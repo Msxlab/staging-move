@@ -30,21 +30,25 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/user-auth", () => ({
   getUserSession: vi.fn(),
   generateOpaqueToken: vi.fn(() => ({ token: "reset-token", hash: "reset-hash" })),
+  hashPassword: vi.fn(() => Promise.resolve("new-password-hash")),
+  validatePasswordPolicy: vi.fn(() => null),
 }));
 
 vi.mock("@/lib/email-service", () => ({
   sendPasswordResetEmail: vi.fn(() => Promise.resolve(true)),
+  sendSecurityNoticeEmail: vi.fn(() => Promise.resolve(true)),
 }));
 
 import { prisma } from "@/lib/db";
-import { getUserSession } from "@/lib/user-auth";
-import { sendPasswordResetEmail } from "@/lib/email-service";
+import { getUserSession, hashPassword } from "@/lib/user-auth";
+import { sendPasswordResetEmail, sendSecurityNoticeEmail } from "@/lib/email-service";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as { findUnique: Mock; update: Mock };
 const auditLogMock = prisma.auditLog as unknown as { create: Mock };
 const tokenMock = prisma.passwordResetToken as unknown as { findFirst: Mock; create: Mock };
 const sendPasswordResetEmailMock = sendPasswordResetEmail as unknown as Mock;
+const sendSecurityNoticeEmailMock = sendSecurityNoticeEmail as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("https://locateflow.com/api/auth/security", {
@@ -124,14 +128,25 @@ describe("auth security route - request_set_password", () => {
     expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
   });
 
-  it("rejects legacy direct set_password without mutating passwordHash", async () => {
+  it("sets a password directly for a verified OAuth-only account", async () => {
     const response = await POST(
       makeRequest({ action: "set_password", newPassword: "Strong-Password-1!" }),
     );
 
-    expect(response.status).toBe(400);
-    expect(userMock.update).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(hashPassword).toHaveBeenCalledWith("Strong-Password-1!");
+    expect(userMock.update).toHaveBeenCalledWith({
+      where: { id: "user_1" },
+      data: { passwordHash: "new-password-hash" },
+    });
+    expect(auditLogMock.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: "SET_PWD_DONE" }),
+    }));
     expect(tokenMock.create).not.toHaveBeenCalled();
     expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+    expect(sendSecurityNoticeEmailMock).toHaveBeenCalledWith(expect.objectContaining({
+      userEmail: "user@example.com",
+      kind: "password-changed",
+    }));
   });
 });

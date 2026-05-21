@@ -152,6 +152,7 @@ export type MobileOAuthExchangeResult =
         lastName: string | null;
         imageUrl: string | null;
         emailVerifiedAt: Date | null;
+        passwordHash: string | null;
         mfaEnabled: boolean;
       };
     }
@@ -183,6 +184,7 @@ export async function consumeMobileOAuthExchangeCode(
           lastName: true,
           imageUrl: true,
           emailVerifiedAt: true,
+          passwordHash: true,
           mfaEnabled: true,
           deletedAt: true,
         },
@@ -224,6 +226,7 @@ export async function consumeMobileOAuthExchangeCode(
       lastName: record.user.lastName,
       imageUrl: record.user.imageUrl,
       emailVerifiedAt: record.user.emailVerifiedAt,
+      passwordHash: record.user.passwordHash,
       mfaEnabled: record.user.mfaEnabled,
     },
   };

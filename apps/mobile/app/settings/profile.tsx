@@ -22,7 +22,7 @@ import { hapticSuccess, hapticError } from "@/lib/haptics";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 const FAMILY_STATUS_VALUES = ["SINGLE", "COUPLE", "FAMILY", "OTHER"] as const;
-const MOVE_TYPES = ["PERSONAL", "BUSINESS", "VACATION"] as const;
+const MOVE_TYPES = ["PERSONAL", "BUSINESS", "VACATION", "MILITARY"] as const;
 const IMMIGRATION_STATUSES = ["", "CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"] as const;
 
 export default function ProfileSettingsScreen() {

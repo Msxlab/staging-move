@@ -315,7 +315,8 @@ export function analyzeMigration(
     // Skip if user already has this category covered
     if (coveredCategories.has(item.category)) continue;
     // Check profile conditions
-    if (!item.moveTypes.includes(profile.moveType)) continue;
+    const effectiveMoveType = profile.moveType === "MILITARY" ? "PERSONAL" : profile.moveType;
+    if (!item.moveTypes.includes(effectiveMoveType)) continue;
     let conditionsMet = true;
     for (const cond of item.conditions) {
       if (!evaluateCondition(cond, profile)) { conditionsMet = false; break; }

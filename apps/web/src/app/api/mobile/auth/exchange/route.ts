@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       lastName: exchanged.user.lastName,
       imageUrl: exchanged.user.imageUrl,
       emailVerified: Boolean(exchanged.user.emailVerifiedAt),
+      hasPasswordLogin: Boolean(exchanged.user.passwordHash),
       mfaEnabled: exchanged.user.mfaEnabled,
     },
   });

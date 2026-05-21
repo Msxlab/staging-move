@@ -65,6 +65,7 @@ function shapeUser(user: {
   lastName: string | null;
   imageUrl: string | null;
   emailVerifiedAt: Date | null;
+  passwordHash: string | null;
   mfaEnabled: boolean;
 }) {
   return {
@@ -74,6 +75,7 @@ function shapeUser(user: {
     lastName: user.lastName,
     imageUrl: user.imageUrl,
     emailVerified: Boolean(user.emailVerifiedAt),
+    hasPasswordLogin: Boolean(user.passwordHash),
     mfaEnabled: user.mfaEnabled,
   };
 }
@@ -288,6 +290,7 @@ export async function POST(request: NextRequest) {
       lastName: true,
       imageUrl: true,
       emailVerifiedAt: true,
+      passwordHash: true,
       mfaEnabled: true,
     },
   });

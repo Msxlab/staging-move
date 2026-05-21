@@ -315,6 +315,7 @@ export async function handlePasswordLogin(
       lastName: user.lastName,
       imageUrl: user.imageUrl,
       emailVerified: Boolean(user.emailVerifiedAt),
+      hasPasswordLogin: Boolean(user.passwordHash),
       mfaEnabled: user.mfaEnabled,
     },
   });

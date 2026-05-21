@@ -162,6 +162,9 @@ export default function OnboardingPage() {
             needsStorage: data.profile?.needsStorage ?? prev.needsStorage,
             hasMotorcycle: data.profile?.hasMotorcycle ?? prev.hasMotorcycle,
             hasBoatRV: data.profile?.hasBoatRV ?? prev.hasBoatRV,
+            moveType: data.profile?.moveType || prev.moveType,
+            isBusinessOwner: data.profile?.isBusinessOwner ?? prev.isBusinessOwner,
+            isMilitary: false,
           }));
         }
 
@@ -852,7 +855,7 @@ export default function OnboardingPage() {
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setProfile({ ...profile, moveType: opt.value, ...(opt.value === "MILITARY" ? { isMilitary: true } : {}) })}
+                    onClick={() => setProfile({ ...profile, moveType: opt.value, isMilitary: false })}
                     className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       profile.moveType === opt.value
                         ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"

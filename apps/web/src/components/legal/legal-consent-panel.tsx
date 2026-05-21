@@ -38,11 +38,10 @@ export function LegalConsentPanel({
   onChange,
   title = "Required legal acknowledgements",
   description = "You must review and accept both documents before you can continue.",
-  compact = false,
   disabled = false,
   className,
 }: LegalConsentPanelProps) {
-  const [expanded, setExpanded] = useState<LegalConsentDocumentKey | null>("terms");
+  const [expanded, setExpanded] = useState<LegalConsentDocumentKey | null>(null);
 
   const updateConsent = (key: LegalConsentDocumentKey, checked: boolean) => {
     onChange(
@@ -71,7 +70,7 @@ export function LegalConsentPanel({
           const summaryId = `legal-consent-${document.key}-summary`;
 
           return (
-            <div key={document.key} className="rounded-2xl border border-border bg-card/80 p-4 shadow-sm">
+            <div key={document.key} className="rounded-lg border border-border bg-card/80 p-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <button
                   type="button"
@@ -94,7 +93,7 @@ export function LegalConsentPanel({
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
@@ -124,17 +123,6 @@ export function LegalConsentPanel({
                     </button>
                   </div>
 
-                  <ul className="space-y-1.5 rounded-xl border border-border bg-background p-3 text-sm text-muted-foreground">
-                    {document.highlights
-                      .slice(0, compact ? 2 : document.highlights.length)
-                      .map((item) => (
-                        <li key={item} className="flex gap-2">
-                          <span className="mt-1 text-primary">-</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                  </ul>
-
                   <div className="flex flex-wrap items-center gap-3 text-xs">
                     <Link
                       href={document.route}
@@ -151,7 +139,7 @@ export function LegalConsentPanel({
                   </div>
 
                   {isExpanded && (
-                    <div className="max-h-64 space-y-4 overflow-y-auto rounded-xl border border-border bg-background p-4">
+                    <div className="max-h-56 space-y-4 overflow-y-auto rounded-lg border border-border bg-background p-4">
                       {document.sections.map((section) => (
                         <div key={section.heading} className="space-y-2">
                           <h4 className="text-sm font-semibold text-foreground">{section.heading}</h4>
@@ -167,7 +155,7 @@ export function LegalConsentPanel({
 
                   <label
                     htmlFor={checkboxId}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground"
+                    className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground"
                   >
                     <input
                       id={checkboxId}

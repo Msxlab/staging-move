@@ -4,8 +4,10 @@ import { prisma } from "@/lib/db";
 import {
   getUserSession,
   generateOpaqueToken,
+  hashPassword,
+  validatePasswordPolicy,
 } from "@/lib/user-auth";
-import { sendPasswordResetEmail } from "@/lib/email-service";
+import { sendPasswordResetEmail, sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -203,10 +205,59 @@ export async function POST(request: NextRequest) {
   const userAgent = request.headers.get("user-agent") || null;
 
   if (parsed.data.action === "set_password") {
-    return NextResponse.json(
-      { error: "Use the emailed password setup link to set a password." },
-      { status: 400 },
-    );
+    if (user.passwordHash) {
+      return NextResponse.json(
+        { error: "This account already has a password. Use change password instead." },
+        { status: 400 },
+      );
+    }
+
+    if (!user.emailVerifiedAt) {
+      return NextResponse.json(
+        { error: "Verify your email before setting a password." },
+        { status: 400 },
+      );
+    }
+
+    const policyError = validatePasswordPolicy(parsed.data.newPassword);
+    if (policyError) {
+      return NextResponse.json({ error: policyError }, { status: 400 });
+    }
+
+    const passwordHash = await hashPassword(parsed.data.newPassword);
+    const changedAt = new Date();
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { passwordHash },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "SET_PWD_DONE",
+        entityType: "User",
+        entityId: session.userId,
+        changes: JSON.stringify({ source: "account_security_inline" }),
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    void sendSecurityNoticeEmail({
+      userEmail: user.email,
+      userName: user.firstName || "there",
+      kind: "password-changed",
+      occurredAt: changedAt,
+      locale: user.preferredLocale,
+      dedupeKey: `pwd-set:${session.userId}:${changedAt.getTime()}`,
+    }).catch((err) => console.error("[AUTH] set-password notice failed:", err));
+
+    const state = await loadSecurityState(session.userId, session.sessionId);
+    return NextResponse.json({
+      success: true,
+      message: "Password set. You can now sign in with email and password.",
+      ...state,
+    });
   }
 
   if (parsed.data.action === "request_set_password") {

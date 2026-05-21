@@ -18,7 +18,7 @@ export const profileSchema = z.strictObject({
   hasSenior: z.boolean().default(false),
   hasDisability: z.boolean().default(false),
   isMilitary: z.boolean().default(false),
-  moveType: z.enum(["PERSONAL", "BUSINESS", "VACATION"]).default("PERSONAL"),
+  moveType: z.enum(["PERSONAL", "BUSINESS", "VACATION", "MILITARY"]).default("PERSONAL"),
   isBusinessOwner: z.boolean().default(false),
   isImmigrant: z.boolean().default(false),
   immigrationStatus: z

@@ -143,6 +143,8 @@ describe("Apple OAuth callback nonce protection", () => {
     mocks.generateFingerprint.mockResolvedValue("fingerprint");
     mocks.createUserSession.mockResolvedValue("session-token");
     mocks.getPostAuthUserState.mockResolvedValue({
+      needsEmailVerification: false,
+      needsPasswordSetup: false,
       hasRequiredLegalConsents: true,
       onboardingCompleted: true,
     });

@@ -23,6 +23,7 @@ export interface AuthUser {
   lastName: string | null;
   imageUrl: string | null;
   emailVerified: boolean;
+  hasPasswordLogin?: boolean;
   mfaEnabled: boolean;
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Linking, ScrollView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Check, ChevronDown, ChevronUp, FileText, ShieldAlert } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import {
@@ -28,7 +28,6 @@ export function LegalConsentPanel({
   onChange,
   title = "Required legal acknowledgements",
   description = "You must accept both documents before continuing.",
-  compact = false,
   disabled = false,
 }: LegalConsentPanelProps) {
 
@@ -37,7 +36,7 @@ export function LegalConsentPanel({
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const [expanded, setExpanded] = useState<LegalConsentDocumentKey | null>("terms");
+  const [expanded, setExpanded] = useState<LegalConsentDocumentKey | null>(null);
 
   const updateConsent = (key: LegalConsentDocumentKey, checked: boolean) => {
     onChange(
@@ -86,25 +85,26 @@ export function LegalConsentPanel({
                 <Text style={styles.checkboxLabel}>{document.checkboxLabel}</Text>
               </TouchableOpacity>
 
-              <View style={styles.highlights}>
-                {document.highlights.slice(0, compact ? 2 : document.highlights.length).map((highlight) => (
-                  <View key={highlight} style={styles.highlightRow}>
-                    <Text style={styles.highlightDot}>•</Text>
-                    <Text style={styles.highlightText}>{highlight}</Text>
-                  </View>
-                ))}
-              </View>
+              <TouchableOpacity
+                disabled={disabled}
+                onPress={() => Linking.openURL(`https://locateflow.com${document.route}`).catch(() => {})}
+                style={styles.fullLink}
+              >
+                <Text style={styles.fullLinkText}>Read full document</Text>
+              </TouchableOpacity>
 
               {isExpanded ? (
                 <View style={styles.sectionBox}>
-                  {document.sections.map((section) => (
-                    <View key={section.heading} style={styles.sectionItem}>
-                      <Text style={styles.sectionTitle}>{section.heading}</Text>
-                      {section.paragraphs.map((paragraph) => (
-                        <Text key={paragraph} style={styles.sectionText}>{paragraph}</Text>
-                      ))}
-                    </View>
-                  ))}
+                  <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+                    {document.sections.map((section) => (
+                      <View key={section.heading} style={styles.sectionItem}>
+                        <Text style={styles.sectionTitle}>{section.heading}</Text>
+                        {section.paragraphs.map((paragraph) => (
+                          <Text key={paragraph} style={styles.sectionText}>{paragraph}</Text>
+                        ))}
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               ) : null}
             </View>
@@ -177,11 +177,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   checkboxDisabled: { opacity: 0.5 },
   checkboxLabel: { flex: 1, fontSize: 13, lineHeight: 20, color: theme.colors.textSecondary },
-  highlights: { gap: 8 },
-  highlightRow: { flexDirection: "row", gap: 8 },
-  highlightDot: { color: theme.colors.primaryLight, fontSize: 14, lineHeight: 20 },
-  highlightText: { flex: 1, fontSize: 12, lineHeight: 19, color: theme.colors.textSecondary },
+  fullLink: {
+    alignSelf: "flex-start",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  fullLinkText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: "700" },
   sectionBox: {
+    maxHeight: 240,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,

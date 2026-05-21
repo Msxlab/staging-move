@@ -192,6 +192,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const currentSegment = String(segments[0] || "");
     const inAuthGroup = currentSegment === "(auth)";
     const inOnboarding = currentSegment === "onboarding";
+    const inPasswordSetup = currentSegment === "setup-password";
     const inOAuthCallback = currentSegment === "oauth";
     const inPasswordReset = currentSegment === "reset-password";
     const inPublicBlog = currentSegment === "blog";
@@ -200,7 +201,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace("/(auth)/sign-in");
       return;
     }
-    if (!token || needsOnboarding === null) return;
+    if (!token || !user || needsOnboarding === null) return;
+
+    const needsPasswordSetup = user.hasPasswordLogin === false;
+    if (needsPasswordSetup && !inPasswordSetup) {
+      router.replace("/setup-password" as any);
+      return;
+    }
+    if (!needsPasswordSetup && inPasswordSetup) {
+      router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
+      return;
+    }
 
     if (token && inAuthGroup) {
       router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
@@ -211,7 +222,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     } else if (token && needsOnboarding && !inOnboarding && !inAuthGroup) {
       router.replace("/onboarding");
     }
-  }, [token, loading, segments, needsOnboarding, router]);
+  }, [token, user, loading, segments, needsOnboarding, router]);
 
   return (
     <>

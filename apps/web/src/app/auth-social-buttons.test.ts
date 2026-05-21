@@ -12,9 +12,9 @@ describe("auth social button styling", () => {
     const signUp = read("src/app/sign-up/page.tsx");
     const combined = `${signIn}\n${signUp}`;
 
-    expect(combined).toContain("bg-card");
-    expect(combined).toContain("text-foreground");
-    expect(combined).toContain("bg-zinc-950");
+    expect(combined).toContain("bg-white");
+    expect(combined).toContain("text-slate-950");
+    expect(combined).toContain("bg-black");
     expect(combined).toContain("dark:bg-white");
     expect(combined).toContain("disabled:opacity-100");
     expect(combined).toContain("googleUnavailable");

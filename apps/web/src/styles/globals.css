@@ -480,6 +480,14 @@
     color: hsl(var(--popover-foreground));
     background-color: hsl(var(--popover));
   }
+
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
 }
 
 /* =========================================================================
@@ -1173,4 +1181,12 @@
 
 .blog-prose :where(table) {
   font-size: 0.95em;
+}
+
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
