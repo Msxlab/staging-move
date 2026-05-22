@@ -1,32 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Animated, Easing } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, {
+  Circle,
   Defs,
   LinearGradient as SvgLinearGradient,
-  RadialGradient,
+  Path,
   Rect,
   Stop,
-  Path,
-  Circle,
 } from "react-native-svg";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-// Edition VII · Aurora. Geometry mirrors apps/web/public/logo-mark.svg
-// (foil curve from start dot to cool pin) so the boot screen reads as the same
-// brand as the web sign-in. Palette: cool/violet flow on Aurora navy.
+const FOIL_LEN = 88;
+
 export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => void; ready?: boolean }) {
-  const markScale = useRef(new Animated.Value(0)).current;
-  const markY = useRef(new Animated.Value(-40)).current;
-  const sweep = useRef(new Animated.Value(0)).current;       // 0–1 along the foil curve
-  const pinScale = useRef(new Animated.Value(0)).current;    // rose pin pop-in
-  const ringScale = useRef(new Animated.Value(0.6)).current; // rose ripple
-  const ringOpacity = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(0.12)).current;
-  const glowScale = useRef(new Animated.Value(0.85)).current;
+  const markOpacity = useRef(new Animated.Value(0)).current;
+  const markScale = useRef(new Animated.Value(0.94)).current;
+  const lineProgress = useRef(new Animated.Value(0)).current;
+  const endDotOpacity = useRef(new Animated.Value(0)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
   const [introDone, setIntroDone] = useState(false);
+  const [barActive, setBarActive] = useState(false);
   const didFinish = useRef(false);
   const onFinishRef = useRef(onFinish);
 
@@ -35,99 +30,47 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
   }, [onFinish]);
 
   useEffect(() => {
+    const barTimer = setTimeout(() => setBarActive(true), 440);
     const introAnimation = Animated.sequence([
-      // Phase 1: Mark drops in
       Animated.parallel([
-        Animated.spring(markScale, {
+        Animated.timing(markOpacity, {
           toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-        Animated.spring(markY, {
-          toValue: 0,
-          tension: 45,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Phase 2: Foil curve sweeps in (start dot already visible)
-      Animated.timing(sweep, {
-        toValue: 1,
-        duration: 700,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      // Phase 3: Rose pin pops at the end of the curve, ripple bursts
-      Animated.parallel([
-        Animated.spring(pinScale, {
-          toValue: 1,
-          tension: 100,
-          friction: 6,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ringOpacity, {
-          toValue: 0.55,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ringScale, {
-          toValue: 1.9,
-          duration: 700,
+          duration: 260,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
+        Animated.spring(markScale, {
+          toValue: 1,
+          tension: 58,
+          friction: 9,
+          useNativeDriver: true,
+        }),
       ]),
-      Animated.timing(ringOpacity, {
-        toValue: 0,
-        duration: 350,
+      Animated.delay(180),
+      Animated.timing(lineProgress, {
+        toValue: 1,
+        duration: 820,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(endDotOpacity, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
+      Animated.delay(160),
     ]);
+
     introAnimation.start(({ finished }) => {
       if (finished) setIntroDone(true);
     });
 
-    // Foil glow breathing
-    const glowAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(glowPulse, {
-            toValue: 0.30,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowScale, {
-            toValue: 1.1,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(glowPulse, {
-            toValue: 0.12,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowScale, {
-            toValue: 0.85,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    );
-    glowAnimation.start();
-
     return () => {
+      clearTimeout(barTimer);
       introAnimation.stop();
-      glowAnimation.stop();
     };
-  }, [glowPulse, glowScale, markScale, markY, pinScale, ringOpacity, ringScale, sweep]);
+  }, [endDotOpacity, lineProgress, markOpacity, markScale]);
 
   useEffect(() => {
     if (!ready || !introDone || didFinish.current) return;
@@ -135,7 +78,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
 
     const fadeAnimation = Animated.timing(overallOpacity, {
       toValue: 0,
-      duration: 500,
+      duration: 420,
       easing: Easing.inOut(Easing.cubic),
       useNativeDriver: true,
     });
@@ -146,84 +89,53 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
     return () => fadeAnimation.stop();
   }, [introDone, overallOpacity, ready]);
 
-  // The foil curve has total length ≈ 88 SVG units; sweep 0→1 maps to
-  // strokeDashoffset 88→0 so the path "draws" left-to-right.
-  const FOIL_LEN = 88;
-  const dashOffset = sweep.interpolate({
+  const dashOffset = lineProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [FOIL_LEN, 0],
   });
 
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      {/* Foil radial glow — Aurora cool → violet */}
-      <Animated.View
-        style={[
-          styles.glow,
-          { opacity: glowPulse, transform: [{ scale: glowScale }] },
-        ]}
-      >
-        <LinearGradient
-          colors={["rgba(127,182,232,0.40)", "rgba(180,155,255,0.10)", "transparent"]}
-          style={styles.glowGradient}
-          start={{ x: 0.5, y: 0.5 }}
-          end={{ x: 1, y: 1 }}
-        />
-      </Animated.View>
-
-      {/* Mark — flow-curve with rose pin */}
       <View style={styles.logoArea}>
         <Animated.View
           style={[
             styles.markContainer,
             {
-              transform: [
-                { scale: markScale },
-                { translateY: markY },
-              ],
+              opacity: markOpacity,
+              transform: [{ scale: markScale }],
             },
           ]}
         >
-          <Svg width={180} height={180} viewBox="0 0 100 100">
+          <Svg width={168} height={168} viewBox="0 0 100 100">
             <Defs>
               <SvgLinearGradient id="splash-bg" x1="0" y1="0" x2="1" y2="1">
                 <Stop offset="0%" stopColor="#1A2438" />
                 <Stop offset="60%" stopColor="#131C2C" />
                 <Stop offset="100%" stopColor="#0A0F18" />
               </SvgLinearGradient>
-              <RadialGradient id="splash-icon-glow" cx="72%" cy="24%" r="62%">
-                <Stop offset="0%" stopColor="#DDE7F5" stopOpacity="0.22" />
-                <Stop offset="100%" stopColor="#DDE7F5" stopOpacity="0" />
-              </RadialGradient>
+              <SvgLinearGradient id="splash-shine" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor="#ECF1F8" stopOpacity="0.15" />
+                <Stop offset="48%" stopColor="#ECF1F8" stopOpacity="0.05" />
+                <Stop offset="100%" stopColor="#ECF1F8" stopOpacity="0" />
+              </SvgLinearGradient>
               <SvgLinearGradient id="splash-foil" x1="0" y1="1" x2="1" y2="0">
                 <Stop offset="0%" stopColor="#5C9DDC" />
                 <Stop offset="45%" stopColor="#7FB6E8" />
                 <Stop offset="100%" stopColor="#DDE7F5" />
               </SvgLinearGradient>
-              <SvgLinearGradient id="splash-rose" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="#A5C9F0" />
-                <Stop offset="100%" stopColor="#5C9DDC" />
-              </SvgLinearGradient>
             </Defs>
 
             <Rect width="100" height="100" rx="22" fill="url(#splash-bg)" />
-            <Rect width="100" height="100" rx="22" fill="url(#splash-icon-glow)" />
-
-            {/* Rose ripple */}
-            <AnimatedCircle
-              cx="80"
-              cy="40"
-              r="10"
+            <Rect width="100" height="100" rx="22" fill="url(#splash-shine)" />
+            <Path
+              d="M20 65 Q 30 32, 50 48 T 80 40"
+              stroke="rgba(221, 231, 245, 0.13)"
+              strokeWidth="5"
               fill="none"
-              stroke="url(#splash-rose)"
-              strokeWidth="1.5"
-              opacity={ringOpacity as unknown as number}
-              {...({ style: { transform: [{ scale: ringScale }] } } as any)}
+              strokeLinecap="round"
             />
-
-            {/* Foil curve — animates dashoffset to "draw" itself */}
-            <AnimatedCircle cx="20" cy="65" r="5.5" fill="url(#splash-foil)" />
-            <AnimatedCircle cx="20" cy="65" r="1.7" fill="#0A0F18" />
+            <Circle cx="20" cy="65" r="5.4" fill="#7FB6E8" />
+            <Circle cx="20" cy="65" r="1.7" fill="#0A0F18" />
             <Path
               d="M20 65 Q 30 32, 50 48 T 80 40"
               stroke="url(#splash-foil)"
@@ -233,48 +145,48 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
               strokeDasharray={FOIL_LEN}
               {...({ strokeDashoffset: dashOffset } as any)}
             />
-
-            {/* Rose pin */}
             <AnimatedCircle
               cx="80"
               cy="40"
-              r="9"
-              fill="url(#splash-rose)"
-              {...({ style: { transform: [{ scale: pinScale }] } } as any)}
+              r="6.8"
+              fill="#7FB6E8"
+              opacity={endDotOpacity as unknown as number}
             />
             <AnimatedCircle
               cx="80"
               cy="40"
-              r="3"
+              r="2.2"
               fill="#ECF1F8"
-              {...({ style: { transform: [{ scale: pinScale }] } } as any)}
+              opacity={endDotOpacity as unknown as number}
             />
           </Svg>
         </Animated.View>
       </View>
 
-      {/* Loading bar */}
       <View style={styles.loadingBarContainer}>
-        <LoadingBar />
+        <LoadingBar active={barActive} />
       </View>
     </Animated.View>
   );
 }
 
-function LoadingBar() {
+function LoadingBar({ active }: { active: boolean }) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (!active) return;
+
+    progress.setValue(0);
     const animation = Animated.timing(progress, {
       toValue: 1,
-      duration: 2600,
+      duration: 1700,
       easing: Easing.inOut(Easing.cubic),
       useNativeDriver: false,
     });
     animation.start();
 
     return () => animation.stop();
-  }, [progress]);
+  }, [active, progress]);
 
   return (
     <View style={styles.loadingTrack}>
@@ -293,7 +205,7 @@ function LoadingBar() {
           colors={["#5C9DDC", "#7FB6E8", "#DDE7F5"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={{ flex: 1, borderRadius: 2 }}
+          style={styles.loadingGradient}
         />
       </Animated.View>
     </View>
@@ -312,25 +224,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 999,
   },
-  glow: {
-    position: "absolute",
-    width: 320,
-    height: 320,
-    top: "25%",
-    alignSelf: "center",
-  },
-  glowGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 160,
-  },
   logoArea: {
     alignItems: "center",
     marginBottom: 28,
   },
   markContainer: {
-    width: 180,
-    height: 180,
+    width: 168,
+    height: 168,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -349,5 +249,9 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 2,
     overflow: "hidden",
+  },
+  loadingGradient: {
+    flex: 1,
+    borderRadius: 2,
   },
 });
