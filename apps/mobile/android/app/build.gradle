@@ -15,7 +15,9 @@ def hasReleaseSigning =
 def isEasCloudBuild = System.getenv("EAS_BUILD") == "true"
 def isLocalReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
 def reactNativePackageDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile()
-def hermesCommandPath = reactNativePackageDir.getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
+def hermesCompilerPackageDir = new File(["node", "--print", "require.resolve('hermes-compiler/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile()
+def hermesExecutable = System.getProperty("os.name").toLowerCase().contains("win") ? "hermesc.exe" : "hermesc"
+def hermesCommandPath = hermesCompilerPackageDir.getAbsolutePath() + "/hermesc/%OS-BIN%/${hermesExecutable}"
 
 /**
  * This is the configuration block to customize your React Native Android app.
