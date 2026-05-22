@@ -56,4 +56,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-module.exports = withNativeWind(config, { input: "./src/styles/global.css" });
+module.exports = withNativeWind(config, {
+  input: path.resolve(projectRoot, "src/styles/global.css"),
+  configPath: path.resolve(projectRoot, "tailwind.config.ts"),
+});

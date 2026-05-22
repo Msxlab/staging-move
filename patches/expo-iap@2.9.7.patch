@@ -1,0 +1,21 @@
+diff --git a/ios/ExpoIapModule.swift b/ios/ExpoIapModule.swift
+index 662ee0e773cee3af9bee17ddc966b75a459f21c0..62f45226105101b05f7b8ed56027733185fbf599 100644
+--- a/ios/ExpoIapModule.swift
++++ b/ios/ExpoIapModule.swift
+@@ -25,12 +25,12 @@ public class ExpoIapModule: Module {
+     // Connection state for local validation parity with RN module
+     private var isInitialized: Bool = false
+     // Subscriptions for OpenIapModule event listeners
+-    private var purchaseUpdatedSub: Subscription?
+-    private var purchaseErrorSub: Subscription?
+-    private var promotedProductSub: Subscription?
++    private var purchaseUpdatedSub: OpenIAP.Subscription?
++    private var purchaseErrorSub: OpenIAP.Subscription?
++    private var promotedProductSub: OpenIAP.Subscription?
+ 
+     // Helper to safely remove a listener and nil out the reference
+-    private func removeListener(_ sub: inout Subscription?) {
++    private func removeListener(_ sub: inout OpenIAP.Subscription?) {
+         if let s = sub { OpenIapModule.shared.removeListener(s) }
+         sub = nil
+     }
