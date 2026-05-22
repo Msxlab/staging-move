@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
       kind: "password-set",
       occurredAt: changedAt,
       locale: user.preferredLocale,
-      dedupeKey: `pwd-set:${session.userId}:${changedAt.getTime()}`,
+      dedupeKey: `pwd-set:${session.userId}`,
     }).catch((err) => console.error("[AUTH] set-password notice failed:", err));
 
     const state = await loadSecurityState(session.userId, session.sessionId);

@@ -147,6 +147,7 @@ describe("auth security route - request_set_password", () => {
     expect(sendSecurityNoticeEmailMock).toHaveBeenCalledWith(expect.objectContaining({
       userEmail: "user@example.com",
       kind: "password-set",
+      dedupeKey: "pwd-set:user_1",
     }));
   });
 });
