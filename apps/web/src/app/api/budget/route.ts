@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAppMutationUser({
-      requireActiveSubscription: true,
-      subscriptionMessage: "An active subscription is required to manage budgets.",
+      requirePremium: true,
+      subscriptionMessage: "A paid subscription is required to manage budgets.",
     });
 
     // Rate limit: 20 writes per minute

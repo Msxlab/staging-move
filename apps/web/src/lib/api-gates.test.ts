@@ -42,7 +42,7 @@ describe("api gate helpers", () => {
         }),
       },
     ]);
-    getUserPlanMock.mockResolvedValue({ isActive: true });
+    getUserPlanMock.mockResolvedValue({ isActive: true, hasPremium: true });
   });
 
   it.each([
@@ -70,10 +70,22 @@ describe("api gate helpers", () => {
   });
 
   it("can require an active subscription for paid mutation surfaces", async () => {
-    getUserPlanMock.mockResolvedValueOnce({ isActive: false });
+    getUserPlanMock.mockResolvedValueOnce({ isActive: false, hasPremium: false });
 
     await expect(requireAppMutationUser({ requireActiveSubscription: true })).rejects.toMatchObject({
       code: "SUBSCRIPTION_REQUIRED",
+    });
+  });
+
+  it("can require premium access separately from active Free Access", async () => {
+    getUserPlanMock.mockResolvedValueOnce({ isActive: true, hasPremium: false });
+
+    await expect(requireAppMutationUser({
+      requirePremium: true,
+      subscriptionMessage: "A paid subscription is required.",
+    })).rejects.toMatchObject({
+      code: "SUBSCRIPTION_REQUIRED",
+      publicMessage: "A paid subscription is required.",
     });
   });
 

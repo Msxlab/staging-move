@@ -65,22 +65,27 @@ export default function NewBudgetScreen() {
         setSubscriptionRequired(false);
         return;
       }
-      if (typeof res.data?.entitlement?.isActive === "boolean") {
-        setSubscriptionRequired(!res.data.entitlement.isActive);
+      const entitlement = res.data?.entitlement;
+      if (entitlement && typeof entitlement.isActive === "boolean") {
+        const hasPremiumAccess =
+          entitlement.accessType === "PAID" ||
+          entitlement.isTrial === true ||
+          (entitlement.plan === "INDIVIDUAL" && entitlement.isActive === true && entitlement.accessType !== "FREE_ACCESS");
+        setSubscriptionRequired(!hasPremiumAccess);
         return;
       }
       const sub = res.data?.subscription || {};
+      const plan = typeof sub.plan === "string" ? sub.plan : null;
       const status = typeof sub.status === "string" ? sub.status : null;
-      const freeAccessEndsAt = sub.freeAccessEndsAt ? new Date(sub.freeAccessEndsAt) : null;
       const premiumUntil = sub.premiumUntil ? new Date(sub.premiumUntil) : null;
       const currentPeriodEndsAt = sub.currentPeriodEndsAt ? new Date(sub.currentPeriodEndsAt) : null;
-      const hasActiveAccess =
-        status === "ACTIVE" ||
-        status === "TRIALING" ||
-        (freeAccessEndsAt && freeAccessEndsAt.getTime() > Date.now()) ||
-        (premiumUntil && premiumUntil.getTime() > Date.now()) ||
-        (currentPeriodEndsAt && currentPeriodEndsAt.getTime() > Date.now());
-      setSubscriptionRequired(!hasActiveAccess);
+      const hasPremiumAccess =
+        Boolean(plan && plan !== "FREE_TRIAL") &&
+        (status === "ACTIVE" ||
+          status === "TRIALING" ||
+          (premiumUntil && premiumUntil.getTime() > Date.now()) ||
+          (currentPeriodEndsAt && currentPeriodEndsAt.getTime() > Date.now()));
+      setSubscriptionRequired(!hasPremiumAccess);
     })().catch(() => {
       if (!cancelled) setSubscriptionRequired(false);
     });

@@ -100,6 +100,7 @@ export function entitlementErrorResponse(
 
 export async function requireAppMutationUser(options: {
   requireActiveSubscription?: boolean;
+  requirePremium?: boolean;
   subscriptionMessage?: string;
 } = {}) {
   const userId = await requireVerifiedUser();
@@ -115,9 +116,9 @@ export async function requireAppMutationUser(options: {
     throw new ApiGateError("LEGAL_ACCEPTANCE_REQUIRED");
   }
 
-  if (options.requireActiveSubscription) {
+  if (options.requireActiveSubscription || options.requirePremium) {
     const plan = await getUserPlan(userId);
-    if (!plan.isActive) {
+    if (!plan.isActive || (options.requirePremium && !plan.hasPremium)) {
       throw new ApiGateError(
         "SUBSCRIPTION_REQUIRED",
         options.subscriptionMessage || GATE_RESPONSES.SUBSCRIPTION_REQUIRED.error,

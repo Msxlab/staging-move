@@ -107,6 +107,10 @@ describe("budget route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(201);
+    expect(requireAppMutationUserMock).toHaveBeenCalledWith({
+      requirePremium: true,
+      subscriptionMessage: "A paid subscription is required to manage budgets.",
+    });
     expect(body.budget.actualExpenses).toBe(250);
     expect(budgetMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

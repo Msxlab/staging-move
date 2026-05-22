@@ -37,6 +37,7 @@ export interface UserPlan {
   plan: string;
   status: string;
   isActive: boolean;
+  hasPremium: boolean;
   isTrialExpired: boolean;
   limits: typeof PLAN_LIMITS[string];
 }
@@ -70,6 +71,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
       plan: "FREE_TRIAL",
       status: "FREE_ACCESS",
       isActive: true,
+      hasPremium: false,
       isTrialExpired: false,
       limits: PLAN_LIMITS.FREE_TRIAL,
     };
@@ -108,6 +110,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
     plan: effectivePlan,
     status,
     isActive: effective.hasAccess,
+    hasPremium: effective.hasPremium,
     isTrialExpired,
     limits,
   };
