@@ -169,6 +169,7 @@
     "startDate": "Fecha de inicio",
     "primary": "Dirección principal",
     "autocompleteHint": "Empieza a escribir para ver sugerencias o continúa manualmente.",
+    "autocompleteUnavailable": "Las sugerencias de dirección no están disponibles. Continúa manualmente.",
     "errorRequiredFields": "Completa calle, ciudad, estado y código postal.",
     "errorStateFormat": "Introduce un código de estado de 2 letras (ej. NY, CA).",
     "errorZipFormat": "Introduce un código postal válido de 5 dígitos.",

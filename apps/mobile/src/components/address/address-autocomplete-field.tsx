@@ -49,6 +49,7 @@ export function AddressAutocompleteField({
   const [predictions, setPredictions] = useState<AddressAutocompletePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [enabled, setEnabled] = useState(true);
+  const helperText = hint || (enabled ? t("addresses.autocompleteHint") : t("addresses.autocompleteUnavailable"));
 
   useEffect(() => {
     const query = value.trim();
@@ -107,7 +108,7 @@ export function AddressAutocompleteField({
         }}
         rightIcon={loading ? <ActivityIndicator size="small" color={theme.colors.primary} /> : enabled ? <MapPin size={16} color={theme.colors.textMuted} /> : null}
       />
-      <Text style={styles.hint}>{hint || t("addresses.autocompleteHint")}</Text>
+      <Text style={styles.hint}>{helperText}</Text>
       {predictions.length > 0 ? (
         <View style={styles.resultsCard}>
           {predictions.map((prediction) => (

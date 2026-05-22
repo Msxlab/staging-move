@@ -6,9 +6,21 @@ import type {
   AddressAutocompleteDetailsResponse,
 } from "@/lib/shared-address-autocomplete";
 
-const GOOGLE_PLACES_AUTOCOMPLETE_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json";
-const GOOGLE_PLACES_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
-const PLACES_PROVIDER_CONFIG_STATUSES = new Set(["REQUEST_DENIED"]);
+const GOOGLE_PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
+const GOOGLE_PLACES_DETAILS_BASE_URL = "https://places.googleapis.com/v1/places";
+const GOOGLE_PLACES_AUTOCOMPLETE_FIELD_MASK = [
+  "suggestions.placePrediction.placeId",
+  "suggestions.placePrediction.text.text",
+  "suggestions.placePrediction.structuredFormat.mainText.text",
+  "suggestions.placePrediction.structuredFormat.secondaryText.text",
+].join(",");
+const GOOGLE_PLACES_DETAILS_FIELD_MASK = "id,formattedAddress,addressComponents,location";
+const PLACES_PROVIDER_CONFIG_STATUSES = new Set([
+  "API_KEY_INVALID",
+  "API_KEY_SERVICE_BLOCKED",
+  "PERMISSION_DENIED",
+  "REQUEST_DENIED",
+]);
 
 export class PlacesProviderConfigError extends Error {
   code = "PLACES_PROVIDER_CONFIG_ERROR";
@@ -19,41 +31,47 @@ export class PlacesProviderConfigError extends Error {
   }
 }
 
+interface GooglePlacesText {
+  text?: string;
+}
+
 interface GoogleAutocompletePrediction {
-  description?: string;
-  place_id?: string;
-  structured_formatting?: {
-    main_text?: string;
-    secondary_text?: string;
+  placeId?: string;
+  text?: GooglePlacesText;
+  structuredFormat?: {
+    mainText?: GooglePlacesText;
+    secondaryText?: GooglePlacesText;
   };
 }
 
 interface GoogleAutocompleteResponse {
-  status?: string;
-  error_message?: string;
-  predictions?: GoogleAutocompletePrediction[];
+  suggestions?: Array<{
+    placePrediction?: GoogleAutocompletePrediction;
+  }>;
+  error?: GooglePlacesError;
 }
 
 interface GoogleAddressComponent {
-  long_name?: string;
-  short_name?: string;
+  longText?: string;
+  shortText?: string;
   types?: string[];
 }
 
 interface GooglePlaceDetailsResponse {
-  status?: string;
-  error_message?: string;
-  result?: {
-    place_id?: string;
-    formatted_address?: string;
-    address_components?: GoogleAddressComponent[];
-    geometry?: {
-      location?: {
-        lat?: number;
-        lng?: number;
-      };
-    };
+  id?: string;
+  formattedAddress?: string;
+  addressComponents?: GoogleAddressComponent[];
+  location?: {
+    latitude?: number;
+    longitude?: number;
   };
+  error?: GooglePlacesError;
+}
+
+interface GooglePlacesError {
+  code?: number;
+  message?: string;
+  status?: string;
 }
 
 function sanitizeSessionToken(value?: string | null) {
@@ -69,7 +87,7 @@ function sanitizeQuery(value: string) {
 function readComponent(components: GoogleAddressComponent[] | undefined, type: string, preferShort = false) {
   const match = components?.find((component) => component.types?.includes(type));
   if (!match) return "";
-  return (preferShort ? match.short_name : match.long_name) || match.long_name || match.short_name || "";
+  return (preferShort ? match.shortText : match.longText) || match.longText || match.shortText || "";
 }
 
 function normalizeStreet(components: GoogleAddressComponent[] | undefined, formattedAddress?: string | null) {
@@ -93,14 +111,27 @@ async function getGoogleMapsApiKey() {
   return getRuntimeConfigValue("GOOGLE_MAPS_API_KEY");
 }
 
-function assertGoogleStatus(status: string | undefined, errorMessage?: string) {
-  if (status === "OK" || status === "ZERO_RESULTS") {
+function normalizePlaceId(value: string) {
+  return value.trim().replace(/^places\//, "");
+}
+
+function isProviderConfigError(status?: string, message?: string) {
+  return Boolean(
+    status && PLACES_PROVIDER_CONFIG_STATUSES.has(status)
+      || message && /API key|referer|referrer|not authorized|permission|billing/i.test(message),
+  );
+}
+
+function assertGoogleResponse(response: Response, error?: GooglePlacesError) {
+  if (response.ok) {
     return;
   }
-  if (status && PLACES_PROVIDER_CONFIG_STATUSES.has(status)) {
-    throw new PlacesProviderConfigError(errorMessage || status);
+  const status = error?.status;
+  const message = error?.message || status || `GOOGLE_PLACES_REQUEST_FAILED_${response.status}`;
+  if (isProviderConfigError(status, message)) {
+    throw new PlacesProviderConfigError(message);
   }
-  throw new Error(errorMessage || status || "GOOGLE_PLACES_REQUEST_FAILED");
+  throw new Error(message);
 }
 
 export function isPlacesProviderConfigError(error: unknown) {
@@ -127,28 +158,38 @@ export async function searchAddressAutocomplete(input: {
     return { enabled: true, predictions: [] };
   }
 
-  const url = new URL(GOOGLE_PLACES_AUTOCOMPLETE_URL);
-  url.searchParams.set("input", query);
-  url.searchParams.set("types", "address");
-  url.searchParams.set("components", "country:us");
-  url.searchParams.set("key", apiKey);
+  const body: Record<string, unknown> = {
+    input: query,
+    includedRegionCodes: ["us"],
+    includedPrimaryTypes: ["street_address", "premise", "subpremise"],
+  };
 
   const sessionToken = sanitizeSessionToken(input.sessionToken);
   if (sessionToken) {
-    url.searchParams.set("sessiontoken", sessionToken);
+    body.sessionToken = sessionToken;
   }
 
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(GOOGLE_PLACES_AUTOCOMPLETE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": GOOGLE_PLACES_AUTOCOMPLETE_FIELD_MASK,
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
   const json = (await response.json()) as GoogleAutocompleteResponse;
-  assertGoogleStatus(json.status, json.error_message);
+  assertGoogleResponse(response, json.error);
 
-  const predictions = (json.predictions || [])
-    .filter((prediction) => prediction.place_id)
+  const predictions = (json.suggestions || [])
+    .map((suggestion) => suggestion.placePrediction)
+    .filter((prediction): prediction is GoogleAutocompletePrediction => Boolean(prediction?.placeId))
     .map((prediction) => ({
-      placeId: prediction.place_id!,
-      description: prediction.description || "",
-      primaryText: prediction.structured_formatting?.main_text || prediction.description || "",
-      secondaryText: prediction.structured_formatting?.secondary_text || "",
+      placeId: prediction.placeId!,
+      description: prediction.text?.text || "",
+      primaryText: prediction.structuredFormat?.mainText?.text || prediction.text?.text || "",
+      secondaryText: prediction.structuredFormat?.secondaryText?.text || "",
     })) satisfies AddressAutocompletePrediction[];
 
   return {
@@ -163,40 +204,43 @@ export async function lookupAddressAutocomplete(placeId: string, sessionToken?: 
     return { enabled: false, result: null };
   }
 
-  const normalizedPlaceId = placeId.trim();
+  const normalizedPlaceId = normalizePlaceId(placeId);
   if (!normalizedPlaceId) {
     return { enabled: true, result: null };
   }
 
-  const url = new URL(GOOGLE_PLACES_DETAILS_URL);
-  url.searchParams.set("place_id", normalizedPlaceId);
-  url.searchParams.set("fields", "place_id,formatted_address,address_component,geometry");
-  url.searchParams.set("key", apiKey);
+  const url = new URL(`${GOOGLE_PLACES_DETAILS_BASE_URL}/${encodeURIComponent(normalizedPlaceId)}`);
 
   const normalizedSessionToken = sanitizeSessionToken(sessionToken);
   if (normalizedSessionToken) {
-    url.searchParams.set("sessiontoken", normalizedSessionToken);
+    url.searchParams.set("sessionToken", normalizedSessionToken);
   }
 
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    headers: {
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": GOOGLE_PLACES_DETAILS_FIELD_MASK,
+    },
+    cache: "no-store",
+  });
   const json = (await response.json()) as GooglePlaceDetailsResponse;
-  assertGoogleStatus(json.status, json.error_message);
+  assertGoogleResponse(response, json.error);
 
-  if (!json.result) {
+  if (!json.id) {
     return { enabled: true, result: null };
   }
 
-  const components = json.result.address_components || [];
+  const components = json.addressComponents || [];
   const result: AddressAutocompleteResult = {
-    placeId: json.result.place_id || normalizedPlaceId,
-    formattedAddress: json.result.formatted_address || null,
-    street: normalizeStreet(components, json.result.formatted_address),
+    placeId: json.id || normalizedPlaceId,
+    formattedAddress: json.formattedAddress || null,
+    street: normalizeStreet(components, json.formattedAddress),
     city: normalizeCity(components),
     state: readComponent(components, "administrative_area_level_1", true).toUpperCase(),
     zip: readComponent(components, "postal_code"),
     country: readComponent(components, "country", true) || "USA",
-    latitude: typeof json.result.geometry?.location?.lat === "number" ? json.result.geometry.location.lat : null,
-    longitude: typeof json.result.geometry?.location?.lng === "number" ? json.result.geometry.location.lng : null,
+    latitude: typeof json.location?.latitude === "number" ? json.location.latitude : null,
+    longitude: typeof json.location?.longitude === "number" ? json.location.longitude : null,
   };
 
   return {

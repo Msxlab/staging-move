@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Linking } from "react-native";
+import { Alert, Linking, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -283,6 +283,7 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
@@ -304,7 +305,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync()
+      .catch(() => undefined)
+      .finally(() => setNativeSplashHidden(true));
     void i18nReady.then(() => setI18nHydrated(true));
   }, []);
 
@@ -312,6 +315,9 @@ export default function RootLayout() {
   // finishes. All three guards must pass; otherwise the first frame flashes
   // either EN copy (i18n) or system fallback (fonts) on the brand wordmark.
   const ready = i18nHydrated && fontsLoaded;
+  if (!nativeSplashHidden) {
+    return <View style={{ flex: 1, backgroundColor: "#0A0F18" }} />;
+  }
   if (showSplash || !ready) {
     return <AnimatedSplash ready={ready} onFinish={() => setShowSplash(false)} />;
   }

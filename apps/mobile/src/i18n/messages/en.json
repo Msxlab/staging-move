@@ -169,6 +169,7 @@
     "startDate": "Start date",
     "primary": "Primary address",
     "autocompleteHint": "Start typing for address suggestions, or continue manually.",
+    "autocompleteUnavailable": "Address suggestions are unavailable. Continue manually.",
     "errorRequiredFields": "Please fill in street, city, state, and ZIP.",
     "errorStateFormat": "Please enter a 2-letter state code (e.g. NY, CA).",
     "errorZipFormat": "Please enter a valid 5-digit ZIP code.",
