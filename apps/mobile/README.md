@@ -4,7 +4,7 @@ React Native (Expo) mobile app for LocateFlow — Android & iOS from a single co
 
 ## Tech Stack
 
-- **Expo SDK 54** + Expo Router v6 (file-based navigation)
+- **Expo SDK 55** + Expo Router v6 (file-based navigation)
 - **NativeWind v4** (TailwindCSS for React Native)
 - **Custom JWT auth** (Bearer token from `/api/auth/login`, stored in Expo SecureStore)
 - **Zustand** (state management)
@@ -72,6 +72,28 @@ eas build -p ios --profile production --auto-submit --what-to-test "Initial inte
 eas submit -p android
 eas submit -p ios
 ```
+
+## EAS Update
+
+OTA updates are enabled through `expo-updates` and EAS Update. Build profiles
+publish against these channels:
+
+- `preview` and `staging-preview` use the `preview` channel.
+- `production` and `play-internal` use the `production` channel.
+
+```bash
+# Publish a preview OTA update
+pnpm mobile:update:preview -- --message "Describe the update"
+
+# Publish a production OTA update
+pnpm mobile:update:production -- --message "Describe the update"
+```
+
+Only ship JavaScript, styling, and asset changes through OTA. Native dependency,
+permission, bundle identifier, app.json native config, or Expo SDK changes need
+a new EAS build before they can receive compatible updates. The current mobile
+runtime is `sdk55-1.0.0`; do not publish SDK 55 JavaScript to older SDK 54
+runtime builds.
 
 ## Project Structure
 

@@ -116,7 +116,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
   },
   tabBarFill: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     // `theme.colors.surface` is the Aurora au-base-2 surface; keeping the
     // literal value here lets the existing-instance read at module-load
     // time stay in sync if a user toggles the appearance setting before

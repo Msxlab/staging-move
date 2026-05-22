@@ -47,6 +47,8 @@
     "mobile:build:dev:android": "pnpm --filter @locateflow/mobile build:dev:android",
     "mobile:build:dev:ios": "pnpm --filter @locateflow/mobile build:dev:ios",
     "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios",
+    "mobile:update:preview": "pnpm --filter @locateflow/mobile update:preview",
+    "mobile:update:production": "pnpm --filter @locateflow/mobile update:production",
     "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts",
     "campaigns:sync-billing": "pnpm exec tsx scripts/sync-acquisition-campaigns.ts",
     "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts",
