@@ -91,6 +91,19 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("lets native mobile Apple sign-in reach its verifier before a bearer token exists", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/mobile/auth/apple/native", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-client-type": "mobile" },
+        body: JSON.stringify({ identityToken: "opaque-apple-identity-token" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
   it("lets sign-in render even when a stale session cookie is present", async () => {
     const response = await middleware(
       request("https://locateflow.com/sign-in", {
