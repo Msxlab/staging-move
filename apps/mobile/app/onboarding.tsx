@@ -133,6 +133,8 @@ const IMMIGRATION_STATUSES = [
   { value: "OTHER_VISA", label: "Other Visa" },
 ];
 
+type OnboardingProgressEvent = "SERVICES_SKIPPED" | "MOVING_SKIPPED" | "COMPLETED";
+
 export default function OnboardingScreen() {
 
   // theme: hook-injected styles
@@ -207,20 +209,81 @@ export default function OnboardingScreen() {
   }, [user]);
 
   useEffect(() => {
-    const loadLegalConsents = async () => {
+    let cancelled = false;
+    const loadOnboardingState = async () => {
       await hydratePendingLegalConsents();
       const pending = getPendingLegalConsents();
       if (pending) {
+        if (cancelled) return;
         setLegalConsents(pending);
         return;
       }
       const res = await api.get<any>("/api/profile");
+      if (cancelled) return;
       if (res.data?.legalConsents) {
         setLegalConsents(getDefaultLegalConsents(res.data.legalConsents));
       }
+      if (res.data?.onboardingCompleted === true) {
+        router.replace("/(tabs)");
+        return;
+      }
+      const nextStep = typeof res.data?.onboardingStepIndex === "number"
+        ? Math.max(0, Math.min(3, res.data.onboardingStepIndex))
+        : 0;
+      setStep(nextStep);
+
+      if (res.data?.user || res.data?.profile) {
+        setProfile((prev) => ({
+          ...prev,
+          firstName: res.data?.user?.firstName || prev.firstName,
+          lastName: res.data?.user?.lastName || prev.lastName,
+          ageRange: res.data?.profile?.ageRange || prev.ageRange,
+          familyStatus: res.data?.profile?.familyStatus || prev.familyStatus,
+          hasChildren: res.data?.profile?.hasChildren ?? prev.hasChildren,
+          childrenCount: res.data?.profile?.childrenCount ?? prev.childrenCount,
+          hasPets: res.data?.profile?.hasPets ?? prev.hasPets,
+          carCount: res.data?.profile?.carCount ?? prev.carCount,
+          hasSenior: res.data?.profile?.hasSenior ?? prev.hasSenior,
+          hasDisability: res.data?.profile?.hasDisability ?? prev.hasDisability,
+          needsStorage: res.data?.profile?.needsStorage ?? prev.needsStorage,
+          hasMotorcycle: res.data?.profile?.hasMotorcycle ?? prev.hasMotorcycle,
+          hasBoatRV: res.data?.profile?.hasBoatRV ?? prev.hasBoatRV,
+          moveType: res.data?.profile?.moveType || prev.moveType,
+          isBusinessOwner: res.data?.profile?.isBusinessOwner ?? prev.isBusinessOwner,
+          isImmigrant: res.data?.profile?.isImmigrant ?? prev.isImmigrant,
+          immigrationStatus: res.data?.profile?.immigrationStatus || prev.immigrationStatus,
+        }));
+      }
+
+      if (nextStep >= 1) {
+        const addressRes = await api.get<any>("/api/addresses").catch(() => ({ data: null }));
+        if (cancelled) return;
+        const addresses = addressRes.data?.addresses || [];
+        const primary = addresses.find((item: any) => item.isPrimary) || addresses[0];
+        if (primary) {
+          setCreatedAddressId(primary.id);
+          setAddress((prev) => ({
+            ...prev,
+            nickname: primary.nickname || prev.nickname,
+            street: primary.street || prev.street,
+            city: primary.city || prev.city,
+            state: primary.state || prev.state,
+            zip: primary.zip || prev.zip,
+            country: primary.country || prev.country,
+            type: primary.type || prev.type,
+            ownership: primary.ownership || prev.ownership,
+            startDate: primary.startDate ? String(primary.startDate).slice(0, 10) : prev.startDate,
+            formattedAddress: primary.formattedAddress ?? prev.formattedAddress,
+            placeId: primary.placeId ?? prev.placeId,
+            latitude: primary.latitude ?? prev.latitude,
+            longitude: primary.longitude ?? prev.longitude,
+          }));
+        }
+      }
     };
-    loadLegalConsents().catch(() => {});
-  }, []);
+    loadOnboardingState().catch(() => {});
+    return () => { cancelled = true; };
+  }, [router]);
 
   // Fetch providers when entering step 2
   const fetchProviders = useCallback(async () => {
@@ -287,6 +350,11 @@ export default function OnboardingScreen() {
       if (next.has(cat)) next.delete(cat); else next.add(cat);
       return next;
     });
+  };
+
+  const recordOnboardingProgress = async (event: OnboardingProgressEvent) => {
+    const res = await api.post<{ ok: boolean }>("/api/onboarding/progress", { event });
+    if (res.error) throw new Error(res.error);
   };
 
   // --- Step save handlers ---
@@ -370,6 +438,7 @@ export default function OnboardingScreen() {
         const firstErr = results.find((r) => r.error);
         if (firstErr) throw new Error(firstErr.error);
         setCreatedServiceIds({});
+        await recordOnboardingProgress("SERVICES_SKIPPED");
         return true;
       }
 
@@ -511,6 +580,15 @@ export default function OnboardingScreen() {
     setSaving(true);
     setError("");
     try {
+      if (selectedProviders.size === 0 && Object.keys(createdServiceIds).length === 0) {
+        await recordOnboardingProgress("SERVICES_SKIPPED");
+      }
+      if (typeof planId === "string") {
+        await recordOnboardingProgress("COMPLETED");
+      } else {
+        await recordOnboardingProgress("MOVING_SKIPPED");
+        await recordOnboardingProgress("COMPLETED");
+      }
       const profileRes = await api.get<any>("/api/profile");
       if (profileRes.error) {
         throw new Error(profileRes.error);
@@ -586,6 +664,17 @@ export default function OnboardingScreen() {
       const completed = await handleComplete();
       if (!completed) hapticError();
     }
+  };
+
+  const skipServices = async () => {
+    hapticLight();
+    const ok = await saveServices();
+    if (!ok) {
+      hapticError();
+      return;
+    }
+    setStep(3);
+    setError("");
   };
 
   const back = () => { if (step > 0) { setStep(step - 1); setError(""); } };
@@ -1158,7 +1247,7 @@ export default function OnboardingScreen() {
             ) : <View />}
             <View style={styles.bottomRight}>
               {step === 2 && (
-                <Button title={t("common.more")} onPress={() => { setStep(3); setError(""); }} variant="ghost" />
+                <Button title={t("common.skip")} onPress={skipServices} variant="ghost" loading={saving} />
               )}
               <Button
                 title={saving ? t("common.loading") : t("common.continue")}

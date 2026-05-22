@@ -229,7 +229,22 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     } else if (token && !needsOnboarding && inOnboarding) {
       router.replace("/(tabs)");
     } else if (token && needsOnboarding && !inOnboarding && !inAuthGroup) {
-      router.replace("/onboarding");
+      // The onboarding screen can finish and route into the app before this
+      // guard's cached needsOnboarding flag has refreshed. Re-check once so a
+      // successful completion does not bounce the user back to step 1.
+      let cancelled = false;
+      void api.get<any>("/api/profile").then((res) => {
+        if (cancelled) return;
+        if (res.data?.onboardingCompleted === true) {
+          setNeedsOnboarding(false);
+          void writeOnboardingCache(true);
+          return;
+        }
+        router.replace("/onboarding");
+      }).catch(() => {
+        if (!cancelled) router.replace("/onboarding");
+      });
+      return () => { cancelled = true; };
     }
   }, [token, user, loading, segments, needsOnboarding, router]);
 
