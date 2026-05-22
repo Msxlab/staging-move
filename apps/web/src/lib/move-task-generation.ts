@@ -186,6 +186,51 @@ function buildTaskTitle(plan: MoveServiceTransitionPlan): string {
   return `${plan.actionLabel}: ${subject}`;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const MOVE_TASK_DUE_DAY_OFFSETS: Partial<Record<MoveServiceTransitionPlan["actionType"], number>> = {
+  STOP_SERVICE: -7,
+  START_SERVICE: -14,
+  TRANSFER_SERVICE: -14,
+  VERIFY_AVAILABILITY: -21,
+  SHOP_PROVIDER: -21,
+  FIND_REPLACEMENT: -21,
+  CANCEL_OR_CLOSE: -7,
+  UPDATE_ADDRESS: -7,
+  INSURANCE_REQUOTE: -14,
+  MAIL_FORWARDING: -14,
+  GOVERNMENT_UPDATE: 10,
+};
+
+function atLocalNoon(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(12, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(atLocalNoon(date).getTime() + days * DAY_MS);
+}
+
+export function buildMoveTaskDueDate(
+  moveDateInput: Date | string | null | undefined,
+  actionType: MoveServiceTransitionPlan["actionType"],
+  now: Date = new Date(),
+): Date | null {
+  if (!moveDateInput || actionType === "NO_ACTION") return null;
+  const moveDate = moveDateInput instanceof Date ? moveDateInput : new Date(moveDateInput);
+  if (Number.isNaN(moveDate.getTime())) return null;
+
+  const offsetDays = MOVE_TASK_DUE_DAY_OFFSETS[actionType] ?? -7;
+  const dueDate = addDays(moveDate, offsetDays);
+  const today = atLocalNoon(now);
+  const moveDay = atLocalNoon(moveDate);
+
+  // If the user creates a near-term plan, don't bury pre-move tasks in the past.
+  if (dueDate < today && moveDay >= today) return today;
+  return dueDate;
+}
+
 function normalizeKeyState(value: string): string {
   return (value || "unknown").trim().toUpperCase() || "unknown";
 }
@@ -271,6 +316,7 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
       reason: plan.primaryReason,
       caveats: plan.caveats,
       confidence: plan.confidence,
+      dueDate: buildMoveTaskDueDate(context.movingPlan.moveDate, plan.actionType),
       localEffect: {
         effectType: plan.taskEffectType,
         addressContext: plan.addressContext,

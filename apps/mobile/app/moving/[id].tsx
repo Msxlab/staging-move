@@ -137,6 +137,17 @@ export default function MovingDetailScreen() {
     );
   };
 
+  const formatTaskDueDate = (value?: string | Date | null) => {
+    if (!value) return null;
+    const dueDate = new Date(value);
+    if (Number.isNaN(dueDate.getTime())) return null;
+    return dueDate.toLocaleDateString(dateLocale, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const confirmAction = async (
     serviceId: string,
     action: "KEEP" | "TRANSFER" | "SWITCH" | "CANCEL",
@@ -362,18 +373,12 @@ export default function MovingDetailScreen() {
                     </View>
                     <Text style={styles.taskTitle}>{task.title}</Text>
                     {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
+                    {formatTaskDueDate(task.dueDate) && (
+                      <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
+                    )}
                     <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
                   </View>
                   <View style={styles.taskActions}>
-                    {!done && !dismissed && task.status === "SUGGESTED" && (
-                      <TouchableOpacity
-                        style={styles.migBtn}
-                        disabled={taskBusy === task.id}
-                        onPress={() => updateMoveTask(task.id, "ACCEPT")}
-                      >
-                        <Text style={styles.migBtnText}>{t("moving.accept")}</Text>
-                      </TouchableOpacity>
-                    )}
                     {!done && !dismissed && (
                       <TouchableOpacity
                         style={styles.migBtnPrimary}
@@ -854,6 +859,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textTertiary,
     lineHeight: 17,
     marginTop: 4,
+  },
+  taskDue: {
+    fontSize: 11,
+    color: theme.colors.primary,
+    marginTop: 6,
+    fontWeight: "700",
   },
   taskCaveat: {
     fontSize: 10,

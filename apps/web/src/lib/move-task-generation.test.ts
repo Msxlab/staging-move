@@ -4,7 +4,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
 
-import { buildMoveTaskIdempotencyKey } from "./move-task-generation";
+import { buildMoveTaskDueDate, buildMoveTaskIdempotencyKey } from "./move-task-generation";
 
 const basePlan = {
   serviceId: "service-1",
@@ -40,5 +40,24 @@ describe("move task idempotency keys", () => {
         toState: "TX",
       }),
     );
+  });
+});
+
+describe("move task due dates", () => {
+  const moveDate = new Date("2026-06-30T12:00:00Z");
+  const earlyNow = new Date("2026-05-01T12:00:00Z");
+
+  it("assigns pre-move due dates by action urgency", () => {
+    expect(buildMoveTaskDueDate(moveDate, "MAIL_FORWARDING", earlyNow)?.toISOString().slice(0, 10)).toBe("2026-06-16");
+    expect(buildMoveTaskDueDate(moveDate, "VERIFY_AVAILABILITY", earlyNow)?.toISOString().slice(0, 10)).toBe("2026-06-09");
+    expect(buildMoveTaskDueDate(moveDate, "UPDATE_ADDRESS", earlyNow)?.toISOString().slice(0, 10)).toBe("2026-06-23");
+  });
+
+  it("schedules government updates after the move date", () => {
+    expect(buildMoveTaskDueDate(moveDate, "GOVERNMENT_UPDATE", earlyNow)?.toISOString().slice(0, 10)).toBe("2026-07-10");
+  });
+
+  it("keeps near-term pre-move tasks due today instead of in the past", () => {
+    expect(buildMoveTaskDueDate(moveDate, "START_SERVICE", new Date("2026-06-28T12:00:00Z"))?.toISOString().slice(0, 10)).toBe("2026-06-28");
   });
 });

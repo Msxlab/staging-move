@@ -475,6 +475,7 @@
     "confidence_MEDIUM": "Confianza media",
     "confidence_LOW": "Confianza baja",
     "confidence_UNVERIFIED": "Confianza no verificada",
+    "dueDate": "Vence {{date}}",
     "accept": "Aceptar",
     "complete": "Completar",
     "dismiss": "Descartar",

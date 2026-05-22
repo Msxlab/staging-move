@@ -39,6 +39,7 @@ interface MoveTaskItem {
   actionType: string;
   status: string;
   confidence: string;
+  dueDate?: string | null;
   reason?: string | null;
   caveats?: string[] | null;
   localEffect?: MoveTaskLocalEffect | null;
@@ -168,6 +169,17 @@ export default function MovingPlanDetailPage() {
   const handleReopenMoveTask = async (taskId: string) => {
     const ok = await updateMoveTask(taskId, "REOPEN");
     if (ok) toast.success("Task reopened");
+  };
+
+  const formatTaskDueDate = (value?: string | null) => {
+    if (!value) return null;
+    const dueDate = new Date(value);
+    if (Number.isNaN(dueDate.getTime())) return null;
+    return dueDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   useEffect(() => {
@@ -379,6 +391,12 @@ export default function MovingPlanDetailPage() {
                     </p>
                     {task.description && !isDone && !isDismissed && (
                       <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                    )}
+                    {formatTaskDueDate(task.dueDate) && !isDone && !isDismissed && (
+                      <p className="inline-flex items-center gap-1 text-[11px] text-tone-cyan-fg mt-2">
+                        <Clock className="h-3 w-3" />
+                        Due {formatTaskDueDate(task.dueDate)}
+                      </p>
                     )}
                     {task.destinationProvider?.name && !isDone && !isDismissed && (
                       <p className="text-[11px] text-tone-emerald-fg mt-2">Candidate: {task.destinationProvider.name}</p>

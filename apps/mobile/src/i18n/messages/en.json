@@ -475,6 +475,7 @@
     "confidence_MEDIUM": "Medium confidence",
     "confidence_LOW": "Low confidence",
     "confidence_UNVERIFIED": "Unverified confidence",
+    "dueDate": "Due {{date}}",
     "accept": "Accept",
     "complete": "Complete",
     "dismiss": "Dismiss",
