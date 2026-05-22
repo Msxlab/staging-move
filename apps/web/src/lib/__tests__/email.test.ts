@@ -39,11 +39,13 @@ beforeEach(() => {
   delete process.env.APP_ENV;
   delete process.env.VERCEL_ENV;
   delete process.env.DIGITALOCEAN_APP_ID;
+  delete process.env.RESEND_FROM;
+  delete process.env.MAIL_FROM;
   process.env.RESEND_API_KEY = "test-resend-api-key-for-redaction";
   mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
     const values: Record<string, string | null> = {
       RESEND_API_KEY: "test-resend-api-key-for-redaction",
-      EMAIL_FROM: "LocateFlow <noreply@locateflow.com>",
+      EMAIL_FROM: "LocateFlow <notifications@locateflow.com>",
       NEXT_PUBLIC_APP_URL: "https://locateflow.com",
       SUPPORT_EMAIL: "support@locateflow.com",
       EMAIL_REPLY_TO: null,
@@ -344,11 +346,11 @@ describe("transactional email layout", () => {
       success: true,
       providerMessageId: "resend_123",
       error: null,
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
     });
     expect(mocks.resendSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "LocateFlow <noreply@locateflow.com>",
+        from: "LocateFlow <notifications@locateflow.com>",
         to: "alice@example.com",
         replyTo: "support@locateflow.com",
         text: expect.stringContaining("Hello Alice"),
@@ -368,9 +370,38 @@ describe("transactional email layout", () => {
       success: false,
       providerMessageId: null,
       error: "EMAIL_BODY_MISSING: html or text content is required",
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
     });
     expect(mocks.resendSend).not.toHaveBeenCalled();
+  });
+
+  it("accepts RESEND_FROM as a production sender alias when EMAIL_FROM is absent", async () => {
+    process.env.APP_ENV = "staging";
+    process.env.RESEND_FROM = "LocateFlow <notifications@locateflow.com>";
+    mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
+      const values: Record<string, string | null> = {
+        RESEND_API_KEY: "re_testresendapikey",
+        EMAIL_FROM: null,
+        NEXT_PUBLIC_APP_URL: "https://locateflow.com",
+        SUPPORT_EMAIL: "support@locateflow.com",
+        EMAIL_REPLY_TO: null,
+      };
+      return Object.fromEntries(keys.map((key) => [key, values[key] || null]));
+    });
+
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.fromEmail).toBe("LocateFlow <notifications@locateflow.com>");
+    expect(mocks.resendSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "LocateFlow <notifications@locateflow.com>",
+      }),
+    );
   });
 
   it("redacts API-looking secrets from Resend failure details", async () => {
@@ -422,7 +453,7 @@ describe("transactional email layout", () => {
     mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
       const values: Record<string, string | null> = {
         RESEND_API_KEY: null,
-        EMAIL_FROM: "LocateFlow <noreply@locateflow.com>",
+        EMAIL_FROM: "LocateFlow <notifications@locateflow.com>",
         NEXT_PUBLIC_APP_URL: "https://locateflow.com",
         SUPPORT_EMAIL: "support@locateflow.com",
         EMAIL_REPLY_TO: null,
@@ -440,7 +471,7 @@ describe("transactional email layout", () => {
       success: false,
       providerMessageId: null,
       error: "RESEND_API_KEY missing",
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
       configError: true,
     });
     expect(mocks.resendSend).not.toHaveBeenCalled();

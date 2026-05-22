@@ -41,6 +41,8 @@ export const READINESS_CONFIG_KEYS = [
   "UPSTASH_REDIS_REST_TOKEN",
   "RESEND_API_KEY",
   "EMAIL_FROM",
+  "RESEND_FROM",
+  "MAIL_FROM",
   "EMAIL_REPLY_TO",
   "SUPPORT_EMAIL",
   "ALERT_EMAIL_FROM",
@@ -259,7 +261,7 @@ export function buildReadinessReport(
   }
 
   // ── Debug / dev modes ────────────────────────────────────────
-  const requiredEmailKeys = ["RESEND_API_KEY", "EMAIL_FROM", "SUPPORT_EMAIL"] as const;
+  const requiredEmailKeys = ["RESEND_API_KEY", "SUPPORT_EMAIL"] as const;
   for (const key of requiredEmailKeys) {
     const value = readConfig(key);
     if (!value) {
@@ -268,6 +270,13 @@ export function buildReadinessReport(
     }
     const validation = validateRuntimeConfigValueShape(key, value);
     if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+  const emailFrom = readConfig("EMAIL_FROM") || readConfig("RESEND_FROM") || readConfig("MAIL_FROM");
+  if (!emailFrom) {
+    fail("EMAIL_FROM", "EMAIL_FROM, RESEND_FROM, or MAIL_FROM must be configured for production email delivery.");
+  } else {
+    const validation = validateRuntimeConfigValueShape("EMAIL_FROM", emailFrom);
+    if (!validation.ok) fail("EMAIL_FROM", `EMAIL_FROM is invalid: ${validation.reason}.`);
   }
   for (const key of ["EMAIL_REPLY_TO", "ALERT_EMAIL_FROM", "ALERT_EMAIL_TO", "ADMIN_ALERT_EMAIL"] as const) {
     const value = readConfig(key);

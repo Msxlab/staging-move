@@ -67,7 +67,7 @@ describe("email-service logging", () => {
       success: true,
       providerMessageId: "resend_123",
       error: null,
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
     });
   });
 
@@ -139,7 +139,7 @@ describe("email-service logging", () => {
       providerMessageId: null,
       error: "EMAIL_FROM domain is not verified",
       configError: true,
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
     });
 
     const result = await sendPasswordResetEmail({
@@ -208,7 +208,7 @@ describe("email-service logging", () => {
       success: false,
       providerMessageId: null,
       error: "Resend rejected the message [redacted]",
-      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      fromEmail: "LocateFlow <notifications@locateflow.com>",
     });
 
     const result = await sendLoggedEmail({
@@ -232,7 +232,7 @@ describe("email-service logging", () => {
     });
     expect(JSON.parse(mocks.emailLogUpdate.mock.calls[0][0].data.metadata)).toEqual(
       expect.objectContaining({
-        fromAddress: "LocateFlow <noreply@locateflow.com>",
+        fromAddress: "LocateFlow <notifications@locateflow.com>",
         resendApiError: true,
         retryAvailable: true,
       }),

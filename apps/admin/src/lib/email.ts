@@ -11,7 +11,7 @@ function getResend(apiKey: string): Resend {
   return _resend;
 }
 
-const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_FROM_EMAIL = "LocateFlow <notifications@locateflow.com>";
 const DEFAULT_APP_URL = "http://localhost:3000";
 const DEFAULT_REPLY_TO = "support@locateflow.com";
 
@@ -34,15 +34,25 @@ async function resolveEmailConfig() {
     "EMAIL_REPLY_TO",
     "SUPPORT_EMAIL",
   ]);
+  const fromEmail =
+    values.EMAIL_FROM ||
+    process.env.RESEND_FROM ||
+    process.env.MAIL_FROM ||
+    DEFAULT_FROM_EMAIL;
+  const fromEmailConfigured = Boolean(
+    values.EMAIL_FROM ||
+    process.env.RESEND_FROM ||
+    process.env.MAIL_FROM,
+  );
 
   return {
     resendApiKey: values.RESEND_API_KEY,
-    fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
+    fromEmail,
     appUrl: values.NEXT_PUBLIC_APP_URL || (isProductionLikeEmailRuntime() ? "https://locateflow.com" : DEFAULT_APP_URL),
     replyTo: values.EMAIL_REPLY_TO || values.SUPPORT_EMAIL || DEFAULT_REPLY_TO,
     configured: {
       resendApiKey: Boolean(values.RESEND_API_KEY),
-      fromEmail: Boolean(values.EMAIL_FROM),
+      fromEmail: fromEmailConfigured,
       appUrl: Boolean(values.NEXT_PUBLIC_APP_URL),
       replyTo: Boolean(values.EMAIL_REPLY_TO || values.SUPPORT_EMAIL),
     },

@@ -11,7 +11,7 @@ function getResend(apiKey: string): Resend {
   return _resend;
 }
 
-const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_FROM_EMAIL = "LocateFlow <notifications@locateflow.com>";
 export const DEFAULT_APP_URL = "https://locateflow.com";
 export const DEFAULT_SUPPORT_EMAIL = "support@locateflow.com";
 
@@ -86,16 +86,26 @@ async function resolveEmailConfig() {
   const appUrl = values.NEXT_PUBLIC_APP_URL
     ? normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL)
     : DEFAULT_APP_URL;
+  const fromEmail =
+    values.EMAIL_FROM ||
+    process.env.RESEND_FROM ||
+    process.env.MAIL_FROM ||
+    DEFAULT_FROM_EMAIL;
+  const fromEmailConfigured = Boolean(
+    values.EMAIL_FROM ||
+    process.env.RESEND_FROM ||
+    process.env.MAIL_FROM,
+  );
 
   return {
     resendApiKey: values.RESEND_API_KEY,
-    fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
+    fromEmail,
     appUrl,
     supportEmail,
     replyTo: values.EMAIL_REPLY_TO || supportEmail,
     configured: {
       resendApiKey: Boolean(values.RESEND_API_KEY),
-      fromEmail: Boolean(values.EMAIL_FROM),
+      fromEmail: fromEmailConfigured,
       appUrl: Boolean(values.NEXT_PUBLIC_APP_URL),
       supportEmail: Boolean(values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO),
     },

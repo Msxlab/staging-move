@@ -47,10 +47,16 @@ function shouldDispatch(severity: AlertSeverity, type: string): boolean {
 // ── Email via Resend ───────────────────────────────────────
 
 async function sendEmailAlert(payload: AlertPayload): Promise<void> {
-  const { RESEND_API_KEY: apiKey, ALERT_EMAIL_TO: to, ALERT_EMAIL_FROM: from } = await getAdminRuntimeConfigValues([
+  const {
+    RESEND_API_KEY: apiKey,
+    ALERT_EMAIL_TO: to,
+    ALERT_EMAIL_FROM: alertFrom,
+    EMAIL_FROM: emailFrom,
+  } = await getAdminRuntimeConfigValues([
     "RESEND_API_KEY",
     "ALERT_EMAIL_TO",
     "ALERT_EMAIL_FROM",
+    "EMAIL_FROM",
   ]);
   if (!apiKey || !to) return;
 
@@ -60,9 +66,15 @@ async function sendEmailAlert(payload: AlertPayload): Promise<void> {
 
     const severityEmoji = payload.severity === "CRITICAL" ? "🚨" : "⚠️";
     const subject = `${severityEmoji} [LocateFlow] ${payload.severity} Security Alert: ${payload.type}`;
+    const from =
+      alertFrom ||
+      emailFrom ||
+      process.env.RESEND_FROM ||
+      process.env.MAIL_FROM ||
+      "LocateFlow Alerts <notifications@locateflow.com>";
 
     await resend.emails.send({
-      from: from || "LocateFlow Alerts <alerts@locateflow.com>",
+      from,
       to: to.split(",").map((e) => e.trim()),
       subject,
       html: `

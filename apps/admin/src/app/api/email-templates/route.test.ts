@@ -90,7 +90,7 @@ describe("email templates admin API", () => {
         status: "SENT",
         error: null,
         metadata: JSON.stringify({
-          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          fromAddress: "LocateFlow <notifications@locateflow.com>",
           configError: false,
           resendApiError: false,
         }),
@@ -107,7 +107,7 @@ describe("email templates admin API", () => {
         status: "FAILED",
         error: "RESEND_API_KEY missing",
         metadata: JSON.stringify({
-          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          fromAddress: "LocateFlow <notifications@locateflow.com>",
           configError: true,
           retryAvailable: true,
         }),
@@ -124,7 +124,7 @@ describe("email templates admin API", () => {
         status: "SENT",
         error: null,
         metadata: JSON.stringify({
-          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          fromAddress: "LocateFlow <notifications@locateflow.com>",
         }),
         sentAt: new Date("2026-04-26T12:04:00Z"),
         createdAt: new Date("2026-04-26T12:04:00Z"),
