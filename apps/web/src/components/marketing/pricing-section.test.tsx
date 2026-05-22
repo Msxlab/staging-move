@@ -9,6 +9,24 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("lucide-react", () => {
+  const Icon = (props: any) => <svg aria-hidden="true" {...props} />;
+  return {
+    Bell: Icon,
+    Building2: Icon,
+    Download: Icon,
+    FileText: Icon,
+    Home: Icon,
+    Languages: Icon,
+    Map: Icon,
+    ShieldCheck: Icon,
+    Smartphone: Icon,
+    Sparkles: Icon,
+    Truck: Icon,
+    Wallet: Icon,
+  };
+});
+
 import { PricingSection } from "./pricing-section";
 
 describe("PricingSection", () => {

@@ -18,12 +18,13 @@ import {
   rememberConfirm as rememberStepUpConfirm,
 } from "./auth-step-up-store";
 
-const adminJwtSecret = process.env.ADMIN_JWT_SECRET;
-if (!adminJwtSecret || adminJwtSecret.length < 32) {
-  throw new Error("ADMIN_JWT_SECRET must be set and at least 32 characters");
+function getAdminJwtSecret(): Uint8Array {
+  const adminJwtSecret = process.env.ADMIN_JWT_SECRET;
+  if (!adminJwtSecret || adminJwtSecret.length < 32) {
+    throw new Error("ADMIN_JWT_SECRET must be set and at least 32 characters");
+  }
+  return new TextEncoder().encode(adminJwtSecret);
 }
-
-const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
 export const ADMIN_SESSION_COOKIE_NAME = "admin_session";
 const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
@@ -137,7 +138,7 @@ export async function createSession(
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("8h")
     .setIssuedAt()
-    .sign(JWT_SECRET);
+    .sign(getAdminJwtSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
@@ -205,7 +206,7 @@ export async function getSession(): Promise<AdminSession | null> {
   const tokenHash = await hashSessionToken(token).catch(() => null);
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET, {
+    const { payload } = await jwtVerify(token, getAdminJwtSecret(), {
       algorithms: ["HS256"],
     });
 

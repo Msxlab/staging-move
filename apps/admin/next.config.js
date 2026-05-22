@@ -4,6 +4,15 @@ const path = require("path");
 const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
+  webpack(config) {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      react: path.resolve(__dirname, "../../node_modules/react"),
+      "react-dom": path.resolve(__dirname, "../../node_modules/react-dom"),
+    };
+    return config;
+  },
   transpilePackages: ["@locateflow/db", "@locateflow/shared"],
   skipProxyUrlNormalize: true,
   // SEC-007: Security headers for admin panel.

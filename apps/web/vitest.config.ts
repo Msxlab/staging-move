@@ -17,6 +17,7 @@ export default defineConfig({
     setupFiles: ["./test-setup.ts"],
   },
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
       // `server-only` throws if it sees the client bundler. In Vitest

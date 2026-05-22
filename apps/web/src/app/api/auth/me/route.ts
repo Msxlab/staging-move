@@ -68,7 +68,8 @@ export async function GET(request?: NextRequest) {
   }
 
   const hasPasswordLogin = Boolean(user.passwordHash);
-  const needsPasswordSetup = !hasPasswordLogin && user.oauthAccounts.length > 0;
+  const hasOAuthLogin = Array.isArray(user.oauthAccounts) && user.oauthAccounts.length > 0;
+  const needsPasswordSetup = !hasPasswordLogin && hasOAuthLogin;
 
   return NextResponse.json(
     {
