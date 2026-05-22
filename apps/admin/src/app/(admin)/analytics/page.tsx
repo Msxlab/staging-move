@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import {
-  Users, Monitor, Smartphone, Tablet, Globe, Chrome, BarChart3,
-  TrendingUp, Eye, Clock, Laptop, Activity,
+  Users, Monitor, Smartphone, Tablet, BarChart3,
+  TrendingUp, Eye, Clock, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
