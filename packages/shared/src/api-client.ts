@@ -97,8 +97,15 @@ export class ApiClient {
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.status === 401) {
+      let body: any = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
       await this.config.onUnauthorized?.();
-      return { error: "Unauthorized", code: "UNAUTHORIZED" };
+      const code = typeof body?.code === "string" ? body.code : "UNAUTHORIZED";
+      return { error: buildApiErrorMessage(response.status, body), code };
     }
 
     if (response.status === 429) {
