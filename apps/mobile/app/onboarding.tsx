@@ -357,6 +357,16 @@ export default function OnboardingScreen() {
     if (res.error) throw new Error(res.error);
   };
 
+  const routeIfOnboardingCompleted = async () => {
+    const profileRes = await api.get<any>("/api/profile");
+    if (profileRes.data?.onboardingCompleted === true) {
+      hapticSuccess();
+      router.replace("/(tabs)");
+      return true;
+    }
+    return false;
+  };
+
   // --- Step save handlers ---
   const saveProfile = async () => {
     if (!profile.firstName.trim() || !profile.lastName.trim()) {
@@ -659,6 +669,7 @@ export default function OnboardingScreen() {
     else if (step === 1) ok = await saveAddress();
     else if (step === 2) ok = await saveServices();
     if (!ok) { hapticError(); return; }
+    if (step === 2 && await routeIfOnboardingCompleted()) return;
     if (step < 3) { setStep(step + 1); setError(""); }
     else {
       const completed = await handleComplete();
@@ -673,6 +684,7 @@ export default function OnboardingScreen() {
       hapticError();
       return;
     }
+    if (await routeIfOnboardingCompleted()) return;
     setStep(3);
     setError("");
   };
