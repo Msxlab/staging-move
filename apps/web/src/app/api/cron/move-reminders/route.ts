@@ -47,68 +47,75 @@ async function handleCron(request: NextRequest) {
       for (const plan of plans) {
         const userPreferences = preferencesByUser.get(plan.userId) || [];
         const notificationSettings = buildWebNotificationSettings(userPreferences);
-        if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.moveUpdate) continue;
-        if (!plan.user.email) continue;
+        const emailAllowed = Boolean(
+          plan.user.email &&
+          notificationSettings.config.emailEnabled &&
+          notificationSettings.prefs.moveUpdate
+        );
+        const pushAllowed = isPushTypeEnabled(userPreferences, "MOVE_ALERT");
+        if (!emailAllowed && !pushAllowed) continue;
 
         const fromCity = `${plan.fromAddress.city}, ${plan.fromAddress.state}`;
         const toCity = `${plan.toAddress.city}, ${plan.toAddress.state}`;
         const moveDateText = plan.moveDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`;
-        const success = await sendMoveReminderEmail({
-          userEmail: plan.user.email,
-          userName: plan.user.firstName || "",
-          fromCity,
-          toCity,
-          moveDate: moveDateText,
-          daysRemaining: days,
-          userId: plan.userId,
-          dedupeKey,
-          metadata: {
+        let emailSent = false;
+        if (emailAllowed) {
+          emailSent = await sendMoveReminderEmail({
+            userEmail: plan.user.email!,
+            userName: plan.user.firstName || "",
+            fromCity,
+            toCity,
+            moveDate: moveDateText,
+            daysRemaining: days,
             userId: plan.userId,
-            movingPlanId: plan.id,
-          },
-        });
-        if (success) {
-          sent++;
-          try {
-            const notificationTitle = days === 1 ? "Your move is tomorrow" : `Your move is in ${days} days`;
-            const notificationBody = `Your move from ${fromCity} to ${toCity} is scheduled for ${moveDateText}.`;
-            const created = await createInAppNotification({
+            dedupeKey,
+            metadata: {
               userId: plan.userId,
-              type: "MOVE_REMINDER",
-              title: notificationTitle,
-              body: notificationBody,
-              href: `/moving/${plan.id}`,
-              icon: "Calendar",
-              dedupeKey,
-              metadata: {
-                kind: "move-reminder",
-                movingPlanId: plan.id,
-                daysRemaining: days,
-                channelMirror: "EMAIL",
-              },
-            });
-            if (created) {
-              mirrored++;
-              if (isPushTypeEnabled(userPreferences, "MOVE_ALERT")) {
-                const pushed = await sendNotification({
-                  userId: plan.userId,
-                  type: "PUSH",
-                  subject: notificationTitle,
-                  body: notificationBody,
-                  dedupeKey: `${dedupeKey}:push`,
-                  metadata: {
-                    kind: "move-reminder",
-                    movingPlanId: plan.id,
-                    daysRemaining: days,
-                  },
-                });
-                if (pushed) pushSent++;
-              }
+              movingPlanId: plan.id,
+            },
+          });
+          if (emailSent) sent++;
+        }
+
+        try {
+          const notificationTitle = days === 1 ? "Your move is tomorrow" : `Your move is in ${days} days`;
+          const notificationBody = `Your move from ${fromCity} to ${toCity} is scheduled for ${moveDateText}.`;
+          const created = await createInAppNotification({
+            userId: plan.userId,
+            type: "MOVE_REMINDER",
+            title: notificationTitle,
+            body: notificationBody,
+            href: `/moving/${plan.id}`,
+            icon: "Calendar",
+            dedupeKey,
+            metadata: {
+              kind: "move-reminder",
+              movingPlanId: plan.id,
+              daysRemaining: days,
+              channelMirror: emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
+            },
+          });
+          if (created) {
+            mirrored++;
+            if (pushAllowed) {
+              const pushed = await sendNotification({
+                userId: plan.userId,
+                type: "PUSH",
+                subject: notificationTitle,
+                body: notificationBody,
+                dedupeKey: `${dedupeKey}:push`,
+                metadata: {
+                  kind: "move-reminder",
+                  movingPlanId: plan.id,
+                  daysRemaining: days,
+                },
+              });
+              if (pushed) pushSent++;
             }
-          } catch (mirrorError) {
-            errors.push(`In-app mirror failed for moving plan ${plan.id}: ${mirrorError}`);
           }
+        } catch (mirrorError) {
+          errors.push(`In-app mirror failed for moving plan ${plan.id}: ${mirrorError}`);
         }
       }
     }

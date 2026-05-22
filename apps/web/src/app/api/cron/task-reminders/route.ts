@@ -88,69 +88,76 @@ export async function GET(req: Request) {
     const errors: string[] = [];
 
     for (const task of tasks) {
-      if (!task.user?.email || !task.dueDate) continue;
+      if (!task.user || !task.dueDate) continue;
       const daysUntilDue = daysUntilDate(task.dueDate, now);
       if (!TASK_REMINDER_DAYS.includes(daysUntilDue)) continue;
 
       const userPreferences = preferencesByUser.get(task.userId) || [];
       const notificationSettings = buildWebNotificationSettings(userPreferences);
-      if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.taskReminder) continue;
+      const emailAllowed = Boolean(
+        task.user.email &&
+        notificationSettings.config.emailEnabled &&
+        notificationSettings.prefs.taskReminder
+      );
+      const pushAllowed = isPushTypeEnabled(userPreferences, "TASK_REMINDER");
+      if (!emailAllowed && !pushAllowed) continue;
 
       const dueDateText = formatDate(task.dueDate, task.user.preferredLocale);
       const dedupeKey = `cron:task-reminder:${task.id}:${task.dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`;
       const userName = [task.user.firstName, task.user.lastName].filter(Boolean).join(" ") || "there";
 
       try {
-        const success = await sendTaskReminderEmail({
-          userEmail: task.user.email,
-          userName,
-          taskTitle: task.title,
-          dueDate: dueDateText,
-          daysUntilDue,
-          movingPlanLabel: movingPlanLabel(task.movingPlan),
-          movingPlanId: task.movingPlan.id,
-          taskId: task.id,
-          userId: task.userId,
-          locale: task.user.preferredLocale,
-          dedupeKey,
-          metadata: { userId: task.userId, taskId: task.id, movingPlanId: task.movingPlan.id },
-        });
-
-        if (success) {
-          sentCount++;
-          const when = daysUntilDue === 0
-            ? "today"
-            : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`;
-          const body = `${task.title} is due ${when} on ${dueDateText}.`;
-          const mirrored = await createInAppNotification({
+        let emailSent = false;
+        if (emailAllowed) {
+          emailSent = await sendTaskReminderEmail({
+            userEmail: task.user.email!,
+            userName,
+            taskTitle: task.title,
+            dueDate: dueDateText,
+            daysUntilDue,
+            movingPlanLabel: movingPlanLabel(task.movingPlan),
+            movingPlanId: task.movingPlan.id,
+            taskId: task.id,
             userId: task.userId,
-            type: "TASK_DUE",
-            title: `Task reminder: ${task.title}`,
-            body,
-            href: `/moving/${task.movingPlan.id}`,
-            icon: "CalendarCheck",
+            locale: task.user.preferredLocale,
             dedupeKey,
-            metadata: {
-              kind: "task-reminder",
-              taskId: task.id,
-              movingPlanId: task.movingPlan.id,
-              daysUntilDue,
-              channelMirror: "EMAIL",
-            },
+            metadata: { userId: task.userId, taskId: task.id, movingPlanId: task.movingPlan.id },
           });
-          if (mirrored) {
-            mirroredCount++;
-            if (isPushTypeEnabled(userPreferences, "TASK_REMINDER")) {
-              const pushed = await sendNotification({
-                userId: task.userId,
-                type: "PUSH",
-                subject: `Task reminder: ${task.title}`,
-                body,
-                dedupeKey: `${dedupeKey}:push`,
-                metadata: { kind: "task-reminder", taskId: task.id, movingPlanId: task.movingPlan.id },
-              });
-              if (pushed) pushSentCount++;
-            }
+          if (emailSent) sentCount++;
+        }
+
+        const when = daysUntilDue === 0
+          ? "today"
+          : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`;
+        const body = `${task.title} is due ${when} on ${dueDateText}.`;
+        const mirrored = await createInAppNotification({
+          userId: task.userId,
+          type: "TASK_DUE",
+          title: `Task reminder: ${task.title}`,
+          body,
+          href: `/moving/${task.movingPlan.id}`,
+          icon: "CalendarCheck",
+          dedupeKey,
+          metadata: {
+            kind: "task-reminder",
+            taskId: task.id,
+            movingPlanId: task.movingPlan.id,
+            daysUntilDue,
+            channelMirror: emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
+          },
+        });
+        if (mirrored) {
+          mirroredCount++;
+          if (pushAllowed) {
+            const pushed = await sendNotification({
+              userId: task.userId,
+              type: "PUSH",
+              subject: `Task reminder: ${task.title}`,
+              body,
+              dedupeKey: `${dedupeKey}:push`,
+              metadata: { kind: "task-reminder", taskId: task.id, movingPlanId: task.movingPlan.id },
+            });
+            if (pushed) pushSentCount++;
           }
         }
       } catch (err) {
