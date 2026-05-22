@@ -17,6 +17,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
+import { getPostAuthMobileRoute } from "@/lib/post-auth-route";
 import {
   canAttemptAppleOAuth,
   canAttemptGoogleOAuth,
@@ -135,7 +136,7 @@ export default function SignInScreen() {
           await setSession(native.token, native.user);
           hapticSuccess();
           void registerForPushNotifications().catch(() => null);
-          router.replace("/onboarding");
+          router.replace(getPostAuthMobileRoute(native.user));
           return;
         }
         if (native.status === "error") {
@@ -157,7 +158,7 @@ export default function SignInScreen() {
       }
       hapticSuccess();
       void registerForPushNotifications().catch(() => null);
-      router.replace("/onboarding");
+      router.replace(getPostAuthMobileRoute(result.user));
     } catch (err: any) {
       setError(err?.message || t("auth.invalid"));
       hapticError();

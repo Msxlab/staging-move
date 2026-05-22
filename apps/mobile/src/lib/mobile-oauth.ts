@@ -22,6 +22,7 @@ export interface MobileOAuthResult {
   success: boolean;
   cancelled?: boolean;
   error?: string;
+  user?: AuthUser;
 }
 
 const OAUTH_CALLBACK_PATH = "oauth";
@@ -134,7 +135,7 @@ async function exchangeOAuthUrl(url: string, setSession: SetSession): Promise<Mo
 
     await setSession(exchanged.token, exchanged.user as AuthUser);
     await persistPendingLegalAcceptance();
-    return { handled: true, success: true };
+    return { handled: true, success: true, user: exchanged.user as AuthUser };
   } catch (err: any) {
     return {
       handled: true,

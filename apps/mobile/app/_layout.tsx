@@ -32,6 +32,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
 import { initMobileSentry, captureException } from "@/lib/sentry";
+import { getPostAuthMobileRoute } from "@/lib/post-auth-route";
 import {
   getPendingLegalConsents,
   hydratePendingLegalConsents,
@@ -122,7 +123,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           await setPendingLegalConsents(null);
         }
       }
-      router.replace("/onboarding");
+      router.replace(getPostAuthMobileRoute(exchanged.user));
     };
 
     Linking.getInitialURL().then((url) => void handleOAuthUrl(url)).catch(() => {});
@@ -210,11 +211,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     // magic-link-only users (no OAuth, no password) into setup too, which
     // is a different remediation path.
     const needsPasswordSetup = user.needsPasswordSetup === true;
-    if (needsPasswordSetup && !inPasswordSetup) {
-      router.replace("/setup-password");
+    if (needsPasswordSetup) {
+      if (!inPasswordSetup) {
+        router.replace("/setup-password");
+      }
       return;
     }
-    if (!needsPasswordSetup && inPasswordSetup) {
+    if (inPasswordSetup) {
       router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
       return;
     }

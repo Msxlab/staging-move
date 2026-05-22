@@ -23,6 +23,7 @@ import {
 } from "@/lib/legal";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
+import { getPostAuthMobileRoute } from "@/lib/post-auth-route";
 import {
   canAttemptAppleOAuth,
   canAttemptGoogleOAuth,
@@ -145,7 +146,7 @@ export default function SignUpScreen() {
           // The native Apple route persisted these consents during the handoff.
           await setPendingLegalConsents(null);
           hapticSuccess();
-          router.replace("/onboarding");
+          router.replace(getPostAuthMobileRoute(native.user));
           return;
         }
         if (native.status === "error") {
@@ -169,7 +170,7 @@ export default function SignUpScreen() {
         return;
       }
       hapticSuccess();
-      router.replace("/onboarding");
+      router.replace(getPostAuthMobileRoute(result.user));
     } catch (err: any) {
       await setPendingLegalConsents(null);
       setError(err?.message || t("auth.invalid"));
