@@ -69,6 +69,8 @@ export interface MoveTransitionProviderRecommendation {
 export interface MoveServiceTransitionPlan {
   serviceId?: string | null;
   serviceCategory: string;
+  serviceProviderId?: string | null;
+  serviceProviderName?: string | null;
   actionType: MoveTransitionActionType;
   actionLabel: string;
   confidence: TaskSourceConfidence;
@@ -109,6 +111,13 @@ function normalizeName(value: string | null | undefined): string {
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function getServiceProviderName(
+  service: MoveTransitionServiceInput,
+  provider?: MoveTransitionProviderInput | null,
+): string | null {
+  return service.providerName || service.name || provider?.name || null;
 }
 
 function normalizeState(value: string | null | undefined): string | undefined {
@@ -176,6 +185,16 @@ function isGovernmentUpdate(category: string): boolean {
 
 function isMailForwarding(category: string): boolean {
   return category === "GOVERNMENT_POSTAL";
+}
+
+function isUspsMailForwardingService(providerName: string | null | undefined): boolean {
+  const normalized = normalizeName(providerName);
+  return (
+    normalized === "usps" ||
+    normalized.includes("us postal service") ||
+    normalized.includes("united states postal service") ||
+    normalized.includes("usps movers guide")
+  );
 }
 
 function isSubscriptionAddressUpdate(category: string): boolean {
@@ -287,9 +306,12 @@ function buildPlan(
     secondaryActions?: MoveTransitionActionType[];
     candidates?: MoveTransitionProviderInput[];
     adminExplanation?: string;
+    serviceProviderName?: string | null;
   },
 ): MoveServiceTransitionPlan {
   const action = getMoveTransitionActionPresentation(input.actionType);
+  const serviceProviderName =
+    input.serviceProviderName || input.service.providerName || input.service.name || null;
   const caveats = [
     ...(input.caveats || []),
     "Manual guidance only. LocateFlow does not update provider accounts or execute address changes.",
@@ -301,6 +323,8 @@ function buildPlan(
   return {
     serviceId: input.service.id,
     serviceCategory: normalizeCategory(input.service.category),
+    serviceProviderId: input.service.providerId || null,
+    serviceProviderName,
     actionType: input.actionType,
     actionLabel: action.label,
     confidence: input.confidence,
@@ -343,6 +367,7 @@ export function classifyMoveServiceTransition(
     isSameProvider(service, candidate),
   );
   const currentProvider = input.currentProvider || sameProviderCandidate || null;
+  const serviceProviderName = getServiceProviderName(service, currentProvider);
   const userCustomService = isUserCustomService(service, currentProvider);
   const sameProviderConfidence = sameProviderCandidate
     ? getCandidateCoverageConfidence(sameProviderCandidate)
@@ -371,8 +396,21 @@ export function classifyMoveServiceTransition(
   }
 
   if (isMailForwarding(category)) {
+    if (!isUspsMailForwardingService(serviceProviderName)) {
+      return buildPlan({
+        service,
+        serviceProviderName,
+        actionType: "UPDATE_ADDRESS",
+        confidence: "MEDIUM",
+        primaryReason: "Package delivery accounts usually need a mailing or delivery-address update, not USPS mail forwarding.",
+        suggestedNextStep: `Update the mailing or delivery address with ${serviceProviderName || "the provider"} directly.`,
+        caveats: ["Package carriers do not set up USPS mail forwarding."],
+      });
+    }
+
     return buildPlan({
       service,
+      serviceProviderName,
       actionType: "MAIL_FORWARDING",
       confidence: "MEDIUM",
       primaryReason: "Mail and postal services usually need a manual forwarding or mailing-address update.",

@@ -179,7 +179,11 @@ export async function buildMoveTransitionContext(
 }
 
 function buildTaskTitle(plan: MoveServiceTransitionPlan): string {
-  return `${plan.actionLabel}: ${plan.serviceCategory.replace(/_/g, " ").toLowerCase()}`;
+  const subject =
+    plan.serviceProviderName ||
+    plan.destinationProviderCandidates[0]?.name ||
+    plan.serviceCategory.replace(/_/g, " ").toLowerCase();
+  return `${plan.actionLabel}: ${subject}`;
 }
 
 function normalizeKeyState(value: string): string {
@@ -235,6 +239,19 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
         where: { userId_idempotencyKey: { userId, idempotencyKey: legacyIdempotencyKey } },
       });
     }
+    if (!existing && plan.serviceId) {
+      existing = await prisma.moveTask.findFirst({
+        where: {
+          userId,
+          movingPlanId,
+          serviceId: plan.serviceId,
+          source: "CLASSIFIER",
+          deletedAt: null,
+          status: { notIn: ["COMPLETED", "DISMISSED"] },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
     const now = new Date();
     const data = {
       userId,
@@ -242,6 +259,7 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
       serviceId: plan.serviceId || null,
       originAddressId: context.movingPlan.fromAddressId,
       destinationAddressId: context.movingPlan.toAddressId,
+      providerId: plan.serviceProviderId || null,
       destinationProviderId:
         plan.actionType === "START_SERVICE" || plan.actionType === "VERIFY_AVAILABILITY"
           ? plan.destinationProviderCandidates[0]?.id || null

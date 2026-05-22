@@ -138,6 +138,44 @@ describe("classifyMoveServiceTransition", () => {
     expect(plan.confidence).toBe("HIGH");
   });
 
+  it("does not treat commercial package carriers as USPS mail forwarding", () => {
+    const plan = classifyMoveServiceTransition({
+      service: {
+        id: "service-ups",
+        category: "GOVERNMENT_POSTAL",
+        providerName: "UPS",
+      },
+      currentProvider: {
+        id: "ups",
+        name: "UPS",
+        category: "GOVERNMENT_POSTAL",
+        scope: "FEDERAL",
+        states: [],
+      },
+      originAddress: { state: "FL" },
+      destinationAddress: { state: "CA" },
+    });
+
+    expect(plan.actionType).toBe("UPDATE_ADDRESS");
+    expect(plan.serviceProviderName).toBe("UPS");
+    expect(plan.userFacingCopy).not.toContain("Forward mail");
+  });
+
+  it("keeps USPS as the mail-forwarding action", () => {
+    const plan = classifyMoveServiceTransition({
+      service: {
+        id: "service-usps",
+        category: "GOVERNMENT_POSTAL",
+        providerName: "USPS",
+      },
+      originAddress: { state: "FL" },
+      destinationAddress: { state: "CA" },
+    });
+
+    expect(plan.actionType).toBe("MAIL_FORWARDING");
+    expect(plan.serviceProviderName).toBe("USPS");
+  });
+
   it("treats interstate insurance moves as requote actions", () => {
     const plan = classifyMoveServiceTransition({
       service: {

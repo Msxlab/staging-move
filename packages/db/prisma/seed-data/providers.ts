@@ -1060,7 +1060,7 @@ export const STATE_PROVIDERS = [
   // ── Maine (ME) — Coverage Gap Fix ──
   { name: "Central Maine Power", slug: "cmp-me", category: "UTILITY_ELECTRIC", description: "Electric utility for central and southern Maine", website: "https://www.cmpco.com", phone: "1-800-750-4000", scope: "STATE", states: ["ME"], popularityScore: 88, tags: ["electric"] },
   { name: "Versant Power", slug: "versant-me", category: "UTILITY_ELECTRIC", description: "Electric utility for northern Maine", website: "https://www.versantpower.com", phone: "1-207-973-2000", scope: "STATE", states: ["ME"], popularityScore: 72, tags: ["electric"] },
-  { name: "Spectrum Maine", slug: "spectrum-me", category: "UTILITY_INTERNET", description: "Internet and cable in Maine", website: "https://www.spectrum.com", phone: "1-855-757-7328", scope: "STATE", states: ["ME", "NY", "OH", "TX", "WI", "NC", "CA"], popularityScore: 82, tags: ["internet", "cable"] },
+  { name: "Spectrum Maine", slug: "spectrum-me", category: "UTILITY_INTERNET", description: "Internet and cable in Maine", website: "https://www.spectrum.com", phone: "1-855-757-7328", scope: "STATE", states: ["ME"], popularityScore: 82, tags: ["internet", "cable", "address-check"] },
   { name: "Maine Water Company", slug: "maine-water", category: "UTILITY_WATER", description: "Water utility serving Maine", website: "https://www.mainewater.com", phone: "1-800-287-1643", scope: "STATE", states: ["ME"], popularityScore: 75, tags: ["water"] },
   { name: "Anthem BCBS Maine", slug: "bcbs-me", category: "FINANCIAL_INSURANCE_HEALTH", description: "Blue Cross Blue Shield of Maine", website: "https://www.anthem.com", scope: "STATE", states: ["ME"], popularityScore: 85, tags: ["health"] },
 

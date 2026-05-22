@@ -81,4 +81,10 @@ describe("provider category taxonomy", () => {
     );
     expect(duplicates, "duplicate provider slugs found").toEqual([]);
   });
+
+  it("keeps state-named regional providers scoped to their actual state", () => {
+    const spectrumMaine = allProviders.find((provider) => provider.slug === "spectrum-me");
+
+    expect(spectrumMaine?.states).toEqual(["ME"]);
+  });
 });

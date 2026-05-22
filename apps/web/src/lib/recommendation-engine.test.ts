@@ -212,4 +212,20 @@ describe("getRecommendedProviders", () => {
     const recommended = getRecommendedProviders(scored, 5);
     expect(recommended.length).toBeLessThanOrEqual(5);
   });
+
+  it("should keep only the strongest provider per category in the recommendation row", () => {
+    const scored = scoreProviders(
+      [
+        makeProvider({ id: "usps", name: "USPS", category: "GOVERNMENT_POSTAL", tags: ["mail", "essential"], popularityScore: 99 }),
+        makeProvider({ id: "ups", name: "UPS", category: "GOVERNMENT_POSTAL", tags: ["mail"], popularityScore: 85 }),
+        makeProvider({ id: "irs", name: "IRS", category: "GOVERNMENT_TAX", tags: ["tax", "essential"], popularityScore: 98 }),
+      ],
+      BASE_PROFILE,
+      "CA",
+    );
+
+    const recommended = getRecommendedProviders(scored, 10);
+
+    expect(recommended.map((provider) => provider.id)).toEqual(["usps", "irs"]);
+  });
 });

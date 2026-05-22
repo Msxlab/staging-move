@@ -795,9 +795,22 @@ export function getRecommendedProviders(
   allProviders: ScoredProvider[],
   limit: number = 10,
 ): ScoredProvider[] {
-  return allProviders
-    .filter((p) => p.matchReasons.length > 0 && p.recommendationScore > 20)
-    .slice(0, limit);
+  const seenCategories = new Set<string>();
+  const recommended: ScoredProvider[] = [];
+
+  for (const provider of allProviders) {
+    if (provider.matchReasons.length === 0 || provider.recommendationScore <= 20) {
+      continue;
+    }
+    if (seenCategories.has(provider.category)) {
+      continue;
+    }
+    seenCategories.add(provider.category);
+    recommended.push(provider);
+    if (recommended.length >= limit) break;
+  }
+
+  return recommended;
 }
 
 export function getCategoryOrder(category: string): number {
