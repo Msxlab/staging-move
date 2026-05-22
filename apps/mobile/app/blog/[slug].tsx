@@ -10,11 +10,11 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ExternalLink } from "lucide-react-native";
+import { ArrowLeft, ExternalLink } from "lucide-react-native";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { useAppTheme, type Theme } from "@/lib/theme";
 
@@ -64,6 +64,7 @@ export default function BlogDetailScreen() {
   const { t, i18n } = useTranslation();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const router = useRouter();
   const params = useLocalSearchParams();
   const slug = firstParam(params.slug);
   const locale = firstParam(params.locale) === "es" ? "es" : "en";
@@ -115,6 +116,15 @@ export default function BlogDetailScreen() {
     }).catch(() => {});
   }, [post]);
 
+  const goBack = useCallback(() => {
+    const canGoBack = typeof (router as any).canGoBack === "function" && (router as any).canGoBack();
+    if (canGoBack) {
+      router.back();
+      return;
+    }
+    router.replace("/blog");
+  }, [router]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
@@ -137,7 +147,19 @@ export default function BlogDetailScreen() {
   const body = htmlToReadableText(post.contentHtml);
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={goBack}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back")}
+        >
+          <ArrowLeft size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.screenTitle}>{t("blog.title")}</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -178,6 +200,24 @@ export default function BlogDetailScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  screenTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   center: {
     flex: 1,
     backgroundColor: theme.colors.background,

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   gdprCreate: vi.fn(),
   gdprUpdate: vi.fn(),
   userFindUnique: vi.fn(),
+  rawMovingPlanDeleteMany: vi.fn(),
   rawUserDelete: vi.fn(),
   destroyAllUserSessions: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
@@ -36,6 +37,9 @@ vi.mock("@/lib/db", () => ({
     },
   },
   rawPrisma: {
+    movingPlan: {
+      deleteMany: (...args: unknown[]) => mocks.rawMovingPlanDeleteMany(...args),
+    },
     user: {
       delete: (...args: unknown[]) => mocks.rawUserDelete(...args),
     },
@@ -92,16 +96,18 @@ describe("account deletion processor", () => {
     mocks.getRuntimeConfigValue.mockResolvedValue("sk_test_account_deletion");
     mocks.stripeCancel.mockResolvedValue({ id: "sub_live_123" });
     mocks.destroyAllUserSessions.mockResolvedValue(undefined);
+    mocks.rawMovingPlanDeleteMany.mockResolvedValue({ count: 1 });
     mocks.rawUserDelete.mockResolvedValue({ id: "user-1" });
     mocks.gdprUpdate.mockResolvedValue({});
   });
 
-  it("cancels Stripe before hard-deleting the user", async () => {
+  it("cancels Stripe and clears moving plans before hard-deleting the user", async () => {
     const result = await processAccountDeletionRequest("gdpr-1");
 
     expect(mocks.getRuntimeConfigValue).toHaveBeenCalledWith("STRIPE_SECRET_KEY");
     expect(mocks.stripeCancel).toHaveBeenCalledWith("sub_live_123");
     expect(mocks.destroyAllUserSessions).toHaveBeenCalledWith("user-1");
+    expect(mocks.rawMovingPlanDeleteMany).toHaveBeenCalledWith({ where: { userId: "user-1" } });
     expect(mocks.rawUserDelete).toHaveBeenCalledWith({ where: { id: "user-1" } });
     expect(result.status).toBe("COMPLETED");
     expect(result.cleanup?.stripeCanceled).toBe(true);
@@ -114,6 +120,7 @@ describe("account deletion processor", () => {
     const result = await processAccountDeletionRequest("gdpr-1");
 
     expect(mocks.destroyAllUserSessions).not.toHaveBeenCalled();
+    expect(mocks.rawMovingPlanDeleteMany).not.toHaveBeenCalled();
     expect(mocks.rawUserDelete).not.toHaveBeenCalled();
     expect(result.status).toBe("PROCESSING");
     expect(result.cleanup?.stripeCanceled).toBe(false);

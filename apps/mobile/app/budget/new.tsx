@@ -24,10 +24,10 @@ function getCurrentMonthValue() {
   return `${now.getFullYear()}-${month}-01`;
 }
 
-// Server-side gate code returned by /api/budget POST when the caller is on a
-// free trial / no active subscription. We pre-flight from /api/profile so the
-// UI can explain the gate inline instead of bouncing the user off a generic
-// 403 error after they fill out the form.
+// Server-side gate code returned by /api/budget POST when the caller has no
+// active entitlement. We pre-flight from /api/profile so the UI can explain
+// the gate inline instead of bouncing the user off a generic 403 error after
+// they fill out the form.
 const SUBSCRIPTION_GATE_CODE = "SUBSCRIPTION_REQUIRED";
 
 export default function NewBudgetScreen() {
@@ -65,14 +65,22 @@ export default function NewBudgetScreen() {
         setSubscriptionRequired(false);
         return;
       }
+      if (typeof res.data?.entitlement?.isActive === "boolean") {
+        setSubscriptionRequired(!res.data.entitlement.isActive);
+        return;
+      }
       const sub = res.data?.subscription || {};
-      const plan = typeof sub.plan === "string" ? sub.plan : null;
       const status = typeof sub.status === "string" ? sub.status : null;
+      const freeAccessEndsAt = sub.freeAccessEndsAt ? new Date(sub.freeAccessEndsAt) : null;
       const premiumUntil = sub.premiumUntil ? new Date(sub.premiumUntil) : null;
-      const hasPaidPlan =
-        Boolean(plan && plan !== "FREE_TRIAL") &&
-        (status === "ACTIVE" || (premiumUntil && premiumUntil.getTime() > Date.now()));
-      setSubscriptionRequired(!hasPaidPlan);
+      const currentPeriodEndsAt = sub.currentPeriodEndsAt ? new Date(sub.currentPeriodEndsAt) : null;
+      const hasActiveAccess =
+        status === "ACTIVE" ||
+        status === "TRIALING" ||
+        (freeAccessEndsAt && freeAccessEndsAt.getTime() > Date.now()) ||
+        (premiumUntil && premiumUntil.getTime() > Date.now()) ||
+        (currentPeriodEndsAt && currentPeriodEndsAt.getTime() > Date.now());
+      setSubscriptionRequired(!hasActiveAccess);
     })().catch(() => {
       if (!cancelled) setSubscriptionRequired(false);
     });

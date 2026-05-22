@@ -20,13 +20,6 @@ function isAccountDeletionConfirmationValid(value: unknown, email: string): bool
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId({ distinguishDeleted: true });
-    emitSecurityEvent({
-      type: "ACCOUNT_DELETE_ATTEMPT",
-      severity: "warn",
-      group: "account_delete",
-      context: { userId },
-    });
-
     const meta = extractRequestMeta(request);
     // Always emit the attempt — independent of whether the limit fires
     // or step-up succeeds. This is the audit trail an investigator

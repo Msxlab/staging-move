@@ -220,6 +220,15 @@ function LegacySubscriptionScreen() {
   const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
   const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
   const canUseNativePurchases = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
+  const nativePurchaseUnavailableMessage = !mobileStorePurchasesEnabled
+    ? t("settings.subscription_mobilePurchasesDisabledForBuild", {
+        defaultValue: "Mobile purchases are not enabled in this build.",
+      })
+    : !iapAvailable
+      ? t("settings.subscription_mobileProductsNotConfigured", {
+          defaultValue: "App Store or Google Play products are not configured yet.",
+        })
+      : t("settings.subscription_mobilePurchasesUnavailable");
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
   // StoreKit/Play return one batch instead of two round-trips.
@@ -305,7 +314,7 @@ function LegacySubscriptionScreen() {
         ? t("settings.subscription_playStoreManagedReadOnly", {
             defaultValue: "Your subscription is managed in Google Play. You can continue using your account here.",
           })
-        : t("settings.subscription_mobilePurchasesUnavailable");
+        : nativePurchaseUnavailableMessage;
 
   const getLocalizedIapError = useCallback((message?: string) => {
     if (message === IAP_PURCHASE_FAILED_MESSAGE) return t("settings.subscription_purchaseFailed");
@@ -340,7 +349,7 @@ function LegacySubscriptionScreen() {
         t("settings.subscription_billingUnavailable"),
         managedSubscriptionBlocksPurchase
           ? managedElsewhereMessage
-          : t("settings.subscription_mobilePurchasesUnavailable"),
+          : nativePurchaseUnavailableMessage,
       );
       return;
     }
@@ -413,6 +422,7 @@ function LegacySubscriptionScreen() {
     canStartNativePurchase,
     managedSubscriptionBlocksPurchase,
     managedElsewhereMessage,
+    nativePurchaseUnavailableMessage,
     monthlySku,
     yearlySku,
     monthlyOfferToken,
@@ -538,7 +548,7 @@ function LegacySubscriptionScreen() {
             <Text style={styles.mobileBillingNoticeText}>
               {isStripeManaged || isOtherPlatformStoreManaged
                 ? managedElsewhereMessage
-                : t("settings.subscription_mobilePurchasesUnavailable")}
+                : nativePurchaseUnavailableMessage}
             </Text>
           </View>
         )}
@@ -639,7 +649,7 @@ function LegacySubscriptionScreen() {
                 <Text style={styles.disabledPurchaseText}>
                   {managedSubscriptionBlocksPurchase
                     ? managedElsewhereMessage
-                    : t("settings.subscription_mobilePurchasesUnavailable")}
+                    : nativePurchaseUnavailableMessage}
                 </Text>
               </View>
             ) : showSplitCtas ? (
@@ -757,7 +767,7 @@ function LegacySubscriptionScreen() {
           {isNativeStorePlatform && managedSubscriptionBlocksPurchase
             ? managedElsewhereMessage
             : isNativeStorePlatform && !canUseNativePurchases
-            ? t("settings.subscription_mobilePurchasesUnavailable")
+            ? nativePurchaseUnavailableMessage
             : t("settings.subscription_manage")}
         </Text>
       </ScrollView>

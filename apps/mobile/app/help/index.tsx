@@ -44,6 +44,34 @@ interface HelpArticle {
   category?: string;
 }
 
+function asText(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function normalizeFaqs(value: unknown): FAQ[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item, index) => ({
+      id: asText((item as any)?.id, `faq-${index}`),
+      question: asText((item as any)?.question),
+      answer: asText((item as any)?.answer),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
+function normalizeArticles(value: unknown): HelpArticle[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item, index) => ({
+      id: asText((item as any)?.id, `article-${index}`),
+      title: asText((item as any)?.title),
+      content: asText((item as any)?.content),
+      excerpt: typeof (item as any)?.excerpt === "string" ? (item as any).excerpt : null,
+      category: asText((item as any)?.category),
+    }))
+    .filter((item) => item.title);
+}
+
 export default function HelpScreen() {
 
   // theme: hook-injected styles
@@ -112,24 +140,27 @@ export default function HelpScreen() {
       return true;
     }
 
-    const res = await api.get<any>("/api/help");
-    if (res.error) {
-      applyLocalHelp();
-      return true;
-    }
-    if (res.data) {
-      const nextFaqs = res.data.faqs || [];
-      const nextArticles = res.data.articles || [];
+    try {
+      const res = await api.get<any>("/api/help");
+      if (res.error) {
+        applyLocalHelp();
+        return true;
+      }
+      const nextFaqs = normalizeFaqs(res.data?.faqs);
+      const nextArticles = normalizeArticles(res.data?.articles);
       if (nextFaqs.length === 0 && nextArticles.length === 0) {
         applyLocalHelp();
         return true;
       }
-      setFaqs(nextFaqs);
-      setArticles(nextArticles);
+      setFaqs(nextFaqs.length > 0 ? nextFaqs : localFaqs);
+      setArticles(nextArticles.length > 0 ? nextArticles : localArticles);
       setError(null);
+      return true;
+    } catch {
+      applyLocalHelp();
+      return true;
     }
-    return true;
-  }, [applyLocalHelp, useLocalHelp]);
+  }, [applyLocalHelp, localArticles, localFaqs, useLocalHelp]);
 
   const load = useCallback(async () => {
     setLoading(true);

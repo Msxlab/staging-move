@@ -37,8 +37,8 @@ interface Ticket {
   category: string;
   status: string;
   updatedAt: string;
-  messages: { content: string; senderType: string }[];
-  _count: { messages: number };
+  messages?: { content?: string; senderType?: string }[];
+  _count?: { messages: number };
 }
 
 const CATEGORIES = ["GENERAL", "BUG", "BILLING", "ACCOUNT", "FEATURE_REQUEST"];
@@ -64,17 +64,22 @@ export default function TicketsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTickets = useCallback(async () => {
-    const res = await api.get<any>("/api/tickets");
-    if (res.error) {
-      setError(res.error);
+    try {
+      const res = await api.get<any>("/api/tickets");
+      if (res.error) {
+        setError(res.error);
+        return false;
+      }
+      if (res.data) {
+        setTickets(Array.isArray(res.data.tickets) ? res.data.tickets : []);
+        setError(null);
+      }
+      return true;
+    } catch {
+      setError(t("common.connectionError"));
       return false;
     }
-    if (res.data) {
-      setTickets(res.data.tickets || []);
-      setError(null);
-    }
-    return true;
-  }, []);
+  }, [t]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -192,7 +197,8 @@ export default function TicketsScreen() {
           <View style={styles.list}>
             {tickets.map((ticket) => {
               const color = STATUS_COLOR[ticket.status] || theme.colors.textMuted;
-              const lastMsg = ticket.messages[0];
+              const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+              const lastMsg = messages[0];
               return (
                 <TouchableOpacity
                   key={ticket.id}
@@ -215,7 +221,7 @@ export default function TicketsScreen() {
                           : lastMsg.senderType === "USER"
                           ? t("tickets.youPrefix")
                           : t("tickets.systemPrefix")}
-                        {lastMsg.content}
+                        {lastMsg.content || ""}
                       </Text>
                     )}
                   </View>

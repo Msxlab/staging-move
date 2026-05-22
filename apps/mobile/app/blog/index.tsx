@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 
@@ -59,6 +60,15 @@ export default function BlogListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const goBack = useCallback(() => {
+    const canGoBack = typeof (router as any).canGoBack === "function" && (router as any).canGoBack();
+    if (canGoBack) {
+      router.back();
+      return;
+    }
+    router.replace("/(tabs)/more");
+  }, [router]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -138,7 +148,19 @@ export default function BlogListScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={goBack}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back")}
+        >
+          <ArrowLeft size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.screenTitle}>{t("blog.title")}</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <FlatList
         data={items}
         keyExtractor={(item) => `${item.locale}-${item.slug}`}
@@ -187,6 +209,24 @@ export default function BlogListScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  screenTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   center: {
     flex: 1,
     backgroundColor: theme.colors.background,

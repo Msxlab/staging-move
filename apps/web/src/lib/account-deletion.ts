@@ -165,9 +165,12 @@ export async function processAccountDeletionRequest(requestId: string) {
       // GDPR Article 17 ("right to erasure") requires a physical delete — use
       // `rawPrisma` to bypass the global soft-delete extension, which would
       // otherwise rewrite this into a `deletedAt` update and leave the row
-      // recoverable. Cascade FKs in the schema physically remove related
-      // addresses, services, budgets, sessions, OAuth links, etc.
+      // recoverable. MovingPlan has required Address relations with
+      // onDelete: Restrict, so remove the user's plans first; then User
+      // cascades physically remove addresses, services, budgets, sessions,
+      // OAuth links, etc.
       await destroyAllUserSessions(request.userId);
+      await rawPrisma.movingPlan.deleteMany({ where: { userId: request.userId } });
       await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
     } catch (error) {

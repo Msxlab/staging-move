@@ -42,9 +42,10 @@ export default function TicketDetailScreen() {
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,17 +55,30 @@ export default function TicketDetailScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   const fetchTicket = useCallback(async () => {
-    const res = await api.get<any>(`/api/tickets/${id}`);
-    if (res.error) {
-      setError(res.error);
+    if (!id) {
+      setError(t("tickets.notFound"));
       return false;
     }
-    if (res.data) {
-      setTicket(res.data.ticket);
-      setError(null);
+    try {
+      const res = await api.get<any>(`/api/tickets/${id}`);
+      if (res.error) {
+        setError(res.error);
+        return false;
+      }
+      if (res.data?.ticket) {
+        const nextTicket = res.data.ticket as Ticket;
+        setTicket({
+          ...nextTicket,
+          messages: Array.isArray(nextTicket.messages) ? nextTicket.messages : [],
+        });
+        setError(null);
+      }
+      return true;
+    } catch {
+      setError(t("common.connectionError"));
+      return false;
     }
-    return true;
-  }, [id]);
+  }, [id, t]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,7 +101,7 @@ export default function TicketDetailScreen() {
   useEffect(() => { load(); }, [load]);
 
   const handleReply = async () => {
-    if (!reply.trim()) return;
+    if (!reply.trim() || !id) return;
     setSending(true);
     try {
       const res = await api.post<any>(`/api/tickets/${id}`, { message: reply });
@@ -106,6 +120,7 @@ export default function TicketDetailScreen() {
   };
 
   const handleClose = () => {
+    if (!id) return;
     Alert.alert(t("tickets.closeTitle"), t("tickets.closeConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
       {
