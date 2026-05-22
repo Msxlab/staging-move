@@ -315,6 +315,10 @@ export async function handlePasswordLogin(
       lastName: user.lastName,
       imageUrl: user.imageUrl,
       emailVerified: Boolean(user.emailVerifiedAt),
+      hasPasswordLogin: Boolean(user.passwordHash),
+      // Password-login path only succeeds when the user supplied a valid
+      // password, so by definition they don't need to set one.
+      needsPasswordSetup: false,
       mfaEnabled: user.mfaEnabled,
     },
   });

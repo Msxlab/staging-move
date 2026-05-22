@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
       hasBoatRV: (profile as any)?.hasBoatRV ?? false,
       isImmigrant: (profile as any)?.isImmigrant ?? false,
       isBusinessOwner: (profile as any)?.isBusinessOwner ?? false,
-      moveType: ((profile as any)?.moveType as "PERSONAL" | "BUSINESS" | "VACATION") || "PERSONAL",
+      moveType: ((profile as any)?.moveType as "PERSONAL" | "BUSINESS" | "VACATION" | "MILITARY") || "PERSONAL",
     };
 
     const analysis = analyzeMigration(

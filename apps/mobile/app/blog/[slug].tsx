@@ -15,7 +15,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ExternalLink } from "lucide-react-native";
-import { api } from "@/lib/api";
+import { api, APP_WEB_URL } from "@/lib/api";
 import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface BlogPostDetail {
@@ -32,7 +32,7 @@ interface BlogPostDetail {
   author: { name: string };
 }
 
-const WEB_URL = process.env.EXPO_PUBLIC_APP_URL || "https://locateflow.com";
+const WEB_URL = APP_WEB_URL;
 
 function firstParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] || "" : value || "";

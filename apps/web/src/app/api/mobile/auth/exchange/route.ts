@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
     deviceType: "Mobile",
   });
 
+  const hasPasswordLogin = Boolean(exchanged.user.passwordHash);
   return NextResponse.json({
     success: true,
     token,
@@ -90,6 +91,10 @@ export async function POST(request: NextRequest) {
       lastName: exchanged.user.lastName,
       imageUrl: exchanged.user.imageUrl,
       emailVerified: Boolean(exchanged.user.emailVerifiedAt),
+      hasPasswordLogin,
+      // OAuth exchange always implies the caller signed in via Google/Apple,
+      // so any user shaped here has at least one linked OAuth account.
+      needsPasswordSetup: !hasPasswordLogin,
       mfaEnabled: exchanged.user.mfaEnabled,
     },
   });

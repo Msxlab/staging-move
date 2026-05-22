@@ -3,7 +3,7 @@
  *
  * Generates a personalized, phase-ordered checklist based on:
  * - User profile (kids, pets, cars, senior, disability, etc.)
- * - Move type (PERSONAL, BUSINESS, VACATION)
+ * - Move type (PERSONAL, BUSINESS, VACATION, MILITARY)
  * - Destination state (for state-specific deadlines)
  * - Move date (for calculating due dates)
  */
@@ -29,7 +29,7 @@ export interface UserChecklistProfile {
   hasBoatRV: boolean;
   isImmigrant: boolean;
   isBusinessOwner: boolean;
-  moveType: "PERSONAL" | "BUSINESS" | "VACATION";
+  moveType: "PERSONAL" | "BUSINESS" | "VACATION" | "MILITARY";
 }
 
 export interface ChecklistStateRuleContext {
@@ -94,7 +94,8 @@ function evaluateCondition(condition: string, profile: UserChecklistProfile): bo
 }
 
 function itemMatchesProfile(item: ServicePriorityItem, profile: UserChecklistProfile): boolean {
-  if (!item.moveTypes.includes(profile.moveType)) return false;
+  const effectiveMoveType = profile.moveType === "MILITARY" ? "PERSONAL" : profile.moveType;
+  if (!item.moveTypes.includes(effectiveMoveType)) return false;
   for (const condition of item.conditions) {
     if (!evaluateCondition(condition, profile)) return false;
   }

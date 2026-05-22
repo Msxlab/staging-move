@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -118,6 +118,11 @@ export const metadata: Metadata = {
           "max-snippet": -1,
         },
       },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

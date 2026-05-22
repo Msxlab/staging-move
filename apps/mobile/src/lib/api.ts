@@ -63,6 +63,24 @@ function enforceProductionApiUrl(url: string) {
 
 const API_URL = enforceProductionApiUrl(resolveApiUrl());
 
+/**
+ * Public web origin (no trailing slash, no /api suffix). Used for opening
+ * marketing/legal pages in the browser. Prefers EXPO_PUBLIC_APP_URL, then
+ * derives from API_URL by stripping the trailing /api, then falls back to
+ * production. Never returns a localhost origin in a release build.
+ */
+function resolveWebAppUrl() {
+  const explicit = process.env.EXPO_PUBLIC_APP_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  const derived = API_URL.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+  if (!__DEV__ && /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(derived)) {
+    return "https://locateflow.com";
+  }
+  return derived || "https://locateflow.com";
+}
+
+const APP_WEB_URL = resolveWebAppUrl();
+
 import { getToken as getStoreToken, useAuthStore } from "@/lib/auth-store";
 
 if (__DEV__) {
@@ -98,4 +116,4 @@ export const api = new ApiClient({
   },
 });
 
-export { API_URL };
+export { API_URL, APP_WEB_URL };

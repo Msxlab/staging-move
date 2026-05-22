@@ -7,6 +7,7 @@ import {
 
 const baseState: PostAuthUserState = {
   needsEmailVerification: false,
+  needsPasswordSetup: false,
   hasRequiredLegalConsents: true,
   onboardingCompleted: true,
 };
@@ -25,6 +26,21 @@ describe("resolvePostAuthRedirect", () => {
       hasRequiredLegalConsents: false,
       onboardingCompleted: false,
     }, "/dashboard")).toBe("/onboarding?step=legal");
+  });
+
+  it("routes OAuth-only users to password setup before onboarding", () => {
+    expect(resolvePostAuthRedirect({
+      ...baseState,
+      needsPasswordSetup: true,
+      hasRequiredLegalConsents: false,
+      onboardingCompleted: false,
+    }, "/dashboard")).toBe("/account/setup-password?redirect=%2Fonboarding%3Fstep%3Dlegal");
+
+    expect(resolvePostAuthRedirect({
+      ...baseState,
+      needsPasswordSetup: true,
+      onboardingCompleted: false,
+    }, "/dashboard")).toBe("/account/setup-password?redirect=%2Fonboarding");
   });
 
   it("routes legal-accepted incomplete users to onboarding", () => {
@@ -52,6 +68,9 @@ describe("resolvePostAuthRedirect", () => {
     expect(resolveOnboardingGateRedirect({ ...baseState, onboardingCompleted: false }, "/onboarding")).toBeNull();
     expect(resolveOnboardingGateRedirect({ ...baseState, needsEmailVerification: true }, "/onboarding")).toBe(
       "/verify-email?redirect=%2Fonboarding",
+    );
+    expect(resolveOnboardingGateRedirect({ ...baseState, needsPasswordSetup: true }, "/onboarding")).toBe(
+      "/account/setup-password?redirect=%2Fonboarding",
     );
     expect(resolveOnboardingGateRedirect(baseState, "/onboarding")).toBe("/dashboard");
   });

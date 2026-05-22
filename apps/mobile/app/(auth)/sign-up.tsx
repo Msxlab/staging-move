@@ -10,6 +10,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
+import { AppleLogoMark, GoogleGMark } from "@/components/ui/BrandLogos";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -204,20 +205,32 @@ export default function SignUpScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Button
-          title={googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
-          variant="outline"
+        <TouchableOpacity
           onPress={() => openOAuth("google")}
           disabled={!googleReady || Boolean(oauthLoading)}
-          style={styles.oauthBtn}
-        />
-        <Button
-          title={appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
-          variant="primary"
+          activeOpacity={0.78}
+          style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+          accessibilityLabel={t("auth.continueWithGoogle")}
+          accessibilityRole="button"
+        >
+          <GoogleGMark size={20} />
+          <Text style={styles.oauthGoogleText}>
+            {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={() => openOAuth("apple")}
           disabled={!appleReady || Boolean(oauthLoading)}
-          style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
-        />
+          activeOpacity={0.78}
+          style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+          accessibilityLabel={t("auth.continueWithApple")}
+          accessibilityRole="button"
+        >
+          <AppleLogoMark size={18} color="#fff" />
+          <Text style={styles.oauthAppleText}>
+            {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
+          </Text>
+        </TouchableOpacity>
 
         {showOAuthReadinessNote ? (
           <Text style={styles.oauthNote}>
@@ -286,6 +299,32 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
   error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },
+  oauthButton: {
+    minHeight: 52,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  oauthGoogle: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(20, 32, 47, 0.14)",
+    ...theme.shadow.sm,
+  },
+  oauthApple: {
+    backgroundColor: "#000",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.18)",
+    ...theme.shadow.sm,
+  },
+  oauthDisabled: { opacity: 0.5 },
+  oauthGoogleText: { color: "#14202F", fontSize: 15, fontWeight: "700" },
+  oauthAppleText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   oauthNote: {
     color: theme.colors.warning,
     fontSize: 12,

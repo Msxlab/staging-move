@@ -169,7 +169,7 @@ export interface ServicePriorityItem {
   deadlineDays: number | null;
   priority: "URGENT" | "HIGH" | "MEDIUM" | "LOW";
   isRequired: boolean;
-  moveTypes: ("PERSONAL" | "BUSINESS" | "VACATION")[];
+  moveTypes: ("PERSONAL" | "BUSINESS" | "VACATION" | "MILITARY")[];
   conditions: string[];
   estimatedMinutes: number;
   icon: string;

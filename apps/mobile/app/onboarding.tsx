@@ -121,6 +121,7 @@ const MOVE_TYPES = [
   { value: "PERSONAL", label: "Personal Move" },
   { value: "BUSINESS", label: "Business" },
   { value: "VACATION", label: "Vacation Home" },
+  { value: "MILITARY", label: "Military / PCS" },
 ];
 
 const IMMIGRATION_STATUSES = [

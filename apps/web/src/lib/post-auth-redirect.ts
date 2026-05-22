@@ -18,6 +18,7 @@ import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 
 export interface PostAuthUserState {
   needsEmailVerification: boolean;
+  needsPasswordSetup: boolean;
   hasRequiredLegalConsents: boolean;
   onboardingCompleted: boolean;
 }
@@ -39,6 +40,14 @@ export function resolvePostAuthRedirect(
 
   if (userState.needsEmailVerification) {
     return buildEmailVerificationGateRedirect(safeRedirect);
+  }
+
+  if (userState.needsPasswordSetup) {
+    const afterPasswordSetup = resolvePostAuthRedirect(
+      { ...userState, needsPasswordSetup: false },
+      requestedRedirect,
+    );
+    return `/account/setup-password?redirect=${encodeURIComponent(afterPasswordSetup)}`;
   }
 
   if (!userState.hasRequiredLegalConsents) {
@@ -64,6 +73,10 @@ export function resolveOnboardingGateRedirect(
 
   if (userState.needsEmailVerification) {
     return buildEmailVerificationGateRedirect(safeRedirect);
+  }
+
+  if (userState.needsPasswordSetup) {
+    return `/account/setup-password?redirect=${encodeURIComponent(safeRedirect)}`;
   }
 
   if (userState.onboardingCompleted) {
@@ -130,6 +143,7 @@ export async function getPostAuthUserState(userId: string): Promise<PostAuthUser
 
   return {
     needsEmailVerification: needsEmailVerificationGate(user),
+    needsPasswordSetup: Boolean(user.oauthAccounts.length > 0 && !user.passwordHash),
     hasRequiredLegalConsents: hasRequiredLegalConsentsValue,
     onboardingCompleted: onboardingProgress.completed,
   };
