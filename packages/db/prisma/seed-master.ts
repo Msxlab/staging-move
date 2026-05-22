@@ -88,14 +88,31 @@ async function main() {
 
   console.log("P4: Email Templates...");
   created = 0;
+  let refreshed = 0;
   for (const tpl of EMAIL_TEMPLATES_ALL) {
     const existing = await prisma.emailTemplate.findUnique({ where: { slug: tpl.slug } });
     if (!existing) {
       await prisma.emailTemplate.create({ data: tpl });
       created++;
+    } else if (existing.updatedBy === null) {
+      // Refresh the default design/copy for templates no admin has edited
+      // (updatedBy stays null until an admin saves a change via the panel).
+      // We deliberately leave isActive/isDefault untouched so admin
+      // activation choices and any customizations survive reseeds.
+      await prisma.emailTemplate.update({
+        where: { slug: tpl.slug },
+        data: {
+          name: tpl.name,
+          subject: tpl.subject,
+          body: tpl.body,
+          category: tpl.category,
+          variables: tpl.variables,
+        },
+      });
+      refreshed++;
     }
   }
-  console.log(`   created ${created} (${EMAIL_TEMPLATES_ALL.length} total)\n`);
+  console.log(`   created ${created}, refreshed ${refreshed} (${EMAIL_TEMPLATES_ALL.length} total)\n`);
 
   console.log("P5: Help Articles...");
   created = 0;

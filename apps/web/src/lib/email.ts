@@ -38,16 +38,23 @@ function isProductionLikeEmailRuntime() {
 }
 
 const COLORS = {
-  background: "#f5f7fb",
+  background: "#eef2f7",
   card: "#ffffff",
-  text: "#172033",
-  muted: "#5f6b7a",
-  border: "#d9e1ea",
-  panel: "#eef3f8",
-  primary: "#f97316",
-  primaryDark: "#c2410c",
-  accent: "#0f766e",
+  text: "#344054",
+  muted: "#667085",
+  border: "#e4e7ec",
+  panel: "#f2f6fb",
+  primary: "#1f5c9e",
+  primaryDark: "#1a4f88",
+  accent: "#5c9ddc",
 };
+// Brand constants used by the email shell (logo, accents, dark-mode).
+const BRAND_NAVY = "#101828";
+const BRAND_FOIL = "#5c9ddc";
+const BRAND_PANEL_BORDER = "#dbe6f4";
+const BRAND_DIVIDER = "#e0e5ec";
+const BRAND_FOOT_MUTED = "#98a2b3";
+const LOGO_ICON_URL = "https://locateflow.com/icons/icon-192.png";
 
 export interface EmailOptions {
   to: string;
@@ -287,14 +294,39 @@ function detailRows(rows: Array<[string, string]>): string {
 }
 
 function ctaButton(href: string, label: string): string {
+  const safeHref = escapeHtml(href);
+  const safeLabel = escapeHtml(label);
+  // Outlook desktop ignores CSS padding/border-radius on <a>, so it gets a
+  // VML roundrect with an approximate fixed width; every other client gets
+  // the styled anchor. Width is estimated from the label length.
+  const vmlWidth = Math.max(170, label.length * 11 + 56);
   return `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:24px 0 8px;">
       <tr>
-        <td bgcolor="${COLORS.primary}" style="border-radius:6px;">
-          <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 20px;font-size:15px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;border-radius:6px;">${escapeHtml(label)}</a>
+        <td>
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${safeHref}" style="height:48px;v-text-anchor:middle;width:${vmlWidth}px;" arcsize="17%" strokecolor="${COLORS.primary}" fillcolor="${COLORS.primary}">
+            <w:anchorlock/>
+            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">${safeLabel}</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-- -->
+          <a href="${safeHref}" style="display:inline-block;background:${COLORS.primary};padding:15px 30px;font-size:16px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,40,.18);">${safeLabel}</a>
+          <!--<![endif]-->
         </td>
       </tr>
     </table>`;
+}
+
+function linkFallbackBlock(href: string, locale: EmailLocale): string {
+  const safeHref = escapeHtml(href);
+  const label =
+    locale === "es"
+      ? "¿El botón no funciona? Copia y pega este enlace en tu navegador:"
+      : "Button not working? Copy and paste this link into your browser:";
+  return `
+    <p class="lf-muted" style="margin:18px 0 6px;font-size:13px;line-height:20px;color:${COLORS.muted};">${label}</p>
+    <p style="margin:0;font-size:13px;line-height:20px;word-break:break-all;"><a class="lf-link-url" href="${safeHref}" style="color:${COLORS.primary};text-decoration:underline;">${safeHref}</a></p>`;
 }
 
 const SHELL_STRINGS: Record<EmailLocale, { securityNote: string; footerNote: string }> = {
@@ -316,57 +348,99 @@ export function renderLocateFlowEmail(opts: {
   supportEmail?: string;
   securityNote?: boolean;
   locale?: EmailLocale;
+  /** Small uppercase pill above the title, e.g. "Secure link · expires in 1 hour". */
+  badge?: string;
+  /** Render a "button not working? copy this link" block under the CTA. */
+  linkFallback?: boolean;
 }): string {
   const locale: EmailLocale = opts.locale || "en";
   const strings = SHELL_STRINGS[locale];
   const supportEmail = opts.supportEmail || DEFAULT_SUPPORT_EMAIL;
   const cta = opts.cta ? ctaButton(opts.cta.href, opts.cta.label) : "";
+  const fallback =
+    opts.linkFallback && opts.cta ? linkFallbackBlock(opts.cta.href, locale) : "";
+  const badge = opts.badge
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:0 0 18px;"><tr><td class="lf-badge" bgcolor="${COLORS.panel}" style="background:${COLORS.panel};border:1px solid ${BRAND_PANEL_BORDER};border-radius:999px;padding:6px 13px;font-size:11px;line-height:14px;font-weight:700;color:${COLORS.primary};letter-spacing:0.06em;text-transform:uppercase;">${escapeHtml(opts.badge)}</td></tr></table>`
+    : "";
   const securityNote = opts.securityNote
-    ? `<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">${strings.securityNote}</p>`
+    ? `<p class="lf-muted" style="margin:18px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">${strings.securityNote}</p>`
     : "";
 
   return `<!DOCTYPE html>
-<html lang="${locale}">
+<html lang="${locale}" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <meta name="supported-color-schemes" content="light dark">
   <title>${escapeHtml(opts.title)}</title>
+  <!--[if mso]><style>body,table,td,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->
+  <style>
+    /* Manual dark mode. Descendant selectors with !important override the
+       inline colors on body paragraphs/tables so text stays readable on the
+       dark card. The logo sits in a white chip outside the card, so it never
+       disappears regardless of mode. */
+    @media (prefers-color-scheme: dark) {
+      body, .lf-bg { background:#0b1220 !important; }
+      .lf-card { background:#141d2e !important; border-color:#24314a !important; }
+      .lf-card p, .lf-card td, .lf-card li, .lf-card span { color:#c2cbdb !important; }
+      .lf-card h1, .lf-card strong, .lf-card b { color:#f3f6fb !important; }
+      .lf-card .lf-muted { color:#8b97ac !important; }
+      .lf-card td[bgcolor], .lf-card table[bgcolor] { background:#1b2740 !important; }
+      .lf-card .lf-badge { background:#13233b !important; border-color:#264268 !important; color:#9ec6ee !important; }
+      .lf-link-url { color:#7fb6e8 !important; }
+      .lf-wordmark, .lf-foot-brand { color:#f3f6fb !important; }
+      .lf-divider { border-color:#24314a !important; }
+    }
+    [data-ogsc] .lf-card { background:#141d2e !important; border-color:#24314a !important; }
+    [data-ogsc] .lf-card p, [data-ogsc] .lf-card td, [data-ogsc] .lf-card span { color:#c2cbdb !important; }
+    [data-ogsc] .lf-card h1, [data-ogsc] .lf-card strong { color:#f3f6fb !important; }
+    [data-ogsc] .lf-card .lf-muted { color:#8b97ac !important; }
+    [data-ogsc] .lf-card td[bgcolor], [data-ogsc] .lf-card table[bgcolor] { background:#1b2740 !important; }
+    [data-ogsc] .lf-link-url { color:#7fb6e8 !important; }
+    [data-ogsc] .lf-wordmark, [data-ogsc] .lf-foot-brand { color:#f3f6fb !important; }
+  </style>
 </head>
-<body style="margin:0;padding:0;background:${COLORS.background};font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:${COLORS.text};">
+<body style="margin:0;padding:0;background:${COLORS.background};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${COLORS.text};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(opts.preheader)}</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.background}" style="border-collapse:collapse;background:${COLORS.background};">
+  <table role="presentation" class="lf-bg" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.background}" style="border-collapse:collapse;background:${COLORS.background};">
     <tr>
-      <td align="center" style="padding:24px 12px;">
+      <td align="center" style="padding:32px 12px;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;">
           <tr>
-            <td style="padding:0 0 12px;">
+            <td style="padding:0 4px 18px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 <tr>
-                  <td bgcolor="${COLORS.primary}" style="width:34px;height:34px;border-radius:8px;text-align:center;color:#ffffff;font-weight:700;font-size:13px;line-height:34px;">LF</td>
-                  <td style="padding-left:10px;font-size:20px;line-height:24px;font-weight:700;color:${COLORS.text};">LocateFlow</td>
+                  <td bgcolor="#ffffff" style="background:#ffffff;border-radius:11px;padding:4px;box-shadow:0 1px 2px rgba(16,24,40,.10);vertical-align:middle;">
+                    <img src="${LOGO_ICON_URL}" width="38" height="38" alt="LocateFlow" style="display:block;border-radius:8px;">
+                  </td>
+                  <td class="lf-wordmark" style="vertical-align:middle;padding-left:12px;font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:40px;font-weight:700;color:${BRAND_NAVY};letter-spacing:-0.01em;">LocateFlow</td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td bgcolor="${COLORS.card}" style="background:${COLORS.card};border:1px solid ${COLORS.border};border-radius:8px;padding:32px 28px;">
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:${COLORS.text};font-weight:700;">${escapeHtml(opts.title)}</h1>
+            <td class="lf-card" bgcolor="${COLORS.card}" style="background:${COLORS.card};border:1px solid ${COLORS.border};border-top:3px solid ${BRAND_FOIL};border-radius:12px;box-shadow:0 1px 3px rgba(16,24,40,.06),0 12px 28px rgba(16,24,40,.06);padding:38px 34px 34px;">
+              ${badge}
+              <h1 class="lf-h1" style="margin:0 0 16px;font-size:24px;line-height:31px;color:${BRAND_NAVY};font-weight:700;letter-spacing:-0.01em;">${escapeHtml(opts.title)}</h1>
               ${opts.bodyHtml}
               ${cta}
+              ${fallback}
               ${securityNote}
             </td>
           </tr>
           <tr>
-            <td style="padding:18px 4px 0;text-align:left;">
-              <p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${COLORS.muted};font-weight:700;">LocateFlow</p>
+            <td style="padding:22px 8px 0;text-align:left;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">
+                <tr><td class="lf-divider" style="border-top:1px solid ${BRAND_DIVIDER};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+              </table>
+              <p class="lf-foot-brand" style="margin:16px 0 6px;font-size:13px;line-height:18px;color:${BRAND_NAVY};font-weight:700;font-family:Georgia,'Times New Roman',serif;">LocateFlow</p>
               <p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${COLORS.muted};">
-                <a href="${DEFAULT_APP_URL}" style="color:${COLORS.primaryDark};text-decoration:underline;">${DEFAULT_APP_URL}</a>
-                &nbsp;|&nbsp;
-                <a href="mailto:${escapeHtml(supportEmail)}" style="color:${COLORS.primaryDark};text-decoration:underline;">${escapeHtml(supportEmail)}</a>
+                <a class="lf-link-url" href="${DEFAULT_APP_URL}" style="color:${COLORS.primary};text-decoration:none;">${DEFAULT_APP_URL.replace(/^https?:\/\//, "")}</a>
+                &nbsp;&middot;&nbsp;
+                <a class="lf-link-url" href="mailto:${escapeHtml(supportEmail)}" style="color:${COLORS.primary};text-decoration:none;">${escapeHtml(supportEmail)}</a>
               </p>
-              <p style="margin:0;font-size:12px;line-height:18px;color:${COLORS.muted};">${strings.footerNote}</p>
+              <p class="lf-muted" style="margin:0;font-size:12px;line-height:18px;color:${BRAND_FOOT_MUTED};">${strings.footerNote}</p>
             </td>
           </tr>
         </table>
@@ -448,14 +522,15 @@ export function emailVerificationContent(data: {
 }): EmailContent {
   const subject = "Verify your LocateFlow email";
   const bodyHtml = `
-    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
-    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Thanks for creating a LocateFlow account. Confirm your email address to finish setting up your account.</p>
-    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">This link expires in 24 hours.</p>`;
+    <p class="lf-body" style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p class="lf-body" style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Thanks for creating a LocateFlow account. Confirm your email address to finish setting up your account.</p>`;
   const html = renderLocateFlowEmail({
     preheader: "Confirm your email address to finish setting up LocateFlow.",
     title: "Verify your email",
     bodyHtml,
+    badge: "Secure link · expires in 24 hours",
     cta: { href: data.verifyLink, label: "Verify Email" },
+    linkFallback: true,
     supportEmail: data.supportEmail,
     securityNote: true,
   });
@@ -483,20 +558,22 @@ export function passwordResetContent(data: {
     ? "Set your LocateFlow password"
     : "Reset your LocateFlow password";
   const bodyHtml = `
-    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
-    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${
+    <p class="lf-body" style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p class="lf-body" style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${
       isSetPassword
         ? "Use this secure link to add password sign-in to your LocateFlow account."
         : "We received a request to reset your LocateFlow password."
     }</p>
-    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">This link expires in 1 hour and can only be used once.</p>`;
+    <p class="lf-muted" style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">This link can only be used once.</p>`;
   const html = renderLocateFlowEmail({
     preheader: isSetPassword
       ? "Use this secure link to set a LocateFlow password."
       : "Use this secure link to reset your LocateFlow password.",
     title: isSetPassword ? "Set your password" : "Reset your password",
     bodyHtml,
+    badge: "Secure link · expires in 1 hour",
     cta: { href: data.resetLink, label: isSetPassword ? "Set Password" : "Reset Password" },
+    linkFallback: true,
     supportEmail: data.supportEmail,
     securityNote: true,
   });
