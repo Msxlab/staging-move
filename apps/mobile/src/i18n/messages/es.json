@@ -691,7 +691,12 @@
     "subscription_restoredDescription": "Tu suscripción activa fue restaurada.",
     "subscription_nothingToRestore": "Nada que restaurar",
     "subscription_nothingToRestoreDescription": "No se encontró ninguna suscripción activa en esta cuenta de la tienda.",
-    "subscription_restoreButton": "Restaurar compras"
+    "subscription_restoreButton": "Restaurar compras",
+    "subscription_openWebBilling": "Abrir facturación en el navegador",
+    "subscription_openWebBillingHint": "Abre tu cuenta web en el navegador para cancelar o gestionar esta suscripción.",
+    "subscription_openWebBillingFailed": "No se pudo abrir el navegador. Visita tu cuenta en la web.",
+    "subscription_billingIntervalAnnual": "Anual",
+    "subscription_billingIntervalMonthly": "Mensual"
   },
   "onboarding": {
     "step1_title": "Configuremos tu perfil",

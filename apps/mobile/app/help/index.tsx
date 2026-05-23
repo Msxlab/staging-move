@@ -29,6 +29,35 @@ import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { captureException } from "@/lib/sentry";
+
+// Normalize a server help record into the shape the UI expects. We do this
+// defensively because the server can return rows with null/undefined for
+// any of these fields, and previously the Help screen would render null
+// children or throw an unhandled access inside the global ErrorBoundary
+// — surfacing as the generic "Something went wrong" fallback.
+function normalizeArticle(raw: any, index: number): HelpArticle | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = typeof raw.id === "string" && raw.id ? raw.id : `article-${index}`;
+  const title = typeof raw.title === "string" && raw.title ? raw.title : null;
+  if (!title) return null;
+  return {
+    id,
+    title,
+    content: typeof raw.content === "string" ? raw.content : "",
+    excerpt: typeof raw.excerpt === "string" ? raw.excerpt : null,
+    category: typeof raw.category === "string" ? raw.category : undefined,
+  };
+}
+
+function normalizeFaq(raw: any, index: number): FAQ | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = typeof raw.id === "string" && raw.id ? raw.id : `faq-${index}`;
+  const question = typeof raw.question === "string" && raw.question ? raw.question : null;
+  const answer = typeof raw.answer === "string" && raw.answer ? raw.answer : null;
+  if (!question || !answer) return null;
+  return { id, question, answer };
+}
 
 interface FAQ {
   id: string;
@@ -112,14 +141,20 @@ export default function HelpScreen() {
       return true;
     }
 
-    const res = await api.get<any>("/api/help");
-    if (res.error) {
-      applyLocalHelp();
-      return true;
-    }
-    if (res.data) {
-      const nextFaqs = res.data.faqs || [];
-      const nextArticles = res.data.articles || [];
+    try {
+      const res = await api.get<any>("/api/help");
+      if (res.error) {
+        applyLocalHelp();
+        return true;
+      }
+      const rawFaqs = Array.isArray(res.data?.faqs) ? res.data.faqs : [];
+      const rawArticles = Array.isArray(res.data?.articles) ? res.data.articles : [];
+      const nextFaqs = rawFaqs
+        .map((row: any, idx: number) => normalizeFaq(row, idx))
+        .filter((row: FAQ | null): row is FAQ => row !== null);
+      const nextArticles = rawArticles
+        .map((row: any, idx: number) => normalizeArticle(row, idx))
+        .filter((row: HelpArticle | null): row is HelpArticle => row !== null);
       if (nextFaqs.length === 0 && nextArticles.length === 0) {
         applyLocalHelp();
         return true;
@@ -127,8 +162,18 @@ export default function HelpScreen() {
       setFaqs(nextFaqs);
       setArticles(nextArticles);
       setError(null);
+      return true;
+    } catch (err) {
+      // Network/parse failure that escaped the api client — report once
+      // so the real cause surfaces in telemetry rather than as a generic
+      // "Something went wrong" from the global ErrorBoundary, then fall
+      // back to local help so the screen is still usable offline.
+      captureException(err instanceof Error ? err : new Error(String(err)), {
+        screen: "help/index",
+      });
+      applyLocalHelp();
+      return true;
     }
-    return true;
   }, [applyLocalHelp, useLocalHelp]);
 
   const load = useCallback(async () => {

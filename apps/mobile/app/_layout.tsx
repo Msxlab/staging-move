@@ -272,6 +272,7 @@ function RootNavigator() {
         <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
         <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
         <Stack.Screen name="onboarding" options={{ animation: "slide_from_bottom" }} />
+        <Stack.Screen name="setup-password" options={{ animation: "slide_from_right" }} />
       </Stack>
     </>
   );

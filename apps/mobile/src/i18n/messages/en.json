@@ -691,7 +691,12 @@
     "subscription_restoredDescription": "Your active subscription was restored.",
     "subscription_nothingToRestore": "Nothing to restore",
     "subscription_nothingToRestoreDescription": "No active subscription was found for this store account.",
-    "subscription_restoreButton": "Restore purchases"
+    "subscription_restoreButton": "Restore purchases",
+    "subscription_openWebBilling": "Open billing in browser",
+    "subscription_openWebBillingHint": "Opens your web account in the browser to cancel or manage this subscription.",
+    "subscription_openWebBillingFailed": "Could not open the browser. Please visit your account on the web.",
+    "subscription_billingIntervalAnnual": "Annual",
+    "subscription_billingIntervalMonthly": "Monthly"
   },
   "onboarding": {
     "step1_title": "Let's set up your profile",

@@ -164,6 +164,50 @@ function evaluateCondition(condition: string, profile: UserChecklistProfile): bo
   }
 }
 
+// US state names + abbreviations used to detect mislabeled provider rows.
+// We use this to demote provider candidates whose display name embeds a
+// state token that does not match the destination state (e.g. data drift
+// in the catalog where "Spectrum Maine" was tagged with CA coverage). A
+// candidate that wins solely on popularity but obviously refers to the
+// wrong state would still be misleading to recommend.
+const US_STATE_NAMES_BY_CODE: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina",
+  ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+  RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
+  TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
+  WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+};
+
+export function providerNameMentionsOtherState(name: string, toState: string): boolean {
+  return detectStateMismatchInName(name, toState);
+}
+
+function detectStateMismatchInName(name: string, toState: string): boolean {
+  if (!name) return false;
+  const normalized = ` ${name.toLowerCase()} `;
+  const targetCode = toState.toUpperCase();
+  const targetName = (US_STATE_NAMES_BY_CODE[targetCode] || "").toLowerCase();
+  for (const [code, fullName] of Object.entries(US_STATE_NAMES_BY_CODE)) {
+    if (code === targetCode) continue;
+    const lower = fullName.toLowerCase();
+    // Skip the destination's own name (already handled above).
+    if (lower === targetName) continue;
+    // Whole-word match on the full state name. We deliberately do NOT
+    // match the bare 2-letter code because plenty of brand names contain
+    // those letters by coincidence (e.g. "GA" inside "Vanguard").
+    if (normalized.includes(` ${lower} `) || normalized.endsWith(` ${lower} `)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function findBestProvider(
   category: string,
   toState: string,
@@ -172,7 +216,13 @@ function findBestProvider(
   const candidates = availableProviders.filter((p) => {
     if (p.category !== category) return false;
     if (p.scope === "FEDERAL") return true;
-    return p.states.includes(toState);
+    if (!p.states.includes(toState)) return false;
+    // Catalog hygiene: if the provider name embeds a wrong-state token
+    // (e.g. "Spectrum Maine" marked as available in CA), it's almost
+    // certainly bad data — exclude it from recommendations so we don't
+    // present "Spectrum Maine" for a California move.
+    if (detectStateMismatchInName(p.name, toState)) return false;
+    return true;
   });
 
   if (candidates.length === 0) return null;
@@ -237,20 +287,10 @@ export function analyzeMigration(
       continue;
     }
 
-    // Federal / nationwide providers → KEEP
     const providerScope = svc.provider?.scope;
-    if (providerScope === "FEDERAL" || TYPICALLY_FEDERAL_CATEGORIES.has(svc.category)) {
-      keeps.push({
-        ...baseItem,
-        action: "KEEP",
-        urgency: "LOW",
-        phase: 2,
-        note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.`,
-      });
-      continue;
-    }
-
-    // State-scoped provider: check if available in destination
+    // State-scoped provider: check explicit catalog scope before category
+    // fallbacks. Some regional banks/insurers live in categories that are
+    // usually national, but their real provider scope must win.
     if (providerScope === "STATE" && svc.provider) {
       const providerStates = svc.provider.states || [];
       if (providerStates.includes(toState)) {
@@ -276,6 +316,19 @@ export function analyzeMigration(
             : undefined,
         });
       }
+      continue;
+    }
+
+    // Federal / nationwide providers, plus unknown-scope services in
+    // categories that are usually national, stay as address-update work.
+    if (providerScope === "FEDERAL" || (!providerScope && TYPICALLY_FEDERAL_CATEGORIES.has(svc.category))) {
+      keeps.push({
+        ...baseItem,
+        action: "KEEP",
+        urgency: "LOW",
+        phase: 2,
+        note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.`,
+      });
       continue;
     }
 

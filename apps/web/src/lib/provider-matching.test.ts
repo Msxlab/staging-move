@@ -84,6 +84,26 @@ describe("tierProvidersFromDb", () => {
     expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "HI", zip: "96766" })).toBe("UNKNOWN");
   });
 
+  it("drops state-scoped DB coverage rows that belong to another state", () => {
+    const providers = [
+      {
+        id: "texas-only",
+        scope: "STATE",
+        coverages: [{ state: "TX", zipPrefix: null, zipExact: null }],
+      },
+      {
+        id: "national",
+        scope: "FEDERAL",
+        coverages: [],
+      },
+    ];
+
+    const result = tierProvidersFromDb(providers, { state: "CA" });
+
+    expect(result.providers.map((provider) => provider.id)).toEqual(["national"]);
+    expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "CA" })).toBe("UNKNOWN");
+  });
+
   it("keeps polygon providers when the address coordinates land inside their service envelope", () => {
     const result = tierProvidersFromDb(
       [

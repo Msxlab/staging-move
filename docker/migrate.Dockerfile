@@ -19,6 +19,7 @@ RUN corepack enable \
 # Only what prisma needs — keep the image small.
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
 COPY packages/db/package.json packages/db/package.json
+COPY patches patches
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @locateflow/db...

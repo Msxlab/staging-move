@@ -438,6 +438,13 @@ export default function MovingDetailScreen() {
                         <Text style={styles.transitionAction}>
                           {planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")}
                         </Text>
+                        {(planItem.serviceProviderName || planItem.serviceCategoryLabel) ? (
+                          <Text style={styles.transitionService}>
+                            {planItem.serviceProviderName || ""}
+                            {planItem.serviceProviderName && planItem.serviceCategoryLabel ? " · " : ""}
+                            {planItem.serviceCategoryLabel ? String(planItem.serviceCategoryLabel).replace(/_/g, " ") : ""}
+                          </Text>
+                        ) : null}
                         <Text style={styles.transitionReason}>{planItem.primaryReason}</Text>
                         <Text style={styles.transitionStep}>{planItem.suggestedNextStep}</Text>
                         {planItem.destinationProviderCandidates?.length > 0 && (
@@ -789,6 +796,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: theme.colors.text,
+    textTransform: "capitalize",
+  },
+  transitionService: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.colors.primary,
+    marginTop: 4,
     textTransform: "capitalize",
   },
   transitionReason: {

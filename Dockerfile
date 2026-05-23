@@ -39,6 +39,7 @@ COPY apps/admin/package.json apps/admin/package.json
 COPY apps/mobile/package.json apps/mobile/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/shared/package.json packages/shared/package.json
+COPY patches patches
 
 RUN pnpm config set store-dir /pnpm/store \
  && pnpm install --frozen-lockfile --ignore-scripts \

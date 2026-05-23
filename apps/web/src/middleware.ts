@@ -70,6 +70,7 @@ const PUBLIC_API_EXACT = [
   "/api/auth/password/reset/confirm",
   "/api/mobile/auth/login",
   "/api/mobile/auth/exchange",
+  "/api/mobile/auth/apple/native",
   "/api/mobile/iap/products",
   "/api/ready",
   "/api/unsubscribe",

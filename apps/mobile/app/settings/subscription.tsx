@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -16,14 +17,18 @@ import {
   ArrowLeft,
   Check,
   Crown,
+  ExternalLink,
   Zap,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { api } from "@/lib/api";
+import { api, APP_WEB_URL } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
-import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
+import {
+  isMobileStorePurchasesEnabledForPlatform,
+  mobileStoreCommerceAdvertisableForPlatform,
+} from "@/lib/billing-flags";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import {
   closeConnection,
@@ -73,6 +78,7 @@ type SubscriptionRecord = {
   trialEndsAt?: string | null;
   premiumUntil?: string | null;
   billingProductId?: string | null;
+  billingInterval?: string | null;
 };
 
 type IapProductsResponse = {
@@ -219,7 +225,10 @@ function LegacySubscriptionScreen() {
   const iapAvailable = Boolean(monthlySku || yearlySku);
   const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
   const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
+  const mobileStoreCommerceAdvertisable = mobileStoreCommerceAdvertisableForPlatform();
   const canUseNativePurchases = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
+  const canAdvertiseMobilePaidPlan =
+    !isNativeStorePlatform || (mobileStoreCommerceAdvertisable && iapAvailable);
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
   // StoreKit/Play return one batch instead of two round-trips.
@@ -280,7 +289,11 @@ function LegacySubscriptionScreen() {
   );
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
   const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
-  const isStripeManaged = currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId);
+  const hasActiveStripeSubscription =
+    currentPlanKey === "INDIVIDUAL" &&
+    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus) &&
+    (currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId));
+  const isStripeManaged = hasActiveStripeSubscription;
   const currentPlatformStoreProvider =
     Platform.OS === "ios" ? "APP_STORE" : Platform.OS === "android" ? "PLAY_STORE" : null;
   const isCurrentPlatformStoreManaged =
@@ -458,6 +471,34 @@ function LegacySubscriptionScreen() {
     t,
   ]);
 
+  // Stripe-managed subscriptions can't be cancelled or modified from inside
+  // the iOS/Android app (Apple guideline 3.1.3 + Play policy forbid linking
+  // a paid IAP-eligible flow out to a non-IAP billing portal). Opening the
+  // user's existing web account in the browser is fine — that's account
+  // management, not external purchase. The URL goes to the web subscription
+  // page where Cancel/Resume/Switch-cycle live behind the user's session.
+  const handleOpenWebBilling = useCallback(async () => {
+    const url = `${APP_WEB_URL}/settings/subscription`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        hapticError();
+        Alert.alert(
+          t("settings.subscription_billingUnavailable"),
+          t("settings.subscription_openWebBillingFailed"),
+        );
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      hapticError();
+      Alert.alert(
+        t("settings.subscription_billingUnavailable"),
+        t("settings.subscription_openWebBillingFailed"),
+      );
+    }
+  }, [t]);
+
   const handleRestore = useCallback(async () => {
     if (!canUseNativePurchases || managedSubscriptionBlocksPurchase) return;
     setProcessingPlan("RESTORE");
@@ -516,7 +557,14 @@ function LegacySubscriptionScreen() {
             </View>
             <View>
               <Text style={styles.currentPlanTitle}>
-                {currentPlan?.name || t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+                {currentPlan?.name
+                  ? currentPlan.name +
+                    (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
+                      ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
+                      : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
+                        ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
+                        : "")
+                  : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
               </Text>
               <Text style={styles.currentPlanMeta}>
                 {periodEndLabel
@@ -540,6 +588,21 @@ function LegacySubscriptionScreen() {
                 ? managedElsewhereMessage
                 : t("settings.subscription_mobilePurchasesUnavailable")}
             </Text>
+            {hasActiveStripeSubscription && (
+              <TouchableOpacity
+                style={styles.openWebBillingBtn}
+                activeOpacity={0.7}
+                onPress={handleOpenWebBilling}
+                accessibilityRole="button"
+                accessibilityLabel={t("settings.subscription_openWebBilling")}
+                accessibilityHint={t("settings.subscription_openWebBillingHint")}
+              >
+                <ExternalLink size={14} color={theme.colors.primary} />
+                <Text style={styles.openWebBillingBtnText}>
+                  {t("settings.subscription_openWebBilling")}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -571,6 +634,11 @@ function LegacySubscriptionScreen() {
             annualOffer?.displayPriceLabel ||
             plan.yearlyPrice ||
             "";
+          const hideUnavailableMobileCommerce =
+            plan.key === "INDIVIDUAL" &&
+            isNativeStorePlatform &&
+            !canAdvertiseMobilePaidPlan &&
+            plan.key !== currentPlanKey;
           const savingsText = showSplitCtas
             ? computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice)
             : null;
@@ -591,10 +659,12 @@ function LegacySubscriptionScreen() {
                   <Text style={styles.planName}>{plan.name}</Text>
                   {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
                 </View>
-                <Text style={styles.planPrice}>
-                  {plan.key === "INDIVIDUAL" && localizedMonthlyPrice ? localizedMonthlyPrice : plan.price}
-                  <Text style={styles.planPeriod}> {dynamicPeriod}</Text>
-                </Text>
+                {!hideUnavailableMobileCommerce ? (
+                  <Text style={styles.planPrice}>
+                    {plan.key === "INDIVIDUAL" && localizedMonthlyPrice ? localizedMonthlyPrice : plan.price}
+                    <Text style={styles.planPeriod}> {dynamicPeriod}</Text>
+                  </Text>
+                ) : null}
               </View>
             </View>
 
@@ -813,6 +883,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: theme.colors.textSecondary,
+  },
+  openWebBillingBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  openWebBillingBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.colors.primary,
   },
   heroBox: { alignItems: "center", paddingVertical: 24, gap: 8 },
   heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
