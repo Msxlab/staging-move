@@ -873,6 +873,60 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case "subscription_schedule.released":
+      case "subscription_schedule.canceled":
+      case "subscription_schedule.aborted":
+      case "subscription_schedule.completed": {
+        // Schedule lifecycle events. The happy path for our deferred
+        // yearly→monthly downgrade is:
+        //   subscription_schedule.updated → phase advance → released →
+        //   customer.subscription.updated (price changes to monthly)
+        // and `syncLocalSubscriptionFromStripe` clears the pending fields
+        // when derivedBillingInterval matches local.pendingBillingInterval.
+        //
+        // BUT if the schedule is canceled or aborted out-of-band — e.g. a
+        // support agent canceling it from the Stripe Dashboard, or a payment
+        // failure that aborts the schedule — no subsequent
+        // customer.subscription.updated will carry the new price, so the
+        // local pendingBillingInterval would stay stale forever. Clear it
+        // here so the UI stops promising a cycle change that won't happen.
+        const schedule = event.data.object as Stripe.SubscriptionSchedule;
+        const stripeSubscriptionId = stripeObjectId(schedule.subscription);
+        const metadataUser = metadataUserId(schedule.metadata);
+        const candidates = await prisma.subscription.findMany({
+          where: {
+            OR: [
+              ...(stripeSubscriptionId ? [{ stripeSubscriptionId }] : []),
+              { stripeSubscriptionScheduleId: schedule.id },
+              ...(metadataUser ? [{ userId: metadataUser }] : []),
+            ],
+          },
+          select: { userId: true, stripeSubscriptionScheduleId: true },
+        });
+        for (const candidate of candidates) {
+          if (candidate.stripeSubscriptionScheduleId !== schedule.id) continue;
+          try {
+            await prisma.subscription.update({
+              where: { userId: candidate.userId },
+              data: {
+                pendingBillingInterval: null,
+                pendingBillingIntervalEffectiveAt: null,
+                stripeSubscriptionScheduleId: null,
+                lastSyncedAt: new Date(),
+                version: { increment: 1 },
+              },
+            });
+          } catch (err) {
+            console.warn("[WEBHOOK] subscription_schedule pending clear failed:", {
+              eventType: event.type,
+              scheduleId: schedule.id,
+              error: (err as Error)?.message,
+            });
+          }
+        }
+        break;
+      }
+
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const stripeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;

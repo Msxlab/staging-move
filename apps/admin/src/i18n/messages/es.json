@@ -60,7 +60,8 @@
     "backups": "Respaldos",
     "auditLogs": "Registros de auditoria",
     "tickets": "Tickets",
-    "support": "Soporte"
+    "support": "Soporte",
+    "adminTeam": "Equipo de Admin"
   },
   "login": {
     "title": "Inicio de sesión de admin",

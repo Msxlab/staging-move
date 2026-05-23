@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Activity,
+  ChevronDown,
+  ChevronRight,
   Eye,
   KeyRound,
   Pencil,
@@ -153,6 +155,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
 
   useEffect(() => {
     void fetchAdmins();
@@ -669,23 +672,29 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {elevatedPermissions.length > 0 ? (
-                        elevatedPermissions.map((permission) => (
-                          <span
-                            key={permission.resource}
-                            className="rounded bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary"
-                          >
-                            {RESOURCE_LABELS[permission.resource] || permission.resource}
-                            {" "}
-                            ({[
-                              permission.canCreate && "C",
-                              permission.canRead && "R",
-                              permission.canUpdate && "U",
-                              permission.canDelete && "D",
-                            ]
-                              .filter(Boolean)
-                              .join("")})
-                          </span>
-                        ))
+                        elevatedPermissions.map((permission) => {
+                          const canWrite = permission.canCreate || permission.canUpdate || permission.canDelete;
+                          const label = permission.canDelete
+                            ? "Full"
+                            : canWrite
+                              ? "Edit"
+                              : "Read";
+                          const tone = permission.canDelete
+                            ? "bg-destructive/10 text-destructive"
+                            : canWrite
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground";
+                          return (
+                            <span
+                              key={permission.resource}
+                              title={`Read:${permission.canRead ? "✓" : "·"} Create:${permission.canCreate ? "✓" : "·"} Update:${permission.canUpdate ? "✓" : "·"} Delete:${permission.canDelete ? "✓" : "·"}`}
+                              className={`rounded px-2 py-1 text-[10px] font-medium ${tone}`}
+                            >
+                              {RESOURCE_LABELS[permission.resource] || permission.resource}
+                              <span className="ml-1 opacity-70">· {label}</span>
+                            </span>
+                          );
+                        })
                       ) : (
                         <span className="rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground">
                           Read-only across assigned modules
@@ -863,58 +872,67 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                 </div>
               )}
 
-              <div className="rounded-xl border border-border bg-background/40 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-medium text-foreground">Permission Matrix</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {currentAdminRole === "SUPER_ADMIN"
-                        ? "These rows define the admin's real runtime access."
-                        : "Permission editing requires a SUPER_ADMIN session."}
-                    </p>
+              <div className="rounded-xl border border-border bg-background/40">
+                <button
+                  type="button"
+                  onClick={() => setPermissionsOpen((v) => !v)}
+                  className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/20"
+                >
+                  <div className="flex items-center gap-2">
+                    {permissionsOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    <div>
+                      <h3 className="font-medium text-foreground">Permission Matrix</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {currentAdminRole === "SUPER_ADMIN"
+                          ? `${editForm.permissions.filter((p) => p.canCreate || p.canUpdate || p.canDelete).length} resources with write access · expand to edit`
+                          : "Permission editing requires a SUPER_ADMIN session."}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-left text-muted-foreground">
-                        <th className="px-3 py-2 font-medium">Resource</th>
-                        <th className="px-3 py-2 font-medium">Read</th>
-                        <th className="px-3 py-2 font-medium">Create</th>
-                        <th className="px-3 py-2 font-medium">Update</th>
-                        <th className="px-3 py-2 font-medium">Delete</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortPermissions(editForm.permissions).map((permission) => (
-                        <tr key={permission.resource} className="border-b border-border/60">
-                          <td className="px-3 py-2 text-foreground">
-                            {RESOURCE_LABELS[permission.resource] || permission.resource}
-                          </td>
-                          {(["canRead", "canCreate", "canUpdate", "canDelete"] as const).map(
-                            (field) => (
-                              <td key={field} className="px-3 py-2">
-                                <input
-                                  type="checkbox"
-                                  checked={permission[field]}
-                                  disabled={currentAdminRole !== "SUPER_ADMIN"}
-                                  onChange={(e) =>
-                                    updatePermission(
-                                      permission.resource,
-                                      field,
-                                      e.target.checked,
-                                    )
-                                  }
-                                  className="h-4 w-4 rounded border-input"
-                                />
-                              </td>
-                            ),
-                          )}
+                </button>
+                {permissionsOpen && (
+                  <div className="overflow-x-auto border-t border-border p-4">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="px-3 py-2 font-medium">Resource</th>
+                          <th className="px-3 py-2 font-medium">Read</th>
+                          <th className="px-3 py-2 font-medium">Create</th>
+                          <th className="px-3 py-2 font-medium">Update</th>
+                          <th className="px-3 py-2 font-medium">Delete</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {sortPermissions(editForm.permissions).map((permission) => (
+                          <tr key={permission.resource} className="border-b border-border/60">
+                            <td className="px-3 py-2 text-foreground">
+                              {RESOURCE_LABELS[permission.resource] || permission.resource}
+                            </td>
+                            {(["canRead", "canCreate", "canUpdate", "canDelete"] as const).map(
+                              (field) => (
+                                <td key={field} className="px-3 py-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={permission[field]}
+                                    disabled={currentAdminRole !== "SUPER_ADMIN"}
+                                    onChange={(e) =>
+                                      updatePermission(
+                                        permission.resource,
+                                        field,
+                                        e.target.checked,
+                                      )
+                                    }
+                                    className="h-4 w-4 rounded border-input"
+                                  />
+                                </td>
+                              ),
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

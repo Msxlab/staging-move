@@ -60,7 +60,8 @@
     "backups": "Backups",
     "auditLogs": "Audit Logs",
     "tickets": "Tickets",
-    "support": "Support"
+    "support": "Support",
+    "adminTeam": "Admin Team"
   },
   "login": {
     "title": "Admin Sign In",

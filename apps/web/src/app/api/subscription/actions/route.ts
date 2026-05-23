@@ -4,7 +4,14 @@ import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
+import {
+  buildStripeIdempotencyKey,
+  requireStripeSecretKeyForMutation,
+} from "@/lib/billing-config";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 import { captureMessage } from "@/lib/sentry";
 import {
   sendSubscriptionCanceledEmail,
@@ -91,9 +98,17 @@ export async function POST(request: NextRequest) {
     const isTrial = subscription.status === "TRIALING" || subscription.status === "TRIAL_CANCELED";
 
     if (action === "resume_renewal") {
-      const updated = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-        cancel_at_period_end: false,
-      });
+      const updated = await stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        { cancel_at_period_end: false },
+        {
+          idempotencyKey: buildStripeIdempotencyKey([
+            "subscription-resume",
+            subscription.stripeSubscriptionId,
+            String(subscription.version ?? 0),
+          ]),
+        },
+      );
       const periodEnd = updated.current_period_end ? new Date(updated.current_period_end * 1000) : subscription.currentPeriodEndsAt;
       const nextStatus = isTrial && subscription.trialEndsAt && subscription.trialEndsAt > now ? "TRIALING" : "ACTIVE";
       await prisma.subscription.update({
@@ -131,9 +146,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: nextStatus, autoRenew: true, currentPeriodEndsAt: periodEnd });
     }
 
-    const updated = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
+    const updated = await stripe.subscriptions.update(
+      subscription.stripeSubscriptionId,
+      { cancel_at_period_end: true },
+      {
+        idempotencyKey: buildStripeIdempotencyKey([
+          "subscription-cancel",
+          subscription.stripeSubscriptionId,
+          String(subscription.version ?? 0),
+        ]),
+      },
+    );
     const periodEnd = updated.current_period_end ? new Date(updated.current_period_end * 1000) : subscription.currentPeriodEndsAt;
     const nextStatus = action === "cancel_trial" || isTrial ? "TRIAL_CANCELED" : "CANCEL_AT_PERIOD_END";
 
@@ -143,21 +166,43 @@ export async function POST(request: NextRequest) {
     const cancelReason = normalizeCancelReason(body?.cancelReason);
     const cancelReasonComment = normalizeCancelComment(body?.cancelReasonComment);
 
-    await prisma.subscription.update({
-      where: { userId },
-      data: {
-        status: nextStatus,
-        cancelAtPeriodEnd: true,
-        autoRenew: false,
-        currentPeriodEndsAt: periodEnd,
-        stripeCurrentPeriodEnd: periodEnd,
-        canceledAt: now,
-        lastSyncedAt: now,
-        cancelReason,
-        cancelReasonComment,
-        version: { increment: 1 },
-      },
-    });
+    const baseUpdate = {
+      status: nextStatus,
+      cancelAtPeriodEnd: true,
+      autoRenew: false,
+      currentPeriodEndsAt: periodEnd,
+      stripeCurrentPeriodEnd: periodEnd,
+      canceledAt: now,
+      lastSyncedAt: now,
+      version: { increment: 1 },
+    };
+    // Only persist the survey fields when the modal returned a value, so a
+    // resume-and-recancel-via-Skip flow doesn't wipe a previously captured
+    // reason. Also wrap in the schema-compat fallback so a rolling deploy
+    // can't 500 every cancel request before the migration lands.
+    const cancelSurveyData = {
+      ...(cancelReason !== null ? { cancelReason } : {}),
+      ...(cancelReasonComment !== null ? { cancelReasonComment } : {}),
+    };
+
+    try {
+      await prisma.subscription.update({
+        where: { userId },
+        data: { ...baseUpdate, ...cancelSurveyData },
+      });
+    } catch (dbError) {
+      if (
+        !isMissingDbColumnError(dbError) ||
+        Object.keys(cancelSurveyData).length === 0
+      ) {
+        throw dbError;
+      }
+      warnSchemaCompatibilityFallback("subscription:cancel-survey-write", dbError);
+      await prisma.subscription.update({
+        where: { userId },
+        data: baseUpdate,
+      });
+    }
 
     if (subscription.user?.email && !subscription.user.deletedAt) {
       fireAndLogEmail(

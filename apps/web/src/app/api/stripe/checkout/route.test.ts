@@ -271,6 +271,7 @@ describe("stripe checkout route", () => {
     );
     expect(mocks.sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({ customer: "cus_live_replacement" }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
   });
 
@@ -300,6 +301,7 @@ describe("stripe checkout route", () => {
     expect(mocks.customersCreate).toHaveBeenCalled();
     expect(mocks.sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({ customer: "cus_live_replacement" }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
   });
 
@@ -362,6 +364,7 @@ describe("stripe checkout route", () => {
           platform: "web",
         }),
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
     expect(subscriptionMock.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -399,6 +402,7 @@ describe("stripe checkout route", () => {
           metadata: expect.objectContaining({ campaignCode: "INDIVIDUAL90" }),
         }),
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
   });
 
@@ -446,6 +450,7 @@ describe("stripe checkout route", () => {
         }),
         success_url: expect.stringContaining("trial=false"),
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
     expect(mocks.sessionsCreate.mock.calls[0][0].subscription_data).not.toHaveProperty("trial_period_days");
     expect(subscriptionMock.update).toHaveBeenCalledWith(
@@ -508,6 +513,7 @@ describe("stripe checkout route", () => {
           metadata: expect.objectContaining({ campaignCode: "SPRING90" }),
         }),
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
   });
 
@@ -550,6 +556,7 @@ describe("stripe checkout route", () => {
           }),
         }),
       }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
     );
   });
 

@@ -1066,8 +1066,13 @@ export async function PATCH(
       if (body.premiumUntil !== undefined) {
         changes.premiumUntil = { from: user.subscription?.premiumUntil, to: body.premiumUntil };
         subData.premiumUntil = body.premiumUntil ? new Date(body.premiumUntil) : null;
-        subData.premiumGrantedBy = session.adminId;
-        subData.premiumGrantedAt = new Date();
+        if (body.premiumUntil) {
+          subData.premiumGrantedBy = session.adminId;
+          subData.premiumGrantedAt = new Date();
+        } else {
+          subData.premiumGrantedBy = null;
+          subData.premiumGrantedAt = null;
+        }
       }
       if (body.premiumNote !== undefined) {
         subData.premiumNote = body.premiumNote || null;
