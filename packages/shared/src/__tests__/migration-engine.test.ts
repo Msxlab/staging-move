@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import {
   analyzeMigration,
+  providerNameMentionsOtherState,
   type ProviderForMigration,
   type ServiceWithProvider,
 } from "../migration-engine";
@@ -58,5 +60,34 @@ describe("analyzeMigration", () => {
     expect(result.switches).toHaveLength(1);
     expect(result.switches[0]?.currentService?.providerName).toBe("Florida Regional Bank");
     expect(result.switches[0]?.recommendedProvider?.name).toBe("California Bank");
+  });
+
+  it("keeps unknown-scope bank services as address-update guidance", () => {
+    const result = analyzeMigration(
+      [
+        {
+          id: "svc-bank",
+          category: "FINANCIAL_BANK",
+          providerName: "Unlinked Bank",
+          isActive: true,
+          provider: null,
+        },
+      ],
+      "FL",
+      "CA",
+      [],
+      profile,
+    );
+
+    expect(result.keeps).toHaveLength(1);
+    expect(result.switches).toHaveLength(0);
+  });
+});
+
+describe("providerNameMentionsOtherState", () => {
+  it("detects provider names that embed a different state name", () => {
+    expect(providerNameMentionsOtherState("Spectrum Maine", "CA")).toBe(true);
+    expect(providerNameMentionsOtherState("California DMV", "CA")).toBe(false);
+    expect(providerNameMentionsOtherState("Bank of America", "CA")).toBe(false);
   });
 });

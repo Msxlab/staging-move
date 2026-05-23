@@ -29,7 +29,9 @@ import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { captureException } from "@/lib/sentry";
 
+// — surfacing as the generic "Something went wrong" fallback.
 interface FAQ {
   id: string;
   question: string;
@@ -156,7 +158,14 @@ export default function HelpScreen() {
       setArticles(nextArticles.length > 0 ? nextArticles : localArticles);
       setError(null);
       return true;
-    } catch {
+    } catch (err) {
+      // Network/parse failure that escaped the api client — report once
+      // so the real cause surfaces in telemetry rather than as a generic
+      // "Something went wrong" from the global ErrorBoundary, then fall
+      // back to local help so the screen is still usable offline.
+      captureException(err instanceof Error ? err : new Error(String(err)), {
+        screen: "help/index",
+      });
       applyLocalHelp();
       return true;
     }

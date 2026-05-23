@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
+  providerNameMentionsOtherState,
   safeJsonArray,
   type MoveTransitionProviderInput,
 } from "@locateflow/shared";
@@ -110,7 +111,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
+    // Drop catalog rows whose display name embeds a US state token that
+    // does not match the destination. These almost always indicate dirty
+    // coverage data (e.g. "Spectrum Maine" tagged with CA) and would be
+    // misleading if surfaced as a recommendation. We do this once at the
+    // route boundary so both the per-service classifier and the broader
+    // `analyzeMigration` flow see a clean candidate set.
+    const cleanedDestinationProviders = destinationProviders.filter((p: any) => {
+      if (p.scope === "FEDERAL") return true;
+      return !providerNameMentionsOtherState(String(p.name || ""), effectiveToState);
+    });
+
+    const destinationProviderInputs: MoveTransitionProviderInput[] = cleanedDestinationProviders.map((p: any) => {
       const metadata = getProviderCoverageMetadata(p.slug);
       const zipCodes = safeJsonArray(p.zipCodes);
       const coverageModel: ProviderCoverageModel =
@@ -146,7 +158,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const providersForMigration: ProviderForMigration[] = destinationProviders
+    const providersForMigration: ProviderForMigration[] = cleanedDestinationProviders
       .map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -186,8 +198,13 @@ export async function GET(request: NextRequest) {
       checklistProfile,
     );
 
-    const transitionPlans = servicesWithParsedStates.map((service) =>
-      classifyMoveServiceTransition({
+    // The classifier returns generic guidance per service. The UI needs to
+    // tell two same-category items apart (e.g. "Forward mail for IRS" vs
+    // "Forward mail for USPS account"), so we attach service identity to
+    // each plan here. Adding it server-side keeps the contract stable for
+    // older mobile builds that just ignore the new fields.
+    const transitionPlans = servicesWithParsedStates.map((service) => {
+      const plan = classifyMoveServiceTransition({
         service,
         currentProvider: service.provider
           ? {
@@ -201,8 +218,14 @@ export async function GET(request: NextRequest) {
         originAddress: { state: fromState, zip: fromZip },
         destinationAddress: { state: effectiveToState, zip: toZip },
         destinationProviderCandidates: destinationProviderInputs,
-      }),
-    );
+      });
+      return {
+        ...plan,
+        serviceProviderName: service.providerName,
+        serviceCategoryLabel:
+          (service.provider?.category as string | undefined) || service.category,
+      };
+    });
 
     const transitionSummary = transitionPlans.reduce<Record<string, number>>((acc, plan) => {
       acc[plan.actionType] = (acc[plan.actionType] || 0) + 1;
