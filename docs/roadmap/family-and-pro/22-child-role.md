@@ -1,8 +1,10 @@
 # CHILD Role
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C13) ile geçersizdir. **CHILD AddressChangeEvent başlatamaz** (§C13 / D22). Service assignee modeli `ServiceAssignee` junction tablosudur — `assignedUserIds` JSON alanı yoktur (§C7). Family üye limiti 6 (CHILD dahil — §C1).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Family (CHILD rolü Pro'da da kullanılabilir, ancak primary use case Family)
-- **Related decisions**: D5 (sabit 5 rol, JSON permission yok), D3 (field-level visibility), D2 (owner-resolved entitlement), D17 (PERSONAL workspace backfill), D1 (workspace tek root)
+- **Related decisions**: D5 (sabit 5 rol, JSON permission yok), D3 (field-level visibility), D2 (owner-resolved entitlement), D17 (PERSONAL workspace backfill), D1 (workspace tek root), D21 (limit canonical), D22 (CHILD event başlatamaz)
 - **Related docs**: 01-architecture-decisions.md, 02-workspace-model.md, 03-workspace-member-roles.md, 04-workspace-invitation.md, 06-entitlements-system.md, 18-security-checklist.md, 20-family-plan-definition.md, 23-shared-services.md, 24-family-budget-consolidated.md, 25-family-reminders-consolidated.md, 50-admin-workspace-inspector.md, 63-entitlement-banners-empty-states.md, 67-i18n-tr-en.md
 
 ## Amaç
@@ -23,7 +25,7 @@ In scope:
 
 Out of scope:
 - Genel rol matrisi → 03-workspace-member-roles.md
-- Shared services model (CHILD'ın assignedUserIds'te olması) → 23-shared-services.md
+- Shared services model (CHILD'ın `ServiceAssignee` junction üyeliği) → 23-shared-services.md
 - Family budget'ta CHILD görüntüsü → 24-family-budget-consolidated.md
 - Reminder feed'de CHILD davranışı → 25-family-reminders-consolidated.md
 - Workspace invitation token mekaniği → 04-workspace-invitation.md
@@ -82,15 +84,16 @@ CHILD için ek alan **yok**. Yaş bilgisi `User.dateOfBirth` (mevcut alan veya 2
 
 Tüm mevcut domain endpoint'leri (services, addresses, budget, reminders) `requireWorkspaceContext` helper'ı (D13) içinde CHILD filtresi uygular. Spesifik etkiler:
 
-- `GET /api/services` → CHILD ise `WHERE serviceId IN (assignedUserIds.contains(userId))`. Detay 23.
+- `GET /api/services` → CHILD ise `JOIN ServiceAssignee a ON a.serviceId = s.id WHERE a.userId = caller.userId`. Detay 23.
 - `GET /api/services/[id]` → CHILD değilse normal; CHILD ise:
-  - `assignedUserIds` üye değilse 403.
+  - `ServiceAssignee(serviceId=:id, userId=caller)` row yoksa 403.
   - Üye ise: `accountNumber` field `accountNumberVisibility==='OWNER_ONLY'` ise `null` döner (D3).
 - `GET /api/addresses` → CHILD ise `WHERE userId = caller.userId OR id IN (sharedAddresses for child)`. MVP basitlik: CHILD sadece kendi `userId`'sinin adreslerini görür.
 - `GET /api/budget` → CHILD ise 403 + UI'da menü gizli; veya kendi servis cost toplamı için `/api/budget/personal` (yeni alt-endpoint, 24'te netleşir).
 - `GET /api/workspace/members` → CHILD görür ama hassas alanlar (email, last login) redacted (sadece displayName + avatar).
 - `POST /api/workspace/invitations` → CHILD 403.
-- `GET /api/billing/*` → CHILD 403 (UI'da hiç linklemiyoruz).
+- `GET /api/stripe/*` → CHILD 403 (UI'da hiç linklemiyoruz). (Canonical §C3 — yeni `/api/billing/*` namespace AÇILMAZ; mevcut `/api/stripe/*` genişler.)
+- **AddressChangeEvent create** → CHILD **403** (canonical §C13 / D22). CHILD kendi taşınma talebini OWNER/ADMIN'e notification ile iletir; event'i Owner/Admin başlatır.
 
 ## Web
 
@@ -103,7 +106,7 @@ Tüm mevcut domain endpoint'leri (services, addresses, budget, reminders) `requi
 |---|---|---|
 | `/dashboard` | Evet | Sadeleştirilmiş; bütçe widget'ı yerine "My services" widget'ı |
 | `/workspace/members` | Evet, read-only | Üye listesi (displayName + role badge), invite UI yok |
-| `/services` | Filtered | Sadece `assignedUserIds.contains(childUserId)` servisler |
+| `/services` | Filtered | Sadece `ServiceAssignee` üyesi olduğu servisler |
 | `/services/[id]` | Conditional | Yukarıdaki erişim kuralı |
 | `/addresses` | Filtered | Sadece kendi `userId`'sine ait adresler |
 | `/budget` | **Hayır (gizli menü)** | Side nav'da gizli; doğrudan URL 403 + redirect /dashboard |
@@ -112,7 +115,7 @@ Tüm mevcut domain endpoint'leri (services, addresses, budget, reminders) `requi
 | `/settings/subscription` | **Hayır** | 403 + redirect |
 | `/settings/profile` | Evet | Kendi profili |
 | `/settings/notifications` | Evet | Kendi preference'ları |
-| `/billing/*` | **Hayır** | 403 |
+| `/api/stripe/*` (billing UI) | **Hayır** | 403 |
 | `/admin/*` | **Hayır** (zaten genel) | — |
 
 ### Componentler (file paths)
@@ -164,9 +167,9 @@ Tüm mevcut domain endpoint'leri (services, addresses, budget, reminders) `requi
 - [x] **Audit log**: Her rol transition (`promote`, `demote`), CHILD davet, CHILD'ın "OWNER_ONLY" alana erişim denemesi (403 → audit), CHILD'ın subscription/billing endpoint'ine erişim denemesi log'lanır. Mevcut `AuditEvent` modeli kullanılır.
 - [x] **Rate limit**: CHILD endpoint çağrıları diğer rol limitlerine **ek olarak** kullanıcı başına standart; ek throttle yok.
 - [x] **Permission matris**:
-  - CHILD read: kendi addresses, kendi services, assignedUserIds.contains(self) services, kendisine targeted reminders, workspace member list (redacted).
+  - CHILD read: kendi addresses, kendi services, `ServiceAssignee` üyesi olduğu services, kendisine targeted reminders, workspace member list (redacted).
   - CHILD write: kendi profile, kendi notification prefs, kendi service notes (eğer assigned), kendi reminder snooze.
-  - CHILD blocked: budget endpoints (consolidated), billing, invite, member CRUD, address change wizard, partner hub, admin.
+  - CHILD blocked: budget endpoints (consolidated), billing, invite, member CRUD, **AddressChangeEvent create (D22)**, address change wizard, partner hub, admin.
 - [x] **Encryption at rest**: `Service.accountNumber` zaten encrypted (`packages/shared/src/encryption.ts`). CHILD görse bile decrypt yetkisi visibility gate ile dururlur; backend decrypt çağrısı yapmadan önce role + visibility kontrolü.
 - [x] **GDPR DSAR**: CHILD verisi (kendi addresses + services + reminders) export'a girer. Aile reisi DSAR çekmez — child'ın **kendi** hesabından çekilir. Under-13 reddedilir (signup gating).
 
@@ -182,8 +185,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   if (!service || service.workspaceId !== ctx.workspaceId) return notFound();
 
   if (ctx.memberRole === "CHILD") {
-    const assignedIds = JSON.parse(service.assignedUserIds || "[]");
-    if (!assignedIds.includes(ctx.userId)) return forbidden();
+    const isAssigned = await db.serviceAssignee.findUnique({
+      where: { serviceId_userId: { serviceId: service.id, userId: ctx.userId } },
+    });
+    if (!isAssigned) return forbidden();
     // field-level redaction
     if (service.accountNumberVisibility === "OWNER_ONLY") service.accountNumber = null;
     if (service.usernameVisibility === "OWNER_ONLY") service.username = null;
@@ -253,7 +258,8 @@ Bu pattern her CHILD-affected endpoint'te tekrarlanır; `apps/web/src/lib/child-
 
 ### Integration
 - `GET /api/services` as CHILD: returns only assigned services.
-- `GET /api/services/[id]` as CHILD not in assignedUserIds: 403.
+- `GET /api/services/[id]` as CHILD without matching `ServiceAssignee` row: 403.
+- `POST /api/address-changes` as CHILD: **403** (D22).
 - `GET /api/budget` as CHILD: 403.
 - `POST /api/workspace/invitations` as CHILD: 403.
 - `POST /api/workspace/members/[id]/promote` as OWNER without step-up: 401 step-up required.

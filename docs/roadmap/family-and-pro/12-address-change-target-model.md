@@ -1,8 +1,10 @@
 # Address Change Target Model
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7) ile geçersizdir. Service assignee modeli `ServiceAssignee` junction tablosu; `Service.assignedUserIds` JSON alanı **yoktur**. AddressChangeEvent ek olarak `fromAddressSnapshotJson`, `toAddressSnapshotJson` alanlarını taşır (§C7).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Infrastructure (Family + Pro)
-- **Related decisions**: D6, D7
+- **Related decisions**: D6, D7, D22 (CHILD event başlatamaz)
 - **Related docs**: [11](./11-address-change-event-model.md), [13](./13-address-change-wizard-web.md), [14](./14-bulk-queue-dashboard.md), [35](./35-partner-sync-attempts.md)
 
 ## Amaç
@@ -87,7 +89,7 @@ model AddressChangeTarget {
 
 | targetType | targetUserId | addressId | label | Servis seçim kuralı |
 |---|---|---|---|---|
-| USER     | required | optional (filtre) | auto = user.fullName | `WHERE service.assignedUserIds CONTAINS targetUserId` (paidByUserId değil — child use case için sahiplikten bağımsız) |
+| USER     | required | optional (filtre) | auto = user.fullName | `JOIN ServiceAssignee a ON a.serviceId = service.id WHERE a.userId = targetUserId` (paidByUserId değil — child use case için sahiplikten bağımsız) |
 | ADDRESS  | NULL     | required          | auto = address.label + city | `WHERE service.addressId = target.addressId` |
 | CUSTOM   | optional | optional          | required (user-typed) | Wizard'da explicit serviceId[] listesi → her serviceId için ayrı `PartnerSyncAttempt` ama hepsi tek CUSTOM target'a bağlı |
 
