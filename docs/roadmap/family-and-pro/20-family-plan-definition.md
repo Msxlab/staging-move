@@ -1,8 +1,10 @@
 # Family Plan Definition
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C1, §C5, §C11, §C12, §C16) ile geçersizdir. Family limitleri **6 üye / 17 adres / 250 servis** (§C1); aşağıda farklı sayılar varsa canonical kazanır. `Subscription.plan @db.VarChar(30)` (§C5). Partner Hub `none` (enum — §C11). Family adres etiketleri canonical §C12'ye göre `HOME | DORM | VACATION | OTHER` (Pro-only DEĞİL). Copy guardrails: "auto-sync", "one-tap utility updates" yasak (§C16).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Family
-- **Related decisions**: D1 (workspace tek root, plan = UI etiketi kaynağı), D2 (entitlement owner'ın subscription'ından türer, grace + overflow), D3 (field-level visibility, PRIVATE service yok), D5 (sabit 5 rol, CHILD dahil), D11 (mobile read-only, satış sadece web), D15 (Day 1 partner = deep-link/PDF/mailto, "auto-sync" yok), D17 (mevcut user → PERSONAL workspace), D20 (Family $9.99/mo, $99/yıl)
+- **Related decisions**: D1 (workspace tek root, plan = UI etiketi kaynağı), D2 (entitlement owner'ın subscription'ından türer, grace + overflow), D3 (field-level visibility, PRIVATE service yok), D5 (sabit 5 rol, CHILD dahil), D11 (mobile read-only, satış sadece web), D15 (Day 1 partner = deep-link/PDF/mailto, "auto-sync" yok), D17 (mevcut user → PERSONAL workspace), D20 (Family $9.99/mo, $99/yıl), D21 (limit canonical), D23 (partnerHubAccess enum), D24 (Family/Pro label split)
 - **Related docs**: 01-architecture-decisions.md, 02-workspace-model.md, 03-workspace-member-roles.md, 06-entitlements-system.md, 21-family-checkout-flow.md, 22-child-role.md, 23-shared-services.md, 24-family-budget-consolidated.md, 25-family-reminders-consolidated.md, 30-pro-plan-definition.md, 60-mobile-billing-readonly.md, 61-pricing-page-update.md, 62-subscription-plan-field-updates.md, 63-entitlement-banners-empty-states.md, 64-marketing-copy-updates.md, 66-email-templates.md
 
 ## Amaç
@@ -24,7 +26,7 @@ In scope:
 Out of scope:
 - Checkout, webhook, upgrade akışı → 21-family-checkout-flow.md
 - CHILD rolü detayları → 22-child-role.md
-- Shared services model (paidByUserId/assignedUserIds) → 23-shared-services.md
+- Shared services model (paidByUserId + `ServiceAssignee` junction) → 23-shared-services.md
 - Pro tanımı → 30-pro-plan-definition.md
 - Subscription.plan enum DB tarafı → 62-subscription-plan-field-updates.md
 - Pricing sayfası UI → 61-pricing-page-update.md
@@ -42,15 +44,7 @@ Out of scope:
 
 `Workspace`, `Subscription`, `Address`, `Service` modellerinin **kendisi** değişmez (Family için yeni bir Prisma model'i yok — D2 gereği plan davranışı `Subscription.plan` üzerinden türer). DB seviyesindeki tek değişiklik **enum genişlemesi**dir, o da 62-subscription-plan-field-updates.md'de işlenir. Burada referans amaçlı yapılan tek diff:
 
-```prisma
-// packages/db/prisma/schema.prisma — Subscription modeli (62 ile birlikte)
-model Subscription {
-  ...
-- plan String @db.VarChar(20) // "FREE_TRIAL" | "INDIVIDUAL"
-+ plan String @db.VarChar(20) // "FREE_TRIAL" | "INDIVIDUAL" | "FAMILY" | "PRO"
-  ...
-}
-```
+Schema artık `01a-canonical-values.md` §C5'te canonical olarak yaşıyor — bu doc'a kopyalamayın. Önemli not: `Subscription.plan` mevcut alan `@db.VarChar(30)` (enum DEĞİL), FAMILY/PRO eklemesi DB migration **istemez** (D17). Allowed values güncellenir.
 
 Tüm geri kalan kapasite/limit/feature flag mantığı **kodda** (`packages/shared/src/entitlements.ts`) yaşar — D4 gereği DB row'ları üzerinden plan gating yapmıyoruz.
 
@@ -170,8 +164,8 @@ FAMILY: {
   sharedServices: true,           // 23-shared-services.md
   familyBudgetView: true,         // 24-family-budget-consolidated.md
   consolidatedReminders: true,    // 25-family-reminders-consolidated.md
-  addressLabels: false,           // Pro-only (32)
-  partnerHub: false,              // Pro-only (33)
+  addressLabels: ["HOME", "DORM", "VACATION", "OTHER"], // canonical §C12 / D24
+  partnerHubAccess: "none",       // canonical §C11 / D23 — enum: none|teaser|full
   uspsDeepLink: true,             // Family için tek partner deep-link
   exports: ["CSV", "PDF"],
   actionTiers: ["BASIC", "EXTENDED"], // D4 — PREMIUM Pro'ya
@@ -194,15 +188,15 @@ FAMILY: {
 |---|---|---|---|---|
 | Aylık fiyat | $0 | $3.99 | **$9.99** | $19.99 |
 | Yıllık fiyat | — | $39.99 | **$99** | $199 |
-| Member sayısı | 1 | 1 | **6 (1+5)** | 25 (Pro tier) |
-| Adres limiti | 2 | 10 | **17** | 100 |
+| Member sayısı | 1 | 1 | **6 (1+5)** | 10 (canonical §C1) |
+| Adres limiti | 2 | 10 | **17** | 25 (canonical §C1) |
 | Servis limiti | 10 | 100 | **250** | 1000 |
-| Shared services (paidBy/assignedUsers) | — | — | **✓** | ✓ |
+| Shared services (paidBy + ServiceAssignee) | — | — | **✓** | ✓ |
 | Family budget view | — | — | **✓** | ✓ (Workspace budget) |
 | Consolidated reminders | — | — | **✓** | ✓ |
 | Child role | — | — | **✓** | ✓ |
-| Address labels (Home/Office/Rental/...) | — | — | — | ✓ |
-| Partner Hub (100+ provider browse) | — | — | — | ✓ |
+| Address labels (canonical §C12) | HOME, OTHER | HOME, OTHER | **HOME, DORM, VACATION, OTHER** | + OFFICE, RENTAL, WAREHOUSE |
+| Partner Hub (canonical §C11 enum) | none | none | **none** | full |
 | USPS deep-link | ✓ | ✓ | **✓** | ✓ |
 | Address change wizard (USER/ADDRESS/CUSTOM scope) | — | basit | **USER scope** | tüm scope'lar |
 | Tax/property CSV export | — | CSV | **CSV + PDF** | CSV + PDF + per-label |
@@ -219,8 +213,8 @@ FAMILY: {
 
 ## Family vs Pro — Pro'nun ek getirdiği
 
-- `Address.label` ile Home/Office/Rental/Vacation/Warehouse/Dorm ayrımı (D18 — sadece UI hint, izolasyon değil; 32).
-- Partner Hub: 100+ provider browse + filter (33), Family'de yalnızca USPS deep-link var.
+- `Address.label` Pro-only ek değerleri: OFFICE, RENTAL, WAREHOUSE (D18 + D24 — Family HOME/DORM/VACATION/OTHER kullanabilir; 32).
+- Partner Hub `full` erişim (canonical §C11 / D23): 10–15 lansman partner + sonradan eklenecek registry (D28 sliced MVP); Family'de Partner Hub erişimi `none`, yalnızca USPS deep-link 'open & update' UX'i var.
 - PartnerSyncAttempt tracking, deep-link launcher, PDF letter generator, mailto template kütüphanesi (35–38).
 - Vendor contact book (kullanıcı kendi partner template'ini kaydeder, 39).
 - Per-label tax export (40).

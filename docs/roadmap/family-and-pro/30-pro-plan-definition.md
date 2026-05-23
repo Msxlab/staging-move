@@ -1,8 +1,10 @@
 # Pro Plan Definition
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C1, §C3, §C11, §C12, §C16) ile geçersizdir. Pro limitleri **10 üye / 25 adres / 1000 servis** (§C1); aşağıda farklı sayılar (örn. 50 üye / 100 adres) görülürse canonical kazanır. Partner Hub `full` (enum — §C11 / D23). Address labels canonical §C12 / D24. Copy guardrails (§C16): "one-click", "auto-sync", "Verified Sync" yasak — Pro lansmanı **0 partner anlaşması** ile başlar (D15).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Pro
-- **Related decisions**: D1, D2, D4, D11, D15, D18, D20
+- **Related decisions**: D1, D2, D4, D11, D15, D18, D20, D21 (limit canonical), D23 (partnerHubAccess enum), D24 (label split), D28 (sliced MVP 10–15 partner)
 - **Related docs**: `01-architecture-decisions.md`, `06-entitlements-system.md`, `20-family-plan-definition.md`, `31-pro-checkout-flow.md`, `32-address-labels.md`, `33-partner-hub-ui.md`, `60-mobile-billing-readonly.md`, `61-pricing-page-update.md`, `62-subscription-plan-field-updates.md`
 
 ## Amaç
@@ -52,19 +54,19 @@ Entitlement matrisinde PRO satırı (`packages/shared/src/entitlements.ts`):
 ```ts
 PRO: {
   limits: {
-    maxAddresses: 25,
+    maxAddresses: 25,           // canonical §C1
     maxServices: 1000,
-    maxMembers: 10,            // + view-only public link separately tracked
-    maxMovingPlans: -1,        // unlimited
+    maxMembers: 10,             // canonical §C1 (+ view-only public link separately tracked)
+    maxMovingPlans: -1,         // unlimited
     maxCustomProviders: -1,
     moveHistoryRetentionMonths: -1, // unlimited
   },
   flags: {
-    addressLabels: true,        // D18 — see 32
-    partnerHub: true,           // D15 — full 100+, see 33/34
+    addressLabels: ["HOME", "OFFICE", "RENTAL", "VACATION", "WAREHOUSE", "DORM", "OTHER"], // D18 + D24 / canonical §C12
+    partnerHubAccess: "full",   // D15 + D23 — enum: none|teaser|full; lansmanda 10–15 partner (D28 sliced MVP)
     bulkSync: true,             // see 14
     taxPropertyExport: true,    // see 40
-    vendorContactBook: true,    // see 39
+    vendorContactBook: true,    // Faz 2 (D28) — see 39
     moveHistoryTimeline: true,  // see 41
     consolidatedBudget: true,
     addressVerification: "bundled", // Faz 2 — schema present, UI "coming soon"
@@ -120,7 +122,7 @@ if (proYearly  && priceId === proYearly ) return { plan: "PRO", billingInterval:
 
 ### Butonlar / actionlar
 
-- Pricing'de "Get Pro" CTA → `/api/billing/checkout` (31).
+- Pricing'de "Get Pro" CTA → `/api/stripe/checkout` (mevcut endpoint genişler — D26; 31).
 - Account sayfasında "Upgrade to Pro" CTA Family veya Individual subscriber için görünür.
 
 ## Mobile
@@ -192,17 +194,17 @@ Bu doc admin sayfası eklemiyor. Mevcut admin etkileri:
 **Sub** (üç persona aynı kartta rotasyonla):
 
 - *Multi-property owner*: "Manage every home, rental, and vacation place under one roof. Label by use, switch between addresses in seconds."
-- *Frequent mover / nomad*: "4 moves a year? We've got you. Run 30+ services through Partner Hub in one sitting and never re-type an address again."
+- *Frequent mover / nomad*: "4 moves a year? We've got you. Open each partner with everything pre-filled and submit yourself — track every confirmation in one queue." (copy guardrail §C16)
 - *Small business with a home office*: "Keep work and home separate with address labels and export-ready records for tax season."
 
 **Bullet list** (Pro sütununda):
-- Up to **25 addresses** and **1,000 services**
+- Up to **25 addresses** and **1,000 services** (canonical §C1)
 - Up to **10 workspace members** + 1 view-only public link
-- **Partner Hub** — 100+ services, one-click open & update
-- **Bulk sync queue** — batch every move in one session
-- **Address labels** — Home, Office, Rental, Vacation, Warehouse, Dorm
+- **Partner Hub** — 10–15 services at launch (more coming), guided open & update (D15/D28; copy guardrail §C16 — "one-click" yasak)
+- **Bulk sync queue** — track every move in one place
+- **Address labels** — Home, Office, Rental, Vacation, Warehouse, Dorm (canonical §C12)
 - **Tax & property export** — CSV + PDF
-- **Vendor contact book** — your private partner templates
+- **Vendor contact book** — your private partner templates *(Faz 2 — D28)*
 - **Unlimited move history timeline**
 - Address verification *(included, coming soon)*
 
@@ -221,8 +223,8 @@ Bu doc admin sayfası eklemiyor. Mevcut admin etkileri:
 [Comparison row (Pro vs Family vs Individual vs Free)]
    (cross-ref pricing-section, 61)
 
-[Partner Hub teaser]   100+ services. One click. Done.
-   (screenshot, link → /partner-hub demo if logged out)
+[Partner Hub teaser]   10–15 launch partners. We prepare, you submit.
+   (screenshot, link → /partner-hub demo if logged out; copy §C16)
 
 [Bulk Sync demo]       GIF: 12 services updated in 90 seconds.
 

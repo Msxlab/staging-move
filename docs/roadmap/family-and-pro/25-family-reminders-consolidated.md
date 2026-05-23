@@ -1,8 +1,10 @@
 # Family Reminders Consolidated
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7) ile geçersizdir. Service assignee modeli `ServiceAssignee` junction tablosudur (`Service.assignedUserIds` JSON yoktur). Reminder targeting bu junction'dan türetilir; `ReminderTarget` ayrı junction olarak (sıcak path) yaşar.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3)
 - **Tier**: Family + Pro
-- **Related decisions**: D1 (workspace tek root), D2 (entitlement owner'dan, grace), D3 (field-level visibility), D5 (CHILD rolü), D17 (PERSONAL workspace backfill)
+- **Related decisions**: D1 (workspace tek root), D2 (entitlement owner'dan, grace), D3 (field-level visibility), D5 (CHILD rolü), D17 (PERSONAL workspace backfill), D21 (limit canonical)
 - **Related docs**: 01-architecture-decisions.md, 02-workspace-model.md, 03-workspace-member-roles.md, 20-family-plan-definition.md, 22-child-role.md, 23-shared-services.md, 24-family-budget-consolidated.md, 30-pro-plan-definition.md, 60-mobile-billing-readonly.md, 63-entitlement-banners-empty-states.md, 66-email-templates.md, 67-i18n-tr-en.md
 
 ## Amaç
@@ -13,7 +15,7 @@ Mevcut per-service `Reminder` modelini bozmadan workspace-bağlamlı bir **konso
 
 In scope:
 - `Reminder` modeline `workspaceId` ve `scope` (`PERSONAL | WORKSPACE`) alanları
-- Yeni `ReminderTarget` junction tablosu (kim hedef? assignedUserIds gibi yapı)
+- Yeni `ReminderTarget` junction tablosu (kim hedef? `ServiceAssignee` ile aynı junction patterni)
 - Per-user `ReminderInteraction` tablosu (snooze, dismiss, done — user-level state)
 - Web `/notifications` workspace view (member filter + chips)
 - Mobile `app/notifications/index.tsx` workspace view
@@ -127,7 +129,7 @@ model NotificationPreference {
 }
 ```
 
-**Neden `ReminderTarget` junction (assignedUserIds JSON değil)?** Service'te 23'te JSON tercih edildi (basitlik). Reminder'da push routing, snooze indexing ve "find all reminders for user X" sorgusu sıcak path; junction tablosu indexable. Karar burada farklı bilinçli olarak yapılır.
+**Neden `ReminderTarget` junction?** Push routing, snooze indexing ve "find all reminders for user X" sorgusu sıcak path; junction tablosu indexable. Canonical §C7'ye uyumlu (Service için de `ServiceAssignee` junction kullanılır).
 
 ### Migration
 
@@ -148,7 +150,7 @@ WHERE r.workspaceId = '';
 -- Eğer mevcut "user-attached custom reminder" yoksa skip; varsa
 -- prior model'i `userId` üzerinden workspaceId çekilir.
 
--- Create ReminderTarget for each existing Reminder → assignedUserIds of service
+-- Create ReminderTarget for each existing Reminder → ServiceAssignee rows of service
 INSERT INTO ReminderTarget (id, reminderId, userId, createdAt)
 SELECT
   CONCAT('rt_', SUBSTRING(MD5(CONCAT(r.id, su.userId)), 1, 24)),
@@ -157,8 +159,10 @@ SELECT
   NOW()
 FROM Reminder r
 JOIN Service s ON s.id = r.serviceId
-JOIN JSON_TABLE(s.assignedUserIds, '$[*]' COLUMNS(userId VARCHAR(30) PATH '$')) su
+JOIN ServiceAssignee sa ON sa.serviceId = s.id
 WHERE r.serviceId IS NOT NULL;
+-- sa.userId aliased as su.userId in the SELECT above is conceptual;
+-- replace su.userId with sa.userId in the SELECT clause when running this migration.
 
 ALTER TABLE Reminder ALTER COLUMN workspaceId DROP DEFAULT;
 ```
@@ -201,7 +205,7 @@ export interface ReminderFeedItem {
 ### Mevcut endpoint'lere etki
 
 - `GET /api/notifications` (apps/web/src/app/api/notifications): mevcut in-app notification list endpoint'i değişmez; reminder feed ayrı endpoint olarak yaşar. UI'da iki feed ayrı tab veya merged view (UX tartışılır — şimdilik ayrı tab).
-- `POST /api/reminders` (mevcut create) — body'e opsiyonel `targetUserIds: string[]` (verilmezse service.assignedUserIds'ten türetilir), `scope: 'PERSONAL'|'WORKSPACE'` (default PERSONAL).
+- `POST /api/reminders` (mevcut create) — body'e opsiyonel `targetUserIds: string[]` (verilmezse `ServiceAssignee` join üzerinden türetilir), `scope: 'PERSONAL'|'WORKSPACE'` (default PERSONAL).
 - `PATCH /api/reminders/[id]` — `dismissedAt`/`scope` write yasak (ayrı endpoint'ler); diğer alanlar permission gate'iyle.
 - `requireWorkspaceContext` (07) — CHILD ise feed query'sine `WHERE ReminderTarget.userId = caller` filter zorunlu.
 
@@ -289,7 +293,7 @@ Mevcut `NotificationQueue` processor (cron) genişler:
   - Snooze: target üye kendisi.
   - Personal done: target üye kendisi.
   - Workspace done/dismiss: OWNER/ADMIN.
-  - Reminder create (assignedUserIds farklı set): OWNER/ADMIN/service owner.
+  - Reminder create (target set farklı): OWNER/ADMIN/service owner.
   - Reminder delete: OWNER/ADMIN.
 - [x] **Encryption at rest**: Reminder.title/message düz text (özetler, hassas data değil). Service.accountNumber zaten encrypted, reminder mesajına dolaylı sızmamalı (template'lerde redaction).
 - [x] **GDPR DSAR**: Kullanıcı export'unda kendi ReminderInteraction + targeted Reminder ID'leri dahil. Erase: ReminderTarget/Interaction CASCADE.
@@ -363,5 +367,5 @@ Mevcut `NotificationQueue` processor (cron) genişler:
 - [ ] "Send myself a copy" sadece OWNER mı, ADMIN da görsün mü? — OWNER + ADMIN ikisi de.
 - [ ] Reminder model'inde `scope=PERSONAL` ile `workspaceId` zorunlu çakışması: PERSONAL reminder yine workspaceId taşır (kullanıcının primary workspace'i). Filter `scope=PERSONAL AND targets.userId=self` ile çekilir. Doc bunu netliyor; ek alan gereksiz.
 - [ ] Timezone: `User.timezone` alanı mevcut değilse Faz 2 eklenir; MVP'de UTC fallback + UI'da kullanıcı uyarı.
-- [ ] Reminder targeting bir servise yeni member assigned olduğunda gelecekteki reminder'lara otomatik ekleniyor mu? — Karar: Yeni reminder yaratılırken `targetUserIds = service.assignedUserIds` snapshot; geçmiş reminder targets değişmez (history of intent). UI'da bilgilendirme.
+- [ ] Reminder targeting bir servise yeni member assigned olduğunda gelecekteki reminder'lara otomatik ekleniyor mu? — Karar: Yeni reminder yaratılırken `targetUserIds = ServiceAssignee(serviceId)` snapshot; geçmiş reminder targets değişmez (history of intent). UI'da bilgilendirme.
 - [ ] ICS calendar export Faz 2'de kullanıcı reminder feed'ini takvime ekleyebilir — schema bu MVP'de uygun mu? — Evet, ek alan gerekmez.

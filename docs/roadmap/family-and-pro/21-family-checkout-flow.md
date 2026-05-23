@@ -1,8 +1,10 @@
 # Family Checkout Flow
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C3, §C5, §C10) ile geçersizdir. Route `/api/stripe/checkout` (mevcut, genişler — D26); aşağıda eski metinlerde geçen `/api/stripe/checkout`, `/api/stripe/upgrade`, `/api/stripe/downgrade` namespace'leri canonical'a aykırıdır. Subscription şema alanları `stripeCurrentPeriodEnd`, `currentPeriodEndsAt`, `trialEndsAt`, `canceledAt`, `plan @db.VarChar(30)`'tur (§C5).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Family
-- **Related decisions**: D2 (owner-resolved entitlement, grace + overflow), D11 (mobile read-only, satış sadece web), D12 (iOS active sub varken web upgrade reddedilir), D17 (mevcut user PERSONAL workspace), D20 (Family fiyat)
+- **Related decisions**: D2 (owner-resolved entitlement, grace + overflow), D11 (mobile read-only, satış sadece web), D12 (iOS active sub varken web upgrade reddedilir), D17 (mevcut user PERSONAL workspace), D20 (Family fiyat), D21 (limit canonical), D26 (`/api/stripe/checkout` genişletilir; yeni `/api/billing/*` AÇILMAZ)
 - **Related docs**: 01-architecture-decisions.md, 02-workspace-model.md, 04-workspace-invitation.md, 06-entitlements-system.md, 17-ios-subscription-conflict-guard.md, 20-family-plan-definition.md, 30-pro-plan-definition.md, 60-mobile-billing-readonly.md, 61-pricing-page-update.md, 62-subscription-plan-field-updates.md, 63-entitlement-banners-empty-states.md, 66-email-templates.md
 
 ## Amaç
@@ -47,24 +49,7 @@ Out of scope:
 
 `Subscription` modeli **değişmez**; sadece `plan` enum kabul edilen değerleri arasına FAMILY/PRO girer (62'de). Yeni hiçbir tablo yok.
 
-```prisma
-// packages/db/prisma/schema.prisma — Subscription (62'den kopya, referans için)
-model Subscription {
-  id                  String    @id
-  userId              String    @unique @db.VarChar(30)
-  plan                String    @db.VarChar(20) // FREE_TRIAL | INDIVIDUAL | FAMILY | PRO
-  status              String    @db.VarChar(30)
-  provider            String    @db.VarChar(20) // STRIPE | APP_STORE | PLAY_STORE | TRIAL | ADMIN
-  platform            String?   @db.VarChar(10)
-  stripeSubscriptionId String?  @unique @db.VarChar(100)
-  stripeCustomerId    String?   @db.VarChar(100)
-  currentPeriodStart  DateTime?
-  currentPeriodEnd    DateTime?
-  cancelAtPeriodEnd   Boolean   @default(false)
-  trialEnd            DateTime?
-  ...
-}
-```
+Schema artık `01a-canonical-values.md` §C5/§C7'de canonical olarak yaşıyor — bu doc'a kopyalamayın. Önemli noktalar: `plan @db.VarChar(30)` (enum DEĞİL), `provider @db.VarChar(30)`, alan adları `stripeCurrentPeriodEnd`/`currentPeriodEndsAt`/`trialEndsAt`/`canceledAt`. Status değeri `CANCELED` (tek L).
 
 Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tabloları (acquisition.ts) kullanılır; sadece campaign config'inde `applicablePlans: ['FAMILY']` filtresi gerekir (mevcutsa kullanılır, yoksa eklenir — bu doc'un dışında basit alan).
 
@@ -74,17 +59,17 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 
 | Method | Path | Auth | Workspace ctx | Body | Response | Errors |
 |---|---|---|---|---|---|---|
-| POST | `/api/billing/checkout` | Required (session) | Owner of caller's primary workspace | `{ plan: 'FAMILY' \| 'PRO', interval: 'monthly' \| 'annual', campaignCode?: string, successUrl?: string, cancelUrl?: string }` | `{ url: string }` (Stripe hosted checkout URL) | 400 invalid plan/interval, 401 unauth, 403 not owner, 409 D12 iOS conflict, 409 mid-billing-state, 429 rate, 502 Stripe error |
-| POST | `/api/billing/upgrade` | Required | Owner | `{ targetPlan: 'FAMILY' \| 'PRO', interval: 'monthly' \| 'annual', prorationBehavior: 'create_prorations' \| 'none' }` | `{ subscriptionId, status, currentPeriodEnd, invoiceUrl? }` | 400, 403, 404 no existing sub, 409 same plan, 502 |
-| POST | `/api/billing/downgrade` | Required | Owner | `{ targetPlan: 'INDIVIDUAL' \| 'FREE_TRIAL', effective: 'period_end' }` | `{ scheduledAt, willOverflowMembers: number }` | 400, 403, 409 owner only |
-| GET  | `/api/billing/checkout/return` | Optional | — | query: `session_id` | Redirects to `/settings/subscription?success=1` | 400 |
+| POST | `/api/stripe/checkout` | Required (session) | Owner of caller's primary workspace | `{ plan: 'FAMILY' \| 'PRO', interval: 'monthly' \| 'annual', campaignCode?: string, successUrl?: string, cancelUrl?: string }` | `{ url: string }` (Stripe hosted checkout URL) | 400 invalid plan/interval, 401 unauth, 403 not owner, 409 D12 iOS conflict, 409 mid-billing-state, 429 rate, 502 Stripe error |
+| POST | `/api/stripe/upgrade` | Required | Owner | `{ targetPlan: 'FAMILY' \| 'PRO', interval: 'monthly' \| 'annual', prorationBehavior: 'create_prorations' \| 'none' }` | `{ subscriptionId, status, currentPeriodEnd, invoiceUrl? }` | 400, 403, 404 no existing sub, 409 same plan, 502 |
+| POST | `/api/stripe/downgrade` | Required | Owner | `{ targetPlan: 'INDIVIDUAL' \| 'FREE_TRIAL', effective: 'period_end' }` | `{ scheduledAt, willOverflowMembers: number }` | 400, 403, 409 owner only |
+| GET  | `/api/stripe/checkout/return` | Optional | — | query: `session_id` | Redirects to `/settings/subscription?success=1` | 400 |
 
-**Not**: Mevcut `apps/web/src/app/api/stripe/checkout/route.ts` halen var; bu spec onu `/api/billing/checkout` namespace'i altında ya **rename** eder ya da yeni endpoint paralel yaşar ve eski Individual-only kodu deprecate edilir. Tercih: rename + redirect (logical olarak tek endpoint, plan parametresiyle).
+**Not**: Mevcut `apps/web/src/app/api/stripe/checkout/route.ts` halen var; bu spec onu `/api/stripe/checkout` namespace'i altında ya **rename** eder ya da yeni endpoint paralel yaşar ve eski Individual-only kodu deprecate edilir. Tercih: rename + redirect (logical olarak tek endpoint, plan parametresiyle).
 
 ### Mevcut endpoint'lere etki
 
-- `/api/stripe/checkout` → `/api/billing/checkout`'a redirect (2-3 sürüm geri uyum). Test: `apps/web/src/app/api/stripe/checkout/route.test.ts` güncellenir.
-- `/api/stripe/checkout/cancel` → `/api/billing/checkout/cancel`'a taşınır.
+- `/api/stripe/checkout` → `/api/stripe/checkout`'a redirect (2-3 sürüm geri uyum). Test: `apps/web/src/app/api/stripe/checkout/route.test.ts` güncellenir.
+- `/api/stripe/checkout/cancel` → `/api/stripe/checkout/cancel`'a taşınır.
 - `/api/stripe/portal` (Stripe Billing Portal session) — Family için **aynı** portal URL döner; portal Stripe tarafında plan upgrade/downgrade'i de gösterir (config Stripe Dashboard'da).
 - `/api/webhooks/stripe`:
   - `checkout.session.completed` → eğer `session.metadata.plan === 'FAMILY'`, Subscription.plan = `FAMILY`, status `ACTIVE` veya `TRIALING`.
@@ -96,7 +81,7 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 ## Web
 
 ### Yeni sayfa/route
-- `/billing/checkout?plan=family&interval=annual` — middleware niteliğinde server component, oturum + workspace context (D13) çözer, `/api/billing/checkout` çağırır, Stripe Checkout URL'ine `redirect()`. Hata durumunda `/billing/error?code=...`'a yönlendirir.
+- `/billing/checkout?plan=family&interval=annual` — middleware niteliğinde server component, oturum + workspace context (D13) çözer, `/api/stripe/checkout` çağırır, Stripe Checkout URL'ine `redirect()`. Hata durumunda `/billing/error?code=...`'a yönlendirir.
 - `/billing/success?session_id=...` — minimal teşekkür sayfası: "Welcome to Family!", invite CTA → `/workspace/members?intent=invite`, ardından otomatik `/settings/subscription` linki. Server tarafında session.id'yi Stripe ile doğrular (defense-in-depth).
 - `/billing/canceled` — "Maybe later" tonu, pricing sayfasına link.
 - `/billing/error?code=ios_conflict|...` — D12 ve diğer hata kodları için Türkçe + EN açıklama.
@@ -107,15 +92,15 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 - `apps/web/src/app/api/webhooks/stripe/route.ts` — handler switch genişler (yukarıda).
 
 ### Componentler (file paths)
-- `apps/web/src/components/billing/UpgradeButton.tsx` — props `{ targetPlan, interval, source }`, click → POST `/api/billing/checkout` → window.location.
+- `apps/web/src/components/billing/UpgradeButton.tsx` — props `{ targetPlan, interval, source }`, click → POST `/api/stripe/checkout` → window.location.
 - `apps/web/src/components/billing/DowngradeModal.tsx` — overflow uyarısı + "X members will be marked OVERFLOW" + confirm.
 - `apps/web/src/components/billing/IosConflictBanner.tsx` — D12 kullanıcı mesajı (17'den paylaşılan).
 - `apps/web/src/components/billing/FamilyWelcomeCard.tsx` — `/billing/success` üzerindeki invite CTA.
 
 ### Butonlar / actionlar
 - Pricing sayfası "Choose Family" (monthly/annual toggle): logged-out → /signup, logged-in → /billing/checkout.
-- Settings > Subscription "Upgrade to Family" → POST /api/billing/upgrade ya da checkout (yeni Stripe Customer yoksa checkout, varsa update).
-- Settings > Subscription "Downgrade" → DowngradeModal → POST /api/billing/downgrade.
+- Settings > Subscription "Upgrade to Family" → POST /api/stripe/upgrade ya da checkout (yeni Stripe Customer yoksa checkout, varsa update).
+- Settings > Subscription "Downgrade" → DowngradeModal → POST /api/stripe/downgrade.
 - /billing/success "Invite members" → /workspace/members (04).
 
 ## Mobile
@@ -125,7 +110,7 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 
 ### Mevcut ekranlara etki
 - `apps/mobile/app/settings/subscription.tsx`:
-  - Plan FAMILY ise: "Manage on web" link (Stripe Portal proxy via `/api/billing/portal-link`).
+  - Plan FAMILY ise: "Manage on web" link (Stripe Portal proxy via `/api/stripe/portal`).
   - Plan INDIVIDUAL ya da FREE_TRIAL ise: `UpgradeOnWebBanner` ("Upgrade to Family on lf.io/upgrade").
 - `apps/mobile/app/(tabs)/index.tsx` (dashboard) — Family upgrade prompt'u (sadece settings'te, dashboard'a koymuyoruz, App Store guideline trigger riski).
 
@@ -140,10 +125,10 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 
 ## Güvenlik
 
-- [x] **Step-up auth**: Checkout başlatmak için **gerekmez** (Stripe Checkout zaten kart girişi ister). Ancak downgrade (`/api/billing/downgrade`) ve admin override **step-up** ister (D10 pattern — mevcut admin tools'taki gibi).
+- [x] **Step-up auth**: Checkout başlatmak için **gerekmez** (Stripe Checkout zaten kart girişi ister). Ancak downgrade (`/api/stripe/downgrade`) ve admin override **step-up** ister (D10 pattern — mevcut admin tools'taki gibi).
 - [x] **PII redaction**: Stripe customer email server-side log'larda redact (`packages/shared/src/audit-redaction.ts` üzerinden). Webhook payload log'lara basılmaz, sadece `event.id` + `event.type`.
 - [x] **Audit log**: Yeni audit event tipleri: `SUBSCRIPTION_UPGRADED`, `SUBSCRIPTION_DOWNGRADED`, `CHECKOUT_STARTED`, `CHECKOUT_COMPLETED`, `WEBHOOK_PROCESSED`. Mevcut `AuditEvent` modeli kullanılır.
-- [x] **Rate limit**: `/api/billing/checkout` user başına 10 req/dakika; abuse loop önler.
+- [x] **Rate limit**: `/api/stripe/checkout` user başına 10 req/dakika; abuse loop önler.
 - [x] **Permission matris**:
   - Checkout/upgrade/downgrade: **sadece OWNER**.
   - MEMBER/CHILD: hata 403 + UI'da buton gizli (defense in depth).
@@ -152,7 +137,7 @@ Acquisition için mevcut `AcquisitionCampaign` / `AcquisitionRedemption` tablola
 
 ### D12 iOS Conflict Guard
 
-`/api/billing/checkout` ilk adım:
+`/api/stripe/checkout` ilk adım:
 
 ```ts
 const currentSub = await db.subscription.findUnique({ where: { userId } });
@@ -173,7 +158,7 @@ UI tarafında `IosConflictBanner` render. Detay 17.
 
 - **Hiçbir mevcut Individual abonesi etkilenmez**. Stripe Subscription row'ları olduğu gibi kalır; price ID'leri değişmez.
 - Webhook handler'ın yeni switch case'leri **additive**; eski Individual webhook'ları aynı kodda çalışmaya devam eder.
-- `/api/stripe/checkout` route 1 sürüm boyunca **alias** olarak yaşar (308 redirect → `/api/billing/checkout`), 2-3 hafta sonra silinir.
+- `/api/stripe/checkout` route 1 sürüm boyunca **alias** olarak yaşar (308 redirect → `/api/stripe/checkout`), 2-3 hafta sonra silinir.
 - Mevcut Individual müşteriler upgrade ettiğinde Stripe **proration** uygular: kalan dönem için diff fatura edilir; bu davranış Stripe Dashboard Subscription settings'inde standart "create_prorations" olarak ayarlı (default).
 
 ### Workspace handling on first Family payment
@@ -203,7 +188,7 @@ on `checkout.session.completed` where plan=FAMILY:
 
 1. Kullanıcı Settings > Subscription'da "Downgrade to Individual" tıklar.
 2. `DowngradeModal` workspace member count + overflow uyarısı (`willOverflowMembers = max(0, memberCount - 1)`).
-3. Confirm → POST `/api/billing/downgrade { targetPlan: 'INDIVIDUAL', effective: 'period_end' }`.
+3. Confirm → POST `/api/stripe/downgrade { targetPlan: 'INDIVIDUAL', effective: 'period_end' }`.
 4. Backend `stripe.subscriptions.update(id, { cancel_at_period_end: false, items: [{ id, price: INDIVIDUAL_PRICE }], proration_behavior: 'none' })` veya schedule API.
 5. Subscription.plan **henüz değişmez**; `scheduledPlanChangeAt` (yeni alan veya metadata) currentPeriodEnd'e set.
 6. currentPeriodEnd'de webhook `customer.subscription.updated` → plan FAMILY → INDIVIDUAL, status ACTIVE.
@@ -240,7 +225,7 @@ Mevcut `AcquisitionCampaign` modeli `applicablePlans: string[]` alanını destek
 Checkout flow:
 1. Kullanıcı pricing veya signup'ta `?code=FAMILY-2026` ile gelir.
 2. `/api/acquisition/redeem` redemption row'u yaratır + cookie set.
-3. `/api/billing/checkout` cookie'yi okur, Stripe Checkout session'ında `subscription_data.trial_period_days = 14 + 16 = 30`.
+3. `/api/stripe/checkout` cookie'yi okur, Stripe Checkout session'ında `subscription_data.trial_period_days = 14 + 16 = 30`.
 4. Subscription oluşunca `RedemptionApplied` audit + email "Your bonus trial is active".
 
 ## Test plan
@@ -252,10 +237,10 @@ Checkout flow:
 - D12 guard: APP_STORE active sub → 409.
 
 ### Integration
-- `POST /api/billing/checkout { plan: 'FAMILY', interval: 'monthly' }` → Stripe API mock → 200 + url.
+- `POST /api/stripe/checkout { plan: 'FAMILY', interval: 'monthly' }` → Stripe API mock → 200 + url.
 - Acquisition campaign code dahil flow.
 - Webhook idempotency: aynı event 2 kez → tek DB write.
-- `/api/billing/upgrade` Individual → Family: Stripe update mock, DB güncel.
+- `/api/stripe/upgrade` Individual → Family: Stripe update mock, DB güncel.
 
 ### E2E (Playwright + Stripe test mode)
 - Free Trial user → /pricing → Choose Family → Stripe Checkout (test card 4242…) → /billing/success → workspace plan FAMILY.
@@ -276,4 +261,4 @@ Checkout flow:
 - [ ] Downgrade'i annual yıl ortasında yapan kullanıcıya refund? — şimdilik "no pro-rated refund, downgrade at period end" (Stripe default). Marketing copy buna göre.
 - [ ] Stripe Customer Portal'da plan switch açık mı kapalı mı? Açık → kullanıcı kendi başına Family ↔ Pro geçer; kapalı → sadece bizim UI üzerinden. Karar: **kapalı**, davranışı kontrol altında tutmak için (App Store karışıklığı riski).
 - [ ] Campaign + iOS conflict: campaign code'lu kullanıcı iOS conflict yaşarsa redemption tüketilir mi? — Karar: tüketilmez, redemption "PENDING" kalır (D12 ekranında).
-- [ ] FAMILY-PRO upgrade için ayrı flow mu, generic mı? → Generic `/api/billing/upgrade { targetPlan }`, ayrı doc 31'de Pro spesifik nüans.
+- [ ] FAMILY-PRO upgrade için ayrı flow mu, generic mı? → Generic `/api/stripe/upgrade { targetPlan }`, ayrı doc 31'de Pro spesifik nüans.

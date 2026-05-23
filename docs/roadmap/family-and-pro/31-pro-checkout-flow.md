@@ -1,8 +1,10 @@
 # Pro Checkout Flow
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C1, §C3, §C5) ile geçersizdir. Route `/api/stripe/checkout` (mevcut, genişler — D26); yeni `/api/billing/*` AÇILMAZ. Pro limitleri: 10 üye / 25 adres / 1000 servis (§C1). Pro → Family downgrade: 10 üye → 6 cap = **4 overflow** (10 - 6 = 4, daha önce "2" yazılı ise yanlış).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Pro
-- **Related decisions**: D2, D11, D12, D20
+- **Related decisions**: D2, D11, D12, D20, D21 (limit canonical 10/25/1000), D26 (`/api/stripe/checkout` extension)
 - **Related docs**: `01-architecture-decisions.md`, `06-entitlements-system.md`, `17-ios-subscription-conflict-guard.md`, `21-family-checkout-flow.md`, `30-pro-plan-definition.md`, `60-mobile-billing-readonly.md`, `61-pricing-page-update.md`, `62-subscription-plan-field-updates.md`
 
 ## Amaç
@@ -12,7 +14,7 @@ Pro aboneliğinin satışı, plan değişimleri (Family↔Pro, Individual→Pro,
 ## Kapsam
 
 **In scope**
-- `POST /api/billing/checkout` endpoint'inin `plan=PRO` parametresini handle etmesi
+- `POST /api/stripe/checkout` endpoint'inin `plan=PRO` parametresini handle etmesi
 - Stripe Price ID env config (`STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_YEARLY`)
 - Plan upgrade akışları (Family→Pro proration, Individual→Pro, Free Trial→Pro)
 - Plan downgrade akışları (Pro→Family seat overflow + Partner Hub lock, Pro→Individual address/service overflow)
@@ -33,7 +35,7 @@ Pro aboneliğinin satışı, plan değişimleri (Family↔Pro, Individual→Pro,
 - **As a Free Trial user**, web pricing'de "Get Pro" → Stripe Checkout → ödeme → workspace anında PRO entitlement'a geçer; trial sayacı durur.
 - **As an Individual subscriber** ($3.99/mo), "Upgrade to Pro" → Stripe `customer.subscription.update` ile price değişir, proration uygulanır, period end'i korunur.
 - **As a Family workspace owner** (8 üye var), Pro'ya upgrade ediyorum: seat 6→10 olur, hiç kimse kick edilmez, partner hub anında açılır.
-- **As a Pro workspace owner** Family'ye downgrade ediyorum (10 üye, 30 adres): üyeler kalır (8 üye fazlaysa 2'si OVERFLOW — D2), Partner Hub kilitlenir ama geçmiş `PartnerSyncAttempt`'ler okunabilir, adres limiti 6'ya düşer ama mevcut 30 adres silinmez (read-only overflow).
+- **As a Pro workspace owner** Family'ye downgrade ediyorum (10 üye, 25 adres aktif): üyeler kalır ama 10 → 6 cap = **4 OVERFLOW** (D2 + canonical §C1), Partner Hub kilitlenir ama geçmiş `PartnerSyncAttempt`'ler okunabilir, adres limiti 17'ye düşer; 25 mevcut adres silinmez (8 adres read-only OVERFLOW).
 - **As an iOS Individual subscriber** (App Store), web'de "Get Pro" tıklarım → 409 hata + açıklayıcı modal (D12).
 
 ## Veri modeli
@@ -50,12 +52,12 @@ Yeni tablo yok. Mevcut/planlı:
 ### Yeni
 | Method | Path | Auth | Workspace ctx | Body | Response | Errors |
 |---|---|---|---|---|---|---|
-| POST | `/api/billing/checkout` | required | required | `{ plan: "PRO", interval: "MONTH"\|"YEAR" }` | `{ url: stripeCheckoutUrl }` | 401, 403, 409 (iOS conflict D12), 422 (invalid plan/interval), 503 (price ID missing) |
-| POST | `/api/billing/upgrade` | required | required (owner only) | `{ plan: "PRO", interval }` | `{ subscriptionId, status, prorationPreviewCents }` | 401, 403, 409, 422 |
-| POST | `/api/billing/downgrade` | required | required (owner only) | `{ targetPlan: "FAMILY"\|"INDIVIDUAL", effective: "PERIOD_END"\|"IMMEDIATE" }` | `{ scheduledChangeAt }` | 401, 403, 422 |
+| POST | `/api/stripe/checkout` | required | required | `{ plan: "PRO", interval: "MONTH"\|"YEAR" }` | `{ url: stripeCheckoutUrl }` | 401, 403, 409 (iOS conflict D12), 422 (invalid plan/interval), 503 (price ID missing) |
+| POST | `/api/stripe/upgrade` | required | required (owner only) | `{ plan: "PRO", interval }` | `{ subscriptionId, status, prorationPreviewCents }` | 401, 403, 409, 422 |
+| POST | `/api/stripe/downgrade` | required | required (owner only) | `{ targetPlan: "FAMILY"\|"INDIVIDUAL", effective: "PERIOD_END"\|"IMMEDIATE" }` | `{ scheduledChangeAt }` | 401, 403, 422 |
 
-`/api/billing/checkout` aynı endpoint — `plan` parametresine göre dallanır (Family ve Pro tek handler).
-`/api/billing/upgrade` ve `/downgrade` Sprint 4'te yaratılır; Family için 21'de, Pro için bu dosyada PRO-spesifik branch.
+`/api/stripe/checkout` aynı endpoint — `plan` parametresine göre dallanır (Family ve Pro tek handler).
+`/api/stripe/upgrade` ve `/downgrade` Sprint 4'te yaratılır; Family için 21'de, Pro için bu dosyada PRO-spesifik branch.
 
 ### Mevcut endpoint'lere etki
 
@@ -78,7 +80,7 @@ Yeni tablo yok. Mevcut/planlı:
 - `apps/web/src/app/(app)/account/page.tsx`:
   - "Upgrade to Pro" butonu Family/Individual subscriber için görünür.
   - "Downgrade to Family" / "Cancel Pro" butonları Pro subscriber için.
-- `apps/web/src/components/marketing/pricing-section.tsx` (61): "Get Pro" CTA → `/api/billing/checkout`.
+- `apps/web/src/components/marketing/pricing-section.tsx` (61): "Get Pro" CTA → `/api/stripe/checkout`.
 
 ### Componentler (file paths)
 
@@ -92,10 +94,10 @@ Yeni tablo yok. Mevcut/planlı:
 
 | Buton | Plan | Davranış |
 |---|---|---|
-| "Get Pro" | FREE_TRIAL | `POST /api/billing/checkout {plan:"PRO"}` → Stripe Checkout |
-| "Upgrade to Pro" | INDIVIDUAL | `POST /api/billing/upgrade {plan:"PRO"}` — Stripe `subscription.update` + proration |
+| "Get Pro" | FREE_TRIAL | `POST /api/stripe/checkout {plan:"PRO"}` → Stripe Checkout |
+| "Upgrade to Pro" | INDIVIDUAL | `POST /api/stripe/upgrade {plan:"PRO"}` — Stripe `subscription.update` + proration |
 | "Upgrade to Pro" | FAMILY | Aynı; seat limit 6→10 anında, mevcut üyeler kalır |
-| "Downgrade to Family" | PRO | Modal → onay → `POST /api/billing/downgrade {targetPlan:"FAMILY", effective:"PERIOD_END"}` |
+| "Downgrade to Family" | PRO | Modal → onay → `POST /api/stripe/downgrade {targetPlan:"FAMILY", effective:"PERIOD_END"}` |
 | "Downgrade to Individual" | PRO | Modal → uyarı (workspace üyeleri kaybedeceksin) → onay |
 | "Cancel Pro" | PRO | Mevcut cancel flow — period end'e dek aktif |
 
@@ -125,7 +127,7 @@ Hiçbiri. D11 read-only.
 - [x] **Step-up auth**: Plan değişimi için fresh-auth pencere içinde olmalı (mevcut pattern, login'den 15 dk). Stripe Checkout zaten Stripe-side 3DS isteyebilir. AddressChangeEvent step-up'ı (D10) burada yok.
 - [x] **PII redaction**: Webhook log'larında Stripe customer email tutulur (zaten log'lanıyor). Card data Stripe tarafında, bizde değil.
 - [x] **Audit log**: Tüm plan transition `BillingAuditLog`'a yazılır (`fromPlan`, `toPlan`, `actor`, `stripeEventId`, `prorationCents`).
-- [x] **Rate limit**: `/api/billing/checkout` ve `/upgrade` IP başına 10/dk; user başına 5/dk. Mevcut middleware (`apps/web/src/lib/rate-limit.ts`) tier ekler.
+- [x] **Rate limit**: `/api/stripe/checkout` ve `/upgrade` IP başına 10/dk; user başına 5/dk. Mevcut middleware (`apps/web/src/lib/rate-limit.ts`) tier ekler.
 - [x] **Permission matris**: Sadece `WorkspaceMember.role = OWNER` checkout/upgrade/downgrade çalıştırabilir. ADMIN ve diğer roller 403.
 - [ ] **Encryption at rest**: N/A (Stripe IDs zaten DB'de plain).
 - [x] **GDPR DSAR**: Subscription + audit log mevcut user-data-export'a dahil.
@@ -173,13 +175,13 @@ Hiçbiri. D11 read-only.
 
 1. Modal uyarısı:
    - "All workspace members except you will lose access. Continue?"
-   - "Your 18 addresses exceed Individual's limit (3). Read-only access kept; you must delete addresses before adding new ones."
+   - "Your 18 addresses exceed Individual's limit (10 — canonical §C1). Read-only access kept; you must delete addresses before adding new ones."
 2. Backend downgrade.
 3. Webhook → `plan=INDIVIDUAL`. Tüm non-OWNER `WorkspaceMember.status = OVERFLOW` (D2 pattern); UI'da owner-only deneyim.
 
 ### iOS active sub guard (D12)
 
-- `POST /api/billing/checkout` öncesi: `await checkIosSubConflict(userId)` (17 helper).
+- `POST /api/stripe/checkout` öncesi: `await checkIosSubConflict(userId)` (17 helper).
 - Eğer `Subscription.provider = "APP_STORE"` ve `status` aktifse → 409 + body:
 
 ```json
@@ -199,7 +201,7 @@ Client `IosSubConflictModal` gösterir.
 
 ## Etkilenen mevcut özellikler
 
-- `/api/billing/checkout` (handler imzası genişler).
+- `/api/stripe/checkout` (handler imzası genişler).
 - Stripe webhook handler (`/api/stripe/webhook/route.ts`).
 - `apps/web/src/lib/billing.ts` price mapping.
 - Customer Portal: Stripe portal otomatik PRO line item'ları gösterir; özel iş yok.
@@ -216,8 +218,8 @@ Client `IosSubConflictModal` gösterir.
 
 **Integration**
 - Stripe webhook fixture (`customer.subscription.created` with PRO price) → DB'de `Subscription.plan="PRO"`.
-- `POST /api/billing/upgrade {plan:"PRO"}` Individual subscriber → Stripe mock `subscriptions.update` çağrılır, response success.
-- `POST /api/billing/downgrade {targetPlan:"FAMILY"}` Pro subscriber 8 üyeli workspace → schedule create, period end simülasyonu sonra 2 üye OVERFLOW.
+- `POST /api/stripe/upgrade {plan:"PRO"}` Individual subscriber → Stripe mock `subscriptions.update` çağrılır, response success.
+- `POST /api/stripe/downgrade {targetPlan:"FAMILY"}` Pro subscriber 8 üyeli workspace → schedule create, period end simülasyonu sonra 2 üye OVERFLOW.
 
 **E2E (Playwright)**
 - Free Trial user → pricing → "Get Pro" → Stripe test mode card → success page → account shows "Pro".

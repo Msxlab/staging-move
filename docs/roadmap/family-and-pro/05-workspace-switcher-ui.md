@@ -1,8 +1,10 @@
 # Workspace Switcher UI
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C4) ile geçersizdir. Cookie adı `lf_workspace_id` (canonical), aşağıda eski metinlerde geçen `lf_active_workspace` yanlıştır; canonical kazanır.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 1 iskelet, Sprint 2 canlı)
 - **Tier**: Infrastructure
-- **Related decisions**: D1 (plan-bazlı display name), D2 (entitlement owner'dan, seat overflow), D11 (mobile read-only billing), D13 (route-level helper), D14 (plan-limits.ts adapter)
+- **Related decisions**: D1 (plan-bazlı display name), D2 (entitlement owner'dan, seat overflow), D11 (mobile read-only billing), D13 (route-level helper), D14 (plan-limits.ts adapter), D21 (limit canonical)
 - **Related docs**: 02-workspace-model.md, 03-workspace-member-roles.md, 04-workspace-invitation.md, 06-entitlements-system.md, 07-api-workspace-context-helper.md, 08-x-workspace-id-header.md, 63-entitlement-banners-empty-states.md, 67-i18n-tr-en.md
 
 ## Amaç
@@ -16,7 +18,7 @@ Bu doc switcher component'ini, persistence (cookie / AsyncStorage), ApiClient en
 In scope:
 - `<WorkspaceSwitcher>` web header component'i
 - `<WorkspaceMenu>` mobile settings satırı + bottom sheet
-- Persistence: web cookie (`lf_active_workspace`) + mobile AsyncStorage (`activeWorkspaceId`)
+- Persistence: web cookie (`lf_workspace_id` — canonical §C4) + mobile AsyncStorage (`lf.workspace.id`)
 - ApiClient integration: her request'e `X-Workspace-Id` header (08 ile tam protokol)
 - Plan badge görünümü (D1 etiketleri)
 - "Create new workspace" CTA (Family/Pro gated)
@@ -69,13 +71,13 @@ type WorkspaceSwitcherItem = {
 ### Persistence
 
 **Web**:
-- Cookie name: `lf_active_workspace`
+- Cookie name: `lf_workspace_id` (canonical §C4)
 - Value: workspaceId
 - Attributes: `HttpOnly=false` (client read için), `SameSite=Lax`, `Secure`, `Path=/`, `Max-Age=2592000` (30 gün)
 - Server-side `requireWorkspaceContext` (07) bu cookie'yi ve `X-Workspace-Id` header'ı uzlaştırır; tutarsızlık halinde header öncelikli (08).
 
 **Mobile**:
-- Key: `@locateflow/active_workspace_id` (AsyncStorage)
+- Key: `lf.workspace.id` (AsyncStorage — canonical §C4)
 - ApiClient init time okur → her request header'ına ekler
 - Switch action sonrası AsyncStorage update + ApiClient header refresh + cache invalidation
 
@@ -201,7 +203,7 @@ Yeni full screen yok. Bottom sheet + settings satırı:
 `packages/shared/src/api-client.ts` (mevcut):
 ```ts
 // init
-this.activeWorkspaceId = await AsyncStorage.getItem('@locateflow/active_workspace_id');
+this.activeWorkspaceId = await AsyncStorage.getItem('lf.workspace.id');
 
 // her request interceptor:
 if (this.activeWorkspaceId) {
@@ -210,7 +212,7 @@ if (this.activeWorkspaceId) {
 
 // switch:
 async setActiveWorkspace(id: string) {
-  await AsyncStorage.setItem('@locateflow/active_workspace_id', id);
+  await AsyncStorage.setItem('lf.workspace.id', id);
   this.activeWorkspaceId = id;
   // emit event → React Query cache flush
 }
