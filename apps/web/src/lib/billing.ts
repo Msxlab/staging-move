@@ -81,6 +81,17 @@ export async function mapStripePriceIdToPlan(priceId: string | null | undefined)
   return (await mapStripePriceIdToPlanAndInterval(priceId))?.plan || null;
 }
 
+async function hydrateStripePlanAndInterval<T extends Record<string, any> | null>(subscription: T): Promise<T> {
+  if (!subscription?.stripePriceId || subscription.billingInterval) return subscription;
+  const mapped = await mapStripePriceIdToPlanAndInterval(subscription.stripePriceId);
+  if (!mapped) return subscription;
+  return {
+    ...subscription,
+    plan: subscription.plan || mapped.plan,
+    billingInterval: mapped.billingInterval,
+  };
+}
+
 export async function getStripeAnnualTrialDays(): Promise<number> {
   const raw = await getRuntimeConfigValue("STRIPE_ANNUAL_TRIAL_DAYS");
   if (!raw) return DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS;
@@ -190,6 +201,39 @@ const SUBSCRIPTION_ENTITLEMENT_SELECT = {
   updatedAt: true,
 } as const;
 
+const SUBSCRIPTION_SCHEMA_COMPAT_SELECT = {
+  id: true,
+  userId: true,
+  plan: true,
+  status: true,
+  provider: true,
+  platform: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+  stripePriceId: true,
+  stripeCurrentPeriodEnd: true,
+  billingProductId: true,
+  currentPeriodEndsAt: true,
+  gracePeriodEndsAt: true,
+  lastValidatedAt: true,
+  lastSyncedAt: true,
+  accessType: true,
+  billingInterval: true,
+  freeAccessEndsAt: true,
+  cancelAtPeriodEnd: true,
+  firstChargeAt: true,
+  firstChargeAmount: true,
+  autoRenew: true,
+  trialEndsAt: true,
+  canceledAt: true,
+  premiumUntil: true,
+  premiumGrantedBy: true,
+  premiumGrantedAt: true,
+  premiumNote: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 const SUBSCRIPTION_LEGACY_SELECT = {
   id: true,
   userId: true,
@@ -211,22 +255,31 @@ const SUBSCRIPTION_LEGACY_SELECT = {
 
 export async function findSubscriptionForEntitlement(userId: string) {
   try {
-    return await prisma.subscription.findUnique({
+    return await hydrateStripePlanAndInterval(await prisma.subscription.findUnique({
       where: { userId },
       select: SUBSCRIPTION_ENTITLEMENT_SELECT,
-    });
+    }));
   } catch (error) {
     if (!isMissingDbColumnError(error)) throw error;
     warnSchemaCompatibilityFallback("subscription:entitlement-read", error);
     try {
-      return await prisma.subscription.findUnique({
+      return await hydrateStripePlanAndInterval(await prisma.subscription.findUnique({
         where: { userId },
-        select: SUBSCRIPTION_LEGACY_SELECT,
-      });
-    } catch (legacyError) {
-      if (!isMissingDbColumnError(legacyError)) throw legacyError;
-      warnSchemaCompatibilityFallback("subscription:legacy-read", legacyError);
-      return null;
+        select: SUBSCRIPTION_SCHEMA_COMPAT_SELECT,
+      }));
+    } catch (compatError) {
+      if (!isMissingDbColumnError(compatError)) throw compatError;
+      warnSchemaCompatibilityFallback("subscription:schema-compat-read", compatError);
+      try {
+        return await hydrateStripePlanAndInterval(await prisma.subscription.findUnique({
+          where: { userId },
+          select: SUBSCRIPTION_LEGACY_SELECT,
+        }));
+      } catch (legacyError) {
+        if (!isMissingDbColumnError(legacyError)) throw legacyError;
+        warnSchemaCompatibilityFallback("subscription:legacy-read", legacyError);
+        return null;
+      }
     }
   }
 }

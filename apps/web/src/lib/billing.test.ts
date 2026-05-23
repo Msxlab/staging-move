@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
@@ -26,11 +26,15 @@ vi.mock("@/lib/runtime-config", () => ({
 import {
   buildUnifiedEntitlementSnapshot,
   ensureSubscriptionDefaults,
+  findSubscriptionForEntitlement,
   getStripeAnnualTrialDays,
   getStripePriceIdForPlan,
   getStripePriceIdForPlanAndInterval,
   mapStripePriceIdToPlanAndInterval,
 } from "./billing";
+import { prisma } from "@/lib/db";
+
+const subscriptionFindUnique = prisma.subscription.findUnique as unknown as Mock;
 
 const fallbackColumns = [
   "id",
@@ -119,6 +123,60 @@ describe("billing helpers", () => {
     });
     await expect(mapStripePriceIdToPlanAndInterval("price_yearly_new")).resolves.toEqual({
       plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
+  });
+
+  it("keeps billing interval during schedule-column schema fallback reads", async () => {
+    subscriptionFindUnique
+      .mockRejectedValueOnce(missingColumnError("defaultdb.Subscription.pendingBillingInterval"))
+      .mockResolvedValueOnce({
+        id: "sub-1",
+        userId: "user-1",
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        provider: "STRIPE",
+        stripeCustomerId: "cus_123",
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_yearly_new",
+        billingInterval: "YEAR",
+      });
+
+    await expect(findSubscriptionForEntitlement("user-1")).resolves.toMatchObject({
+      id: "sub-1",
+      billingInterval: "YEAR",
+      provider: "STRIPE",
+    });
+
+    expect(subscriptionFindUnique).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      select: expect.objectContaining({
+        billingInterval: true,
+        provider: true,
+      }),
+    }));
+  });
+
+  it("hydrates a missing billing interval from the Stripe price mapping", async () => {
+    const values: Record<string, string> = {
+      STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_yearly_new",
+    };
+    mocks.getRuntimeConfigValue.mockImplementation(async (key: string) =>
+      values[key] || null,
+    );
+    subscriptionFindUnique.mockResolvedValueOnce({
+      id: "sub-1",
+      userId: "user-1",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "STRIPE",
+      stripeCustomerId: "cus_123",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly_new",
+      billingInterval: null,
+    });
+
+    await expect(findSubscriptionForEntitlement("user-1")).resolves.toMatchObject({
+      id: "sub-1",
       billingInterval: "YEAR",
     });
   });

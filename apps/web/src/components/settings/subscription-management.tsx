@@ -302,6 +302,12 @@ export default function SubscriptionManagementPage() {
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   const hasKnownStripeBillingInterval =
     subscription?.billingInterval === "MONTH" || subscription?.billingInterval === "YEAR";
+  const pendingMonthly =
+    subscription?.billingInterval === "YEAR" &&
+    subscription?.pendingBillingInterval === "MONTH";
+  const pendingMonthlyEffectiveLabel = formatDateLabel(
+    subscription?.pendingBillingIntervalEffectiveAt || subscription?.currentPeriodEndsAt,
+  );
   // Store-managed subscriptions (Apple / Google) cannot be cancelled or
   // modified through Stripe Customer Portal — store policy requires the
   // user to manage them in iOS Settings → Subscriptions or Play Store →
@@ -475,6 +481,9 @@ export default function SubscriptionManagementPage() {
     if (currentState === "FREE_ACCESS_EXPIRED") return "Choose an Individual plan to continue full access.";
     if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${subscriptionPriceLabel} on ${firstChargeLabel}.`;
     if (currentState === "TRIAL_CANCELED") return `Your trial remains active until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
+    if (currentState === "ACTIVE" && pendingMonthly) {
+      return `Annual access stays active until ${pendingMonthlyEffectiveLabel || periodEndLabel || "the renewal date"}. Monthly billing starts after that.`;
+    }
     if (currentState === "ACTIVE") return `Renews on ${periodEndLabel || "the renewal date"}.`;
     if (currentState === "CANCEL_AT_PERIOD_END") return `Your plan remains active until ${periodEndLabel || "the period end date"}. It will not renew.`;
     if (currentState === "GRACE_PERIOD") return "Your payment needs attention. Access continues during the short grace period.";
@@ -619,12 +628,6 @@ export default function SubscriptionManagementPage() {
           (currentState === "ACTIVE" || currentState === "CANCEL_AT_PERIOD_END") ? (
             (() => {
               const isOnMonthly = subscription.billingInterval === "MONTH";
-              const pendingMonthly =
-                subscription.billingInterval === "YEAR" &&
-                subscription.pendingBillingInterval === "MONTH";
-              const pendingEffectiveLabel = formatDateLabel(
-                subscription.pendingBillingIntervalEffectiveAt || subscription.currentPeriodEndsAt,
-              );
               const targetInterval = isOnMonthly ? "YEAR" : "MONTH";
               const monthlyUsd =
                 BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd ?? 3.99;
@@ -649,7 +652,7 @@ export default function SubscriptionManagementPage() {
                           Monthly billing scheduled
                         </h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Your annual access stays active until {pendingEffectiveLabel || "the end of this billing period"}.
+                          Your annual access stays active until {pendingMonthlyEffectiveLabel || "the end of this billing period"}.
                           Monthly billing starts after that, with no extra charge today.
                         </p>
                         {canManageStripeBilling ? (

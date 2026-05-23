@@ -15,6 +15,10 @@ import {
   isMobileAppClient,
   mobileExternalBillingNotAllowedResponse,
 } from "@/lib/mobile-external-billing-guard";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 
 // POST /api/subscription/switch-cycle
 // Body: { targetInterval: "MONTH" | "YEAR" }
@@ -193,22 +197,40 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-      await prisma.subscription.update({
-        where: { userId },
-        data: {
-          stripeSubscriptionScheduleId: schedule.id,
-          pendingBillingInterval: "MONTH",
-          pendingBillingIntervalEffectiveAt: periodEnd,
-          currentPeriodEndsAt: periodEnd,
-          stripeCurrentPeriodEnd: periodEnd,
-          status: "ACTIVE",
-          cancelAtPeriodEnd: false,
-          autoRenew: true,
-          canceledAt: null,
-          lastSyncedAt: now,
-          version: { increment: 1 },
-        },
-      });
+      try {
+        await prisma.subscription.update({
+          where: { userId },
+          data: {
+            stripeSubscriptionScheduleId: schedule.id,
+            pendingBillingInterval: "MONTH",
+            pendingBillingIntervalEffectiveAt: periodEnd,
+            currentPeriodEndsAt: periodEnd,
+            stripeCurrentPeriodEnd: periodEnd,
+            status: "ACTIVE",
+            cancelAtPeriodEnd: false,
+            autoRenew: true,
+            canceledAt: null,
+            lastSyncedAt: now,
+            version: { increment: 1 },
+          },
+        });
+      } catch (error) {
+        if (!isMissingDbColumnError(error)) throw error;
+        warnSchemaCompatibilityFallback("subscription:switch-cycle-pending-write", error);
+        await prisma.subscription.update({
+          where: { userId },
+          data: {
+            currentPeriodEndsAt: periodEnd,
+            stripeCurrentPeriodEnd: periodEnd,
+            status: "ACTIVE",
+            cancelAtPeriodEnd: false,
+            autoRenew: true,
+            canceledAt: null,
+            lastSyncedAt: now,
+            version: { increment: 1 },
+          },
+        });
+      }
 
       return NextResponse.json({
         status: "ACTIVE",
@@ -237,25 +259,46 @@ export async function POST(request: NextRequest) {
       : subscription.currentPeriodEndsAt;
     const newCycle = billingIntervalToCycle(targetInterval);
 
-    await prisma.subscription.update({
-      where: { userId },
-      data: {
-        billingInterval: targetInterval,
-        pendingBillingInterval: null,
-        pendingBillingIntervalEffectiveAt: null,
-        stripeSubscriptionScheduleId: null,
-        stripePriceId: newPriceId,
-        billingProductId: newPriceId,
-        currentPeriodEndsAt: periodEnd,
-        stripeCurrentPeriodEnd: periodEnd,
-        status: "ACTIVE",
-        cancelAtPeriodEnd: false,
-        autoRenew: true,
-        canceledAt: null,
-        lastSyncedAt: now,
-        version: { increment: 1 },
-      },
-    });
+    try {
+      await prisma.subscription.update({
+        where: { userId },
+        data: {
+          billingInterval: targetInterval,
+          pendingBillingInterval: null,
+          pendingBillingIntervalEffectiveAt: null,
+          stripeSubscriptionScheduleId: null,
+          stripePriceId: newPriceId,
+          billingProductId: newPriceId,
+          currentPeriodEndsAt: periodEnd,
+          stripeCurrentPeriodEnd: periodEnd,
+          status: "ACTIVE",
+          cancelAtPeriodEnd: false,
+          autoRenew: true,
+          canceledAt: null,
+          lastSyncedAt: now,
+          version: { increment: 1 },
+        },
+      });
+    } catch (error) {
+      if (!isMissingDbColumnError(error)) throw error;
+      warnSchemaCompatibilityFallback("subscription:switch-cycle-immediate-write", error);
+      await prisma.subscription.update({
+        where: { userId },
+        data: {
+          billingInterval: targetInterval,
+          stripePriceId: newPriceId,
+          billingProductId: newPriceId,
+          currentPeriodEndsAt: periodEnd,
+          stripeCurrentPeriodEnd: periodEnd,
+          status: "ACTIVE",
+          cancelAtPeriodEnd: false,
+          autoRenew: true,
+          canceledAt: null,
+          lastSyncedAt: now,
+          version: { increment: 1 },
+        },
+      });
+    }
 
     return NextResponse.json({
       status: "ACTIVE",
