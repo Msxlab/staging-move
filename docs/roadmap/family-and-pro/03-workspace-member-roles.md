@@ -1,8 +1,10 @@
 # Workspace Member Roles
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C10, §C13) ile geçersizdir. Step-up auth matrisi canonical §C10'da: member-remove (ADMIN/OWNER hedef) → `MEMBER_REMOVE` purpose ile step-up zorunlu; (MEMBER/CHILD/VIEW_ONLY hedef) → admin confirm yeterli. Workspace ownership transfer → `ROLE_OWNER_CHANGE` purpose ile step-up. Service assignee modeli `ServiceAssignee` junction'dır (§C7) — `Service.assignedUserIds` JSON YOK. CHILD AddressChangeEvent **başlatamaz** (§C13 / D22).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 1)
 - **Tier**: Infrastructure
-- **Related decisions**: D5 (sabit rol matrisi, permissionsJson yok), D3 (field-level visibility, PRIVATE service yok), D2 (entitlement owner'dan, seat overflow), D10 (event-level step-up)
+- **Related decisions**: D5 (sabit rol matrisi, permissionsJson yok), D3 (field-level visibility, PRIVATE service yok), D2 (entitlement owner'dan, seat overflow), D10 (event-level step-up), D21 (limit canonical), D22 (CHILD event başlatamaz)
 - **Related docs**: 02-workspace-model.md, 04-workspace-invitation.md, 06-entitlements-system.md, 07-api-workspace-context-helper.md, 22-child-role.md, 23-shared-services.md, 50-admin-workspace-inspector.md
 
 ## Amaç
@@ -127,7 +129,7 @@ model WorkspaceMember {
 
 Legend: ✅ = full, ❌ = denied, ⚠️ = conditional (see notes column / linked doc).
 
-**CHILD field-level**: D3 + 22 gereği CHILD her `Service.*Visibility` flag'ini görse bile sadece `assignedUserIds.includes(child.userId)` ise full görür, aksi halde `count` placeholder. Detay 22'de.
+**CHILD field-level**: D3 + 22 gereği CHILD her `Service.*Visibility` flag'ini görse bile sadece `ServiceAssignee(serviceId, childUserId)` row'u varsa full görür, aksi halde `count` placeholder. Detay 22'de.
 
 ## API endpoint'leri
 
@@ -211,7 +213,7 @@ Davet endpoint'leri 04'te.
 
 ## Güvenlik
 
-- [x] **Step-up auth**: Üye remove + role downgrade (özellikle OWNER → other) **fresh auth** gerektirir mi? **MVP'de hayır** — D10 step-up sadece AddressChangeEvent için. Member mgmt için reauthorization yapmadan UI confirm yeterli. (Açık soru: ATO sonrası attacker tüm üyeleri remove edebilir → log + bildirim + 24h undo penceresi düşünmek lazım.)
+- [x] **Step-up auth** (canonical §C10): Member-remove (ADMIN/OWNER hedef) **step-up zorunlu** purpose `MEMBER_REMOVE`. Member-remove (MEMBER/CHILD/VIEW_ONLY) admin confirm yeterli (step-up gerekmez). Role promote-to-OWNER ve demote-OWNER → step-up purpose `ROLE_OWNER_CHANGE`. Diğer rol değişiklikleri step-up gerektirmez. ATO sonrası 24h undo penceresi mevcut audit log + email notification ile sağlanır.
 - [x] **PII redaction**: Member list response'unda email tam görünür sadece OWNER/ADMIN'e; MEMBER `email` yerine `obfuscatedEmail` (`a***@example.com`).
 - [x] **Audit log**: `WORKSPACE_MEMBER_ROLE_CHANGED`, `WORKSPACE_MEMBER_REMOVED`, `WORKSPACE_MEMBER_SUSPENDED`, `WORKSPACE_MEMBER_LEFT`, `WORKSPACE_MEMBER_OVERFLOW_FLAGGED` (D2 cron). Actor + target + before/after rol.
 - [x] **Rate limit**: Role change 30/saat/workspace, remove 10/saat/workspace.
@@ -258,6 +260,6 @@ Davet endpoint'leri 04'te.
 
 - **AÇIK**: SUSPENDED status'teki member, login olabiliyor mu, sadece o workspace context'inde 403 mü görür yoksa tüm workspace listesinden bu workspace gizlenir mi?
 - **AÇIK**: Member remove sonrası kişinin **yarattığı** Service/Address ne olur? Owner'a transfer mi (önerilen), yoksa member soft-delete mi? (Şu an "kalır, createdByUserId=removed user; ama mülkiyet workspace'in" varsayımı — UX'te creator badge nasıl görünür?)
-- **AÇIK**: CHILD rolünün AddressChangeEvent **complete** etmesi (kendi assigned servisi için) — mantıken evet, ama D10 step-up CHILD password setup'ı şart koşuyor mu? 22'de cevap verilmeli.
+- [x] CHILD AddressChangeEvent **create yapamaz** (D22). Kendi assigned partner action'ını **complete** edebilir (canonical §C13); step-up parent event'in create'inde tüketildi.
 - **AÇIK**: VIEW_ONLY rolünün "comment" yetkisi var mı? (Faz 2 collaboration için; MVP'de yorum sistemi yok, bu nedenle N/A.)
 - **AÇIK**: 5 rol için kullanıcıya görünen Türkçe etiketler (Sahip / Yönetici / Üye / Çocuk / Sadece Görüntüleyici?) — 67-i18n-tr-en.md'de finalize edilmeli.

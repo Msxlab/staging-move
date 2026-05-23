@@ -1,13 +1,17 @@
 # Subscription Plan Field — FAMILY + PRO Expansion
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C1, §C5, §C14) ile geçersizdir. `Subscription.plan` mevcut alan `@db.VarChar(30)` (§C5) — enum DEĞİL — Family/Pro eklemesi DB migration **istemez**. Plan limit matrisi canonical §C1'de: FAMILY 6/17/250, PRO 10/25/1000 (aşağıda 25/250/6 veya 50/100/1000 gibi sayılar görülürse canonical kazanır). Mobile auto-render guard: `salesChannel` metadata + `MOBILE_FAMILY_PRO_PURCHASE_ENABLED=false` flag (§C14 / D11).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 1 types + Sprint 4 Stripe wiring)
 - **Tier**: Infrastructure
-- **Related decisions**: D20 (pricing), D17 (phase0_cleanup geçmişi), D14 (plan-limits adapter)
+- **Related decisions**: D20 (pricing), D17 (phase0_cleanup geçmişi), D14 (plan-limits adapter), D21 (limit canonical)
 - **Related docs**: [20](./20-family-plan-definition.md), [30](./30-pro-plan-definition.md), [06](./06-entitlements-system.md), [21](./21-family-checkout-flow.md), [31](./31-pro-checkout-flow.md), [61](./61-pricing-page-update.md)
 
 ## Amaç
 
-`Subscription.plan` field'ı Prisma'da `String` olarak tanımlı (enum **değil**) — bu yüzden Family ve Pro'yu allowed value listesine eklemek **DB migration gerektirmez**. Değişiklik `packages/shared/src/billing.ts` içindeki TypeScript union ve definitions'a iner. Bu doc, tüm güncellemeleri ve consumer audit'i tanımlar.
+`Subscription.plan` field'ı Prisma'da `String @db.VarChar(30)` olarak tanımlı (canonical §C5 — enum **değil**) — bu yüzden Family ve Pro'yu allowed value listesine eklemek **DB migration gerektirmez**. Değişiklik `packages/shared/src/billing.ts` içindeki TypeScript union ve definitions'a iner. Bu doc, tüm güncellemeleri ve consumer audit'i tanımlar.
+
+**`salesChannel` metadata** (canonical §C14 / D11 — mobile auto-render guard): Stripe Checkout Session metadata'ya `salesChannel: "web"` set edilir. Mobile read-only ekran sadece `salesChannel === "web"` olan subscription'ları kendi UI'da görüntüler; ileride IAP açılınca `"ios" | "android"` filter ile karışıklık engellenir. MVP'de `MOBILE_FAMILY_PRO_PURCHASE_ENABLED = false`.
 
 ## Kapsam
 
@@ -33,7 +37,7 @@ Pure plumbing — N/A. Developer-facing değişiklik.
 
 ## Veri modeli
 
-**DB migration: yok.** `Subscription.plan` String(20) zaten Family/Pro kabul eder. `20260417000000_phase0_cleanup` migration'ında `FAMILY → INDIVIDUAL` UPDATE yapıldığı için tarihsel `FAMILY` row'u yok, yeni `FAMILY` müşterileri fresh insert.
+**DB migration: yok.** `Subscription.plan` `@db.VarChar(30)` (canonical §C5) zaten Family/Pro kabul eder. `20260417000000_phase0_cleanup` migration'ında `FAMILY → INDIVIDUAL` UPDATE yapıldığı için tarihsel `FAMILY` row'u yok, yeni `FAMILY` müşterileri fresh insert.
 
 Doğrulama: `SELECT DISTINCT plan FROM Subscription;` — sadece `FREE_TRIAL`, `INDIVIDUAL` döner (production). Yeni değerler eklenince yeni row'lar `FAMILY` veya `PRO` olarak yazılır.
 
@@ -53,7 +57,7 @@ Yeni endpoint yok. Mevcut endpoint'lerin response'larında `plan` artık `FAMILY
 - `GET /api/profile` → `entitlement.plan` genişler
 - `GET /api/account/subscription`
 - `POST /api/webhooks/stripe` — `metadata.plan` parsing'i Family/Pro tanır
-- `POST /api/billing/checkout` — `body.targetPlan` Family/Pro accept eder
+- `POST /api/stripe/checkout` — `body.plan` Family/Pro accept eder (canonical §C3 / D26 — yeni `/api/billing/*` AÇILMAZ)
 
 ## Web
 
@@ -68,10 +72,10 @@ Audit listesi (grep "BILLING_PLAN_ORDER" `apps/web/src` `apps/admin/src` `apps/m
 | Dosya | Etki | Aksiyon |
 |---|---|---|
 | `apps/web/src/lib/shared-billing.ts` | re-export shim | Otomatik (import'tan gelir) |
-| `apps/web/src/lib/plan-limits.ts` | Plan → limit mapping | **Manual** — Family (6 user, 25 address, 250 service), Pro (50 user, 100 address, 1000 service) eklenir (cross-ref 20, 30 değerleri) |
+| `apps/web/src/lib/plan-limits.ts` | Plan → limit mapping | **Manual** — Family (6 member, 17 address, 250 service), Pro (10 member, 25 address, 1000 service) eklenir — canonical §C1 |
 | `apps/web/src/lib/api-gates.ts` | Plan gate logic | Audit: gate'ler Family/Pro plan'da nasıl davranır kararı (cross-ref 06) |
 | `apps/web/src/lib/billing-config.ts` | Stripe config lookup | Yeni 4 price key okuma path'i |
-| `apps/web/src/app/api/billing/checkout/route.ts` | Checkout handler | Family/Pro targetPlan kabul + Stripe price ID lookup |
+| `apps/web/src/app/api/stripe/checkout/route.ts` | Checkout handler (mevcut endpoint genişler — D26) | Family/Pro `plan` kabul + Stripe price ID lookup + `salesChannel: "web"` metadata |
 | `apps/web/src/app/api/webhooks/stripe/route.ts` | Webhook parser | `subscription.metadata.plan` Family/Pro accept |
 | `apps/web/src/app/account/billing/page.tsx` | Account billing page | Plan badge "Family" / "Pro" render eder; mevcut switch zaten string'i gösterir, doğrula |
 | `apps/admin/src/app/(admin)/users/[id]/page.tsx` | User detail | Plan kolonu Family/Pro render eder |
@@ -146,7 +150,7 @@ Mevcut Individual key'leri ile aynı pattern (`ENV_FIRST_RUNTIME_CONFIG_KEYS` al
 - `apps/web/src/lib/plan-limits.ts` (manuel limits eklenir)
 - `apps/web/src/lib/api-gates.ts` (gate'ler audit)
 - `apps/web/src/lib/billing-config.ts` (config lookup)
-- `apps/web/src/app/api/billing/checkout/route.ts` (Faz 4)
+- `apps/web/src/app/api/stripe/checkout/route.ts` (Faz 4 — mevcut endpoint genişler, D26)
 - `apps/web/src/app/api/webhooks/stripe/route.ts` (Faz 4)
 - `docs/design-system/reference/codebase/web/src/components/marketing/pricing-section.tsx` (reference snapshot — güncel tutulmalı mı tartışılır)
 
@@ -184,7 +188,7 @@ Her satır audit edilir, Family/Pro davranışı not düşülür. Eksik branch k
 ## Açık sorual
 
 1. Audit grep listesi mekanik olarak çalıştırılıp `docs/roadmap/family-and-pro/_audit-plan-consumers.md` olarak commit'lensin mi? Faydası: review'da gözden kaçan dosya kalmaz. Maliyet: ek doc bakımı.
-2. `Subscription.plan` field'ına Prisma seviyesinde CHECK constraint (`@db.VarChar(20)` zaten var; allowed value listesi raw SQL migration ile eklenebilir) eklensin mi? **Tercih**: hayır, TypeScript yeterli, DB constraint future-proof değil (yeni plan eklerken migration gerekir).
+2. `Subscription.plan` field'ına Prisma seviyesinde CHECK constraint (`@db.VarChar(30)` zaten var — canonical §C5; allowed value listesi raw SQL migration ile eklenebilir) eklensin mi? **Tercih**: hayır, TypeScript yeterli, DB constraint future-proof değil (yeni plan eklerken migration gerekir).
 3. `docs/design-system/reference/codebase/web/src/components/marketing/pricing-section.tsx` — bu reference snapshot otomatik mi güncellenir yoksa manuel commit ile mi? Bu doc kapsamı dışı, ayrı PR.
 4. `BILLING_PLAN_ORDER` tuple sırası UI order'ı belirliyor mu? Bazı consumer'lar `.map()` ile sıralı render ediyor olabilir. Audit'te kontrol et — eğer order önemliyse Free → Individual → Family → Pro **doğru** sıra.
 5. `runtime-config.ts` `ENV_FIRST_RUNTIME_CONFIG_KEYS` literal `as const` array'i kontrak — yeni key'ler eklenince downstream consumer'larda type widening sorunu çıkıyor mu? Test ekle.

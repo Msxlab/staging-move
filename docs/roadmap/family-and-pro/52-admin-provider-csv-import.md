@@ -1,8 +1,10 @@
 # Admin Provider CSV Import
 
-- **Status**: Proposed (Family/Pro launch, Sprint 2)
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C8, §C14) ile geçersizdir. Dotted permission kodları YASAK (D25 / §C8); `ADMIN_RESOURCES`'a `provider_imports` resource'u eklenir. **CSV import D28 / §C14 gereği Faz 2'ye ertelenmiştir**; bu doc Faz 2 referansı olarak kalır, MVP'de elle curated 10–15 partner seed edilir.
+
+- **Status**: Faz 2 (D28 sliced MVP — Phase 6 deferred)
 - **Tier**: Admin
-- **Related decisions**: D4 (action `actionTier` enum), D15 (deep-link + PDF + mailto stratejisi — bulk seed bu kanalları kapsar)
+- **Related decisions**: D4 (action `actionTier` enum), D15 (deep-link + PDF + mailto stratejisi — bulk seed bu kanalları kapsar), D25 (ADMIN_RESOURCES extension), D28 (Faz 2 ertelendi)
 - **Related docs**: [`34-service-provider-action-registry.md`](./34-service-provider-action-registry.md), [`51-admin-provider-actions-crud.md`](./51-admin-provider-actions-crud.md)
 
 ## Amaç

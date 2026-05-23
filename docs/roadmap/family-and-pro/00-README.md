@@ -1,10 +1,13 @@
 # Family & Pro Launch — Master Index
 
+> **Sliced MVP (2026-05-23)** — per D28, only 10–15 curated partners + core deep-link launcher ship Phase 5; PDF/email-template editor / CSV-import / vendor contact book / partner claim active = **Faz 2 deferred**. Aşağıdaki sprint tablosu Phase 0–5 + 5b ile sınırlıdır; Phase 6 (PDF generator, mailto editor, CSV import, full 100+ partner registry, vendor book, partner claim active, PartnerConsent active flow) Faz 2'ye taşınmıştır. Detay: [`01a-canonical-values.md §C14`](./01a-canonical-values.md) ve [`01-architecture-decisions.md` D28](./01-architecture-decisions.md).
+
 - **Status**: Proposal locked, implementation not started
-- **Target**: Family + Pro paralel lansman (~8 hafta paralel sprint)
+- **Target**: Family + Pro paralel lansman (sliced MVP — D28; 6 fazlı)
 - **Branch**: `claude/relaxed-franklin-OvI62`
 - **Owner**: TBD
 - **Decision log**: [`01-architecture-decisions.md`](./01-architecture-decisions.md) — *bu dosya tüm diğer doc'ların referans tabanıdır*
+- **Canonical values**: [`01a-canonical-values.md`](./01a-canonical-values.md) — *sayısal/string/route/cookie/header/field değerler için tek kaynak*
 
 ---
 

@@ -1,8 +1,10 @@
 # Partner Sync Attempts
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C9) ile geçersizdir. Canonical schema (§C7): `confirmationNumber String? @db.Text` ve `notes String? @db.Text` — her ikisi de **encrypted-at-rest** (canonical §C9 / D27). Aşağıdaki "low sensitivity / encrypt değil" yorumu canonical'a aykırıdır; encrypt **zorunlu**.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3)
 - **Tier**: Infrastructure (powers Pro Partner Hub + Bulk Queue)
-- **Related decisions**: D7
+- **Related decisions**: D7, D27 (confirmation/notes encrypt zorunlu)
 - **Related docs**: `01-architecture-decisions.md`, `06-entitlements-system.md`, `11-address-change-event-model.md`, `12-address-change-target-model.md`, `14-bulk-queue-dashboard.md`, `34-service-provider-action-registry.md`, `36-partner-deep-link-launcher.md`, `53-admin-sync-attempts-dashboard.md`
 
 ## Amaç
@@ -67,8 +69,8 @@ Kullanıcının bir `AddressChangeEvent` çerçevesinde her partner action'a ola
 +   lastConfirmationAt  DateTime?
 +   completedAt         DateTime?
 +
-+   confirmationNumber  String? @db.VarChar(100)
-+   notes               String? @db.Text
++   confirmationNumber  String? @db.Text   // canonical §C9 — encrypted at rest (AES-GCM, ENCRYPTION_KEY)
++   notes               String? @db.Text   // canonical §C9 — encrypted at rest
 +   resultMetadataJson  String? @db.Text
 +   // örn: { "channel":"PDF","downloadedAt":"...","filename":"..." }
 +   // veya: { "errorReason":"BROKEN_URL","statusCode":404 }
@@ -195,7 +197,7 @@ Yok.
   - CHILD: only `event.targetUserId === self` attempts (22).
   - VIEW_ONLY: GET only.
   - OVERFLOW: GET only.
-- [ ] **Encryption at rest**: `confirmationNumber` low sensitivity; encrypt değil. `notes` user-typed; encrypt değil (workspace içi private zaten).
+- [x] **Encryption at rest**: `confirmationNumber` ve `notes` **encrypted-at-rest** (canonical §C9 / D27 — `packages/shared/src/encryption.ts` AES-GCM, `ENCRYPTION_KEY`). UI'da decrypt + son 4 karakter mask varyantı (admin dashboard 53).
 - [x] **GDPR DSAR**: User-data-export'a `PartnerSyncAttempt[] WHERE eventId IN (user's events)` dahil. Erase: cascade üzerinden Event delete olunca attempt'ler de.
 
 ## Migration / backward compat

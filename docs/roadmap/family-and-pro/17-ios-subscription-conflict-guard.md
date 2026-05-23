@@ -1,20 +1,22 @@
 # iOS Subscription Conflict Guard
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C3) ile geçersizdir. Route `/api/stripe/checkout` (mevcut, genişler — D26); aşağıda `/api/stripe/checkout` referansları canonical'a aykırıdır, guard `/api/stripe/checkout` route'unda yaşar.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Infrastructure (Family + Pro checkout)
-- **Related decisions**: D11, D12
+- **Related decisions**: D11, D12, D26 (`/api/stripe/checkout` extension)
 - **Related docs**: [21](./21-family-checkout-flow.md), [31](./31-pro-checkout-flow.md), [60](./60-mobile-billing-readonly.md), [62](./62-subscription-plan-field-updates.md), [63](./63-entitlement-banners-empty-states.md)
 
 ## Amaç
 
-App Store üzerinden aktif aboneliği olan bir kullanıcı web Stripe checkout başlatırsa **çift ödeme + senkronizasyon problemi** doğar (Stripe sub + APP_STORE sub aynı user'da). D12 kararı: backend `/api/billing/checkout` endpoint'i `Subscription.provider = APP_STORE` + aktif/grace status görürse 409 döner ve kullanıcıya App Store > Subscriptions üzerinden iptal etmesini söyler.
+App Store üzerinden aktif aboneliği olan bir kullanıcı web Stripe checkout başlatırsa **çift ödeme + senkronizasyon problemi** doğar (Stripe sub + APP_STORE sub aynı user'da). D12 kararı: backend `/api/stripe/checkout` endpoint'i `Subscription.provider = APP_STORE` + aktif/grace status görürse 409 döner ve kullanıcıya App Store > Subscriptions üzerinden iptal etmesini söyler.
 
 Bu doc tek bir guard'ın server logic + web UI + mobile UI + support runbook bütününü tarifler. Edge case'leri (expired iOS, refunded iOS, Stripe → Stripe upgrade) açıklar.
 
 ## Kapsam
 
 **In scope**
-- `/api/billing/checkout` endpoint conflict logic
+- `/api/stripe/checkout` endpoint conflict logic
 - Web UI 409 handling
 - Mobile UI mevcut banner messaging
 - Audit log entry
@@ -57,10 +59,10 @@ EXPIRED, CANCELED → conflict YOK, web upgrade serbest.
 
 ### Mevcut endpoint'lere etki
 
-**`POST /api/billing/checkout`** (mevcut endpoint, conflict guard eklenir):
+**`POST /api/stripe/checkout`** (mevcut endpoint, conflict guard eklenir):
 
 ```ts
-// apps/web/src/app/api/billing/checkout/route.ts
+// apps/web/src/app/api/stripe/checkout/route.ts
 export async function POST(request: Request) {
   const { userId } = await requireWorkspaceContext(request);
   const { plan, interval } = await validateBody(request);
@@ -253,7 +255,7 @@ Doküman link: `docs/support/ios-subscription-conflicts.md` (ayrı dosya, bu spe
 
 ## Etkilenen mevcut özellikler
 
-- `apps/web/src/app/api/billing/checkout/route.ts` — guard eklenir.
+- `apps/web/src/app/api/stripe/checkout/route.ts` — guard eklenir.
 - `apps/web/src/lib/billing.ts` — `checkIosSubscriptionConflict` eklenir.
 - `/billing` sayfası UI banner.
 - `/pricing` upgrade button states.
@@ -268,7 +270,7 @@ Doküman link: `docs/support/ios-subscription-conflicts.md` (ayrı dosya, bu spe
 - Multiple subs scenario: 1 aktif iOS + 1 expired Stripe → block
 
 **Integration**
-- POST /api/billing/checkout with iOS active sub → 409 + correct body
+- POST /api/stripe/checkout with iOS active sub → 409 + correct body
 - GET /api/billing/upgrade-eligibility iOS active → canUpgrade:false
 - iOS expired → checkout success path reached
 - Stripe → Stripe upgrade: no conflict path

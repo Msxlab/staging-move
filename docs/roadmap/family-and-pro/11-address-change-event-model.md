@@ -1,8 +1,10 @@
 # Address Change Event Model
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C13) ile geçersizdir. Canonical schema `fromAddressSnapshotJson` ve `toAddressSnapshotJson` Text alanlarını taşır; `fromAddressId`/`toAddressId` nullable. **CHILD AddressChangeEvent başlatamaz** (§C13 / D22 — MVP). CHILD'in taşınma talebi Owner/Admin'e notification gönderir.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Infrastructure (Family + Pro)
-- **Related decisions**: D6, D7, D10, D19
+- **Related decisions**: D6, D7, D10, D19, D22 (CHILD event başlatamaz)
 - **Related docs**: [12](./12-address-change-target-model.md), [13](./13-address-change-wizard-web.md), [14](./14-bulk-queue-dashboard.md), [15](./15-workspace-auth-challenge.md), [16](./16-step-up-auth-flow.md), [35](./35-partner-sync-attempts.md)
 
 ## Amaç
@@ -65,8 +67,12 @@ model AddressChangeEvent {
   fromAddressId   String? @db.VarChar(30)  // null when user moves from no prior address
   fromAddress     Address? @relation("AddressChangeEventFrom", fields: [fromAddressId], references: [id])
 
-  toAddressId     String  @db.VarChar(30)
-  toAddress       Address  @relation("AddressChangeEventTo", fields: [toAddressId], references: [id])
+  toAddressId     String? @db.VarChar(30)  // canonical §C7: nullable (address silinse de event korunur)
+  toAddress       Address?  @relation("AddressChangeEventTo", fields: [toAddressId], references: [id])
+
+  // Canonical §C7 snapshot fields — adres silinse de event'in tarihçesi korunur
+  fromAddressSnapshotJson String? @db.Text
+  toAddressSnapshotJson   String? @db.Text
 
   scopeType       AddressChangeScopeType
   status          AddressChangeStatus     @default(DRAFT)
@@ -229,7 +235,7 @@ model AddressChangeEvent {
 - [x] **Permission matris** (D5):
   - OWNER/ADMIN: create any scope, view all, archive any
   - MEMBER: create SELF or CUSTOM (kendi servisleri), view own + ALL_WORKSPACE'e dahil olduğu eventler
-  - CHILD: create SELF only, MEMBER scope'unda hedef olabilir ama yaratıcı olamaz; finansal etki yok
+  - **CHILD: create YASAK** (canonical §C13 / D22). CHILD MEMBER scope'unda hedef olabilir, kendi assigned partner action'larını tamamlayabilir, ama event create edemez. Taşınma talebi Owner/Admin'e in-app notification gönderir.
   - VIEW_ONLY: yaratamaz, sadece okuma
 - [x] **Encryption at rest**: `notes` plain text (PII riski düşük; user-typed). Eğer freeform içerik hassas görülürse `packages/shared/src/encryption.ts` ile `notesEncrypted` field eklenebilir (Faz 2).
 - [x] **GDPR DSAR**: User erase'de tüm `AddressChangeEvent` rows where `createdByUserId = X` hard delete; ayrıca user adına yaratılmış event'ler `createdByUserId = NULL`'a güncellenir, `label/notes` redact edilir. Cascade `Workspace` üzerinden gelir (workspace silinirse event silinir).

@@ -1,8 +1,10 @@
 # Admin Sync Attempts Dashboard
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C8, §C9) ile geçersizdir. Dotted permission kodları (`sync_attempts.*`, `provider.actions.write`) YASAK (D25 / §C8); `ADMIN_RESOURCES`'a `sync_attempts` resource'u eklenir. `PartnerSyncAttempt.confirmationNumber` ve `notes` canonical §C9 gereği encrypted-at-rest (D27).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3)
 - **Tier**: Admin
-- **Related decisions**: D7 (PartnerSyncAttempt idempotent + openCount), D15 (Day 1 partner API yok → broken URL tespit kritik)
+- **Related decisions**: D7 (PartnerSyncAttempt idempotent + openCount), D15 (Day 1 partner API yok → broken URL tespit kritik), D25 (ADMIN_RESOURCES extension), D27 (confirmation/notes encrypt)
 - **Related docs**: [`35-partner-sync-attempts.md`](./35-partner-sync-attempts.md), [`34-service-provider-action-registry.md`](./34-service-provider-action-registry.md), [`51-admin-provider-actions-crud.md`](./51-admin-provider-actions-crud.md), [`36-partner-deep-link-launcher.md`](./36-partner-deep-link-launcher.md)
 
 ## Amaç

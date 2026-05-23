@@ -1,8 +1,10 @@
 # Marketing Copy Updates — Homepage, FAQ, Blog, Email Signatures
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C1, §C16) ile geçersizdir. Pro limitleri **10 üye / 25 adres / 1000 servis** (§C1); aşağıda "50 collaborator", "100 addresses" gibi sayılar varsa canonical kazanır. Lansman partner sayısı **10–15** (D28); "100+" copy yanıltıcıdır. "one-tap utility update", "one-click", "auto-sync", "we update X for you", "Verified Sync" yasak (§C16) — onaylı ifadeler: "guided update", "open & update", "we prepare; you submit".
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3 draft + Sprint 4 publish)
 - **Tier**: Cross-cutting
-- **Related decisions**: D1 (workspace labels), D11 (web-only sales), D15 (no false partner sync claims), D20 (pricing)
+- **Related decisions**: D1 (workspace labels), D11 (web-only sales), D15 (no false partner sync claims), D20 (pricing), D21 (limit canonical), D28 (sliced MVP 10–15 partner)
 - **Related docs**: [61](./61-pricing-page-update.md), [20](./20-family-plan-definition.md), [30](./30-pro-plan-definition.md), [66](./66-email-templates.md), [67](./67-i18n-tr-en.md)
 
 ## Amaç
@@ -93,16 +95,16 @@ Lokasyon: anasayfa içinde `<MarketingFaq>` componenti (varsa) veya ayrı `apps/
    > Yes — our Family plan lets up to 6 people share one workspace. Each member has their own login, their own services, and you choose what's shared (like the home address) vs private (like a personal email account). Owner pays once, everyone gets full access.
 
 2. **"I have multiple rental properties — what's the right plan for me?"**
-   > Pro is built for landlords and property managers. You get up to 100 addresses with labels (Home, Rental, Vacation, etc.), Partner Hub for one-tap utility updates, tax-ready property exports, and up to 50 collaborator seats for your team or accountant.
+   > Pro is built for landlords and property managers. You get up to **25 addresses** (canonical §C1) with labels (Home, Office, Rental, Vacation, Warehouse, etc.), Partner Hub for guided utility updates (we prepare; you submit), tax-ready property exports, and up to **10 collaborator seats** for your team or accountant.
 
 3. **"What happens if I downgrade from Pro to Family?"**
-   > You won't lose any data. Existing addresses and members stay accessible. You won't be able to **add new** addresses or invite new members beyond the Family limits (25 addresses, 6 members) until you upgrade again. We call this read-write protection — never read-only on what you've built. (Details: 7-day grace period and seat overflow handling.)
+   > You won't lose any data. Existing addresses and members stay accessible. You won't be able to **add new** addresses or invite new members beyond the Family limits (17 addresses, 6 members — canonical §C1) until you upgrade again. We call this read-write protection — never read-only on what you've built. (Details: 7-day grace period and seat overflow handling.)
 
 4. **"Can my child have their own account on Family?"**
    > Absolutely. Children can be invited with the CHILD role — they manage their own addresses (like a dorm or first apartment), see their own services, but the family billing and account-level controls stay with the owner. Financial info stays private from the child by default.
 
 5. **"How does the partner integration work?"**
-   > Pro's Partner Hub lists 100+ utility, government, insurance and subscription providers. When you move, you tap "Open & Update →" on any provider — we pre-fill your old address, new address and account number on your clipboard, open the provider's change-of-address page in a new tab, and track that you've completed the update. **Today we don't have direct API agreements**, so nothing happens behind the scenes automatically — you're always the one clicking Submit on the provider's site. (Per D15 — no false claims.)
+   > Pro's Partner Hub launches with **10–15 curated partners** (USPS, Amazon, Netflix, Spotify, Apple, Google, AT&T, Verizon, Comcast, Geico, Allstate, Chase, BofA, Capital One, IRS — D28). When you move, you tap "Open & Update →" on any provider — we pre-fill your old address, new address and account number on your clipboard, open the provider's change-of-address page in a new tab, and track that you've completed the update. **We don't have direct API agreements** — you're always the one clicking Submit on the provider's site. (Per D15/§C16 — "we prepare; you submit".)
 
 ### Butonlar / actionlar
 
@@ -137,7 +139,7 @@ N/A — mobile marketing surface yok.
   - Pricing math: when does Pro pay for itself
   - CTA: try free trial
 
-**Post 2**: "How to update your address with 50 companies without losing your mind"
+**Post 2**: "How to update your address with multiple companies without losing your mind"
 - Audience: top-funnel SEO ("change of address checklist")
 - Outline:
   - The 50-company reality (USPS, DMV, utility × 8, bank × 3, etc.)
