@@ -156,7 +156,9 @@ type LocalSubscriptionForWebhook = {
   billingInterval: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  stripeSubscriptionScheduleId: string | null;
   stripePriceId: string | null;
+  pendingBillingInterval: string | null;
   user?: { id: string; deletedAt: Date | string | null } | null;
 };
 
@@ -183,7 +185,9 @@ async function findLocalSubscriptionForWebhook(input: {
       billingInterval: true,
       stripeCustomerId: true,
       stripeSubscriptionId: true,
+      stripeSubscriptionScheduleId: true,
       stripePriceId: true,
+      pendingBillingInterval: true,
       user: { select: { id: true, deletedAt: true } },
     },
   }) as Promise<LocalSubscriptionForWebhook | null>;
@@ -266,6 +270,11 @@ async function syncLocalSubscriptionFromStripe(input: {
     plan: input.plan || "INDIVIDUAL",
     version: { increment: 1 },
   };
+  if (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval) {
+    updateData.pendingBillingInterval = null;
+    updateData.pendingBillingIntervalEffectiveAt = null;
+    updateData.stripeSubscriptionScheduleId = null;
+  }
 
   const result = await prisma.subscription.updateMany({
     where: { userId: local.userId },

@@ -151,27 +151,27 @@ export default function SignUpPage() {
             aria-disabled={googleUnavailable}
             disabled={googleUnavailable}
             onClick={startGoogleOAuth}
-            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-950 shadow-md shadow-black/10 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 dark:border-white/20 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+            className="group relative flex min-h-12 w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-950 shadow-[0_1px_2px_rgba(15,23,42,0.08),0_8px_24px_-12px_rgba(15,23,42,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_2px_4px_rgba(15,23,42,0.1),0_12px_28px_-12px_rgba(15,23,42,0.3)] active:translate-y-0 active:shadow-[0_1px_2px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-100 disabled:hover:translate-y-0 dark:border-white/15 dark:bg-white dark:text-slate-950 dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_8px_24px_-8px_rgba(0,0,0,0.5)] dark:hover:bg-slate-50 dark:hover:shadow-[0_2px_4px_rgba(0,0,0,0.4),0_16px_32px_-8px_rgba(0,0,0,0.6)]"
           >
-            <svg className="h-5 w-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg className="h-5 w-5 shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8a12 12 0 1 1 0-24c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8.1 20-20 0-1.2-.1-2.4-.4-3.5z"/>
               <path fill="#FF3D00" d="M6.3 14.1l6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.1z"/>
               <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
               <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
             </svg>
-            {googleReady ? tAuth("continueWithGoogle") : tAuth("googleUnavailable")}
+            <span>{googleReady ? tAuth("continueWithGoogle") : tAuth("googleUnavailable")}</span>
           </button>
           <button
             type="button"
             aria-disabled={appleUnavailable}
             disabled={appleUnavailable}
             onClick={startAppleOAuth}
-            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-black bg-black px-4 py-3 text-base font-semibold text-white shadow-md shadow-black/20 transition hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 dark:border-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+            className="group relative flex min-h-12 w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-black bg-black bg-gradient-to-b from-zinc-800 to-black px-4 py-3 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.25),0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-all duration-200 hover:-translate-y-0.5 hover:from-zinc-700 hover:to-zinc-900 hover:shadow-[0_2px_4px_rgba(0,0,0,0.3),0_12px_28px_-12px_rgba(0,0,0,0.7)] active:translate-y-0 active:shadow-[0_1px_2px_rgba(0,0,0,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-100 disabled:hover:translate-y-0 dark:border-white dark:bg-white dark:from-white dark:to-slate-100 dark:text-black dark:shadow-[0_1px_2px_rgba(255,255,255,0.1),0_8px_24px_-8px_rgba(255,255,255,0.25)] dark:hover:from-slate-50 dark:hover:to-white dark:hover:shadow-[0_2px_4px_rgba(255,255,255,0.15),0_16px_32px_-8px_rgba(255,255,255,0.3)]"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <svg className="h-5 w-5 shrink-0 -translate-y-px" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
             </svg>
-            {appleReady ? tAuth("continueWithApple") : tAuth("appleUnavailable")}
+            <span>{appleReady ? tAuth("continueWithApple") : tAuth("appleUnavailable")}</span>
           </button>
 
           {showOAuthReadinessNote && (

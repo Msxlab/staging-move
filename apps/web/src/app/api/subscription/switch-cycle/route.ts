@@ -20,10 +20,37 @@ import {
 // Body: { targetInterval: "MONTH" | "YEAR" }
 //
 // Switches the user's existing Stripe subscription between monthly and
-// yearly billing. Stripe handles proration (unused time on the current
-// price is credited toward the new one) when proration_behavior is set
-// to "create_prorations". The next invoice reflects the credit + the new
-// full-period charge, so no extra calculation is needed on our side.
+// yearly billing. Monthly -> yearly is an immediate upgrade with Stripe
+// proration. Yearly -> monthly is a deferred downgrade: keep the already
+// paid annual access until current_period_end, then start monthly billing.
+function scheduleIdFromStripeSub(stripeSub: Stripe.Subscription) {
+  const schedule = stripeSub.schedule;
+  if (!schedule) return null;
+  return typeof schedule === "string" ? schedule : schedule.id;
+}
+
+async function retrieveOrCreateSchedule(
+  stripe: Stripe,
+  stripeSub: Stripe.Subscription,
+  existingScheduleId?: string | null,
+) {
+  const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
+  if (scheduleId) {
+    return stripe.subscriptionSchedules.retrieve(scheduleId);
+  }
+  return stripe.subscriptionSchedules.create({ from_subscription: stripeSub.id });
+}
+
+async function releaseAttachedSchedule(
+  stripe: Stripe,
+  stripeSub: Stripe.Subscription,
+  existingScheduleId?: string | null,
+) {
+  const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
+  if (!scheduleId) return;
+  await stripe.subscriptionSchedules.release(scheduleId);
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (isMobileAppClient(request)) {
@@ -68,6 +95,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (subscription.billingInterval === targetInterval) {
+      if (subscription.pendingBillingInterval === targetInterval) {
+        return NextResponse.json(
+          { error: "This billing cycle change is already scheduled." },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         { error: "You are already on this billing cycle." },
         { status: 400 },
@@ -104,6 +137,92 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const now = new Date();
+
+    if (subscription.billingInterval === "YEAR" && targetInterval === "MONTH") {
+      const periodEndUnix = stripeSub.current_period_end;
+      const periodEnd = periodEndUnix
+        ? new Date(periodEndUnix * 1000)
+        : subscription.currentPeriodEndsAt;
+      if (!periodEndUnix || !periodEnd || periodEnd.getTime() <= now.getTime()) {
+        return NextResponse.json(
+          { error: "Could not determine the annual period end for scheduling." },
+          { status: 409 },
+        );
+      }
+
+      const schedule = await retrieveOrCreateSchedule(
+        stripe,
+        stripeSub,
+        subscription.stripeSubscriptionScheduleId,
+      );
+      const currentPhaseStart =
+        schedule.current_phase?.start_date ||
+        stripeSub.current_period_start ||
+        Math.floor(now.getTime() / 1000);
+      const quantity = primaryItem.quantity || 1;
+
+      await stripe.subscriptionSchedules.update(schedule.id, {
+        end_behavior: "release",
+        proration_behavior: "none",
+        metadata: {
+          locateflow_user_id: userId,
+          locateflow_pending_billing_interval: "MONTH",
+        },
+        phases: [
+          {
+            start_date: currentPhaseStart,
+            end_date: periodEndUnix,
+            items: [{ price: primaryItem.price.id, quantity }],
+            proration_behavior: "none",
+            metadata: {
+              billingInterval: "YEAR",
+              pendingBillingInterval: "MONTH",
+            },
+          },
+          {
+            iterations: 1,
+            items: [{ price: newPriceId, quantity }],
+            billing_cycle_anchor: "phase_start",
+            proration_behavior: "none",
+            metadata: {
+              billingInterval: "MONTH",
+              pendingBillingInterval: "",
+            },
+          },
+        ],
+      });
+
+      await prisma.subscription.update({
+        where: { userId },
+        data: {
+          stripeSubscriptionScheduleId: schedule.id,
+          pendingBillingInterval: "MONTH",
+          pendingBillingIntervalEffectiveAt: periodEnd,
+          currentPeriodEndsAt: periodEnd,
+          stripeCurrentPeriodEnd: periodEnd,
+          status: "ACTIVE",
+          cancelAtPeriodEnd: false,
+          autoRenew: true,
+          canceledAt: null,
+          lastSyncedAt: now,
+          version: { increment: 1 },
+        },
+      });
+
+      return NextResponse.json({
+        status: "ACTIVE",
+        billingInterval: "YEAR",
+        cycle: "yearly",
+        pendingBillingInterval: "MONTH",
+        pendingBillingIntervalEffectiveAt: periodEnd,
+        currentPeriodEndsAt: periodEnd,
+        scheduled: true,
+      });
+    }
+
+    await releaseAttachedSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
+
     const updated = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
       items: [{ id: primaryItem.id, price: newPriceId }],
       proration_behavior: "create_prorations",
@@ -113,7 +232,6 @@ export async function POST(request: NextRequest) {
       cancel_at_period_end: false,
     });
 
-    const now = new Date();
     const periodEnd = updated.current_period_end
       ? new Date(updated.current_period_end * 1000)
       : subscription.currentPeriodEndsAt;
@@ -123,6 +241,9 @@ export async function POST(request: NextRequest) {
       where: { userId },
       data: {
         billingInterval: targetInterval,
+        pendingBillingInterval: null,
+        pendingBillingIntervalEffectiveAt: null,
+        stripeSubscriptionScheduleId: null,
         stripePriceId: newPriceId,
         billingProductId: newPriceId,
         currentPeriodEndsAt: periodEnd,

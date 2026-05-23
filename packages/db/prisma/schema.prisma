@@ -232,43 +232,46 @@ model Subscription {
   provider String  @default("TRIAL") @db.VarChar(30)
   platform String? @db.VarChar(20)
 
-  stripeCustomerId          String?                 @unique @db.VarChar(191)
-  stripeSubscriptionId      String?                 @unique @db.VarChar(191)
-  stripePriceId             String?                 @db.VarChar(191)
-  stripeCurrentPeriodEnd    DateTime?
-  billingProductId          String?                 @db.VarChar(191)
-  originalTransactionId     String?                 @unique @db.VarChar(191)
-  latestTransactionId       String?                 @db.VarChar(191)
-  purchaseToken             String?                 @db.Text
-  purchaseTokenHash         String?                 @unique @db.VarChar(64)
-  appStoreEnvironment       String?                 @db.VarChar(30)
-  currentPeriodEndsAt       DateTime?
-  gracePeriodEndsAt         DateTime?
-  lastValidatedAt           DateTime?
-  lastSyncedAt              DateTime?
-  accessType                String?                 @db.VarChar(30)
-  billingInterval           String?                 @db.VarChar(20)
-  freeAccessEndsAt          DateTime?
-  cancelAtPeriodEnd         Boolean                 @default(false)
-  firstChargeAt             DateTime?
-  firstChargeAmount         Float?
-  autoRenew                 Boolean?
-  campaignId                String?                 @db.VarChar(30)
-  campaignCode              String?                 @db.VarChar(80)
-  campaignSnapshot          String?                 @db.Text
-  checkoutConsentSnapshot   String?                 @db.Text
-  termsVersion              String?                 @db.VarChar(30)
-  subscriptionPolicyVersion String?                 @db.VarChar(30)
-  refundPolicyVersion       String?                 @db.VarChar(30)
-  acquisitionCampaign       AcquisitionCampaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  acquisitionRedemptions    AcquisitionRedemption[]
+  stripeCustomerId                  String?                 @unique @db.VarChar(191)
+  stripeSubscriptionId              String?                 @unique @db.VarChar(191)
+  stripeSubscriptionScheduleId      String?                 @db.VarChar(191)
+  stripePriceId                     String?                 @db.VarChar(191)
+  stripeCurrentPeriodEnd            DateTime?
+  billingProductId                  String?                 @db.VarChar(191)
+  originalTransactionId             String?                 @unique @db.VarChar(191)
+  latestTransactionId               String?                 @db.VarChar(191)
+  purchaseToken                     String?                 @db.Text
+  purchaseTokenHash                 String?                 @unique @db.VarChar(64)
+  appStoreEnvironment               String?                 @db.VarChar(30)
+  currentPeriodEndsAt               DateTime?
+  gracePeriodEndsAt                 DateTime?
+  lastValidatedAt                   DateTime?
+  lastSyncedAt                      DateTime?
+  accessType                        String?                 @db.VarChar(30)
+  billingInterval                   String?                 @db.VarChar(20)
+  pendingBillingInterval            String?                 @db.VarChar(20)
+  pendingBillingIntervalEffectiveAt DateTime?
+  freeAccessEndsAt                  DateTime?
+  cancelAtPeriodEnd                 Boolean                 @default(false)
+  firstChargeAt                     DateTime?
+  firstChargeAmount                 Float?
+  autoRenew                         Boolean?
+  campaignId                        String?                 @db.VarChar(30)
+  campaignCode                      String?                 @db.VarChar(80)
+  campaignSnapshot                  String?                 @db.Text
+  checkoutConsentSnapshot           String?                 @db.Text
+  termsVersion                      String?                 @db.VarChar(30)
+  subscriptionPolicyVersion         String?                 @db.VarChar(30)
+  refundPolicyVersion               String?                 @db.VarChar(30)
+  acquisitionCampaign               AcquisitionCampaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  acquisitionRedemptions            AcquisitionRedemption[]
 
   trialEndsAt         DateTime?
   canceledAt          DateTime?
   // Reason captured by the cancel-survey modal at the moment the user
   // cancels renewal or a trial. Category is a fixed enum-ish slug
   // (`too_expensive`, `not_using`, `missing_feature`, ...); comment is the
-  // optional free-text follow-up. Both nullable — surveys are skippable.
+  // optional free-text follow-up. Both nullable; surveys are skippable.
   cancelReason        String?   @db.VarChar(40)
   cancelReasonComment String?   @db.VarChar(500)
 
@@ -284,10 +287,12 @@ model Subscription {
 
   @@index([userId])
   @@index([stripeCustomerId])
+  @@index([stripeSubscriptionScheduleId])
   @@index([provider, status])
   @@index([platform, provider])
   @@index([billingProductId])
   @@index([currentPeriodEndsAt])
+  @@index([pendingBillingIntervalEffectiveAt])
   @@index([accessType, status])
   @@index([campaignId])
   @@index([cancelReason])

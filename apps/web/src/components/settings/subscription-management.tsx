@@ -28,6 +28,8 @@ type SubscriptionRecord = {
   stripeSubscriptionId?: string | null;
   accessType?: string | null;
   billingInterval?: string | null;
+  pendingBillingInterval?: string | null;
+  pendingBillingIntervalEffectiveAt?: string | null;
   trialEndsAt?: string | null;
   freeAccessEndsAt?: string | null;
   firstChargeAt?: string | null;
@@ -617,6 +619,12 @@ export default function SubscriptionManagementPage() {
           (currentState === "ACTIVE" || currentState === "CANCEL_AT_PERIOD_END") ? (
             (() => {
               const isOnMonthly = subscription.billingInterval === "MONTH";
+              const pendingMonthly =
+                subscription.billingInterval === "YEAR" &&
+                subscription.pendingBillingInterval === "MONTH";
+              const pendingEffectiveLabel = formatDateLabel(
+                subscription.pendingBillingIntervalEffectiveAt || subscription.currentPeriodEndsAt,
+              );
               const targetInterval = isOnMonthly ? "YEAR" : "MONTH";
               const monthlyUsd =
                 BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd ?? 3.99;
@@ -629,6 +637,38 @@ export default function SubscriptionManagementPage() {
                 : 0;
               const switchKey = `SWITCH_${targetInterval}`;
               const isSwitching = processing === switchKey;
+              if (pendingMonthly) {
+                return (
+                  <div className="rounded-2xl border border-border bg-foreground/5 p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl border border-tone-emerald-br bg-tone-emerald-bg p-2.5">
+                        <RefreshCw className="h-5 w-5 text-tone-emerald-fg" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-foreground">
+                          Monthly billing scheduled
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Your annual access stays active until {pendingEffectiveLabel || "the end of this billing period"}.
+                          Monthly billing starts after that, with no extra charge today.
+                        </p>
+                        {canManageStripeBilling ? (
+                          <div className="mt-4">
+                            <button
+                              type="button"
+                              onClick={() => void openPortal()}
+                              disabled={Boolean(processing)}
+                              className="inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline disabled:opacity-60"
+                            >
+                              Manage in Stripe portal
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div className="rounded-2xl border border-border bg-foreground/5 p-5">
                   <div className="flex items-start gap-3">
