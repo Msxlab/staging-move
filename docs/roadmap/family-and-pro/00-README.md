@@ -47,7 +47,8 @@ Sonra ihtiyaca göre.
 | # | Dosya | Açıklama |
 |---|---|---|
 | 00 | [README.md](./00-README.md) | Bu dosya |
-| 01 | [architecture-decisions.md](./01-architecture-decisions.md) | Tüm mimari kararların tek kaynağı |
+| 01 | [architecture-decisions.md](./01-architecture-decisions.md) | Tüm mimari kararların tek kaynağı (D1–D28) |
+| 01a | [canonical-values.md](./01a-canonical-values.md) | **Sayısal/string değerlerin tek kaynağı — drift varsa bu kazanır** |
 | 02 | [workspace-model.md](./02-workspace-model.md) | `Workspace` modeli, lifecycle, ownership |
 | 03 | [workspace-member-roles.md](./03-workspace-member-roles.md) | 5 sabit rol, policy matrisi |
 | 04 | [workspace-invitation.md](./04-workspace-invitation.md) | Davet token akışı, accept flow, güvenlik |

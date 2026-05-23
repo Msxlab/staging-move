@@ -319,10 +319,104 @@ Stripe Prices Sprint 4'te yaratılır. Existing INDIVIDUAL fiyatları **değişm
 
 ---
 
+---
+
+## Review-pass kararları (2026-05-23)
+
+`01a-canonical-values.md` aynı tarihte yazıldı. Aşağıdaki D'ler review sonucu eklendi.
+
+---
+
+## D21. Final plan limit matrisi (TEK kaynak)
+
+**Karar**: Plan limitleri için tek kaynak `01a-canonical-values.md §C1`. Tüm doc'lar oraya referans verir. Drift olan doc'lar fix PR'ında düzeltilir.
+
+**Locked değerler**: FAMILY 6üye/17adres/250svc, PRO 10üye/25adres/1000svc.
+
+**Etkilenen doc'lar**: 03, 06, 20, 22, 23, 24, 25, 30, 31, 32, 60, 61, 62, 63, 64
+
+---
+
+## D22. CHILD AddressChangeEvent başlatamaz
+
+**Karar**: CHILD rolü MVP'de `AddressChangeEvent` başlatamaz. Kendi adres/servis ekleyebilir, assigned reminder kapatabilir, kendi assigned partner attempt'leri tamamlayabilir.
+
+**Neden**: ATO + parental supervision birleşik risk. Çocuğun aile çapında bir taşınmayı tetiklemesi kontrolsüz değişiklik yaratabilir. Phase 2'de CHILD'in Owner/Admin'e "ben taşınmak istiyorum" notification göndermesi planlanır.
+
+**Etkilenen doc'lar**: 03, 11, 13, 22
+
+---
+
+## D23. Partner Hub access enum (boolean değil)
+
+**Karar**: `partnerHubAccess: "none" | "teaser" | "full"`. Plan mapping:
+- FREE_TRIAL, INDIVIDUAL, FAMILY → `none`
+- PRO → `full`
+- `teaser` schema'da yer alır ama MVP'de hiçbir plan kullanmaz (Phase 2 için açık)
+
+**Neden**: Family için teaser tartışması doc'lar arasında çelişiyordu. Boolean ifade edemiyordu. MVP en sade: Family Partner Hub'a hiç erişmez, net upsell.
+
+**Etkilenen doc'lar**: 06, 20, 30, 33, 60, 63
+
+---
+
+## D24. Address label set Family/Pro split
+
+**Karar**: Family `HOME | DORM | VACATION | OTHER` kullanabilir. Pro ek olarak `OFFICE | RENTAL | WAREHOUSE`. Tax export Pro-only çünkü grouping bu Pro-only label'lara dayanır.
+
+**Neden**: D18 (label = sadece UI hint, izolasyon yok) korunuyor. Family'nin DORM ihtiyacı meşru — üniversiteye giden çocuk için. OFFICE/RENTAL/WAREHOUSE pure business etiketleri, Pro'nun ayırıcı değeri.
+
+**Etkilenen doc'lar**: 32, 20, 22, 30, 40
+
+---
+
+## D25. Admin permission `ADMIN_RESOURCES` extension (dotted YASAK)
+
+**Karar**: Doc'lardaki `provider.actions.write`, `workspace.read` gibi dotted permission kodları kullanılmaz. Mevcut `apps/admin/src/lib/admin-permissions.ts` `ADMIN_RESOURCES` array'ine yeni resource'lar eklenir: `workspaces`, `provider_actions`, `provider_imports`, `sync_attempts`, `provider_claims`. Her resource için existing `canRead/canCreate/canUpdate/canDelete` pattern korunur.
+
+**Neden**: Mevcut admin auth modeli + AdminPermission tablosu CRUD-based. Yeni dotted model paralel infrastructure gerektirir, gereksiz. Adapter daha düşük riskli.
+
+**Etkilenen doc'lar**: 50, 51, 52, 53, 54
+
+---
+
+## D26. Checkout route mevcut `/api/stripe/checkout` genişletilir
+
+**Karar**: Yeni `/api/billing/*` namespace AÇILMAZ. Mevcut `POST /api/stripe/checkout` body'ye `plan: "individual"|"family"|"pro"` + `interval: "monthly"|"yearly"` eklenerek genişler. `/api/stripe/portal` ve `/api/webhooks/stripe` dokunulmaz.
+
+**Neden**: Yeni namespace creating breaking redirect maintenance + mobile shared client değişiklik gerektirir. Genişletme sıfır breaking change.
+
+**Etkilenen doc'lar**: 21, 31, 60, 61
+
+---
+
+## D27. PartnerSyncAttempt confirmation/notes encrypt zorunlu
+
+**Karar**: `PartnerSyncAttempt.confirmationNumber` ve `notes` `Service.accountNumber` ile aynı encryption pattern (`packages/shared/src/encryption.ts`). 14 ve 35 doc'larında çelişen tutum vardı; doğru olan encrypt etmek.
+
+**Neden**: Confirmation # genelde hesap no veya partner-side reference; notes ise freeform kullanıcı girdisi (PII içerebilir). DSAR/breach risk için encrypt at rest standardı.
+
+**Etkilenen doc'lar**: 14, 35
+
+---
+
+## D28. Lansman scope = Sliced MVP (6-fazlı)
+
+**Karar**: Orijinal 8-haftalık paralel scope yerine 6-fazlı sliced delivery. Phase 6 (PDF generator, mailto editor, CSV import, full 100+ partner registry, vendor contact book, partner claim active, PartnerConsent active flow) **Faz 2'ye ertelenir**.
+
+**Lansman partner sayısı**: 10–15 elle curated (USPS, Amazon, Netflix, Spotify, Apple, Google, AT&T, Verizon, Comcast, Geico, Allstate, Chase, BofA, Capital One, IRS).
+
+**Neden**: Review'da yakalanan agresiflik. MVP sliced yapı her phase'de testable çıktı sağlar, regresyon riski düşer.
+
+**Etkilenen doc'lar**: 00, 33, 34, 37, 38, 39, 45, 46, 52
+
+---
+
 ## Karar ekleme protokolü
 
 Yeni bir mimari karar verildiğinde:
 1. Bu dosyaya `D<n>` olarak eklenir
 2. `Etkilenen doc'lar` listesi yazılır
 3. Etkilenen doc'lar PR ile güncellenir
-4. PR review en az 1 onaylı kişi gerektirir
+4. Sayısal/string değerler `01a-canonical-values.md`'ye de yansır
+5. PR review en az 1 onaylı kişi gerektirir
