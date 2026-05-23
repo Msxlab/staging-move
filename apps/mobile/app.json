@@ -183,8 +183,7 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-localization",
-      "expo-image"
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
