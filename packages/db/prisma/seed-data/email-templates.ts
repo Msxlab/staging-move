@@ -1,26 +1,43 @@
 const BRAND = {
   url: "https://locateflow.com",
   supportEmail: "support@locateflow.com",
-  bg: "#f5f7fb",
+  logoUrl: "https://locateflow.com/icons/icon-192.png",
+  bg: "#eef2f7",
   card: "#ffffff",
-  text: "#172033",
-  muted: "#5f6b7a",
-  border: "#d9e1ea",
-  panel: "#eef3f8",
-  primary: "#f97316",
-  primaryDark: "#c2410c",
+  navy: "#101828",
+  text: "#344054",
+  muted: "#667085",
+  footMuted: "#98a2b3",
+  border: "#e4e7ec",
+  divider: "#e0e5ec",
+  panel: "#f2f6fb",
+  panelBorder: "#dbe6f4",
+  foil: "#5c9ddc",
+  primary: "#1f5c9e",
+  primaryDark: "#1a4f88",
 };
 
 function p(text: string): string {
-  return `<p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${BRAND.text};">${text}</p>`;
+  return `<p class="lf-body" style="margin:0 0 14px;font-size:15px;line-height:24px;color:${BRAND.text};">${text}</p>`;
 }
 
 function note(text: string): string {
-  return `<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${BRAND.muted};">${text}</p>`;
+  return `<p class="lf-muted" style="margin:16px 0 0;font-size:13px;line-height:20px;color:${BRAND.muted};">${text}</p>`;
 }
 
 function button(href: string, label: string): string {
-  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:24px 0 8px;"><tr><td bgcolor="${BRAND.primary}" style="border-radius:6px;"><a href="${href}" style="display:inline-block;padding:13px 20px;font-size:15px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;border-radius:6px;">${label}</a></td></tr></table>`;
+  // Outlook desktop ignores CSS padding/radius on <a>, so it gets a VML
+  // roundrect (approximate fixed width); all other clients get the anchor.
+  const vmlWidth = Math.max(170, label.length * 11 + 56);
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:24px 0 8px;"><tr><td><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:48px;v-text-anchor:middle;width:${vmlWidth}px;" arcsize="17%" strokecolor="${BRAND.primary}" fillcolor="${BRAND.primary}"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">${label}</center></v:roundrect><![endif]--><!--[if !mso]><!-- --><a href="${href}" style="display:inline-block;background:${BRAND.primary};padding:15px 30px;font-size:16px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,40,.18);">${label}</a><!--<![endif]--></td></tr></table>`;
+}
+
+function badge(text: string): string {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:0 0 18px;"><tr><td class="lf-badge" bgcolor="${BRAND.panel}" style="background:${BRAND.panel};border:1px solid ${BRAND.panelBorder};border-radius:999px;padding:6px 13px;font-size:11px;line-height:14px;font-weight:700;color:${BRAND.primary};letter-spacing:0.06em;text-transform:uppercase;">${text}</td></tr></table>`;
+}
+
+function linkFallback(href: string, label: string): string {
+  return `<p class="lf-muted" style="margin:18px 0 6px;font-size:13px;line-height:20px;color:${BRAND.muted};">${label}</p><p style="margin:0;font-size:13px;line-height:20px;word-break:break-all;"><a class="lf-link-url" href="${href}" style="color:${BRAND.primary};text-decoration:underline;">${href}</a></p>`;
 }
 
 function rows(items: Array<[string, string]>): string {
@@ -45,16 +62,26 @@ const WRAP_STRINGS: Record<WrapLocale, { securityNote: string; footerNote: strin
   },
 };
 
+const DARK_STYLE = `<style>@media (prefers-color-scheme: dark){body,.lf-bg{background:#0b1220 !important;}.lf-card{background:#141d2e !important;border-color:#24314a !important;}.lf-card p,.lf-card td,.lf-card li,.lf-card span{color:#c2cbdb !important;}.lf-card h1,.lf-card strong,.lf-card b{color:#f3f6fb !important;}.lf-card .lf-muted{color:#8b97ac !important;}.lf-card td[bgcolor],.lf-card table[bgcolor]{background:#1b2740 !important;}.lf-card .lf-badge{background:#13233b !important;border-color:#264268 !important;color:#9ec6ee !important;}.lf-link-url{color:#7fb6e8 !important;}.lf-wordmark,.lf-foot-brand{color:#f3f6fb !important;}.lf-divider{border-color:#24314a !important;}}[data-ogsc] .lf-card{background:#141d2e !important;border-color:#24314a !important;}[data-ogsc] .lf-card p,[data-ogsc] .lf-card td,[data-ogsc] .lf-card span{color:#c2cbdb !important;}[data-ogsc] .lf-card h1,[data-ogsc] .lf-card strong{color:#f3f6fb !important;}[data-ogsc] .lf-card .lf-muted{color:#8b97ac !important;}[data-ogsc] .lf-card td[bgcolor],[data-ogsc] .lf-card table[bgcolor]{background:#1b2740 !important;}[data-ogsc] .lf-link-url{color:#7fb6e8 !important;}[data-ogsc] .lf-wordmark,[data-ogsc] .lf-foot-brand{color:#f3f6fb !important;}</style>`;
+
 function wrap(
   title: string,
   preheader: string,
   content: string,
   security = false,
   locale: WrapLocale = "en",
+  extras: { badge?: string; fallback?: { href: string; label: string } } = {},
 ): string {
   const strings = WRAP_STRINGS[locale];
-  const securityNote = security ? note(strings.securityNote) : "";
-  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${title}</title></head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:${BRAND.text};"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BRAND.bg}" style="border-collapse:collapse;background:${BRAND.bg};"><tr><td align="center" style="padding:24px 12px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;"><tr><td style="padding:0 0 12px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr><td bgcolor="${BRAND.primary}" style="width:34px;height:34px;border-radius:8px;text-align:center;color:#ffffff;font-weight:700;font-size:13px;line-height:34px;">LF</td><td style="padding-left:10px;font-size:20px;line-height:24px;font-weight:700;color:${BRAND.text};">LocateFlow</td></tr></table></td></tr><tr><td bgcolor="${BRAND.card}" style="background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:8px;padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:${BRAND.text};font-weight:700;">${title}</h1>${content}${securityNote}</td></tr><tr><td style="padding:18px 4px 0;text-align:left;"><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};font-weight:700;">LocateFlow</p><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};"><a href="${BRAND.url}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.url}</a>&nbsp;|&nbsp;<a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.supportEmail}</a></p><p style="margin:0;font-size:12px;line-height:18px;color:${BRAND.muted};">${strings.footerNote}</p></td></tr></table></td></tr></table></body></html>`;
+  const securityNote = security
+    ? `<p class="lf-muted" style="margin:18px 0 0;font-size:13px;line-height:20px;color:${BRAND.muted};">${strings.securityNote}</p>`
+    : "";
+  const badgeHtml = extras.badge ? badge(extras.badge) : "";
+  const fallbackHtml = extras.fallback
+    ? linkFallback(extras.fallback.href, extras.fallback.label)
+    : "";
+  const domain = BRAND.url.replace(/^https?:\/\//, "");
+  return `<!doctype html><html lang="${locale}" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${title}</title><!--[if mso]><style>body,table,td,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->${DARK_STYLE}</head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${BRAND.text};"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div><table role="presentation" class="lf-bg" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BRAND.bg}" style="border-collapse:collapse;background:${BRAND.bg};"><tr><td align="center" style="padding:32px 12px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;"><tr><td style="padding:0 4px 18px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:11px;padding:4px;box-shadow:0 1px 2px rgba(16,24,40,.10);vertical-align:middle;"><img src="${BRAND.logoUrl}" width="38" height="38" alt="LocateFlow" style="display:block;border-radius:8px;"></td><td class="lf-wordmark" style="vertical-align:middle;padding-left:12px;font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:40px;font-weight:700;color:${BRAND.navy};letter-spacing:-0.01em;">LocateFlow</td></tr></table></td></tr><tr><td class="lf-card" bgcolor="${BRAND.card}" style="background:${BRAND.card};border:1px solid ${BRAND.border};border-top:3px solid ${BRAND.foil};border-radius:12px;box-shadow:0 1px 3px rgba(16,24,40,.06),0 12px 28px rgba(16,24,40,.06);padding:38px 34px 34px;">${badgeHtml}<h1 class="lf-h1" style="margin:0 0 16px;font-size:24px;line-height:31px;color:${BRAND.navy};font-weight:700;letter-spacing:-0.01em;">${title}</h1>${content}${fallbackHtml}${securityNote}</td></tr><tr><td style="padding:22px 8px 0;text-align:left;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;"><tr><td class="lf-divider" style="border-top:1px solid ${BRAND.divider};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr></table><p class="lf-foot-brand" style="margin:16px 0 6px;font-size:13px;line-height:18px;color:${BRAND.navy};font-weight:700;font-family:Georgia,'Times New Roman',serif;">LocateFlow</p><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};"><a class="lf-link-url" href="${BRAND.url}" style="color:${BRAND.primary};text-decoration:none;">${domain}</a>&nbsp;&middot;&nbsp;<a class="lf-link-url" href="mailto:${BRAND.supportEmail}" style="color:${BRAND.primary};text-decoration:none;">${BRAND.supportEmail}</a></p><p class="lf-muted" style="margin:0;font-size:12px;line-height:18px;color:${BRAND.footMuted};">${strings.footerNote}</p></td></tr></table></td></tr></table></body></html>`;
 }
 
 export const EMAIL_TEMPLATES_ALL = [
@@ -91,9 +118,13 @@ export const EMAIL_TEMPLATES_ALL = [
       "Confirm your email address to finish setting up LocateFlow.",
       p("Hi <strong>{{firstName}}</strong>,") +
         p("Thanks for creating a LocateFlow account. Confirm your email address to finish setting up your account.") +
-        note("This link expires in 24 hours.") +
         button("{{verifyLink}}", "Verify Email"),
       true,
+      "en",
+      {
+        badge: "Secure link · expires in 24 hours",
+        fallback: { href: "{{verifyLink}}", label: "Button not working? Copy and paste this link into your browser:" },
+      },
     ),
   },
   {
@@ -109,9 +140,14 @@ export const EMAIL_TEMPLATES_ALL = [
       "Use this secure link to reset your LocateFlow password.",
       p("Hi <strong>{{firstName}}</strong>,") +
         p("We received a request to reset your LocateFlow password.") +
-        note("This link expires in 1 hour and can only be used once.") +
+        note("This link can only be used once.") +
         button("{{resetLink}}", "Reset Password"),
       true,
+      "en",
+      {
+        badge: "Secure link · expires in 1 hour",
+        fallback: { href: "{{resetLink}}", label: "Button not working? Copy and paste this link into your browser:" },
+      },
     ),
   },
   {
@@ -592,10 +628,13 @@ export const EMAIL_TEMPLATES_ALL = [
       "Confirma tu correo para terminar de configurar LocateFlow.",
       p("Hola <strong>{{firstName}}</strong>,") +
         p("Gracias por crear una cuenta en LocateFlow. Confirma tu correo para terminar de configurar tu cuenta.") +
-        note("Este enlace expira en 24 horas.") +
         button("{{verifyLink}}", "Verificar correo"),
       true,
       "es",
+      {
+        badge: "Enlace seguro · expira en 24 horas",
+        fallback: { href: "{{verifyLink}}", label: "¿El botón no funciona? Copia y pega este enlace en tu navegador:" },
+      },
     ),
   },
   {
@@ -611,10 +650,14 @@ export const EMAIL_TEMPLATES_ALL = [
       "Usa este enlace seguro para restablecer tu contraseña de LocateFlow.",
       p("Hola <strong>{{firstName}}</strong>,") +
         p("Recibimos una solicitud para restablecer tu contraseña de LocateFlow.") +
-        note("Este enlace expira en 1 hora y solo puede usarse una vez.") +
+        note("Este enlace solo puede usarse una vez.") +
         button("{{resetLink}}", "Restablecer contraseña"),
       true,
       "es",
+      {
+        badge: "Enlace seguro · expira en 1 hora",
+        fallback: { href: "{{resetLink}}", label: "¿El botón no funciona? Copia y pega este enlace en tu navegador:" },
+      },
     ),
   },
 ];
