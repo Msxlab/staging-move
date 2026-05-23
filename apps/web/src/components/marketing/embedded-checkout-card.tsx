@@ -56,6 +56,14 @@ export type EmbeddedCheckoutCardProps = {
   onPendingChange?: (pending: boolean) => void;
   /** Optional CSS classes applied to the trigger button. */
   triggerClassName?: string;
+  /**
+   * Required acknowledgement that the parent has shown the subscription
+   * disclosure UI and the user has accepted it. The server route enforces
+   * `acceptedSubscriptionTerms === true`, but the embedded card itself
+   * also refuses to launch without an explicit `true` to keep future
+   * mount sites from silently bypassing the gate.
+   */
+  termsAccepted: boolean;
 };
 
 type IntentState =
@@ -72,11 +80,20 @@ export function EmbeddedCheckoutCard({
   disabled = false,
   onPendingChange,
   triggerClassName,
+  termsAccepted,
 }: EmbeddedCheckoutCardProps) {
   const [intent, setIntent] = useState<IntentState>({ status: "idle" });
 
   const launch = useCallback(async () => {
     if (disabled || intent.status === "loading") return;
+    if (!termsAccepted) {
+      setIntent({
+        status: "error",
+        message:
+          "Please confirm you have read and accepted the subscription terms before continuing.",
+      });
+      return;
+    }
     if (!PUBLISHABLE_KEY) {
       setIntent({
         status: "error",
@@ -111,7 +128,7 @@ export function EmbeddedCheckoutCard({
       setIntent({ status: "error", message: error?.message || "Failed to start checkout." });
       onPendingChange?.(false);
     }
-  }, [disabled, intent.status, onPendingChange, plan, billingInterval, campaignCode]);
+  }, [disabled, intent.status, onPendingChange, plan, billingInterval, campaignCode, termsAccepted]);
 
   const options = useMemo(() => {
     if (intent.status !== "ready") return null;

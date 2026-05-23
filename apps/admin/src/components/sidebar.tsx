@@ -124,7 +124,7 @@ const navGroups: NavGroup[] = [
       { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock, show: ({ role }) => role === "SUPER_ADMIN" },
       { name: "Backups", nameKey: "backups", href: "/backups", icon: Database, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText, show: ({ permissions }) => permissions.audit_logs.canRead },
-      { name: "Admin Team", nameKey: "users", href: "/team", icon: Shield, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Admin Team", nameKey: "adminTeam", href: "/team", icon: Shield, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Settings", nameKey: "settings", href: "/settings", icon: Settings },
     ],
   },

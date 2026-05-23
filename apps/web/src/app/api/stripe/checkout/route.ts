@@ -453,7 +453,23 @@ export async function POST(request: NextRequest) {
       sessionParams.cancel_url = `${appUrl}/api/stripe/checkout/cancel`;
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    // Idempotency: a double-click or React StrictMode re-mount on the
+    // pricing page must not create two Stripe Checkout sessions. Scope it
+    // to a short server-side attempt bucket so a user can retry the same
+    // offer later instead of being tied to a completed/expired session for
+    // Stripe's full idempotency retention window.
+    const session = await stripe.checkout.sessions.create(sessionParams, {
+      idempotencyKey: buildStripeIdempotencyKey([
+        "stripe-checkout",
+        userId,
+        stripeCustomerId || "no-customer",
+        plan,
+        billingInterval,
+        campaign.code,
+        uiMode,
+        String(Math.floor(now.getTime() / 60_000)),
+      ]),
+    });
 
     if (uiMode === "embedded") {
       return NextResponse.json({

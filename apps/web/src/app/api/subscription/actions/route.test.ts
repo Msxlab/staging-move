@@ -33,11 +33,11 @@ const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
 };
 
-function actionRequest(action: string) {
+function actionRequest(action: string, extraBody: Record<string, unknown> = {}) {
   return new NextRequest("https://locateflow.com/api/subscription/actions", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action }),
+    body: JSON.stringify({ action, ...extraBody }),
   });
 }
 
@@ -76,9 +76,11 @@ describe("subscription actions route", () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe("TRIAL_CANCELED");
-    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith("sub_123", {
-      cancel_at_period_end: true,
-    });
+    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      { cancel_at_period_end: true },
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
     expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
       data: expect.objectContaining({
@@ -102,8 +104,90 @@ describe("subscription actions route", () => {
 
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ status: "TRIALING", autoRenew: true });
-    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith("sub_123", {
-      cancel_at_period_end: false,
+    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      { cancel_at_period_end: false },
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
+  });
+
+  it("persists survey reason and comment when the cancel modal submits them", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      status: "ACTIVE",
+      stripeSubscriptionId: "sub_123",
+      trialEndsAt: null,
+      currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    await POST(
+      actionRequest("cancel_renewal", {
+        cancelReason: "too_expensive",
+        cancelReasonComment: "  Premium pricing exceeds my budget right now.  ",
+      }),
+    );
+
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        status: "CANCEL_AT_PERIOD_END",
+        cancelReason: "too_expensive",
+        cancelReasonComment: "Premium pricing exceeds my budget right now.",
+      }),
+    });
+  });
+
+  it("does NOT overwrite an existing cancel reason when the user skips the survey", async () => {
+    // Regression: user cancels with reason → resumes → recancels via Skip.
+    // The recancel must not clobber the original reason with null.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      status: "ACTIVE",
+      stripeSubscriptionId: "sub_123",
+      trialEndsAt: null,
+      currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    await POST(actionRequest("cancel_renewal"));
+
+    const updateCall = mocks.subscriptionUpdate.mock.calls[0][0];
+    expect(updateCall.data).not.toHaveProperty("cancelReason");
+    expect(updateCall.data).not.toHaveProperty("cancelReasonComment");
+    expect(updateCall.data).toMatchObject({
+      status: "CANCEL_AT_PERIOD_END",
+      cancelAtPeriodEnd: true,
+    });
+  });
+
+  it("falls back to base update when the new cancelReason columns do not exist yet", async () => {
+    // Rolling-deploy guard: the migration that adds cancelReason/columns
+    // may land after this commit ships. The cancel path must still succeed.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      status: "ACTIVE",
+      stripeSubscriptionId: "sub_123",
+      trialEndsAt: null,
+      currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    const missingColumnError = Object.assign(new Error("Unknown column 'cancelReason'"), {
+      code: "P2022",
+      meta: { column: "Subscription.cancelReason" },
+    });
+    mocks.subscriptionUpdate
+      .mockRejectedValueOnce(missingColumnError)
+      .mockResolvedValueOnce({});
+
+    const response = await POST(
+      actionRequest("cancel_renewal", { cancelReason: "too_expensive" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledTimes(2);
+    const fallbackCall = mocks.subscriptionUpdate.mock.calls[1][0];
+    expect(fallbackCall.data).not.toHaveProperty("cancelReason");
+    expect(fallbackCall.data).toMatchObject({
+      status: "CANCEL_AT_PERIOD_END",
+      cancelAtPeriodEnd: true,
     });
   });
 });

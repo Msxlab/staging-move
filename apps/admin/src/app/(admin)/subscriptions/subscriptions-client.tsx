@@ -122,88 +122,63 @@ export default function SubscriptionsClient() {
         <p className="mt-1 text-muted-foreground">{total} subscription{total !== 1 ? "s" : ""} found</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — Active / Trialing / Canceled cards double as status filters. */}
       {stats && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Total</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{stats.totalAll}</p>
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Total</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">{stats.totalAll}</p>
+                </div>
+                <div className="rounded-lg bg-tone-sky-bg p-2"><CreditCard className="h-4 w-4 text-tone-sky-fg" /></div>
               </div>
-              <div className="rounded-lg bg-tone-sky-bg p-2"><CreditCard className="h-4 w-4 text-tone-sky-fg" /></div>
             </div>
-          </div>
-          <button onClick={() => { setFilters({ ...filters, status: filters.status === "ACTIVE" ? "" : "ACTIVE" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "ACTIVE" ? "border-tone-sage-br bg-tone-sage-bg" : "border-border hover:border-tone-sage-br"}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Active</p>
-                <p className="mt-1 text-2xl font-bold text-tone-sage-fg">{stats.activeCount}</p>
+            <button onClick={() => { setFilters({ ...filters, status: filters.status === "ACTIVE" ? "" : "ACTIVE" }); setPage(1); }}
+              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "ACTIVE" ? "border-tone-sage-br bg-tone-sage-bg" : "border-border hover:border-tone-sage-br"}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Active{filters.status === "ACTIVE" ? " · filtered" : ""}</p>
+                  <p className="mt-1 text-2xl font-bold text-tone-sage-fg">{stats.activeCount}</p>
+                </div>
+                <div className="rounded-lg bg-tone-sage-bg p-2"><CheckCircle2 className="h-4 w-4 text-tone-sage-fg" /></div>
               </div>
-              <div className="rounded-lg bg-tone-sage-bg p-2"><CheckCircle2 className="h-4 w-4 text-tone-sage-fg" /></div>
-            </div>
-          </button>
-          <button onClick={() => { setFilters({ ...filters, status: filters.status === "TRIALING" ? "" : "TRIALING" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "TRIALING" ? "border-tone-cyan-br bg-tone-cyan-bg" : "border-border hover:border-tone-cyan-br"}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Trialing</p>
-                <p className="mt-1 text-2xl font-bold text-tone-cyan-fg">{stats.trialingCount}</p>
-              </div>
-              <div className="rounded-lg bg-tone-cyan-bg p-2"><Clock className="h-4 w-4 text-tone-cyan-fg" /></div>
-            </div>
-          </button>
-          <button onClick={() => { setFilters({ ...filters, status: filters.status === "CANCELED" ? "" : "CANCELED" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "CANCELED" ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-destructive/20"}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Canceled</p>
-                <p className="mt-1 text-2xl font-bold text-destructive">{stats.canceledCount}</p>
-              </div>
-              <div className="rounded-lg bg-destructive/10 p-2"><XCircle className="h-4 w-4 text-destructive" /></div>
-            </div>
-          </button>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">New This Month</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
-              </div>
-              <div className="rounded-lg bg-tone-foil-bg p-2"><TrendingUp className="h-4 w-4 text-tone-foil-fg" /></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Plan distribution pills */}
-      {stats?.planMap && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-1">Plans:</span>
-          {Object.entries(stats.planMap).map(([plan, count]) => (
-            <button key={plan} onClick={() => { setFilters({ ...filters, plan: filters.plan === plan ? "" : plan }); setPage(1); }}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${filters.plan === plan ? "bg-primary text-primary-foreground" : PLAN_COLORS[plan] || "bg-muted text-muted-foreground"}`}>
-              {plan.replace("_", " ")} ({count as number})
             </button>
-          ))}
-        </div>
-      )}
-
-      {stats?.providerMap && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground mr-1">Sources:</span>
-            {Object.entries(stats.providerMap).map(([provider, count]) => (
-              <button key={provider} onClick={() => { setFilters({ ...filters, provider: filters.provider === provider ? "" : provider }); setPage(1); }}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${filters.provider === provider ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                {provider} ({count as number})
-              </button>
-            ))}
+            <button onClick={() => { setFilters({ ...filters, status: filters.status === "TRIALING" ? "" : "TRIALING" }); setPage(1); }}
+              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "TRIALING" ? "border-tone-cyan-br bg-tone-cyan-bg" : "border-border hover:border-tone-cyan-br"}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Trialing{filters.status === "TRIALING" ? " · filtered" : ""}</p>
+                  <p className="mt-1 text-2xl font-bold text-tone-cyan-fg">{stats.trialingCount}</p>
+                </div>
+                <div className="rounded-lg bg-tone-cyan-bg p-2"><Clock className="h-4 w-4 text-tone-cyan-fg" /></div>
+              </div>
+            </button>
+            <button onClick={() => { setFilters({ ...filters, status: filters.status === "CANCELED" ? "" : "CANCELED" }); setPage(1); }}
+              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "CANCELED" ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-destructive/20"}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Canceled{filters.status === "CANCELED" ? " · filtered" : ""}</p>
+                  <p className="mt-1 text-2xl font-bold text-destructive">{stats.canceledCount}</p>
+                </div>
+                <div className="rounded-lg bg-destructive/10 p-2"><XCircle className="h-4 w-4 text-destructive" /></div>
+              </div>
+            </button>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">New This Month</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
+                </div>
+                <div className="rounded-lg bg-tone-foil-bg p-2"><TrendingUp className="h-4 w-4 text-tone-foil-fg" /></div>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Store health reflects recorded transaction identifiers and last validation timestamps only; it does not imply live App Store or Play Store verification unless production credentials are configured.
+          <p className="text-[11px] text-muted-foreground">
+            Click Active / Trialing / Canceled to filter by status. Plan, source, and platform live in the filters panel.
           </p>
-        </div>
+        </>
       )}
 
       {/* Search + Filters */}
@@ -227,22 +202,13 @@ export default function SubscriptionsClient() {
 
       {showFilters && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Plans</option>
                 <option value="FREE_TRIAL">Free Trial</option>
                 <option value="INDIVIDUAL">Individual</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Status</label>
-              <select value={filters.status} onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setPage(1); }} className={inputCls}>
-                <option value="">All Status</option>
-                <option value="ACTIVE">Active</option>
-                <option value="TRIALING">Trialing</option>
-                <option value="CANCELED">Canceled</option>
               </select>
             </div>
             <div>
@@ -284,6 +250,9 @@ export default function SubscriptionsClient() {
               <input type="date" value={filters.dateTo} onChange={(e) => { setFilters({ ...filters, dateTo: e.target.value }); setPage(1); }} className={inputCls} />
             </div>
           </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Store health (App Store / Play Store) reflects recorded transaction identifiers and last validation timestamps only; live verification requires production credentials.
+          </p>
         </div>
       )}
 

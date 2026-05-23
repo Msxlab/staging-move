@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert } from "lucide-react";
+import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
@@ -35,6 +35,10 @@ export default function SecurityClient() {
   const [stepUpError, setStepUpError] = useState<string | null>(null);
   const [stepUpRequiresMfa, setStepUpRequiresMfa] = useState(false);
   const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
+  // Readiness baseline (groups + 5 stat cards + check details) is dense
+  // and rarely needed. Default closed; the always-visible summary header
+  // still surfaces "Needs attention" so missing controls aren't hidden.
+  const [readinessOpen, setReadinessOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -240,69 +244,81 @@ export default function SecurityClient() {
       </div>
 
       {readiness && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Security Readiness Baseline</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Live view of preventive controls, detection wiring, and backup recovery readiness.
-              </p>
+        <div className="rounded-xl border border-border bg-card">
+          <button
+            type="button"
+            onClick={() => setReadinessOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-muted/20"
+          >
+            <div className="flex items-center gap-3">
+              {readinessOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Security Readiness Baseline</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {readiness.summary.ready} ready · {readiness.summary.warn} warning{readiness.summary.warn === 1 ? "" : "s"} · {readiness.summary.missing} missing
+                  {readiness.summary.missingRequired > 0 ? ` · ${readiness.summary.missingRequired} required missing` : ""}
+                </p>
+              </div>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${readiness.summary.missingRequired > 0 ? "bg-destructive/10 text-destructive" : "bg-tone-sage-bg text-tone-sage-fg"}`}>
               {readiness.summary.missingRequired > 0 ? "Needs attention" : "Baseline healthy"}
             </span>
-          </div>
+          </button>
 
-          <div className="grid grid-cols-5 gap-4">
-            {readinessStatCards.map((card) => (
-              <div key={card.label} className="rounded-xl border border-border bg-background p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{card.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-foreground">{card.value}</p>
+          {readinessOpen && (
+            <div className="border-t border-border p-6 space-y-5">
+              <div className="grid grid-cols-5 gap-4">
+                {readinessStatCards.map((card) => (
+                  <div key={card.label} className="rounded-xl border border-border bg-background p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{card.label}</p>
+                        <p className="mt-1 text-2xl font-bold text-foreground">{card.value}</p>
+                      </div>
+                      <div className={`rounded-lg p-2.5 ${card.bg}`}><card.icon className={`h-4 w-4 ${card.color}`} /></div>
+                    </div>
                   </div>
-                  <div className={`rounded-lg p-2.5 ${card.bg}`}><card.icon className={`h-4 w-4 ${card.color}`} /></div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {readiness.missingRequiredKeys.length > 0 && (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-              <p className="text-sm font-medium text-destructive">Missing required controls</p>
-              <p className="mt-2 text-sm text-muted-foreground">{readiness.missingRequiredKeys.join(", ")}</p>
+              {readiness.missingRequiredKeys.length > 0 && (
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                  <p className="text-sm font-medium text-destructive">Missing required controls</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{readiness.missingRequiredKeys.join(", ")}</p>
+                </div>
+              )}
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                {readiness.groups.map((group) => (
+                  <div key={group.id} className="rounded-xl border border-border bg-background p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                      <span className="text-xs text-muted-foreground">{group.checks.length} checks</span>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {group.checks.map((check) => (
+                        <div key={check.key} className="rounded-lg border border-border bg-card p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-medium text-foreground">{check.label}</p>
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses[check.status]}`}>{check.status}</span>
+                          </div>
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                          <p className="mt-2 text-[11px] uppercase tracking-wide text-muted-foreground">Source: {check.source}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
+                <span>Last snapshot: {new Date(readiness.generatedAt).toLocaleString()}</span>
+                <span>
+                  Last backup: {readiness.lastBackup ? `${new Date(readiness.lastBackup.createdAt).toLocaleString()} · ${readiness.lastBackup.type}` : "No completed backup"}
+                </span>
+              </div>
             </div>
           )}
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {readiness.groups.map((group) => (
-              <div key={group.id} className="rounded-xl border border-border bg-background p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
-                  <span className="text-xs text-muted-foreground">{group.checks.length} checks</span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {group.checks.map((check) => (
-                    <div key={check.key} className="rounded-lg border border-border bg-card p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-foreground">{check.label}</p>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses[check.status]}`}>{check.status}</span>
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
-                      <p className="mt-2 text-[11px] uppercase tracking-wide text-muted-foreground">Source: {check.source}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            <span>Last snapshot: {new Date(readiness.generatedAt).toLocaleString()}</span>
-            <span>
-              Last backup: {readiness.lastBackup ? `${new Date(readiness.lastBackup.createdAt).toLocaleString()} · ${readiness.lastBackup.type}` : "No completed backup"}
-            </span>
-          </div>
         </div>
       )}
 

@@ -137,6 +137,7 @@ function SparkLine({ data }: { data: Record<string, number> }) {
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionDetails, setSessionDetails] = useState(false);
 
   useEffect(() => {
     fetch("/api/analytics")
@@ -209,24 +210,25 @@ export default function AnalyticsPage() {
       {/* Email Pipeline Health */}
       <EmailHealthWidget />
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Platform Distribution */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Platform</h2>
-          {data.platforms.length > 0 ? (
-            <DonutChart data={data.platforms} />
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">No session data yet. Enable tracking in web app.</p>
-          )}
-        </div>
+      {/* Audience Breakdown — Platform / Device / OS / Browser grouped under one card */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-5">Audience Breakdown</h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Platform */}
+          <div>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Platform</p>
+            {data.platforms.length > 0 ? (
+              <DonutChart data={data.platforms} />
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-8">No session data yet. Enable tracking in web app.</p>
+            )}
+          </div>
 
-        {/* Device Types */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Device Type</h2>
-          {data.devices.length > 0 ? (
-            <>
-              <div className="flex justify-center gap-6 mb-4">
+          {/* Device Type */}
+          <div>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Device Type</p>
+            {data.devices.length > 0 ? (
+              <div className="flex justify-center gap-6">
                 {data.devices.slice(0, 3).map(([label, value]) => {
                   const Icon = DEVICE_ICONS[label] || Monitor;
                   const total = data.devices.reduce((s, [, v]) => s + v, 0);
@@ -242,36 +244,33 @@ export default function AnalyticsPage() {
                   );
                 })}
               </div>
-            </>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">No data yet</p>
-          )}
-        </div>
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-8">No data yet</p>
+            )}
+          </div>
 
-        {/* OS Distribution */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Operating System</h2>
-          <BarChart data={data.operatingSystems} colorMap={OS_COLORS} />
+          {/* OS */}
+          <div>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Operating System</p>
+            <BarChart data={data.operatingSystems} colorMap={OS_COLORS} />
+          </div>
+
+          {/* Browser */}
+          <div>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Browser</p>
+            <BarChart data={data.browsers} colorMap={BROWSER_COLORS} />
+          </div>
         </div>
       </div>
 
-      {/* Second Row */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Browser */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Browser</h2>
-          <BarChart data={data.browsers} colorMap={BROWSER_COLORS} />
-        </div>
-
-        {/* Regions */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Top Regions</h2>
-          {data.regions.length > 0 ? (
-            <BarChart data={data.regions} maxItems={8} />
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">No location data yet</p>
-          )}
-        </div>
+      {/* Geography */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Top Regions</h2>
+        {data.regions.length > 0 ? (
+          <BarChart data={data.regions} maxItems={8} />
+        ) : (
+          <p className="text-center text-sm text-muted-foreground py-8">No location data yet</p>
+        )}
       </div>
 
       {/* Popular Pages */}
@@ -290,17 +289,27 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* Recent Sessions */}
+      {/* Recent Sessions — Browser/OS hidden by default since they live in the
+          Audience Breakdown charts above; toggle reveals them on demand. */}
       {data.recentSessions.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Recent Sessions</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-foreground">Recent Sessions</h2>
+            <button
+              type="button"
+              onClick={() => setSessionDetails((v) => !v)}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            >
+              {sessionDetails ? "Hide browser / OS" : "Show browser / OS"}
+            </button>
+          </div>
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">User</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Browser</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">OS</th>
+                  {sessionDetails && <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Browser</th>}
+                  {sessionDetails && <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">OS</th>}
                   <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Device</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Platform</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Location</th>
@@ -321,8 +330,8 @@ export default function AnalyticsPage() {
                         </a>
                       ) : "—"}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "—"}</td>
+                    {sessionDetails && <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "—"}</td>}
+                    {sessionDetails && <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "—"}</td>}
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         s.deviceType === "Mobile" ? "bg-tone-sage-bg text-tone-sage-fg" :

@@ -36,6 +36,7 @@ vi.mock("@/lib/billing", () => ({
 }));
 vi.mock("@/lib/billing-config", () => ({
   requireStripeSecretKeyForMutation: vi.fn((key: string) => key),
+  buildStripeIdempotencyKey: vi.fn((parts: string[]) => `locateflow:test:${parts.join(":")}`),
 }));
 vi.mock("@/lib/sentry", () => ({ captureMessage: vi.fn() }));
 vi.mock("@/lib/mobile-external-billing-guard", () => ({
@@ -134,11 +135,15 @@ describe("subscription switch-cycle route", () => {
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ billingInterval: "YEAR", cycle: "yearly" });
     expect(mocks.stripeSchedulesCreate).not.toHaveBeenCalled();
-    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith("sub_123", {
-      items: [{ id: "si_123", price: "price_yearly" }],
-      proration_behavior: "create_prorations",
-      cancel_at_period_end: false,
-    });
+    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      {
+        items: [{ id: "si_123", price: "price_yearly" }],
+        proration_behavior: "create_prorations",
+        cancel_at_period_end: false,
+      },
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
     expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
       data: expect.objectContaining({
@@ -181,36 +186,40 @@ describe("subscription switch-cycle route", () => {
     expect(mocks.stripeSchedulesCreate).toHaveBeenCalledWith({
       from_subscription: "sub_123",
     });
-    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith("sched_123", {
-      end_behavior: "release",
-      proration_behavior: "none",
-      metadata: {
-        locateflow_user_id: "user_1",
-        locateflow_pending_billing_interval: "MONTH",
+    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith(
+      "sched_123",
+      {
+        end_behavior: "release",
+        proration_behavior: "none",
+        metadata: {
+          locateflow_user_id: "user_1",
+          locateflow_pending_billing_interval: "MONTH",
+        },
+        phases: [
+          {
+            start_date: 1_700_000_000,
+            end_date: 1_800_000_000,
+            items: [{ price: "price_yearly", quantity: 1 }],
+            proration_behavior: "none",
+            metadata: {
+              billingInterval: "YEAR",
+              pendingBillingInterval: "MONTH",
+            },
+          },
+          {
+            iterations: 1,
+            items: [{ price: "price_monthly", quantity: 1 }],
+            billing_cycle_anchor: "phase_start",
+            proration_behavior: "none",
+            metadata: {
+              billingInterval: "MONTH",
+              pendingBillingInterval: "",
+            },
+          },
+        ],
       },
-      phases: [
-        {
-          start_date: 1_700_000_000,
-          end_date: 1_800_000_000,
-          items: [{ price: "price_yearly", quantity: 1 }],
-          proration_behavior: "none",
-          metadata: {
-            billingInterval: "YEAR",
-            pendingBillingInterval: "MONTH",
-          },
-        },
-        {
-          iterations: 1,
-          items: [{ price: "price_monthly", quantity: 1 }],
-          billing_cycle_anchor: "phase_start",
-          proration_behavior: "none",
-          metadata: {
-            billingInterval: "MONTH",
-            pendingBillingInterval: "",
-          },
-        },
-      ],
-    });
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
     const updateArgs = mocks.subscriptionUpdate.mock.calls[0][0];
     expect(updateArgs.data.billingInterval).toBeUndefined();
     expect(updateArgs.data.stripePriceId).toBeUndefined();
@@ -221,5 +230,73 @@ describe("subscription switch-cycle route", () => {
       cancelAtPeriodEnd: false,
       autoRenew: true,
     });
+  });
+
+  it("releases the Stripe schedule when the pending-interval DB write fails on missing columns", async () => {
+    // Regression: the previous fallback silently wrote a reduced payload
+    // and returned `scheduled: true` to the client, leaving an orphan
+    // Stripe schedule that the webhook had no way to reconcile.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: null,
+    });
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue(
+      stripeSubscription("price_yearly", "year"),
+    );
+    const missingColumnError = Object.assign(
+      new Error("Unknown column 'pendingBillingInterval'"),
+      { code: "P2022", meta: { column: "Subscription.pendingBillingInterval" } },
+    );
+    mocks.subscriptionUpdate.mockRejectedValueOnce(missingColumnError);
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({ code: "PENDING_INTERVAL_PERSIST_FAILED" });
+    expect(mocks.stripeSchedulesRelease).toHaveBeenCalledWith("sched_123");
+  });
+
+  it("falls through to immediate swap when the annual period has already ended", async () => {
+    // Last-hours edge: rejecting with 409 left the user stuck while
+    // Stripe auto-renewed the yearly plan. Now we fall through.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: null,
+    });
+    const expiredSub = {
+      ...stripeSubscription("price_yearly", "year"),
+      current_period_end: Math.floor(Date.now() / 1000) - 60,
+    };
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue(expiredSub);
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ billingInterval: "MONTH", cycle: "monthly" });
+    expect(mocks.stripeSchedulesUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSubscriptionsUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      expect.objectContaining({
+        items: [{ id: "si_123", price: "price_monthly" }],
+        proration_behavior: "create_prorations",
+      }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
   });
 });

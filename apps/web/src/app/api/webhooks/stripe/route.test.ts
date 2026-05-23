@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => ({
     subscription: {
       updateMany: vi.fn(),
       findFirst: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
     acquisitionRedemption: {
       findFirst: vi.fn(),
@@ -60,6 +62,8 @@ const processedMock = mocks.prisma.processedWebhookEvent as {
 const subscriptionMock = mocks.prisma.subscription as {
   updateMany: Mock;
   findFirst: Mock;
+  findMany: Mock;
+  update: Mock;
 };
 const redemptionMock = mocks.prisma.acquisitionRedemption as {
   findFirst: Mock;
@@ -230,6 +234,8 @@ describe("Stripe webhook idempotency and livemode", () => {
     processedMock.create.mockResolvedValue({});
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
     subscriptionMock.findFirst.mockResolvedValue(localSubscription());
+    subscriptionMock.findMany.mockResolvedValue([]);
+    subscriptionMock.update.mockResolvedValue({});
     redemptionMock.findFirst.mockResolvedValue(null);
     redemptionMock.updateMany.mockResolvedValue({ count: 0 });
     campaignMock.update.mockResolvedValue({});
@@ -590,5 +596,62 @@ describe("Stripe webhook idempotency and livemode", () => {
     expect(body.code).toBe("STRIPE_LIVEMODE_MISMATCH");
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
     expect(processedMock.create).not.toHaveBeenCalled();
+  });
+
+  it("clears pendingBillingInterval when a subscription_schedule is canceled out-of-band", async () => {
+    // Without this handler, a dashboard-canceled schedule would leave the
+    // user's row promising a cycle change that will never fire.
+    mocks.constructEvent.mockReturnValue({
+      id: "evt_sched_cancel_1",
+      type: "subscription_schedule.canceled",
+      created: Math.floor(Date.now() / 1000),
+      livemode: false,
+      data: {
+        object: {
+          id: "sched_abc",
+          subscription: "sub_trial_1",
+          metadata: { userId: "user_1", locateflow_pending_billing_interval: "MONTH" },
+        },
+      },
+    });
+    subscriptionMock.findMany.mockResolvedValueOnce([
+      { userId: "user_1", stripeSubscriptionScheduleId: "sched_abc" },
+    ]);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.update).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        pendingBillingInterval: null,
+        pendingBillingIntervalEffectiveAt: null,
+        stripeSubscriptionScheduleId: null,
+      }),
+    });
+  });
+
+  it("skips schedule clears for subscriptions whose scheduleId no longer matches", async () => {
+    mocks.constructEvent.mockReturnValue({
+      id: "evt_sched_stale_1",
+      type: "subscription_schedule.released",
+      created: Math.floor(Date.now() / 1000),
+      livemode: false,
+      data: {
+        object: {
+          id: "sched_abc",
+          subscription: "sub_trial_1",
+          metadata: { userId: "user_1" },
+        },
+      },
+    });
+    subscriptionMock.findMany.mockResolvedValueOnce([
+      { userId: "user_1", stripeSubscriptionScheduleId: "sched_other" },
+    ]);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.update).not.toHaveBeenCalled();
   });
 });

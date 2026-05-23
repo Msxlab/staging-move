@@ -562,6 +562,67 @@ describe("admin user detail billing updates", () => {
     });
   });
 
+  it("clears manual premium markers when revoking to default free access", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      firstName: "Person",
+      lastName: "Example",
+      subscription: {
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        provider: "ADMIN",
+        accessType: "FREE_ACCESS",
+        stripeSubscriptionId: null,
+        originalTransactionId: null,
+        latestTransactionId: null,
+        purchaseTokenHash: null,
+        premiumUntil: new Date("2026-12-01T00:00:00.000Z"),
+        premiumGrantedBy: "admin_previous",
+        premiumGrantedAt: new Date("2026-05-01T00:00:00.000Z"),
+        freeAccessEndsAt: null,
+        cancelAtPeriodEnd: true,
+        autoRenew: false,
+      },
+    });
+
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          plan: "FREE_TRIAL",
+          subscriptionStatus: "FREE_ACCESS",
+          provider: "TRIAL",
+          accessType: "FREE_ACCESS",
+          premiumUntil: null,
+          freeAccessEndsAt: "2026-12-15",
+          cancelAtPeriodEnd: false,
+          autoRenew: false,
+          confirmPassword: "admin-password",
+          mfaCode: "123456",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        plan: "FREE_TRIAL",
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        accessType: "FREE_ACCESS",
+        premiumUntil: null,
+        premiumGrantedBy: null,
+        premiumGrantedAt: null,
+        freeAccessEndsAt: expect.any(Date),
+        cancelAtPeriodEnd: false,
+        autoRenew: false,
+      }),
+    });
+  });
+
   it("rejects unsupported plan values", async () => {
     const response = await PATCH(
       new NextRequest("https://admin.locateflow.com/api/users/user_1", {

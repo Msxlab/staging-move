@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { maskEmail } from "@/lib/privacy";
@@ -11,6 +11,7 @@ import {
   accessSourceLabel,
   effectiveStatusLabel,
   getEffectiveEntitlement,
+  TRIAL_DURATION_DAYS,
 } from "@/lib/shared-billing";
 
 interface AdminApiError {
@@ -97,6 +98,14 @@ export default function UserDetailClient() {
   const [subscriptionActionBusy, setSubscriptionActionBusy] = useState(false);
   const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
   const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
+  const [grantPresetMonths, setGrantPresetMonths] = useState<number | "custom">(1);
+  const [grantCustomDate, setGrantCustomDate] = useState("");
+  const [grantReason, setGrantReason] = useState("");
+  const [pendingGrantAction, setPendingGrantAction] = useState<"grant" | "revoke" | null>(null);
+  const [grantActionError, setGrantActionError] = useState<string | null>(null);
+  const [grantActionRequiresMfa, setGrantActionRequiresMfa] = useState(false);
+  const [grantActionBusy, setGrantActionBusy] = useState(false);
+  const [advancedBillingOpen, setAdvancedBillingOpen] = useState(false);
   const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
   // Per-modal flag: server returned `requiresMfa: true` last attempt, so
   // the PasswordConfirmModal should mark the MFA field as required and
@@ -359,6 +368,105 @@ export default function UserDetailClient() {
       toast.error("Failed to update premium settings.");
     } finally {
       setSavingPremium(false);
+    }
+  }
+
+  async function confirmGrantPremiumAction(_confirmPassword: string, stepUp: StepUpValues) {
+    if (!user || !pendingGrantAction) return;
+    setGrantActionBusy(true);
+    setGrantActionError(null);
+    try {
+      let payload: any = { ...stepUp };
+      if (pendingGrantAction === "grant") {
+        let untilIso = "";
+        if (grantPresetMonths === "custom") {
+          if (!grantCustomDate) {
+            setGrantActionError("Pick a custom expiry date.");
+            setGrantActionBusy(false);
+            return;
+          }
+          untilIso = grantCustomDate;
+        } else {
+          const d = new Date();
+          d.setMonth(d.getMonth() + grantPresetMonths);
+          untilIso = d.toISOString().slice(0, 10);
+        }
+        // Minimum safe payload for an admin manual grant. Backend auto-flips
+        // provider→ADMIN (route.ts:1016-1022) when premiumUntil is sent and
+        // provider isn't explicit, then validates accessType≠PAID against
+        // ADMIN (route.ts:243-245), so we send accessType=null.
+        payload = {
+          ...payload,
+          plan: "INDIVIDUAL",
+          subscriptionStatus: "ACTIVE",
+          accessType: null,
+          premiumUntil: untilIso,
+          trialEndsAt: null,
+          freeAccessEndsAt: null,
+          autoRenew: false,
+          cancelAtPeriodEnd: true,
+          premiumNote: grantReason || null,
+        };
+      } else {
+        const freeAccessUntil = new Date();
+        freeAccessUntil.setDate(freeAccessUntil.getDate() + TRIAL_DURATION_DAYS);
+        // Revoke: clear admin grant and drop the user back to default free
+        // access. Only safe when current provider is ADMIN (not Stripe/App
+        // Store/Play Store) — the UI hides this button otherwise.
+        payload = {
+          ...payload,
+          plan: "FREE_TRIAL",
+          subscriptionStatus: "FREE_ACCESS",
+          provider: "TRIAL",
+          accessType: "FREE_ACCESS",
+          premiumUntil: null,
+          freeAccessEndsAt: freeAccessUntil.toISOString().slice(0, 10),
+          trialEndsAt: null,
+          autoRenew: false,
+          cancelAtPeriodEnd: false,
+          premiumNote: grantReason || null,
+        };
+      }
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to update premium access.");
+        setGrantActionError(message);
+        setGrantActionRequiresMfa(requiresMfa);
+        toast.error(message);
+        return;
+      }
+      // Refetch the user so the Effective Access summary, raw subscription
+      // row, and the Advanced form all reflect the post-write state from
+      // a single source of truth.
+      const refetch = await fetch(`/api/users/${params.id}`);
+      if (refetch.ok) {
+        const data = await refetch.json();
+        setUser(data.user);
+        const sub = data.user?.subscription || {};
+        setPremiumForm({
+          subscriptionStatus: sub.status || "",
+          accessType: sub.accessType || "",
+          premiumUntil: sub.premiumUntil ? new Date(sub.premiumUntil).toISOString().slice(0, 10) : "",
+          trialEndsAt: sub.trialEndsAt ? new Date(sub.trialEndsAt).toISOString().slice(0, 10) : "",
+          freeAccessEndsAt: sub.freeAccessEndsAt ? new Date(sub.freeAccessEndsAt).toISOString().slice(0, 10) : "",
+          premiumNote: sub.premiumNote || "",
+          cancelAtPeriodEnd: Boolean(sub.cancelAtPeriodEnd),
+          autoRenew: Boolean(sub.autoRenew),
+        });
+      }
+      setPendingGrantAction(null);
+      setGrantActionRequiresMfa(false);
+      setGrantReason("");
+      toast.success(pendingGrantAction === "grant" ? "Premium granted" : "Premium revoked");
+    } catch {
+      setGrantActionError("Failed to update premium access.");
+      toast.error("Failed to update premium access.");
+    } finally {
+      setGrantActionBusy(false);
     }
   }
 
@@ -684,15 +792,27 @@ export default function UserDetailClient() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-        <StatCard label="Subscription" value={user.subscription?.plan || "FREE_TRIAL"} />
-        <StatCard label="Access Type" value={user.subscription?.accessType || "Default"} />
-        <StatCard label="Addresses" value={user.addresses?.length || 0} />
-        <StatCard label="Moving Plans" value={user.movingPlans?.length || 0} />
-        <StatCard label="Move Tasks" value={moveTasks.length} />
-        <StatCard label="Custom Providers" value={customProviders.length} />
-        <StatCard label="Push Devices" value={pushDevices.length} />
-      </div>
+      {(() => {
+        const eff = getEffectiveEntitlement(user.subscription || null);
+        const expires = eff.expiresAt ? new Date(eff.expiresAt).toLocaleDateString() : null;
+        const planLabel = effectiveStatusLabel(eff.effectiveStatus);
+        const planDetail = expires ? `Expires ${expires}` : accessSourceLabel(eff.accessSource);
+        return (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <StatCard
+              label="Plan"
+              value={planLabel}
+              detail={planDetail}
+              accent={eff.hasPremium ? "sage" : eff.hasAccess ? undefined : "honey"}
+            />
+            <StatCard label="Addresses" value={user.addresses?.length || 0} />
+            <StatCard label="Moving Plans" value={user.movingPlans?.length || 0} />
+            <StatCard label="Move Tasks" value={moveTasks.length} />
+            <StatCard label="Custom Providers" value={customProviders.length} />
+            <StatCard label="Push Devices" value={pushDevices.length} />
+          </div>
+        );
+      })()}
 
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -1081,97 +1201,129 @@ export default function UserDetailClient() {
             </div>
           );
         })()}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
-            <select
-              value={premiumForm.subscriptionStatus}
-              onChange={(e) => setPremiumForm({ ...premiumForm, subscriptionStatus: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="FREE_ACCESS">Free Access</option>
-              <option value="FREE_ACCESS_EXPIRED">Free Access Expired</option>
-              <option value="TRIALING">Trialing</option>
-              <option value="TRIAL_CANCELED">Trial Canceled</option>
-              <option value="ACTIVE">Active</option>
-              <option value="CANCEL_AT_PERIOD_END">Cancel at Period End</option>
-              <option value="CANCELED">Canceled</option>
-              <option value="PAST_DUE">Past Due</option>
-              <option value="GRACE_PERIOD">Grace Period</option>
-              <option value="REFUNDED">Refunded</option>
-              <option value="EXPIRED">Expired</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Access Type</label>
-            <select
-              value={premiumForm.accessType}
-              onChange={(e) => setPremiumForm({ ...premiumForm, accessType: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Default / Paid</option>
-              <option value="FREE_ACCESS">Free Access</option>
-              <option value="FREE_TRIAL">Free Trial</option>
-              <option value="PAID">Paid</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Premium Until</label>
-            <input
-              type="date"
-              value={premiumForm.premiumUntil}
-              onChange={(e) => setPremiumForm({ ...premiumForm, premiumUntil: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Trial Ends At</label>
-            <input
-              type="date"
-              value={premiumForm.trialEndsAt}
-              onChange={(e) => setPremiumForm({ ...premiumForm, trialEndsAt: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Free Access Ends At</label>
-            <input
-              type="date"
-              value={premiumForm.freeAccessEndsAt}
-              onChange={(e) => setPremiumForm({ ...premiumForm, freeAccessEndsAt: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Quick Actions</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 30);
-                  setPremiumForm({ ...premiumForm, premiumUntil: d.toISOString().slice(0, 10), subscriptionStatus: "ACTIVE" });
-                }}
-                className="flex-1 rounded-lg border border-primary/30 bg-primary/10 px-2 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition"
-              >+30 days</button>
-              <button
-                onClick={() => {
-                  const d = new Date();
-                  d.setFullYear(d.getFullYear() + 1);
-                  setPremiumForm({ ...premiumForm, premiumUntil: d.toISOString().slice(0, 10), subscriptionStatus: "ACTIVE" });
-                }}
-                className="flex-1 rounded-lg border border-primary/30 bg-primary/10 px-2 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition"
-              >+1 year</button>
+        {(() => {
+          const hasStripeSub = hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId);
+          const currentProvider = user.subscription?.provider || null;
+          const isAdminGrant = currentProvider === "ADMIN";
+          // Revoke is only safe when current provider is ADMIN. For Stripe/IAP
+          // users we hide it and steer the admin to the provider-native flow
+          // (Cancel renewal below).
+          const canRevoke = isAdminGrant && (user.subscription?.premiumUntil || user.subscription?.status === "ACTIVE");
+          const previewIso = (() => {
+            if (grantPresetMonths === "custom") return grantCustomDate || "";
+            const d = new Date();
+            d.setMonth(d.getMonth() + grantPresetMonths);
+            return d.toISOString().slice(0, 10);
+          })();
+          const previewLabel = previewIso ? new Date(previewIso + "T00:00:00").toLocaleDateString() : "—";
+          return (
+            <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Grant Premium Access</h3>
+              </div>
+              {hasStripeSub && (
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-tone-honey-bg bg-tone-honey-bg/50 px-3 py-2 text-xs text-tone-honey-fg">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    User has an active Stripe subscription. Manual grant overrides it locally; the next Stripe webhook may re-sync. Prefer Stripe-side actions for paying customers.
+                  </span>
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr]">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Duration</label>
+                  <select
+                    value={String(grantPresetMonths)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setGrantPresetMonths(v === "custom" ? "custom" : Number(v));
+                    }}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="1">1 month</option>
+                    <option value="3">3 months</option>
+                    <option value="6">6 months</option>
+                    <option value="12">1 year</option>
+                    <option value="custom">Custom date…</option>
+                  </select>
+                </div>
+                {grantPresetMonths === "custom" ? (
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Expiry date</label>
+                    <input
+                      type="date"
+                      value={grantCustomDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(e) => setGrantCustomDate(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Expires on</label>
+                    <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-sm font-medium text-foreground">
+                      {previewLabel}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Reason (optional)</label>
+                  <input
+                    type="text"
+                    value={grantReason}
+                    onChange={(e) => setGrantReason(e.target.value)}
+                    placeholder="e.g. Goodwill credit for support escalation"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  {user.subscription?.premiumGrantedAt
+                    ? <>Last granted {new Date(user.subscription.premiumGrantedAt).toLocaleDateString()}{user.subscription.premiumNote ? ` — "${user.subscription.premiumNote}"` : ""}</>
+                    : "No previous admin grant on record."}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {canRevoke && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGrantActionError(null);
+                        setPendingGrantAction("revoke");
+                      }}
+                      disabled={grantActionBusy}
+                      className="rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      Revoke Premium
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (grantPresetMonths === "custom" && !grantCustomDate) {
+                        toast.error("Pick a custom expiry date first.");
+                        return;
+                      }
+                      setGrantActionError(null);
+                      setPendingGrantAction("grant");
+                    }}
+                    disabled={grantActionBusy}
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {grantActionBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Grant Premium
+                  </button>
+                </div>
+              </div>
+              {grantActionError && (
+                <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {grantActionError}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
-            Auto-renewal: <span className="font-medium text-foreground">{premiumForm.autoRenew ? "On" : "Off"}</span>
-          </div>
-          <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
-            Cancel at period end: <span className="font-medium text-foreground">{premiumForm.cancelAtPeriodEnd ? "Yes" : "No"}</span>
-          </div>
-        </div>
+          );
+        })()}
         {user.subscription?.campaignSnapshot && (
           <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
             <p className="text-xs font-medium text-muted-foreground">Campaign snapshot</p>
@@ -1232,39 +1384,121 @@ export default function UserDetailClient() {
             )}
           </div>
         )}
-        <div className="mb-4">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Admin Note</label>
-          <input
-            value={premiumForm.premiumNote}
-            onChange={(e) => setPremiumForm({ ...premiumForm, premiumNote: e.target.value })}
-            placeholder="Reason for premium grant (optional)"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
-            {user.subscription?.premiumGrantedAt && (
-              <span>Last granted: {new Date(user.subscription.premiumGrantedAt).toLocaleDateString()} {user.subscription.premiumNote ? `— "${user.subscription.premiumNote}"` : ""}</span>
-            )}
-          </div>
+        <div className="rounded-lg border border-border">
           <button
-            onClick={() => {
-              setPremiumError(null);
-              setPremiumConfirmError(null);
-              setShowPremiumConfirm(true);
-            }}
-            disabled={savingPremium}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            type="button"
+            onClick={() => setAdvancedBillingOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/30"
           >
-            {savingPremium ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Premium Settings
+            <span className="flex items-center gap-2">
+              {advancedBillingOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              Advanced billing fields
+            </span>
+            <span className="text-xs text-muted-foreground/70">Raw status, access type, dates — for Stripe / IAP edge cases</span>
           </button>
+          {advancedBillingOpen && (
+            <div className="border-t border-border p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
+                  <select
+                    value={premiumForm.subscriptionStatus}
+                    onChange={(e) => setPremiumForm({ ...premiumForm, subscriptionStatus: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="FREE_ACCESS">Free Access</option>
+                    <option value="FREE_ACCESS_EXPIRED">Free Access Expired</option>
+                    <option value="TRIALING">Trialing</option>
+                    <option value="TRIAL_CANCELED">Trial Canceled</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="CANCEL_AT_PERIOD_END">Cancel at Period End</option>
+                    <option value="CANCELED">Canceled</option>
+                    <option value="PAST_DUE">Past Due</option>
+                    <option value="GRACE_PERIOD">Grace Period</option>
+                    <option value="REFUNDED">Refunded</option>
+                    <option value="EXPIRED">Expired</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Access Type</label>
+                  <select
+                    value={premiumForm.accessType}
+                    onChange={(e) => setPremiumForm({ ...premiumForm, accessType: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Default / Paid</option>
+                    <option value="FREE_ACCESS">Free Access</option>
+                    <option value="FREE_TRIAL">Free Trial</option>
+                    <option value="PAID">Paid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Premium Until</label>
+                  <input
+                    type="date"
+                    value={premiumForm.premiumUntil}
+                    onChange={(e) => setPremiumForm({ ...premiumForm, premiumUntil: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Trial Ends At</label>
+                  <input
+                    type="date"
+                    value={premiumForm.trialEndsAt}
+                    onChange={(e) => setPremiumForm({ ...premiumForm, trialEndsAt: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Free Access Ends At</label>
+                  <input
+                    type="date"
+                    value={premiumForm.freeAccessEndsAt}
+                    onChange={(e) => setPremiumForm({ ...premiumForm, freeAccessEndsAt: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
+                  Auto-renewal: <span className="font-medium text-foreground">{premiumForm.autoRenew ? "On" : "Off"}</span>
+                </div>
+                <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
+                  Cancel at period end: <span className="font-medium text-foreground">{premiumForm.cancelAtPeriodEnd ? "Yes" : "No"}</span>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Admin Note</label>
+                <input
+                  value={premiumForm.premiumNote}
+                  onChange={(e) => setPremiumForm({ ...premiumForm, premiumNote: e.target.value })}
+                  placeholder="Reason for raw field edit (optional)"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={() => {
+                    setPremiumError(null);
+                    setPremiumConfirmError(null);
+                    setShowPremiumConfirm(true);
+                  }}
+                  disabled={savingPremium}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {savingPremium ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Raw Fields
+                </button>
+              </div>
+              {premiumError && (
+                <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {premiumError}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {premiumError && (
-          <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {premiumError}
-          </div>
-        )}
       </div>
 
       {/* Profile */}
@@ -1801,6 +2035,27 @@ export default function UserDetailClient() {
         onConfirm={confirmSubscriptionAction}
       />
       <PasswordConfirmModal
+        open={Boolean(pendingGrantAction)}
+        title={pendingGrantAction === "revoke" ? "Revoke premium access" : "Grant premium access"}
+        description={
+          pendingGrantAction === "revoke"
+            ? `Revoke the admin premium grant for ${maskEmail(user.email)} and drop the user back to default free access. Enter your admin password and MFA code or backup code to continue.`
+            : `Grant manual premium access to ${maskEmail(user.email)}${grantReason ? ` — "${grantReason}"` : ""}. Enter your admin password and MFA code or backup code to continue.`
+        }
+        confirmLabel={pendingGrantAction === "revoke" ? "Revoke Premium" : "Grant Premium"}
+        busy={grantActionBusy}
+        error={grantActionError}
+        requiresMfa={grantActionRequiresMfa}
+        onClose={() => {
+          if (!grantActionBusy) {
+            setPendingGrantAction(null);
+            setGrantActionError(null);
+            setGrantActionRequiresMfa(false);
+          }
+        }}
+        onConfirm={confirmGrantPremiumAction}
+      />
+      <PasswordConfirmModal
         open={showPremiumConfirm}
         title="Update billing entitlements"
         description={`Enter your admin password and MFA code or backup code to update subscription, premium, or trial entitlement fields for ${maskEmail(user.email)}.`}
@@ -1821,11 +2076,24 @@ export default function UserDetailClient() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({
+  label,
+  value,
+  detail,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  detail?: string | null;
+  accent?: "sage" | "honey";
+}) {
+  const accentClass =
+    accent === "sage" ? "text-tone-sage-fg" : accent === "honey" ? "text-tone-honey-fg" : "text-foreground";
   return (
     <div className="rounded-xl border border-border bg-card p-4 text-center">
       <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
+      <p className={`mt-1 text-xl font-bold ${accentClass}`}>{value}</p>
+      {detail && <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>}
     </div>
   );
 }

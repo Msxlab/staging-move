@@ -300,14 +300,36 @@ export default function UsersPage() {
           </div>
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
             <p className="kpi-label mb-2">Plan Distribution</p>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(stats.planMap || {}).map(([plan, count]) => (
-                <button key={plan} onClick={() => { setFilters({ ...filters, plan: filters.plan === plan ? "" : plan }); setPage(1); }}
-                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors cursor-pointer ${filters.plan === plan ? "bg-primary text-primary-foreground" : PLAN_COLORS[plan] || "bg-muted text-muted-foreground"}`}>
-                  {plan}: {count as number}
-                </button>
-              ))}
-            </div>
+            {(() => {
+              const entries = Object.entries(stats.planMap || {}) as [string, number][];
+              const total = entries.reduce((sum, [, count]) => sum + count, 0) || 1;
+              return (
+                <>
+                  <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                    {entries.map(([plan, count]) => {
+                      const pct = (count / total) * 100;
+                      const bar =
+                        plan === "INDIVIDUAL" ? "bg-tone-sky-fg"
+                        : plan === "FAMILY" ? "bg-tone-foil-fg"
+                        : "bg-tone-honey-fg";
+                      return <div key={plan} className={bar} style={{ width: `${pct}%` }} title={`${plan}: ${count}`} />;
+                    })}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    {entries.map(([plan, count]) => (
+                      <span key={plan} className="inline-flex items-center gap-1">
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                          plan === "INDIVIDUAL" ? "bg-tone-sky-fg"
+                          : plan === "FAMILY" ? "bg-tone-foil-fg"
+                          : "bg-tone-honey-fg"
+                        }`} />
+                        {plan}: <span className="font-medium text-foreground">{count}</span>
+                      </span>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

@@ -809,6 +809,7 @@ export default function SubscriptionManagementPage() {
                         disabled={Boolean(processing)}
                         onPendingChange={(pending) => setProcessing(pending ? "EMBEDDED_CHECKOUT" : null)}
                         triggerClassName="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/10"
+                        termsAccepted={acceptedAnnualTerms}
                       />
                     </div>
                   ) : null}
@@ -872,6 +873,7 @@ export default function SubscriptionManagementPage() {
                         disabled={Boolean(processing)}
                         onPendingChange={(pending) => setProcessing(pending ? "EMBEDDED_CHECKOUT" : null)}
                         triggerClassName="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/10"
+                        termsAccepted={acceptedMonthlyTerms}
                       />
                     </div>
                   ) : null}

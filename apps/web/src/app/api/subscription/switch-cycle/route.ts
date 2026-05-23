@@ -4,7 +4,10 @@ import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
+import {
+  buildStripeIdempotencyKey,
+  requireStripeSecretKeyForMutation,
+} from "@/lib/billing-config";
 import {
   billingIntervalToCycle,
   getStripePriceIdForPlanAndInterval,
@@ -53,6 +56,112 @@ async function releaseAttachedSchedule(
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
   if (!scheduleId) return;
   await stripe.subscriptionSchedules.release(scheduleId);
+}
+
+type LocalSubscriptionForSwitch = {
+  userId: string;
+  version?: number | null;
+  currentPeriodEndsAt: Date | null;
+};
+
+async function applyImmediateCycleSwap(input: {
+  stripe: Stripe;
+  userId: string;
+  subscription: LocalSubscriptionForSwitch;
+  stripeSub: Stripe.Subscription;
+  primaryItemId: string;
+  newPriceId: string;
+  targetInterval: StripeBillingInterval;
+  now: Date;
+}) {
+  const {
+    stripe,
+    userId,
+    subscription,
+    stripeSub,
+    primaryItemId,
+    newPriceId,
+    targetInterval,
+    now,
+  } = input;
+
+  const updated = await stripe.subscriptions.update(
+    stripeSub.id,
+    {
+      items: [{ id: primaryItemId, price: newPriceId }],
+      proration_behavior: "create_prorations",
+      // Resume auto-renewal when switching — if the user had set the plan
+      // to cancel at period end, switching cycles is a clear "I want to
+      // stay" signal, so we clear the cancel flag.
+      cancel_at_period_end: false,
+    },
+    {
+      idempotencyKey: buildStripeIdempotencyKey([
+        "subscription-switch-immediate",
+        stripeSub.id,
+        newPriceId,
+        String(subscription.version ?? 0),
+      ]),
+    },
+  );
+
+  const periodEnd = updated.current_period_end
+    ? new Date(updated.current_period_end * 1000)
+    : subscription.currentPeriodEndsAt;
+  const newCycle = billingIntervalToCycle(targetInterval);
+
+  try {
+    await prisma.subscription.update({
+      where: { userId },
+      data: {
+        billingInterval: targetInterval,
+        pendingBillingInterval: null,
+        pendingBillingIntervalEffectiveAt: null,
+        stripeSubscriptionScheduleId: null,
+        stripePriceId: newPriceId,
+        billingProductId: newPriceId,
+        currentPeriodEndsAt: periodEnd,
+        stripeCurrentPeriodEnd: periodEnd,
+        status: "ACTIVE",
+        cancelAtPeriodEnd: false,
+        autoRenew: true,
+        canceledAt: null,
+        lastSyncedAt: now,
+        version: { increment: 1 },
+      },
+    });
+  } catch (error) {
+    if (!isMissingDbColumnError(error)) throw error;
+    warnSchemaCompatibilityFallback("subscription:switch-cycle-immediate-write", error);
+    // Stripe already charged the proration. The webhook will repair the
+    // local row from the new price on the next customer.subscription.updated
+    // delivery — derivedBillingInterval will match targetInterval and the
+    // sync writes billingInterval/stripePriceId regardless of the
+    // pending-column existence. Keep the user-visible response truthful.
+    await prisma.subscription.update({
+      where: { userId },
+      data: {
+        billingInterval: targetInterval,
+        stripePriceId: newPriceId,
+        billingProductId: newPriceId,
+        currentPeriodEndsAt: periodEnd,
+        stripeCurrentPeriodEnd: periodEnd,
+        status: "ACTIVE",
+        cancelAtPeriodEnd: false,
+        autoRenew: true,
+        canceledAt: null,
+        lastSyncedAt: now,
+        version: { increment: 1 },
+      },
+    });
+  }
+
+  return NextResponse.json({
+    status: "ACTIVE",
+    billingInterval: targetInterval,
+    cycle: newCycle,
+    currentPeriodEndsAt: periodEnd,
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -148,11 +257,28 @@ export async function POST(request: NextRequest) {
       const periodEnd = periodEndUnix
         ? new Date(periodEndUnix * 1000)
         : subscription.currentPeriodEndsAt;
+      // If the annual period has already ended (or there is no period at
+      // all), there's nothing left to defer — Stripe is about to auto-renew
+      // the yearly plan in the next webhook tick. Fall through to the
+      // immediate-swap path so the user actually gets monthly billing
+      // instead of getting a silent 409 and then being charged for another
+      // year.
       if (!periodEndUnix || !periodEnd || periodEnd.getTime() <= now.getTime()) {
-        return NextResponse.json(
-          { error: "Could not determine the annual period end for scheduling." },
-          { status: 409 },
+        await releaseAttachedSchedule(
+          stripe,
+          stripeSub,
+          subscription.stripeSubscriptionScheduleId,
         );
+        return await applyImmediateCycleSwap({
+          stripe,
+          userId,
+          subscription,
+          stripeSub,
+          primaryItemId: primaryItem.id,
+          newPriceId,
+          targetInterval,
+          now,
+        });
       }
 
       const schedule = await retrieveOrCreateSchedule(
@@ -166,37 +292,56 @@ export async function POST(request: NextRequest) {
         Math.floor(now.getTime() / 1000);
       const quantity = primaryItem.quantity || 1;
 
-      await stripe.subscriptionSchedules.update(schedule.id, {
-        end_behavior: "release",
-        proration_behavior: "none",
-        metadata: {
-          locateflow_user_id: userId,
-          locateflow_pending_billing_interval: "MONTH",
+      await stripe.subscriptionSchedules.update(
+        schedule.id,
+        {
+          end_behavior: "release",
+          proration_behavior: "none",
+          metadata: {
+            locateflow_user_id: userId,
+            locateflow_pending_billing_interval: "MONTH",
+          },
+          phases: [
+            {
+              start_date: currentPhaseStart,
+              end_date: periodEndUnix,
+              items: [{ price: primaryItem.price.id, quantity }],
+              proration_behavior: "none",
+              metadata: {
+                billingInterval: "YEAR",
+                pendingBillingInterval: "MONTH",
+              },
+            },
+            {
+              iterations: 1,
+              items: [{ price: newPriceId, quantity }],
+              billing_cycle_anchor: "phase_start",
+              proration_behavior: "none",
+              metadata: {
+                billingInterval: "MONTH",
+                pendingBillingInterval: "",
+              },
+            },
+          ],
         },
-        phases: [
-          {
-            start_date: currentPhaseStart,
-            end_date: periodEndUnix,
-            items: [{ price: primaryItem.price.id, quantity }],
-            proration_behavior: "none",
-            metadata: {
-              billingInterval: "YEAR",
-              pendingBillingInterval: "MONTH",
-            },
-          },
-          {
-            iterations: 1,
-            items: [{ price: newPriceId, quantity }],
-            billing_cycle_anchor: "phase_start",
-            proration_behavior: "none",
-            metadata: {
-              billingInterval: "MONTH",
-              pendingBillingInterval: "",
-            },
-          },
-        ],
-      });
+        {
+          idempotencyKey: buildStripeIdempotencyKey([
+            "subscription-schedule",
+            schedule.id,
+            "YEAR-to-MONTH",
+            String(periodEndUnix),
+          ]),
+        },
+      );
 
+      // Rollback path: the Stripe schedule is live, but if our DB cannot
+      // record the pending interval we have no way to detect the phase
+      // transition later (the webhook clears pendingBillingInterval by
+      // matching it against the derived price interval). Releasing the
+      // schedule reverts Stripe to the original yearly subscription
+      // without phase 2, so the user's billing is unchanged. Better to
+      // surface 503 than leave an orphan schedule and a misleading
+      // "scheduled: true" response that we can't honor.
       try {
         await prisma.subscription.update({
           where: { userId },
@@ -217,19 +362,24 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         if (!isMissingDbColumnError(error)) throw error;
         warnSchemaCompatibilityFallback("subscription:switch-cycle-pending-write", error);
-        await prisma.subscription.update({
-          where: { userId },
-          data: {
-            currentPeriodEndsAt: periodEnd,
-            stripeCurrentPeriodEnd: periodEnd,
-            status: "ACTIVE",
-            cancelAtPeriodEnd: false,
-            autoRenew: true,
-            canceledAt: null,
-            lastSyncedAt: now,
-            version: { increment: 1 },
+        try {
+          await stripe.subscriptionSchedules.release(schedule.id);
+        } catch (rollbackError) {
+          captureMessage(
+            `[SWITCH_CYCLE] Failed to release orphaned schedule ${schedule.id}: ${
+              (rollbackError as Error)?.message || "unknown"
+            }`,
+            "error",
+          );
+        }
+        return NextResponse.json(
+          {
+            error:
+              "Billing cycle change could not be saved. No changes were made — please try again shortly.",
+            code: "PENDING_INTERVAL_PERSIST_FAILED",
           },
-        });
+          { status: 503 },
+        );
       }
 
       return NextResponse.json({
@@ -245,66 +395,15 @@ export async function POST(request: NextRequest) {
 
     await releaseAttachedSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
 
-    const updated = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-      items: [{ id: primaryItem.id, price: newPriceId }],
-      proration_behavior: "create_prorations",
-      // Resume auto-renewal when switching — if the user had set the plan
-      // to cancel at period end, switching cycles is a clear "I want to
-      // stay" signal, so we clear the cancel flag.
-      cancel_at_period_end: false,
-    });
-
-    const periodEnd = updated.current_period_end
-      ? new Date(updated.current_period_end * 1000)
-      : subscription.currentPeriodEndsAt;
-    const newCycle = billingIntervalToCycle(targetInterval);
-
-    try {
-      await prisma.subscription.update({
-        where: { userId },
-        data: {
-          billingInterval: targetInterval,
-          pendingBillingInterval: null,
-          pendingBillingIntervalEffectiveAt: null,
-          stripeSubscriptionScheduleId: null,
-          stripePriceId: newPriceId,
-          billingProductId: newPriceId,
-          currentPeriodEndsAt: periodEnd,
-          stripeCurrentPeriodEnd: periodEnd,
-          status: "ACTIVE",
-          cancelAtPeriodEnd: false,
-          autoRenew: true,
-          canceledAt: null,
-          lastSyncedAt: now,
-          version: { increment: 1 },
-        },
-      });
-    } catch (error) {
-      if (!isMissingDbColumnError(error)) throw error;
-      warnSchemaCompatibilityFallback("subscription:switch-cycle-immediate-write", error);
-      await prisma.subscription.update({
-        where: { userId },
-        data: {
-          billingInterval: targetInterval,
-          stripePriceId: newPriceId,
-          billingProductId: newPriceId,
-          currentPeriodEndsAt: periodEnd,
-          stripeCurrentPeriodEnd: periodEnd,
-          status: "ACTIVE",
-          cancelAtPeriodEnd: false,
-          autoRenew: true,
-          canceledAt: null,
-          lastSyncedAt: now,
-          version: { increment: 1 },
-        },
-      });
-    }
-
-    return NextResponse.json({
-      status: "ACTIVE",
-      billingInterval: targetInterval,
-      cycle: newCycle,
-      currentPeriodEndsAt: periodEnd,
+    return await applyImmediateCycleSwap({
+      stripe,
+      userId,
+      subscription,
+      stripeSub,
+      primaryItemId: primaryItem.id,
+      newPriceId,
+      targetInterval,
+      now,
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
