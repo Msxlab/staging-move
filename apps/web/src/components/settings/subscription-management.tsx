@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, Crown, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Crown, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   BILLING_PLAN_DEFINITIONS,
   buildCheckoutDisclosureText,
@@ -72,7 +72,9 @@ function formatDateLabel(value?: string | null) {
 }
 
 function intervalLabel(subscription: SubscriptionRecord | null | undefined) {
-  return subscription?.billingInterval === "MONTH" ? "Monthly" : "Annual";
+  if (subscription?.billingInterval === "YEAR") return "Annual";
+  if (subscription?.billingInterval === "MONTH") return "Monthly";
+  return null;
 }
 
 function stateTitle(state: string, subscription?: SubscriptionRecord | null) {
@@ -87,9 +89,9 @@ function stateTitle(state: string, subscription?: SubscriptionRecord | null) {
     case "TRIAL_CANCELED":
       return "Trial canceled";
     case "ACTIVE":
-      return `Individual ${interval}`;
+      return interval ? `Individual ${interval}` : "Individual";
     case "CANCEL_AT_PERIOD_END":
-      return `Individual ${interval}`;
+      return interval ? `Individual ${interval}` : "Individual";
     case "PAST_DUE":
     case "GRACE_PERIOD":
       return "Payment needs attention";
@@ -287,6 +289,8 @@ export default function SubscriptionManagementPage() {
     firstChargeAmount: offerPriceLabel,
   });
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
+  const hasKnownStripeBillingInterval =
+    subscription?.billingInterval === "MONTH" || subscription?.billingInterval === "YEAR";
   // Store-managed subscriptions (Apple / Google) cannot be cancelled or
   // modified through Stripe Customer Portal — store policy requires the
   // user to manage them in iOS Settings → Subscriptions or Play Store →
@@ -379,6 +383,30 @@ export default function SubscriptionManagementPage() {
       await load();
     } catch (err: any) {
       setError(err?.message || "Failed to update subscription.");
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  async function switchBillingCycle(targetInterval: "MONTH" | "YEAR") {
+    setProcessing(`SWITCH_${targetInterval}`);
+    setError(null);
+    try {
+      const response = await fetch("/api/subscription/switch-cycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetInterval }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Failed to switch billing cycle.");
+      trackEvent("subscription_cycle_switched", {
+        plan: "individual",
+        from_cycle: subscription?.billingInterval === "YEAR" ? "yearly" : "monthly",
+        to_cycle: targetInterval === "YEAR" ? "yearly" : "monthly",
+      });
+      await load();
+    } catch (err: any) {
+      setError(err?.message || "Failed to switch billing cycle.");
     } finally {
       setProcessing(null);
     }
@@ -533,6 +561,79 @@ export default function SubscriptionManagementPage() {
               ) : null}
             </div>
           </div>
+
+          {currentProvider === "STRIPE" &&
+          subscription?.stripeSubscriptionId &&
+          hasKnownStripeBillingInterval &&
+          (currentState === "ACTIVE" || currentState === "CANCEL_AT_PERIOD_END") ? (
+            (() => {
+              const isOnMonthly = subscription.billingInterval === "MONTH";
+              const targetInterval = isOnMonthly ? "YEAR" : "MONTH";
+              const monthlyUsd =
+                BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd ?? 3.99;
+              const yearlyUsd =
+                BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 39.99;
+              const annualOfMonthly = monthlyUsd * 12;
+              const annualSavings = Math.max(annualOfMonthly - yearlyUsd, 0);
+              const savingsPercent = annualOfMonthly > 0
+                ? Math.round((annualSavings / annualOfMonthly) * 100)
+                : 0;
+              const switchKey = `SWITCH_${targetInterval}`;
+              const isSwitching = processing === switchKey;
+              return (
+                <div className="rounded-2xl border border-border bg-foreground/5 p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-xl border border-tone-emerald-br bg-tone-emerald-bg p-2.5">
+                      <RefreshCw className="h-5 w-5 text-tone-emerald-fg" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-semibold text-foreground">
+                        {isOnMonthly ? "Switch to annual billing" : "Switch to monthly billing"}
+                      </h3>
+                      {isOnMonthly ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          ${yearlyUsd.toFixed(2)}/year vs ${monthlyUsd.toFixed(2)}/month × 12 = ${annualOfMonthly.toFixed(2)}.
+                          {annualSavings > 0
+                            ? ` Save $${annualSavings.toFixed(2)}/year (${savingsPercent}% off).`
+                            : ""}
+                          {" "}Stripe credits unused time on your current period toward the new charge.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Move to ${monthlyUsd.toFixed(2)}/month billing. Stripe credits the unused portion of your annual plan toward future monthly invoices.
+                        </p>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void switchBillingCycle(targetInterval)}
+                          disabled={Boolean(processing)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-tone-emerald-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Check className="h-4 w-4" />
+                          {isSwitching
+                            ? "Switching..."
+                            : isOnMonthly
+                              ? `Switch to annual · $${yearlyUsd.toFixed(2)}/yr`
+                              : `Switch to monthly · $${monthlyUsd.toFixed(2)}/mo`}
+                        </button>
+                        {canManageStripeBilling ? (
+                          <button
+                            type="button"
+                            onClick={() => void openPortal()}
+                            disabled={Boolean(processing)}
+                            className="rounded-xl border border-border px-4 py-2 text-sm text-foreground transition hover:bg-foreground/5 disabled:opacity-60"
+                          >
+                            Open Stripe portal instead
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          ) : null}
 
           {showAnnualTrialOffer ? (
           <div className="space-y-4">

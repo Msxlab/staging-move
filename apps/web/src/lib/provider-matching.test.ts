@@ -85,24 +85,23 @@ describe("tierProvidersFromDb", () => {
   });
 
   it("drops state-scoped providers when their coverage rows belong to another state", () => {
-    const result = tierProvidersFromDb(
-      [
-        {
-          id: "texas-only",
-          scope: "STATE",
-          coverages: [{ state: "TX", zipPrefix: null, zipExact: null }],
-        },
-        {
-          id: "federal",
-          scope: "FEDERAL",
-          coverages: [],
-        },
-      ],
-      { state: "CA" }
-    );
+    const providers = [
+      {
+        id: "texas-only",
+        scope: "STATE",
+        coverages: [{ state: "TX", zipPrefix: null, zipExact: null }],
+      },
+      {
+        id: "federal",
+        scope: "FEDERAL",
+        coverages: [],
+      },
+    ];
+    const result = tierProvidersFromDb(providers, { state: "CA" });
 
     expect(result.providers.map((provider) => provider.id)).toEqual(["federal"]);
     expect(getProviderCoverageConfidenceFromDb(result.providers[0]!, { state: "CA" })).toBe("NATIONAL_OR_FEDERAL");
+    expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "CA" })).toBe("UNKNOWN");
   });
 
   it("does not short-circuit state-only requests before applying DB coverage guards", () => {
