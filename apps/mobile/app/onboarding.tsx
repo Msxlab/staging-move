@@ -61,6 +61,7 @@ import {
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
+import { detectStateZipMismatch } from "@locateflow/shared";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -290,8 +291,11 @@ export default function OnboardingScreen() {
     setLoadingProviders(true);
     try {
       const params: Record<string, string> = {};
+      if (createdAddressId) params.addressId = createdAddressId;
       if (address.state) params.state = address.state;
       if (address.zip) params.zip = address.zip;
+      if (address.latitude != null) params.lat = String(address.latitude);
+      if (address.longitude != null) params.lng = String(address.longitude);
       const res = await api.get<any>("/api/providers/recommendations", params);
       setProviders(res.data?.allProviders || []);
     } catch {
@@ -299,7 +303,7 @@ export default function OnboardingScreen() {
     } finally {
       setLoadingProviders(false);
     }
-  }, [address.state, address.zip]);
+  }, [address.latitude, address.longitude, address.state, address.zip, createdAddressId]);
 
   useEffect(() => {
     if (step === 2) fetchProviders();
@@ -417,6 +421,16 @@ export default function OnboardingScreen() {
       setError(t("onboarding.error_stateFormat"));
       return false;
     }
+    const addressMismatch = detectStateZipMismatch(address.state, address.zip);
+    if (addressMismatch) {
+      setError(t("onboarding.error_stateZipMismatch", {
+        defaultValue: `ZIP ${address.zip} appears to be in ${addressMismatch.zipState}, but the state is ${addressMismatch.typedState}. Please check the address.`,
+        state: addressMismatch.typedState,
+        zip: address.zip,
+        zipState: addressMismatch.zipState,
+      }));
+      return false;
+    }
     setError(""); setSaving(true);
     try {
       const res = createdAddressId
@@ -528,6 +542,20 @@ export default function OnboardingScreen() {
     }
     if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
       setError(t("onboarding.error_destinationRequired"));
+      return false;
+    }
+    if (movingForm.state.length !== 2) {
+      setError(t("onboarding.error_stateFormat"));
+      return false;
+    }
+    const destinationMismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
+    if (destinationMismatch) {
+      setError(t("onboarding.error_stateZipMismatchDestination", {
+        defaultValue: `ZIP ${movingForm.zip} appears to be in ${destinationMismatch.zipState}, but the state is ${destinationMismatch.typedState}. Please check the destination address.`,
+        state: destinationMismatch.typedState,
+        zip: movingForm.zip,
+        zipState: destinationMismatch.zipState,
+      }));
       return false;
     }
     if (!createdAddressId) {

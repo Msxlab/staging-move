@@ -255,7 +255,6 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               isBusinessOwner: profile.isBusinessOwner ?? false,
               moveType: profile.moveType || "PERSONAL",
             };
-            const completedCats: Set<string> = new Set(services.map((s: any) => s.category as string));
             const completedTemplates: Set<string> = new Set<string>();
             const toState = (inProgressPlan as any).toAddress?.state || "";
             let stateRule: ChecklistStateRuleContext | null = null;
@@ -272,7 +271,6 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               new Date(inProgressPlan.moveDate),
               (inProgressPlan as any).fromAddress?.state || "",
               toState,
-              completedCats,
               completedTemplates,
               stateRule,
             );

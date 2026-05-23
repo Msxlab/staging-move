@@ -144,6 +144,15 @@ const ADDRESS_SENSITIVE_COVERAGE_PENALTY: Partial<Record<CoverageConfidence, num
   UNKNOWN: -20,
 };
 
+const MIN_RECOMMENDATION_SCORE = 20;
+const ADDRESS_SENSITIVE_RECOMMENDABLE_COVERAGE = new Set<CoverageConfidence>([
+  "EXACT_ZIP",
+  "ZIP_PREFIX",
+  "MAPPED_SERVICE_AREA",
+  "STATE_LEVEL",
+  "ADDRESS_CHECK_REQUIRED",
+]);
+
 function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
   return mapCoverageMatchToConfidence(provider.coverageMatchLevel, {
     scope: provider.scope,
@@ -151,6 +160,11 @@ function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
     requiresAddressCheck: provider.requiresAddressCheck,
     requiresPolygonCheck: provider.requiresPolygonCheck,
   });
+}
+
+function hasRecommendableCoverage(provider: Provider): boolean {
+  if (!isCoverageAddressSensitive(provider.category)) return true;
+  return ADDRESS_SENSITIVE_RECOMMENDABLE_COVERAGE.has(getProviderCoverageConfidence(provider));
 }
 
 // ── Category Metadata ────────────────────────────────────────
@@ -799,7 +813,11 @@ export function getRecommendedProviders(
   const recommended: ScoredProvider[] = [];
 
   for (const provider of allProviders) {
-    if (provider.matchReasons.length === 0 || provider.recommendationScore <= 20) {
+    if (
+      provider.matchReasons.length === 0 ||
+      provider.recommendationScore <= MIN_RECOMMENDATION_SCORE ||
+      !hasRecommendableCoverage(provider)
+    ) {
       continue;
     }
     if (seenCategories.has(provider.category)) {

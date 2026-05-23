@@ -148,6 +148,18 @@ export function resolveEffectiveState(state?: string | null, zip?: string | null
   return zipToState(normalizedZip);
 }
 
+export function detectStateZipMismatch(
+  state?: string | null,
+  zip?: string | null,
+): { typedState: string; zipState: string; normalizedZip: string } | null {
+  const typedState = state?.trim().toUpperCase();
+  const normalizedZip = normalizeZip(zip);
+  if (!typedState || !normalizedZip) return null;
+  const zipState = zipToState(normalizedZip);
+  if (!zipState || zipState === typedState) return null;
+  return { typedState, zipState, normalizedZip };
+}
+
 // Expand (scope, states, zipCodes) into normalized coverage rows.
 // - FEDERAL with no zipCodes → empty array (matching happens via scope='FEDERAL').
 // - FEDERAL with zipCodes → per-zip rows (state looked up via ZIP prefix table).

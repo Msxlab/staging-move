@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  detectStateZipMismatch,
   expandCoverageRows,
   getZipReferenceFacts,
+  zipToState,
 } from "../provider-coverage";
 
 describe("expandCoverageRows", () => {
@@ -49,5 +51,25 @@ describe("expandCoverageRows", () => {
     expect(facts.clientSafeHintOnly).toBe(true);
     expect(facts.prefixCount).toBeGreaterThan(300);
     expect(facts.prefixCount).toBeLessThan(1_000);
+  });
+});
+
+describe("ZIP state reference", () => {
+  it("keeps the Arizona ZIP3 prefixes used by provider coverage", () => {
+    expect(zipToState("85901")).toBe("AZ");
+    expect(zipToState("86001")).toBe("AZ");
+    expect(zipToState("86301")).toBe("AZ");
+    expect(zipToState("86401")).toBe("AZ");
+    expect(zipToState("86503")).toBe("AZ");
+  });
+
+  it("detects state and ZIP mismatches without blocking unresolved prefixes", () => {
+    expect(detectStateZipMismatch("CA", "10001")).toEqual({
+      typedState: "CA",
+      zipState: "NY",
+      normalizedZip: "10001",
+    });
+    expect(detectStateZipMismatch("NY", "10001")).toBeNull();
+    expect(detectStateZipMismatch("CA", "002")).toBeNull();
   });
 });

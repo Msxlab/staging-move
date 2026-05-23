@@ -237,20 +237,9 @@ export function analyzeMigration(
       continue;
     }
 
-    // Federal / nationwide providers → KEEP
     const providerScope = svc.provider?.scope;
-    if (providerScope === "FEDERAL" || TYPICALLY_FEDERAL_CATEGORIES.has(svc.category)) {
-      keeps.push({
-        ...baseItem,
-        action: "KEEP",
-        urgency: "LOW",
-        phase: 2,
-        note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.`,
-      });
-      continue;
-    }
-
-    // State-scoped provider: check if available in destination
+    // Explicit provider scope wins over category heuristics. A regional bank
+    // or insurer should not be kept just because its category is often national.
     if (providerScope === "STATE" && svc.provider) {
       const providerStates = svc.provider.states || [];
       if (providerStates.includes(toState)) {
@@ -276,6 +265,19 @@ export function analyzeMigration(
             : undefined,
         });
       }
+      continue;
+    }
+
+    // Federal / nationwide providers → KEEP. Category-level federal fallback is
+    // only used when the provider scope is unknown.
+    if (providerScope === "FEDERAL" || (!providerScope && TYPICALLY_FEDERAL_CATEGORIES.has(svc.category))) {
+      keeps.push({
+        ...baseItem,
+        action: "KEEP",
+        urgency: "LOW",
+        phase: 2,
+        note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.`,
+      });
       continue;
     }
 

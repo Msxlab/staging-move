@@ -157,6 +157,15 @@ export const RELOCATION_PHASES = [
   { phase: 5, label: "Settling In", shortLabel: "60+ Days", daysOffset: 90, icon: "🏠", color: "#10b981" },
 ] as const;
 
+export function getCurrentRelocationPhase(daysSinceMove: number): number {
+  if (daysSinceMove < -7) return 0;
+  if (daysSinceMove <= 3) return 1;
+  if (daysSinceMove <= 10) return 2;
+  if (daysSinceMove <= 30) return 3;
+  if (daysSinceMove <= 60) return 4;
+  return 5;
+}
+
 // ==================== SERVICE PRIORITY MAP ====================
 
 export interface ServicePriorityItem {

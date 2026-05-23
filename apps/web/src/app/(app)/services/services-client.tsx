@@ -133,7 +133,6 @@ export function ServicesClient({
           isBusinessOwner: prof.isBusinessOwner ?? false,
           moveType: prof.moveType || "PERSONAL",
         };
-        const completedCats = new Set<string>(services.map((s) => s.category));
         const completedTemplates = new Set<string>(
           (activePlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
         );
@@ -150,7 +149,6 @@ export function ServicesClient({
           new Date(activePlan.moveDate),
           activePlan.fromAddress?.state || "",
           toState,
-          completedCats,
           completedTemplates,
           stateRule,
         );

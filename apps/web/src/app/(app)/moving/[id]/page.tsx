@@ -262,6 +262,7 @@ export default function MovingPlanDetailPage() {
   const migrationSummaryLabel = migration
     ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : t("migrationGuidanceEmpty");
+  const hasTransitionPlans = Boolean(migration?.transitionPlans?.length);
 
   return (
     <div className="space-y-6 pb-8">
@@ -548,6 +549,8 @@ export default function MovingPlanDetailPage() {
                 </div>
               )}
 
+              {!hasTransitionPlans && (
+                <>
               {/* KEEP */}
               {migration.keeps.length > 0 && (
                 <div>
@@ -740,6 +743,9 @@ export default function MovingPlanDetailPage() {
                     })}
                   </div>
                 </div>
+              )}
+
+                </>
               )}
 
               {migration.summary.total === 0 && (

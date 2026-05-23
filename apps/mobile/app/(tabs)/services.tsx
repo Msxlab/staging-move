@@ -188,7 +188,6 @@ export default function ServicesScreen() {
           hasBoatRV: prof.hasBoatRV ?? false, isImmigrant: prof.isImmigrant ?? false,
           isBusinessOwner: prof.isBusinessOwner ?? false, moveType: prof.moveType || "PERSONAL",
         };
-        const cats = new Set<string>(svcs.map((s: any) => s.category as string));
         const tmpls = new Set<string>(
           (activePlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
         );
@@ -202,7 +201,7 @@ export default function ServicesScreen() {
             stateRule = null;
           }
         }
-        setChecklist(generateChecklist(cp, new Date(activePlan.moveDate), activePlan.fromAddress?.state || "", toState, cats, tmpls, stateRule));
+        setChecklist(generateChecklist(cp, new Date(activePlan.moveDate), activePlan.fromAddress?.state || "", toState, tmpls, stateRule));
       } else {
         setChecklist(null);
       }

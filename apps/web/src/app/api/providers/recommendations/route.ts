@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
+import { CANCELED_MOVING_PLAN_STATUSES, getCurrentRelocationPhase } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import {
@@ -33,6 +33,12 @@ export async function GET(request: NextRequest) {
     const requestedAddressId = searchParams.get("addressId");
     const requestedState = searchParams.get("state")?.trim().toUpperCase();
     const requestedZip = searchParams.get("zip")?.trim();
+    const requestedLatitudeParam = searchParams.get("lat");
+    const requestedLongitudeParam = searchParams.get("lng");
+    const requestedLatitude = requestedLatitudeParam !== null ? Number(requestedLatitudeParam) : null;
+    const requestedLongitude = requestedLongitudeParam !== null ? Number(requestedLongitudeParam) : null;
+    const queryLatitude = Number.isFinite(requestedLatitude) ? requestedLatitude : null;
+    const queryLongitude = Number.isFinite(requestedLongitude) ? requestedLongitude : null;
 
     const [profile, addresses, services, movingPlan] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
@@ -50,8 +56,8 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
-    const fallbackLatitude = primaryAddr?.latitude ?? null;
-    const fallbackLongitude = primaryAddr?.longitude ?? null;
+    const fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
+    const fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
 
     const providers = await prisma.serviceProvider.findMany({
       where: {
@@ -90,16 +96,11 @@ export async function GET(request: NextRequest) {
       longitude: fallbackLongitude,
     });
 
-    let currentPhase = 0;
-    if (movingPlan?.moveDate) {
-      const daysFromMove = Math.floor((Date.now() - new Date(movingPlan.moveDate).getTime()) / (24 * 60 * 60 * 1000));
-      if (daysFromMove < -7) currentPhase = 0;
-      else if (daysFromMove <= 3) currentPhase = 1;
-      else if (daysFromMove <= 10) currentPhase = 2;
-      else if (daysFromMove <= 30) currentPhase = 3;
-      else if (daysFromMove <= 60) currentPhase = 4;
-      else currentPhase = 5;
-    }
+    const currentPhase = movingPlan?.moveDate
+      ? getCurrentRelocationPhase(
+          Math.floor((Date.now() - new Date(movingPlan.moveDate).getTime()) / (24 * 60 * 60 * 1000)),
+        )
+      : 0;
 
     const userProfile: UserProfile = {
       hasChildren: profile?.hasChildren || false,

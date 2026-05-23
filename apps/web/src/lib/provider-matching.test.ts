@@ -84,6 +84,48 @@ describe("tierProvidersFromDb", () => {
     expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "HI", zip: "96766" })).toBe("UNKNOWN");
   });
 
+  it("drops state-scoped providers when their coverage rows belong to another state", () => {
+    const result = tierProvidersFromDb(
+      [
+        {
+          id: "texas-only",
+          scope: "STATE",
+          coverages: [{ state: "TX", zipPrefix: null, zipExact: null }],
+        },
+        {
+          id: "federal",
+          scope: "FEDERAL",
+          coverages: [],
+        },
+      ],
+      { state: "CA" }
+    );
+
+    expect(result.providers.map((provider) => provider.id)).toEqual(["federal"]);
+    expect(getProviderCoverageConfidenceFromDb(result.providers[0]!, { state: "CA" })).toBe("NATIONAL_OR_FEDERAL");
+  });
+
+  it("does not short-circuit state-only requests before applying DB coverage guards", () => {
+    const result = tierProvidersFromDb(
+      [
+        {
+          id: "wrong-state",
+          scope: "STATE",
+          coverages: [{ state: "NY", zipPrefix: null, zipExact: null }],
+        },
+        {
+          id: "right-state",
+          scope: "STATE",
+          coverages: [{ state: "CA", zipPrefix: null, zipExact: null }],
+        },
+      ],
+      { state: "CA" }
+    );
+
+    expect(result.zipMatchLevel).toBe("state");
+    expect(result.providers.map((provider) => provider.id)).toEqual(["right-state"]);
+  });
+
   it("keeps polygon providers when the address coordinates land inside their service envelope", () => {
     const result = tierProvidersFromDb(
       [

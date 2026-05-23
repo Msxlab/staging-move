@@ -253,6 +253,7 @@ export default function MovingDetailScreen() {
   const migrationSummaryLabel = migration
     ? t("moving.migrationSummary", { count: migration.transitionPlans?.length || migration.summary.total })
     : t("moving.migrationEmpty");
+  const hasTransitionPlans = Boolean(migration?.transitionPlans?.length);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -463,6 +464,8 @@ export default function MovingDetailScreen() {
                 </View>
               )}
 
+              {!hasTransitionPlans && (
+                <>
               {(migration.transfers || []).length > 0 && (
                 <View style={{ marginBottom: 12 }}>
                   <View style={styles.migSectionHeader}>
@@ -630,6 +633,9 @@ export default function MovingDetailScreen() {
                     );
                   })}
                 </View>
+              )}
+
+                </>
               )}
             </Card>
           </View>

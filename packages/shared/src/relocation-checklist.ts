@@ -12,6 +12,7 @@ import {
   SERVICE_PRIORITY_MAP,
   STATE_DMV_DEADLINES,
   RELOCATION_PHASES,
+  getCurrentRelocationPhase,
   type ServicePriorityItem,
 } from "./constants";
 
@@ -150,7 +151,6 @@ export function generateChecklist(
   moveDate: Date,
   fromState: string,
   toState: string,
-  completedTaskCategories: Set<string> = new Set(),
   completedTaskTemplateIds: Set<string> = new Set(),
   stateRule?: ChecklistStateRuleContext | null,
 ): RelocationChecklist {
@@ -172,7 +172,7 @@ export function generateChecklist(
 
     // Calculate due date
     const dueDate = new Date(moveDateMs + item.daysRelativeToMove * 24 * 60 * 60 * 1000);
-    const deadlineDate = deadlineDays
+    const deadlineDate = deadlineDays != null
       ? new Date(moveDateMs + deadlineDays * 24 * 60 * 60 * 1000)
       : null;
 
@@ -181,9 +181,7 @@ export function generateChecklist(
       ? Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       : null;
 
-    const isCompleted =
-      completedTaskTemplateIds.has(item.id) ||
-      completedTaskCategories.has(item.category);
+    const isCompleted = completedTaskTemplateIds.has(item.id);
 
     const isOverdue = !isCompleted && daysUntilDue < 0;
 
@@ -211,12 +209,13 @@ export function generateChecklist(
     return a.daysRelativeToMove - b.daysRelativeToMove;
   });
 
+  const currentPhase = getCurrentRelocationPhase(daysSinceMove);
+
   // Group into phases
   const phases = RELOCATION_PHASES.map((phaseInfo) => {
     const items = allItems.filter((item) => item.phase === phaseInfo.phase);
     const completedCount = items.filter((i) => i.isCompleted).length;
-    const isActive = daysSinceMove >= (phaseInfo.daysOffset - 14) &&
-      daysSinceMove < (phaseInfo.daysOffset + 30);
+    const isActive = phaseInfo.phase === currentPhase;
 
     return {
       phase: phaseInfo.phase,
@@ -234,15 +233,6 @@ export function generateChecklist(
   const totalItems = allItems.length;
   const completedItems = allItems.filter((i) => i.isCompleted).length;
   const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
-
-  // Determine current phase
-  let currentPhase = 0;
-  if (daysSinceMove < -7) currentPhase = 0;
-  else if (daysSinceMove < 3) currentPhase = 1;
-  else if (daysSinceMove < 10) currentPhase = 2;
-  else if (daysSinceMove < 30) currentPhase = 3;
-  else if (daysSinceMove < 60) currentPhase = 4;
-  else currentPhase = 5;
 
   // Find next action (first incomplete item in current or earlier phase)
   const nextAction = allItems.find(

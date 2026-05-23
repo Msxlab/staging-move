@@ -121,7 +121,6 @@ export default function DashboardScreen() {
             isBusinessOwner: profileData.isBusinessOwner ?? false,
             moveType: profileData.moveType || "PERSONAL",
           };
-          const completedCats = new Set<string>(svcs.map((s: any) => s.category as string));
           const toState = activePlan.toAddress?.state || "";
           let stateRule: ChecklistStateRuleContext | null = null;
           if (toState) {
@@ -137,7 +136,6 @@ export default function DashboardScreen() {
             new Date(activePlan.moveDate),
             activePlan.fromAddress?.state || "",
             toState,
-            completedCats,
             new Set<string>(),
             stateRule,
           );

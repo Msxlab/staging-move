@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CATEGORY_META,
   PROVIDER_CATEGORY_VALUES,
+  getRecommendedProviders,
   scoreProviders,
   type Provider,
   type UserProfile,
@@ -119,5 +120,32 @@ describe("provider recommendation safety", () => {
     expect(scored.explanation.coverageConfidence).toBe("STATE_LEVEL");
     expect(scored.explanation.caveat).toContain("not proof");
     expect(scored.explanation.manualConfirmationNote).toContain("manual guidance");
+  });
+
+  it("does not put address-sensitive unverified coverage into the recommended shortlist", () => {
+    const scored = scoreProviders(
+      [
+        provider({
+          id: "unknown-water",
+          name: "Unknown Water",
+          category: "UTILITY_WATER",
+          coverageMatchLevel: undefined,
+          coverageModel: undefined,
+          popularityScore: 100,
+        }),
+        provider({
+          id: "state-water",
+          name: "State Water",
+          category: "UTILITY_WATER",
+          coverageMatchLevel: "state",
+          coverageModel: "state",
+          popularityScore: 1,
+        }),
+      ],
+      baseProfile,
+      "TX",
+    );
+
+    expect(getRecommendedProviders(scored).map((p) => p.id)).toEqual(["state-water"]);
   });
 });

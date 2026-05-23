@@ -8,8 +8,8 @@ import { getProviderMatchLevelFromDb, tierProvidersFromDb } from "./provider-mat
  * These complement the unit tests in provider-matching.test.ts by exercising
  * multiple tiers together and covering edge cases that the API routes rely on.
  *
- * Note: tierProvidersFromDb trusts that the DB query has already filtered by
- * state/scope — it classifies providers by tier precision but doesn't re-filter.
+ * tierProvidersFromDb also applies a defensive state guard so a caller that
+ * accidentally passes unfiltered DB rows does not leak wrong-state providers.
  */
 
 describe("full coverage tier cascade", () => {

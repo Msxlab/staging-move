@@ -224,16 +224,26 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
 
   let hasPrefix = false;
   let hasZipScopedCoverage = false;
-  let hasStateOnly = provider.scope === "FEDERAL" && provider.coverages.length === 0;
+  let hasStateCoverage = provider.scope === "FEDERAL" && provider.coverages.length === 0;
+  let hasAnyStateCoverage = false;
+  let hasMatchingStateCoverage = provider.scope === "FEDERAL" && provider.coverages.length === 0;
 
   for (const cov of provider.coverages) {
+    const matchesEffectiveState = !effectiveState || !cov.state || cov.state === effectiveState;
+    if (cov.state) {
+      hasAnyStateCoverage = true;
+      if (matchesEffectiveState) {
+        hasMatchingStateCoverage = true;
+      }
+    }
     if (cov.zipExact || cov.zipPrefix) {
       hasZipScopedCoverage = true;
     }
-    if (normalizedZip && cov.zipExact && cov.zipExact === normalizedZip) {
+    if (matchesEffectiveState && normalizedZip && cov.zipExact && cov.zipExact === normalizedZip) {
       return "exact";
     }
     if (
+      matchesEffectiveState &&
       normalizedZip &&
       cov.zipPrefix &&
       cov.zipPrefix.length < normalizedZip.length &&
@@ -241,13 +251,16 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
     ) {
       hasPrefix = true;
     }
-    if (!cov.zipExact && !cov.zipPrefix && cov.state && cov.state === effectiveState) {
-      hasStateOnly = true;
+    if (!cov.zipExact && !cov.zipPrefix && cov.state && matchesEffectiveState) {
+      hasStateCoverage = true;
     }
   }
 
   if (hasPrefix) return "prefix";
-  if (hasZipScopedCoverage && !hasStateOnly) return "none";
+  if (effectiveState && provider.scope !== "FEDERAL" && provider.coverages.length === 0) return "none";
+  if (effectiveState && provider.scope !== "FEDERAL" && hasAnyStateCoverage && !hasMatchingStateCoverage) return "none";
+  if (hasZipScopedCoverage && normalizedZip && !hasStateCoverage) return "none";
+  if (hasZipScopedCoverage && !hasMatchingStateCoverage) return "none";
   if (provider.coverageModel === "polygon") {
     const polygonMatch = resolvePolygonCoverageMatch(provider.slug, options.latitude, options.longitude);
     if (polygonMatch === true) return "polygon";
@@ -255,7 +268,7 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
     return "polygon";
   }
   if (provider.coverageModel === "live_address") return "live_address";
-  if (hasStateOnly) return "state";
+  if (hasStateCoverage) return "state";
   return "state";
 }
 
@@ -263,10 +276,11 @@ export function getProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
   provider: T,
   options: ProviderMatchOptions
 ): ZipMatchLevel {
+  const effectiveState = resolveEffectiveState(options.state, options.zip);
   const normalizedZip = normalizeZip(options.zip);
   const hasCoordinates = isFiniteCoordinate(options.latitude) && isFiniteCoordinate(options.longitude);
 
-  if (!normalizedZip && !hasCoordinates) {
+  if (!effectiveState && !normalizedZip && !hasCoordinates) {
     return "state";
   }
 
@@ -296,7 +310,7 @@ export function tierProvidersFromDb<T extends ProviderWithCoverages>(
   const normalizedZip = normalizeZip(options.zip);
   const hasCoordinates = isFiniteCoordinate(options.latitude) && isFiniteCoordinate(options.longitude);
 
-  if (!normalizedZip && !hasCoordinates) {
+  if (!effectiveState && !normalizedZip && !hasCoordinates) {
     return { effectiveState, providers, zipMatchLevel: "state", coverageConfidence: "STATE_LEVEL" };
   }
 

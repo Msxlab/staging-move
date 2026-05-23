@@ -23,6 +23,7 @@ import {
   getDefaultLegalConsents,
   hasRequiredLegalConsents,
 } from "@/lib/legal";
+import { detectStateZipMismatch } from "@locateflow/shared";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
@@ -285,8 +286,11 @@ export default function OnboardingPage() {
     setLoadingProviders(true);
     try {
       const params = new URLSearchParams();
+      if (createdAddressId) params.set("addressId", createdAddressId);
       if (address.state) params.set("state", address.state);
       if (address.zip) params.set("zip", address.zip);
+      if (address.latitude != null) params.set("lat", String(address.latitude));
+      if (address.longitude != null) params.set("lng", String(address.longitude));
       const res = await fetch(`/api/providers/recommendations?${params.toString()}`);
       const data = await res.json();
       setProviders(data.allProviders || []);
@@ -295,7 +299,7 @@ export default function OnboardingPage() {
     } finally {
       setLoadingProviders(false);
     }
-  }, [address.state, address.zip]);
+  }, [address.latitude, address.longitude, address.state, address.zip, createdAddressId]);
 
   useEffect(() => {
     if (step === 2) fetchProviders();
@@ -394,6 +398,11 @@ export default function OnboardingPage() {
     }
     if (!/^\d{5}(-\d{4})?$/.test(address.zip)) {
       setError("ZIP code must be 5 digits.");
+      return false;
+    }
+    const mismatch = detectStateZipMismatch(address.state, address.zip);
+    if (mismatch) {
+      setError(`ZIP ${address.zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the address.`);
       return false;
     }
     setError("");
@@ -497,6 +506,11 @@ export default function OnboardingPage() {
       setError("State must be a 2-letter code.");
       return false;
     }
+    const mismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
+    if (mismatch) {
+      setError(`ZIP ${movingForm.zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the destination address.`);
+      return false;
+    }
     if (!createdAddressId) {
       setError("No origin address found. Please go back and add an address first.");
       return false;
@@ -548,11 +562,26 @@ export default function OnboardingPage() {
   };
 
   const recordOnboardingProgress = async (event: "SERVICES_SKIPPED" | "MOVING_SKIPPED" | "COMPLETED") => {
-    await fetch("/api/onboarding/progress", {
+    const res = await fetch("/api/onboarding/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event }),
-    }).catch(() => null);
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to save onboarding progress");
+    }
+  };
+
+  const ensureOnboardingCompleted = async () => {
+    const res = await fetch("/api/profile");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to verify onboarding status");
+    }
+    if (data.onboardingCompleted !== true) {
+      throw new Error("Onboarding could not be completed. Please try again.");
+    }
   };
 
   const next = async () => {
@@ -563,7 +592,14 @@ export default function OnboardingPage() {
       const selectedCount = selectedProviders.size;
       ok = await saveServices();
       if (ok && selectedCount === 0) {
-        await recordOnboardingProgress("SERVICES_SKIPPED");
+        try {
+          await recordOnboardingProgress("SERVICES_SKIPPED");
+        } catch (e: any) {
+          const message = e.message || "Failed to save onboarding progress";
+          setError(message);
+          toast.error(message);
+          return;
+        }
       }
     }
     if (!ok) return;
@@ -574,17 +610,25 @@ export default function OnboardingPage() {
   const finishOnboarding = async () => {
     const planId = await saveMovingPlan();
     if (planId === false) return;
-    if (typeof planId === "string") {
-      trackEvent("moving_plan_started", { source: "onboarding" });
+    try {
+      if (typeof planId === "string") {
+        trackEvent("moving_plan_started", { source: "onboarding" });
+        await recordOnboardingProgress("COMPLETED");
+        await ensureOnboardingCompleted();
+        trackEvent("onboarding_completed", { created_moving_plan: true });
+        router.push(`/moving/${planId}`);
+        return;
+      }
+      await recordOnboardingProgress("MOVING_SKIPPED");
       await recordOnboardingProgress("COMPLETED");
-      trackEvent("onboarding_completed", { created_moving_plan: true });
-      router.push(`/moving/${planId}`);
-      return;
+      await ensureOnboardingCompleted();
+      trackEvent("onboarding_completed", { created_moving_plan: false });
+      router.push("/dashboard");
+    } catch (e: any) {
+      const message = e.message || "Failed to complete onboarding";
+      setError(message);
+      toast.error(message);
     }
-    await recordOnboardingProgress("MOVING_SKIPPED");
-    await recordOnboardingProgress("COMPLETED");
-    trackEvent("onboarding_completed", { created_moving_plan: false });
-    router.push("/dashboard");
   };
 
   const prev = () => { if (step > 0) { setStep(step - 1); setError(""); } };
