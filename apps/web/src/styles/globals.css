@@ -1190,3 +1190,21 @@
     font-size: 16px !important;
   }
 }
+
+/* ===== Mobile in-app browser embed mode =====
+   The mobile app opens locateflow.com URLs with `?embed=mobile`. The
+   inline script in app/layout.tsx latches that flag onto <html data-embed>.
+   Anything outside the page's primary content — global headers, footers,
+   floating prompts, cookie banner — is hidden so the screen visually
+   matches the surrounding native UI.
+
+   AppShell handles its own chrome via React in app-shell.tsx; this CSS
+   covers the public marketing pages that open from mobile (Help, Contact,
+   Terms, Privacy, Billing Policy, etc.) where the header/footer come from
+   server components we can't conditionally render. */
+html[data-embed="mobile"] [data-embed-hide],
+html[data-embed="mobile"] header.sticky,
+html[data-embed="mobile"] footer,
+html[data-embed="mobile"] .install-prompt {
+  display: none !important;
+}

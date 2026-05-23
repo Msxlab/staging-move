@@ -160,9 +160,35 @@ export default async function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="mask-icon" href="/logo-mark.svg" color="#7FB6E8" />
+        {/*
+         * iOS Safari smart app banner. Shows a system-rendered "OPEN / VIEW
+         * IN APP STORE" strip above the page on iPhone/iPad. Becomes a no-op
+         * when the env var is unset (closed beta — our custom install-prompt
+         * banner picks up the slack via the waitlist fallback).
+         */}
+        {process.env.NEXT_PUBLIC_IOS_APP_STORE_ID ? (
+          <meta
+            name="apple-itunes-app"
+            content={`app-id=${process.env.NEXT_PUBLIC_IOS_APP_STORE_ID}`}
+          />
+        ) : null}
         {!BLOCK_INDEXING ? <SiteSchemas /> : null}
       </head>
       <body className={`${geistSans.className} lf-aurora`}>
+        {/*
+         * Embed-mode detection — runs before paint to avoid a flash of the
+         * full marketing/app chrome before it's hidden. The mobile in-app
+         * browser opens locateflow.com URLs with `?embed=mobile`; we latch
+         * that into sessionStorage so subsequent navigation inside the
+         * in-app browser stays chromeless. The CSS in globals.css then
+         * hides `data-embed-hide` ancestors (marketing header/footer, etc).
+         */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();`,
+          }}
+        />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <ThemeProvider nonce={nonce}>

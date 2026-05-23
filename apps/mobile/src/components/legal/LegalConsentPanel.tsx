@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { Linking, ScrollView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Check, ChevronDown, ChevronUp, FileText, ShieldAlert } from "lucide-react-native";
 import { APP_WEB_URL } from "@/lib/api";
+import { openWebUrl } from "@/lib/in-app-browser";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import {
   LEGAL_CONSENT_DOCUMENTS,
@@ -88,7 +89,7 @@ export function LegalConsentPanel({
 
               <TouchableOpacity
                 disabled={disabled}
-                onPress={() => Linking.openURL(`${APP_WEB_URL}${document.route}`).catch(() => {})}
+                onPress={() => void openWebUrl(`${APP_WEB_URL}${document.route}`)}
                 style={styles.fullLink}
               >
                 <Text style={styles.fullLinkText}>Read full document</Text>

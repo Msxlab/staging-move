@@ -13,6 +13,28 @@ import {
 
 type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
 
+const CANCEL_REASON_CODES = new Set([
+  "too_expensive",
+  "not_using",
+  "missing_feature",
+  "found_alternative",
+  "just_trying",
+  "technical_issue",
+  "other",
+]);
+
+function normalizeCancelReason(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const slug = value.trim().toLowerCase().slice(0, 40);
+  return CANCEL_REASON_CODES.has(slug) ? slug : null;
+}
+
+function normalizeCancelComment(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().slice(0, 500);
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
   if (!date) return null;
   const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
@@ -114,6 +136,13 @@ export async function POST(request: NextRequest) {
     });
     const periodEnd = updated.current_period_end ? new Date(updated.current_period_end * 1000) : subscription.currentPeriodEndsAt;
     const nextStatus = action === "cancel_trial" || isTrial ? "TRIAL_CANCELED" : "CANCEL_AT_PERIOD_END";
+
+    // The survey modal posts cancelReason + cancelReasonComment alongside
+    // the cancel action; both fields are optional so the legacy
+    // immediate-cancel paths keep working unchanged.
+    const cancelReason = normalizeCancelReason(body?.cancelReason);
+    const cancelReasonComment = normalizeCancelComment(body?.cancelReasonComment);
+
     await prisma.subscription.update({
       where: { userId },
       data: {
@@ -124,6 +153,8 @@ export async function POST(request: NextRequest) {
         stripeCurrentPeriodEnd: periodEnd,
         canceledAt: now,
         lastSyncedAt: now,
+        cancelReason,
+        cancelReasonComment,
         version: { increment: 1 },
       },
     });

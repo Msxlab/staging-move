@@ -14,6 +14,11 @@ import {
 import { RevealModal } from "@/components/premium/reveal-modal";
 import { planToStickerTier } from "@/components/premium/premium-sticker";
 import { trackEvent } from "@/lib/analytics";
+import {
+  CancelSurveyModal,
+  type CancelReasonCode,
+} from "@/components/settings/cancel-survey-modal";
+import { EmbeddedCheckoutCard } from "@/components/marketing/embedded-checkout-card";
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -142,6 +147,10 @@ export default function SubscriptionManagementPage() {
   const justUpgradedPlan = successFlag ? searchParams.get("plan") : null;
   const justUpgradedTier = planToStickerTier(justUpgradedPlan);
   const [revealOpen, setRevealOpen] = useState(false);
+  const [cancelSurvey, setCancelSurvey] = useState<{
+    open: boolean;
+    flavor: "trial" | "renewal";
+  }>({ open: false, flavor: "renewal" });
   const activationTrackedRef = useRef(false);
   const stuckCheckoutRecoveryRef = useRef(false);
 
@@ -369,22 +378,52 @@ export default function SubscriptionManagementPage() {
     }
   }
 
-  async function subscriptionAction(action: "cancel_trial" | "cancel_renewal" | "resume_renewal") {
+  async function subscriptionAction(
+    action: "cancel_trial" | "cancel_renewal" | "resume_renewal",
+    cancelPayload?: { reason: CancelReasonCode | null; comment: string },
+  ) {
     setProcessing(action);
     setError(null);
     try {
       const response = await fetch("/api/subscription/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({
+          action,
+          ...(cancelPayload?.reason ? { cancelReason: cancelPayload.reason } : {}),
+          ...(cancelPayload?.comment ? { cancelReasonComment: cancelPayload.comment } : {}),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Failed to update subscription.");
+      if (action === "cancel_trial" || action === "cancel_renewal") {
+        trackEvent("subscription_cancel_submitted", {
+          plan: "individual",
+          action,
+          reason: cancelPayload?.reason || "skipped",
+          has_comment: cancelPayload?.comment ? "true" : "false",
+        });
+      }
       await load();
+      return true;
     } catch (err: any) {
       setError(err?.message || "Failed to update subscription.");
+      return false;
     } finally {
       setProcessing(null);
+    }
+  }
+
+  function openCancelSurvey(flavor: "trial" | "renewal") {
+    setCancelSurvey({ open: true, flavor });
+  }
+
+  async function submitCancelSurvey(payload: { reason: CancelReasonCode | null; comment: string }) {
+    const flavor = cancelSurvey.flavor;
+    const action = flavor === "trial" ? "cancel_trial" : "cancel_renewal";
+    const submitted = await subscriptionAction(action, payload);
+    if (submitted) {
+      setCancelSurvey({ open: false, flavor });
     }
   }
 
@@ -518,9 +557,9 @@ export default function SubscriptionManagementPage() {
                 {currentState === "TRIALING" ? (
                   <button
                     type="button"
-                    onClick={() => void subscriptionAction("cancel_trial")}
+                    onClick={() => openCancelSurvey("trial")}
                     disabled={Boolean(processing)}
-                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:opacity-60"
+                    className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
                   >
                     {processing === "cancel_trial" ? "Updating..." : "Cancel trial"}
                   </button>
@@ -528,9 +567,9 @@ export default function SubscriptionManagementPage() {
                 {currentState === "ACTIVE" ? (
                   <button
                     type="button"
-                    onClick={() => void subscriptionAction("cancel_renewal")}
+                    onClick={() => openCancelSurvey("renewal")}
                     disabled={Boolean(processing)}
-                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:opacity-60"
+                    className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
                   >
                     {processing === "cancel_renewal" ? "Updating..." : "Cancel renewal"}
                   </button>
@@ -540,9 +579,19 @@ export default function SubscriptionManagementPage() {
                     type="button"
                     onClick={() => void subscriptionAction("resume_renewal")}
                     disabled={Boolean(processing)}
-                    className="rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-60"
+                    className="rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
                   >
                     {processing === "resume_renewal" ? "Updating..." : "Resume renewal"}
+                  </button>
+                ) : null}
+                {(currentState === "PAST_DUE" || currentState === "GRACE_PERIOD") && canManageStripeBilling ? (
+                  <button
+                    type="button"
+                    onClick={() => void openPortal()}
+                    disabled={processing === "MANAGE"}
+                    className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    {processing === "MANAGE" ? "Opening..." : "Update payment method"}
                   </button>
                 ) : null}
                 {canManageStripeBilling ? (
@@ -550,7 +599,7 @@ export default function SubscriptionManagementPage() {
                     type="button"
                     onClick={() => void openPortal()}
                     disabled={processing === "MANAGE"}
-                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:opacity-60"
+                    className="rounded-xl border border-foreground/20 bg-foreground/10 px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-foreground/15 disabled:opacity-60"
                   >
                     {processing === "MANAGE" ? "Opening..." : "Manage billing"}
                   </button>
@@ -622,7 +671,7 @@ export default function SubscriptionManagementPage() {
                             type="button"
                             onClick={() => void openPortal()}
                             disabled={Boolean(processing)}
-                            className="rounded-xl border border-border px-4 py-2 text-sm text-foreground transition hover:bg-foreground/5 disabled:opacity-60"
+                            className="inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline disabled:opacity-60"
                           >
                             Open Stripe portal instead
                           </button>
@@ -695,12 +744,31 @@ export default function SubscriptionManagementPage() {
                   <button
                     type="button"
                     onClick={() => void startAnnualTrial()}
-                    disabled={processing === "CHECKOUT" || !acceptedAnnualTerms}
+                    disabled={Boolean(processing) || !acceptedAnnualTerms}
                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-3 text-sm font-semibold text-white transition hover:bg-tone-orange-bg disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check className="h-4 w-4" />
                     {offerCtaLabel}
                   </button>
+
+                  {acceptedAnnualTerms ? (
+                    <div className="mt-4">
+                      <div className="my-3 flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <span className="h-px flex-1 bg-border" />
+                        <span>or pay instantly</span>
+                        <span className="h-px flex-1 bg-border" />
+                      </div>
+                      <EmbeddedCheckoutCard
+                        plan="INDIVIDUAL"
+                        billingInterval="YEAR"
+                        campaignCode={publicCampaign.campaignCode}
+                        triggerLabel="Pay with Apple Pay / Google Pay"
+                        disabled={Boolean(processing)}
+                        onPendingChange={(pending) => setProcessing(pending ? "EMBEDDED_CHECKOUT" : null)}
+                        triggerClassName="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/10"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -739,12 +807,31 @@ export default function SubscriptionManagementPage() {
                   <button
                     type="button"
                     onClick={() => void startMonthlyPlan()}
-                    disabled={processing === "MONTHLY_CHECKOUT" || !acceptedMonthlyTerms}
+                    disabled={Boolean(processing) || !acceptedMonthlyTerms}
                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check className="h-4 w-4" />
                     {monthlyCtaLabel}
                   </button>
+
+                  {acceptedMonthlyTerms ? (
+                    <div className="mt-4">
+                      <div className="my-3 flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <span className="h-px flex-1 bg-border" />
+                        <span>or pay instantly</span>
+                        <span className="h-px flex-1 bg-border" />
+                      </div>
+                      <EmbeddedCheckoutCard
+                        plan="INDIVIDUAL"
+                        billingInterval="MONTH"
+                        campaignCode={monthlyOffer.campaignCode}
+                        triggerLabel="Pay with Apple Pay / Google Pay"
+                        disabled={Boolean(processing)}
+                        onPendingChange={(pending) => setProcessing(pending ? "EMBEDDED_CHECKOUT" : null)}
+                        triggerClassName="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/10"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -770,6 +857,19 @@ export default function SubscriptionManagementPage() {
           onClose={() => setRevealOpen(false)}
         />
       )}
+
+      <CancelSurveyModal
+        open={cancelSurvey.open}
+        flavor={cancelSurvey.flavor}
+        pending={processing === "cancel_trial" || processing === "cancel_renewal"}
+        onClose={() => {
+          if (processing === "cancel_trial" || processing === "cancel_renewal") return;
+          setCancelSurvey((prev) => ({ ...prev, open: false }));
+        }}
+        onConfirm={(payload) => {
+          void submitCancelSurvey(payload);
+        }}
+      />
     </div>
   );
 }

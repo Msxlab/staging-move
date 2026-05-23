@@ -7,7 +7,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   TextInput,
-  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +24,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
+import { openWebUrl } from "@/lib/in-app-browser";
 import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Button } from "@/components/ui/Button";
@@ -208,10 +208,7 @@ export default function HelpScreen() {
 
   const handleContactUs = useCallback(async () => {
     const supportUrl = `${APP_WEB_URL}/contact`;
-    const canOpen = await Linking.canOpenURL(supportUrl);
-    if (canOpen) {
-      await Linking.openURL(supportUrl);
-    }
+    await openWebUrl(supportUrl);
   }, []);
 
   if (selectedArticle) {

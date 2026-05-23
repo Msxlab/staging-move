@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -23,6 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
+import { openWebUrl } from "@/lib/in-app-browser";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import {
@@ -489,18 +489,8 @@ function LegacySubscriptionScreen() {
   // page where Cancel/Resume/Switch-cycle live behind the user's session.
   const handleOpenWebBilling = useCallback(async () => {
     const url = `${APP_WEB_URL}/settings/subscription`;
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (!canOpen) {
-        hapticError();
-        Alert.alert(
-          t("settings.subscription_billingUnavailable"),
-          t("settings.subscription_openWebBillingFailed"),
-        );
-        return;
-      }
-      await Linking.openURL(url);
-    } catch {
+    const opened = await openWebUrl(url);
+    if (!opened) {
       hapticError();
       Alert.alert(
         t("settings.subscription_billingUnavailable"),

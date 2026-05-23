@@ -104,7 +104,15 @@ export async function POST(request: NextRequest) {
       cycle: rawCycle,
       campaignCode,
       acceptedSubscriptionTerms,
+      // When the caller is rendering Stripe's Embedded Checkout (pricing
+      // page Express path), it asks for a `client_secret` instead of a
+      // hosted-redirect URL so the iframe can mount inline without losing
+      // the page. Apple Pay / Google Pay buttons appear at the top of the
+      // embedded form automatically (the same wallet detection that runs
+      // on Hosted Checkout).
+      uiMode: rawUiMode,
     } = await request.json();
+    const uiMode: "hosted" | "embedded" = rawUiMode === "embedded" ? "embedded" : "hosted";
 
     if (plan !== "INDIVIDUAL") {
       return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
@@ -395,10 +403,15 @@ export async function POST(request: NextRequest) {
       // additive and may not exist for a brief rolling-deploy window.
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // The plan query param is read by subscription-management to decide
+    // which tier sticker to celebrate in the reveal modal.
+    const successPath = `/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=${isTrialOffer ? "true" : "false"}`;
+
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: stripeCustomerId,
       client_reference_id: userId,
       mode: "subscription",
+      ui_mode: uiMode,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       payment_method_collection: "always",
@@ -416,10 +429,6 @@ export async function POST(request: NextRequest) {
           checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
         },
       },
-      // The plan query param is read by subscription-management to decide
-      // which tier sticker to celebrate in the reveal modal.
-      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=${isTrialOffer ? "true" : "false"}`,
-      cancel_url: `${appUrl}/api/stripe/checkout/cancel`,
       metadata: {
         userId,
         plan,
@@ -431,8 +440,27 @@ export async function POST(request: NextRequest) {
         accessType: campaign.accessType,
         checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
       },
-    });
+    };
 
+    if (uiMode === "embedded") {
+      // Embedded mode: Stripe loads the form inside the page's iframe and
+      // we poll the session on completion via the return_url page (which
+      // is the same `/settings/subscription?success=true` page that the
+      // hosted flow lands on).
+      sessionParams.return_url = `${appUrl}${successPath}`;
+    } else {
+      sessionParams.success_url = `${appUrl}${successPath}`;
+      sessionParams.cancel_url = `${appUrl}/api/stripe/checkout/cancel`;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    if (uiMode === "embedded") {
+      return NextResponse.json({
+        clientSecret: session.client_secret,
+        sessionId: session.id,
+      });
+    }
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     if (error?.name === "BILLING_CONFIG_ERROR" || error?.name === "APP_URL_CONFIG_ERROR") {

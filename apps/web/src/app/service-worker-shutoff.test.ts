@@ -24,10 +24,14 @@ describe("service worker emergency shutoff", () => {
     expect(register).not.toContain(".register(");
   });
 
-  it("does not run the PWA install prompt while the service worker is disabled", () => {
+  it("keeps the install banner on native app store links, not PWA installation", () => {
     const prompt = read("src/components/shared/install-prompt.tsx");
 
-    expect(prompt).toContain("PWA_INSTALL_ENABLED = false");
-    expect(prompt).toContain("if (!PWA_INSTALL_ENABLED) return");
+    expect(prompt).toContain("NEXT_PUBLIC_IOS_APP_STORE_URL");
+    expect(prompt).toContain("NEXT_PUBLIC_ANDROID_PLAY_STORE_URL");
+    expect(prompt).toContain("WaitlistForm");
+    expect(prompt).not.toContain("addEventListener(\"beforeinstallprompt\"");
+    expect(prompt).not.toContain("addEventListener('beforeinstallprompt'");
+    expect(prompt).not.toContain(".prompt()");
   });
 });

@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Header } from "@/components/layout/header";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
@@ -14,9 +15,43 @@ type AppShellProps = {
   showBudget?: boolean;
 };
 
+const EMBED_STORAGE_KEY = "lf:embed-mobile";
+
+function useEmbedMode() {
+  const searchParams = useSearchParams();
+  const [embed, setEmbed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromQuery = searchParams.get("embed") === "mobile";
+    if (fromQuery) {
+      // Native in-app browser sessions navigate between pages of the same
+      // origin; the query param survives the first hop but not subsequent
+      // server-side redirects, so latch it for the rest of the session.
+      try {
+        window.sessionStorage.setItem(EMBED_STORAGE_KEY, "1");
+      } catch {
+        /* sessionStorage can throw in private mode — fall through */
+      }
+      setEmbed(true);
+      return;
+    }
+    try {
+      if (window.sessionStorage.getItem(EMBED_STORAGE_KEY) === "1") {
+        setEmbed(true);
+      }
+    } catch {
+      /* noop */
+    }
+  }, [searchParams]);
+
+  return embed;
+}
+
 export function AppShell({ children, showBudget = true }: AppShellProps) {
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const embedMode = useEmbedMode();
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -28,6 +63,24 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [mobileMenuOpen]);
+
+  // Mobile in-app browser embed: strip the global chrome so the screen
+  // visually matches the surrounding native UI. No header, sidebar, mobile
+  // tab bar, or install prompt — just the page content. The in-app browser
+  // supplies its own "Done" button to dismiss.
+  const embedShell = useMemo(() => {
+    if (!embedMode) return null;
+    return (
+      <div className="min-h-screen" style={{ background: "var(--surface)" }}>
+        <ImpersonationBanner />
+        <main id="main-content" tabIndex={-1} className="p-4 focus:outline-none">
+          <div className="mx-auto w-full max-w-screen-md">{children}</div>
+        </main>
+      </div>
+    );
+  }, [embedMode, children]);
+
+  if (embedShell) return embedShell;
 
   return (
     <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
