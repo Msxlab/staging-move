@@ -31,7 +31,7 @@
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^11.15.0",
+    "framer-motion": "^12.40.0",
     "html-to-text": "^10.0.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.16.0",
