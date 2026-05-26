@@ -2,7 +2,7 @@
 
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Infrastructure
-- **Related decisions**: D10, D19
+- **Related decisions**: D10, D19, D26 (`/api/stripe/checkout` extension)
 - **Related docs**: [11](./11-address-change-event-model.md), [16](./16-step-up-auth-flow.md), [18](./18-security-checklist.md)
 
 ## Amaç
@@ -32,13 +32,17 @@ Amacı ATO senaryosunda saldırganın session hijack'i ile tek tıkla hasar yapm
 
 ## Veri modeli
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C10) ile geçersizdir. Canonical purpose enum 7 değer taşır: `ADDRESS_CHANGE | MEMBER_REMOVE | WORKSPACE_DELETE | BILLING_CHANGE | EXPORT | ROLE_OWNER_CHANGE | VENDOR_BULK_DELETE`. Aşağıda eksik değerler varsa canonical kazanır. `purpose` alanı `@db.VarChar(40)` (canonical §C7). Route `/api/stripe/checkout` (mevcut, genişler — D26); `/api/billing/*` yeni namespace AÇILMAZ.
+
 ```prisma
 enum AuthChallengePurpose {
   ADDRESS_CHANGE        // POST /api/address-changes
-  MEMBER_REMOVE         // DELETE /api/workspaces/:id/members/:userId
+  MEMBER_REMOVE         // DELETE /api/workspaces/:id/members/:userId (ADMIN/OWNER hedef)
   WORKSPACE_DELETE      // DELETE /api/workspaces/:id
-  BILLING_CHANGE        // POST /api/billing/checkout, cancel sub, plan change
-  // Faz 2: SERVICE_BULK_DELETE, EXPORT_PII
+  BILLING_CHANGE        // POST /api/stripe/checkout downgrade/cancel + plan change
+  EXPORT                // Tax/Property export (Pro)
+  ROLE_OWNER_CHANGE     // Ownership transfer / promote-to-OWNER / demote-OWNER
+  VENDOR_BULK_DELETE    // Vendor book bulk delete (Pro, Faz 2)
 }
 
 enum AuthChallengeMethod {

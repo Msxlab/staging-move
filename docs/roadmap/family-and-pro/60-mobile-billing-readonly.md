@@ -1,5 +1,7 @@
 # Mobile Billing — Read-Only Entitlement (Faz 1)
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C2, §C14) ile uyumludur. Mobile auto-render guard: `MOBILE_FAMILY_PRO_PURCHASE_ENABLED = false` (§C14), kombine `Subscription.salesChannel === "web"` filter (62 metadata). Aşağıdaki içerik canonical'a uygun; özel düzeltme yok.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 1 setup + Sprint 4 polish)
 - **Tier**: Cross-cutting
 - **Related decisions**: D11 (mobile read-only), D12 (iOS conflict guard), D14 (plan-limits adapter)
@@ -43,7 +45,7 @@ N/A — yeni tablo yok. Mevcut `Subscription`, `WorkspaceMember`, `Workspace` (c
 Mobile sadece **okur**. Hiçbir yeni endpoint mobile için yaratılmaz, mevcut endpoint'lere ek alan eklenir:
 
 - `GET /api/profile` (mevcut) — response'a `entitlement: UnifiedEntitlementSnapshot` (zaten var) + `workspace: { id, name, role, ownerEmail?, planSourceWorkspace: boolean }` (yeni)
-- `GET /api/billing/checkout-availability` (yeni, küçük) — body `{ targetPlan: "FAMILY"|"PRO" }` → response `{ allowed: boolean, blockReason?: "IOS_ACTIVE_SUB"|"PLAY_ACTIVE_SUB"|"ALREADY_SUBSCRIBED", message: string, helpUrl: string }`. Mobile butona basmadan önce çağırır, doğru mesajı gösterir.
+- `GET /api/stripe/checkout-availability` (yeni, küçük) — body `{ targetPlan: "FAMILY"|"PRO" }` → response `{ allowed: boolean, blockReason?: "IOS_ACTIVE_SUB"|"PLAY_ACTIVE_SUB"|"ALREADY_SUBSCRIBED", message: string, helpUrl: string }`. Mobile butona basmadan önce çağırır, doğru mesajı gösterir.
 
 ## Web
 
@@ -84,7 +86,7 @@ State machine (plan'a göre render):
 - `plan=PRO`, owner DEĞİL ise → "Pro · Member" + owner email + read-only
 - `status=GRACE_PERIOD` → ek banner: "Your workspace owner's subscription expired. Read-only until {graceEndsAt}."
 
-Conflict guard: "Switch to Family/Pro on web →" tıklanınca `GET /api/billing/checkout-availability` çağrılır:
+Conflict guard: "Switch to Family/Pro on web →" tıklanınca `GET /api/stripe/checkout-availability` çağrılır:
 - `allowed=true` → `Linking.openURL('https://lf.io/upgrade?source=mobile')`
 - `allowed=false, blockReason=IOS_ACTIVE_SUB` → modal: D12 mesajı + "Open App Store Subscriptions" butonu
 
@@ -125,7 +127,7 @@ N/A — admin'in mobile-only ek aksiyonu yok. `apps/admin/src/app/(admin)/email-
 - [x] **Step-up auth?** — Hayır, satın alma yok, sadece read-only entitlement.
 - [x] **PII redaction?** — `ownerEmail` mobile'a verilirken member rolündeki kullanıcıya truncated form: `john****@gmail.com` (mevcut `apps/web/src/lib/audit-redaction.ts` benzeri util mobile'a port edilir veya server-side maskele).
 - [x] **Audit log?** — `subscription.viewed_on_mobile` event'i ağır değil, atılmaz. Conflict guard hit (`ios_sub_conflict.shown`) loglanır (cross-ref 65).
-- [x] **Rate limit?** — `GET /api/billing/checkout-availability` mevcut profile rate limit'i içinde kalır (60 rpm per user).
+- [x] **Rate limit?** — `GET /api/stripe/checkout-availability` mevcut profile rate limit'i içinde kalır (60 rpm per user).
 - [x] **Permission matris?** — OWNER plan yönetir; ADMIN/MEMBER/CHILD/VIEW_ONLY plan görür ama "manage" butonu render olmaz. CHILD özel: subscription ekranı tamamen gizli, sadece "Your account is managed by your family." mesajı.
 - [x] **Encryption at rest?** — Mobile lokal storage'da yalnızca `plan`, `status` cache'lenir (kısa TTL, 5 dk). Token/secret saklanmaz.
 - [x] **GDPR DSAR?** — Mobile sadece read-only, primary data web tarafında. DSAR `/api/account/export` üzerinden (mevcut) tüm subscription history'sini kapsar.
@@ -143,7 +145,7 @@ N/A — admin'in mobile-only ek aksiyonu yok. `apps/admin/src/app/(admin)/email-
 - `apps/mobile/src/lib/billing-flags.ts` — yeni flag eklenir
 - `apps/web/src/app/api/profile/route.ts` (varsa, yoksa shared `getProfileResponse` util) — response'a `workspace.role`, `workspace.ownerEmailMasked`, `workspace.planSourceWorkspace` eklenir
 - Mobile `apps/mobile/src/i18n/messages/en.json` + `es.json` (cross-ref 67) — yeni key'ler
-- `apps/web/src/app/api/billing/checkout-availability/route.ts` — yeni endpoint
+- `apps/web/src/app/api/stripe/checkout-availability/route.ts` — yeni endpoint
 - `apps/mobile/src/lib/api/billing.ts` (varsa) — `checkoutAvailability()` fonksiyonu
 
 ## Test plan

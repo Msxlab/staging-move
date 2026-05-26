@@ -1,8 +1,10 @@
 # Admin Provider Actions CRUD
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C7, §C8) ile geçersizdir. **Dotted permission kodu `provider.actions.write` YASAK** (D25 / §C8); bunun yerine `ADMIN_RESOURCES`'a `provider_actions` resource'u eklenir, route'lar `provider_actions.canCreate/canUpdate/canDelete` flag'lerini kontrol eder. `ServiceProviderAction.actionType` canonical `@db.VarChar(30)` (§C7), `channel/actionTier @db.VarChar(20)`.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Admin
-- **Related decisions**: D4 (action tier kodda, plan-gating kodda; DB'de `tier: BASIC|EXTENDED|PREMIUM`), D15 (Day 1 partner anlaşması yok — deep-link + PDF + mailto)
+- **Related decisions**: D4 (action tier kodda, plan-gating kodda; DB'de `tier: BASIC|EXTENDED|PREMIUM`), D15 (Day 1 partner anlaşması yok — deep-link + PDF + mailto), D25 (ADMIN_RESOURCES extension)
 - **Related docs**: [`34-service-provider-action-registry.md`](./34-service-provider-action-registry.md), [`52-admin-provider-csv-import.md`](./52-admin-provider-csv-import.md), [`53-admin-sync-attempts-dashboard.md`](./53-admin-sync-attempts-dashboard.md), [`36-partner-deep-link-launcher.md`](./36-partner-deep-link-launcher.md), [`37-partner-pdf-letter-generator.md`](./37-partner-pdf-letter-generator.md), [`38-partner-mailto-templates.md`](./38-partner-mailto-templates.md)
 
 ## Amaç

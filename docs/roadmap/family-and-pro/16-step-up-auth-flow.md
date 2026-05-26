@@ -1,8 +1,10 @@
 # Step-Up Auth Flow
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C3, §C10) ile geçersizdir. Canonical purpose enum 7 değer: `ADDRESS_CHANGE | MEMBER_REMOVE | WORKSPACE_DELETE | BILLING_CHANGE | EXPORT | ROLE_OWNER_CHANGE | VENDOR_BULK_DELETE`. Billing route `/api/stripe/checkout` (mevcut, D26 — yeni `/api/billing/*` AÇILMAZ).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Infrastructure
-- **Related decisions**: D10, D19
+- **Related decisions**: D10, D19, D26
 - **Related docs**: [15](./15-workspace-auth-challenge.md), [11](./11-address-change-event-model.md), [13](./13-address-change-wizard-web.md), [18](./18-security-checklist.md)
 
 ## Amaç
@@ -59,7 +61,7 @@ function detectChallengeMethods(user: User): AuthChallengeMethod[] {
 
 | Method | Path | Auth | Workspace ctx | Body | Response | Errors |
 |---|---|---|---|---|---|---|
-| POST | `/api/auth/challenge` | Session | required (workspaceId body'de) | `{ workspaceId, purpose: 'ADDRESS_CHANGE' \| ..., preferredMethod?: 'PASSWORD' \| 'TOTP' \| 'EMAIL_OTP' }` | `201 { challengeId, method, expiresAt, availableMethods }` | 401, 403 (no workspace role), 429 (rate limit) |
+| POST | `/api/auth/challenge` | Session | required (workspaceId body'de) | `{ workspaceId, purpose: 'ADDRESS_CHANGE' \| 'MEMBER_REMOVE' \| 'WORKSPACE_DELETE' \| 'BILLING_CHANGE' \| 'EXPORT' \| 'ROLE_OWNER_CHANGE' \| 'VENDOR_BULK_DELETE', preferredMethod?: 'PASSWORD' \| 'TOTP' \| 'EMAIL_OTP' }` | `201 { challengeId, method, expiresAt, availableMethods }` | 401, 403 (no workspace role), 429 (rate limit) |
 | POST | `/api/auth/challenge/:id/verify` | Session | derived | `{ code?: string, password?: string }` | `200 { ok: true, consumeToken: string, expiresAt }` | 400 (invalid input), 401, 403 (not owner), 410 (expired/consumed), 429 (max attempts) |
 
 Yanıtın `consumeToken` alanı: action POST'unda `authChallengeId` olarak kullanılmaz **doğrudan**; client zaten challengeId'yi bilir. `consumeToken` ek bir HMAC (challengeId + userId + verifiedAt secret-signed) — kötü niyetli client'a karşı extra layer. Action endpoint hem challengeId hem consumeToken doğrular.
@@ -96,7 +98,7 @@ Verify EMAIL_OTP:
 - `/api/address-changes` POST — `authChallengeId` body'de zorunlu (→ 11)
 - `/api/workspaces/:id/members/:userId` DELETE — `authChallengeId` body'de zorunlu (purpose=MEMBER_REMOVE)
 - `/api/workspaces/:id` DELETE — `authChallengeId` zorunlu (purpose=WORKSPACE_DELETE)
-- `/api/billing/checkout` POST — `authChallengeId` zorunlu (purpose=BILLING_CHANGE; Faz 2 toggleable)
+- `/api/stripe/checkout` POST **downgrade/cancel/plan-change path'inde** — `authChallengeId` zorunlu (purpose=BILLING_CHANGE). Upgrade için Stripe Checkout zaten auth ister (canonical §C10).
 
 ## Web
 

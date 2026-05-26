@@ -1,8 +1,10 @@
 # Admin Workspace Inspector
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C8) ile geçersizdir. **Dotted permission kodları (`workspace.read`, `workspace.impersonate.read` vb.) YASAK** (D25 / §C8). Bunun yerine mevcut `ADMIN_RESOURCES` array'ine `workspaces` resource'u eklenir; her resource için `canRead`, `canCreate`, `canUpdate`, `canDelete` flag'leri `AdminPermission` row'unda yaşar. Aşağıda dotted kod gösteren tablolar canonical'a aykırıdır; "workspace.read" → `workspaces.canRead`, "workspace.transfer.ownership" → ek `requireStepUp` flag (Faz 2) veya iki-tıklı confirm pattern; "workspace.suspend" → `workspaces.canUpdate` + admin action audit. `Workspace.suspendedAt` alanı canonical §C7'de yer almaz; gerekiyorsa ayrı PR ile §C7'ye eklenmelidir.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 1)
 - **Tier**: Admin
-- **Related decisions**: D2 (entitlements owner-resolved + grace + overflow), D3 (field-level service visibility), D5 (sabit rol matrisi), D7 (PartnerSyncAttempt idempotent), D17 (existing user migration)
+- **Related decisions**: D2 (entitlements owner-resolved + grace + overflow), D3 (field-level service visibility), D5 (sabit rol matrisi), D7 (PartnerSyncAttempt idempotent), D17 (existing user migration), D25 (ADMIN_RESOURCES extension)
 - **Related docs**: [`02-workspace-model.md`](./02-workspace-model.md), [`03-workspace-member-roles.md`](./03-workspace-member-roles.md), [`06-entitlements-system.md`](./06-entitlements-system.md), [`11-address-change-event-model.md`](./11-address-change-event-model.md), [`35-partner-sync-attempts.md`](./35-partner-sync-attempts.md)
 
 ## Amaç

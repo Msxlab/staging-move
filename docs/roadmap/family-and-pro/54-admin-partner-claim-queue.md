@@ -1,8 +1,10 @@
 # Admin Partner Claim Queue
 
-- **Status**: Schema-only, MVP shows placeholder (Family/Pro launch, Sprint 4 — iskelet); Faz 2 activation Q3 2026
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C8, §C14) ile geçersizdir. Dotted permission kodu `provider.claim.review` YASAK (D25 / §C8); bunun yerine `ADMIN_RESOURCES`'a `provider_claims` resource'u eklenir, `provider_claims.canRead/canUpdate` flag'leri kullanılır. **MVP'de hiçbir admin role'a grant edilmez** (D16/D28 — Faz 2 aktivasyonu).
+
+- **Status**: Schema-only, MVP shows placeholder (Family/Pro launch, Sprint 4 — iskelet); Faz 2 activation Q3 2026 (D28)
 - **Tier**: Admin
-- **Related decisions**: D16 (Partner Claim MVP'de iskelet, UI disabled; tablolar yaratılır), D8 (PartnerConsent ayrı schema-only iskelet — bu doc'la paralel pattern)
+- **Related decisions**: D16 (Partner Claim MVP'de iskelet, UI disabled; tablolar yaratılır), D8 (PartnerConsent ayrı schema-only iskelet — bu doc'la paralel pattern), D25 (ADMIN_RESOURCES extension), D28 (Faz 2)
 - **Related docs**: [`46-partner-claim-skeleton.md`](./46-partner-claim-skeleton.md), [`45-partner-consent-skeleton.md`](./45-partner-consent-skeleton.md), [`51-admin-provider-actions-crud.md`](./51-admin-provider-actions-crud.md)
 
 ## Amaç

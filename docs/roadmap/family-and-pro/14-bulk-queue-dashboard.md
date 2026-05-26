@@ -1,8 +1,10 @@
 # Bulk Queue Dashboard
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C9) ile uyumludur — bu doc `confirmationNumber` encryption davranışını zaten içeriyor (§C9 / D27 ile aynı yön): `PartnerSyncAttempt.confirmationNumber` ve `notes` encrypted-at-rest (`packages/shared/src/encryption.ts`).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3)
 - **Tier**: Family + Pro
-- **Related decisions**: D7
+- **Related decisions**: D7, D27 (confirmation/notes encrypt)
 - **Related docs**: [11](./11-address-change-event-model.md), [12](./12-address-change-target-model.md), [13](./13-address-change-wizard-web.md), [35](./35-partner-sync-attempts.md), [36](./36-partner-deep-link-launcher.md)
 
 ## Amaç
