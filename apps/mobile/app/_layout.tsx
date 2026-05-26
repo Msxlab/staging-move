@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Linking, View } from "react-native";
+import { Alert, Linking, Platform, StatusBar as NativeStatusBar, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -271,14 +271,14 @@ function RootNavigator() {
   // and when the keyboard collapses) in sync with the active palette.
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => null);
+    if (Platform.OS === "android") {
+      NativeStatusBar.setBackgroundColor(colors.background, true);
+    }
   }, [colors.background]);
 
   return (
     <>
-      <StatusBar
-        style={resolvedScheme === "light" ? "dark" : "light"}
-        backgroundColor={colors.background}
-      />
+      <StatusBar style={resolvedScheme === "light" ? "dark" : "light"} />
       <Stack
         key={resolvedScheme}
         screenOptions={{
