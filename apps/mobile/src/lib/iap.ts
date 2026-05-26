@@ -13,6 +13,7 @@
  */
 
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { api } from "@/lib/api";
 import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { captureException } from "@/lib/sentry";
@@ -121,6 +122,56 @@ export const IAP_VERIFICATION_ERROR_MESSAGE = "IAP_VERIFICATION_ERROR";
 export const IAP_STORE_UNAVAILABLE_MESSAGE = "IAP_STORE_UNAVAILABLE";
 export { IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE };
 
+const IAP_PURCHASE_TIMEOUT_MS = 120_000;
+
+function getPurchaseProductId(purchase: any): string | undefined {
+  if (typeof purchase?.productId === "string" && purchase.productId) return purchase.productId;
+  if (Array.isArray(purchase?.ids)) return purchase.ids.find((id: unknown): id is string => typeof id === "string");
+  return undefined;
+}
+
+function getIosSignedTransaction(purchase: any): string | undefined {
+  return (
+    purchase?.purchaseToken ||
+    purchase?.jwsRepresentation ||
+    purchase?.jwsRepresentationIOS ||
+    purchase?.jwsRepresentationIos ||
+    undefined
+  );
+}
+
+function getIosTransactionId(purchase: any): string | undefined {
+  return purchase?.transactionId || purchase?.id || undefined;
+}
+
+export function buildVerifyBodyForPurchase(
+  purchase: any,
+  platform: "ios" | "android" | string = Platform.OS,
+): Record<string, unknown> {
+  if (platform === "ios") {
+    const transactionId = getIosTransactionId(purchase);
+    return {
+      platform: "ios",
+      signedTransaction: getIosSignedTransaction(purchase),
+      ...(transactionId ? { transactionId } : {}),
+    };
+  }
+
+  return {
+    platform: "android",
+    purchaseToken: purchase?.purchaseToken || purchase?.purchaseTokenAndroid,
+    productId: getPurchaseProductId(purchase),
+  };
+}
+
+function getAndroidPackageName() {
+  return (
+    (Constants.expoConfig as any)?.android?.package ||
+    (Constants.manifest as any)?.android?.package ||
+    "com.locateflow.mobile"
+  );
+}
+
 /**
  * Kick off a subscription purchase and wait for backend verification.
  *
@@ -145,36 +196,39 @@ export async function purchaseSubscription(opts: {
 
   return new Promise<PurchaseResult>((resolve) => {
     let settled = false;
+    let handlingPurchase = false;
+    let updateSub: { remove: () => void } | null = null;
+    let errorSub: { remove: () => void } | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      finish({ status: "error", message: IAP_PURCHASE_FAILED_MESSAGE });
+    }, IAP_PURCHASE_TIMEOUT_MS);
+
     const finish = (value: PurchaseResult) => {
       if (settled) return;
       settled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       try {
-        updateSub.remove();
+        updateSub?.remove();
       } catch {}
       try {
-        errorSub.remove();
+        errorSub?.remove();
       } catch {}
       resolve(value);
     };
 
-    const updateSub = IAP.purchaseUpdatedListener(async (purchase: any) => {
+    const handlePurchase = async (purchase: any) => {
+      if (settled || handlingPurchase) return;
+      const purchaseProductId = getPurchaseProductId(purchase);
+      if (purchaseProductId && purchaseProductId !== opts.productId) return;
+      handlingPurchase = true;
       try {
-        const verifyBody: Record<string, unknown> =
-          Platform.OS === "ios"
-            ? {
-                platform: "ios",
-                // Prefer the JWS representation — it's self-authenticating.
-                signedTransaction:
-                  purchase?.jwsRepresentation ||
-                  purchase?.jwsRepresentationIos ||
-                  undefined,
-                transactionId: purchase?.transactionId || purchase?.originalTransactionIdentifierIOS,
-              }
-            : {
-                platform: "android",
-                purchaseToken: purchase?.purchaseToken,
-                productId: purchase?.productId || opts.productId,
-              };
+        const verifyBody = buildVerifyBodyForPurchase(purchase, Platform.OS);
+        if (Platform.OS === "android" && !verifyBody.productId) {
+          verifyBody.productId = opts.productId;
+        }
 
         if (Platform.OS === "ios" && !verifyBody.signedTransaction) {
           finish({
@@ -212,10 +266,16 @@ export async function purchaseSubscription(opts: {
           status: "error",
           message: err?.message || IAP_VERIFICATION_ERROR_MESSAGE,
         });
+      } finally {
+        handlingPurchase = false;
       }
+    };
+
+    updateSub = IAP.purchaseUpdatedListener((purchase: any) => {
+      void handlePurchase(purchase);
     });
 
-    const errorSub = IAP.purchaseErrorListener((err: any) => {
+    errorSub = IAP.purchaseErrorListener((err: any) => {
       if (IAP.isUserCancelledError(err)) {
         finish({ status: "cancelled" });
         return;
@@ -228,13 +288,24 @@ export async function purchaseSubscription(opts: {
 
     (async () => {
       try {
-        await IAP.requestPurchase(
+        const directResult = await IAP.requestPurchase(
           buildSubscriptionPurchaseRequest({
             platform: Platform.OS === "ios" ? "ios" : "android",
             productId: opts.productId,
             offerToken: opts.offerToken,
           }),
         );
+        const directPurchases = Array.isArray(directResult)
+          ? directResult
+          : directResult
+            ? [directResult]
+            : [];
+        const matchingPurchase =
+          directPurchases.find((purchase: any) => getPurchaseProductId(purchase) === opts.productId) ||
+          directPurchases[0];
+        if (matchingPurchase && !settled) {
+          await handlePurchase(matchingPurchase);
+        }
       } catch (err: any) {
         if (err?.message === IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE) {
           finish({ status: "error", message: IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE });
@@ -268,7 +339,11 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 
   let items: any[] = [];
   try {
-    items = (await IAP.getAvailablePurchases()) || [];
+    const nativeRestore = (IAP as any).restorePurchases;
+    items =
+      (typeof nativeRestore === "function"
+        ? await nativeRestore({ onlyIncludeActiveItemsIOS: true })
+        : await IAP.getAvailablePurchases()) || [];
   } catch (err) {
     reportIapIssue("[IAP] getAvailablePurchases failed", err);
     return [];
@@ -276,22 +351,7 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 
   const results: PurchaseResult[] = [];
   for (const purchase of items) {
-    const body: Record<string, unknown> =
-      Platform.OS === "ios"
-        ? {
-            platform: "ios",
-            signedTransaction:
-              purchase?.jwsRepresentation ||
-              purchase?.jwsRepresentationIos ||
-              undefined,
-            transactionId:
-              purchase?.transactionId || purchase?.originalTransactionIdentifierIOS,
-          }
-        : {
-            platform: "android",
-            purchaseToken: purchase?.purchaseToken,
-            productId: purchase?.productId,
-          };
+    const body = buildVerifyBodyForPurchase(purchase, Platform.OS);
 
     try {
       if (Platform.OS === "ios" && !body.signedTransaction) {
@@ -328,7 +388,14 @@ export async function openNativeSubscriptionSettings(productId?: string) {
   if (!IAP) return;
 
   try {
-    await IAP.deepLinkToSubscriptions(productId ? { sku: productId } : undefined);
+    await IAP.deepLinkToSubscriptions(
+      Platform.OS === "android"
+        ? {
+            skuAndroid: productId,
+            packageNameAndroid: getAndroidPackageName(),
+          }
+        : undefined,
+    );
   } catch (err) {
     reportIapIssue("[IAP] deepLinkToSubscriptions failed", err);
   }

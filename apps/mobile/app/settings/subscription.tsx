@@ -193,6 +193,10 @@ function LegacySubscriptionScreen() {
   const [localizedYearlyPrice, setLocalizedYearlyPrice] = useState<string | null>(null);
   const [monthlyOfferToken, setMonthlyOfferToken] = useState<string | null>(null);
   const [yearlyOfferToken, setYearlyOfferToken] = useState<string | null>(null);
+  const [storeProductsLoading, setStoreProductsLoading] = useState(false);
+  const [storeProductsLoaded, setStoreProductsLoaded] = useState(false);
+  const [storeMonthlyProductAvailable, setStoreMonthlyProductAvailable] = useState(false);
+  const [storeYearlyProductAvailable, setStoreYearlyProductAvailable] = useState(false);
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
@@ -226,7 +230,11 @@ function LegacySubscriptionScreen() {
   const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
   const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
   const mobileStoreCommerceAdvertisable = mobileStoreCommerceAdvertisableForPlatform();
-  const canUseNativePurchases = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
+  const canFetchNativeStoreProducts = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
+  const canUseNativePurchases =
+    canFetchNativeStoreProducts &&
+    storeProductsLoaded &&
+    (storeMonthlyProductAvailable || storeYearlyProductAvailable);
   const nativePurchaseUnavailableMessage = !mobileStorePurchasesEnabled
     ? t("settings.subscription_mobilePurchasesDisabledForBuild", {
         defaultValue: "Mobile purchases are not enabled in this build.",
@@ -235,22 +243,36 @@ function LegacySubscriptionScreen() {
       ? t("settings.subscription_mobileProductsNotConfigured", {
           defaultValue: "App Store or Google Play products are not configured yet.",
         })
-      : t("settings.subscription_mobilePurchasesUnavailable");
+      : storeProductsLoading || !storeProductsLoaded
+        ? t("settings.subscription_mobileProductsLoading", {
+            defaultValue: "Loading App Store or Google Play products...",
+          })
+        : !canUseNativePurchases
+          ? t("settings.subscription_mobileProductsNotAvailable", {
+              defaultValue: "App Store or Google Play products are not available on this device yet.",
+            })
+          : t("settings.subscription_mobilePurchasesUnavailable");
   const canAdvertiseMobilePaidPlan =
-    !isNativeStorePlatform || (mobileStoreCommerceAdvertisable && iapAvailable);
+    !isNativeStorePlatform || (mobileStoreCommerceAdvertisable && canUseNativePurchases);
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
   // StoreKit/Play return one batch instead of two round-trips.
   useEffect(() => {
     const skus = [monthlySku, yearlySku].filter((sku): sku is string => Boolean(sku));
-    if (!canUseNativePurchases || skus.length === 0) {
+    if (!canFetchNativeStoreProducts || skus.length === 0) {
       setLocalizedMonthlyPrice(null);
       setLocalizedYearlyPrice(null);
       setMonthlyOfferToken(null);
       setYearlyOfferToken(null);
+      setStoreProductsLoading(false);
+      setStoreProductsLoaded(false);
+      setStoreMonthlyProductAvailable(false);
+      setStoreYearlyProductAvailable(false);
       return;
     }
     let cancelled = false;
+    setStoreProductsLoading(true);
+    setStoreProductsLoaded(false);
     (async () => {
       const products = await fetchSubscriptionProducts(skus);
       if (cancelled) return;
@@ -258,15 +280,21 @@ function LegacySubscriptionScreen() {
       const yearly = products.find((p) => p.id === yearlySku);
       const monthlyAndroidOffer = monthly ? selectAndroidSubscriptionOffer(monthly, "monthly") : null;
       const yearlyAndroidOffer = yearly ? selectAndroidSubscriptionOffer(yearly, "yearly") : null;
+      const monthlyAvailable = Boolean(monthly && (Platform.OS !== "android" || monthlyAndroidOffer?.offerToken));
+      const yearlyAvailable = Boolean(yearly && (Platform.OS !== "android" || yearlyAndroidOffer?.offerToken));
       setLocalizedMonthlyPrice(monthly?.displayPrice || null);
       setLocalizedYearlyPrice(yearly?.displayPrice || null);
       setMonthlyOfferToken(monthlyAndroidOffer?.offerToken || null);
       setYearlyOfferToken(yearlyAndroidOffer?.offerToken || null);
+      setStoreMonthlyProductAvailable(monthlyAvailable);
+      setStoreYearlyProductAvailable(yearlyAvailable);
+      setStoreProductsLoaded(true);
+      setStoreProductsLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [canUseNativePurchases, monthlySku, yearlySku]);
+  }, [canFetchNativeStoreProducts, monthlySku, yearlySku]);
 
   useEffect(() => () => {
     // Release StoreKit connection on unmount.
@@ -289,6 +317,12 @@ function LegacySubscriptionScreen() {
   const currentPlanKey = hasServerSubscription ? subscription?.plan || null : null;
   const currentStatus = hasServerSubscription ? subscription?.status || "UNKNOWN" : "NO_SUBSCRIPTION";
   const currentProvider = subscription?.provider || null;
+  const currentBillingCycle: Cycle | null =
+    subscription?.billingInterval === "YEAR"
+      ? "yearly"
+      : subscription?.billingInterval === "MONTH"
+        ? "monthly"
+        : null;
   const currentPlan = useMemo(
     () => currentPlanKey ? PLANS.find((plan) => plan.key === currentPlanKey) || null : null,
     [currentPlanKey]
@@ -298,9 +332,11 @@ function LegacySubscriptionScreen() {
   );
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
   const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
-  const hasActiveStripeSubscription =
+  const isActiveIndividualPlan =
     currentPlanKey === "INDIVIDUAL" &&
-    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus) &&
+    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus);
+  const hasActiveStripeSubscription =
+    isActiveIndividualPlan &&
     (currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId));
   const isStripeManaged = hasActiveStripeSubscription;
   const currentPlatformStoreProvider =
@@ -309,9 +345,12 @@ function LegacySubscriptionScreen() {
     Boolean(currentPlatformStoreProvider) && currentProvider === currentPlatformStoreProvider;
   const isOtherPlatformStoreManaged = isStoreManaged && !isCurrentPlatformStoreManaged;
   const managedSubscriptionBlocksPurchase =
-    currentPlanKey === "INDIVIDUAL" &&
-    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus) &&
+    isActiveIndividualPlan &&
     (isStripeManaged || isOtherPlatformStoreManaged);
+  const isUnmanagedNativeEligiblePlan =
+    isActiveIndividualPlan &&
+    !isStoreManaged &&
+    !isStripeManaged;
   const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
   const canManageBilling =
     (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
@@ -350,7 +389,15 @@ function LegacySubscriptionScreen() {
     // Resolve the effective cycle. When the caller doesn't specify, fall
     // back to whatever campaign is live (annual trial wins over monthly
     // paid). This keeps the legacy single-CTA call site working unchanged.
-    const fallbackCycle: Cycle = annualOffer ? "yearly" : monthlyOffer ? "monthly" : "yearly";
+    const fallbackCycle: Cycle = storeYearlyProductAvailable
+      ? "yearly"
+      : storeMonthlyProductAvailable
+        ? "monthly"
+        : annualOffer
+          ? "yearly"
+          : monthlyOffer
+            ? "monthly"
+            : "yearly";
     const cycle: Cycle = requestedCycle || fallbackCycle;
     const processingKey = `${planKey}_${cycle}`;
     setProcessingPlan(processingKey);
@@ -404,12 +451,19 @@ function LegacySubscriptionScreen() {
       return;
     }
 
-    // Native IAP path — preferred on iOS/Android (required by store policy).
-    // Pick the SKU matching the user-chosen cycle. Fall back to monthly when
-    // the yearly SKU is not configured so a single-SKU build keeps working.
-    const targetSku = cycle === "yearly" ? (yearlySku || monthlySku) : monthlySku;
+    // Native IAP path - preferred on iOS/Android (required by store policy).
+    // Buy exactly the cycle the user selected; don't silently downgrade annual
+    // to monthly if the annual StoreKit/Play product is unavailable.
+    const targetSku =
+      cycle === "yearly"
+        ? storeYearlyProductAvailable
+          ? yearlySku
+          : null
+        : storeMonthlyProductAvailable
+          ? monthlySku
+          : null;
     const targetOfferToken = Platform.OS === "android"
-      ? cycle === "yearly" && yearlySku
+      ? cycle === "yearly"
         ? yearlyOfferToken
         : monthlyOfferToken
       : undefined;
@@ -440,6 +494,8 @@ function LegacySubscriptionScreen() {
     yearlySku,
     monthlyOfferToken,
     yearlyOfferToken,
+    storeMonthlyProductAvailable,
+    storeYearlyProductAvailable,
     fetchSubscription,
     t,
     annualOffer,
@@ -616,15 +672,29 @@ function LegacySubscriptionScreen() {
 
         {PLANS.map((plan) => {
           const dynamicPeriod = plan.period;
-          // The INDIVIDUAL card supports two CTAs (monthly + annual) once both
-          // store SKUs are configured. Until then we fall back to the legacy
-          // single-CTA layout that ships in earlier mobile builds.
-          const showSplitCtas =
-            plan.key === "INDIVIDUAL" &&
-            plan.key !== currentPlanKey &&
+          const isIndividualPlan = plan.key === "INDIVIDUAL";
+          const isCurrentPlan = plan.key === currentPlanKey;
+          const isCurrentIndividualPlan = isIndividualPlan && isCurrentPlan;
+          // The INDIVIDUAL card supports whichever cycles the native store
+          // currently returns. Backend SKU config alone is not enough here:
+          // StoreKit/Play may still be propagating or missing a base plan.
+          const showNativeCycleActions =
+            isIndividualPlan &&
             canStartNativePurchase &&
-            Boolean(yearlySku) &&
-            Boolean(monthlySku);
+            (storeYearlyProductAvailable || storeMonthlyProductAvailable) &&
+            (
+              !isCurrentPlan ||
+              isUnmanagedNativeEligiblePlan ||
+              isCurrentPlatformStoreManaged
+            );
+          const showAnnualAction =
+            showNativeCycleActions &&
+            storeYearlyProductAvailable &&
+            !(isCurrentPlatformStoreManaged && currentBillingCycle === "yearly");
+          const showMonthlyAction =
+            showNativeCycleActions &&
+            storeMonthlyProductAvailable &&
+            !(isCurrentPlatformStoreManaged && currentBillingCycle === "monthly");
           const monthlyDisplayPrice =
             localizedMonthlyPrice ||
             monthlyOffer?.displayPriceLabel ||
@@ -635,18 +705,28 @@ function LegacySubscriptionScreen() {
             plan.yearlyPrice ||
             "";
           const hideUnavailableMobileCommerce =
-            plan.key === "INDIVIDUAL" &&
+            isIndividualPlan &&
             isNativeStorePlatform &&
             !canAdvertiseMobilePaidPlan &&
-            plan.key !== currentPlanKey;
-          const savingsText = showSplitCtas
+            !isCurrentPlan;
+          const savingsText = showAnnualAction
             ? computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice)
             : null;
-          const trialBadge = annualOffer?.trialLabel
+          const trialBadge = !isCurrentIndividualPlan && annualOffer?.trialLabel
             ? `First ${annualOffer.trialLabel} free`
-            : annualOffer?.trialDays
+            : !isCurrentIndividualPlan && annualOffer?.trialDays
               ? `First ${annualOffer.trialDays} days free`
               : null;
+          const annualButtonLabel =
+            isCurrentPlatformStoreManaged && currentBillingCycle === "monthly"
+              ? `Switch to annual · ${yearlyDisplayPrice}`
+              : trialBadge
+                ? t("settings.subscription_subscribeAnnualTrial")
+                : `Start annual · ${yearlyDisplayPrice}`;
+          const monthlyButtonLabel =
+            isCurrentPlatformStoreManaged && currentBillingCycle === "yearly"
+              ? `Switch to monthly · ${monthlyDisplayPrice}`
+              : `${t("settings.subscription_subscribeMonthly")} · ${monthlyDisplayPrice}`;
           return (
           <Card
             key={plan.key}
@@ -677,7 +757,86 @@ function LegacySubscriptionScreen() {
               ))}
             </View>
 
-            {plan.key === currentPlanKey ? (
+            {showNativeCycleActions && (showAnnualAction || showMonthlyAction) ? (
+              <View style={styles.splitCtaWrap}>
+                {showAnnualAction ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.upgradeBtn}
+                      activeOpacity={0.7}
+                      onPress={() => handleUpgrade("INDIVIDUAL", "yearly")}
+                      disabled={processingPlan === "INDIVIDUAL_yearly"}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("settings.subscription_a11yUpgradeAnnual", {
+                        defaultValue: "Start annual plan with 3-month free trial",
+                      })}
+                      accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_yearly" }}
+                    >
+                      {processingPlan === "INDIVIDUAL_yearly" ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <>
+                          <Zap size={16} color="#fff" />
+                          <Text style={styles.upgradeBtnText}>{annualButtonLabel}</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                    <View style={styles.annualMetaRow}>
+                      <Text style={styles.annualMetaText}>
+                        {yearlyDisplayPrice}
+                        {trialBadge ? ` · ${trialBadge}` : ""}
+                      </Text>
+                      {savingsText ? (
+                        <Text style={styles.savingsText}>{savingsText}</Text>
+                      ) : null}
+                    </View>
+                  </>
+                ) : null}
+                {showMonthlyAction ? (
+                  <TouchableOpacity
+                    style={styles.secondaryBtn}
+                    activeOpacity={0.7}
+                    onPress={() => handleUpgrade("INDIVIDUAL", "monthly")}
+                    disabled={processingPlan === "INDIVIDUAL_monthly"}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("settings.subscription_a11yUpgradeMonthly", {
+                      defaultValue: "Start monthly plan",
+                    })}
+                    accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_monthly" }}
+                  >
+                    {processingPlan === "INDIVIDUAL_monthly" ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : (
+                      <Text style={styles.secondaryBtnText}>{monthlyButtonLabel}</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+                {canManageBilling ? (
+                  <TouchableOpacity
+                    style={styles.manageBtn}
+                    activeOpacity={0.7}
+                    onPress={handleManageBilling}
+                    disabled={processingPlan === "MANAGE"}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("settings.subscription_a11yManage")}
+                    accessibilityHint={t("settings.subscription_a11yManageHint")}
+                    accessibilityState={{ disabled: processingPlan === "MANAGE" }}
+                  >
+                    {processingPlan === "MANAGE" ? (
+                      <ActivityIndicator color={theme.colors.primary} />
+                    ) : (
+                      <Text style={styles.manageBtnText}>{t("settings.subscription_manage")}</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+                <Text style={styles.legalCopy}>
+                  {t("settings.subscription_storeLegal", {
+                    defaultValue:
+                      "Subscription renews automatically through your App Store or Google Play account until canceled. Trial availability is managed by the app store.",
+                  })}
+                </Text>
+              </View>
+            ) : plan.key === currentPlanKey ? (
               canManageBilling ? (
                 <TouchableOpacity
                   style={styles.manageBtn}
@@ -710,67 +869,6 @@ function LegacySubscriptionScreen() {
                   {managedSubscriptionBlocksPurchase
                     ? managedElsewhereMessage
                     : nativePurchaseUnavailableMessage}
-                </Text>
-              </View>
-            ) : showSplitCtas ? (
-              <View style={styles.splitCtaWrap}>
-                <TouchableOpacity
-                  style={styles.upgradeBtn}
-                  activeOpacity={0.7}
-                  onPress={() => handleUpgrade("INDIVIDUAL", "yearly")}
-                  disabled={processingPlan === "INDIVIDUAL_yearly"}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("settings.subscription_a11yUpgradeAnnual", {
-                    defaultValue: "Start annual plan with 3-month free trial",
-                  })}
-                  accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_yearly" }}
-                >
-                  {processingPlan === "INDIVIDUAL_yearly" ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <>
-                      <Zap size={16} color="#fff" />
-                      <Text style={styles.upgradeBtnText}>
-                        {trialBadge
-                          ? t("settings.subscription_subscribeAnnualTrial")
-                          : `Start annual · ${yearlyDisplayPrice}`}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-                <View style={styles.annualMetaRow}>
-                  <Text style={styles.annualMetaText}>
-                    {yearlyDisplayPrice}
-                    {trialBadge ? ` · ${trialBadge}` : ""}
-                  </Text>
-                  {savingsText ? (
-                    <Text style={styles.savingsText}>{savingsText}</Text>
-                  ) : null}
-                </View>
-                <TouchableOpacity
-                  style={styles.secondaryBtn}
-                  activeOpacity={0.7}
-                  onPress={() => handleUpgrade("INDIVIDUAL", "monthly")}
-                  disabled={processingPlan === "INDIVIDUAL_monthly"}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("settings.subscription_a11yUpgradeMonthly", {
-                    defaultValue: "Start monthly plan",
-                  })}
-                  accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_monthly" }}
-                >
-                  {processingPlan === "INDIVIDUAL_monthly" ? (
-                    <ActivityIndicator color={theme.colors.primary} />
-                  ) : (
-                    <Text style={styles.secondaryBtnText}>
-                      {t("settings.subscription_subscribeMonthly")} · {monthlyDisplayPrice}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-                <Text style={styles.legalCopy}>
-                  {t("settings.subscription_storeLegal", {
-                    defaultValue:
-                      "Subscription renews automatically through your App Store or Google Play account until canceled. Trial availability is managed by the app store.",
-                  })}
                 </Text>
               </View>
             ) : (
@@ -824,11 +922,18 @@ function LegacySubscriptionScreen() {
         )}
 
         <Text style={styles.footer}>
-          {isNativeStorePlatform && managedSubscriptionBlocksPurchase
+          {isNativeStorePlatform && isUnmanagedNativeEligiblePlan
+            ? t("settings.subscription_restoreStoreOnly", {
+                defaultValue:
+                  "Restore only finds subscriptions purchased with this App Store or Google Play account.",
+              })
+            : isNativeStorePlatform && managedSubscriptionBlocksPurchase
             ? managedElsewhereMessage
             : isNativeStorePlatform && !canUseNativePurchases
             ? nativePurchaseUnavailableMessage
-            : t("settings.subscription_manage")}
+            : isCurrentPlatformStoreManaged
+              ? t("settings.subscription_manage")
+              : ""}
         </Text>
       </ScrollView>
     </SafeAreaView>
