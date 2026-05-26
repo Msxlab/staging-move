@@ -137,7 +137,7 @@ Tüm endpoint'ler `requireWorkspaceContext` (07) helper'ını kullanır.
 
 - `/api/auth/signup` → signup tamamlanınca aynı transaction'da bir Workspace + WorkspaceMember (OWNER) yaratır.
 - `/api/me` → response'a `workspaces: [...]` ve `defaultWorkspaceId` eklenir.
-- `/api/billing/checkout` → Family/Pro upgrade success'inde owner'ın mevcut PERSONAL workspace'i o plan'a yükselir (Workspace row'una dokunulmaz, Subscription row'u update edilir).
+- `/api/stripe/checkout` (mevcut endpoint genişler — D26 / canonical §C3) → Family/Pro upgrade success'inde owner'ın mevcut PERSONAL workspace'i o plan'a yükselir (Workspace row'una dokunulmaz, Subscription row'u update edilir).
 
 ## Web
 

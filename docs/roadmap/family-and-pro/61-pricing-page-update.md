@@ -1,8 +1,10 @@
 # Marketing Pricing Page — 4-Column Update
 
+> **Drift fix 2026-05-23** — Canonical kaynak [`01a-canonical-values.md`](./01a-canonical-values.md) §C1 (limit matrix) ve §C2 (pricing). Bu doc'taki sayısal/string değerler canonical ile çelişirse canonical kazanır. `61` doc'unun hardcoded Individual refactor not'u zaten içeride; data-driven UI (`BILLING_PLAN_DEFINITIONS`) tek kaynak olmalı.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 4)
 - **Tier**: Cross-cutting
-- **Related decisions**: D20 (fixed pricing), D1 (workspace labels), D11 (web-only sales)
+- **Related decisions**: D20 (fixed pricing), D1 (workspace labels), D11 (web-only sales), D21 (limit canonical)
 - **Related docs**: [20](./20-family-plan-definition.md), [30](./30-pro-plan-definition.md), [62](./62-subscription-plan-field-updates.md), [64](./64-marketing-copy-updates.md), [65](./65-analytics-events.md), [67](./67-i18n-tr-en.md)
 
 ## Amaç

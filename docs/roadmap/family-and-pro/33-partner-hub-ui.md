@@ -1,23 +1,26 @@
 # Partner Hub UI
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C11, §C16, §C14) ile geçersizdir. Partner Hub access enum: **`none` | `teaser` | `full`** (boolean DEĞİL — §C11 / D23). Family canonical kararla `none` (teaser DEĞİL); aşağıda eski metinler teaser anlatıyorsa canonical kazanır. Lansman partner sayısı **10–15** (D28 sliced MVP); "100+" copy violation. "one-click", "auto-sync", "Verified Sync" forbidden (§C16). CHILD Partner Hub erişimi yok (§C13).
+
 - **Status**: Proposed (Family/Pro launch, Sprint 3)
-- **Tier**: Pro (full); Family sees preview/teaser; Individual/Free Trial: locked
-- **Related decisions**: D4, D11, D15
+- **Tier**: Pro (full); Family: `none` (access yok — canonical §C11 / D23); Individual/Free Trial: `none`
+- **Related decisions**: D4, D11, D15, D21 (limit canonical), D23 (partnerHubAccess enum), D28 (sliced MVP 10–15 partner)
 - **Related docs**: `01-architecture-decisions.md`, `06-entitlements-system.md`, `30-pro-plan-definition.md`, `34-service-provider-action-registry.md`, `35-partner-sync-attempts.md`, `36-partner-deep-link-launcher.md`, `61-pricing-page-update.md`, `63-entitlement-banners-empty-states.md`
 
 ## Amaç
 
-Pro plan'ının ana satış argümanı olan "100+ servisle one-click open & update" deneyimini sunan landing sayfası. Kullanıcı kategoriye, partner adına, aksiyon türüne göre tarayabilir; "benim aktif servislerim" filtresiyle hayatına en yakın listeyi görür; her partner card'ından doğrudan "Open & Update →" launcher'ı tetikler. D15 gereği lansmanda hiçbir "Verified Sync" rozeti yok — sadece kanal etiketi ("Update via partner site / email / PDF").
+Pro plan'ının ana satış argümanı olan "10–15 lansman partnerinde guided open & update" deneyimini sunan landing sayfası (D28 sliced MVP; copy guardrail §C16 — "one-click"/"auto-sync" yasak). Kullanıcı kategoriye, partner adına, aksiyon türüne göre tarayabilir; "benim aktif servislerim" filtresiyle hayatına en yakın listeyi görür; her partner card'ından doğrudan "Open & Update →" launcher'ı tetikler. D15 gereği lansmanda hiçbir "Verified Sync" rozeti yok — sadece kanal etiketi ("Update via partner site / email / PDF").
 
 ## Kapsam
 
 **In scope**
-- Web route `/partner-hub` (Pro + Family teaser)
+- Web route `/partner-hub` (Pro `full` only; Family/Individual/Free → `none` per canonical §C11 — link kilitli + upsell)
 - Layout: header + category nav + grid card listesi + filter sidebar
 - 4 ana filter: kategori, aksiyon türü, "active for me" (kullanıcının servisi olan), arama
 - Card expand → action list
 - Loading skeleton, empty state, pagination/virtualization
-- Family teaser: read-only browse, action butonları "Upgrade to Pro" CTA'ya dönüşür
+- Family/Individual/Free: tüm partner hub link'i `lock` + pricing upsell (canonical §C11 `none`); MVP'de teaser browse YOK
+- (Teaser modu enum'da yer alır ama hiçbir plan kullanmaz; §C11 — Phase 2 için açık)
 - Mobile equivalent: basit liste (`apps/mobile/app/partner-hub/index.tsx`)
 - Performance: 100+ partner, kategoriyle paginate veya `react-window` virtualize
 - Cross-link from pricing page (61): "see Partner Hub demo →"
@@ -33,9 +36,9 @@ Pro plan'ının ana satış argümanı olan "100+ servisle one-click open & upda
 
 ## User stories
 
-- **As a Pro user**, `/partner-hub` aç → 100+ partner kategori sekmelerle gruplanmış. "Streaming" kategorisinden Netflix card'ı genişlet → "Update billing address" aksiyonunu seç → launcher tetiklenir (36).
-- **As a Pro user**, "Active for me" filter'ı açar → sadece elimde Service kayıtlı 12 partner görünür → her birinden 30 sn'de adres güncelleme akışına girer.
-- **As a Family user**, `/partner-hub`'a gider, browse edebilir ama tıklayınca "Upgrade to Pro to use Partner Hub" modal'ı + ekran içinde "Locked" overlay.
+- **As a Pro user**, `/partner-hub` aç → 10–15 lansman partneri kategori sekmelerle gruplanmış (D28). "Streaming" kategorisinden Netflix card'ı genişlet → "Update billing address" aksiyonunu seç → launcher tetiklenir (36).
+- **As a Pro user**, "Active for me" filter'ı açar → sadece elimde Service kayıtlı partner'ları görür → her birinden guided update akışına girer.
+- **As a Family user**, `/partner-hub`'a gider — link kilitli, direkt "Upgrade to Pro" upsell sayfasına yönlendirilir (canonical §C11, MVP'de browse YOK).
 - **As an Individual / Free Trial user**, navigation menüsünde Partner Hub link'i upsell rozetiyle (kilit ikonu); tıklayınca pricing page'e yönlendirilir.
 - **As a Pro user on mobile**, basit liste görür, kategori filter, arama; tıkla → launcher (36).
 
@@ -53,7 +56,7 @@ Bu doc yeni model yaratmaz. Bağımlı:
 ### Yeni
 | Method | Path | Auth | Workspace ctx | Body | Response | Errors |
 |---|---|---|---|---|---|---|
-| GET | `/api/partner-hub/providers` | required | required | query: `category?`, `actionType?`, `activeForMe?=true`, `q?`, `cursor?`, `limit?=24` | `{ items: ProviderWithActionsDto[], nextCursor?, total }` | 401, 403 (no entitlement.flags.partnerHub) |
+| GET | `/api/partner-hub/providers` | required | required | query: `category?`, `actionType?`, `activeForMe?=true`, `q?`, `cursor?`, `limit?=24` | `{ items: ProviderWithActionsDto[], nextCursor?, total }` | 401, 403 (entitlement.partnerHubAccess !== "full") |
 | GET | `/api/partner-hub/providers/[id]` | required | required | — | `ProviderWithActionsDto` | 404 |
 
 `ProviderWithActionsDto` shape (özet):
@@ -125,7 +128,7 @@ Server-side tier filter: `entitlements.actionTierMax` (D4 helper) → query filt
 ┌──────────────────────────────────────────────────────────────────┐
 │  Partner Hub                                                     │
 │  ┌─────────────────────────┐  [☑ Active for me]  [Actions ▾]    │
-│  │ 🔍 Search 100+ partners │                                     │
+│  │ 🔍 Search partners      │                                     │
 │  └─────────────────────────┘                                     │
 │  All(120) Utility(34) Finance(18) Insurance(12) Streaming(22)... │
 ├──────────────────────────────────────────────────────────────────┤
@@ -155,8 +158,8 @@ Server-side tier filter: `entitlements.actionTierMax` (D4 helper) → query filt
 ┌──────────────────────────────────────────────────────────────────┐
 │  Partner Hub                          🔒 Pro-only                │
 │  ┌──────────────────────────────────────────────────────────┐    │
-│  │  Browse 100+ services and update your address in one     │    │
-│  │  click. [Upgrade to Pro →]                               │    │
+│  │  Browse curated partners and submit your address update  │    │
+│  │  with everything pre-filled. [Upgrade to Pro →]          │    │
 │  │  ─────────────────────────────────────────────────────── │    │
 │  │  (Greyed-out preview of cards below, click → CTA modal)  │    │
 │  └──────────────────────────────────────────────────────────┘    │
@@ -194,7 +197,7 @@ Bu doc admin sayfası eklemiyor — provider/action CRUD 51'de. Admin "preview a
 - [ ] **PII redaction**: Hub data PII içermez (partner katalog public-ish). `isActiveForMe` flag'i sadece caller'a döner; başkasının service'i sızmaz.
 - [x] **Audit log**: Browse log'lanmaz (yüksek volume). Card expand → 65 analytics event. Action click → 36 + 35 audit.
 - [x] **Rate limit**: `/api/partner-hub/providers` GET cache'lenebilir; user başına 60/dk yeterli. Search query 30/dk debounced.
-- [x] **Permission matris**: `entitlements.flags.partnerHub` true olmalı. PRO: true. FAMILY: false (UI teaser). INDIVIDUAL/FREE_TRIAL: false. OVERFLOW member: read-only (browse OK, action click 403). CHILD: sadece kendi Service'lerine bağlı partner'ları görür (22).
+- [x] **Permission matris**: `entitlements.partnerHubAccess === "full"` olmalı (canonical §C11). PRO: `full`. FAMILY/INDIVIDUAL/FREE_TRIAL: `none` → 403. OVERFLOW member: parent workspace plan'ı `full` ise read-only browse OK, action click step-up required + ait olduğu event üzerinden. CHILD: Partner Hub'a erişim yok (§C13).
 - [ ] **Encryption at rest**: N/A (katalog public).
 - [ ] **GDPR DSAR**: N/A (caller'ın `isActiveForMe` computed; persisted değil).
 
@@ -202,7 +205,7 @@ Bu doc admin sayfası eklemiyor — provider/action CRUD 51'de. Admin "preview a
 
 - Yeni route, mevcut user etkilenmez.
 - ServiceProviderAction tablosu ve seed (34) bağımlı: o yapılmadan bu sayfa boş listeyle render olur. CI test: empty state grafikle render.
-- Family teaser flag'i 30'da `partnerHub: "teaser"` veya feature flag ile toggle edilebilir; karar 30 update PR'ında.
+- Family teaser açılması Faz 2'ye ertelenmiştir; canonical §C11 enum `teaser` schema'da yer alır ama MVP'de kullanılmaz.
 
 ## Etkilenen mevcut özellikler
 
@@ -234,7 +237,7 @@ Bu doc admin sayfası eklemiyor — provider/action CRUD 51'de. Admin "preview a
 
 ## Açık sorular
 
-- Family için Partner Hub teaser açık mı yoksa tamamen kilitli mi? Önerilen: **teaser açık** (Pro upgrade conversion driver). Karar 30/61.
+- [x] Family için Partner Hub teaser: **canonical §C11 / D23'te `none` (kilitli) seçildi**. Teaser Faz 2.
 - "Active for me" toggle default açık mı kapalı mı? Öneri: kapalı (yeni kullanıcı tüm katalog görsün), ama service sayısı ≥ 5 ise otomatik açık.
 - Provider card click davranışı (modal vs expand vs route)? Karar: **inline expand** (accordion), URL hash sync. Detail route Faz 2.
 - Search backend mi client mi? 100+ partner için client'ta `Fuse.js` yeterli — initial fetch tüm liste, filter client. Eğer 500+ olursa server search.

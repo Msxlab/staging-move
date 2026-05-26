@@ -1,8 +1,10 @@
 # Address Change Wizard — Web
 
+> **Drift fix 2026-05-23** — Çelişkili değerler [`01a-canonical-values.md`](./01a-canonical-values.md) (§C13) ile geçersizdir. **CHILD wizard'a erişemez** (canonical §C13 / D22 — MVP). Aşağıdaki "CHILD: sadece SELF" davranışı geçersiz; CHILD ScopePicker'a hiç ulaşmadan 403 alır veya sidebar entry'si gizlenir.
+
 - **Status**: Proposed (Family/Pro launch, Sprint 2)
 - **Tier**: Family + Pro
-- **Related decisions**: D6, D10, D19
+- **Related decisions**: D6, D10, D19, D22 (CHILD wizard erişimi yok)
 - **Related docs**: [11](./11-address-change-event-model.md), [12](./12-address-change-target-model.md), [14](./14-bulk-queue-dashboard.md), [15](./15-workspace-auth-challenge.md), [16](./16-step-up-auth-flow.md), [35](./35-partner-sync-attempts.md)
 
 ## Amaç
@@ -168,7 +170,7 @@ Wizard yok mobile'da Sprint 2'de. Mobile dashboard "Start on web" link gösterir
   - MEMBER scope: OWNER/ADMIN
   - ALL_WORKSPACE: OWNER/ADMIN
   - VIEW_ONLY: wizard erişim yok (route guard)
-  - CHILD: sadece SELF scope; ScopePicker'da diğer opsiyonlar disabled+tooltip
+  - CHILD: **wizard erişimi YOK** (D22 / §C13). UI'da sidebar entry gizli; doğrudan URL ziyareti 403 → /dashboard redirect + toast "Taşınma talebini ailenin Owner/Admin üyesine ilet."
 - [x] **Encryption at rest**: Draft localStorage; production'da `crypto.subtle.encrypt` ile workspace-scoped key kullanılabilir (Faz 2, MVP'de düz).
 - [x] **GDPR DSAR**: Wizard draft localStorage user-side; "Erase my data" akışında uygulama logout edilirken localStorage clear edilir (`apps/web/src/lib/account-deletion.ts` extend).
 
@@ -201,7 +203,7 @@ Wizard yok mobile'da Sprint 2'de. Mobile dashboard "Start on web" link gösterir
 **E2E (Playwright)**
 - Owner sidebar → New Move → SELF → existing toAddress → review → submit (mock challenge) → /address-change/[id] yüklenir
 - Address detail → Move from here → prefilled fromAddress → continue → submit
-- CHILD kullanıcı sidebar New Move → ScopePicker'da sadece SELF aktif
+- CHILD kullanıcı sidebar New Move entry'sini görmez; doğrudan URL → 403/redirect (D22 / §C13)
 - Draft save: 2. step'te tarayıcı kapat, geri aç → draft restore
 
 **Manual**
