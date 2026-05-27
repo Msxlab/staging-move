@@ -19,6 +19,7 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { captureException } from "@/lib/sentry";
 import {
   applyIapStateToUser,
+  normalizeAppleTransactionPayload,
   refreshAppleSubscriptionFor,
   refreshGoogleSubscriptionFor,
   type NormalizedIapState,
@@ -76,16 +77,19 @@ export async function POST(request: NextRequest) {
 
     if (parsed.data.platform === "ios") {
       let originalTransactionId = "";
+      let jwsPayload: AppleTransactionPayload | null = null;
 
       if (parsed.data.signedTransaction) {
         // Locally verify the client-supplied JWS first — cryptographic proof
         // it came from Apple without needing an extra API call to resolve
         // the originalTransactionId.
-        let jwsPayload: AppleTransactionPayload;
         try {
           jwsPayload = verifyAppleJws<AppleTransactionPayload>(parsed.data.signedTransaction);
         } catch (err) {
           console.warn("[IAP] apple JWS verify failed:", (err as Error).message);
+          return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
+        }
+        if (!jwsPayload) {
           return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
         }
         if (parsed.data.transactionId && parsed.data.transactionId !== jwsPayload.transactionId) {
@@ -98,7 +102,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
       }
 
-      normalized = await refreshAppleSubscriptionFor(originalTransactionId);
+      try {
+        normalized = await refreshAppleSubscriptionFor(originalTransactionId);
+      } catch (err) {
+        if (!jwsPayload) throw err;
+        console.warn(
+          "[IAP] apple server lookup failed; accepting locally verified signed transaction:",
+          (err as Error).message,
+        );
+        normalized = await normalizeAppleTransactionPayload(jwsPayload);
+      }
+      if (!normalized && jwsPayload) {
+        console.warn("[IAP] apple server lookup returned no subscription; using signed transaction fallback");
+        normalized = await normalizeAppleTransactionPayload(jwsPayload);
+      }
       if (!normalized) {
         return NextResponse.json({ error: "SUBSCRIPTION_NOT_FOUND" }, { status: 404 });
       }

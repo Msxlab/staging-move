@@ -345,6 +345,49 @@ export async function normalizeAppleResult(
   };
 }
 
+export async function normalizeAppleTransactionPayload(
+  transaction: AppleSubscriptionStatusResult["transaction"],
+): Promise<NormalizedIapState | null> {
+  const expectedBundleId = await getRuntimeConfigValue("APPLE_BUNDLE_ID");
+  if (!expectedBundleId) {
+    throw new Error("APPLE_API_CREDS_MISSING");
+  }
+  if (transaction.bundleId !== expectedBundleId) {
+    throw new Error("APPLE_JWS_BUNDLE_MISMATCH");
+  }
+
+  const resolved = await mapProductIdToPlan("ios", transaction.productId);
+  if (!resolved) return null;
+
+  const expiresAt = transaction.expiresDate ? new Date(transaction.expiresDate) : null;
+  const now = Date.now();
+  let status: SubscriptionStatus = "ACTIVE";
+
+  if (transaction.revocationDate) {
+    status = "REFUNDED";
+  } else if (expiresAt && expiresAt.getTime() < now) {
+    status = "EXPIRED";
+  } else if (transaction.offerDiscountType === "FREE_TRIAL") {
+    status = "TRIALING";
+  }
+
+  return {
+    platform: "ios",
+    plan: resolved.plan,
+    status,
+    provider: "APP_STORE",
+    productId: transaction.productId,
+    billingInterval: resolved.billingInterval,
+    originalTransactionId: transaction.originalTransactionId,
+    latestTransactionId: transaction.transactionId,
+    purchaseToken: null,
+    expiresAt,
+    gracePeriodEndsAt: null,
+    environment: transaction.environment,
+    raw: { transaction, source: "signedTransactionFallback" },
+  };
+}
+
 export async function normalizeGoogleResult(
   result: GoogleSubscriptionResult,
 ): Promise<NormalizedIapState | null> {

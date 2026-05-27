@@ -12,6 +12,7 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: vi.fn(async (key: string) => {
+    if (key === "APPLE_BUNDLE_ID") return "com.locateflow";
     if (key.includes("IOS") && key.includes("YEARLY")) return "individual.ios.yearly";
     if (key.includes("IOS")) return "individual.ios";
     if (key.includes("ANDROID") && key.includes("YEARLY")) return "individual.android.yearly";
@@ -35,6 +36,7 @@ import {
   applyIapStateToUser,
   hashPurchaseToken,
   normalizeAppleResult,
+  normalizeAppleTransactionPayload,
   normalizeGoogleResult,
   refreshGoogleSubscriptionFor,
   type NormalizedIapState,
@@ -136,6 +138,55 @@ describe("IAP normalization", () => {
       status: "CANCEL_AT_PERIOD_END",
       expiresAt: new Date(expiresDate),
     });
+  });
+
+  it("normalizes a locally verified Apple signed transaction when server lookup is unavailable", async () => {
+    const expiresDate = Date.now() + 90 * 24 * 60 * 60 * 1000;
+
+    const normalized = await normalizeAppleTransactionPayload({
+      transactionId: "1000000000003",
+      originalTransactionId: "1000000000001",
+      bundleId: "com.locateflow",
+      productId: "individual.ios.yearly",
+      purchaseDate: Date.now(),
+      originalPurchaseDate: Date.now(),
+      expiresDate,
+      quantity: 1,
+      type: "Auto-Renewable Subscription",
+      inAppOwnershipType: "PURCHASED",
+      signedDate: Date.now(),
+      environment: "Sandbox",
+      offerDiscountType: "FREE_TRIAL",
+    });
+
+    expect(normalized).toMatchObject({
+      status: "TRIALING",
+      provider: "APP_STORE",
+      productId: "individual.ios.yearly",
+      billingInterval: "YEAR",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000003",
+      expiresAt: new Date(expiresDate),
+    });
+  });
+
+  it("rejects locally verified Apple transactions for another bundle", async () => {
+    await expect(
+      normalizeAppleTransactionPayload({
+        transactionId: "1000000000003",
+        originalTransactionId: "1000000000001",
+        bundleId: "com.other.app",
+        productId: "individual.ios",
+        purchaseDate: Date.now(),
+        originalPurchaseDate: Date.now(),
+        expiresDate: Date.now() + 86_400_000,
+        quantity: 1,
+        type: "Auto-Renewable Subscription",
+        inAppOwnershipType: "PURCHASED",
+        signedDate: Date.now(),
+        environment: "Sandbox",
+      }),
+    ).rejects.toThrow("APPLE_JWS_BUNDLE_MISMATCH");
   });
 
   it("maps Google Play canceled subscriptions to cancel-at-period-end while expiry remains", async () => {
