@@ -133,6 +133,27 @@ function parseAmount(label: string | null | undefined): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
+function stripBillingPeriod(label: string) {
+  return label.replace(/\s*\/\s*(month|mo|year|yr)\b/gi, "").trim();
+}
+
+function formatAmountLike(label: string | null | undefined, amount: number): string {
+  const rounded = Math.round(amount * 100) / 100;
+  const plain = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(2);
+  const fallback = `$${plain}`;
+  if (!label) return fallback;
+
+  const match = label.match(/([0-9]+(?:[.,][0-9]{1,2})?)/);
+  if (!match) return fallback;
+  const rawNumber = match[1];
+  const index = match.index ?? label.indexOf(rawNumber);
+  const prefix = label.slice(0, index);
+  const suffix = stripBillingPeriod(label.slice(index + rawNumber.length));
+  const localizedNumber = plain.replace(".", rawNumber.includes(",") ? "," : ".");
+
+  return `${prefix}${localizedNumber}${suffix}`.trim();
+}
+
 function computeAnnualSavingsText(
   yearlyLabel: string | null | undefined,
   monthlyLabel: string | null | undefined,
@@ -144,7 +165,13 @@ function computeAnnualSavingsText(
   if (yearOfMonthly <= yearly) return null;
   const saved = yearOfMonthly - yearly;
   const percent = Math.round((saved / yearOfMonthly) * 100);
-  return `Save $${saved.toFixed(saved % 1 === 0 ? 0 : 2)}/year vs monthly · ${percent}% off`;
+  return `Save ${formatAmountLike(yearlyLabel || monthlyLabel, saved)}/year vs monthly · ${percent}% off`;
+}
+
+function computeAnnualMonthlyEquivalentText(yearlyLabel: string | null | undefined): string | null {
+  const yearly = parseAmount(yearlyLabel);
+  if (!yearly) return null;
+  return `${formatAmountLike(yearlyLabel, yearly / 12)}/month`;
 }
 
 type PublicCampaignSummary = {
@@ -712,6 +739,29 @@ function LegacySubscriptionScreen() {
           const savingsText = showAnnualAction
             ? computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice)
             : null;
+          const currentAnnualSavingsText = computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice);
+          const currentAnnualMonthlyEquivalentText = computeAnnualMonthlyEquivalentText(yearlyDisplayPrice);
+          const isCurrentAnnualIndividual =
+            isCurrentIndividualPlan && currentBillingCycle === "yearly";
+          const planDisplayName = isCurrentAnnualIndividual
+            ? `${plan.name} Annual`
+            : isCurrentIndividualPlan && currentBillingCycle === "monthly"
+              ? `${plan.name} Monthly`
+              : plan.name;
+          const planPriceLabel = isCurrentAnnualIndividual && yearlyDisplayPrice
+            ? stripBillingPeriod(yearlyDisplayPrice)
+            : plan.key === "INDIVIDUAL" && localizedMonthlyPrice
+              ? stripBillingPeriod(localizedMonthlyPrice)
+              : stripBillingPeriod(plan.price);
+          const planPeriodLabel = isCurrentAnnualIndividual ? "/year" : dynamicPeriod;
+          const currentAnnualValueText = isCurrentAnnualIndividual
+            ? [
+                currentAnnualMonthlyEquivalentText
+                  ? `Equivalent to ${currentAnnualMonthlyEquivalentText}`
+                  : null,
+                currentAnnualSavingsText,
+              ].filter(Boolean).join(" · ")
+            : null;
           const trialBadge = !isCurrentIndividualPlan && annualOffer?.trialLabel
             ? `First ${annualOffer.trialLabel} free`
             : !isCurrentIndividualPlan && annualOffer?.trialDays
@@ -736,14 +786,19 @@ function LegacySubscriptionScreen() {
             <View style={styles.planHeader}>
               <View>
                 <View style={styles.planNameRow}>
-                  <Text style={styles.planName}>{plan.name}</Text>
+                  <Text style={styles.planName}>{planDisplayName}</Text>
                   {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
                 </View>
                 {!hideUnavailableMobileCommerce ? (
-                  <Text style={styles.planPrice}>
-                    {plan.key === "INDIVIDUAL" && localizedMonthlyPrice ? localizedMonthlyPrice : plan.price}
-                    <Text style={styles.planPeriod}> {dynamicPeriod}</Text>
-                  </Text>
+                  <>
+                    <Text style={styles.planPrice}>
+                      {planPriceLabel}
+                      <Text style={styles.planPeriod}> {planPeriodLabel}</Text>
+                    </Text>
+                    {currentAnnualValueText ? (
+                      <Text style={styles.currentAnnualValueText}>{currentAnnualValueText}</Text>
+                    ) : null}
+                  </>
                 ) : null}
               </View>
             </View>
@@ -1015,6 +1070,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   planName: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
   planPrice: { fontSize: 28, fontWeight: "800", color: theme.colors.text, marginTop: 4 },
   planPeriod: { fontSize: 14, fontWeight: "400", color: theme.colors.textTertiary },
+  currentAnnualValueText: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+    color: theme.colors.emerald.text,
+    marginTop: 4,
+  },
   featureList: { marginTop: 16, gap: 8 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   featureText: { fontSize: 13, color: theme.colors.textSecondary },
