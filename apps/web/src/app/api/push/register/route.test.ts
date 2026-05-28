@@ -7,10 +7,16 @@ const mocks = vi.hoisted(() => ({
   pushCreate: vi.fn(),
   pushUpdate: vi.fn(),
   pushDeleteMany: vi.fn(),
+  rateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: () => mocks.requireDbUserId(),
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  getRateLimitKey: () => "rate-key",
+  rateLimit: (...args: unknown[]) => mocks.rateLimit(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -44,6 +50,7 @@ describe("push register route", () => {
     mocks.pushCreate.mockResolvedValue({ id: "device-1" });
     mocks.pushUpdate.mockResolvedValue({ id: "device-1" });
     mocks.pushDeleteMany.mockResolvedValue({ count: 1 });
+    mocks.rateLimit.mockResolvedValue({ success: true });
   });
 
   it("creates a new token for the current user", async () => {
@@ -87,5 +94,15 @@ describe("push register route", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.pushDeleteMany).toHaveBeenCalledWith({ where: { userId: "user-1", token: TOKEN } });
+  });
+
+  it("rejects registration once the rate limit is exhausted", async () => {
+    mocks.rateLimit.mockResolvedValueOnce({ success: false });
+
+    const response = await POST(postRequest({ token: TOKEN, platform: "ios" }));
+
+    expect(response.status).toBe(429);
+    expect(mocks.pushFindUnique).not.toHaveBeenCalled();
+    expect(mocks.pushCreate).not.toHaveBeenCalled();
   });
 });

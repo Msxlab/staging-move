@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   token: z.string().min(10).max(255),
@@ -16,6 +17,14 @@ export async function POST(req: NextRequest) {
     userId = await requireDbUserId();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(getRateLimitKey(req, "push:register"), {
+    limit: 20,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
   }
 
   const body = await req.json().catch(() => null);
@@ -60,6 +69,14 @@ export async function DELETE(req: NextRequest) {
     userId = await requireDbUserId();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(getRateLimitKey(req, "push:unregister"), {
+    limit: 20,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
   }
 
   const body = await req.json().catch(() => null);
