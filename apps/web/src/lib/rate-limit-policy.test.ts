@@ -45,6 +45,25 @@ describe("rate-limit policy", () => {
     expect(first).not.toContain("203.0.113.10");
   });
 
+  it("ignores the attacker-controlled User-Agent for auth_login keys", () => {
+    // Rotating the UA header must NOT mint a fresh limiter/lockout bucket,
+    // otherwise per-account brute-force protection is trivially bypassed.
+    const identity = { email: "victim@example.com", routeId: "password" };
+    const chrome = buildPolicyRateLimitKey(
+      request({ "user-agent": "Mozilla/5.0 Chrome/120" }),
+      "auth_login",
+      identity,
+    );
+    const curl = buildPolicyRateLimitKey(
+      request({ "user-agent": "curl/8.0" }),
+      "auth_login",
+      identity,
+    );
+    expect(chrome).toBe(curl);
+    expect(chrome).toContain("rl:auth_login:email:");
+    expect(chrome).toContain(":ip:");
+  });
+
   it("includes user identity for app usage to avoid IP-only false positives", () => {
     const key = buildPolicyRateLimitKey(request(), "provider_recommendations", {
       userId: "user-1",

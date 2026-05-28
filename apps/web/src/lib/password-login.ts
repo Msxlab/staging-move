@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import {
   verifyPassword,
+  hashPassword,
   createUserSession,
   generateFingerprint,
   generateMobileFingerprint,
@@ -59,6 +60,23 @@ function parseUA(ua: string) {
 
 function sha256(value: string | null | undefined): string {
   return createHash("sha256").update(value || "none").digest("hex");
+}
+
+// Lazily-computed throwaway bcrypt hash. Used to make the "no such user /
+// OAuth-only account" path spend the same wall-clock time as a real password
+// verification. Without it, the presence of a password-backed account is
+// observable through response latency (bcrypt only runs when a passwordHash
+// exists), which leaks account existence — a user-enumeration oracle.
+let cachedDummyPasswordHash: string | null = null;
+async function equalizePasswordTiming(password: string): Promise<void> {
+  try {
+    if (!cachedDummyPasswordHash) {
+      cachedDummyPasswordHash = await hashPassword("locateflow-timing-equalizer");
+    }
+    await verifyPassword(password, cachedDummyPasswordHash);
+  } catch {
+    // The equalizer is best-effort and must never affect the login outcome.
+  }
 }
 
 function emitLoginLockout(reason: string, lockKey: string, retryAfterSec: number) {
@@ -147,6 +165,9 @@ export async function handlePasswordLogin(
   const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
 
   if (!user || !user.passwordHash) {
+    // Spend the same time as a genuine bcrypt check so this branch is
+    // indistinguishable from a wrong password by response latency.
+    await equalizePasswordTiming(password);
     const nextState = await recordLoginFailure(lockKey);
     if (nextState.locked) {
       emitLoginLockout("UNKNOWN_OR_OAUTH_ONLY_ACCOUNT", lockKey, nextState.retryAfterSec);

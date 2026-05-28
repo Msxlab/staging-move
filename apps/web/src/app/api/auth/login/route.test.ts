@@ -15,6 +15,7 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/user-auth", () => ({
   verifyPassword: vi.fn(() => Promise.resolve(false)),
+  hashPassword: vi.fn(() => Promise.resolve("$2a$12$dummyhashfortimingequalizer")),
   createUserSession: vi.fn(),
   generateFingerprint: vi.fn(() => Promise.resolve("fingerprint")),
   generateMobileFingerprint: vi.fn(() => Promise.resolve("mobile-fingerprint")),

@@ -42,7 +42,7 @@ export type RateLimitMode = "enforce" | "warn" | "shadow";
 
 export type RateLimitKeyStrategy =
   | "ip_user_agent_route"
-  | "email_ip_user_agent"
+  | "email_ip"
   | "user_session_route"
   | "user_route"
   | "mobile_client_ip_user_agent"
@@ -112,7 +112,7 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
     cooldownSeconds: 60,
     hardLockoutThreshold: 5,
     hardLockoutSeconds: 30 * 60,
-    keyStrategy: "email_ip_user_agent",
+    keyStrategy: "email_ip",
     userFacingErrorCode: "AUTH_RATE_LIMITED",
     preferStepUp: false,
     failClosed: true,
@@ -124,7 +124,7 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
     cooldownSeconds: 120,
     hardLockoutThreshold: 12,
     hardLockoutSeconds: 30 * 60,
-    keyStrategy: "email_ip_user_agent",
+    keyStrategy: "email_ip",
     userFacingErrorCode: "REGISTER_RATE_LIMITED",
     preferStepUp: false,
     failClosed: true,
@@ -136,7 +136,7 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
     cooldownSeconds: 5 * 60,
     hardLockoutThreshold: 12,
     hardLockoutSeconds: 30 * 60,
-    keyStrategy: "email_ip_user_agent",
+    keyStrategy: "email_ip",
     userFacingErrorCode: "PASSWORD_RESET_RATE_LIMITED",
     preferStepUp: false,
     failClosed: true,
@@ -154,7 +154,7 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
     cooldownSeconds: 5 * 60,
     hardLockoutThreshold: 12,
     hardLockoutSeconds: 30 * 60,
-    keyStrategy: "email_ip_user_agent",
+    keyStrategy: "email_ip",
     userFacingErrorCode: "PASSWORD_RESET_RATE_LIMITED",
     preferStepUp: false,
     failClosed: true,
@@ -269,7 +269,7 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
     cooldownSeconds: 5 * 60,
     hardLockoutThreshold: 5,
     hardLockoutSeconds: 30 * 60,
-    keyStrategy: "email_ip_user_agent",
+    keyStrategy: "email_ip",
     userFacingErrorCode: "ADMIN_LOGIN_RATE_LIMITED",
     preferStepUp: true,
     failClosed: false,
@@ -409,8 +409,13 @@ export function buildPolicyRateLimitKey(
   const extra = stableRateLimitHash(identity.extra);
 
   switch (policy.keyStrategy) {
-    case "email_ip_user_agent":
-      return `rl:${group}:email:${email}:ip:${ipHash}:ua:${uaHash}:client:${clientType}:route:${route}`;
+    case "email_ip":
+      // Deliberately omits the User-Agent. UA is fully attacker-controlled, so
+      // including it would let a brute-force / credential-stuffing attacker
+      // reset the per-account limiter — and the login lockout, which reuses
+      // this key — on every request just by rotating the UA header, defeating
+      // both. Email + IP separates NAT neighbors well enough without that hole.
+      return `rl:${group}:email:${email}:ip:${ipHash}:client:${clientType}:route:${route}`;
     case "user_session_route":
       return `rl:${group}:user:${user}:session:${session}:ip:${ipHash}:client:${clientType}:route:${route}:extra:${extra}`;
     case "user_route":
