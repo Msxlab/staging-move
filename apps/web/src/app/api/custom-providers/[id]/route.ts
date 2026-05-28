@@ -176,10 +176,25 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Custom provider not found" }, { status: 404 });
     }
 
-    await prisma.userCustomProvider.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    // Replicate the schema's onDelete: SetNull, which never fires for our soft
+    // deletes: detach the user's services and move tasks from this provider in
+    // the same transaction so they stop rendering a record the user just
+    // removed. The rows survive (services keep their denormalized providerName).
+    const now = new Date();
+    const [servicesResult, moveTasksResult] = await prisma.$transaction([
+      prisma.service.updateMany({
+        where: { customProviderId: id, userId, deletedAt: null },
+        data: { customProviderId: null },
+      }),
+      prisma.moveTask.updateMany({
+        where: { customProviderId: id, userId, deletedAt: null },
+        data: { customProviderId: null },
+      }),
+      prisma.userCustomProvider.update({
+        where: { id },
+        data: { deletedAt: now },
+      }),
+    ]);
 
     const meta = extractRequestMeta(request);
     await createAuditLog({
@@ -187,7 +202,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       action: "DELETE",
       entityType: "UserCustomProvider",
       entityId: id,
-      changes: { name: existing.name, category: existing.category },
+      changes: {
+        name: existing.name,
+        category: existing.category,
+        servicesDetached: servicesResult.count,
+        moveTasksDetached: moveTasksResult.count,
+      },
       ...meta,
     });
 

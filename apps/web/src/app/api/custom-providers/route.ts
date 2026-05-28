@@ -76,7 +76,9 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category")?.slice(0, 50);
+    // Stored categories are cleaned-uppercase on create, so the filter must
+    // match that form or a lowercase query would never hit.
+    const category = searchParams.get("category")?.slice(0, 50).trim().toUpperCase();
     const search = searchParams.get("search")?.slice(0, 200);
 
     const providers = await prisma.userCustomProvider.findMany({
