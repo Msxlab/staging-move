@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
@@ -23,6 +24,14 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const rl = await rateLimit(getRateLimitKey(request, "moving:migration"), {
+      limit: 30,
+      windowSeconds: 60,
+    });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get("planId");
 
@@ -31,8 +40,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch moving plan with addresses
-    const plan = await prisma.movingPlan.findUnique({
-      where: { id: planId },
+    const plan = await prisma.movingPlan.findFirst({
+      where: { id: planId, deletedAt: null },
       include: {
         fromAddress: true,
         toAddress: true,
@@ -109,6 +118,13 @@ export async function GET(request: NextRequest) {
       include: {
         coverages: { where: { state: effectiveToState } },
       },
+      // Safety bound: a single destination state should never legitimately
+      // exceed this many active providers, so ordering by popularity first
+      // keeps the most relevant candidates if the catalog ever balloons,
+      // while capping the per-request memory and O(services × providers)
+      // classification cost. Not a functional limit on normal data.
+      orderBy: { popularityScore: "desc" },
+      take: 1000,
     });
 
     // Drop catalog rows whose display name embeds a US state token that

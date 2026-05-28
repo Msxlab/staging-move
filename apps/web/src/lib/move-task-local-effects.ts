@@ -111,7 +111,7 @@ export async function completeMoveTaskWithLocalEffect(
           data: {
             isActive: false,
             deactivatedAt: now,
-            migrationAction: task.actionType === "STOP_SERVICE" ? "CANCEL" : "CANCEL",
+            migrationAction: "CANCEL",
           },
         });
         updatedServiceId = service.id;
