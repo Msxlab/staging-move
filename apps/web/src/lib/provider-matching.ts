@@ -2,11 +2,10 @@
 //
 // Pure utilities (ZIP↔state lookup, JSON parsing) live in @locateflow/shared
 // so mobile can reuse them. This file re-exports them for callers that still
-// import from "@/lib/provider-matching", and adds the in-memory tiered matcher
-// used by the legacy JSON-string path.
-//
-// New code should prefer the DB-indexed path: query ServiceProviderCoverage
-// rows directly via Prisma (see apps/web/src/app/api/providers/route.ts).
+// import from "@/lib/provider-matching", and adds the DB-indexed tiered matcher
+// used by the providers API: query ServiceProviderCoverage rows directly via
+// Prisma (see apps/web/src/app/api/providers/route.ts), then tier the
+// candidates (exact → prefix → polygon → state → live_address).
 
 export {
   safeJsonArray,
@@ -21,20 +20,11 @@ export {
 
 import { getProviderCoverageMetadata, type ProviderCoveragePolygon } from "@locateflow/db";
 import {
-  safeJsonArray,
   normalizeZip,
-  normalizeZipRule,
   resolveEffectiveState,
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
 } from "@locateflow/shared";
-
-export interface ProviderCoverageLike {
-  scope: string;
-  states: string[] | string;
-  zipCodes?: string[] | string | null;
-  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
-}
 
 export type ZipMatchLevel = "exact" | "prefix" | "polygon" | "state" | "live_address";
 
@@ -98,103 +88,6 @@ function resolvePolygonCoverageMatch(
   }
 
   return polygons.some((polygon) => pointInPolygon(latitude, longitude, polygon));
-}
-
-function isStateEligible(provider: ProviderCoverageLike, effectiveState?: string): boolean {
-  if (!effectiveState) return true;
-  if (provider.scope === "FEDERAL") return true;
-  const states = safeJsonArray(provider.states);
-  return states.includes(effectiveState);
-}
-
-function getExactZipMatches<T extends ProviderCoverageLike>(providers: T[], normalizedZip: string): T[] {
-  return providers.filter((provider) => {
-    const zipRules = safeJsonArray(provider.zipCodes);
-    return zipRules.some((rule) => normalizeZipRule(rule) === normalizedZip);
-  });
-}
-
-function getPrefixZipMatches<T extends ProviderCoverageLike>(providers: T[], normalizedZip: string): T[] {
-  return providers.filter((provider) => {
-    const zipRules = safeJsonArray(provider.zipCodes)
-      .map((rule) => normalizeZipRule(rule))
-      .filter((rule) => rule.length >= 3 && rule.length < normalizedZip.length);
-
-    return zipRules.some((rule) => normalizedZip.startsWith(rule));
-  });
-}
-
-function getUnrestrictedProviders<T extends ProviderCoverageLike>(providers: T[]): T[] {
-  return providers.filter((provider) => safeJsonArray(provider.zipCodes).length === 0);
-}
-
-export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
-  providers: T[],
-  options: ProviderMatchOptions
-): ProviderMatchResult<T> {
-  const effectiveState = resolveEffectiveState(options.state, options.zip);
-  const normalizedZip = normalizeZip(options.zip);
-  const stateEligibleProviders = providers.filter((provider) => isStateEligible(provider, effectiveState));
-
-  if (!normalizedZip) {
-    return {
-      effectiveState,
-      providers: stateEligibleProviders,
-      zipMatchLevel: "state",
-      coverageConfidence: "STATE_LEVEL",
-    };
-  }
-
-  const exactMatches = getExactZipMatches(stateEligibleProviders, normalizedZip);
-  if (exactMatches.length > 0) {
-    return {
-      effectiveState,
-      providers: exactMatches,
-      zipMatchLevel: "exact",
-      coverageConfidence: "EXACT_ZIP",
-    };
-  }
-
-  const prefixMatches = getPrefixZipMatches(stateEligibleProviders, normalizedZip);
-  if (prefixMatches.length > 0) {
-    return {
-      effectiveState,
-      providers: prefixMatches,
-      zipMatchLevel: "prefix",
-      coverageConfidence: "ZIP_PREFIX",
-    };
-  }
-
-  const polygonMatches = getUnrestrictedProviders(stateEligibleProviders).filter(
-    (provider) => provider.coverageModel === "polygon"
-  );
-  if (polygonMatches.length > 0) {
-    return {
-      effectiveState,
-      providers: [...polygonMatches, ...getUnrestrictedProviders(stateEligibleProviders).filter((provider) => provider.coverageModel !== "polygon")],
-      zipMatchLevel: "polygon",
-      coverageConfidence: "MAPPED_SERVICE_AREA",
-    };
-  }
-
-  const stateMatches = getUnrestrictedProviders(stateEligibleProviders).filter(
-    (provider) => provider.coverageModel !== "live_address"
-  );
-  if (stateMatches.length > 0) {
-    return {
-      effectiveState,
-      providers: [...stateMatches, ...getUnrestrictedProviders(stateEligibleProviders).filter((provider) => provider.coverageModel === "live_address")],
-      zipMatchLevel: "state",
-      coverageConfidence: "STATE_LEVEL",
-    };
-  }
-
-  return {
-    effectiveState,
-    providers: getUnrestrictedProviders(stateEligibleProviders),
-    zipMatchLevel: "live_address",
-    coverageConfidence: "ADDRESS_CHECK_REQUIRED",
-  };
 }
 
 // -----------------------------------------------------------------------------
@@ -265,10 +158,12 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
     const polygonMatch = resolvePolygonCoverageMatch(provider.slug, options.latitude, options.longitude);
     if (polygonMatch === true) return "polygon";
     if (polygonMatch === false) return "none";
-    return "polygon";
+    // polygonMatch === null: no coordinates or no polygon metadata, so we
+    // genuinely can't confirm coverage. Surface it as an address check rather
+    // than optimistically claiming a polygon match the user can't rely on.
+    return "live_address";
   }
   if (provider.coverageModel === "live_address") return "live_address";
-  if (hasStateCoverage) return "state";
   return "state";
 }
 

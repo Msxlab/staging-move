@@ -173,6 +173,43 @@ describe("tierProvidersFromDb", () => {
     expect(result.providers.map((provider) => provider.id)).toEqual(["state"]);
   });
 
+  it("does not optimistically claim a polygon match when coverage cannot be confirmed", () => {
+    // No coordinates supplied → resolvePolygonCoverageMatch returns null, so we
+    // can't verify the address sits inside the envelope. It must degrade to an
+    // address check, not an optimistic mapped-service-area match.
+    const provider = {
+      id: "polygon-unconfirmed",
+      slug: "wmata",
+      scope: "STATE",
+      coverageModel: "polygon" as const,
+      coverages: [{ state: "DC", zipPrefix: null, zipExact: null }],
+    };
+
+    expect(getProviderMatchLevelFromDb(provider, { state: "DC", zip: "20001" })).toBe("live_address");
+    expect(getProviderCoverageConfidenceFromDb(provider, { state: "DC", zip: "20001" })).toBe(
+      "ADDRESS_CHECK_REQUIRED",
+    );
+  });
+
+  it("still keeps confirmed polygon matches at mapped-service-area confidence", () => {
+    const provider = {
+      id: "polygon-confirmed",
+      slug: "wmata",
+      scope: "STATE",
+      coverageModel: "polygon" as const,
+      coverages: [{ state: "DC", zipPrefix: null, zipExact: null }],
+    };
+
+    expect(
+      getProviderCoverageConfidenceFromDb(provider, {
+        state: "DC",
+        zip: "20001",
+        latitude: 38.9072,
+        longitude: -77.0369,
+      }),
+    ).toBe("MAPPED_SERVICE_AREA");
+  });
+
   it("marks address-qualified providers as live_address when no better local rule exists", () => {
     const provider = {
       id: "fiber",

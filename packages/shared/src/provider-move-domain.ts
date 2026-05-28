@@ -535,7 +535,11 @@ export function mapCoverageMatchToConfidence(
   if (options?.requiresAddressCheck) return "ADDRESS_CHECK_REQUIRED";
   if (matchLevel === "exact") return "EXACT_ZIP";
   if (matchLevel === "prefix") return "ZIP_PREFIX";
-  if (matchLevel === "polygon" || options?.coverageModel === "polygon") {
+  // A resolved "live_address" match means the address could not be confirmed
+  // inside a polygon envelope (no coordinates / no polygon metadata), so let it
+  // win over the static polygon coverage model instead of optimistically
+  // claiming a mapped service-area match.
+  if (matchLevel === "polygon" || (options?.coverageModel === "polygon" && matchLevel !== "live_address")) {
     return "MAPPED_SERVICE_AREA";
   }
   if (matchLevel === "live_address" || options?.coverageModel === "live_address") {

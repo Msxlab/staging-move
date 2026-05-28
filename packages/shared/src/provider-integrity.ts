@@ -223,7 +223,7 @@ export function getProviderCoverageConfidence(
 ): ProviderCoverageConfidence {
   const matchLevel = (record.coverageMatchLevel ||
     (record.coverageModel === "live_address" ? "live_address" : null) ||
-    (record.scope === "FEDERAL" ? "state" : "state")) as ProviderCoverageMatchLevel;
+    "state") as ProviderCoverageMatchLevel;
   const confidence = mapCoverageMatchToConfidence(matchLevel, {
     scope: record.scope,
     coverageModel: record.coverageModel,

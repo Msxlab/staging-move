@@ -135,20 +135,24 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // resolveProviderMatchLevelFromDb walks every coverage row, and both the
+    // sort comparator and the response map need it — so compute match level +
+    // confidence once per provider instead of O(n log n) times inside sort.
+    const matchOptions = { state, zip, latitude: normalizedLatitude, longitude: normalizedLongitude };
+    const coverageByProvider = new Map(
+      filtered.map((p) => [
+        p,
+        {
+          matchLevel: getProviderMatchLevelFromDb(p, matchOptions),
+          confidence: getProviderCoverageConfidenceFromDb(p, matchOptions),
+        },
+      ] as const),
+    );
+
     filtered.sort((a, b) => {
       const confidenceRank = compareCoverageConfidence(
-        getProviderCoverageConfidenceFromDb(a, {
-          state,
-          zip,
-          latitude: normalizedLatitude,
-          longitude: normalizedLongitude,
-        }),
-        getProviderCoverageConfidenceFromDb(b, {
-          state,
-          zip,
-          latitude: normalizedLatitude,
-          longitude: normalizedLongitude,
-        }),
+        coverageByProvider.get(a)!.confidence,
+        coverageByProvider.get(b)!.confidence,
       );
       if (confidenceRank !== 0) return confidenceRank;
       const da = a.displayOrder > 0 ? a.displayOrder : Number.MAX_SAFE_INTEGER;
@@ -163,12 +167,7 @@ export async function GET(request: NextRequest) {
       const zipCodes = Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes);
       const tags = safeJsonArray(p.tags);
       const coverageModel = p.coverageModel || "state";
-      const coverageMatchLevel = getProviderMatchLevelFromDb(p, {
-        state,
-        zip,
-        latitude: normalizedLatitude,
-        longitude: normalizedLongitude,
-      });
+      const coverageMatchLevel = coverageByProvider.get(p)!.matchLevel;
       const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;
       const coverageSourceUrl = ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null;
       const requiresAddressCheck = coverageModel === "live_address";

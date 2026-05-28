@@ -72,6 +72,8 @@ export { rebuildProviderCoverage, type RebuildCoverageInput } from "./provider-c
 export {
   getProviderCoverageMetadata,
   getProviderCoverageMetadataMap,
+  getCoverageMetadataIntegrityWarnings,
+  type CoverageMetadataIntegrityWarning,
   type ProviderCoverageMetadata,
   type ProviderCoverageModel,
   type ProviderCoveragePoint,

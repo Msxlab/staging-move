@@ -2209,3 +2209,27 @@ export function getProviderCoverageMetadata(slug?: string | null) {
   if (!slug) return null;
   return coverageMetadataMap.get(slug) || null;
 }
+
+export interface CoverageMetadataIntegrityWarning {
+  slug: string;
+  code: "polygon_model_missing_polygons";
+  message: string;
+}
+
+// Self-check over the curated dataset: a "polygon" coverage model with no
+// polygons can't be confirmed by point-in-polygon, so the matcher silently
+// degrades it to an address check. Surface those entries so a data author
+// either adds the service envelope or picks a different model.
+export function getCoverageMetadataIntegrityWarnings(): CoverageMetadataIntegrityWarning[] {
+  const warnings: CoverageMetadataIntegrityWarning[] = [];
+  for (const entry of coverageMetadataMap.values()) {
+    if (entry.coverageModel === "polygon" && (!entry.polygons || entry.polygons.length === 0)) {
+      warnings.push({
+        slug: entry.slug,
+        code: "polygon_model_missing_polygons",
+        message: `Provider "${entry.slug}" uses coverageModel "polygon" but ships no polygons; coverage cannot be confirmed and degrades to an address check.`,
+      });
+    }
+  }
+  return warnings;
+}
