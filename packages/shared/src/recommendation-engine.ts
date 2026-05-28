@@ -125,6 +125,12 @@ export interface RecommendationStateRuleContext {
 
 export interface RecommendationContext {
   stateRule?: RecommendationStateRuleContext | null;
+  /**
+   * Optional scoring-weight overrides (e.g. sourced from RuntimeConfig for
+   * deploy-free tuning / A-B tests). Only the provided keys are overridden;
+   * everything else falls back to DEFAULT_SCORING_WEIGHTS.
+   */
+  weights?: Partial<ScoringWeights>;
 }
 
 const COVERAGE_SCORE_WEIGHT: Record<CoverageConfidence, number> = {
@@ -425,11 +431,48 @@ const URGENCY_TIER_META: Record<UrgencyTier, { label: string; icon: string; colo
   OPTIONAL: { label: "Nice to Have", icon: "⚪", color: "#6b7280", description: "Optional services you might want" },
 };
 
-function getUrgencyTier(category: string, profile: UserProfile): UrgencyTier {
+// Categories whose urgency depends on profile relevance. When the predicate is
+// false, the category is demoted to OPTIONAL so it doesn't crowd the high-urgency
+// clusters — a car-less renter shouldn't see auto insurance under "Must Do This
+// Week", nor a childless mover see school enrollment under "First 30 Days".
+// Predicates return true when the category is RELEVANT to the profile.
+// NOTE: GOVERNMENT_DMV is intentionally NOT gated on carCount — the DMV also
+// handles state ID / license transfers that apply regardless of vehicle ownership.
+// Predicates that read `ownership` only demote when ownership is known; an
+// undefined ownership leaves both home/renters guidance at full urgency.
+const TIER_RELEVANCE_GATE: Record<string, (p: UserProfile) => boolean> = {
+  FINANCIAL_INSURANCE_AUTO: (p) => p.carCount > 0,
+  TRANSPORTATION_TOLL: (p) => p.carCount > 0,
+  TRANSPORTATION_AUTO: (p) => p.carCount > 0,
+  TRANSPORTATION_PARKING: (p) => p.carCount > 0,
+  KIDS_SCHOOL: (p) => p.hasChildren,
+  KIDS_DAYCARE: (p) => p.hasChildren,
+  KIDS_ACTIVITY: (p) => p.hasChildren,
+  HEALTHCARE_VET: (p) => p.hasPets,
+  FINANCIAL_INSURANCE_PET: (p) => p.hasPets,
+  PET_SERVICES: (p) => p.hasPets,
+  HEALTHCARE_SENIOR: (p) => p.hasSenior,
+  FINANCIAL_INSURANCE_MOTORCYCLE: (p) => p.hasMotorcycle,
+  FINANCIAL_INSURANCE_BOAT: (p) => p.hasBoatRV,
+  FINANCIAL_INSURANCE_RV: (p) => p.hasBoatRV,
+  HOUSING_STORAGE: (p) => p.needsStorage,
+  FINANCIAL_INSURANCE_HOME: (p) => p.ownership !== "RENT",
+  FINANCIAL_MORTGAGE: (p) => p.ownership !== "RENT",
+  FINANCIAL_INSURANCE_RENTERS: (p) => p.ownership !== "OWN",
+};
+
+function getBaseUrgencyTier(category: string): UrgencyTier {
   if (CRITICAL_CATEGORIES.has(category)) return "CRITICAL";
   if (IMPORTANT_CATEGORIES.has(category)) return "IMPORTANT";
   if (RECOMMENDED_CATEGORIES.has(category)) return "RECOMMENDED";
   return "OPTIONAL";
+}
+
+function getUrgencyTier(category: string, profile: UserProfile): UrgencyTier {
+  const baseTier = getBaseUrgencyTier(category);
+  const gate = TIER_RELEVANCE_GATE[category];
+  if (gate && !gate(profile)) return "OPTIONAL";
+  return baseTier;
 }
 
 // ── Category Deadlines ───────────────────────────────────────
@@ -483,6 +526,36 @@ const ESSENTIAL_CATEGORIES: Record<string, number> = {
   HOUSING_SECURITY: 28, HOUSING_MOVING: 35,
   GROCERY_DELIVERY: 15, HOUSING_CLEANING: 12,
 };
+
+// ── Tunable Scoring Weights ──────────────────────────────────
+// Bundles the magic-number tables that drive scoring so they can be overridden
+// at runtime (RuntimeConfig) without a deploy. scoreProviders merges any
+// provided overrides over these defaults — passing none reproduces the
+// hardcoded behaviour exactly.
+
+export interface ScoringWeights {
+  urgencyTier: Record<UrgencyTier, number>;
+  coverageScore: Record<CoverageConfidence, number>;
+  addressSensitivePenalty: Partial<Record<CoverageConfidence, number>>;
+  essentialCategories: Record<string, number>;
+}
+
+export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
+  urgencyTier: URGENCY_TIER_WEIGHT,
+  coverageScore: COVERAGE_SCORE_WEIGHT,
+  addressSensitivePenalty: ADDRESS_SENSITIVE_COVERAGE_PENALTY,
+  essentialCategories: ESSENTIAL_CATEGORIES,
+};
+
+function resolveScoringWeights(overrides?: Partial<ScoringWeights>): ScoringWeights {
+  if (!overrides) return DEFAULT_SCORING_WEIGHTS;
+  return {
+    urgencyTier: { ...URGENCY_TIER_WEIGHT, ...overrides.urgencyTier },
+    coverageScore: { ...COVERAGE_SCORE_WEIGHT, ...overrides.coverageScore },
+    addressSensitivePenalty: { ...ADDRESS_SENSITIVE_COVERAGE_PENALTY, ...overrides.addressSensitivePenalty },
+    essentialCategories: { ...ESSENTIAL_CATEGORIES, ...overrides.essentialCategories },
+  };
+}
 
 // ── Tag → Profile Match ─────────────────────────────────────
 
@@ -545,6 +618,7 @@ export function scoreProviders(
   existingServiceNames?: Set<string>,
   context?: RecommendationContext,
 ): ScoredProvider[] {
+  const weights = resolveScoringWeights(context?.weights);
   return providers
     .map((provider) => {
       let score = 0;
@@ -556,13 +630,13 @@ export function scoreProviders(
 
       // 0. Urgency tier (primary sort signal)
       const urgencyTier = getUrgencyTier(provider.category, profile);
-      score += URGENCY_TIER_WEIGHT[urgencyTier];
+      score += weights.urgencyTier[urgencyTier];
 
       // 1. Base popularity (0-100 → 0-30 points)
       score += ((provider.popularityScore || 0) / 100) * 30;
 
       // 2. Essential category boost
-      const essentialBoost = ESSENTIAL_CATEGORIES[provider.category] || 0;
+      const essentialBoost = weights.essentialCategories[provider.category] || 0;
       if (essentialBoost > 0) {
         score += essentialBoost;
         if (essentialBoost >= 25) reasons.push("Essential service");
@@ -591,8 +665,8 @@ export function scoreProviders(
       }
 
       const coverageScore =
-        COVERAGE_SCORE_WEIGHT[coverageConfidence] +
-        (addressSensitive ? ADDRESS_SENSITIVE_COVERAGE_PENALTY[coverageConfidence] || 0 : 0);
+        weights.coverageScore[coverageConfidence] +
+        (addressSensitive ? weights.addressSensitivePenalty[coverageConfidence] || 0 : 0);
       score += coverageScore;
 
       if (coverageConfidence === "EXACT_ZIP") {

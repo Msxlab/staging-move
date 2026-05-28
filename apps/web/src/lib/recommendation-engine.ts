@@ -18,6 +18,8 @@ export {
   CATEGORY_META,
   PROVIDER_CATEGORY_VALUES,
   PROVIDER_CATEGORY_OPTIONS,
+  DEFAULT_SCORING_WEIGHTS,
+  type ScoringWeights,
   type UserProfile,
   type Provider,
   type ScoredProvider,

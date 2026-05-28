@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CATEGORY_META,
   PROVIDER_CATEGORY_VALUES,
+  DEFAULT_SCORING_WEIGHTS,
   getRecommendedProviders,
   scoreProviders,
   type Provider,
@@ -147,5 +148,144 @@ describe("provider recommendation safety", () => {
     );
 
     expect(getRecommendedProviders(scored).map((p) => p.id)).toEqual(["state-water"]);
+  });
+});
+
+describe("profile-aware urgency tiers", () => {
+  function baseProfile(overrides: Partial<UserProfile> = {}): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 1,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+      ...overrides,
+    };
+  }
+
+  function provider(category: string): Provider {
+    return {
+      id: category,
+      name: category,
+      slug: category.toLowerCase(),
+      category,
+      description: null,
+      website: null,
+      phone: null,
+      scope: "FEDERAL",
+      states: [],
+      tags: [],
+      popularityScore: 50,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  function tierFor(category: string, profile: UserProfile): string {
+    const [scored] = scoreProviders([provider(category)], profile, "TX");
+    return scored.urgencyTier;
+  }
+
+  it("demotes vehicle categories to OPTIONAL for a carless user", () => {
+    const carless = baseProfile({ carCount: 0 });
+    expect(tierFor("FINANCIAL_INSURANCE_AUTO", carless)).toBe("OPTIONAL");
+    expect(tierFor("TRANSPORTATION_TOLL", carless)).toBe("OPTIONAL");
+  });
+
+  it("keeps vehicle categories at their base tier when the user owns a car", () => {
+    const driver = baseProfile({ carCount: 2 });
+    expect(tierFor("FINANCIAL_INSURANCE_AUTO", driver)).toBe("CRITICAL");
+    expect(tierFor("TRANSPORTATION_TOLL", driver)).toBe("IMPORTANT");
+  });
+
+  it("demotes kids categories to OPTIONAL for a childless user", () => {
+    const childless = baseProfile({ hasChildren: false });
+    expect(tierFor("KIDS_SCHOOL", childless)).toBe("OPTIONAL");
+    const parent = baseProfile({ hasChildren: true, childrenCount: 2 });
+    expect(tierFor("KIDS_SCHOOL", parent)).toBe("IMPORTANT");
+  });
+
+  it("gates pet categories on pet ownership", () => {
+    expect(tierFor("HEALTHCARE_VET", baseProfile({ hasPets: false }))).toBe("OPTIONAL");
+    expect(tierFor("HEALTHCARE_VET", baseProfile({ hasPets: true }))).toBe("RECOMMENDED");
+  });
+
+  it("steers home vs renters insurance by ownership", () => {
+    const renter = baseProfile({ ownership: "RENT" });
+    expect(tierFor("FINANCIAL_INSURANCE_HOME", renter)).toBe("OPTIONAL");
+    expect(tierFor("FINANCIAL_MORTGAGE", renter)).toBe("OPTIONAL");
+    expect(tierFor("FINANCIAL_INSURANCE_RENTERS", renter)).toBe("CRITICAL");
+
+    const owner = baseProfile({ ownership: "OWN" });
+    expect(tierFor("FINANCIAL_INSURANCE_HOME", owner)).toBe("CRITICAL");
+    expect(tierFor("FINANCIAL_INSURANCE_RENTERS", owner)).toBe("OPTIONAL");
+  });
+
+  it("does not gate DMV — license/ID transfer applies regardless of vehicle ownership", () => {
+    expect(tierFor("GOVERNMENT_DMV", baseProfile({ carCount: 0 }))).toBe("CRITICAL");
+  });
+});
+
+describe("injectable scoring weights", () => {
+  function profile(): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 1,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+    };
+  }
+
+  function provider(category: string): Provider {
+    return {
+      id: category,
+      name: category,
+      slug: category.toLowerCase(),
+      category,
+      description: null,
+      website: null,
+      phone: null,
+      scope: "FEDERAL",
+      states: [],
+      tags: [],
+      popularityScore: 50,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  it("reproduces default behaviour when no overrides are supplied", () => {
+    const withoutContext = scoreProviders([provider("UTILITY_ELECTRIC")], profile(), "TX")[0];
+    const withEmptyContext = scoreProviders([provider("UTILITY_ELECTRIC")], profile(), "TX", undefined, undefined, {})[0];
+    expect(withEmptyContext.recommendationScore).toBe(withoutContext.recommendationScore);
+  });
+
+  it("applies an urgency-tier weight override additively", () => {
+    const p = provider("UTILITY_ELECTRIC");
+    const base = scoreProviders([p], profile(), "TX")[0].recommendationScore;
+    const bumped = scoreProviders([p], profile(), "TX", undefined, undefined, {
+      weights: { urgencyTier: { ...DEFAULT_SCORING_WEIGHTS.urgencyTier, CRITICAL: DEFAULT_SCORING_WEIGHTS.urgencyTier.CRITICAL + 50 } },
+    })[0].recommendationScore;
+    expect(bumped - base).toBe(50);
+  });
+
+  it("applies an essential-category weight override additively", () => {
+    const p = provider("UTILITY_ELECTRIC");
+    const base = scoreProviders([p], profile(), "TX")[0].recommendationScore;
+    const bumped = scoreProviders([p], profile(), "TX", undefined, undefined, {
+      weights: { essentialCategories: { UTILITY_ELECTRIC: (DEFAULT_SCORING_WEIGHTS.essentialCategories.UTILITY_ELECTRIC || 0) + 10 } },
+    })[0].recommendationScore;
+    expect(bumped - base).toBe(10);
   });
 });

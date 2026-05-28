@@ -11,6 +11,8 @@ import {
 } from "@/lib/recommendation-engine";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
+import { getCommunityPopularity } from "@/lib/community-popularity";
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
 // Returns tiered clusters with "next critical actions" based on what user already has
@@ -153,33 +155,9 @@ export async function GET(request: NextRequest) {
       ? await prisma.stateRule.findUnique({ where: { stateCode: effectiveState } }).catch(() => null)
       : null;
 
-    let communityPopular: Record<string, number> | undefined;
-    if (effectiveState) {
-      try {
-        const stateAddresses = await prisma.address.findMany({
-          where: { state: effectiveState },
-          select: { userId: true },
-        });
-        const stateUserIds = [...new Set(stateAddresses.map((a) => a.userId))];
-        if (stateUserIds.length > 5) {
-          const stateServices = await prisma.service.findMany({
-            where: { userId: { in: stateUserIds }, isActive: true, providerId: { not: null } },
-            select: { providerId: true },
-          });
-          const counts: Record<string, number> = {};
-          for (const s of stateServices) {
-            if (s.providerId) counts[s.providerId] = (counts[s.providerId] || 0) + 1;
-          }
-          const maxCount = Math.max(1, ...Object.values(counts));
-          communityPopular = {};
-          for (const [id, count] of Object.entries(counts)) {
-            communityPopular[id] = Math.round((count / maxCount) * 20);
-          }
-        }
-      } catch {
-        // Non-blocking
-      }
-    }
+    const scoringWeights = await getScoringWeightOverrides();
+
+    const communityPopular = await getCommunityPopularity(effectiveState);
 
     const scored = scoreProviders(
       parsedProviders,
@@ -193,6 +171,7 @@ export async function GET(request: NextRequest) {
           voterRegistration: stateRule.voterRegistration,
           taxInfo: stateRule.taxInfo,
         } : null,
+        weights: scoringWeights,
       }
     );
     const result = buildRecommendationClusters(scored, completedCategories);

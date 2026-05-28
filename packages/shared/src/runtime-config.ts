@@ -778,6 +778,18 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "plain",
     validation: "boolean",
   },
+  {
+    key: "RECOMMENDATION_SCORING_WEIGHTS",
+    label: "Recommendation Scoring Weights",
+    description:
+      "Optional JSON overriding the provider recommendation engine's scoring weights (keys: urgencyTier, coverageScore, addressSensitivePenalty, essentialCategories). Leave blank to use built-in defaults. Lets product tune ranking without a redeploy.",
+    scope: "WEB",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "JSON object of scoring-weight overrides",
+  },
 
   // ── OAuth (Google + Apple Sign-in) ─────────────────────────
   {
