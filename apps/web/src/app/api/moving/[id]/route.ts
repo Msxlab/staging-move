@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { z } from "zod";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const MOVING_STATUS_VALUES = ["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELED"] as const;
@@ -116,7 +117,29 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
 
-    await prisma.movingPlan.update({ where: { id }, data: { deletedAt: new Date() } });
+    // Replicate the schema's MoveTask.movingPlan onDelete: Cascade, which never
+    // fires for our soft deletes: soft-delete the plan's move tasks in the same
+    // transaction so they stop surfacing in the global task feed once the user
+    // removes the plan they belong to.
+    const now = new Date();
+    const [moveTasksResult] = await prisma.$transaction([
+      prisma.moveTask.updateMany({
+        where: { movingPlanId: id, userId, deletedAt: null },
+        data: { deletedAt: now },
+      }),
+      prisma.movingPlan.update({ where: { id }, data: { deletedAt: now } }),
+    ]);
+
+    const meta = extractRequestMeta(request);
+    await createAuditLog({
+      userId,
+      action: "DELETE",
+      entityType: "MovingPlan",
+      entityId: id,
+      changes: { moveTasksDeleted: moveTasksResult.count },
+      ...meta,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const gateResponse = apiGateErrorResponse(error);
