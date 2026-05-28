@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import {
   buildWebNotificationSettings,
+  normalizeDigestDay,
+  normalizeReminderDays,
   WEB_NOTIFICATION_CONFIG_DEFINITIONS,
   WEB_NOTIFICATION_PREFERENCE_DEFINITIONS,
 } from "@/lib/notification-preferences";
@@ -82,32 +84,37 @@ export async function POST(request: NextRequest) {
     }
 
     if (digestDay !== undefined) {
+      // Coerce to a known day before storing so an out-of-range or oversized
+      // value can't overflow the VarChar(20) frequency column (failing the
+      // whole save) or persist a value the read path would silently discard.
+      const normalizedDigestDay = normalizeDigestDay(digestDay);
       configWrites.push(
         prisma.notificationPreference.upsert({
           where: { userId_channel_type: { userId, channel: digestConfig.channel, type: digestConfig.type } },
-          update: { enabled: true, frequency: digestDay },
+          update: { enabled: true, frequency: normalizedDigestDay },
           create: {
             userId,
             channel: digestConfig.channel,
             type: digestConfig.type,
             enabled: true,
-            frequency: digestDay,
+            frequency: normalizedDigestDay,
           },
         })
       );
     }
 
     if (reminderDays !== undefined) {
+      const normalizedReminderDays = normalizeReminderDays(reminderDays);
       configWrites.push(
         prisma.notificationPreference.upsert({
           where: { userId_channel_type: { userId, channel: reminderConfig.channel, type: reminderConfig.type } },
-          update: { enabled: true, frequency: reminderDays },
+          update: { enabled: true, frequency: normalizedReminderDays },
           create: {
             userId,
             channel: reminderConfig.channel,
             type: reminderConfig.type,
             enabled: true,
-            frequency: reminderDays,
+            frequency: normalizedReminderDays,
           },
         })
       );

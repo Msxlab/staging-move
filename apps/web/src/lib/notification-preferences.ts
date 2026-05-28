@@ -84,11 +84,11 @@ function resolveConfig(definition: WebNotificationConfigDefinition, preferenceMa
   };
 }
 
-function normalizeDigestDay(value: string) {
+export function normalizeDigestDay(value: string) {
   return VALID_DIGEST_DAYS.has(value) ? value : "Monday";
 }
 
-function normalizeReminderDays(value: string) {
+export function normalizeReminderDays(value: string) {
   return VALID_REMINDER_DAYS.has(value) ? value : "3";
 }
 
