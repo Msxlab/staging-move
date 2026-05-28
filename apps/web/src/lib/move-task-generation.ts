@@ -98,6 +98,11 @@ export async function buildMoveTransitionContext(
     include: {
       coverages: { where: { state: effectiveToState } },
     },
+    // Most-popular-first so the classifier's default candidate[0] (used for
+    // START_SERVICE / VERIFY_AVAILABILITY tasks) is the most popular provider
+    // rather than an arbitrary DB order, plus a safety bound on the catalog scan.
+    orderBy: { popularityScore: "desc" },
+    take: 1000,
   });
 
   const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
