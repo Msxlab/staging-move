@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import {
   ONBOARDING_MOVING_SKIPPED_EVENT,
@@ -24,6 +25,14 @@ export async function POST(request: NextRequest) {
     userId = await requireDbUserId();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(getRateLimitKey(request, "onboarding:progress"), {
+    limit: 20,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
   }
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));

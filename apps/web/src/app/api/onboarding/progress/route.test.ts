@@ -15,10 +15,17 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(() => Promise.resolve("user-1")),
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  getRateLimitKey: vi.fn(() => "rate-key"),
+  rateLimit: vi.fn(() => Promise.resolve({ success: true })),
+}));
+
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 import { POST } from "./route";
 
 const userEvent = prisma.userEvent as unknown as { findFirst: Mock; create: Mock };
+const mockRateLimit = rateLimit as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/onboarding/progress", {
@@ -33,6 +40,7 @@ describe("onboarding progress route", () => {
     vi.clearAllMocks();
     userEvent.findFirst.mockResolvedValue(null);
     userEvent.create.mockResolvedValue({});
+    mockRateLimit.mockResolvedValue({ success: true });
   });
 
   it("persists a services-skipped onboarding event idempotently", async () => {
@@ -63,6 +71,16 @@ describe("onboarding progress route", () => {
     const response = await POST(makeRequest({ event: "FUTURE_STEP" }));
 
     expect(response.status).toBe(400);
+    expect(userEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects writes once the rate limit is exhausted", async () => {
+    mockRateLimit.mockResolvedValueOnce({ success: false });
+
+    const response = await POST(makeRequest({ event: "SERVICES_SKIPPED" }));
+
+    expect(response.status).toBe(429);
+    expect(userEvent.findFirst).not.toHaveBeenCalled();
     expect(userEvent.create).not.toHaveBeenCalled();
   });
 });
