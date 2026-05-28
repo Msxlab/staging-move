@@ -100,20 +100,44 @@ export async function POST(request: NextRequest) {
 
     // Append rows rather than upsert — we keep the full history for audit,
     // including the version of the consent text the user saw.
-    await prisma.$transaction(
-      parsed.data.grants.map((g) =>
-        prisma.dataConsent.create({
-          data: {
-            userId,
-            category: g.category,
-            granted: g.granted,
-            version: CONSENT_TEXT_VERSION,
-            ipAddress: ip,
-            userAgent: userAgent?.slice(0, 500) ?? null,
-          },
-        }),
-      ),
+    const consentWrites = parsed.data.grants.map((g) =>
+      prisma.dataConsent.create({
+        data: {
+          userId,
+          category: g.category,
+          granted: g.granted,
+          version: CONSENT_TEXT_VERSION,
+          ipAddress: ip,
+          userAgent: userAgent?.slice(0, 500) ?? null,
+        },
+      }),
     );
+
+    // Withdrawing SENSITIVE consent must also stop us from continuing to store
+    // the sensitive profile fields it gated, otherwise the revocation only
+    // blocks future writes while the previously-collected disability /
+    // immigration / military data lingers. Clear those fields in the same
+    // transaction so the consent record and the stored data can't drift apart.
+    // updateMany is a no-op (count 0) when the user has no profile row yet.
+    const revokesSensitive = parsed.data.grants.some(
+      (g) => g.category === "SENSITIVE" && g.granted === false,
+    );
+    const operations = revokesSensitive
+      ? [
+          ...consentWrites,
+          prisma.profile.updateMany({
+            where: { userId },
+            data: {
+              hasDisability: false,
+              isImmigrant: false,
+              isMilitary: false,
+              immigrationStatus: null,
+            },
+          }),
+        ]
+      : consentWrites;
+
+    await prisma.$transaction(operations);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
