@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EyeOff, KeyRound, RefreshCw, Save, ShieldAlert } from "lucide-react";
+import { InfoHint } from "@/components/info-hint";
 
 type RuntimeConfigCatalogStatus =
   | "Verified from ENV"
@@ -235,10 +236,28 @@ export default function RuntimeConfigClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <MetricCard label="Managed Keys" value={configs.length} />
-        <MetricCard label="Verified from ENV" value={configs.filter((item) => item.status === "Verified from ENV").length} />
-        <MetricCard label="Conflicts" value={configs.filter((item) => item.status === "Conflict").length} tone={configs.some((item) => item.status === "Conflict") ? "danger" : "default"} />
-        <MetricCard label="Missing required" value={configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length} tone="danger" />
+        <MetricCard
+          label="Managed Keys"
+          value={configs.length}
+          hint="Every config key this app reads — secrets like JWT signing keys, service URLs (e.g. Redis), Stripe keys, and feature toggles."
+        />
+        <MetricCard
+          label="Verified from ENV"
+          value={configs.filter((item) => item.status === "Verified from ENV").length}
+          hint="Keys whose value comes from the deployment's environment variables and passed validation. This is the preferred source for production secrets."
+        />
+        <MetricCard
+          label="Conflicts"
+          value={configs.filter((item) => item.status === "Conflict").length}
+          tone={configs.some((item) => item.status === "Conflict") ? "danger" : "default"}
+          hint="Keys set in BOTH the environment and the database with different values. The app picks one, so resolve these to avoid surprises."
+        />
+        <MetricCard
+          label="Missing required"
+          value={configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length}
+          tone="danger"
+          hint="Keys required in production that have no value anywhere. The features that depend on them will not work until set."
+        />
       </div>
 
       <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg">
@@ -417,10 +436,13 @@ export default function RuntimeConfigClient() {
   );
 }
 
-function MetricCard({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "danger" }) {
+function MetricCard({ label, value, tone = "default", hint }: { label: string; value: number; tone?: "default" | "danger"; hint?: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+        {label}
+        {hint ? <InfoHint text={hint} label={label} /> : null}
+      </p>
       <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : "text-foreground"}`}>{value}</p>
     </div>
   );

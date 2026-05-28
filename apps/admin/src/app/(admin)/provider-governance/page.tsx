@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, Rocket, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const QUEUE_LABELS: Record<string, string> = {
   userCreatedProviderReview: "User-Submitted Provider Requests",
@@ -44,6 +45,7 @@ export default function ProviderGovernancePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [pendingPromote, setPendingPromote] = useState<{ id: string; name: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -86,12 +88,11 @@ export default function ProviderGovernancePage() {
     }
   };
 
-  const promoteToListed = (customProviderId: string, name: string) => {
-    const confirmed = window.confirm(
-      `Promote "${name}" to the listed provider directory?\n\nThis creates a new public listed provider record. Make sure the name, website, and category are correct — listed records are visible to all users.`,
-    );
-    if (!confirmed) return;
-    void updateCustomProvider(customProviderId, "promote_to_listed");
+  const confirmPromote = async () => {
+    if (!pendingPromote) return;
+    const { id } = pendingPromote;
+    setPendingPromote(null);
+    await updateCustomProvider(id, "promote_to_listed");
   };
 
   const exportQueue = () => {
@@ -114,6 +115,20 @@ export default function ProviderGovernancePage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={pendingPromote !== null}
+        tone="default"
+        title="Promote to listed directory"
+        description={
+          pendingPromote
+            ? `"${pendingPromote.name}" will be published as a new public listed provider, visible to all users. Make sure the name, website, and category are correct.`
+            : ""
+        }
+        confirmLabel="Promote provider"
+        onClose={() => setPendingPromote(null)}
+        onConfirm={confirmPromote}
+      />
+
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Provider operations</p>
@@ -233,7 +248,7 @@ export default function ProviderGovernancePage() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button
                             disabled={busy === customId}
-                            onClick={() => promoteToListed(customId, provider.name)}
+                            onClick={() => setPendingPromote({ id: customId, name: provider.name })}
                             className="inline-flex items-center gap-1 rounded-md border border-tone-emerald-br bg-tone-emerald-bg px-2 py-1 text-xs text-tone-emerald-fg hover:opacity-90 disabled:opacity-50"
                           >
                             <Rocket className="h-3 w-3" /> Promote to listed

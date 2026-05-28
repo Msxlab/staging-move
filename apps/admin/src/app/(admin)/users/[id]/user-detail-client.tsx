@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
+import { InfoHint } from "@/components/info-hint";
 import { maskEmail } from "@/lib/privacy";
 import {
   accessSourceLabel,
@@ -1679,7 +1680,13 @@ export default function UserDetailClient() {
             <div className="flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Move Transition Support Context</h2>
+                  <h2 className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
+                    Move Transition Support Context
+                    <InfoHint
+                      text="Background on this user's in-progress move so a support agent can give informed manual guidance. It is read-only context — nothing here changes the user's utility or service accounts."
+                      label="Move Transition Support Context"
+                    />
+                  </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     This is operator context for manual guidance. LocateFlow does not update provider accounts or execute address changes.
                   </p>
@@ -1696,10 +1703,12 @@ export default function UserDetailClient() {
                 <InfoCard
                   label="Origin services"
                   value={activeMoveOriginServices}
+                  hint="Count of services (electric, internet, etc.) tracked at the address the user is moving FROM — typically things to stop or transfer."
                 />
                 <InfoCard
                   label="Destination services"
                   value={activeMoveDestinationServices}
+                  hint="Count of services tracked at the address the user is moving TO — typically things to set up or shop for."
                 />
                 <InfoCard
                   label="Route"
@@ -2098,10 +2107,13 @@ function StatCard({
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string | number }) {
+function InfoCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="rounded-lg bg-muted/30 p-4">
-      <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">{label}</p>
+      <p className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase text-muted-foreground">
+        {label}
+        {hint ? <InfoHint text={hint} label={label} /> : null}
+      </p>
       <p className="text-sm font-semibold text-foreground">{value}</p>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   getCategoryIcon,
   getCategoryLabel,
 } from "@/lib/recommendation-engine";
+import { InfoHint } from "@/components/info-hint";
 
 interface Provider {
   id: string;
@@ -250,6 +251,7 @@ export default function ProviderDetailPage() {
           tone="amber"
           label="Coverage Rows"
           value={coverageCount}
+          hint="Number of geographic service areas mapped to this provider (each row is a state, city, or ZIP/polygon entry that decides where it appears in search)."
         />
         <StatCard
           icon={Shield}
@@ -456,11 +458,13 @@ function StatCard({
   label,
   value,
   tone,
+  hint,
 }: {
   icon: typeof Users;
   label: string;
   value: string | number;
   tone: "purple" | "cyan" | "amber" | "blue";
+  hint?: string;
 }) {
   const toneMap = {
     purple: "bg-tone-foil-bg text-tone-foil-fg",
@@ -477,7 +481,10 @@ function StatCard({
         </div>
         <div>
           <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            {label}
+            {hint ? <InfoHint text={hint} label={label} /> : null}
+          </p>
         </div>
       </div>
     </div>

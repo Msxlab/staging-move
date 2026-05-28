@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type Campaign = {
   id: string;
@@ -275,6 +276,8 @@ export default function AcquisitionCampaignsClient() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<"hidden" | "create" | "edit">("hidden");
   const [redemptionsFor, setRedemptionsFor] = useState<{ campaign: Campaign; rows: RedemptionRow[]; loading: boolean } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const editingCampaign = campaigns.find((campaign) => campaign.id === editingCampaignId) || null;
 
   const slots = useMemo(() => {
@@ -348,22 +351,30 @@ export default function AcquisitionCampaignsClient() {
     }
   }
 
-  async function deleteCampaign(campaign: Campaign) {
+  function requestDeleteCampaign(campaign: Campaign) {
     if (campaign.redemptionCount > 0) {
       toast.error("Cannot delete a campaign with redemptions. End it instead.");
       return;
     }
-    if (!window.confirm(`Delete campaign "${campaign.name}"? This cannot be undone.`)) return;
+    setPendingDelete(campaign);
+  }
+
+  async function confirmDeleteCampaign() {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      const response = await fetch(`/api/acquisition-campaigns/${campaign.id}`, {
+      const response = await fetch(`/api/acquisition-campaigns/${pendingDelete.id}`, {
         method: "DELETE",
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Failed to delete campaign.");
       toast.success("Campaign deleted");
+      setPendingDelete(null);
       await load();
     } catch (error: any) {
       toast.error(error?.message || "Failed to delete campaign.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -956,7 +967,7 @@ export default function AcquisitionCampaignsClient() {
                       <BarChart3 className="h-3.5 w-3.5" /> Redemptions
                     </button>
                     <button
-                      onClick={() => void deleteCampaign(campaign)}
+                      onClick={() => requestDeleteCampaign(campaign)}
                       disabled={campaign.redemptionCount > 0}
                       title={campaign.redemptionCount > 0 ? "End this campaign — it has redemptions on record." : "Delete draft / unused campaign"}
                       className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
@@ -1062,6 +1073,16 @@ export default function AcquisitionCampaignsClient() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete campaign"
+        description={pendingDelete ? `Campaign "${pendingDelete.name}" will be permanently deleted. This cannot be undone.` : ""}
+        confirmLabel="Delete campaign"
+        busy={deleting}
+        onClose={() => { if (!deleting) setPendingDelete(null); }}
+        onConfirm={confirmDeleteCampaign}
+      />
     </div>
   );
 }

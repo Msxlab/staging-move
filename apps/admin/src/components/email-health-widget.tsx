@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { InfoHint } from "@/components/info-hint";
 
 interface TemplateRow {
   templateId: string | null;
@@ -76,8 +77,9 @@ export function EmailHealthWidget() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="flex items-center gap-1 text-sm font-semibold text-foreground">
             Email pipeline health (last {data.windowHours}h)
+            <InfoHint text={`Outcome of every email the app tried to send in the last ${data.windowHours} hours. Use it to spot delivery problems early.`} label="Email pipeline health" />
           </h2>
         </div>
         <Link href="/email-templates" className="text-xs text-muted-foreground hover:text-foreground">
@@ -86,10 +88,10 @@ export function EmailHealthWidget() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <Stat icon={CheckCircle2} label="Sent" value={sent} color="text-tone-sage-fg" />
-        <Stat icon={AlertTriangle} label="Failed" value={failed} color="text-destructive" />
-        <Stat icon={Clock} label="Pending" value={pending} color="text-tone-honey-fg" />
-        <Stat icon={AlertTriangle} label="Bounced" value={bounced} color="text-tone-orange-fg" />
+        <Stat icon={CheckCircle2} label="Sent" value={sent} color="text-tone-sage-fg" hint="Accepted by the email provider for delivery." />
+        <Stat icon={AlertTriangle} label="Failed" value={failed} color="text-destructive" hint="The app could not hand the message to the email provider (e.g. provider error or bad config). It never left our system." />
+        <Stat icon={Clock} label="Pending" value={pending} color="text-tone-honey-fg" hint="Queued but not yet confirmed sent. Usually clears within minutes." />
+        <Stat icon={AlertTriangle} label="Bounced" value={bounced} color="text-tone-orange-fg" hint="Sent, but the recipient's mail server rejected it (bad address, full mailbox, spam block). A high count hurts sender reputation." />
       </div>
 
       {data.byTemplate.length > 0 && (
@@ -145,12 +147,13 @@ export function EmailHealthWidget() {
   );
 }
 
-function Stat({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
+function Stat({ icon: Icon, label, value, color, hint }: { icon: any; label: string; value: number; color: string; hint?: string }) {
   return (
     <div className="rounded-lg border border-border bg-background/50 p-3">
       <div className="flex items-center gap-2 mb-1">
         <Icon className={`h-3.5 w-3.5 ${color}`} />
         <span className="text-xs text-muted-foreground">{label}</span>
+        {hint ? <InfoHint text={hint} label={label} /> : null}
       </div>
       <p className="text-lg font-bold text-foreground">{value}</p>
     </div>

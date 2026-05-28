@@ -96,7 +96,7 @@ const navGroups: NavGroup[] = [
     label: "Communication",
     labelKey: "communication",
     items: [
-      { name: "Tickets", nameKey: "tickets", href: "/support", icon: LifeBuoy, show: ({ permissions }) => permissions.tickets.canRead },
+      { name: "Support", nameKey: "support", href: "/support", icon: LifeBuoy, show: ({ permissions }) => permissions.tickets.canRead },
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },

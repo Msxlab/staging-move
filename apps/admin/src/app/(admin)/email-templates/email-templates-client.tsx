@@ -3,6 +3,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Template {
   id: string;
@@ -51,6 +52,8 @@ export default function EmailTemplatesClient() {
   const [preview, setPreview] = useState<Template | null>(null);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [form, setForm] = useState({ slug: "", name: "", subject: "", body: "", category: "SYSTEM", variables: "", isActive: true });
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = () => {
     fetch("/api/email-templates").then((r) => r.json()).then((d) => {
@@ -72,10 +75,12 @@ export default function EmailTemplatesClient() {
     else { const d = await res.json(); toast.error(d.error || "Failed"); }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Delete this template?")) return;
-    const res = await fetch("/api/email-templates", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    if (res.ok) { toast.success("Deleted"); load(); } else toast.error("Failed");
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    const res = await fetch("/api/email-templates", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: pendingDelete.id }) });
+    setDeleting(false);
+    if (res.ok) { toast.success("Deleted"); setPendingDelete(null); load(); } else toast.error("Failed");
   };
 
   const startEdit = (t: Template) => { setEditing(t); setForm({ slug: t.slug, name: t.name, subject: t.subject, body: t.body, category: t.category, variables: t.variables || "", isActive: t.isActive }); setShowForm(true); };
@@ -150,7 +155,7 @@ export default function EmailTemplatesClient() {
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => setPreview(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
                     <button onClick={() => startEdit(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => remove(t.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -208,6 +213,16 @@ export default function EmailTemplatesClient() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete email template"
+        description={pendingDelete ? `"${pendingDelete.name}" will be permanently deleted. This cannot be undone.` : ""}
+        confirmLabel="Delete"
+        busy={deleting}
+        onClose={() => { if (!deleting) setPendingDelete(null); }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

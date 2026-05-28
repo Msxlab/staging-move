@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { PasswordChangeForm } from "./password-form";
+import { InfoHint } from "@/components/info-hint";
 
 const MODEL_ICONS: Record<string, typeof Users> = {
   users: Users,
@@ -285,12 +286,25 @@ export default function SettingsPage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <InfoCard label="Managed Keys" value={data.runtimeSummary.managedKeys} />
-              <InfoCard label="Configured" value={data.runtimeSummary.configured} />
-              <InfoCard label="DB Overrides" value={data.runtimeSummary.dbOverrides} />
+              <InfoCard
+                label="Managed Keys"
+                value={data.runtimeSummary.managedKeys}
+                hint="Total config keys the app knows how to read (secrets, URLs, toggles), whether or not a value is set yet."
+              />
+              <InfoCard
+                label="Configured"
+                value={data.runtimeSummary.configured}
+                hint="Managed keys that currently have a value, from either an environment variable or a database override."
+              />
+              <InfoCard
+                label="DB Overrides"
+                value={data.runtimeSummary.dbOverrides}
+                hint="Keys whose value is set in the database and takes precedence over the deployment's environment variable."
+              />
               <InfoCard
                 label="Missing Required"
                 value={data.runtimeSummary.missingRequired}
+                hint="Required keys with no value anywhere. The related feature stays off until these are filled in."
               />
             </div>
             {data.runtimeSummary.missingRequiredKeys.length > 0 && (
@@ -543,11 +557,12 @@ export default function SettingsPage() {
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string | number }) {
+function InfoCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="rounded-lg bg-muted/50 p-3">
-      <p className="text-[10px] font-medium uppercase text-muted-foreground">
+      <p className="flex items-center gap-1 text-[10px] font-medium uppercase text-muted-foreground">
         {label}
+        {hint ? <InfoHint text={hint} label={label} /> : null}
       </p>
       <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
     </div>

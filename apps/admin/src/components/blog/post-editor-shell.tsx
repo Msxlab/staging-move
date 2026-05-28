@@ -9,6 +9,7 @@ import { CoverImageUploader } from "./cover-image-uploader";
 import { CategoryPicker } from "./category-picker";
 import { TagPicker } from "./tag-picker";
 import { SeoScore } from "./seo-score";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type BlogStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
 type BlogLocale = "en" | "es";
@@ -120,6 +121,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
   const [saving, setSaving] = useState(false);
   const [autosaving, setAutosaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [post, setPost] = useState<LoadedPost | null>(null);
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -367,7 +369,6 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
 
   async function deletePost() {
     if (!postId) return;
-    if (!window.confirm("Delete this blog post?")) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/blog/posts/${postId}`, { method: "DELETE" });
@@ -376,8 +377,8 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
       window.location.replace("/blog");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
-    } finally {
       setSaving(false);
+      setConfirmingDelete(false);
     }
   }
 
@@ -486,7 +487,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               )}
               <button
                 type="button"
-                onClick={deletePost}
+                onClick={() => setConfirmingDelete(true)}
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-md border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
               >
@@ -681,6 +682,16 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           </section>
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete blog post"
+        description={form.title.trim() ? `"${form.title.trim()}" will be permanently deleted. This cannot be undone.` : "This post will be permanently deleted. This cannot be undone."}
+        confirmLabel="Delete post"
+        busy={saving}
+        onClose={() => { if (!saving) setConfirmingDelete(false); }}
+        onConfirm={deletePost}
+      />
     </div>
   );
 }

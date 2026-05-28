@@ -154,7 +154,6 @@ export default function SecurityClient() {
   };
 
   const deleteIPRule = async (rule: IPRule) => {
-    if (!confirm("Delete this rule?")) return;
     requestStepUp({
       title: "Confirm IP rule deletion",
       description: "Enter your admin password plus an authenticator or backup code before deleting this IP rule.",

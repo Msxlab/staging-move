@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Article { id: string; slug: string; title: string; content: string; excerpt: string | null; category: string; tags: string; order: number; isPublished: boolean; viewCount: number; helpfulYes: number; helpfulNo: number; createdAt: string }
 interface FAQ { id: string; question: string; answer: string; category: string; order: number; isPublished: boolean }
@@ -16,6 +17,8 @@ export default function HelpCenterPage() {
   const [editing, setEditing] = useState<any>(null);
   const [articleForm, setArticleForm] = useState({ slug: "", title: "", content: "", excerpt: "", category: "Getting Started", tags: "", order: 0, isPublished: false });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", category: "General", order: 0, isPublished: true });
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; type: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = () => { fetch("/api/help-center").then(r => r.json()).then(d => { setArticles(d.articles || []); setFaqs(d.faqs || []); }).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
@@ -36,10 +39,12 @@ export default function HelpCenterPage() {
     if (res.ok) { toast.success(editing ? "Updated" : "Created"); resetForm(); load(); } else toast.error("Failed");
   };
 
-  const remove = async (id: string, type: string) => {
-    if (!confirm("Delete?")) return;
-    const res = await fetch("/api/help-center", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, entityType: type }) });
-    if (res.ok) { toast.success("Deleted"); load(); } else toast.error("Failed");
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    const res = await fetch("/api/help-center", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: pendingDelete.id, entityType: pendingDelete.type }) });
+    setDeleting(false);
+    if (res.ok) { toast.success("Deleted"); setPendingDelete(null); load(); } else toast.error("Failed");
   };
 
   const togglePublish = async (item: any, type: string) => {
@@ -123,7 +128,7 @@ export default function HelpCenterPage() {
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => togglePublish(a, "article")} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                     <button onClick={() => editArticle(a)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => remove(a.id, "article")} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPendingDelete({ id: a.id, type: "article", label: a.title })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -148,13 +153,23 @@ export default function HelpCenterPage() {
                 <div className="flex gap-1 ml-4">
                   <button onClick={() => togglePublish(f, "faq")} className="rounded p-1 text-muted-foreground hover:bg-accent">{f.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                   <button onClick={() => editFaq(f)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                  <button onClick={() => remove(f.id, "faq")} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => setPendingDelete({ id: f.id, type: "faq", label: f.question })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={pendingDelete?.type === "faq" ? "Delete FAQ" : "Delete article"}
+        description={pendingDelete ? `"${pendingDelete.label}" will be permanently deleted. This cannot be undone.` : ""}
+        confirmLabel="Delete"
+        busy={deleting}
+        onClose={() => { if (!deleting) setPendingDelete(null); }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

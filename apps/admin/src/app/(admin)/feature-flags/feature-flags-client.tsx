@@ -88,7 +88,6 @@ export default function FeatureFlagsClient() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this flag?")) return;
     requestStepUp({
       title: "Confirm feature flag deletion",
       description: "Enter your admin password before deleting this feature flag.",
