@@ -10,6 +10,9 @@ vi.mock("@/lib/db", () => ({
     service: {
       updateMany: vi.fn(),
     },
+    budget: {
+      updateMany: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }));
@@ -63,6 +66,7 @@ const mockAddress = prisma.address as unknown as {
   update: Mock;
 };
 const mockService = (prisma as unknown as { service: { updateMany: Mock } }).service;
+const mockBudget = (prisma as unknown as { budget: { updateMany: Mock } }).budget;
 const mockTransaction = (prisma as unknown as { $transaction: Mock }).$transaction;
 
 function addressParams(id = "address-1") {
@@ -169,11 +173,12 @@ describe("address detail route", () => {
       // The handler builds the transaction array by *calling* these first, so
       // give them sentinel return values we can assert were passed to $transaction.
       mockService.updateMany.mockReturnValue("service-updateMany-op");
+      mockBudget.updateMany.mockReturnValue("budget-updateMany-op");
       mockAddress.update.mockReturnValue("address-update-op");
-      mockTransaction.mockResolvedValue([{ count: 2 }, { id: "address-1" }]);
+      mockTransaction.mockResolvedValue([{ count: 2 }, { count: 1 }, { id: "address-1" }]);
     });
 
-    it("soft-deletes the address and cascades to its active services in one transaction", async () => {
+    it("soft-deletes the address and cascades to its services and budgets in one transaction", async () => {
       const response = await DELETE(
         new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
         addressParams() as any,
@@ -188,15 +193,24 @@ describe("address detail route", () => {
         where: { addressId: "address-1", userId: "user-1", deletedAt: null },
         data: { isActive: false, deactivatedAt: expect.any(Date), deletedAt: expect.any(Date) },
       });
+      // Budgets scoped to the address are soft-deleted too.
+      expect(mockBudget.updateMany).toHaveBeenCalledWith({
+        where: { addressId: "address-1", userId: "user-1", deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      });
       expect(mockAddress.update).toHaveBeenCalledWith({
         where: { id: "address-1" },
         data: { deletedAt: expect.any(Date) },
       });
-      // Both writes go through a single $transaction so a partial delete is impossible.
-      expect(mockTransaction).toHaveBeenCalledWith(["service-updateMany-op", "address-update-op"]);
+      // All three writes go through a single $transaction so a partial delete is impossible.
+      expect(mockTransaction).toHaveBeenCalledWith([
+        "service-updateMany-op",
+        "budget-updateMany-op",
+        "address-update-op",
+      ]);
     });
 
-    it("records the number of cascaded services in the audit log", async () => {
+    it("records the number of cascaded services and budgets in the audit log", async () => {
       await DELETE(
         new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
         addressParams() as any,
@@ -208,7 +222,7 @@ describe("address detail route", () => {
           action: "DELETE",
           entityType: "Address",
           entityId: "address-1",
-          changes: expect.objectContaining({ servicesDeactivated: 2 }),
+          changes: expect.objectContaining({ servicesDeactivated: 2, budgetsDeleted: 1 }),
         }),
       );
     });
@@ -231,6 +245,7 @@ describe("address detail route", () => {
       expect(body.error).toBe("Address not found");
       expect(mockTransaction).not.toHaveBeenCalled();
       expect(mockService.updateMany).not.toHaveBeenCalled();
+      expect(mockBudget.updateMany).not.toHaveBeenCalled();
     });
   });
 });

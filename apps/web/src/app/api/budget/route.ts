@@ -88,7 +88,15 @@ export async function GET(request: NextRequest) {
       },
     });
     const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId: summaryAddressId });
-    const monthlyBudgetLimit = budgets[0]?.plannedExpenses || 0;
+    // Match the limit to the same scope+month the projection is computed for.
+    // budgets[0] is merely the most-recently-saved row, which can belong to a
+    // different month/scope than the summary when no month filter is supplied.
+    const summaryScopeKey = budgetScopeKey(summaryAddressId);
+    const summaryBudget = budgets.find(
+      (b: any) =>
+        b.scopeKey === summaryScopeKey && new Date(b.month).getTime() === summaryMonth.getTime(),
+    );
+    const monthlyBudgetLimit = (summaryBudget ?? budgets[0])?.plannedExpenses || 0;
 
     return NextResponse.json({
       budgets,
@@ -136,7 +144,9 @@ export async function POST(request: NextRequest) {
 
     if (addressId) {
       const address = await prisma.address.findUnique({ where: { id: addressId } });
-      if (!address) {
+      // Treat a soft-deleted address as gone so a budget can't be re-attached
+      // to an address the user already removed.
+      if (!address || address.deletedAt) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
       if (address.userId !== userId) {
@@ -156,7 +166,9 @@ export async function POST(request: NextRequest) {
       addressId,
       scopeKey,
       month: budgetMonth,
-      year: validated.year,
+      // Derive the year from the normalized month so the two can't desync; the
+      // client-supplied year is otherwise free to disagree with the month.
+      year: budgetMonth.getUTCFullYear(),
       plannedIncome: validated.plannedIncome ?? null,
       actualIncome: validated.actualIncome ?? null,
       plannedExpenses: validated.plannedExpenses ?? null,

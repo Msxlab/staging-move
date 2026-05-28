@@ -182,6 +182,56 @@ describe("budget route", () => {
     }));
   });
 
+  it("derives the stored year from the month, ignoring a mismatched client year", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: "2026-04-01",
+          year: 2030,
+          plannedExpenses: 300,
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.budget.year).toBe(2026);
+    expect(budgetMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ year: 2026 }),
+        update: expect.objectContaining({ year: 2026 }),
+      }),
+    );
+  });
+
+  it("treats a soft-deleted address as not found", async () => {
+    (prisma.address.findUnique as Mock).mockResolvedValue({
+      id: "addr-1",
+      userId: "user-1",
+      deletedAt: new Date("2026-04-01T00:00:00.000Z"),
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "addr-1",
+          month: "2026-04-01",
+          year: 2026,
+          plannedExpenses: 300,
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body.error).toBe("Address not found");
+    expect(budgetMock.upsert).not.toHaveBeenCalled();
+  });
+
   it("uses address-specific scope keys separately from global budgets", async () => {
     (prisma.address.findUnique as Mock).mockResolvedValue({ id: "addr-1", userId: "user-1" });
 

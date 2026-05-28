@@ -116,15 +116,20 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
-    // Cascade the soft-delete to the address's active services in one
-    // transaction. Otherwise they keep deletedAt=null/isActive=true and
-    // surface in /api/services and the budget totals while pointing at an
-    // address the user just removed.
+    // Cascade the soft-delete to the address's services AND budgets in one
+    // transaction. The schema's onDelete: SetNull never fires for our soft
+    // deletes, so without this the services keep isActive=true and the budgets
+    // keep deletedAt=null, both surfacing in their list endpoints while
+    // pointing at an address the user just removed.
     const now = new Date();
-    const [servicesResult] = await prisma.$transaction([
+    const [servicesResult, budgetsResult] = await prisma.$transaction([
       prisma.service.updateMany({
         where: { addressId: id, userId, deletedAt: null },
         data: { isActive: false, deactivatedAt: now, deletedAt: now },
+      }),
+      prisma.budget.updateMany({
+        where: { addressId: id, userId, deletedAt: null },
+        data: { deletedAt: now },
       }),
       prisma.address.update({ where: { id }, data: { deletedAt: now } }),
     ]);
@@ -135,7 +140,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       action: "DELETE",
       entityType: "Address",
       entityId: id,
-      changes: { nickname: existing.nickname, servicesDeactivated: servicesResult.count },
+      changes: {
+        nickname: existing.nickname,
+        servicesDeactivated: servicesResult.count,
+        budgetsDeleted: budgetsResult.count,
+      },
       ...meta,
     });
 
