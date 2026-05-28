@@ -7,12 +7,26 @@ vi.mock("@/lib/db", () => ({
       update: vi.fn(),
       updateMany: vi.fn(),
     },
+    service: {
+      updateMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }));
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
+
+// Partial mock: keep the real apiGateErrorResponse (the GET 401 path relies on
+// it) and only stub requireAppMutationUser, which the DELETE/PATCH handlers use.
+vi.mock("@/lib/api-gates", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api-gates")>("@/lib/api-gates");
+  return {
+    ...actual,
+    requireAppMutationUser: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/audit", () => ({
   createAuditLog: vi.fn(),
@@ -37,12 +51,19 @@ vi.mock("@/lib/service-sensitive-fields", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { GET } from "./route";
+import { requireAppMutationUser } from "@/lib/api-gates";
+import { createAuditLog } from "@/lib/audit";
+import { DELETE, GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockRequireAppMutationUser = requireAppMutationUser as unknown as Mock;
+const mockCreateAuditLog = createAuditLog as unknown as Mock;
 const mockAddress = prisma.address as unknown as {
   findUnique: Mock;
+  update: Mock;
 };
+const mockService = (prisma as unknown as { service: { updateMany: Mock } }).service;
+const mockTransaction = (prisma as unknown as { $transaction: Mock }).$transaction;
 
 function addressParams(id = "address-1") {
   return { params: Promise.resolve({ id }) };
@@ -133,6 +154,83 @@ describe("address detail route", () => {
     expect(body).toMatchObject({
       code: "UNAUTHORIZED",
       error: "Please sign in again.",
+    });
+  });
+
+  describe("DELETE", () => {
+    beforeEach(() => {
+      mockRequireAppMutationUser.mockResolvedValue("user-1");
+      mockAddress.findUnique.mockResolvedValue({
+        id: "address-1",
+        userId: "user-1",
+        deletedAt: null,
+        nickname: "Home",
+      });
+      // The handler builds the transaction array by *calling* these first, so
+      // give them sentinel return values we can assert were passed to $transaction.
+      mockService.updateMany.mockReturnValue("service-updateMany-op");
+      mockAddress.update.mockReturnValue("address-update-op");
+      mockTransaction.mockResolvedValue([{ count: 2 }, { id: "address-1" }]);
+    });
+
+    it("soft-deletes the address and cascades to its active services in one transaction", async () => {
+      const response = await DELETE(
+        new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
+        addressParams() as any,
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({ success: true });
+
+      // Only the address's own still-active services are cascaded.
+      expect(mockService.updateMany).toHaveBeenCalledWith({
+        where: { addressId: "address-1", userId: "user-1", deletedAt: null },
+        data: { isActive: false, deactivatedAt: expect.any(Date), deletedAt: expect.any(Date) },
+      });
+      expect(mockAddress.update).toHaveBeenCalledWith({
+        where: { id: "address-1" },
+        data: { deletedAt: expect.any(Date) },
+      });
+      // Both writes go through a single $transaction so a partial delete is impossible.
+      expect(mockTransaction).toHaveBeenCalledWith(["service-updateMany-op", "address-update-op"]);
+    });
+
+    it("records the number of cascaded services in the audit log", async () => {
+      await DELETE(
+        new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
+        addressParams() as any,
+      );
+
+      expect(mockCreateAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-1",
+          action: "DELETE",
+          entityType: "Address",
+          entityId: "address-1",
+          changes: expect.objectContaining({ servicesDeactivated: 2 }),
+        }),
+      );
+    });
+
+    it("does not delete another user's address", async () => {
+      mockAddress.findUnique.mockResolvedValueOnce({
+        id: "address-1",
+        userId: "user-2",
+        deletedAt: null,
+        nickname: "Foreign",
+      });
+
+      const response = await DELETE(
+        new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
+        addressParams() as any,
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(body.error).toBe("Address not found");
+      expect(mockTransaction).not.toHaveBeenCalled();
+      expect(mockService.updateMany).not.toHaveBeenCalled();
     });
   });
 });

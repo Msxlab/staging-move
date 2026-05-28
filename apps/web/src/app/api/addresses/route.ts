@@ -76,21 +76,23 @@ export async function POST(request: NextRequest) {
       formattedAddress: validated.formattedAddress ? encrypt(validated.formattedAddress) : validated.formattedAddress,
     };
 
-    // If setting as primary, unset all other primary addresses for this user
-    if (validated.isPrimary) {
-      await prisma.address.updateMany({
-        where: { userId, isPrimary: true },
-        data: { isPrimary: false },
+    // Unset other primaries and create in one transaction so a failed create
+    // can never leave the user with zero primary addresses.
+    const address = await prisma.$transaction(async (tx) => {
+      if (validated.isPrimary) {
+        await tx.address.updateMany({
+          where: { userId, isPrimary: true },
+          data: { isPrimary: false },
+        });
+      }
+      return tx.address.create({
+        data: {
+          ...encryptedData,
+          userId,
+          startDate: new Date(validated.startDate),
+          endDate: validated.endDate ? new Date(validated.endDate) : undefined,
+        },
       });
-    }
-
-    const address = await prisma.address.create({
-      data: {
-        ...encryptedData,
-        userId,
-        startDate: new Date(validated.startDate),
-        endDate: validated.endDate ? new Date(validated.endDate) : undefined,
-      },
     });
 
     return NextResponse.json({

@@ -16,8 +16,11 @@ const PREFIX = "enc_v1:";
 
 function getKey(): Buffer | null {
   const hex = process.env.FIELD_ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) return null;
-  return Buffer.from(hex, "hex");
+  // Reject non-hex keys here, not just wrong-length ones: Buffer.from(badHex,
+  // "hex") silently drops invalid chars and yields a short key, which would
+  // otherwise blow up deep inside createCipheriv per request.
+  if (!validateKeyFormat(hex ?? "")) return null;
+  return Buffer.from(hex as string, "hex");
 }
 
 /**
