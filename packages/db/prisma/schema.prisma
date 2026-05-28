@@ -280,6 +280,12 @@ model Subscription {
   premiumGrantedAt DateTime?
   premiumNote      String?   @db.VarChar(500)
 
+  // Stripe delivers webhook events at-least-once and out-of-order. This is the
+  // `event.created` timestamp of the most recent Stripe event we applied; an
+  // incoming event older than this is stale (a late retry of a superseded
+  // state) and must be skipped so it can't overwrite newer billing state.
+  lastStripeEventAt DateTime?
+
   version Int @default(1)
 
   createdAt DateTime @default(now())

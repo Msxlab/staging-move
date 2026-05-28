@@ -154,6 +154,11 @@ function chargeRefundedEvent(overrides: Record<string, unknown> = {}) {
         id: "ch_1",
         customer: "cus_1",
         invoice: "in_1",
+        // A full refund: Stripe sets `refunded: true` only when the charge
+        // is entirely refunded. Access is revoked solely on full refunds.
+        refunded: true,
+        amount: 3999,
+        amount_refunded: 3999,
         metadata: { userId: "user_1" },
       },
     },
@@ -320,9 +325,37 @@ describe("Stripe webhook idempotency and livemode", () => {
         stripeSubscriptionId: "sub_trial_1",
         userId: "user_1",
         provider: { not: "ADMIN" },
+        OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
       },
-      data: expect.objectContaining({ status: "REFUNDED" }),
+      data: expect.objectContaining({ status: "REFUNDED", lastStripeEventAt: expect.any(Date) }),
     });
+  });
+
+  it("does not revoke access on a partial charge.refunded", async () => {
+    // charge.refunded also fires for partial refunds (e.g. a goodwill credit).
+    // Revoking a still-paid user would be a regression — skip anything but a
+    // full refund.
+    mocks.constructEvent.mockReturnValue(
+      chargeRefundedEvent({
+        data: {
+          object: {
+            id: "ch_1",
+            customer: "cus_1",
+            invoice: "in_1",
+            refunded: false,
+            amount: 3999,
+            amount_refunded: 1000,
+            metadata: { userId: "user_1" },
+          },
+        },
+      }),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.invoicesRetrieve).not.toHaveBeenCalled();
+    expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
   });
 
   it("updates local state to TRIALING for completed subscription checkout", async () => {
@@ -335,7 +368,10 @@ describe("Stripe webhook idempotency and livemode", () => {
     expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_trial_1");
     expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: "user_1" },
+        where: expect.objectContaining({
+          userId: "user_1",
+          OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+        }),
         data: expect.objectContaining({
           status: "TRIALING",
           provider: "STRIPE",
@@ -346,6 +382,7 @@ describe("Stripe webhook idempotency and livemode", () => {
           stripeSubscriptionId: "sub_trial_1",
           trialEndsAt: expect.any(Date),
           firstChargeAt: expect.any(Date),
+          lastStripeEventAt: expect.any(Date),
         }),
       }),
     );
@@ -364,7 +401,10 @@ describe("Stripe webhook idempotency and livemode", () => {
     expect(response.status).toBe(200);
     expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: "user_1" },
+        where: expect.objectContaining({
+          userId: "user_1",
+          OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+        }),
         data: expect.objectContaining({
           status: "TRIALING",
           accessType: "FREE_TRIAL",
@@ -494,7 +534,10 @@ describe("Stripe webhook idempotency and livemode", () => {
       expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_active_1");
       expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: "user_1" },
+          where: expect.objectContaining({
+            userId: "user_1",
+            OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+          }),
           data: expect.objectContaining({
             status: "ACTIVE",
             accessType: "PAID",

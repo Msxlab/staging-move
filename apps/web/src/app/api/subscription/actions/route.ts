@@ -14,6 +14,11 @@ import {
 } from "@/lib/db-schema-compat";
 import { captureMessage } from "@/lib/sentry";
 import {
+  formatPlanLabel,
+  formatDateForEmail,
+  fireAndLogEmail as fireAndLogBillingEmail,
+} from "@/lib/billing-email-utils";
+import {
   sendSubscriptionCanceledEmail,
   sendSubscriptionResumedEmail,
 } from "@/lib/email-service";
@@ -42,24 +47,8 @@ function normalizeCancelComment(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
-  if (!date) return null;
-  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  return date.toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatPlanLabel(plan: string | null | undefined) {
-  return (plan || "subscription")
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 function fireAndLogEmail(promise: Promise<unknown>, context: string) {
-  void promise.catch((err) => {
-    console.error(`[SUBSCRIPTION_ACTION] Email dispatch failed (${context}):`, err);
-    captureMessage(`[SUBSCRIPTION_ACTION] Email dispatch failed (${context})`, "warning");
-  });
+  fireAndLogBillingEmail(promise, context, { logPrefix: "[SUBSCRIPTION_ACTION]", captureWarning: true });
 }
 
 export async function POST(request: NextRequest) {

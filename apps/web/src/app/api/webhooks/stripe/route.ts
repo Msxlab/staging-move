@@ -6,6 +6,8 @@ import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/li
 import { captureException, captureMessage } from "@/lib/sentry";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { isMissingDbColumnError, warnSchemaCompatibilityFallback } from "@/lib/db-schema-compat";
+import { formatPlanLabel, fireAndLogEmail as fireAndLogBillingEmail } from "@/lib/billing-email-utils";
 import {
   sendPaymentFailedEmail,
   sendSubscriptionActivatedEmail,
@@ -64,13 +66,6 @@ function formatCurrency(amountMinor: number | null | undefined, currency: string
 function safeUserHint(userId: string | null | undefined) {
   if (!userId) return null;
   return userId.length > 8 ? `${userId.slice(0, 8)}...` : userId;
-}
-
-function formatPlanLabel(plan: string | null | undefined) {
-  return (plan || "subscription")
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function stripeObjectId(value: unknown): string | null {
@@ -159,6 +154,7 @@ type LocalSubscriptionForWebhook = {
   stripeSubscriptionScheduleId: string | null;
   stripePriceId: string | null;
   pendingBillingInterval: string | null;
+  lastStripeEventAt?: Date | string | null;
   user?: { id: string; deletedAt: Date | string | null } | null;
 };
 
@@ -173,24 +169,38 @@ async function findLocalSubscriptionForWebhook(input: {
   if (input.stripeSubscriptionId) OR.push({ stripeSubscriptionId: input.stripeSubscriptionId });
   if (OR.length === 0) return null;
 
-  return prisma.subscription.findFirst({
-    where: { OR },
-    select: {
-      id: true,
-      userId: true,
-      status: true,
-      accessType: true,
-      provider: true,
-      plan: true,
-      billingInterval: true,
-      stripeCustomerId: true,
-      stripeSubscriptionId: true,
-      stripeSubscriptionScheduleId: true,
-      stripePriceId: true,
-      pendingBillingInterval: true,
-      user: { select: { id: true, deletedAt: true } },
-    },
-  }) as Promise<LocalSubscriptionForWebhook | null>;
+  const baseSelect = {
+    id: true,
+    userId: true,
+    status: true,
+    accessType: true,
+    provider: true,
+    plan: true,
+    billingInterval: true,
+    stripeCustomerId: true,
+    stripeSubscriptionId: true,
+    stripeSubscriptionScheduleId: true,
+    stripePriceId: true,
+    pendingBillingInterval: true,
+    user: { select: { id: true, deletedAt: true } },
+  } as const;
+
+  // Select lastStripeEventAt for out-of-order protection, but fall back to the
+  // base select if a rolling deploy is still running against the pre-migration
+  // schema — otherwise every webhook sync would 500 until the column lands.
+  try {
+    return (await prisma.subscription.findFirst({
+      where: { OR },
+      select: { ...baseSelect, lastStripeEventAt: true },
+    })) as LocalSubscriptionForWebhook | null;
+  } catch (error) {
+    if (!isMissingDbColumnError(error)) throw error;
+    warnSchemaCompatibilityFallback("webhook:find-subscription-last-event", error);
+    return (await prisma.subscription.findFirst({
+      where: { OR },
+      select: baseSelect,
+    })) as LocalSubscriptionForWebhook | null;
+  }
 }
 
 async function retrieveStripeSubscription(
@@ -212,8 +222,48 @@ function stripeDate(unixSeconds: number | null | undefined) {
   return unixSeconds ? new Date(unixSeconds * 1000) : null;
 }
 
+function toEventTime(value: Date | string | null | undefined): number | null {
+  if (!value) return null;
+  const time = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+// Applies a webhook write with out-of-order protection: only rows whose
+// lastStripeEventAt is older-or-equal to this event (or null) are written, and
+// the column is advanced to the event timestamp. `lte` (not `lt`) keeps the
+// existing last-writer-wins behavior for two events sharing the same
+// second-granularity `event.created`. During a rolling deploy the column may
+// not exist yet — fall back to the unguarded write so webhooks keep flowing
+// until the migration lands.
+async function applyStripeWebhookUpdate(input: {
+  scope: string;
+  where: Record<string, unknown>;
+  data: Record<string, unknown>;
+  eventDate: Date;
+}): Promise<{ count: number; guarded: boolean }> {
+  try {
+    const result = await prisma.subscription.updateMany({
+      where: {
+        ...input.where,
+        OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: input.eventDate } }],
+      },
+      data: { ...input.data, lastStripeEventAt: input.eventDate },
+    });
+    return { count: result.count, guarded: true };
+  } catch (error) {
+    if (!isMissingDbColumnError(error)) throw error;
+    warnSchemaCompatibilityFallback(input.scope, error);
+    const result = await prisma.subscription.updateMany({
+      where: input.where,
+      data: input.data,
+    });
+    return { count: result.count, guarded: false };
+  }
+}
+
 async function syncLocalSubscriptionFromStripe(input: {
   eventType: string;
+  eventDate: Date;
   userId?: string | null;
   metadataUserIdExists: boolean;
   stripeCustomerId: string | null;
@@ -256,7 +306,6 @@ async function syncLocalSubscriptionFromStripe(input: {
     accessType: stripeStatus === "trialing" || newStatus === "TRIAL_CANCELED" ? "FREE_TRIAL" : "PAID",
     billingInterval: derivedBillingInterval || input.billingInterval || "YEAR",
     trialEndsAt: trialEnd,
-    firstChargeAt: trialEnd,
     autoRenew: !input.stripeSubscription.cancel_at_period_end,
     cancelAtPeriodEnd: Boolean(input.stripeSubscription.cancel_at_period_end),
     stripeCustomerId: input.stripeCustomerId,
@@ -270,18 +319,50 @@ async function syncLocalSubscriptionFromStripe(input: {
     plan: input.plan || "INDIVIDUAL",
     version: { increment: 1 },
   };
+  // firstChargeAt marks when a trial converts to a paid charge. Only write it
+  // while a trial end is known; a later non-trial sync (trial_end === null)
+  // must not null out the timestamp the checkout flow already recorded.
+  if (trialEnd) {
+    updateData.firstChargeAt = trialEnd;
+  }
   if (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval) {
     updateData.pendingBillingInterval = null;
     updateData.pendingBillingIntervalEffectiveAt = null;
     updateData.stripeSubscriptionScheduleId = null;
   }
 
-  const result = await prisma.subscription.updateMany({
+  // Out-of-order protection: if we've already applied a strictly newer Stripe
+  // event to this row, this delivery is a stale retry of superseded state —
+  // skip it so it can't roll the subscription back to an older status.
+  const storedEventTime = toEventTime(local.lastStripeEventAt);
+  if (storedEventTime !== null && input.eventDate.getTime() < storedEventTime) {
+    console.info("[WEBHOOK] Skipping stale Stripe event (older than last applied)", {
+      eventType: input.eventType,
+      userHint: safeUserHint(local.userId),
+      eventDate: input.eventDate.toISOString(),
+      lastAppliedAt: new Date(storedEventTime).toISOString(),
+    });
+    return { skipped: true as const, local, newStatus, priceId, trialEnd, currentPeriodEnd };
+  }
+
+  const { count, guarded } = await applyStripeWebhookUpdate({
+    scope: "webhook:sync-subscription",
     where: { userId: local.userId },
     data: updateData,
+    eventDate: input.eventDate,
   });
 
-  if (!result.count) {
+  if (!count) {
+    if (guarded) {
+      // A concurrently-processed newer event already advanced this row past
+      // our timestamp (or the row was removed between read and write). Either
+      // way a retry can't usefully re-apply older state — treat as a no-op.
+      console.info("[WEBHOOK] Stripe sync superseded by newer concurrent event", {
+        eventType: input.eventType,
+        userHint: safeUserHint(local.userId),
+      });
+      return { skipped: true as const, local, newStatus, priceId, trialEnd, currentPeriodEnd };
+    }
     retryableWebhookError(input.eventType, "Local subscription update matched no rows", {
       userHint: safeUserHint(local.userId),
       metadataUserIdExists: input.metadataUserIdExists,
@@ -302,7 +383,7 @@ async function syncLocalSubscriptionFromStripe(input: {
     newStatus,
   });
 
-  return { local, newStatus, priceId, trialEnd, currentPeriodEnd };
+  return { skipped: false as const, local, newStatus, priceId, trialEnd, currentPeriodEnd };
 }
 
 
@@ -310,10 +391,7 @@ async function syncLocalSubscriptionFromStripe(input: {
 // Stripe retries the entire webhook on non-2xx, so we explicitly swallow
 // here instead of bubbling and forcing a redelivery for an unrelated reason.
 function fireAndLogEmail(promise: Promise<unknown>, context: string): void {
-  void promise.catch((err) => {
-    console.error(`[WEBHOOK] Email dispatch failed (${context}):`, err);
-    captureMessage(`[WEBHOOK] Email dispatch failed (${context})`, "warning");
-  });
+  fireAndLogBillingEmail(promise, context, { logPrefix: "[WEBHOOK]", captureWarning: true });
 }
 
 function stripeLivemodeMismatchResponse(event: Stripe.Event) {
@@ -455,6 +533,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
+    // Wall-clock time this event was created, used for out-of-order protection
+    // (see applyStripeWebhookUpdate / syncLocalSubscriptionFromStripe).
+    const eventDate = new Date(event.created * 1000);
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -493,6 +575,7 @@ export async function POST(request: NextRequest) {
         const plan = (session.metadata?.plan as string) || mappedPrice?.plan || "INDIVIDUAL";
         await syncLocalSubscriptionFromStripe({
           eventType: event.type,
+          eventDate,
           userId,
           metadataUserIdExists,
           stripeCustomerId,
@@ -574,6 +657,7 @@ export async function POST(request: NextRequest) {
 
         const sync = await syncLocalSubscriptionFromStripe({
           eventType: event.type,
+          eventDate,
           userId,
           metadataUserIdExists,
           stripeCustomerId,
@@ -583,7 +667,7 @@ export async function POST(request: NextRequest) {
           billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(subscription.metadata),
         });
 
-        if (event.type === "customer.subscription.updated") {
+        if (event.type === "customer.subscription.updated" && !sync.skipped) {
           const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
           if (recipient) {
             const oldStatus = sync.local.status || null;
@@ -676,7 +760,9 @@ export async function POST(request: NextRequest) {
         // does not get every row CANCELED at once. Also skip rows that
         // have been switched to a manual admin grant — those should not
         // be flipped to CANCELED by a stale Stripe deletion.
-        await prisma.subscription.updateMany({
+        const deleteResult = await applyStripeWebhookUpdate({
+          scope: "webhook:subscription-deleted",
+          eventDate,
           where: {
             stripeCustomerId,
             stripeSubscriptionId: subscription.id,
@@ -706,7 +792,12 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+        // Skip the cancellation email when nothing was written — either a
+        // newer event already superseded this deletion, or there was no
+        // matching row to cancel.
+        const recipient = deleteResult.count > 0
+          ? await lookupUserByStripeCustomer(stripeCustomerId)
+          : null;
         if (recipient) {
           fireAndLogEmail(
             sendSubscriptionCanceledEmail({
@@ -752,6 +843,7 @@ export async function POST(request: NextRequest) {
 
           await syncLocalSubscriptionFromStripe({
             eventType: event.type,
+            eventDate,
             userId: metadataUserId(stripeSubscription.metadata),
             metadataUserIdExists: Boolean(metadataUserId(stripeSubscription.metadata)),
             stripeCustomerId: subscriptionCustomerId,
@@ -796,7 +888,9 @@ export async function POST(request: NextRequest) {
           updateData.billingProductId = stripePriceId;
         }
 
-        await prisma.subscription.updateMany({
+        await applyStripeWebhookUpdate({
+          scope: "webhook:invoice-paid-customer",
+          eventDate,
           where: {
             stripeCustomerId,
             // Defense against stale stripeCustomerId on a row that has
@@ -849,14 +943,20 @@ export async function POST(request: NextRequest) {
           updateData.stripeSubscriptionId = stripeSubscriptionId;
         }
 
-        await prisma.subscription.updateMany({
+        const paymentFailedResult = await applyStripeWebhookUpdate({
+          scope: "webhook:payment-failed",
+          eventDate,
           where: stripeSubscriptionId
             ? { stripeCustomerId, stripeSubscriptionId, provider: { not: "ADMIN" } }
             : { stripeCustomerId, provider: { not: "ADMIN" } },
           data: updateData,
         });
 
-        const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+        // Don't dun the user when a newer event already superseded this
+        // failure (or no row matched) — the PAST_DUE state wasn't applied.
+        const recipient = paymentFailedResult.count > 0
+          ? await lookupUserByStripeCustomer(stripeCustomerId)
+          : null;
         if (recipient) {
           fireAndLogEmail(
             sendPaymentFailedEmail({
@@ -930,7 +1030,17 @@ export async function POST(request: NextRequest) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const stripeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
-        if (stripeCustomerId) {
+        // charge.refunded fires on partial refunds too (e.g. a goodwill
+        // credit on an annual plan). `charge.refunded` is true only when the
+        // charge is *fully* refunded; revoking access on a partial refund
+        // would lock out a still-paid user. Skip anything but a full refund.
+        const fullyRefunded =
+          charge.refunded === true ||
+          (typeof charge.amount === "number" &&
+            typeof charge.amount_refunded === "number" &&
+            charge.amount > 0 &&
+            charge.amount_refunded >= charge.amount);
+        if (stripeCustomerId && fullyRefunded) {
           const metadataUserId = typeof charge.metadata?.userId === "string" ? charge.metadata.userId : null;
           // Resolve the underlying subscription via the charge's invoice when
           // possible — refunding one charge should not REFUND every sub on
@@ -951,7 +1061,9 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          await prisma.subscription.updateMany({
+          await applyStripeWebhookUpdate({
+            scope: "webhook:charge-refunded",
+            eventDate,
             where: stripeSubscriptionId
               ? { stripeCustomerId, stripeSubscriptionId, ...(metadataUserId ? { userId: metadataUserId } : {}), provider: { not: "ADMIN" } }
               : { stripeCustomerId, ...(metadataUserId ? { userId: metadataUserId } : {}), provider: { not: "ADMIN" } },
@@ -995,7 +1107,13 @@ function mapStripeStatus(stripeStatus: string): string {
     unpaid: "UNPAID",
     incomplete: "INCOMPLETE",
     incomplete_expired: "EXPIRED",
-    paused: "PAST_DUE",
+    // Stripe `paused` (pause_collection) is an intentional, resumable pause —
+    // not a dunning/payment failure. We have no PAUSED status, and either way
+    // a paused subscription should not grant premium, so map it to CANCELED:
+    // access ends cleanly without surfacing the "update your payment method"
+    // dunning UX that PAST_DUE drives. A later resume sends customer.subscription.updated
+    // with status=active, which re-activates the row.
+    paused: "CANCELED",
   };
   return map[stripeStatus] || "UNKNOWN";
 }

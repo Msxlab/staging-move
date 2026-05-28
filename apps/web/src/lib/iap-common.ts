@@ -26,6 +26,11 @@ import {
   sendSubscriptionCanceledEmail,
 } from "@/lib/email-service";
 import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
+import {
+  formatPlanLabel,
+  formatDateForEmail,
+  fireAndLogEmail as fireAndLogBillingEmail,
+} from "@/lib/billing-email-utils";
 import { isBillingProductionLike } from "@/lib/billing-config";
 import {
   isMissingDbColumnError,
@@ -129,23 +134,8 @@ async function findSubscriptionByPurchaseTokenIdentifiers(
   });
 }
 
-function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
-  if (!date) return null;
-  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  return date.toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatPlanLabel(plan: BillingPlan | string | null | undefined) {
-  return (plan || "subscription")
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 function fireAndLogIapEmail(promise: Promise<unknown>, context: string) {
-  void promise.catch((err) => {
-    console.error(`[IAP] Email dispatch failed (${context}):`, err);
-  });
+  fireAndLogBillingEmail(promise, context, { logPrefix: "[IAP]" });
 }
 
 async function sendIapLifecycleEmail(opts: {
