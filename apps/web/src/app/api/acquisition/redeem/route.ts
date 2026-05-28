@@ -67,11 +67,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Idempotency for the (user, campaign) pair: a duplicate POST from a
-    // double-click or retry must not create a second redemption row or
-    // overwrite the user's existing subscription. Schema doesn't have a
-    // unique index on (userId, campaignId) yet — we check at the start
-    // and again inside the transaction below.
+    // Best-effort idempotency for the (user, campaign) pair: a duplicate POST
+    // from a double-click or retry should not create a second redemption row.
+    // This is a check-then-create guard only — the schema has no unique index
+    // on (userId, campaignId) yet, so two truly concurrent requests can still
+    // both pass here. The only DB-enforced guard inside the transaction below
+    // is the campaign-level redemption cap; full per-user idempotency awaits a
+    // @@unique([userId, campaignId]) migration.
     if (campaign.id) {
       const existingForCampaign = await (prisma as any).acquisitionRedemption.findFirst({
         where: { userId, campaignId: campaign.id },
