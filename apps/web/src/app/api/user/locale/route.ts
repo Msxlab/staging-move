@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import {
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
@@ -32,6 +33,16 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // IP-keyed so it also covers the anonymous cookie-only path; generous
+  // enough that a real user changing language is never affected.
+  const rl = await rateLimit(getRateLimitKey(request, "user:locale"), {
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success || !isLocale(parsed.data.locale)) {
     return NextResponse.json(
