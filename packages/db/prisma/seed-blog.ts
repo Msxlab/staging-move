@@ -1,7 +1,7 @@
 /**
  * Blog example posts.
  *
- * Three evergreen, AI-friendly articles seeded so a fresh database
+ * A set of evergreen, AI-friendly articles seeded so a fresh database
  * shows a populated /blog instead of an empty shelf. Each post has:
  *   - hand-written Tiptap JSON (matches the editor's schema)
  *   - parallel sanitized HTML (matches what the public renderer emits)
@@ -22,9 +22,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 interface Section {
-  type: "h2" | "h3" | "p" | "ul" | "ol" | "blockquote";
+  type: "h2" | "h3" | "p" | "ul" | "ol" | "blockquote" | "img";
   text?: string;
   items?: string[];
+  /** For `img` sections: a site-relative path under /public, e.g. "/blog/foo.svg". */
+  src?: string;
+  /** For `img` sections: alt text, also rendered as a <figcaption>. */
+  caption?: string;
 }
 
 type CategorySlug = "moving" | "money" | "logistics" | "government" | "tools";
@@ -41,7 +45,7 @@ interface SamplePost {
   sections: Section[];
 }
 
-// --- Three sample posts ---------------------------------------------------
+// --- Sample posts ---------------------------------------------------------
 
 const POSTS: SamplePost[] = [
   {
@@ -876,6 +880,629 @@ const POSTS: SamplePost[] = [
       },
     ],
   },
+  {
+    slug: "irs-address-change-form-8822",
+    title: "Telling the IRS you moved: Form 8822 and the address the agency actually uses",
+    excerpt:
+      "The IRS does not learn your new address from USPS forwarding, and a refund check sent to the wrong place can take months to reissue. Here are the four ways the IRS updates your address, which one to use, and when each takes effect.",
+    seoTitle: "IRS address change after moving — Form 8822 explained",
+    seoDescription:
+      "The IRS doesn't pull your new address from USPS forwarding. Here's how to update it — Form 8822, your next return, and what happens to a refund or notice if you don't.",
+    categorySlug: "government",
+    categoryName: "Government",
+    readingMinutes: 6,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/irs-form-8822.svg",
+        caption: "Updating your address with the IRS after a move.",
+      },
+      {
+        type: "p",
+        text: "Of every account that needs your new address, the IRS is the one people most reliably forget — partly because you only hear from them once or twice a year, and partly because nobody tells you the agency keeps its own address record that USPS forwarding does not touch.",
+      },
+      {
+        type: "p",
+        text: "That gap is quiet until it isn't. A paper refund check, a notice about your return, or a letter that starts a 30-day clock all go to the address the IRS has on file. If that address is two moves stale, you may not see the letter until the deadline inside it has passed.",
+      },
+      { type: "h2", text: "The four ways the IRS updates your address" },
+      {
+        type: "p",
+        text: "There is no single button. The IRS recognizes an address change through any of these, and they take effect at different speeds:",
+      },
+      {
+        type: "ol",
+        items: [
+          "Your tax return — filing with the new address updates it automatically. This is the simplest path if you're moving between filing seasons and aren't expecting mid-year correspondence.",
+          "Form 8822 (Change of Address) — the dedicated form. Use it when you've moved after filing and want the record current before next season, especially if a refund or notice is pending.",
+          "A written, signed statement — mailed to the IRS center where you file, including your full name, old and new addresses, and SSN. Functionally the same as 8822, just less structured.",
+          "Calling or in person — the IRS can update it after verifying your identity. Slower and only worth it if you also have another reason to contact them.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "Allow several weeks for any address change to fully process. It is not instant — file it well before you expect a refund check or a notice, not the week you need it.",
+      },
+      { type: "h2", text: "If you're married or moved separately" },
+      {
+        type: "p",
+        text: "If you filed jointly and now live apart, each spouse should notify the IRS of their own new address — one 8822 does not cover two destinations. If only one of you moved, that person files separately so the other's record stays intact.",
+      },
+      { type: "h2", text: "State tax agencies are a separate notification" },
+      {
+        type: "p",
+        text: "Updating the federal IRS does nothing for your state department of revenue. If you moved within a state, update the state agency too. If you moved across state lines, you may have a part-year return to file in both states next season — the address on file is what determines where notices land, so update both.",
+      },
+      { type: "h2", text: "The clean version" },
+      {
+        type: "p",
+        text: "If you moved after filing this year, send Form 8822 now and don't wait for next April to fix it through the return. If you moved before filing, just use the new address on the return and you're done. Either way, set a reminder to check that any expected refund or notice actually arrives — the IRS letter you never received is the one that costs you. Keeping the date you filed each address change in your move record turns a vague worry into a checkable fact.",
+      },
+    ],
+  },
+  {
+    slug: "avoid-internet-gap-when-moving",
+    title: "How to move without an internet gap: lead times, self-install, and the overlap week",
+    excerpt:
+      "Internet has the longest lead time of anything you set up at a new home — and the one service where calling a week early isn't early enough. Here's how to schedule a transfer or a fresh install so you're online on day one.",
+    seoTitle: "Avoid an internet gap when moving — transfer vs new install",
+    seoDescription:
+      "Internet has the longest lead time of any utility. Here's how to schedule the transfer or new install so you're online on move-in day — and the overlap trick that prevents a dead week.",
+    categorySlug: "logistics",
+    categoryName: "Logistics",
+    readingMinutes: 6,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/internet-gap-when-moving.svg",
+        caption: "Setting up internet at a new home without a coverage gap.",
+      },
+      {
+        type: "p",
+        text: "Power gets turned on with a phone call. Water is usually a same-week thing through the city. Internet is the outlier — it can need a technician, a line pulled to the unit, and an appointment slot that books out two to three weeks. It is the single most common reason a new home has everything working except the one thing you need to work from it.",
+      },
+      { type: "h2", text: "First question: transfer or new account?" },
+      {
+        type: "p",
+        text: "The answer depends entirely on whether your current provider serves the new address.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Same provider serves both addresses — you transfer service. Keep your account, often keep your plan price, and the disconnect-at-old / connect-at-new dates are scheduled together. This is the smoothest path.",
+          "Different providers — you cancel one and open a new account at the other. Now you're a new customer with a new install, a possible credit check, and equipment to return on the old end.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Check coverage at the exact new address before you assume anything — service can change street by street, and the plan available two miles away may not exist at the new place.",
+      },
+      { type: "h2", text: "The lead-time ladder" },
+      {
+        type: "ol",
+        items: [
+          "Three weeks out: confirm which providers serve the new address and whether you're transferring or starting fresh. Book the install slot now — the earliest slots go first.",
+          "Two weeks out: if a technician visit is required, lock the date for move-in day or the day before, not after.",
+          "Move week: confirm the appointment by phone. Self-install kits ship to the new address, so make sure someone can receive the box.",
+          "Old address: schedule the disconnect for a day or two after you leave, not before — a too-early cutoff strands you during the last packing days.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "The overlap week is worth paying for. A few days of double billing on internet is cheaper than a week of working from a coffee shop because the disconnect fired before the connect.",
+      },
+      { type: "h2", text: "The self-install trap and the fallback" },
+      {
+        type: "p",
+        text: "Self-install kits are convenient until the line into the unit was never activated, in which case the modem blinks and you still need a technician — now on a next-available slot. If you're cutting it close, ask the provider directly whether the address has a live, provisioned line. If the answer is unclear, book a technician visit anyway and cancel it if the self-install works.",
+      },
+      {
+        type: "p",
+        text: "Have a fallback for day one regardless: a phone hotspot plan or a known nearby workspace. The most reliable internet on move-in day is the one you already had in your pocket.",
+      },
+      { type: "h2", text: "Don't forget the disconnect" },
+      {
+        type: "p",
+        text: "The new connection gets all the attention; the old one quietly keeps billing. Return leased equipment (modem, router, cable boxes) and get a receipt — unreturned-equipment fees are a common surprise charge weeks after a move. Note the cancellation confirmation number alongside your other move records so a wrongful charge is easy to dispute.",
+      },
+    ],
+  },
+  {
+    slug: "transfer-healthcare-doctors-prescriptions-when-moving",
+    title: "Moving your healthcare: doctors, prescriptions, and the insurance network trap",
+    excerpt:
+      "A move can quietly push your doctors out of network and strand a prescription mid-refill. Healthcare is the move task with the most moving parts and the least forgiving timing. Here's the order that keeps care continuous.",
+    seoTitle: "Transfer healthcare when moving — doctors, prescriptions, networks",
+    seoDescription:
+      "Moving can push your doctors out of network and strand a refill. Here's the order to move your healthcare — insurance, prescriptions, records, and new providers — without a gap in care.",
+    categorySlug: "moving",
+    categoryName: "Moving",
+    readingMinutes: 7,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/healthcare-transfer-when-moving.svg",
+        caption: "Transferring doctors, prescriptions, and coverage when you move.",
+      },
+      {
+        type: "p",
+        text: "Most move checklists treat healthcare as one line item: \"find a new doctor.\" In practice it's four separate systems — your insurance network, your prescriptions, your records, and your actual providers — and they have to move in a specific order or you get a gap exactly when you can least afford one.",
+      },
+      { type: "h2", text: "Start with insurance, because it gates everything else" },
+      {
+        type: "p",
+        text: "Your plan's network is geographic. A plan that covered every doctor near the old place may cover almost none near the new one, and an out-of-network visit can cost several times an in-network one.",
+      },
+      {
+        type: "ul",
+        items: [
+          "If you have employer coverage and stayed at the same job, the plan usually follows you — but the in-network providers near your new home are a different list. Check it before you book anyone.",
+          "A move across state lines can be a qualifying life event that opens a special enrollment window. If you buy your own coverage, a new state often means a new marketplace and new plans entirely.",
+          "Medicare and Medicaid have their own move rules; Medicaid in particular is state-administered, so an interstate move means re-applying in the new state.",
+        ],
+      },
+      { type: "h2", text: "Refill prescriptions before you go" },
+      {
+        type: "p",
+        text: "The prescription is the time-critical piece. Pharmacy chains can transfer a prescription between their own locations in minutes, but a controlled substance, a new state, or a different chain complicates it. Two weeks before the move:",
+      },
+      {
+        type: "ol",
+        items: [
+          "Refill everything you can so you have a buffer that outlasts any transfer delay.",
+          "For chain pharmacies, confirm there's a branch near the new address and ask them to transfer the prescription on file.",
+          "For controlled medications, ask the prescriber what the new state requires — some need a fresh in-state prescription, not a transfer.",
+          "If you're switching insurers, confirm the medication is on the new plan's formulary before you rely on it being covered.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "A prescription transfer is fast; a prescription transfer plus a new state plus a new insurer plus a controlled-substance rule is not. Assume the slowest path and build a buffer.",
+      },
+      { type: "h2", text: "Request records before you leave, not after" },
+      {
+        type: "p",
+        text: "Ask each current provider — primary care, specialists, dentist, eye doctor — to send your records to the new provider or to you directly. Most will send a secure PDF within a few business days. Doing this before you leave is easier than chasing a clinic two time zones away that has no reason to prioritize a former patient.",
+      },
+      { type: "h2", text: "Then find providers — in that order" },
+      {
+        type: "p",
+        text: "Only once you know your network can you pick providers without an out-of-network surprise. Book a primary-care meet-and-greet even if nothing is wrong; it gets you into the system so that when something is wrong, you're not starting from zero. Carry a short medication-and-condition list for the first visit so nothing depends on records that haven't arrived yet.",
+      },
+      {
+        type: "p",
+        text: "Healthcare is the move task where a forgotten step shows up as a denied claim or a missed dose, not just a hassle. Tracking which providers you've moved, which records have arrived, and what the new plan covers — in one place rather than across a dozen browser tabs — is the difference between continuous care and a scramble.",
+      },
+    ],
+  },
+  {
+    slug: "update-bank-accounts-cards-without-breaking-autopay",
+    title: "Updating your bank and cards after a move without breaking autopay",
+    excerpt:
+      "Changing a card's billing address sounds harmless until the next autopay charge declines because the address on file no longer matches. Here's the order to update financial accounts so nothing bounces and no card gets mailed to the old place.",
+    seoTitle: "Change your address with banks without breaking autopay",
+    seoDescription:
+      "Updating a card's billing address can decline the next autopay charge or mail a replacement card to your old home. Here's the order to update banks and cards after a move safely.",
+    categorySlug: "money",
+    categoryName: "Money",
+    readingMinutes: 5,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/bank-accounts-autopay.svg",
+        caption: "Updating banks and cards after a move without breaking autopay.",
+      },
+      {
+        type: "p",
+        text: "Banks and cards feel like a safe, low-stakes address update — until you realize how much hangs off the billing address. Replacement cards, fraud alerts, statements, and the address-verification check that some autopay merchants run all key off it. Update it carelessly and the next automatic payment can decline for a reason that looks like fraud.",
+      },
+      { type: "h2", text: "Why autopay breaks on an address change" },
+      {
+        type: "p",
+        text: "Some recurring merchants verify the billing ZIP against the card on file (it's called AVS — address verification). When you change the billing address with your bank but the merchant still has the old ZIP stored, the next charge can be rejected as a mismatch. The payment doesn't fail because there's no money; it fails because two systems disagree about where you live.",
+      },
+      { type: "h2", text: "The order that avoids a bounce" },
+      {
+        type: "ol",
+        items: [
+          "Update the bank or card issuer's billing address first. This is the source of truth and the one that controls where replacement cards and statements go.",
+          "Make a list of every merchant on autopay against that card — your statement from the last 90 days is the complete list.",
+          "Update the billing address stored at each of those merchants to match. This is the step people skip, and it's the one that prevents the decline.",
+          "Only then change anything else (new cards, closed accounts), so you're not chasing a mismatch across a dozen merchants at once.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "The bank's address and the merchant's stored address have to agree. Updating one without the other is what turns a routine autopay into a declined payment and a late fee.",
+      },
+      { type: "h2", text: "Watch the replacement-card timing" },
+      {
+        type: "p",
+        text: "Changing your address sometimes triggers the bank to mail a new card or a confirmation letter. If you change it before you've actually moved, that mail goes to an address you've already left. Change the address on or just after move-in, and make sure USPS forwarding is active as a safety net for anything that slips through.",
+      },
+      { type: "h2", text: "The accounts behind the accounts" },
+      {
+        type: "ul",
+        items: [
+          "Joint accounts: updating your login may not update your partner's card record. Confirm both.",
+          "Old savings or brokerage accounts you rarely log into still mail tax documents in January — update them now, not in April.",
+          "Buy-now-pay-later and store cards are easy to forget because they're not in your main banking app, but they bill on a schedule like everything else.",
+          "Digital wallets (the card stored in your phone) carry their own billing address — update it there too.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Financial accounts reward doing this in one focused sitting rather than piecemeal. Pull the statement, work the list top to bottom, and note each confirmation. The half hour it takes is the half hour that keeps a single address change from becoming three late fees and a fraud hold.",
+      },
+    ],
+  },
+  {
+    slug: "enroll-kids-new-school-district-after-move",
+    title: "Enrolling your kids in a new school district: records, residency proof, and timing",
+    excerpt:
+      "School enrollment is the move task with a hard external deadline you don't control — the school calendar. It also needs documents that take time to gather. Here's the paperwork, the residency proof that trips people up, and when to start.",
+    seoTitle: "Enroll kids in a new school district after moving — checklist",
+    seoDescription:
+      "New-district enrollment needs proof of residency, immunization records, and sometimes an IEP handoff. Here's the document set, the residency-proof rules, and the timing that avoids a gap.",
+    categorySlug: "government",
+    categoryName: "Government",
+    readingMinutes: 6,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/school-enrollment-new-district.svg",
+        caption: "Enrolling children in a new school district after a move.",
+      },
+      {
+        type: "p",
+        text: "Most move tasks bend to your schedule. School enrollment doesn't — the academic calendar is fixed, the registration windows are real, and the documents a district requires take longer to assemble than parents expect. Start this one early and it's paperwork; start it late and it's a child sitting out of class while you chase a transcript.",
+      },
+      { type: "h2", text: "The document set every district wants" },
+      {
+        type: "p",
+        text: "Specifics vary by district, but the core set is consistent. Gather these before you try to register:",
+      },
+      {
+        type: "ul",
+        items: [
+          "Proof of residency — usually two documents (a lease or deed plus a utility bill or bank statement) showing your name at the new address.",
+          "The child's birth certificate or other proof of age.",
+          "Immunization records — districts enforce state vaccination requirements, and an out-of-state record sometimes needs reformatting by a local provider.",
+          "The most recent report card or transcript, and for older students, the records that determine course placement.",
+          "Any IEP or 504 plan, if the child receives special-education or accommodation services.",
+        ],
+      },
+      { type: "h2", text: "Residency proof is the step that surprises people" },
+      {
+        type: "p",
+        text: "Districts are funded by residents, so they verify that you actually live in the attendance zone — sometimes strictly. If you're staying with family temporarily, renting before a lease is signed, or between addresses, the standard two-document proof may not exist yet. Call the district's registrar and ask what they accept in your exact situation before enrollment day; they have seen it before and there's usually a documented alternative.",
+      },
+      {
+        type: "blockquote",
+        text: "Confirm the attendance zone for your exact address, not the neighborhood. Two homes on the same street can feed different schools, and the catchment map is the only authority.",
+      },
+      { type: "h2", text: "The IEP/504 handoff can't be informal" },
+      {
+        type: "p",
+        text: "If your child has an IEP or 504 plan, the new district must provide comparable services, but it needs the actual plan to do so. Request the full special-education file from the old district in writing and hand-carry a copy to the new one. Don't rely on district-to-district transfer alone — the services depend on the document arriving, and the start of the school year is the worst time for it to be in transit.",
+      },
+      { type: "h2", text: "When to start" },
+      {
+        type: "ol",
+        items: [
+          "As soon as the new address is firm, identify the assigned school and its registration process — online portal, in person, or both.",
+          "Request records from the current school before you leave; mid-summer is when school offices are least staffed and slowest to respond.",
+          "Schedule any required immunization updates with enough lead time that a missing shot doesn't delay the start date.",
+          "Confirm transportation — bus eligibility is keyed to the address and isn't always automatic.",
+        ],
+      },
+      {
+        type: "p",
+        text: "School enrollment rewards treating it as a project with a deadline rather than an errand. Keep the document set and each request date together so that when the registrar asks for the one thing you forgot, you know exactly where it is — and the first day at the new school is just a first day, not a paperwork emergency.",
+      },
+    ],
+  },
+  {
+    slug: "insurance-coverage-gap-moving-day",
+    title: "The insurance coverage gap on moving day nobody plans for",
+    excerpt:
+      "On the day your belongings are most exposed — in boxes, on a truck, between two homes — they may be covered by no policy at all. Here's how renters, homeowners, and mover coverage overlap, and the gap that opens in the middle.",
+    seoTitle: "Moving-day insurance gap — renters, home, and stuff in transit",
+    seoDescription:
+      "Your belongings can be uninsured the moment they're on the truck. Here's how renters, homeowners, and mover coverage overlap — and how to close the gap that opens on moving day.",
+    categorySlug: "money",
+    categoryName: "Money",
+    readingMinutes: 6,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/insurance-coverage-gap-moving-day.svg",
+        caption: "Closing the insurance coverage gap on moving day.",
+      },
+      {
+        type: "p",
+        text: "Insurance is built around a fixed address. Moving day is the one day your life isn't at a fixed address — your belongings are in transit, the old policy may be ending, and the new one may not have started. That's not a hypothetical edge case; it's a predictable few hours where a dropped box of electronics could be covered by nobody.",
+      },
+      { type: "h2", text: "Three policies, three different jobs" },
+      {
+        type: "ul",
+        items: [
+          "Homeowners or renters insurance covers your belongings — sometimes even while they're temporarily away from home, but with limits and conditions worth reading before you rely on them.",
+          "The moving company's liability is usually minimal by default — often valued by weight, not by what the item is actually worth. A released-value settlement on a damaged laptop can be a few dollars.",
+          "Full-value protection or separate moving insurance covers the actual replacement value, but you usually have to elect and pay for it before the move.",
+        ],
+      },
+      { type: "h2", text: "Where the gap opens" },
+      {
+        type: "p",
+        text: "The gap has two common shapes. The first is timing: if you cancel the old policy the day you leave and the new one starts the day you arrive, anything that happens on the road in between falls outside both. The second is scope: your homeowners policy might cover goods in transit at a reduced limit, while the mover's default liability is far below replacement cost — so a serious loss is only partly covered by either.",
+      },
+      {
+        type: "blockquote",
+        text: "Don't let the old policy lapse before the new one is active. A one-day overlap costs almost nothing; a one-day gap can cost the value of everything on the truck.",
+      },
+      { type: "h2", text: "How to close it" },
+      {
+        type: "ol",
+        items: [
+          "Overlap the policies. Start the new policy the day before you leave and cancel the old one the day after you arrive, so coverage is continuous through the move.",
+          "Ask your insurer specifically how belongings are covered while in transit and what the limit is. Get the answer before you need it.",
+          "Decide on mover coverage deliberately. For a valuable load, full-value protection is usually worth the cost; for a budget move of replaceable items, default liability may be acceptable.",
+          "Photograph high-value items before they're packed. A claim is far easier with a dated photo and a rough value than with a memory.",
+        ],
+      },
+      { type: "h2", text: "The address change is also a re-rating" },
+      {
+        type: "p",
+        text: "Updating your address isn't just administrative — both home and auto premiums are rated on location, so the same coverage can cost more or less at the new ZIP. Update it promptly either way: if the rate drops you want the savings immediately, and if a claim ever arises, a policy with the wrong address can be adjusted against you.",
+      },
+      {
+        type: "p",
+        text: "Moving-day coverage is cheap insurance against an expensive few hours. Decide the overlap dates and the mover coverage level a week out, while it's a calm decision — not on the morning the truck is idling in the driveway.",
+      },
+    ],
+  },
+  {
+    slug: "first-30-days-after-moving-timeline",
+    title: "The first 30 days after moving: a week-by-week address-change timeline",
+    excerpt:
+      "The address changes that matter most are also the ones with deadlines — and most of them fall inside the first month. Here's a week-by-week plan that puts the high-stakes, time-limited updates first and the rest in their place.",
+    seoTitle: "First 30 days after moving — a week-by-week checklist",
+    seoDescription:
+      "A week-by-week plan for the first month after a move: what to update on day one, in week one, and before the 30-day deadlines on licenses, registration, and insurance close.",
+    categorySlug: "moving",
+    categoryName: "Moving",
+    readingMinutes: 7,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/first-30-days-timeline.svg",
+        caption: "A week-by-week timeline for the first 30 days after moving.",
+      },
+      {
+        type: "p",
+        text: "The problem with address changes isn't volume — it's that they're all due at once and a few of them have hard deadlines hiding inside. Several states give you as little as ten days to update a driver's license; insurance is rated the moment you move; school and utility windows don't wait. A week-by-week order turns an undifferentiated pile into a sequence.",
+      },
+      { type: "h2", text: "Day one: the safety nets" },
+      {
+        type: "ol",
+        items: [
+          "Confirm USPS Change of Address is active — it's the net that catches everything you forget, not a replacement for updating accounts.",
+          "Make a single reference with your old address, new address, and move date. Every call this month starts by reading from it.",
+          "Verify the essentials work: power, water, heat, and internet. Anything broken on day one needs a same-day call before offices close.",
+        ],
+      },
+      { type: "h2", text: "Week one: identity, money, and the legal clocks" },
+      {
+        type: "ul",
+        items: [
+          "Driver's license and vehicle registration — check your state's deadline first; the shortest are about ten days and the clock starts when you begin living at the new address.",
+          "Auto and home/renters insurance — update the address; it re-rates the premium and a claim on a stale address can be reduced.",
+          "Banks and credit cards — update the billing address, then update the same address at every autopay merchant so nothing declines.",
+          "Voter registration — deadlines close weeks before any election; do it now while it's on your mind.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "If a task has a legal deadline — license, registration, voter registration — it belongs in week one. Everything without a deadline can wait for week two without consequence.",
+      },
+      { type: "h2", text: "Week two: government and health" },
+      {
+        type: "ol",
+        items: [
+          "IRS (and your state tax agency) — file Form 8822 or notify them; they don't learn your address from USPS.",
+          "Health insurance, doctors, and prescriptions — confirm the new address is in-network and transfer refills before the buffer runs out.",
+          "Employer HR and any benefits — your tax forms and any mailed benefits documents follow this record.",
+          "If you have kids or pets: school enrollment and the microchip registry both need attention and neither updates itself.",
+        ],
+      },
+      { type: "h2", text: "Weeks three and four: the long tail" },
+      {
+        type: "p",
+        text: "By now the deadlines are handled and what's left is the steady drip of smaller accounts: subscriptions, loyalty programs, online retailers, and the occasional forwarded letter that reveals an account you forgot. Work these as they surface. A forwarded envelope with the yellow label is a direct signal: that sender still has your old address — fix it while the envelope is in your hand.",
+      },
+      { type: "h2", text: "The 30-day review" },
+      {
+        type: "p",
+        text: "At day 30, do one pass: did every expected bill, statement, and card arrive at the new place? Anything missing is an account that didn't get the update. This single review catches the silent failures — the joint card nobody re-pointed, the annual statement that hasn't come due yet. A move tracked as a checklist with dates, rather than held in memory, is what makes that review take ten minutes instead of an afternoon.",
+      },
+    ],
+  },
+  {
+    slug: "vehicle-registration-second-dmv-deadline",
+    title: "Vehicle registration vs driver's license: the second DMV deadline people miss",
+    excerpt:
+      "Updating your license and re-registering your vehicle are two different tasks with two different deadlines — and the registration one is the one people miss. Here's how they differ, why an interstate move resets the whole thing, and what rides on it.",
+    seoTitle: "Vehicle registration after moving — the second DMV deadline",
+    seoDescription:
+      "Updating your license and re-registering your vehicle are separate DMV deadlines. Here's how they differ by state, plus the title, emissions, and insurance effects of a move.",
+    categorySlug: "government",
+    categoryName: "Government",
+    readingMinutes: 6,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/vehicle-registration-deadline.svg",
+        caption: "Vehicle registration is a separate DMV deadline from your license.",
+      },
+      {
+        type: "p",
+        text: "People treat the DMV as one errand: update the license, done. But your driver's license and your vehicle registration are two separate records with two separate deadlines, and the registration is the one that quietly lapses — because the sticker on your plate looks fine until the day it isn't.",
+      },
+      { type: "h2", text: "Two records, two clocks" },
+      {
+        type: "ul",
+        items: [
+          "Your driver's license carries your address as identification. Updating it is often a quick online change within a short deadline after you move.",
+          "Your vehicle registration ties a specific car to an address and a jurisdiction for taxes, fees, and emissions. Within a state it's an address update; across state lines it's frequently a full re-registration with inspection.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Within the same state, the two often move together and the deadlines are short — sometimes the same ten-to-thirty-day window as the license. Across state lines, registration is the bigger job and the one with the most attached requirements.",
+      },
+      { type: "h2", text: "What an interstate move actually requires" },
+      {
+        type: "ol",
+        items: [
+          "Register the vehicle in the new state, usually within a set number of days of establishing residency.",
+          "Pass any required safety or emissions inspection — some states require it before they'll register, some don't require it at all.",
+          "Update the title if the new state requires titling there; if there's a lien, the lender may need to be involved.",
+          "Get new plates and a new registration, and surrender or retire the old plates per the old state's rules.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "The plate sticker gives no warning. Expired registration is usually discovered at a traffic stop or a renewal notice that went to the old address — both after the deadline has already passed.",
+      },
+      { type: "h2", text: "What rides on getting it right" },
+      {
+        type: "ul",
+        items: [
+          "Insurance — your policy's garaging address should match the registration. A mismatch can complicate a claim and is sometimes treated as misrepresentation.",
+          "Tolls and tickets — automated systems mail to the registered address. A stale one means you don't see the notice until it's a penalty.",
+          "Emissions and renewal cycles — the new state's schedule may differ from the old one, so the renewal date you remember may no longer apply.",
+        ],
+      },
+      { type: "h2", text: "The clean sequence" },
+      {
+        type: "p",
+        text: "Update the license first (it's quick and other steps may ask to see it), then tackle registration with the document set the new state lists — proof of insurance in that state, proof of residency, the title or lienholder details, and any inspection certificate. Treat registration as its own task with its own deadline, not a footnote to the license, and the second DMV clock stops being the one that catches you out.",
+      },
+    ],
+  },
+  {
+    slug: "senior-parent-relocation-checklist",
+    title: "Moving an aging parent: the relocation checklist that protects benefits and care",
+    excerpt:
+      "Relocating an older parent touches Medicare, Social Security, prescriptions, and a care network — each with its own update path and its own consequence for getting it wrong. Here's the checklist that keeps benefits intact and care continuous.",
+    seoTitle: "Senior relocation checklist — benefits, care, and records",
+    seoDescription:
+      "Relocating an older parent touches Medicare, Social Security, prescriptions, and care networks — each with its own update path. Here's the checklist that keeps benefits and care intact.",
+    categorySlug: "moving",
+    categoryName: "Moving",
+    readingMinutes: 7,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/senior-parent-relocation.svg",
+        caption: "A relocation checklist for moving an aging parent.",
+      },
+      {
+        type: "p",
+        text: "Moving an older parent carries everything a normal move does, plus a layer most moves don't: benefits and care that are tied to a specific address and a specific provider network, where a missed update isn't an inconvenience but an interruption in coverage or treatment. The order matters more here than almost anywhere.",
+      },
+      { type: "h2", text: "Benefits: what's federal and what's local" },
+      {
+        type: "ul",
+        items: [
+          "Social Security follows the person nationally, but the address still needs updating so payments, tax forms, and notices arrive — and direct deposit should be confirmed unchanged.",
+          "Original Medicare travels anywhere in the country, but a Medicare Advantage or Part D drug plan has a regional network — a move can take the parent out of it and opens a special enrollment window to choose a plan that works at the new address.",
+          "Medicaid is administered by each state, so an interstate move means re-applying in the new state, and there can be a gap to plan around.",
+          "Any pension or annuity payer needs the new address for the same reasons as Social Security.",
+        ],
+      },
+      { type: "h2", text: "Care continuity is the time-critical part" },
+      {
+        type: "ol",
+        items: [
+          "Refill all prescriptions to a comfortable buffer before the move, and confirm the medications are covered under whatever plan applies at the new address.",
+          "Request medical records from every current provider — primary care, specialists, pharmacy — and hand-carry copies.",
+          "Line up new providers in-network before the move where possible, especially for any ongoing or specialty care.",
+          "If there's home care, adult day services, or durable medical equipment, arrange the equivalent at the new location before the old one ends.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "For an older adult, a two-week gap in a prescription or a specialist is not an administrative hiccup — it's a health event. Build the buffer first, then move the paperwork.",
+      },
+      { type: "h2", text: "The documents that make decisions possible" },
+      {
+        type: "p",
+        text: "Make sure powers of attorney, healthcare directives, and insurance cards are gathered and accessible during the move, not packed in a box. If any legal document names a state, check whether it's still valid after an interstate move — some need to be re-executed under the new state's rules.",
+      },
+      { type: "h2", text: "The everyday accounts still apply" },
+      {
+        type: "p",
+        text: "Underneath the benefits layer, the ordinary move still happens — banks, utilities, insurance, USPS forwarding, voter registration. For a parent who isn't managing it themselves, these often fall to you, which makes a shared, written record especially valuable: it lets siblings or caregivers see what's done and what's pending without a dozen phone calls.",
+      },
+      {
+        type: "p",
+        text: "A senior move is the case where tracking it once — benefits, providers, prescriptions, accounts, and the date each was handled — pays back the most. The stakes are higher and the people involved are usually more than one. A single source of truth turns a stressful, error-prone handoff into something the whole family can rely on.",
+      },
+    ],
+  },
+  {
+    slug: "mail-packages-new-home-informed-delivery",
+    title: "Mail and packages at the new place: Informed Delivery, lockers, and porch theft",
+    excerpt:
+      "A change-of-address form forwards letters; it does nothing for the packages already in transit or the ones a retailer will ship to the address it has on file. Here's how to make sure mail and parcels actually reach the new place.",
+    seoTitle: "Set up mail and packages at a new home — Informed Delivery",
+    seoDescription:
+      "Beyond a change-of-address: USPS Informed Delivery, package lockers, and redirecting in-transit shipments so nothing lands at the old address or on a stranger's porch.",
+    categorySlug: "logistics",
+    categoryName: "Logistics",
+    readingMinutes: 5,
+    sections: [
+      {
+        type: "img",
+        src: "/blog/mail-packages-new-home.svg",
+        caption: "Setting up mail and packages so they reach the new home.",
+      },
+      {
+        type: "p",
+        text: "Most people file a USPS Change of Address and consider mail handled. It forwards letters, which is genuinely useful — but it does nothing for packages, which ship to whatever address a retailer has stored, and it does nothing for parcels already on a truck when you move. Mail and packages are two different problems with two different fixes.",
+      },
+      { type: "h2", text: "Turn on Informed Delivery at the new address" },
+      {
+        type: "p",
+        text: "USPS Informed Delivery shows you a daily preview of the letter mail scheduled to arrive — and many incoming packages. After a move it's the single best tool for catching what's still going to the old address: if you see (or stop seeing) mail you expected, you immediately know which senders still have stale information. Set it up for the new address as soon as you can verify it.",
+      },
+      { type: "h2", text: "Packages don't forward — they follow the address on file" },
+      {
+        type: "ul",
+        items: [
+          "Update the default shipping address in every retail account you order from — the marketplace, the pharmacy auto-refill, the subscription box, the grocery delivery. Each stores its own address.",
+          "For a package already in transit, use the carrier's redirect or hold feature (USPS, UPS, and FedEx each have one) before it attempts delivery to the old place — once it's out for delivery it may be too late.",
+          "Carrier forwarding is not the same as USPS forwarding; a UPS or FedEx parcel addressed to the old home won't be rerouted by a USPS change-of-address form.",
+        ],
+      },
+      {
+        type: "blockquote",
+        text: "USPS forwarding moves letters. Packages move only when you update the address stored in each account that ships to you. Those are separate actions, and only one of them is automatic.",
+      },
+      { type: "h2", text: "The receiving setup at the new place" },
+      {
+        type: "p",
+        text: "Where packages land at the new home is its own small project. If it's a building, find out whether there's a mailroom, a parcel locker, or a front desk, and how delivery access works — some buildings require you to register for locker codes or buzzer access before anything can be delivered. If it's a house with an exposed porch, a lock box, a parcel locker, or routing deliveries to a pickup point reduces the porch-theft window that's highest right after a move, when packages arrive daily.",
+      },
+      { type: "h2", text: "The two-week mailbox audit" },
+      {
+        type: "p",
+        text: "Two weeks in, look at what's actually arriving. Anything you expected that hasn't shown up points to a sender with the wrong address; anything still trickling to the old place (a forwarding label is the tell) is an account to fix at the source. Catching it now, while forwarding is still active, is the difference between a quick login and a letter lost for good. Keeping a short list of which senders you've re-pointed makes the audit a check, not a guess.",
+      },
+    ],
+  },
 ];
 
 // --- Tiptap JSON + sanitized HTML + plain text generators -----------------
@@ -934,6 +1561,8 @@ function sectionToTiptap(section: Section): unknown {
       return orderedList(section.items!);
     case "blockquote":
       return blockquote(section.text!);
+    case "img":
+      return { type: "image", attrs: { src: section.src!, alt: section.caption ?? "" } };
   }
 }
 
@@ -951,6 +1580,12 @@ function sectionToHtml(section: Section): string {
       return `<ol>${section.items!.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ol>`;
     case "blockquote":
       return `<blockquote><p>${escapeHtml(section.text!)}</p></blockquote>`;
+    case "img":
+      return (
+        `<figure><img src="${section.src!}" alt="${escapeHtml(section.caption ?? "")}" loading="lazy" />` +
+        (section.caption ? `<figcaption>${escapeHtml(section.caption)}</figcaption>` : "") +
+        `</figure>`
+      );
   }
 }
 
@@ -964,6 +1599,10 @@ function sectionToText(section: Section): string {
     case "ul":
     case "ol":
       return section.items!.join(" ");
+    case "img":
+      // Images carry no body copy — skip them in the plain-text/search index
+      // (mirrors htmlToText's `img: skip` selector on the public side).
+      return "";
   }
 }
 
@@ -973,7 +1612,10 @@ function buildPostContent(post: SamplePost) {
     content: post.sections.map(sectionToTiptap),
   };
   const html = post.sections.map(sectionToHtml).join("");
-  const text = post.sections.map(sectionToText).join("\n\n");
+  const text = post.sections
+    .map(sectionToText)
+    .filter((t) => t.length > 0)
+    .join("\n\n");
   return { json, html, text };
 }
 

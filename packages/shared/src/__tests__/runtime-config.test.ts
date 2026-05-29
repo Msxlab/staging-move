@@ -319,6 +319,41 @@ describe("validateRuntimeConfigValueShape hardening", () => {
     ).toMatchObject({ ok: true });
   });
 
+  it("validates RECOMMENDATION_SCORING_WEIGHTS as a usable JSON weight object", () => {
+    // Valid: at least one finite numeric weight under a recognized group.
+    expect(
+      validateRuntimeConfigValueShape(
+        "RECOMMENDATION_SCORING_WEIGHTS",
+        JSON.stringify({ urgencyTier: { CRITICAL: 120 } }),
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+
+    // Malformed JSON.
+    expect(
+      validateRuntimeConfigValueShape("RECOMMENDATION_SCORING_WEIGHTS", "{not json", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "json_invalid" });
+
+    // Valid JSON but not an object.
+    expect(
+      validateRuntimeConfigValueShape("RECOMMENDATION_SCORING_WEIGHTS", "[1,2,3]", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "json_object_required" });
+
+    // Object with no recognized numeric weights — saving it would be a
+    // silent no-op, so the admin should be told instead.
+    expect(
+      validateRuntimeConfigValueShape(
+        "RECOMMENDATION_SCORING_WEIGHTS",
+        JSON.stringify({ urgencyTier: { CRITICAL: "high" }, foo: 1 }),
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: false, reason: "scoring_weights_empty" });
+  });
+
   it("marks weakly-validated generic IDs as needs review instead of verified", () => {
     const resolution = resolveRuntimeConfigResolution({
       definition: getRuntimeConfigDefinition("GOOGLE_OAUTH_CLIENT_ID")!,
