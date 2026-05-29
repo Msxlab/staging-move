@@ -7,7 +7,7 @@ import {
 } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
-import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
+import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 
@@ -37,6 +37,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Owner-resolved entitlement: the workspace's plan must unlock API connectors.
+  const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true } });
+  if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!(await userHasApiConnectorEntitlement(workspace.ownerUserId))) {
+    return NextResponse.json({ error: "This workspace's plan doesn't include automatic connectors." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({}));
   const toAddressId = typeof body?.toAddressId === "string" ? body.toAddressId : "";
@@ -68,8 +75,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // The destination address must belong to the subject.
-  const address = await prisma.address.findFirst({ where: { id: toAddressId, userId: subjectUserId } });
+  const address = await prisma.address.findFirst({
+    where: { id: toAddressId, userId: subjectUserId },
+    select: { id: true, workspaceId: true },
+  });
   if (!address) return NextResponse.json({ error: "Address not found" }, { status: 404 });
+  // Defense-in-depth: once addresses carry a workspaceId, a workspace sync must
+  // only act on an address that belongs to THIS workspace. No-op while the
+  // column is null (dual-read not yet opened); enforcing once it's populated.
+  if (address.workspaceId && address.workspaceId !== id) {
+    return NextResponse.json({ error: "Address is not in this workspace." }, { status: 403 });
+  }
 
   const result = await enqueueAddressChange({ userId: subjectUserId, toAddressId, fromAddressId });
   return NextResponse.json(result);

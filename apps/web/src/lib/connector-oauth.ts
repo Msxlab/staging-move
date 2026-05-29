@@ -19,6 +19,7 @@ import {
   type OAuthProviderConfig,
   type OAuthTokens,
 } from "@locateflow/connectors";
+import { getEffectiveEntitlement, planFeatures } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/shared-encryption";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
@@ -29,6 +30,18 @@ const FEATURE_FLAG_KEY = "FEATURE_API_CONNECTORS";
 export async function isApiConnectorsEnabled(): Promise<boolean> {
   const value = (await getRuntimeConfigValue(FEATURE_FLAG_KEY)) ?? process.env.FEATURE_API_CONNECTORS ?? "";
   return value === "true" || value === "1";
+}
+
+/**
+ * Plan-level entitlement gate: whether a user's effective plan unlocks API
+ * connectors (PRO per the entitlement matrix). The master flag turns the
+ * surface ON; THIS gates WHO may use it, so Free/Individual/Family users cannot
+ * connect a partner or trigger a sync even when the flag is on.
+ */
+export async function userHasApiConnectorEntitlement(userId: string): Promise<boolean> {
+  const sub = await prisma.subscription.findUnique({ where: { userId } });
+  const plan = String(getEffectiveEntitlement(sub).effectivePlan);
+  return planFeatures(plan).apiConnectors === true;
 }
 
 /** Lowercase kebab-case connector keys only (matches the manifest contract). */

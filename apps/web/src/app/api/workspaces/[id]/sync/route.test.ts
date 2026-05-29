@@ -3,25 +3,28 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceMember: { findFirst: vi.fn() },
+    workspace: { findUnique: vi.fn() },
     address: { findFirst: vi.fn() },
   },
 }));
 vi.mock("@/lib/user-auth", () => ({ getUserSession: vi.fn() }));
-vi.mock("@/lib/connector-oauth", () => ({ isApiConnectorsEnabled: vi.fn() }));
+vi.mock("@/lib/connector-oauth", () => ({ isApiConnectorsEnabled: vi.fn(), userHasApiConnectorEntitlement: vi.fn() }));
 vi.mock("@/lib/workspace-routes", () => ({ workspaceFeatureGate: vi.fn() }));
 vi.mock("@/lib/connector-runtime", () => ({ enqueueAddressChange: vi.fn() }));
 
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
-import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
+import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 import { POST } from "./route";
 
 const memberMock = prisma.workspaceMember.findFirst as unknown as Mock;
+const workspaceMock = prisma.workspace.findUnique as unknown as Mock;
 const addressMock = prisma.address.findFirst as unknown as Mock;
 const sessionMock = getUserSession as unknown as Mock;
 const connectorsMock = isApiConnectorsEnabled as unknown as Mock;
+const entitlementMock = userHasApiConnectorEntitlement as unknown as Mock;
 const gateMock = workspaceFeatureGate as unknown as Mock;
 const enqueueMock = enqueueAddressChange as unknown as Mock;
 
@@ -54,6 +57,8 @@ describe("POST /api/workspaces/[id]/sync", () => {
     gateMock.mockResolvedValue(null); // feature on
     sessionMock.mockResolvedValue({ userId: CALLER });
     connectorsMock.mockResolvedValue(true);
+    entitlementMock.mockResolvedValue(true);
+    workspaceMock.mockResolvedValue({ ownerUserId: "owner-1" });
     addressMock.mockResolvedValue({ id: "a1" });
     enqueueMock.mockResolvedValue({ enqueued: 1 });
   });
@@ -69,6 +74,14 @@ describe("POST /api/workspaces/[id]/sync", () => {
     connectorsMock.mockResolvedValue(false);
     const res = await call({ toAddressId: "a1" });
     expect(res.status).toBe(503);
+  });
+
+  it("403s when the workspace plan lacks the connector entitlement", async () => {
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
+    entitlementMock.mockResolvedValue(false);
+    const res = await call({ toAddressId: "a1" });
+    expect(res.status).toBe(403);
+    expect(enqueueMock).not.toHaveBeenCalled();
   });
 
   it("404s when the caller is not a member", async () => {

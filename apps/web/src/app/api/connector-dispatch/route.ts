@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSession } from "@/lib/user-auth";
-import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
+import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 
 export const runtime = "nodejs";
@@ -19,6 +19,9 @@ export async function POST(request: NextRequest) {
   }
   if (!(await isApiConnectorsEnabled())) {
     return NextResponse.json({ error: "Connectors are not enabled." }, { status: 503 });
+  }
+  if (!(await userHasApiConnectorEntitlement(session.userId))) {
+    return NextResponse.json({ error: "Your plan doesn't include automatic connectors." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({}));
