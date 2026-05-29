@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/connector-dispatch",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/workspace-purge",
+      "schedule": "0 3 * * *"
     }
   ]
 }

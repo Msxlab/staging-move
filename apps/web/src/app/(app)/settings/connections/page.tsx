@@ -35,18 +35,21 @@ export default function ConnectionsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [disabled, setDisabled] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
+    setError(false);
     fetch("/api/partner-consents")
       .then((r) => {
         if (r.status === 404 || r.status === 503) {
           setDisabled(true);
           return { consents: [] };
         }
-        return r.ok ? r.json() : { consents: [] };
+        if (!r.ok) throw new Error("load failed");
+        return r.json();
       })
       .then((d) => setConsents(d.consents || []))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -125,6 +128,13 @@ export default function ConnectionsPage() {
       ) : disabled ? (
         <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-sm text-muted-foreground">
           Partner connections aren&apos;t available on your plan yet.
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive">
+          Couldn&apos;t load your connections.{" "}
+          <button onClick={load} className="font-medium underline hover:no-underline">
+            Try again
+          </button>
         </div>
       ) : (
         <>

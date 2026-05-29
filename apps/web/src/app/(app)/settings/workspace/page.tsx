@@ -91,6 +91,7 @@ export default function WorkspaceSettingsPage() {
           setFeatureOff(true);
           return;
         }
+        if (!wsRes.ok) throw new Error("load failed"); // 5xx → caught below + toasted, not shown as "no workspaces"
         const wsData = await wsRes.json().catch(() => ({}));
         const meData = await meRes.json().catch(() => ({}));
         const list: Workspace[] = Array.isArray(wsData.workspaces) ? wsData.workspaces : [];

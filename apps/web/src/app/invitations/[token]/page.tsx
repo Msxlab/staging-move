@@ -57,9 +57,16 @@ export default function InvitationPage() {
         const meData = await meRes.json().catch(() => ({}));
         if (cancelled) return;
         if (!invRes.ok) {
-          setError(invData.error || "This invitation is no longer valid.");
-        } else {
+          // A 5xx isn't "invalid" — tell the user it's a transient error.
+          setError(
+            invRes.status >= 500
+              ? "Something went wrong loading this invitation. Please try again."
+              : invData.error || "This invitation is no longer valid.",
+          );
+        } else if (typeof invData?.invitedEmail === "string") {
           setInvite(invData as InviteDetails);
+        } else {
+          setError("Something went wrong loading this invitation.");
         }
         setAuthed(Boolean(meData.authenticated));
         setMyEmail(meData.user?.email ?? null);
