@@ -226,7 +226,14 @@ export async function revokeConsent(input: {
       revokedAt: new Date(),
       revocationReason: input.reason,
       tokenEncrypted: null,
+      refreshTokenEncrypted: null,
     },
+  });
+  // Cancel the consent's queued/in-flight dispatches so a revoked partner is
+  // never (re)attempted; NEEDS_USER is the terminal manual-fallback state.
+  await prisma.connectorDispatch.updateMany({
+    where: { consentId: consent.id, status: { in: ["QUEUED", "DISPATCHING"] } },
+    data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
   });
   return true;
 }

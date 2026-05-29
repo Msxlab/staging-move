@@ -515,7 +515,7 @@ export async function sendWorkspaceInvitationEmail(opts: {
 }): Promise<boolean> {
   const inviter = opts.inviterName?.trim() || "A LocateFlow member";
   const content = buildSimpleContent({
-    subject: `You're invited to join ${opts.workspaceName} on LocateFlow`,
+    subject: sharedSanitizeEmailSubject(`You're invited to join ${opts.workspaceName} on LocateFlow`),
     title: `Join ${opts.workspaceName}`,
     preheader: `${inviter} invited you to ${opts.workspaceName}.`,
     userName: "there",

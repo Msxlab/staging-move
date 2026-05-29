@@ -171,12 +171,17 @@ export function createConnectorHttpClient(options: ConnectorHttpClientOptions): 
 
         return response;
       } catch (error) {
-        breaker.recordFailure();
-        if (error instanceof ConnectorHttpError) throw error;
-        const aborted = options.signal?.aborted ?? false;
+        if (error instanceof ConnectorHttpError) {
+          breaker.recordFailure();
+          throw error;
+        }
+        const callerAborted = options.signal?.aborted ?? false;
+        // A caller-initiated cancellation isn't a partner-health signal; only a
+        // real network error or the per-call timeout should trip the breaker.
+        if (!callerAborted) breaker.recordFailure();
         throw new ConnectorHttpError(
-          aborted ? "UNKNOWN" : "PARTNER_DOWN",
-          aborted ? "Request aborted" : "Network or timeout error",
+          callerAborted ? "UNKNOWN" : "PARTNER_DOWN",
+          callerAborted ? "Request aborted" : "Network or timeout error",
           { cause: error },
         );
       } finally {
