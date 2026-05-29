@@ -1845,6 +1845,12 @@ model WorkspaceMember {
   role   String @default("MEMBER") @db.VarChar(20) // OWNER|ADMIN|MEMBER|CHILD|VIEW_ONLY
   status String @default("ACTIVE") @db.VarChar(20) // ACTIVE|SUSPENDED|OVERFLOW
 
+  // Member consent for owner/admin-initiated "managed sync": pushing an address
+  // change to THIS member's connected partners on their behalf (using their own
+  // server-held tokens). null = unset → defaults to true for CHILD
+  // (guardian-managed), false otherwise. Resolve via resolveManagedSyncEnabled.
+  managedSyncEnabled Boolean?
+
   // Optional guardian link for CHILD (UI hint only; permission is role-based).
   parentMemberId String?           @db.VarChar(30)
   parentMember   WorkspaceMember?  @relation("ChildParent", fields: [parentMemberId], references: [id], onDelete: SetNull)
