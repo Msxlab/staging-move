@@ -40,13 +40,15 @@ function shouldDispatch(severity: AlertSeverity, type: string): boolean {
   const last = recentAlerts.get(key);
   if (last && Date.now() - last < DEDUP_WINDOW_MS) return false;
 
-  recentAlerts.set(key, Date.now());
+  // The dedup marker is recorded in dispatchAlert *after* a channel actually
+  // delivers — not here — so a transient double-failure doesn't silently
+  // suppress the next identical alert for the whole dedup window.
   return true;
 }
 
 // ── Email via Resend ───────────────────────────────────────
 
-async function sendEmailAlert(payload: AlertPayload): Promise<void> {
+async function sendEmailAlert(payload: AlertPayload): Promise<boolean> {
   const {
     RESEND_API_KEY: apiKey,
     ALERT_EMAIL_TO: to,
@@ -58,7 +60,7 @@ async function sendEmailAlert(payload: AlertPayload): Promise<void> {
     "ALERT_EMAIL_FROM",
     "EMAIL_FROM",
   ]);
-  if (!apiKey || !to) return;
+  if (!apiKey || !to) return false;
 
   try {
     const { Resend } = await import("resend");
@@ -96,16 +98,18 @@ async function sendEmailAlert(payload: AlertPayload): Promise<void> {
         </div>
       `,
     });
+    return true;
   } catch (err) {
     console.error("[ALERT-DISPATCH] Email send failed:", err);
+    return false;
   }
 }
 
 // ── Slack via Incoming Webhook ─────────────────────────────
 
-async function sendSlackAlert(payload: AlertPayload): Promise<void> {
+async function sendSlackAlert(payload: AlertPayload): Promise<boolean> {
   const { SLACK_WEBHOOK_URL: webhookUrl } = await getAdminRuntimeConfigValues(["SLACK_WEBHOOK_URL"]);
-  if (!webhookUrl) return;
+  if (!webhookUrl) return false;
 
   try {
     const severityEmoji = payload.severity === "CRITICAL" ? ":rotating_light:" : ":warning:";
@@ -140,8 +144,10 @@ async function sendSlackAlert(payload: AlertPayload): Promise<void> {
         ],
       }),
     });
+    return true;
   } catch (err) {
     console.error("[ALERT-DISPATCH] Slack send failed:", err);
+    return false;
   }
 }
 
@@ -165,9 +171,15 @@ export async function dispatchAlert(
     timestamp: new Date(),
   };
 
-  // Fire-and-forget — both channels in parallel
-  await Promise.allSettled([
+  // Send on both channels; record the dedup marker only if at least one
+  // actually delivered, so a transient double-failure can retry on the next
+  // identical event instead of being silently suppressed for the window.
+  const results = await Promise.allSettled([
     sendEmailAlert(payload),
     sendSlackAlert(payload),
   ]);
+  const delivered = results.some((r) => r.status === "fulfilled" && r.value === true);
+  if (delivered) {
+    recentAlerts.set(`${type}:${severity}`, Date.now());
+  }
 }

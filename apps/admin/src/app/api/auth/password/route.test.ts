@@ -25,6 +25,7 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/auth", () => ({
   requireAdmin: vi.fn(() => Promise.resolve({ adminId: "admin_1", email: "admin@example.com", role: "SUPER_ADMIN" })),
+  requirePasswordConfirm: vi.fn(() => Promise.resolve({ confirmed: true })),
   expireAdminSessionCookies: vi.fn((response) => response),
 }));
 

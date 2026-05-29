@@ -54,6 +54,11 @@ const BACKUP_TABLE_COUNTS: Record<string, () => Promise<number>> = {
   adminPermissions: () => prisma.adminPermission.count(),
   adminLoginLogs: () => prisma.adminLoginLog.count(),
   adminAuditLogs: () => prisma.adminAuditLog.count(),
+  acquisitionCampaigns: () => prisma.acquisitionCampaign.count(),
+  acquisitionRedemptions: () => prisma.acquisitionRedemption.count(),
+  blogCategories: () => prisma.blogCategory.count(),
+  blogTags: () => prisma.blogTag.count(),
+  blogPosts: () => prisma.blogPost.count(),
 };
 
 function normalizeBackupRecord(backup: any, createdByLabel?: string) {

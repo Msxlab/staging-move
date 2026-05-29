@@ -39,6 +39,11 @@ const BACKUP_TABLE_COUNTERS = {
   adminPermissions: () => prisma.adminPermission.count(),
   adminLoginLogs: () => prisma.adminLoginLog.count(),
   adminAuditLogs: () => prisma.adminAuditLog.count(),
+  acquisitionCampaigns: () => prisma.acquisitionCampaign.count(),
+  acquisitionRedemptions: () => prisma.acquisitionRedemption.count(),
+  blogCategories: () => prisma.blogCategory.count(),
+  blogTags: () => prisma.blogTag.count(),
+  blogPosts: () => prisma.blogPost.count(),
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

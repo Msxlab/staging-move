@@ -210,10 +210,8 @@ export async function GET(request: NextRequest) {
       prisma.userSession.count(),
       prisma.userEvent.count(),
       prisma.adminAuditLog.count(),
-      prisma.backupRecord?.count().catch(() => 0) || 0,
-      prisma.adminSession
-        ?.count({ where: { isActive: true } })
-        .catch(() => 0) || 0,
+      prisma.backupRecord.count().catch(() => 0),
+      prisma.adminSession.count({ where: { isActive: true } }).catch(() => 0),
     ]);
 
     // Last successful backup. The admin backup schedule is wired through

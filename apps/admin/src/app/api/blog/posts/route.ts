@@ -17,7 +17,6 @@ import { requirePermission } from "@/lib/auth";
 import { renderBlogContent } from "@/lib/blog-content";
 import {
   BLOG_LOCALES,
-  generateExcerpt,
   isReservedSlug,
   slugify,
 } from "@locateflow/shared";

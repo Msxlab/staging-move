@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { BILLING_PLAN_DEFINITIONS } from "@/lib/shared-billing";
+import { computeLtv, computeMonthlyChurnRate } from "@/lib/billing-metrics";
 
 const MOBILE_BILLING_PROVIDERS = new Set(["APP_STORE", "PLAY_STORE"]);
 
@@ -15,6 +16,11 @@ const MOBILE_BILLING_PROVIDERS = new Set(["APP_STORE", "PLAY_STORE"]);
 function monthlyEquivalent(sub: any): number {
   if (sub.accessType === "FREE_ACCESS") return 0;
   if (sub.provider === "ADMIN" || sub.provider === "TRIAL") return 0;
+  // Trials are committed pipeline, not realized revenue — the subscriber has
+  // not been charged yet. Exclude them from MRR for the same reason as
+  // admin-granted/free access. (Trial counts still show up in
+  // statusDistribution / trialExpiring, so the pipeline isn't lost.)
+  if (sub.status === "TRIALING" || sub.accessType === "FREE_TRIAL") return 0;
   const def = (BILLING_PLAN_DEFINITIONS as any)[sub.plan];
   if (!def) return 0;
   if (sub.billingInterval === "YEAR") {
@@ -133,6 +139,12 @@ export async function GET(req: NextRequest) {
 
     const mrr = activeSubs.reduce((sum, s) => sum + monthlyEquivalent(s), 0);
     const arr = mrr * 12;
+    // Per-user revenue metrics (ARPU, LTV) must divide by *paying* subs only.
+    // Admin-granted premium (provider ADMIN / accessType FREE_ACCESS) and
+    // trials generate no revenue — they're already excluded from MRR by
+    // monthlyEquivalent, so including them in the denominator would dilute
+    // ARPU/LTV. "Paying" = contributes a non-zero monthly equivalent.
+    const payingActiveSubs = activeSubs.filter((s) => monthlyEquivalent(s) > 0);
 
     const planDistribution = allSubs.reduce((acc: Record<string, { total: number; active: number; revenue: number }>, s) => {
       if (!acc[s.plan]) acc[s.plan] = { total: 0, active: 0, revenue: 0 };
@@ -161,10 +173,20 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {});
 
-    const activeStart = activeSubs.filter((s) => new Date(s.createdAt) < thisMonth).length;
-    const churnRate = activeStart > 0 ? (canceledThisMonth.length / activeStart) * 100 : 0;
-    const lastMonthActiveStart = activeSubs.filter((s) => new Date(s.createdAt) < lastMonth).length;
-    const lastMonthChurn = lastMonthActiveStart > 0 ? (canceledLastMonth.length / lastMonthActiveStart) * 100 : 0;
+    // Churn is measured against the start-of-month cohort (survivors +
+    // those who canceled during the month). See computeMonthlyChurnRate —
+    // the denominator now includes the churned subs instead of dividing by
+    // survivors alone, which previously inflated the reported rate.
+    const churnRate = computeMonthlyChurnRate({
+      activeSubs,
+      canceledInMonth: canceledThisMonth,
+      monthStart: thisMonth,
+    });
+    const lastMonthChurn = computeMonthlyChurnRate({
+      activeSubs,
+      canceledInMonth: canceledLastMonth,
+      monthStart: lastMonth,
+    });
 
     const newSubsThisMonth = allSubs.filter((s) => new Date(s.createdAt) >= thisMonth).length;
     const newSubsLastMonth = allSubs.filter((s) => new Date(s.createdAt) >= lastMonth && new Date(s.createdAt) < thisMonth).length;
@@ -185,6 +207,11 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => new Date(b.canceledAt!).getTime() - new Date(a.canceledAt!).getTime())
       .slice(0, 10);
 
+    // Approximate 30-day revenue trend — an estimate, not a ledger. It prices
+    // every past day with each subscription's *current* plan/interval (we do
+    // not snapshot historical price), and a subscription that lapsed without
+    // an explicit canceledAt (EXPIRED/PAST_DUE) isn't placed on the timeline.
+    // Fine for a trend sparkline; not for accounting/reconciliation.
     const dailyRevenue: Record<string, number> = {};
     for (let i = 29; i >= 0; i--) {
       const d = new Date(now);
@@ -214,6 +241,9 @@ export async function GET(req: NextRequest) {
       arr: Math.round(arr * 100) / 100,
       totalSubscriptions: allSubs.length,
       activeSubscriptions: activeSubs.length,
+      // Active subs that actually generate revenue (excludes admin-granted
+      // premium, free access, and trials). MRR/ARPU/LTV are based on these.
+      payingSubscriptions: payingActiveSubs.length,
       churnRate: Math.round(churnRate * 100) / 100,
       lastMonthChurn: Math.round(lastMonthChurn * 100) / 100,
       newSubsThisMonth,
@@ -256,8 +286,8 @@ export async function GET(req: NextRequest) {
           lastSyncedAt: s.lastSyncedAt,
           missingReceiptIdentifier: hasMissingStoreIdentifier(s),
         })),
-      avgRevenuePerUser: activeSubs.length > 0 ? Math.round((mrr / activeSubs.length) * 100) / 100 : 0,
-      ltv: churnRate > 0 ? Math.round(((mrr / activeSubs.length) / (churnRate / 100)) * 100) / 100 : 0,
+      avgRevenuePerUser: payingActiveSubs.length > 0 ? Math.round((mrr / payingActiveSubs.length) * 100) / 100 : 0,
+      ltv: Math.round(computeLtv({ mrr, activeCount: payingActiveSubs.length, churnRatePct: churnRate }) * 100) / 100,
     });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

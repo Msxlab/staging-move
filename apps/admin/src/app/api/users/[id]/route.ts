@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
-import { maskEmail, maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
+import { canSeeRawBillingIds, maskEmail, maskProviderIdentifier, redactBillingIds, redactUserDetail } from "@/lib/privacy";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
@@ -104,14 +104,6 @@ const userDetailSubscriptionSelect = {
   updatedAt: true,
 };
 
-function canSeeRawBillingIds(role: string | null | undefined) {
-  return role === "ADMIN" || role === "SUPER_ADMIN";
-}
-
-function maskNullableProviderId(value: string | null | undefined) {
-  return value ? maskProviderIdentifier(value) : null;
-}
-
 function redactUserDetailSubscription(subscription: any, role: string | null | undefined) {
   if (!subscription) return null;
   const showRawBillingIds = canSeeRawBillingIds(role);
@@ -122,25 +114,8 @@ function redactUserDetailSubscription(subscription: any, role: string | null | u
     status: subscription.status,
     provider: subscription.provider,
     platform: subscription.platform,
-    stripeCustomerId: showRawBillingIds
-      ? subscription.stripeCustomerId
-      : maskNullableProviderId(subscription.stripeCustomerId),
-    stripeSubscriptionId: showRawBillingIds
-      ? subscription.stripeSubscriptionId
-      : maskNullableProviderId(subscription.stripeSubscriptionId),
-    stripePriceId: showRawBillingIds
-      ? subscription.stripePriceId
-      : maskNullableProviderId(subscription.stripePriceId),
+    ...redactBillingIds(subscription, showRawBillingIds),
     stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
-    billingProductId: showRawBillingIds
-      ? subscription.billingProductId
-      : maskNullableProviderId(subscription.billingProductId),
-    originalTransactionId: showRawBillingIds
-      ? subscription.originalTransactionId
-      : maskNullableProviderId(subscription.originalTransactionId),
-    latestTransactionId: showRawBillingIds
-      ? subscription.latestTransactionId
-      : maskNullableProviderId(subscription.latestTransactionId),
     currentPeriodEndsAt: subscription.currentPeriodEndsAt,
     gracePeriodEndsAt: subscription.gracePeriodEndsAt,
     lastValidatedAt: subscription.lastValidatedAt,

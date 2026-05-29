@@ -158,11 +158,20 @@ export async function POST(request: NextRequest) {
     if (!data.name || !data.code) {
       return NextResponse.json({ error: "Campaign name and code are required." }, { status: 400 });
     }
-    if (data.accessType === "FREE_TRIAL" && data.trialDays < 1) {
-      return NextResponse.json({ error: "Trial days must be at least 1." }, { status: 400 });
+    // Number("abc") is NaN, and NaN < 1 is false — so a non-numeric value
+    // previously slipped past these guards and was written as NaN to an Int
+    // column. Guard on Number.isFinite so a bad value is rejected cleanly.
+    if (data.accessType === "FREE_TRIAL" && (!Number.isFinite(data.trialDays) || data.trialDays < 1)) {
+      return NextResponse.json({ error: "Trial days must be a number of at least 1." }, { status: 400 });
     }
-    if (data.accessType === "FREE_ACCESS" && data.freeAccessDays < 1) {
-      return NextResponse.json({ error: "Free Access days must be at least 1." }, { status: 400 });
+    if (data.accessType === "FREE_ACCESS" && (!Number.isFinite(data.freeAccessDays) || data.freeAccessDays < 1)) {
+      return NextResponse.json({ error: "Free Access days must be a number of at least 1." }, { status: 400 });
+    }
+    if (data.maxRedemptions !== null && (!Number.isFinite(data.maxRedemptions) || data.maxRedemptions < 1)) {
+      return NextResponse.json(
+        { error: "Max redemptions must be a positive whole number, or left blank for unlimited." },
+        { status: 400 },
+      );
     }
     if (data.accessType === "PAID" && data.billingInterval !== "MONTH" && data.billingInterval !== "YEAR") {
       return NextResponse.json({ error: "Paid campaigns must use monthly or annual billing." }, { status: 400 });

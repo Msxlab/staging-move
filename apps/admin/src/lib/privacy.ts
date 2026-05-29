@@ -29,6 +29,45 @@ export function maskProviderIdentifier(value: string | null | undefined): string
 }
 
 /**
+ * Billing identifiers masked for non-privileged admin roles. Single source
+ * of truth: the user-detail and subscriptions routes previously each kept
+ * their own inline copy of this list + masking logic, so a new `stripe*Id`
+ * added to one response could quietly ship raw from the other.
+ */
+export const BILLING_ID_FIELDS = [
+  "stripeCustomerId",
+  "stripeSubscriptionId",
+  "stripePriceId",
+  "billingProductId",
+  "originalTransactionId",
+  "latestTransactionId",
+] as const;
+
+export type BillingIdField = (typeof BILLING_ID_FIELDS)[number];
+
+/** ADMIN and SUPER_ADMIN see raw billing identifiers; lower roles see masked. */
+export function canSeeRawBillingIds(role: string | null | undefined): boolean {
+  return role === "ADMIN" || role === "SUPER_ADMIN";
+}
+
+/**
+ * Returns the billing-identifier fields for a subscription — raw when
+ * `showRaw`, masked otherwise. Spread the result into the route response so
+ * both endpoints expose the exact same set, masked the exact same way.
+ */
+export function redactBillingIds(
+  subscription: Record<string, any> | null | undefined,
+  showRaw: boolean,
+): Record<BillingIdField, string | null> {
+  const out = {} as Record<BillingIdField, string | null>;
+  for (const field of BILLING_ID_FIELDS) {
+    const value = subscription ? subscription[field] : null;
+    out[field] = showRaw ? value ?? null : value ? maskProviderIdentifier(value) : null;
+  }
+  return out;
+}
+
+/**
  * Mask an IP address by zeroing the last 8 bits (IPv4) or the last 80
  * bits / 5 hextets (IPv6). Keeps enough of the address to identify a
  * geographic region or ISP without exposing a specific subscriber.

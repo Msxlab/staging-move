@@ -24,7 +24,9 @@ export async function GET() {
       return NextResponse.json({ admin: null }, { status: 401 });
     }
 
-    return NextResponse.json({ admin });
+    // Identity endpoint (email/role/permissions) — never let a shared or
+    // CDN cache serve one admin's identity to another.
+    return NextResponse.json({ admin }, { headers: { "Cache-Control": "no-store" } });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ admin: null }, { status: 401 });

@@ -147,4 +147,26 @@ describe("admin billing response privacy", () => {
       data: expect.objectContaining({ action: "BILLING_DASHBOARD_VIEWED", entityType: "Subscription" }),
     });
   });
+
+  it("counts only realized revenue in MRR — trials, admin grants, and free access are excluded", async () => {
+    mocks.subscriptionFindMany.mockResolvedValue([
+      subscription({ id: "s-paid", status: "ACTIVE", provider: "STRIPE", accessType: "PAID" }),
+      subscription({ id: "s-trial", status: "TRIALING", provider: "STRIPE", accessType: "FREE_TRIAL" }),
+      subscription({ id: "s-admin", status: "ACTIVE", provider: "ADMIN", accessType: "FREE_ACCESS" }),
+      subscription({ id: "s-free", status: "ACTIVE", provider: "STRIPE", accessType: "FREE_ACCESS" }),
+    ]);
+
+    const { GET } = await import("./route");
+    const response = await GET(new Request("https://admin.locateflow.com/api/billing") as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // Only the one paid, active subscription is realized revenue (PRO = $10).
+    expect(body.mrr).toBe(10);
+    expect(body.payingSubscriptions).toBe(1);
+    // All four are "active" (3 ACTIVE + 1 TRIALING); the count is not revenue.
+    expect(body.activeSubscriptions).toBe(4);
+    // ARPU/LTV divide by paying subs only — not diluted by the 3 non-paying.
+    expect(body.avgRevenuePerUser).toBe(10);
+  });
 });
