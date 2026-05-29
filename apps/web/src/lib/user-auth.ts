@@ -19,6 +19,7 @@ import {
   summarizeOAuthError,
 } from "@/lib/oauth";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
+import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -855,5 +856,6 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   }
 
   await ensureSubscriptionDefaults(created.id);
+  await ensureWorkspaceDefaults(created.id);
   return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

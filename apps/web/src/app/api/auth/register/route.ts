@@ -10,6 +10,7 @@ import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
+import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
     },
   });
   await ensureSubscriptionDefaults(user.id);
+  await ensureWorkspaceDefaults(user.id);
 
   if (acceptedLegalConsents) {
     await recordLegalAcceptance({
