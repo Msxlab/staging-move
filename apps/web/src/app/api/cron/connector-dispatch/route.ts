@@ -23,7 +23,7 @@ async function isCronAuthorized(request: NextRequest): Promise<boolean> {
  * the planner's retry/fallback decision. Gated by FEATURE_API_CONNECTORS — a
  * no-op when the feature is off.
  */
-export async function POST(request: NextRequest) {
+async function handle(request: NextRequest): Promise<NextResponse> {
   if (!(await isCronAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -32,4 +32,13 @@ export async function POST(request: NextRequest) {
   }
   const result = await runDueDispatches();
   return NextResponse.json(result);
+}
+
+// Vercel Cron invokes via GET (with the CRON_SECRET bearer); POST is kept for
+// manual/system invocation. Both share one handler.
+export async function GET(request: NextRequest) {
+  return handle(request);
+}
+export async function POST(request: NextRequest) {
+  return handle(request);
 }
