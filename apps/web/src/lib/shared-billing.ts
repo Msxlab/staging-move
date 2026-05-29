@@ -11,6 +11,7 @@ export {
   BILLING_PRODUCT_CONFIG_KEYS,
   getBillingPlanDefinition,
   isPaidBillingPlan,
+  isBillingPlan,
   isActiveSubscriptionStatus,
   createFallbackEntitlementSnapshot,
   type BillingPlan,

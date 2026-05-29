@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
+import { isBillingPlan } from "@/lib/shared-billing";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
@@ -19,6 +20,20 @@ import {
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
+
+/**
+ * Resolve a Subscription.plan from webhook inputs, preserving each call site's
+ * candidate precedence. Every candidate is validated against the BillingPlan
+ * union so unrecognized Stripe metadata (typos, a removed tier like BUSINESS)
+ * is rejected rather than persisted verbatim and silently mis-read on the next
+ * entitlement read. Falls back to INDIVIDUAL when nothing resolves.
+ */
+function resolveWebhookPlan(...candidates: Array<string | null | undefined>): string {
+  for (const candidate of candidates) {
+    if (isBillingPlan(candidate)) return candidate;
+  }
+  return "INDIVIDUAL";
+}
 
 async function lookupUserByStripeCustomer(stripeCustomerId: string | null | undefined) {
   if (!stripeCustomerId) return null;
@@ -578,7 +593,7 @@ export async function POST(request: NextRequest) {
         const stripeSubscription = await retrieveStripeSubscription(stripe, stripeSubId, event.type);
         const priceId = stripeSubscription.items?.data?.[0]?.price?.id;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(priceId);
-        const plan = (session.metadata?.plan as string) || mappedPrice?.plan || "INDIVIDUAL";
+        const plan = resolveWebhookPlan(session.metadata?.plan as string, mappedPrice?.plan);
         await syncLocalSubscriptionFromStripe({
           eventType: event.type,
           eventDate,
@@ -657,9 +672,10 @@ export async function POST(request: NextRequest) {
         const metadataUserIdExists = Boolean(userId);
 
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
-        const plan = mappedPrice?.plan ||
-          (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
-          "INDIVIDUAL";
+        const plan = resolveWebhookPlan(
+          mappedPrice?.plan,
+          typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null,
+        );
 
         const sync = await syncLocalSubscriptionFromStripe({
           eventType: event.type,
@@ -755,9 +771,10 @@ export async function POST(request: NextRequest) {
         const stripeCustomerId = String(subscription.customer);
         const stripePriceId = subscription.items?.data?.[0]?.price?.id;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
-        const plan = mappedPrice?.plan ||
-          (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
-          "INDIVIDUAL";
+        const plan = resolveWebhookPlan(
+          mappedPrice?.plan,
+          typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null,
+        );
         const periodEnd = stripeDate(subscription.current_period_end);
         const trialEnd = stripeDate(subscription.trial_end);
 
@@ -855,11 +872,11 @@ export async function POST(request: NextRequest) {
             stripeCustomerId: subscriptionCustomerId,
             stripeSubscriptionId,
             stripeSubscription,
-            plan:
-              subscriptionMappedPrice?.plan ||
-              (typeof stripeSubscription.metadata?.plan === "string" ? stripeSubscription.metadata.plan : null) ||
-              mappedPrice?.plan ||
-              "INDIVIDUAL",
+            plan: resolveWebhookPlan(
+              subscriptionMappedPrice?.plan,
+              typeof stripeSubscription.metadata?.plan === "string" ? stripeSubscription.metadata.plan : null,
+              mappedPrice?.plan,
+            ),
             billingInterval:
               subscriptionMappedPrice?.billingInterval ||
               mappedPrice?.billingInterval ||

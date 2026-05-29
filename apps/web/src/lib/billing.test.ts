@@ -127,6 +127,45 @@ describe("billing helpers", () => {
     });
   });
 
+  it("resolves Family and Pro Stripe prices from their config keys (doc 62 cascade)", async () => {
+    const values: Record<string, string> = {
+      STRIPE_PRICE_FAMILY_MONTHLY: "price_family_m",
+      STRIPE_PRICE_FAMILY_YEARLY: "price_family_y",
+      STRIPE_PRICE_PRO_MONTHLY: "price_pro_m",
+      STRIPE_PRICE_PRO_YEARLY: "price_pro_y",
+    };
+    mocks.getRuntimeConfigValue.mockImplementation(async (key: string) => values[key] || null);
+
+    await expect(getStripePriceIdForPlanAndInterval("FAMILY", "MONTH")).resolves.toBe("price_family_m");
+    await expect(getStripePriceIdForPlanAndInterval("FAMILY", "YEAR")).resolves.toBe("price_family_y");
+    await expect(getStripePriceIdForPlanAndInterval("PRO", "MONTH")).resolves.toBe("price_pro_m");
+    await expect(getStripePriceIdForPlan("PRO", "yearly")).resolves.toBe("price_pro_y");
+  });
+
+  it("maps Family and Pro Stripe price IDs back to plan and interval", async () => {
+    const values: Record<string, string> = {
+      STRIPE_PRICE_FAMILY_MONTHLY: "price_family_m",
+      STRIPE_PRICE_PRO_YEARLY: "price_pro_y",
+    };
+    mocks.getRuntimeConfigValue.mockImplementation(async (key: string) => values[key] || null);
+
+    await expect(mapStripePriceIdToPlanAndInterval("price_family_m")).resolves.toEqual({
+      plan: "FAMILY",
+      billingInterval: "MONTH",
+    });
+    await expect(mapStripePriceIdToPlanAndInterval("price_pro_y")).resolves.toEqual({
+      plan: "PRO",
+      billingInterval: "YEAR",
+    });
+  });
+
+  it("returns null for Family/Pro checkout when their price IDs are not configured (self-serve stays external-blocked)", async () => {
+    mocks.getRuntimeConfigValue.mockResolvedValue(null);
+
+    await expect(getStripePriceIdForPlanAndInterval("FAMILY", "MONTH")).resolves.toBeNull();
+    await expect(getStripePriceIdForPlanAndInterval("PRO", "YEAR")).resolves.toBeNull();
+  });
+
   it("keeps billing interval during schedule-column schema fallback reads", async () => {
     subscriptionFindUnique
       .mockRejectedValueOnce(missingColumnError("defaultdb.Subscription.pendingBillingInterval"))
