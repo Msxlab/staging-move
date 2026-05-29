@@ -17,16 +17,12 @@ import {
   LogOut,
   BarChart3,
   Bell,
-  DollarSign,
-  PieChart,
-  Mail,
   HelpCircle,
   Flag,
   Plug,
   Lock,
   ChevronDown,
   Search,
-  Database,
   LifeBuoy,
   Sparkles,
   Ticket,
@@ -71,6 +67,11 @@ function meetsRole(actual: AdminRoleString, required: AdminRoleString): boolean 
 // can type "Subscriptions" regardless of the active locale. `nameKey`
 // drives the visible label via useTranslations("nav.*"). To add a new
 // route: append here + add EN/ES string under messages/{locale}.json.
+// Sub-workflows (Billing, Provider Governance, Reports, Email Templates,
+// Backups, Runtime Config, …) are no longer top-level here — they surface as
+// section tabs under their parent route via <SubNav>. This keeps the sidebar
+// to ~19 items across 4 groups (admin IA simplification). Adding/moving a
+// child tab is done in components/sub-nav.tsx, not here.
 const navGroups: NavGroup[] = [
   {
     label: "Core",
@@ -80,7 +81,7 @@ const navGroups: NavGroup[] = [
       { name: "Users", nameKey: "users", href: "/users", icon: Users, show: ({ permissions }) => permissions.users.canRead },
       { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard, show: ({ permissions }) => permissions.subscriptions.canRead },
       { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket, show: ({ permissions }) => permissions.acquisition_campaigns.canRead },
-      { name: "Billing", nameKey: "billing", href: "/billing", icon: DollarSign, show: ({ permissions }) => permissions.subscriptions.canRead },
+      { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
     ],
   },
   {
@@ -88,7 +89,6 @@ const navGroups: NavGroup[] = [
     labelKey: "content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
-      { name: "Provider Governance", nameKey: "providerGovernance", href: "/provider-governance", icon: Shield, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },
     ],
@@ -99,18 +99,9 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Support", nameKey: "support", href: "/support", icon: LifeBuoy, show: ({ permissions }) => permissions.tickets.canRead },
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell, show: ({ role }) => meetsRole(role, "ADMIN") },
-      { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
       { name: "Blog", nameKey: "blog", href: "/blog", icon: FileText, show: ({ permissions }) => permissions.blog.canRead },
       { name: "Waitlist", nameKey: "waitlist", href: "/waitlist", icon: Sparkles },
-    ],
-  },
-  {
-    label: "Analytics",
-    labelKey: "analytics",
-    items: [
-      { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
-      { name: "Reports", nameKey: "reports", href: "/reports", icon: PieChart },
     ],
   },
   {
@@ -123,8 +114,6 @@ const navGroups: NavGroup[] = [
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Security", nameKey: "security", href: "/security", icon: Lock, show: ({ role }) => meetsRole(role, "ADMIN") },
-      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock, show: ({ role }) => role === "SUPER_ADMIN" },
-      { name: "Backups", nameKey: "backups", href: "/backups", icon: Database, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText, show: ({ permissions }) => permissions.audit_logs.canRead },
       { name: "Admin Team", nameKey: "adminTeam", href: "/team", icon: Shield, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Settings", nameKey: "settings", href: "/settings", icon: Settings },

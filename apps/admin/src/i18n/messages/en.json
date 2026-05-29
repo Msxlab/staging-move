@@ -62,7 +62,14 @@
     "auditLogs": "Audit Logs",
     "tickets": "Tickets",
     "support": "Support",
-    "adminTeam": "Admin Team"
+    "adminTeam": "Admin Team",
+    "governance": "Governance",
+    "needsLogo": "Needs Logo",
+    "intelligence": "Intelligence",
+    "sessions": "Sessions",
+    "activity": "Activity",
+    "health": "Health",
+    "twoFactor": "Two-Factor"
   },
   "login": {
     "title": "Admin Sign In",

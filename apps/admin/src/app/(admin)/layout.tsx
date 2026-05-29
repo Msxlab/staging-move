@@ -1,5 +1,6 @@
 import { AuroraBackground } from "@/components/aurora";
 import { Sidebar } from "@/components/sidebar";
+import { SubNav } from "@/components/sub-nav";
 import { requirePageAdmin } from "@/lib/page-guard";
 import "../aurora.css";
 
@@ -36,7 +37,13 @@ export default async function AdminLayout({
         tabIndex={-1}
         className="flex-1 pl-64 focus:outline-none"
       >
-        <div className="p-8">{children}</div>
+        <div className="p-8">
+          {/* Section tab bar — surfaces the sub-workflows that were removed
+              from the sidebar (Billing, Governance, Reports, …). Renders only
+              inside a cluster, role-gated by the same ctx as the sidebar. */}
+          <SubNav ctx={{ role: ctx.role, permissions: ctx.permissions }} />
+          {children}
+        </div>
       </main>
     </div>
   );
