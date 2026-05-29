@@ -27,6 +27,7 @@ export const SOFT_DELETE_MODELS = new Set<string>([
   "MoveTask",
   "UserCustomProvider",
   "BlogPost",
+  "Workspace",
 ]);
 
 function isSoftDeleteModel(model: string | undefined): boolean {
