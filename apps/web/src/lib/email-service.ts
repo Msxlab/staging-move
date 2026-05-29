@@ -544,6 +544,45 @@ export async function sendWorkspaceInvitationEmail(opts: {
 }
 
 /**
+ * Connector "action needed" — sent when an address sync to a partner can't
+ * complete automatically (NEEDS_USER: token expired, validation rejected, or
+ * unsupported). Transactional; the user must act, so it always sends. Without
+ * this the sync fails silently and the user thinks their address was updated.
+ */
+export async function sendConnectorActionNeededEmail(opts: {
+  userEmail: string;
+  userName?: string | null;
+  connectorKey: string;
+  dedupeKey?: string;
+}): Promise<boolean> {
+  const partner = opts.connectorKey.toUpperCase();
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: `Action needed: finish updating your address with ${partner}`,
+    title: "Action needed to sync your address",
+    preheader: `We couldn't finish updating your address with ${partner}.`,
+    userName: opts.userName || "there",
+    bodyLines: [
+      `We couldn't finish updating your address with ${partner} automatically.`,
+      "Open Connections to reconnect the partner or complete the change yourself.",
+    ],
+    details: [["Partner", partner]],
+    cta: { href: `${appUrl}/settings/connections`, label: "Open Connections" },
+    securityNote: true,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "connector-action-needed",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "connector-action-needed" },
+  });
+  return result.success;
+}
+
+/**
  * Email verification, sent after registration.
  */
 function isNonEnglishLocale(locale?: string | null): boolean {

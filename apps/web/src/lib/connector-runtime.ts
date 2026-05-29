@@ -29,6 +29,8 @@ import {
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { refreshConsentAccessToken } from "@/lib/connector-oauth";
+import { createInAppNotification } from "@/lib/in-app-notifications";
+import { sendConnectorActionNeededEmail } from "@/lib/email-service";
 
 /** The connectors LocateFlow ships. Adding one = add it here (+ its folder). */
 export const connectorRegistry = createConnectorRegistry([uspsConnector]);
@@ -163,10 +165,32 @@ export async function enqueueAddressChange(input: {
 interface DispatchRow {
   id: string;
   connectorKey: string;
+  userId: string;
   consentId: string | null;
   idempotencyKey: string;
   attemptCount: number;
   payloadEncrypted: string | null;
+}
+
+/** Tell the user (in-app + email) that a sync needs their attention. Best-effort. */
+async function notifyNeedsUser(userId: string, connectorKey: string, dispatchId: string): Promise<void> {
+  const dedupeKey = `connector-needs-user:${dispatchId}`;
+  try {
+    await createInAppNotification({
+      userId,
+      type: "CONNECTOR_ACTION_NEEDED",
+      title: "Action needed to sync your address",
+      body: `We couldn't finish updating your address with ${connectorKey.toUpperCase()}. Open Connections to reconnect or complete it.`,
+      href: "/settings/connections",
+      dedupeKey,
+    });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, firstName: true } });
+    if (user?.email) {
+      await sendConnectorActionNeededEmail({ userEmail: user.email, userName: user.firstName, connectorKey, dedupeKey });
+    }
+  } catch {
+    // Best-effort: a notification failure must never fail the dispatch.
+  }
 }
 
 /** Run one dispatch row through its connector and persist the planned status. */
@@ -188,6 +212,7 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       where: { id: row.id },
       data: { status: "NEEDS_USER", lastErrorCode: "NOT_SUPPORTED" },
     });
+    await notifyNeedsUser(row.userId, row.connectorKey, row.id);
     return "NEEDS_USER";
   }
 
@@ -249,6 +274,9 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       resultMetadataJson: result.metadata ? JSON.stringify(result.metadata) : undefined,
     },
   });
+  if (plan.status === "NEEDS_USER") {
+    await notifyNeedsUser(row.userId, row.connectorKey, row.id);
+  }
   return plan.status;
 }
 
@@ -262,6 +290,7 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number 
     select: {
       id: true,
       connectorKey: true,
+      userId: true,
       consentId: true,
       idempotencyKey: true,
       attemptCount: true,
