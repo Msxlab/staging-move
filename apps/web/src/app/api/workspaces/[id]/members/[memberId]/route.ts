@@ -3,6 +3,7 @@ import { can, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
+import { createInAppNotification } from "@/lib/in-app-notifications";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const updated = await prisma.workspaceMember.update({ where: { id: memberId }, data: { role: newRole } });
+  await createInAppNotification({
+    userId: target.userId,
+    type: "WORKSPACE_MEMBERSHIP",
+    title: "Your role changed",
+    body: `Your role in this workspace is now ${updated.role}.`,
+    href: "/settings/workspace",
+  }).catch(() => {});
   return NextResponse.json({ id: updated.id, role: updated.role });
 }
 
@@ -68,5 +76,12 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   // (Address/Service carrying this workspaceId) stays with the workspace, and
   // their personal connector consents are user-scoped — untouched by design.
   await prisma.workspaceMember.delete({ where: { id: memberId } });
+  await createInAppNotification({
+    userId: target.userId,
+    type: "WORKSPACE_MEMBERSHIP",
+    title: "Removed from workspace",
+    body: "You were removed from a shared workspace.",
+    href: "/settings/workspace",
+  }).catch(() => {});
   return NextResponse.json({ removed: true });
 }

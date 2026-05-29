@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { hashInvitationToken, seatLimitForPlan } from "@/lib/workspace-invitations";
+import { createInAppNotification } from "@/lib/in-app-notifications";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,19 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
     }
     throw e;
+  }
+
+  // Notify the inviter that their invite was accepted (best-effort, deduped).
+  if (inv.invitedByUserId) {
+    const ws = await prisma.workspace.findUnique({ where: { id: inv.workspaceId }, select: { name: true } });
+    await createInAppNotification({
+      userId: inv.invitedByUserId,
+      type: "WORKSPACE_MEMBERSHIP",
+      title: "Invitation accepted",
+      body: `${inv.invitedEmail} joined ${ws?.name ?? "your workspace"}.`,
+      href: "/settings/workspace",
+      dedupeKey: `ws-invite-accepted:${inv.id}`,
+    }).catch(() => {});
   }
 
   return NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
