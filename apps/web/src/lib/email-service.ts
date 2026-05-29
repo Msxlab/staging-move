@@ -498,6 +498,52 @@ export async function sendWelcomeEmail(user: {
 }
 
 /**
+ * Workspace invitation — sent when an owner/admin invites someone to a
+ * workspace. Transactional (no unsubscribe). Inline content so it works without
+ * a DB template; in dev with no email provider configured it logs as failed and
+ * the route still surfaces the link to the inviter.
+ */
+export async function sendWorkspaceInvitationEmail(opts: {
+  invitedEmail: string;
+  workspaceName: string;
+  inviterName?: string | null;
+  roleLabel: string;
+  acceptUrl: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const inviter = opts.inviterName?.trim() || "A LocateFlow member";
+  const content = buildSimpleContent({
+    subject: `You're invited to join ${opts.workspaceName} on LocateFlow`,
+    title: `Join ${opts.workspaceName}`,
+    preheader: `${inviter} invited you to ${opts.workspaceName}.`,
+    userName: "there",
+    bodyLines: [
+      `${inviter} invited you to join ${opts.workspaceName} as ${opts.roleLabel}.`,
+      "Open the invitation to review it and join. You can leave the workspace at any time.",
+    ],
+    details: [
+      ["Workspace", opts.workspaceName],
+      ["Role", opts.roleLabel],
+    ],
+    cta: { href: opts.acceptUrl, label: "Review invitation" },
+    securityNote: true,
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.invitedEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-invitation",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-invitation", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
  * Email verification, sent after registration.
  */
 function isNonEnglishLocale(locale?: string | null): boolean {

@@ -10,10 +10,12 @@ import {
   invitationExpiry,
   seatLimitForPlan,
 } from "@/lib/workspace-invitations";
+import { sendWorkspaceInvitationEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
 const INVITABLE_ROLES = ["ADMIN", "MEMBER", "CHILD", "VIEW_ONLY"]; // never OWNER
+const ROLE_LABELS: Record<string, string> = { ADMIN: "Admin", MEMBER: "Member", CHILD: "Child", VIEW_ONLY: "View only" };
 
 function appBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // Seat ceiling from the owner's plan.
-  const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true } });
+  const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true, name: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
   const plan = String(getEffectiveEntitlement(ownerSub).effectivePlan);
@@ -102,11 +104,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     select: { id: true, invitedEmail: true, role: true, expiresAt: true, tokenLast4: true },
   });
 
-  // TODO(doc 66): send the invitation email here. No email infra in dev, so we
-  // surface the link to the authorized inviter as a dev-only fallback. The
-  // token plaintext is never persisted or returned in production.
-  const emailSent = false;
+  // Send the invitation email (doc 66). Transactional + inert when the feature
+  // is off (this route 404s before reaching here). In dev with no email provider
+  // configured, the send logs as failed and we still surface the link below.
   const inviteUrl = `${appBaseUrl()}/invitations/${token}`;
+  const inviter = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { firstName: true, lastName: true },
+  });
+  const inviterName = [inviter?.firstName, inviter?.lastName].filter(Boolean).join(" ") || null;
+  const emailSent = await sendWorkspaceInvitationEmail({
+    invitedEmail,
+    workspaceName: workspace.name,
+    inviterName,
+    roleLabel: ROLE_LABELS[role] ?? role,
+    acceptUrl: inviteUrl,
+    dedupeKey: `ws-invite:${invitation.id}`,
+    metadata: { workspaceId: id },
+  }).catch(() => false);
 
   return NextResponse.json({
     ...invitation,
