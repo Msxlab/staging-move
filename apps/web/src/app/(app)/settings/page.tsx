@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, Loader2 } from "lucide-react";
+import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
@@ -20,6 +20,7 @@ const accountSections = [
   { title: "Notifications", description: "Configure in-app and email reminders", icon: Bell, href: "/settings/notifications" },
   { title: "Subscription", description: "Manage your plan and billing", icon: CreditCard, href: "/settings/subscription" },
   { title: "Connections", description: "Link partners to auto-update your address", icon: Link2, href: "/settings/connections" },
+  { title: "Workspace", description: "Members, roles, and invitations", icon: Users, href: "/settings/workspace" },
   { title: "Data Export", description: "Export your data as PDF or CSV", icon: Download, href: "/settings/export" },
   { title: "Privacy & Security", description: "Password, 2FA, and data privacy", icon: Shield, href: "/settings/privacy" },
 ];

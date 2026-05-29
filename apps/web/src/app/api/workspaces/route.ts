@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEffectiveEntitlement } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
-import { planLabelForOwner, workspaceFeatureGate, workspacePlanLabel } from "@/lib/workspace-routes";
+import { planSummaryForOwner, workspaceFeatureGate, workspacePlanLabel } from "@/lib/workspace-routes";
 
 export const runtime = "nodejs";
 
@@ -28,15 +28,19 @@ export async function GET() {
   });
 
   const workspaces = await Promise.all(
-    memberships.map(async (m) => ({
-      id: m.workspace.id,
-      name: m.workspace.name,
-      role: m.role,
-      status: m.status,
-      planLabel: await planLabelForOwner(m.workspace.ownerUserId),
-      memberCount: await prisma.workspaceMember.count({ where: { workspaceId: m.workspace.id } }),
-      deletedAt: m.workspace.deletedAt,
-    })),
+    memberships.map(async (m) => {
+      const summary = await planSummaryForOwner(m.workspace.ownerUserId);
+      return {
+        id: m.workspace.id,
+        name: m.workspace.name,
+        role: m.role,
+        status: m.status,
+        planLabel: summary.planLabel,
+        seatLimit: summary.seatLimit,
+        memberCount: await prisma.workspaceMember.count({ where: { workspaceId: m.workspace.id } }),
+        deletedAt: m.workspace.deletedAt,
+      };
+    }),
   );
 
   return NextResponse.json({ workspaces }, { headers: { "Cache-Control": "no-store" } });
