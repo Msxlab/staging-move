@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getUserSession } from "@/lib/user-auth";
+import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
 import {
   MapPin,
   Zap,
@@ -18,6 +19,7 @@ import {
   Building2,
   Stethoscope,
   Package,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,9 +86,10 @@ export default async function LandingPage() {
   // CTA below resolves a state-aware destination so eligible Free Access
   // users are not silently funnelled past the trial offer.
   const primaryHref = userId ? "/dashboard" : "/sign-up";
-  const [ctaTarget, publicCampaign] = await Promise.all([
+  const [ctaTarget, publicCampaign, workspaceModelEnabled] = await Promise.all([
     resolveMarketingCtaTarget(userId),
     getPublicSubscriptionOffersViewModel(),
+    isWorkspaceModelEnabled(),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   // Server-side translation — getTranslations resolves the locale from
@@ -326,6 +329,37 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Families & teams — workspace positioning. Gated by WORKSPACE_MODEL_ENABLED
+          so the live page is unchanged until launch. Copy is about shared
+          workspaces only — it makes no auto-update/provider-account claim. */}
+      {workspaceModelEnabled && (
+        <section className="container py-20 border-t">
+          <div className="text-center mb-12 max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-primary">
+              <Users className="h-3.5 w-3.5" />
+              {t("family_eyebrow")}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("family_title")}</h2>
+            <p className="text-muted-foreground text-lg">{t("family_subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              { icon: Users, titleKey: "family_feature_invite_title", bodyKey: "family_feature_invite_body" },
+              { icon: Shield, titleKey: "family_feature_roles_title", bodyKey: "family_feature_roles_body" },
+              { icon: MapPin, titleKey: "family_feature_together_title", bodyKey: "family_feature_together_body" },
+            ].map((item) => (
+              <div key={item.titleKey} className="rounded-xl border bg-card p-6 space-y-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-semibold">{t(item.titleKey as any)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(item.bodyKey as any)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Bilingual showcase — the wedge */}
       <BilingualShowcase />
