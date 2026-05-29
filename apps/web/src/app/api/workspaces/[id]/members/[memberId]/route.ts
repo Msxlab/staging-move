@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, type WorkspaceRole } from "@locateflow/shared";
+import { can, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -36,10 +36,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Invalid role" }, { status: 422 });
   }
   // Promoting to ADMIN is OWNER-only; all role changes are gated on the target's current role.
-  if (newRole === "ADMIN" && !can(caller.role as WorkspaceRole, "member.promoteAdmin")) {
+  if (newRole === "ADMIN" && !can(caller.role as WorkspaceRole, "member.promoteAdmin", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only the owner can grant the Admin role." }, { status: 403 });
   }
-  if (!can(caller.role as WorkspaceRole, "member.changeRole", { targetRole: target.role as WorkspaceRole })) {
+  if (!can(caller.role as WorkspaceRole, "member.changeRole", { targetRole: target.role as WorkspaceRole, status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "You can't change this member's role." }, { status: 403 });
   }
 
@@ -60,7 +60,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   if (target.userId === session.userId) {
     return NextResponse.json({ error: "Use leave to remove yourself." }, { status: 409 });
   }
-  if (!can(caller.role as WorkspaceRole, "member.remove", { targetRole: target.role as WorkspaceRole })) {
+  if (!can(caller.role as WorkspaceRole, "member.remove", { targetRole: target.role as WorkspaceRole, status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "You can't remove this member." }, { status: 403 });
   }
 

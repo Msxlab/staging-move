@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, getEffectiveEntitlement, type WorkspaceRole } from "@locateflow/shared";
+import { can, getEffectiveEntitlement, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!can(caller.role as WorkspaceRole, "member.invite")) {
+  if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!can(caller.role as WorkspaceRole, "member.invite")) {
+  if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only owners and admins can invite." }, { status: 403 });
   }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!INVITABLE_ROLES.includes(role)) {
     return NextResponse.json({ error: "Invalid role." }, { status: 422 });
   }
-  if (role === "ADMIN" && !can(caller.role as WorkspaceRole, "member.promoteAdmin")) {
+  if (role === "ADMIN" && !can(caller.role as WorkspaceRole, "member.promoteAdmin", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only the owner can invite an Admin." }, { status: 403 });
   }
 
