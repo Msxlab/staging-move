@@ -12,7 +12,7 @@
  * ConnectorConfig and no partner credentials this never does anything.
  */
 
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import {
   CircuitBreaker,
   createConnectorHttpClient,
@@ -81,6 +81,30 @@ function buildContext(
   };
 }
 
+interface ConnectorControl {
+  connectorKey: string;
+  rolloutPercent: number;
+  circuitState: string;
+  stage: string;
+}
+
+/** Deterministic 0..99 bucket for gradual rollout (stable per user+connector). */
+function rolloutBucket(userId: string, connectorKey: string): number {
+  return createHash("sha256").update(`${userId}:${connectorKey}`).digest().readUInt16BE(0) % 100;
+}
+
+/**
+ * Whether the admin control plane currently lets this connector dispatch for
+ * this user. Honors the circuit state, lifecycle stage, and gradual rollout %
+ * (the `enabled` kill switch is already applied by the query filter).
+ */
+function isConnectorDispatchable(config: ConnectorControl, userId: string): boolean {
+  if (config.circuitState === "OPEN" || config.circuitState === "DISABLED") return false;
+  if (config.stage === "SHADOW" || config.stage === "RETIRED") return false;
+  if (config.stage === "ROLLOUT" && rolloutBucket(userId, config.connectorKey) >= config.rolloutPercent) return false;
+  return true; // GA, or ROLLOUT within %, with a CLOSED/HALF_OPEN circuit
+}
+
 /**
  * Fan one address change out to the user's connected + enabled connectors by
  * writing QUEUED outbox rows. Returns how many were enqueued.
@@ -97,11 +121,14 @@ export async function enqueueAddressChange(input: {
       : Promise.resolve(null),
     prisma.user.findUnique({ where: { id: input.userId }, select: { firstName: true, lastName: true } }),
     prisma.partnerConsent.findMany({ where: { userId: input.userId, status: "GRANTED" }, select: { id: true, connectorKey: true } }),
-    prisma.connectorConfig.findMany({ where: { enabled: true }, select: { connectorKey: true } }),
+    prisma.connectorConfig.findMany({
+      where: { enabled: true },
+      select: { connectorKey: true, rolloutPercent: true, circuitState: true, stage: true },
+    }),
   ]);
   if (!toAddress) throw new Error("ADDRESS_NOT_FOUND");
 
-  const enabledKeys = new Set(configs.map((c) => c.connectorKey));
+  const configByKey = new Map<string, ConnectorControl>(configs.map((c) => [c.connectorKey, c]));
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "LocateFlow User";
   const changeRef = randomUUID();
   const base: Omit<CanonicalAddressChange, "fields"> = {
@@ -113,7 +140,9 @@ export async function enqueueAddressChange(input: {
 
   let created = 0;
   for (const consent of consents) {
-    if (!enabledKeys.has(consent.connectorKey) || !connectorRegistry.has(consent.connectorKey)) continue;
+    const config = configByKey.get(consent.connectorKey);
+    if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
+    if (!isConnectorDispatchable(config, input.userId)) continue;
     const payload: CanonicalAddressChange = { ...base, fields: {} };
     await prisma.connectorDispatch.create({
       data: {
@@ -160,6 +189,21 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       data: { status: "NEEDS_USER", lastErrorCode: "NOT_SUPPORTED" },
     });
     return "NEEDS_USER";
+  }
+
+  // Honor the admin kill switch / circuit even for already-claimed rows: if the
+  // connector was disabled or its circuit opened after enqueue, defer (back to
+  // QUEUED) rather than pushing.
+  const control = await prisma.connectorConfig.findUnique({
+    where: { connectorKey: row.connectorKey },
+    select: { enabled: true, circuitState: true },
+  });
+  if (!control?.enabled || control.circuitState === "OPEN" || control.circuitState === "DISABLED") {
+    await prisma.connectorDispatch.update({
+      where: { id: row.id },
+      data: { status: "QUEUED", nextRetryAt: new Date(Date.now() + 5 * 60_000) },
+    });
+    return "QUEUED";
   }
 
   let accessToken: string | null = null;
