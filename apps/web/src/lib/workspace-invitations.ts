@@ -25,12 +25,9 @@ export function invitationExpiry(now: Date = new Date()): Date {
   return new Date(now.getTime() + INVITE_TTL_MS);
 }
 
-/** Seat ceiling by plan (D21). Refined alongside entitlements (Dilim 5). */
-export function seatLimitForPlan(plan: string): number {
-  if (plan === "PRO") return 10;
-  if (plan === "FAMILY") return 6;
-  return 1; // Free / Individual — solo workspace
-}
+// Seat ceiling lives in @locateflow/shared (single source of truth across web,
+// admin, and mobile). Re-exported so existing importers keep working.
+export { seatLimitForPlan } from "@locateflow/shared";
 
 /** Used seats = non-suspended members + pending invitations. */
 export async function countUsedSeats(workspaceId: string): Promise<number> {

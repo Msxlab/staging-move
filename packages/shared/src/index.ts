@@ -8,6 +8,7 @@ export * from "./billing";
 export * from "./acquisition";
 export * from "./entitlement";
 export * from "./permissions";
+export * from "./workspace-entitlements";
 export * from "./legal";
 export * from "./relocation-checklist";
 export * from "./migration-engine";
