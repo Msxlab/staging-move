@@ -106,7 +106,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // surface the link to the authorized inviter as a dev-only fallback. The
   // token plaintext is never persisted or returned in production.
   const emailSent = false;
-  const inviteUrl = `${appBaseUrl()}/workspace/invite/${token}`;
+  const inviteUrl = `${appBaseUrl()}/invitations/${token}`;
 
   return NextResponse.json({
     ...invitation,
