@@ -22,6 +22,7 @@ import {
   Mail,
   HelpCircle,
   Flag,
+  Plug,
   Lock,
   ChevronDown,
   Search,
@@ -120,6 +121,7 @@ const navGroups: NavGroup[] = [
       // server-side gate would let the admin in. Hiding is UX only —
       // direct URL access still hits page-guard / API guards.
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Security", nameKey: "security", href: "/security", icon: Lock, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock, show: ({ role }) => role === "SUPER_ADMIN" },
       { name: "Backups", nameKey: "backups", href: "/backups", icon: Database, show: ({ role }) => meetsRole(role, "ADMIN") },

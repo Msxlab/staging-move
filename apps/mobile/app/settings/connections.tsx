@@ -1,0 +1,243 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, Link2, ExternalLink, Trash2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { useAppTheme, type Theme } from "@/lib/theme";
+import { api, APP_WEB_URL } from "@/lib/api";
+import { openWebUrl } from "@/lib/in-app-browser";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { hapticSuccess, hapticError } from "@/lib/haptics";
+
+interface Consent {
+  id: string;
+  connectorKey: string;
+  status: string;
+  scopes: string[];
+}
+
+// The partners LocateFlow can connect to. Mirrors the connector registry; the
+// list is intentionally small until partner OAuth credentials are configured.
+const AVAILABLE_CONNECTORS: Array<{ key: string; name: string }> = [{ key: "usps", name: "USPS" }];
+
+export default function ConnectionsScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const router = useRouter();
+  const { t } = useTranslation();
+  const [pageLoading, setPageLoading] = useState(true);
+  const [consents, setConsents] = useState<Consent[]>([]);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await api.get<{ consents: Consent[] }>("/api/partner-consents");
+    if (res.data?.consents) setConsents(res.data.consents);
+    setPageLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const grantedByKey = useMemo(() => {
+    const map = new Map<string, Consent>();
+    for (const c of consents) {
+      if (c.status === "GRANTED") map.set(c.connectorKey, c);
+    }
+    return map;
+  }, [consents]);
+
+  const connect = async (connectorKey: string) => {
+    // Opens our server-side OAuth initiate in an in-app browser that shares the
+    // signed-in session. The token is exchanged + stored server-side; the
+    // device never sees it. Inert (503) until partner credentials are set.
+    setBusyKey(connectorKey);
+    await openWebUrl(`${APP_WEB_URL}/api/partner-consents/oauth/initiate?connector=${encodeURIComponent(connectorKey)}`);
+    setBusyKey(null);
+    // Refresh after the user returns from the browser.
+    void load();
+  };
+
+  const revoke = (consent: Consent) => {
+    Alert.alert(
+      t("connections.revokeTitle", "Disconnect?"),
+      t("connections.revokeBody", "LocateFlow will stop syncing addresses to this partner."),
+      [
+        { text: t("common.cancel", "Cancel"), style: "cancel" },
+        {
+          text: t("connections.revoke", "Disconnect"),
+          style: "destructive",
+          onPress: async () => {
+            setBusyKey(consent.connectorKey);
+            const res = await api.delete<{ revoked: boolean }>(`/api/partner-consents/${consent.id}`);
+            setBusyKey(null);
+            if (res.error) {
+              hapticError();
+              Alert.alert(t("common.retry", "Try again"), res.error);
+              return;
+            }
+            hapticSuccess();
+            void load();
+          },
+        },
+      ],
+    );
+  };
+
+  if (pageLoading) return <LoadingScreen />;
+
+  const connectable = AVAILABLE_CONNECTORS.filter((c) => !grantedByKey.has(c.key));
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.title}>{t("connections.title", "Connections")}</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.intro}>
+          {t(
+            "connections.intro",
+            "Connect a partner once and LocateFlow can keep your address up to date there when you move.",
+          )}
+        </Text>
+
+        {consents.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("connections.connected", "Connected")}</Text>
+            <View style={styles.card}>
+              {consents.map((c, i) => (
+                <View key={c.id} style={[styles.row, i < consents.length - 1 && styles.rowBorder]}>
+                  <View style={styles.rowIcon}>
+                    <Link2 size={18} color={theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowLabel}>{c.connectorKey.toUpperCase()}</Text>
+                    <Text style={styles.rowDesc}>{statusLabel(c.status, t)}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => revoke(c)}
+                    disabled={busyKey === c.connectorKey}
+                    style={styles.iconBtn}
+                  >
+                    {busyKey === c.connectorKey ? (
+                      <ActivityIndicator size="small" color={theme.colors.textTertiary} />
+                    ) : (
+                      <Trash2 size={18} color={theme.colors.error} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t("connections.available", "Available")}</Text>
+          {connectable.length === 0 ? (
+            <Text style={styles.empty}>{t("connections.allConnected", "All available partners are connected.")}</Text>
+          ) : (
+            <View style={styles.card}>
+              {connectable.map((c, i) => (
+                <View key={c.key} style={[styles.row, i < connectable.length - 1 && styles.rowBorder]}>
+                  <View style={styles.rowIcon}>
+                    <Link2 size={18} color={theme.colors.textTertiary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowLabel}>{c.name}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => connect(c.key)}
+                    disabled={busyKey === c.key}
+                    style={styles.connectBtn}
+                    activeOpacity={0.7}
+                  >
+                    {busyKey === c.key ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <ExternalLink size={14} color="#fff" />
+                        <Text style={styles.connectBtnText}>{t("connections.connect", "Connect")}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function statusLabel(status: string, t: (k: string, d: string) => string): string {
+  switch (status) {
+    case "GRANTED":
+      return t("connections.status_connected", "Connected");
+    case "EXPIRED":
+      return t("connections.status_expired", "Expired — reconnect");
+    case "REVOKED":
+      return t("connections.status_revoked", "Disconnected");
+    default:
+      return status;
+  }
+}
+
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    header: {
+      flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+      paddingHorizontal: 20, paddingVertical: 12,
+    },
+    backBtn: {
+      width: 44, height: 44, borderRadius: 14,
+      backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+      alignItems: "center", justifyContent: "center",
+    },
+    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    intro: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 19, marginTop: 8, marginBottom: 4 },
+    section: { marginTop: 20 },
+    sectionTitle: {
+      fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
+      textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
+    },
+    empty: { fontSize: 13, color: theme.colors.textMuted, marginLeft: 4 },
+    card: {
+      backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
+      borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row", alignItems: "center", gap: 12,
+      paddingVertical: 14, paddingHorizontal: 16,
+    },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+    rowIcon: {
+      width: 36, height: 36, borderRadius: 12,
+      backgroundColor: theme.colors.background, alignItems: "center", justifyContent: "center",
+    },
+    rowLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
+    rowDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+    iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+    connectBtn: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      backgroundColor: theme.colors.primary, borderRadius: theme.radius.md,
+      paddingVertical: 8, paddingHorizontal: 14,
+    },
+    connectBtnText: { fontSize: 13, fontWeight: "700", color: "#fff" },
+  });

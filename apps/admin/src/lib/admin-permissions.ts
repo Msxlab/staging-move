@@ -48,6 +48,10 @@ export const ADMIN_RESOURCES = [
   // ADMIN handle refunds without also letting them edit the homepage
   // headline.
   "acquisition_campaigns",
+  // Connector framework control plane (Faz 2): enable/disable connectors,
+  // kill switch, rollout stage, and partner-consent administration. Default
+  // role matrix applies — ADMIN/SUPER_ADMIN manage, MODERATOR/VIEWER read-only.
+  "connectors",
 ] as const;
 
 export type AdminResource = (typeof ADMIN_RESOURCES)[number];

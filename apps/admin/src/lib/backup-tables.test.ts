@@ -48,6 +48,16 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "SupportTicket",
   "TicketMessage",
   "Reminder",
+  "PartnerConsent", // holds encrypted OAuth tokens — restoring stale grants re-grants revoked partner access (same rationale as session/token tables)
+  "ConnectorConfig", // runtime control-plane config managed via the admin UI, not restored (same as FeatureFlag)
+  "ConnectorDispatch", // operational connector-sync ledger; restoring stale rows could re-trigger processing and carries stale encrypted confirmations
+  // Workspace foundation (Family/Pro). Empty + flag-off in Phase 1. TODO: when
+  // the workspace backfill runs and the feature launches, promote Workspace and
+  // WorkspaceMember to BACKUP_TABLES (ordered after `users`); they are core data.
+  "Workspace",
+  "WorkspaceMember",
+  "WorkspaceInvitation", // pending invites with hashed tokens — transient/expiring, not restored (token-table rationale)
+  "WorkspaceAuthChallenge", // short-lived step-up challenges — never restore live auth state
 ]);
 
 describe("backup table catalog", () => {

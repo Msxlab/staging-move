@@ -54,6 +54,7 @@
     "analyticsPage": "Analytics",
     "reports": "Reports",
     "featureFlags": "Feature Flags",
+    "connectors": "Connectors",
     "security": "Security",
     "runtimeConfig": "Runtime Config",
     "settings": "Settings",
