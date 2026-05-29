@@ -169,6 +169,11 @@ export default function AddressesScreen() {
           />
         }
       >
+        {error && addresses.length > 0 ? (
+          <View style={{ marginHorizontal: 16, marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
+            <Text style={{ color: theme.colors.rose.text, fontSize: 12, textAlign: "center" }}>{error}</Text>
+          </View>
+        ) : null}
         {error && addresses.length === 0 ? (
           <ErrorState message={error} onRetry={load} />
         ) : addresses.length === 0 ? (

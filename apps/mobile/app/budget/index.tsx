@@ -120,6 +120,11 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
+        {error && budgets.length > 0 ? (
+          <View style={{ marginHorizontal: 16, marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
+            <Text style={{ color: theme.colors.rose.text, fontSize: 12, textAlign: "center" }}>{error}</Text>
+          </View>
+        ) : null}
         {error && budgets.length === 0 ? (
           <ErrorState message={error} onRetry={load} />
         ) : budgets.length === 0 ? (
@@ -136,7 +141,17 @@ export default function BudgetScreen() {
               <TouchableOpacity key={budget.id} activeOpacity={0.7} onPress={() => router.push({ pathname: "/budget/[id]", params: { id: budget.id } })}>
               <Card variant="default">
                 <View style={styles.budgetHeader}>
-                  <Text style={styles.budgetMonth}>{budget.month} {budget.year}</Text>
+                  <Text style={styles.budgetMonth}>
+                    {(() => {
+                      // `budget.month` is a DateTime (ISO); there is no `year`
+                      // field. Format the month into "Month Year" instead of
+                      // rendering a raw timestamp followed by `undefined`.
+                      const d = budget.month ? new Date(budget.month) : null;
+                      return d && !Number.isNaN(d.getTime())
+                        ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
+                        : "";
+                    })()}
+                  </Text>
                   <Text style={[styles.budgetBalance, { color: (budget.actualIncome || 0) - (budget.actualExpenses || 0) >= 0 ? theme.colors.emerald.text : theme.colors.rose.text }]}>
                     {fmt((budget.actualIncome || 0) - (budget.actualExpenses || 0))}
                   </Text>

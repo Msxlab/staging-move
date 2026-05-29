@@ -113,11 +113,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 export async function getToken(): Promise<string | null> {
   return tokenCache.getToken(TOKEN_KEY);
 }
-
-export async function saveToken(token: string): Promise<void> {
-  await tokenCache.saveToken(TOKEN_KEY, token);
-}
-
-export async function clearToken(): Promise<void> {
-  await tokenCache.clearToken(TOKEN_KEY);
-}

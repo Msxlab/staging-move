@@ -122,6 +122,7 @@ export default function NewServiceScreen() {
   // Provider state
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [providersError, setProvidersError] = useState<string | null>(null);
   const [providerSearch, setProviderSearch] = useState("");
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
@@ -183,7 +184,15 @@ export default function NewServiceScreen() {
       const params: Record<string, string> = {};
       params.addressId = addr.id;
       const res = await api.get<any>("/api/providers/recommendations", params);
-      setAllProviders(res.data?.allProviders || []);
+      if (res.error) {
+        // Surface the failure instead of rendering a silent "no providers"
+        // empty state that's indistinguishable from a genuinely empty result.
+        setProvidersError(res.error);
+        setAllProviders([]);
+      } else {
+        setProvidersError(null);
+        setAllProviders(res.data?.allProviders || []);
+      }
       setLoadingProviders(false);
     })();
   }, [selectedAddress, addresses]);
@@ -572,7 +581,7 @@ export default function NewServiceScreen() {
                 <Text style={styles.loadingText}>{t("services.loadingProviders")}</Text>
               </View>
             ) : sortedCategories.length === 0 ? (
-              <Text style={styles.emptyText}>{t("providers.empty")}</Text>
+              <Text style={styles.emptyText}>{providersError || t("providers.empty")}</Text>
             ) : (
               <View style={{ marginTop: 12 }}>
                 {sortedCategories.map((cat) => {

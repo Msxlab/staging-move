@@ -98,7 +98,11 @@ export default function SignInScreen() {
       },
     );
 
-    if (res.data?.requiresMfa) {
+    // The MFA challenge returns as HTTP 403, where the shared API client
+    // exposes only `error` + `code` (the body's `data` is dropped on non-2xx).
+    // Key off the stable `code` so MFA-enrolled users actually reach the
+    // code-entry step instead of seeing a generic "invalid credentials" error.
+    if (res.code === "MFA_REQUIRED" || res.data?.requiresMfa) {
       setRequiresMfa(true);
       setLoading(false);
       return;
