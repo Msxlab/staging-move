@@ -8,6 +8,8 @@ import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
+import { enqueueAddressChange } from "@/lib/connector-runtime";
+import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -86,6 +88,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     await createAuditLog({ userId, action: "UPDATE", entityType: "Address", entityId: id, changes: validated, ...meta });
 
     const moveTaskSync = await syncMoveTasksForAddress(userId, id);
+
+    // Auto-sync to connected partners when the user's PRIMARY address location
+    // changes (or an address becomes primary). Best-effort + gated; a no-op
+    // unless the user has connected a partner (enqueue finds no consents).
+    try {
+      const locationKeys = ["street", "street2", "city", "state", "zip", "country"] as const;
+      const locationChanged = locationKeys.some(
+        (k) => (validated as any)[k] !== undefined && (validated as any)[k] !== (existing as any)[k],
+      );
+      const becamePrimary = validated.isPrimary === true && !existing.isPrimary;
+      if (address.isPrimary && (locationChanged || becamePrimary) && (await isApiConnectorsEnabled())) {
+        await enqueueAddressChange({ userId, toAddressId: id });
+      }
+    } catch {
+      // best-effort: a sync enqueue must never fail the address update
+    }
 
     return NextResponse.json({
       address: {

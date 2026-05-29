@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Link2, ExternalLink, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Link2, ExternalLink, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -34,6 +34,7 @@ export default function ConnectionsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [disabled, setDisabled] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(() => {
     fetch("/api/partner-consents")
@@ -80,6 +81,25 @@ export default function ConnectionsPage() {
     }
   };
 
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/connector-dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Couldn't start a sync.");
+        return;
+      }
+      toast.success(data.created > 0 ? `Syncing your address to ${data.created} partner(s)…` : "Nothing to sync yet.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
@@ -110,7 +130,18 @@ export default function ConnectionsPage() {
         <>
           {consents.length > 0 && (
             <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
-              <div className="px-5 pt-5 pb-3 text-sm font-semibold text-foreground">Connected</div>
+              <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <span className="text-sm font-semibold text-foreground">Connected</span>
+                <button
+                  type="button"
+                  onClick={syncNow}
+                  disabled={syncing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                >
+                  {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  Sync now
+                </button>
+              </div>
               <div className="px-5 pb-4 space-y-0.5">
                 {consents.map((c) => (
                   <div

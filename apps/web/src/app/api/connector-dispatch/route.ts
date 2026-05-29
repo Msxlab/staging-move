@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
@@ -25,10 +26,18 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const toAddressId = typeof body?.toAddressId === "string" ? body.toAddressId : "";
+  let toAddressId = typeof body?.toAddressId === "string" ? body.toAddressId : "";
   const fromAddressId = typeof body?.fromAddressId === "string" ? body.fromAddressId : null;
   if (!toAddressId) {
-    return NextResponse.json({ error: "toAddressId is required" }, { status: 400 });
+    // The "Sync now" button sends no id → default to the user's primary address.
+    const primary = await prisma.address.findFirst({
+      where: { userId: session.userId, isPrimary: true, deletedAt: null },
+      select: { id: true },
+    });
+    if (!primary) {
+      return NextResponse.json({ error: "Set a primary address first." }, { status: 400 });
+    }
+    toAddressId = primary.id;
   }
 
   try {
