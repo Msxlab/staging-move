@@ -65,7 +65,10 @@ export default function ConnectionsPage() {
   const revoke = async (c: Consent) => {
     setBusy(c.connectorKey);
     try {
-      const res = await fetch(`/api/partner-consents/${c.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/partner-consents/${c.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
       if (!res.ok) {
         toast.error("Couldn't disconnect. Try again.");
         return;
