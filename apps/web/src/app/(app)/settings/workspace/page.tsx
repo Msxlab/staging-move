@@ -75,6 +75,7 @@ export default function WorkspaceSettingsPage() {
 
   const selected = workspaces.find((w) => w.id === selectedId) ?? null;
   const iAmManager = selected ? isManagerRole(selected.role) : false;
+  const iAmOwner = selected ? selected.role === "OWNER" : false;
 
   // Initial load: workspaces + my user id.
   useEffect(() => {
@@ -181,6 +182,28 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("Member removed.");
       refreshDetail();
+    } finally {
+      setBusyMember(null);
+    }
+  };
+
+  const transferOwnership = async (member: Member) => {
+    if (!selectedId) return;
+    if (!window.confirm(`Make ${member.displayName || member.email} the owner? You'll become an admin.`)) return;
+    setBusyMember(member.id);
+    try {
+      const res = await fetch(`/api/workspaces/${selectedId}/transfer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toUserId: member.userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Couldn't transfer ownership.");
+        return;
+      }
+      toast.success("Ownership transferred.");
+      window.location.reload();
     } finally {
       setBusyMember(null);
     }
@@ -422,6 +445,15 @@ export default function WorkspaceSettingsPage() {
                         <span className="rounded-lg bg-foreground/10 px-2 py-1 text-xs text-muted-foreground">
                           {ROLE_LABEL[m.role] ?? m.role}
                         </span>
+                      )}
+                      {iAmOwner && !isSelf && m.status === "ACTIVE" && (m.role === "ADMIN" || m.role === "MEMBER") && (
+                        <button
+                          onClick={() => transferOwnership(m)}
+                          disabled={busyMember === m.id}
+                          className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground disabled:opacity-50"
+                        >
+                          Make owner
+                        </button>
                       )}
                       {canManageThis && (
                         <button

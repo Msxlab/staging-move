@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   userFindUnique: vi.fn(),
   rawMovingPlanDeleteMany: vi.fn(),
   rawUserDelete: vi.fn(),
+  rawWorkspaceFindMany: vi.fn(),
+  rawWorkspaceDelete: vi.fn(),
+  workspaceMemberFindFirst: vi.fn(),
   destroyAllUserSessions: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   stripeCancel: vi.fn(),
@@ -35,6 +38,9 @@ vi.mock("@/lib/db", () => ({
     user: {
       findUnique: (...args: unknown[]) => mocks.userFindUnique(...args),
     },
+    workspaceMember: {
+      findFirst: (...args: unknown[]) => mocks.workspaceMemberFindFirst(...args),
+    },
   },
   rawPrisma: {
     movingPlan: {
@@ -42,6 +48,10 @@ vi.mock("@/lib/db", () => ({
     },
     user: {
       delete: (...args: unknown[]) => mocks.rawUserDelete(...args),
+    },
+    workspace: {
+      findMany: (...args: unknown[]) => mocks.rawWorkspaceFindMany(...args),
+      delete: (...args: unknown[]) => mocks.rawWorkspaceDelete(...args),
     },
   },
 }));
@@ -98,6 +108,9 @@ describe("account deletion processor", () => {
     mocks.destroyAllUserSessions.mockResolvedValue(undefined);
     mocks.rawMovingPlanDeleteMany.mockResolvedValue({ count: 1 });
     mocks.rawUserDelete.mockResolvedValue({ id: "user-1" });
+    mocks.rawWorkspaceFindMany.mockResolvedValue([]);
+    mocks.rawWorkspaceDelete.mockResolvedValue({ id: "ws-1" });
+    mocks.workspaceMemberFindFirst.mockResolvedValue(null);
     mocks.gdprUpdate.mockResolvedValue({});
   });
 
@@ -112,6 +125,17 @@ describe("account deletion processor", () => {
     expect(result.status).toBe("COMPLETED");
     expect(result.cleanup?.stripeCanceled).toBe(true);
     expect(result.cleanup?.userDeleted).toBe(true);
+  });
+
+  it("clears an owned solo workspace before deleting the user (FK would otherwise block)", async () => {
+    mocks.rawWorkspaceFindMany.mockResolvedValue([{ id: "ws-solo" }]);
+    mocks.workspaceMemberFindFirst.mockResolvedValue(null); // no heir → hard delete
+
+    const result = await processAccountDeletionRequest("gdpr-1");
+
+    expect(mocks.rawWorkspaceDelete).toHaveBeenCalledWith({ where: { id: "ws-solo" } });
+    expect(mocks.rawUserDelete).toHaveBeenCalledWith({ where: { id: "user-1" } });
+    expect(result.status).toBe("COMPLETED");
   });
 
   it("does not hard-delete the user when Stripe cancellation fails", async () => {

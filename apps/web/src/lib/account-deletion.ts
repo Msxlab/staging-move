@@ -4,6 +4,7 @@ import { prisma, rawPrisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { destroyAllUserSessions } from "@/lib/user-auth";
+import { pickOwnershipHeir, transferWorkspaceOwnership } from "@/lib/workspace-ownership";
 
 export interface AccountDeletionRequestData {
   source: string;
@@ -170,6 +171,22 @@ export async function processAccountDeletionRequest(requestId: string) {
       // cascades physically remove addresses, services, budgets, sessions,
       // OAuth links, etc.
       await destroyAllUserSessions(request.userId);
+      // Owned workspaces block user deletion (Workspace.owner is onDelete:
+      // Restrict). Transfer each shared workspace to an heir (the deleted user's
+      // own membership then cascades away, the workspace survives for the rest);
+      // hard-delete solo ones. rawPrisma bypasses soft-delete so the FK clears.
+      const ownedWorkspaces = await rawPrisma.workspace.findMany({
+        where: { ownerUserId: request.userId },
+        select: { id: true },
+      });
+      for (const ownedWorkspace of ownedWorkspaces) {
+        const heir = await pickOwnershipHeir(ownedWorkspace.id, request.userId);
+        if (heir) {
+          await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir);
+        } else {
+          await rawPrisma.workspace.delete({ where: { id: ownedWorkspace.id } });
+        }
+      }
       await rawPrisma.movingPlan.deleteMany({ where: { userId: request.userId } });
       await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
