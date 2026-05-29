@@ -1720,8 +1720,9 @@ model PartnerConsent {
   revokedAt DateTime?
   expiresAt DateTime?
 
-  tokenEncrypted String?   @db.Text // refresh/access token, encrypted with FIELD_ENCRYPTION_KEY
-  tokenExpiresAt DateTime?
+  tokenEncrypted        String?   @db.Text // ACCESS token, encrypted with FIELD_ENCRYPTION_KEY
+  refreshTokenEncrypted String?   @db.Text // refresh token, encrypted; mints new access tokens
+  tokenExpiresAt        DateTime? // expiry of the ACCESS token above
 
   consentSnapshotJson String @db.Text // immutable terms + scope shown at grant time
 

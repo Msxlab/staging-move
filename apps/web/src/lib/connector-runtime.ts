@@ -28,6 +28,7 @@ import {
 } from "@locateflow/connectors";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
+import { refreshConsentAccessToken } from "@/lib/connector-oauth";
 
 /** The connectors LocateFlow ships. Adding one = add it here (+ its folder). */
 export const connectorRegistry = createConnectorRegistry([uspsConnector]);
@@ -165,10 +166,21 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
   if (row.consentId) {
     const consent = await prisma.partnerConsent.findUnique({
       where: { id: row.consentId },
-      select: { status: true, tokenEncrypted: true },
+      select: { status: true, tokenEncrypted: true, refreshTokenEncrypted: true, tokenExpiresAt: true },
     });
-    if (consent?.status === "GRANTED" && consent.tokenEncrypted) {
-      accessToken = decrypt(consent.tokenEncrypted);
+    if (consent?.status === "GRANTED") {
+      const expired = consent.tokenExpiresAt ? consent.tokenExpiresAt.getTime() <= Date.now() : false;
+      if (expired && consent.refreshTokenEncrypted) {
+        // Access token expired → mint a fresh one in-band. On failure the attempt
+        // proceeds with a null token → AUTH_EXPIRED → NEEDS_USER (not a silent skip).
+        accessToken = await refreshConsentAccessToken(row.consentId, row.connectorKey, consent.refreshTokenEncrypted);
+      } else if (consent.tokenEncrypted) {
+        try {
+          accessToken = decrypt(consent.tokenEncrypted);
+        } catch {
+          accessToken = null; // corrupt/rotated-key ciphertext → fall back, don't crash the worker
+        }
+      }
     }
   }
 

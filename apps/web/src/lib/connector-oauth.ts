@@ -21,7 +21,7 @@ import {
 } from "@locateflow/connectors";
 import { getEffectiveEntitlement, planFeatures } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
-import { encrypt } from "@/lib/shared-encryption";
+import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 const FEATURE_FLAG_KEY = "FEATURE_API_CONNECTORS";
@@ -120,6 +120,38 @@ export async function refreshConnectorToken(
 }
 
 /**
+ * Refresh + persist a consent's ACCESS token from its stored refresh token.
+ * Returns the fresh access token, or null when config/refresh is unavailable
+ * (the dispatcher then degrades to NEEDS_USER). Rotates the refresh token if the
+ * provider returns a new one.
+ */
+export async function refreshConsentAccessToken(
+  consentId: string,
+  connectorKey: string,
+  refreshTokenEncrypted: string,
+): Promise<string | null> {
+  const config = await getConnectorOAuthConfig(connectorKey, "");
+  if (!config) return null;
+  let refreshToken: string;
+  try {
+    refreshToken = decrypt(refreshTokenEncrypted);
+  } catch {
+    return null;
+  }
+  const tokens = await refreshConnectorToken(config, refreshToken);
+  if (!tokens?.accessToken) return null;
+  await prisma.partnerConsent.update({
+    where: { id: consentId },
+    data: {
+      tokenEncrypted: encrypt(tokens.accessToken),
+      refreshTokenEncrypted: tokens.refreshToken ? encrypt(tokens.refreshToken) : undefined,
+      tokenExpiresAt: tokenExpiryFrom(tokens.expiresInSeconds, Date.now()),
+    },
+  });
+  return tokens.accessToken;
+}
+
+/**
  * Persist a granted consent, encrypting the long-lived token at rest. One
  * active consent per (user, connector) — a new grant supersedes the old.
  */
@@ -131,8 +163,8 @@ export async function upsertGrantedConsent(input: {
   now: Date;
 }): Promise<string> {
   const { userId, connectorKey, tokens, consentSnapshot, now } = input;
-  const tokenToStore = tokens.refreshToken ?? tokens.accessToken;
-  const tokenEncrypted = tokenToStore ? encrypt(tokenToStore) : null;
+  const tokenEncrypted = tokens.accessToken ? encrypt(tokens.accessToken) : null;
+  const refreshTokenEncrypted = tokens.refreshToken ? encrypt(tokens.refreshToken) : null;
   const tokenExpiresAt = tokenExpiryFrom(tokens.expiresInSeconds, now.getTime());
   const scopesJson = JSON.stringify(tokens.scope ? tokens.scope.split(/\s+/).filter(Boolean) : []);
   const consentSnapshotJson = JSON.stringify(consentSnapshot);
@@ -149,6 +181,7 @@ export async function upsertGrantedConsent(input: {
         scopesJson,
         consentSnapshotJson,
         tokenEncrypted,
+        refreshTokenEncrypted: refreshTokenEncrypted ?? undefined,
         tokenExpiresAt,
         grantedAt: now,
         revokedAt: null,
@@ -166,6 +199,7 @@ export async function upsertGrantedConsent(input: {
       status: "GRANTED",
       grantedAt: now,
       tokenEncrypted,
+      refreshTokenEncrypted,
       tokenExpiresAt,
       consentSnapshotJson,
     },

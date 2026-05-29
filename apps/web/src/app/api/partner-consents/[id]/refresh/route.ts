@@ -31,9 +31,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const consent = await prisma.partnerConsent.findUnique({
     where: { id },
-    select: { id: true, connectorKey: true, status: true, tokenEncrypted: true },
+    select: { id: true, connectorKey: true, status: true, refreshTokenEncrypted: true },
   });
-  if (!consent || consent.status !== "GRANTED" || !consent.tokenEncrypted) {
+  if (!consent || consent.status !== "GRANTED" || !consent.refreshTokenEncrypted) {
     return NextResponse.json({ error: "No refreshable consent" }, { status: 404 });
   }
 
@@ -43,9 +43,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Connector OAuth is not configured." }, { status: 503 });
   }
 
-  const refreshToken = decrypt(consent.tokenEncrypted);
+  const refreshToken = decrypt(consent.refreshTokenEncrypted);
   const tokens = await refreshConnectorToken(config, refreshToken);
-  if (!tokens) {
+  if (!tokens?.accessToken) {
     await prisma.partnerConsent.update({
       where: { id: consent.id },
       data: { status: "EXPIRED", revocationReason: "AUTO_EXPIRED", revokedAt: new Date() },
@@ -53,11 +53,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ refreshed: false }, { status: 502 });
   }
 
-  const newToken = tokens.refreshToken ?? refreshToken;
   await prisma.partnerConsent.update({
     where: { id: consent.id },
     data: {
-      tokenEncrypted: encrypt(newToken),
+      tokenEncrypted: encrypt(tokens.accessToken),
+      refreshTokenEncrypted: tokens.refreshToken ? encrypt(tokens.refreshToken) : undefined,
       tokenExpiresAt: tokenExpiryFrom(tokens.expiresInSeconds, Date.now()),
     },
   });
