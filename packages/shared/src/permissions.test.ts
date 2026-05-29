@@ -124,9 +124,15 @@ describe("can — suspended status gate", () => {
     expect(can("OWNER", "workspace.rename", { status: "SUSPENDED" })).toBe(false);
   });
 
-  it("statusAllowsMutation reflects the gate", () => {
+  it("statusAllowsMutation reflects the gate (SUSPENDED + OVERFLOW are read-only)", () => {
     expect(statusAllowsMutation("ACTIVE")).toBe(true);
-    expect(statusAllowsMutation("OVERFLOW")).toBe(true);
+    expect(statusAllowsMutation("OVERFLOW")).toBe(false);
     expect(statusAllowsMutation("SUSPENDED")).toBe(false);
+  });
+
+  it("an OVERFLOW member keeps reads but loses mutations", () => {
+    expect(can("MEMBER", "address.view", { status: "OVERFLOW" })).toBe(true);
+    expect(can("MEMBER", "address.create", { status: "OVERFLOW" })).toBe(false);
+    expect(can("ADMIN", "member.invite", { status: "OVERFLOW" })).toBe(false);
   });
 });

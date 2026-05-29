@@ -69,8 +69,9 @@ function isManagerRole(role: WorkspaceRole): boolean {
 
 /** Whether `role` may perform `action` in the given context. Pure. */
 export function can(role: WorkspaceRole, action: WorkspaceAction, ctx: PermissionContext = {}): boolean {
-  // Suspended members keep read-only access; everything else is denied.
-  if (ctx.status === "SUSPENDED" && !READ_ACTIONS.has(action)) return false;
+  // Suspended OR overflow (over the seat limit after a downgrade) members keep
+  // read-only access; everything else is denied.
+  if ((ctx.status === "SUSPENDED" || ctx.status === "OVERFLOW") && !READ_ACTIONS.has(action)) return false;
 
   switch (action) {
     // ── Owner-only ──────────────────────────────────────────
@@ -159,7 +160,7 @@ export function can(role: WorkspaceRole, action: WorkspaceAction, ctx: Permissio
 
 /** Convenience: whether a member status permits any mutation at all. */
 export function statusAllowsMutation(status: WorkspaceMemberStatus | undefined): boolean {
-  return status !== "SUSPENDED";
+  return status !== "SUSPENDED" && status !== "OVERFLOW";
 }
 
 /**

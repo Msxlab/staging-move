@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { emitSecurityEvent } from "@/lib/security-events";
@@ -372,6 +373,11 @@ async function syncLocalSubscriptionFromStripe(input: {
       newLocalStatus: newStatus,
     });
   }
+
+  // A plan change can shrink the seat limit — reconcile the owner's workspaces
+  // (best-effort; demotes the newest over-limit members to read-only OVERFLOW,
+  // restores them on upgrade). No-op for personal/solo workspaces.
+  await reconcileSeatsForOwner(local.userId).catch(() => {});
 
   logStripeSubscriptionSync({
     eventType: input.eventType,
