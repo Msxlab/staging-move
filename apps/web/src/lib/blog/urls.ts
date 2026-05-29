@@ -14,6 +14,18 @@ export function blogPostUrl(
   return `${siteUrl.replace(/\/+$/, "")}${blogPostPath(slug, locale)}`;
 }
 
+export function blogCategoryPath(slug: string, locale?: string | null): string {
+  return locale === "es" ? `/blog/category/${slug}?locale=es` : `/blog/category/${slug}`;
+}
+
+export function blogCategoryUrl(
+  siteUrl: string,
+  slug: string,
+  locale?: string | null,
+): string {
+  return `${siteUrl.replace(/\/+$/, "")}${blogCategoryPath(slug, locale)}`;
+}
+
 export function blogHreflangUrls(
   siteUrl: string,
   slug: string,

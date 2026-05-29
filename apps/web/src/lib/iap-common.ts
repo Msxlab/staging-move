@@ -495,6 +495,16 @@ export async function applyIapStateToUser(opts: {
     cancelAtPeriodEnd: state.status === "CANCEL_AT_PERIOD_END",
     autoRenew: !IAP_CANCELED_STATUSES.has(state.status),
     canceledAt: IAP_CANCELED_STATUSES.has(state.status) ? now : null,
+    // A real store purchase takes over the single per-user subscription row.
+    // Clear any admin-grant / free-access remnants so the row can't end up
+    // both provider=APP_STORE/PLAY_STORE AND still carrying premiumGrantedBy /
+    // premiumUntil / freeAccessEndsAt from a prior admin comp (a contradictory
+    // row the entitlement resolver and MRR accounting would misread).
+    premiumGrantedBy: null,
+    premiumUntil: null,
+    premiumGrantedAt: null,
+    premiumNote: null,
+    freeAccessEndsAt: null,
     lastValidatedAt: now,
     lastSyncedAt: now,
   };

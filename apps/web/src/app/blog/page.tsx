@@ -12,8 +12,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Rss, ArrowRight } from "lucide-react";
 import { getLocale } from "next-intl/server";
-import { listPublicPosts } from "@/lib/blog/queries";
-import { blogPostPath } from "@/lib/blog/urls";
+import { listPublicCategories, listPublicPosts } from "@/lib/blog/queries";
+import { blogCategoryPath, blogPostPath } from "@/lib/blog/urls";
 import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +98,11 @@ export default async function BlogIndexPage({
     listing = { ...listing, page };
   }
 
+  let categoryNav = await listPublicCategories(locale).catch(() => []);
+  if (categoryNav.length === 0 && locale !== "en") {
+    categoryNav = await listPublicCategories("en").catch(() => []);
+  }
+
   const totalPages = Math.max(1, Math.ceil(listing.total / listing.pageSize));
   const [hero, ...rest] = listing.items;
 
@@ -129,6 +134,19 @@ export default async function BlogIndexPage({
               Practical, field-tested writing on moving smarter - keeping provider records, addresses,
               and renewal reminders in one place so fewer details slip through.
             </p>
+            {categoryNav.length > 0 ? (
+              <nav className="flex flex-wrap gap-2" aria-label="Blog categories">
+                {categoryNav.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={blogCategoryPath(c.slug, locale)}
+                    className="rounded-full border border-border bg-card/60 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
           </div>
         </div>
       </section>

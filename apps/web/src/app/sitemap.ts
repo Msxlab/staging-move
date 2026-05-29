@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
-import { blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
+import { listPublicCategories } from "@/lib/blog/queries";
+import { blogCategoryUrl, blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
 import { SITE_URL, isNoIndexEnvironment, staticLastModified } from "@/lib/seo";
 
 // Generate at request time so the blog query always runs against the live
@@ -98,5 +99,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     blogEntries = [];
   }
 
-  return [...staticEntries, ...blogEntries];
+  // Blog category hubs — one indexable page per category that has at least
+  // one published post. Same DB-unreachable safety as the post block.
+  let categoryEntries: MetadataRoute.Sitemap = [];
+  try {
+    const categories = await listPublicCategories();
+    categoryEntries = categories.map((c) => ({
+      url: blogCategoryUrl(SITE_URL, c.slug),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    }));
+  } catch (err) {
+    console.warn("sitemap_category_query_failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    categoryEntries = [];
+  }
+
+  return [...staticEntries, ...blogEntries, ...categoryEntries];
 }

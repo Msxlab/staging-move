@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { prisma, rawPrisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
+import { deriveStripeEntitlementFields } from "@/lib/stripe-subscription-mapping";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { captureMessage } from "@/lib/sentry";
 import { logger } from "@/lib/logger";
@@ -91,6 +92,9 @@ async function handleCron(request: NextRequest) {
       plan: string;
       billingInterval: string | null;
       canceledAt: Date | null;
+      accessType: string | null;
+      cancelAtPeriodEnd: boolean;
+      autoRenew: boolean | null;
     }> = await rawPrisma.subscription.findMany({
       where: {
         stripeSubscriptionId: { not: null },
@@ -114,6 +118,9 @@ async function handleCron(request: NextRequest) {
         plan: true,
         billingInterval: true,
         canceledAt: true,
+        accessType: true,
+        cancelAtPeriodEnd: true,
+        autoRenew: true,
       },
     });
 
@@ -168,7 +175,13 @@ async function handleCron(request: NextRequest) {
       const livePeriodEnd = (live as any).current_period_end
         ? new Date((live as any).current_period_end * 1000)
         : null;
-      const liveStatus = mapStripeSubscriptionStatus(live.status);
+      // Derive status/accessType/cancel/autoRenew the SAME way the Stripe
+      // webhook does (shared helper) so this nightly reconcile can't drift
+      // from it. Previously it used a cancel-unaware status map and never
+      // synced accessType — silently re-activating canceled subs and leaving
+      // trial→paid conversions stuck at FREE_TRIAL ($0 in MRR).
+      const entitlement = deriveStripeEntitlementFields(live);
+      const liveStatus = entitlement.status;
       const liveCanceledAt = live.canceled_at
         ? new Date(live.canceled_at * 1000)
         : null;
@@ -208,6 +221,23 @@ async function handleCron(request: NextRequest) {
           after: liveCanceledAt?.toISOString() ?? null,
         });
       }
+      if (sub.accessType !== entitlement.accessType) {
+        diffs.push({ field: "accessType", before: sub.accessType, after: entitlement.accessType });
+      }
+      if (sub.cancelAtPeriodEnd !== entitlement.cancelAtPeriodEnd) {
+        diffs.push({
+          field: "cancelAtPeriodEnd",
+          before: String(sub.cancelAtPeriodEnd),
+          after: String(entitlement.cancelAtPeriodEnd),
+        });
+      }
+      if (sub.autoRenew !== entitlement.autoRenew) {
+        diffs.push({
+          field: "autoRenew",
+          before: String(sub.autoRenew),
+          after: String(entitlement.autoRenew),
+        });
+      }
 
       if (diffs.length === 0) {
         report.matched += 1;
@@ -238,6 +268,9 @@ async function handleCron(request: NextRequest) {
           where: { id: sub.id },
           data: {
             status: liveStatus,
+            accessType: entitlement.accessType,
+            cancelAtPeriodEnd: entitlement.cancelAtPeriodEnd,
+            autoRenew: entitlement.autoRenew,
             plan: livePlan,
             billingInterval: liveBillingInterval,
             stripePriceId: livePriceId,
@@ -274,18 +307,4 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return handleCron(request);
-}
-
-function mapStripeSubscriptionStatus(stripeStatus: string): string {
-  const map: Record<string, string> = {
-    trialing: "TRIALING",
-    active: "ACTIVE",
-    past_due: "PAST_DUE",
-    canceled: "CANCELED",
-    unpaid: "UNPAID",
-    incomplete: "INCOMPLETE",
-    incomplete_expired: "EXPIRED",
-    paused: "PAST_DUE",
-  };
-  return map[stripeStatus] || "UNKNOWN";
 }

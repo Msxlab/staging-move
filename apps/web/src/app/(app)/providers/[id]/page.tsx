@@ -41,12 +41,22 @@ function parseJsonArray(value: string): string[] {
   }
 }
 
-function shape(p: ProviderRow, state: string | null): ProviderDetail {
+type CoverageAddress = {
+  state: string | null;
+  zip?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+} | null;
+
+function shape(p: ProviderRow, address: CoverageAddress): ProviderDetail {
   const states = parseJsonArray(p.states);
   const zipCodes = parseJsonArray(p.zipCodes);
   const tags = parseJsonArray(p.tags);
   const metadata = getProviderCoverageMetadata(p.slug);
   const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+  // Pass the full address (zip + coordinates when known) so ZIP- and
+  // polygon-level coverage can resolve instead of always falling back to a
+  // coarse state-level match.
   const coverageMatchLevel = getProviderMatchLevelFromDb(
     {
       id: p.id,
@@ -55,7 +65,12 @@ function shape(p: ProviderRow, state: string | null): ProviderDetail {
       coverageModel,
       coverages: p.coverages || [],
     },
-    { state },
+    {
+      state: address?.state ?? null,
+      zip: address?.zip ?? null,
+      latitude: address?.latitude ?? null,
+      longitude: address?.longitude ?? null,
+    },
   );
   const requiresAddressCheck = coverageModel === "live_address";
   const requiresPolygonCheck = coverageModel === "polygon";
@@ -128,7 +143,7 @@ export default async function ProviderDetailPage({
   const [primaryAddress, alternativesRaw, stateRuleRow] = await Promise.all([
     prisma.address.findFirst({
       where: { userId: userId!, deletedAt: null, isPrimary: true },
-      select: { id: true, state: true, zip: true, city: true, nickname: true },
+      select: { id: true, state: true, zip: true, city: true, nickname: true, latitude: true, longitude: true },
     }),
     prisma.serviceProvider.findMany({
       where: { isActive: true, category: provider.category, id: { not: provider.id } },
@@ -148,8 +163,8 @@ export default async function ProviderDetailPage({
 
   return (
     <ProviderDetailClient
-      provider={shape(provider, primaryAddress?.state ?? null)}
-      alternatives={alternativesRaw.map((alt) => shape(alt, primaryAddress?.state ?? null))}
+      provider={shape(provider, primaryAddress)}
+      alternatives={alternativesRaw.map((alt) => shape(alt, primaryAddress))}
       primaryAddress={
         primaryAddress
           ? {
