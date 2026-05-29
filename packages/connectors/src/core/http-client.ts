@@ -70,6 +70,9 @@ function parseBody(text: string): unknown {
   }
 }
 
+/** Max redirect hops to follow (each one re-checked against the allowlist). */
+const MAX_REDIRECTS = 3;
+
 /**
  * Build a `ConnectorHttpClient` bound to a single connector's allowlist and
  * breaker. The returned client is the only egress a connector ever gets.
@@ -117,12 +120,42 @@ export function createConnectorHttpClient(options: ConnectorHttpClientOptions): 
       };
 
       try {
-        const res = await doFetch(request.url, {
+        // Follow redirects MANUALLY so the allowlist is re-enforced on every
+        // hop. The default fetch (`redirect:"follow"`) would silently chase a
+        // 3xx to a host the connector never declared — and resend the
+        // Authorization header to it — defeating the egress allowlist. We cap
+        // the chain and re-assert host + https on each Location.
+        const fetchInit = {
           method: request.method,
           headers,
           body: request.body === undefined ? undefined : JSON.stringify(request.body),
           signal: controller.signal,
-        });
+          redirect: "manual" as const,
+        };
+        let currentUrl = request.url;
+        let res = await doFetch(currentUrl, fetchInit);
+
+        for (let hop = 0; res.status >= 300 && res.status < 400; hop++) {
+          const location = headersToRecord(res.headers)["location"];
+          if (!location) break; // 3xx without a Location → treat as the final response
+          if (hop >= MAX_REDIRECTS) {
+            throw new ConnectorHttpError("PARTNER_DOWN", "Too many redirects");
+          }
+          let nextUrl: URL;
+          try {
+            nextUrl = new URL(location, currentUrl);
+          } catch {
+            throw new ConnectorHttpError("PARTNER_DOWN", `Invalid redirect location: ${location}`);
+          }
+          if (nextUrl.protocol !== "https:" || !allowed.has(nextUrl.host.toLowerCase())) {
+            throw new ConnectorHttpError(
+              "PARTNER_DOWN",
+              `Egress blocked: redirect to ${nextUrl.host} is not in the connector allowlist`,
+            );
+          }
+          currentUrl = nextUrl.toString();
+          res = await doFetch(currentUrl, fetchInit);
+        }
 
         const response: ConnectorHttpResponse = {
           status: res.status,

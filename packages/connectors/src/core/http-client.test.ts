@@ -104,3 +104,51 @@ describe("createConnectorHttpClient", () => {
     expect(breaker.canRequest()).toBe(true);
   });
 });
+
+describe("createConnectorHttpClient — redirect allowlist enforcement", () => {
+  it("uses redirect:\"manual\" so fetch never auto-follows", async () => {
+    const fetchImpl = vi.fn(async (_u: string, _i: Init) => fakeResponse(200, {}));
+    const client = createConnectorHttpClient({ allowedHosts, fetchImpl });
+    await client.request({ method: "GET", url: "https://api.partner.com/v1" });
+    const init = fetchImpl.mock.calls[0]![1] as { redirect?: string };
+    expect(init.redirect).toBe("manual");
+  });
+
+  it("follows a redirect to an allowed host, re-checking the allowlist each hop", async () => {
+    let n = 0;
+    const fetchImpl = vi.fn(async (_u: string, _i: Init) =>
+      n++ === 0
+        ? fakeResponse(302, "", { Location: "https://api.partner.com/step2" })
+        : fakeResponse(200, { ok: true }),
+    );
+    const client = createConnectorHttpClient({ allowedHosts, fetchImpl });
+    const res = await client.request({ method: "GET", url: "https://api.partner.com/start" });
+    expect(res.status).toBe(200);
+    expect(fetchImpl.mock.calls.map((c) => c[0])).toEqual([
+      "https://api.partner.com/start",
+      "https://api.partner.com/step2",
+    ]);
+  });
+
+  it("BLOCKS a redirect to a host outside the allowlist and never contacts it", async () => {
+    const fetchImpl = vi.fn(async (_u: string, _i: Init) =>
+      fakeResponse(302, "", { Location: "https://evil.com/steal" }),
+    );
+    const client = createConnectorHttpClient({ allowedHosts, fetchImpl });
+    await expect(
+      client.request({ method: "GET", url: "https://api.partner.com/start" }),
+    ).rejects.toMatchObject({ code: "PARTNER_DOWN" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl.mock.calls[0]![0]).toBe("https://api.partner.com/start");
+  });
+
+  it("stops after too many redirects", async () => {
+    const fetchImpl = vi.fn(async (_u: string, _i: Init) =>
+      fakeResponse(302, "", { Location: "https://api.partner.com/loop" }),
+    );
+    const client = createConnectorHttpClient({ allowedHosts, fetchImpl });
+    await expect(
+      client.request({ method: "GET", url: "https://api.partner.com/start" }),
+    ).rejects.toThrow(/too many redirects/i);
+  });
+});
