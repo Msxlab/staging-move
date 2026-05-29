@@ -46,6 +46,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  "/invitations", // workspace invite landing (flag-gated API returns 404 when off)
   "/opengraph-image",
 ];
 const PUBLIC_API_PREFIXES = [
@@ -89,6 +90,7 @@ const PUBLIC_API_GET = [
   "/api/blog/image",
   "/api/blog/indexnow-key",
   "/api/blog/posts",
+  "/api/invitations", // GET invite details for the landing page; POST accept stays auth-gated
 ];
 
 function matchesPathOrChild(pathname: string, path: string): boolean {
@@ -587,6 +589,7 @@ function pathShouldNoIndex(pathname: string): boolean {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify-email") ||
+    pathname.startsWith("/invitations") || // token-bearing URLs must never be indexed
     pathname.startsWith("/unsubscribe") ||
     pathname.startsWith("/offline")
   );
