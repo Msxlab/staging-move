@@ -216,11 +216,19 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number 
   let processed = 0;
   for (const row of due) {
     try {
+      // Atomic claim: only the worker that flips QUEUED→DISPATCHING owns this
+      // row. A concurrent worker (cron + manual trigger) gets count 0 and skips
+      // it, so a partner is never sent the same change twice.
+      const claim = await prisma.connectorDispatch.updateMany({
+        where: { id: row.id, status: "QUEUED" },
+        data: { status: "DISPATCHING", dispatchedAt: new Date() },
+      });
+      if (claim.count === 0) continue;
       await runDispatchRow(row);
       processed += 1;
     } catch {
-      // Leave the row QUEUED; the next run retries it. Never let one row
-      // poison the whole batch.
+      // The row is left mid-flight (DISPATCHING); a reconciliation/retry sweep
+      // recovers it. Never let one row poison the whole batch.
     }
   }
   return { processed };
