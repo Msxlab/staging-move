@@ -145,9 +145,13 @@ export interface ArticleSchemaInput {
   authorName: string;
   authorUrl?: string;
   inLanguage: "en-US" | "es-US";
+  wordCount?: number;
+  keywords?: string[];
+  articleSection?: string;
 }
 
 export function articleSchema(ctx: SiteContext, input: ArticleSchemaInput) {
+  const keywords = input.keywords?.filter(Boolean) ?? [];
   return {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -158,6 +162,9 @@ export function articleSchema(ctx: SiteContext, input: ArticleSchemaInput) {
     datePublished: input.datePublished,
     dateModified: input.dateModified,
     inLanguage: input.inLanguage,
+    wordCount: input.wordCount,
+    keywords: keywords.length > 0 ? keywords : undefined,
+    articleSection: input.articleSection,
     author: {
       "@type": "Person",
       name: input.authorName,

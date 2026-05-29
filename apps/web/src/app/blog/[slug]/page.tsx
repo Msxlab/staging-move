@@ -29,9 +29,16 @@ import {
 } from "@/components/seo/json-ld";
 import { BlogViewTracker } from "@/components/blog/view-tracker";
 import { Button } from "@/components/ui/button";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, absoluteUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+/** Approximate word count from sanitized article HTML, for JSON-LD. */
+function countWords(html: string): number {
+  const text = html.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ");
+  const words = text.split(/\s+/).filter(Boolean);
+  return words.length;
+}
 
 export async function generateMetadata({
   params,
@@ -58,6 +65,9 @@ export async function generateMetadata({
   const publishedLocales = await listPublishedLocalesForSlug(post.slug).catch(() => [post.locale]);
   const hreflangLocales = publishedLocales.length > 0 ? publishedLocales : [post.locale];
 
+  const ogImageUrl = post.ogImageUrl ?? absoluteUrl(DEFAULT_OG_IMAGE);
+  const ogImageAlt = post.ogImageUrl ? (post.ogImageAlt ?? post.title) : post.title;
+
   return {
     title: post.seo.title,
     description: post.seo.description,
@@ -75,15 +85,13 @@ export async function generateMetadata({
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       authors: [post.author.name],
-      images: post.ogImageUrl
-        ? [{ url: post.ogImageUrl, width: 1200, height: 630, alt: post.ogImageAlt ?? post.title }]
-        : undefined,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: ogImageAlt }],
     },
     twitter: {
       card: "summary_large_image",
       title: post.seo.title,
       description: post.seo.description,
-      images: post.ogImageUrl ? [post.ogImageUrl] : undefined,
+      images: [ogImageUrl],
     },
   };
 }
@@ -138,11 +146,14 @@ export default async function BlogPostPage({
           url,
           headline: post.title,
           description: post.excerpt,
-          image: post.ogImageUrl,
+          image: post.ogImageUrl ?? absoluteUrl(DEFAULT_OG_IMAGE),
           datePublished: post.publishedAt,
           dateModified: post.updatedAt,
           authorName: post.author.name,
           inLanguage,
+          wordCount: countWords(post.contentHtml),
+          keywords: post.tags.map((t) => t.name),
+          articleSection: post.category?.name,
         })}
       />
       <JsonLd

@@ -528,31 +528,35 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
         </section>
 
         <aside className="space-y-4">
-          <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Cover image</h2>
-            <CoverImageUploader
-              ogImageKey={form.ogImageKey}
-              ogImageAlt={form.ogImageAlt}
-              onChange={({ ogImageKey, ogImageAlt }) =>
-                setForm((f) => ({ ...f, ogImageKey, ogImageAlt }))
-              }
-              disabled={saving}
-            />
-          </section>
+          {postId ? (
+            <section className="rounded-lg border border-border bg-card p-4">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Cover image</h2>
+              <CoverImageUploader
+                ogImageKey={form.ogImageKey}
+                ogImageAlt={form.ogImageAlt}
+                onChange={({ ogImageKey, ogImageAlt }) =>
+                  setForm((f) => ({ ...f, ogImageKey, ogImageAlt }))
+                }
+                disabled={saving}
+              />
+            </section>
+          ) : null}
 
-          <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Discoverability</h2>
-            <SeoScore
-              title={form.title}
-              seoTitle={form.seoTitle}
-              excerpt={form.excerpt}
-              seoDescription={form.seoDescription}
-              slug={form.slug}
-              ogImageKey={form.ogImageKey}
-              ogImageAlt={form.ogImageAlt}
-              contentText={post?.contentText ?? tiptapToText(form.contentJson)}
-            />
-          </section>
+          {postId ? (
+            <section className="rounded-lg border border-border bg-card p-4">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Discoverability</h2>
+              <SeoScore
+                title={form.title}
+                seoTitle={form.seoTitle}
+                excerpt={form.excerpt}
+                seoDescription={form.seoDescription}
+                slug={form.slug}
+                ogImageKey={form.ogImageKey}
+                ogImageAlt={form.ogImageAlt}
+                contentText={post?.contentText ?? tiptapToText(form.contentJson)}
+              />
+            </section>
+          ) : null}
 
           <section className="rounded-lg border border-border bg-card p-4">
             <h2 className="mb-3 text-sm font-semibold text-foreground">Post settings</h2>
@@ -586,100 +590,110 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   <option value="es">Spanish (US)</option>
                 </select>
               </div>
-              <CategoryPicker
-                locale={form.locale}
-                value={form.categoryId}
-                onChange={(categoryId) => setForm((f) => ({ ...f, categoryId }))}
-                disabled={saving}
-              />
-              <TagPicker
-                locale={form.locale}
-                value={form.tagIds}
-                onChange={(tagIds) => setForm((f) => ({ ...f, tagIds }))}
-                disabled={saving}
-              />
-              <div>
-                <label className={labelClass} htmlFor="blog-excerpt">
-                  Excerpt
-                </label>
-                <textarea
-                  id="blog-excerpt"
-                  value={form.excerpt}
-                  onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
-                  className={inputClass}
-                  rows={4}
-                  maxLength={500}
-                  placeholder="Short summary for cards and search previews"
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="blog-scheduled">
-                  Scheduled time
-                </label>
-                <input
-                  id="blog-scheduled"
-                  type="datetime-local"
-                  value={form.scheduledAt}
-                  onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
+              {postId ? (
+                <>
+                  <CategoryPicker
+                    locale={form.locale}
+                    value={form.categoryId}
+                    onChange={(categoryId) => setForm((f) => ({ ...f, categoryId }))}
+                    disabled={saving}
+                  />
+                  <TagPicker
+                    locale={form.locale}
+                    value={form.tagIds}
+                    onChange={(tagIds) => setForm((f) => ({ ...f, tagIds }))}
+                    disabled={saving}
+                  />
+                  <div>
+                    <label className={labelClass} htmlFor="blog-excerpt">
+                      Excerpt
+                    </label>
+                    <textarea
+                      id="blog-excerpt"
+                      value={form.excerpt}
+                      onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
+                      className={inputClass}
+                      rows={4}
+                      maxLength={500}
+                      placeholder="Short summary for cards and search previews"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="blog-scheduled">
+                      Scheduled time
+                    </label>
+                    <input
+                      id="blog-scheduled"
+                      type="datetime-local"
+                      value={form.scheduledAt}
+                      onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Category, tags, excerpt, scheduling, the cover image, and SEO meta unlock once you create the draft.
+                </p>
+              )}
             </div>
           </section>
 
-          <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">SEO meta</h2>
-            <div className="space-y-3">
-              <div>
-                <label className={labelClass} htmlFor="seo-title">
-                  SEO title
+          {postId ? (
+            <section className="rounded-lg border border-border bg-card p-4">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">SEO meta</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className={labelClass} htmlFor="seo-title">
+                    SEO title
+                  </label>
+                  <input
+                    id="seo-title"
+                    value={form.seoTitle}
+                    onChange={(e) => setForm((f) => ({ ...f, seoTitle: e.target.value }))}
+                    className={inputClass}
+                    maxLength={200}
+                    placeholder="Falls back to the post title"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="seo-description">
+                    Meta description
+                  </label>
+                  <textarea
+                    id="seo-description"
+                    value={form.seoDescription}
+                    onChange={(e) => setForm((f) => ({ ...f, seoDescription: e.target.value }))}
+                    className={inputClass}
+                    rows={3}
+                    maxLength={320}
+                    placeholder="Falls back to the excerpt"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="canonical-url">
+                    Canonical URL
+                  </label>
+                  <input
+                    id="canonical-url"
+                    value={form.canonicalUrl}
+                    onChange={(e) => setForm((f) => ({ ...f, canonicalUrl: e.target.value }))}
+                    className={inputClass}
+                    placeholder="https://locateflow.com/blog/post"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={form.noIndex}
+                    onChange={(e) => setForm((f) => ({ ...f, noIndex: e.target.checked }))}
+                    className="accent-primary"
+                  />
+                  Noindex this post
                 </label>
-                <input
-                  id="seo-title"
-                  value={form.seoTitle}
-                  onChange={(e) => setForm((f) => ({ ...f, seoTitle: e.target.value }))}
-                  className={inputClass}
-                  maxLength={200}
-                  placeholder="Falls back to the post title"
-                />
               </div>
-              <div>
-                <label className={labelClass} htmlFor="seo-description">
-                  Meta description
-                </label>
-                <textarea
-                  id="seo-description"
-                  value={form.seoDescription}
-                  onChange={(e) => setForm((f) => ({ ...f, seoDescription: e.target.value }))}
-                  className={inputClass}
-                  rows={3}
-                  maxLength={320}
-                  placeholder="Falls back to the excerpt"
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="canonical-url">
-                  Canonical URL
-                </label>
-                <input
-                  id="canonical-url"
-                  value={form.canonicalUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, canonicalUrl: e.target.value }))}
-                  className={inputClass}
-                  placeholder="https://locateflow.com/blog/post"
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={form.noIndex}
-                  onChange={(e) => setForm((f) => ({ ...f, noIndex: e.target.checked }))}
-                  className="accent-primary"
-                />
-                Noindex this post
-              </label>
-            </div>
-          </section>
+            </section>
+          ) : null}
         </aside>
       </div>
 
