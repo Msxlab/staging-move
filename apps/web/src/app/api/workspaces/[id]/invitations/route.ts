@@ -110,7 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const inviteUrl = `${appBaseUrl()}/invitations/${token}`;
   const inviter = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { firstName: true, lastName: true },
+    select: { firstName: true, lastName: true, preferredLocale: true },
   });
   const inviterName = [inviter?.firstName, inviter?.lastName].filter(Boolean).join(" ") || null;
   const emailSent = await sendWorkspaceInvitationEmail({
@@ -119,6 +119,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     inviterName,
     roleLabel: ROLE_LABELS[role] ?? role,
     acceptUrl: inviteUrl,
+    locale: inviter?.preferredLocale,
     dedupeKey: `ws-invite:${invitation.id}`,
     metadata: { workspaceId: id },
   }).catch(() => false);

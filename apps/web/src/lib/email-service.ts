@@ -514,23 +514,42 @@ export async function sendWorkspaceInvitationEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const inviter = opts.inviterName?.trim() || "A LocateFlow member";
-  const content = buildSimpleContent({
-    subject: sharedSanitizeEmailSubject(`You're invited to join ${opts.workspaceName} on LocateFlow`),
-    title: `Join ${opts.workspaceName}`,
-    preheader: `${inviter} invited you to ${opts.workspaceName}.`,
-    userName: "there",
-    bodyLines: [
-      `${inviter} invited you to join ${opts.workspaceName} as ${opts.roleLabel}.`,
-      "Open the invitation to review it and join. You can leave the workspace at any time.",
-    ],
-    details: [
-      ["Workspace", opts.workspaceName],
-      ["Role", opts.roleLabel],
-    ],
-    cta: { href: opts.acceptUrl, label: "Review invitation" },
-    securityNote: true,
-    locale: opts.locale,
-  });
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`Te invitaron a unirte a ${opts.workspaceName} en LocateFlow`),
+        title: `Unirse a ${opts.workspaceName}`,
+        preheader: `${inviter} te invitó a ${opts.workspaceName}.`,
+        userName: "hola",
+        bodyLines: [
+          `${inviter} te invitó a unirte a ${opts.workspaceName} como ${opts.roleLabel}.`,
+          "Abre la invitación para revisarla y unirte. Puedes salir del espacio cuando quieras.",
+        ],
+        details: [
+          ["Espacio", opts.workspaceName],
+          ["Rol", opts.roleLabel],
+        ],
+        cta: { href: opts.acceptUrl, label: "Revisar invitación" },
+        securityNote: true,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`You're invited to join ${opts.workspaceName} on LocateFlow`),
+        title: `Join ${opts.workspaceName}`,
+        preheader: `${inviter} invited you to ${opts.workspaceName}.`,
+        userName: "there",
+        bodyLines: [
+          `${inviter} invited you to join ${opts.workspaceName} as ${opts.roleLabel}.`,
+          "Open the invitation to review it and join. You can leave the workspace at any time.",
+        ],
+        details: [
+          ["Workspace", opts.workspaceName],
+          ["Role", opts.roleLabel],
+        ],
+        cta: { href: opts.acceptUrl, label: "Review invitation" },
+        securityNote: true,
+        locale: opts.locale,
+      });
   const result = await sendLoggedEmail({
     to: opts.invitedEmail,
     subject: content.subject,
