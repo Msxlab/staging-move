@@ -11,6 +11,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:status": "prisma migrate status",
+    "migrate:workspaces": "tsx prisma/migrate-to-workspaces.ts",
     "push": "prisma db push",
     "seed": "tsx prisma/seed-master.ts",
     "seed:providers": "tsx prisma/seed-providers.ts",
