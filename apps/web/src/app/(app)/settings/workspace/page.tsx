@@ -163,6 +163,8 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("Role updated.");
       refreshDetail();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
     }
@@ -183,6 +185,8 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("Member removed.");
       refreshDetail();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
     }
@@ -205,6 +209,8 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("Ownership transferred.");
       window.location.reload();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
     }
@@ -226,6 +232,8 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("You left the workspace.");
       window.location.reload();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
     }
@@ -250,6 +258,8 @@ export default function WorkspaceSettingsPage() {
       setInviteEmail("");
       if (data.devInviteUrl) setDevInviteUrl(data.devInviteUrl);
       refreshDetail();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setInviting(false);
     }
@@ -270,6 +280,8 @@ export default function WorkspaceSettingsPage() {
       }
       toast.success("Invitation revoked.");
       refreshDetail();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
     }
