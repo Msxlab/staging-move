@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { can, statusAllowsMutation, type WorkspaceRole } from "./permissions";
+import { can, resolveManagedSyncEnabled, statusAllowsMutation, type WorkspaceRole } from "./permissions";
 
 describe("can — owner-only actions", () => {
   const ownerOnly = ["workspace.rename", "workspace.delete", "billing.manage", "member.promoteAdmin", "member.transferOwner"] as const;
@@ -85,6 +85,22 @@ describe("can — address change (sync) authorization", () => {
   it("CHILD completes only their own assigned sync attempt", () => {
     expect(can("CHILD", "syncAttempt.complete", { isSelf: true })).toBe(true);
     expect(can("CHILD", "syncAttempt.complete", { isSelf: false })).toBe(false);
+  });
+
+  it("only OWNER/ADMIN may manage sync on behalf of members", () => {
+    expect(can("OWNER", "addressChange.manageForMembers")).toBe(true);
+    expect(can("ADMIN", "addressChange.manageForMembers")).toBe(true);
+    expect(can("MEMBER", "addressChange.manageForMembers")).toBe(false);
+    expect(can("CHILD", "addressChange.manageForMembers")).toBe(false);
+    expect(can("VIEW_ONLY", "addressChange.manageForMembers")).toBe(false);
+  });
+
+  it("managed-sync consent: stored flag wins; null defaults true for CHILD only", () => {
+    expect(resolveManagedSyncEnabled("MEMBER", null)).toBe(false);
+    expect(resolveManagedSyncEnabled("MEMBER", true)).toBe(true);
+    expect(resolveManagedSyncEnabled("CHILD", null)).toBe(true);
+    expect(resolveManagedSyncEnabled("CHILD", false)).toBe(false); // a guardian can still opt a child out
+    expect(resolveManagedSyncEnabled("ADMIN", undefined)).toBe(false);
   });
 });
 

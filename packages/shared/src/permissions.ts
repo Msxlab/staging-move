@@ -34,6 +34,7 @@ export type WorkspaceAction =
   | "service.create"
   | "service.edit"
   | "addressChange.initiate"
+  | "addressChange.manageForMembers"
   | "syncAttempt.complete"
   | "export.tax"
   | "billing.manage"
@@ -135,6 +136,12 @@ export function can(role: WorkspaceRole, action: WorkspaceAction, ctx: Permissio
     case "addressChange.initiate":
       return role === "OWNER" || role === "ADMIN" || role === "MEMBER"; // CHILD/VIEW_ONLY cannot start a sync
 
+    case "addressChange.manageForMembers":
+      // Push a change to ANOTHER member's connected partners on their behalf.
+      // Gated here on the acting manager; the target member's own consent is
+      // checked separately via resolveManagedSyncEnabled.
+      return isManagerRole(role);
+
     case "syncAttempt.complete":
       if (role === "VIEW_ONLY") return false;
       if (role === "CHILD") return ctx.isSelf === true;
@@ -153,4 +160,19 @@ export function can(role: WorkspaceRole, action: WorkspaceAction, ctx: Permissio
 /** Convenience: whether a member status permits any mutation at all. */
 export function statusAllowsMutation(status: WorkspaceMemberStatus | undefined): boolean {
   return status !== "SUSPENDED";
+}
+
+/**
+ * Effective managed-sync consent for a member: whether an owner/admin may push
+ * an address change to this member's connected partners on their behalf. The
+ * stored flag wins; unset (null/undefined) defaults to true for CHILD
+ * (guardian-managed) and false for everyone else. Pairs with the
+ * `addressChange.manageForMembers` gate on the acting manager.
+ */
+export function resolveManagedSyncEnabled(
+  targetRole: WorkspaceRole,
+  storedFlag: boolean | null | undefined,
+): boolean {
+  if (typeof storedFlag === "boolean") return storedFlag;
+  return targetRole === "CHILD";
 }
