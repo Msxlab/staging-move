@@ -23,8 +23,14 @@ function clampPercent(value: unknown): number | undefined {
 export async function GET() {
   try {
     await requirePermission("connectors", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const connectors = await prisma.connectorConfig.findMany({ orderBy: { connectorKey: "asc" } });
-    return NextResponse.json({ connectors });
+    const [connectors, dispatchCounts] = await Promise.all([
+      prisma.connectorConfig.findMany({ orderBy: { connectorKey: "asc" } }),
+      prisma.connectorDispatch.groupBy({ by: ["status"], _count: { _all: true } }),
+    ]);
+    // Dispatch (outbox) health for ops: how many syncs are queued / confirmed /
+    // stuck needing the user — so a failing connector is visible, not silent.
+    const dispatchHealth = Object.fromEntries(dispatchCounts.map((c) => [c.status, c._count._all]));
+    return NextResponse.json({ connectors, dispatchHealth });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

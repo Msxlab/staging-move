@@ -31,6 +31,7 @@ const EMPTY_FORM = { connectorKey: "", version: "1.0.0", enabled: false, stage: 
 export default function ConnectorsClient() {
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dispatchHealth, setDispatchHealth] = useState<Record<string, number>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ConnectorConfig | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -41,7 +42,10 @@ export default function ConnectorsClient() {
   const load = () => {
     fetch("/api/connectors")
       .then((r) => r.json())
-      .then((d) => setConnectors(d.connectors || []))
+      .then((d) => {
+        setConnectors(d.connectors || []);
+        setDispatchHealth(d.dispatchHealth || {});
+      })
       .finally(() => setLoading(false));
   };
   useEffect(() => {
@@ -175,6 +179,28 @@ export default function ConnectorsClient() {
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{connectors.filter((c) => c.enabled).length}</p></div>
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Circuit open</p><p className="mt-1 text-2xl font-bold text-destructive">{connectors.filter((c) => c.circuitState === "OPEN").length}</p></div>
       </div>
+
+      {Object.keys(dispatchHealth).length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <p className="mb-3 text-sm font-medium text-foreground">Dispatch health</p>
+          <div className="flex flex-wrap gap-2">
+            {["QUEUED", "DISPATCHING", "SUBMITTED", "CONFIRMED", "NEEDS_USER", "FAILED"].map((s) => (
+              <span
+                key={s}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+                  s === "NEEDS_USER" || s === "FAILED"
+                    ? "bg-destructive/10 text-destructive"
+                    : s === "CONFIRMED"
+                      ? "bg-tone-sage-bg text-tone-sage-fg"
+                      : "bg-foreground/5 text-muted-foreground"
+                }`}
+              >
+                {s.replace("_", " ").toLowerCase()}: {dispatchHealth[s] ?? 0}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">

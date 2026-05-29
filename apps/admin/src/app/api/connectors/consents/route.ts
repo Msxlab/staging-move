@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     const result = await prisma.partnerConsent.updateMany({
       where: { connectorKey, status: "GRANTED" },
-      data: { status: "REVOKED", revokedAt: new Date(), revocationReason, tokenEncrypted: null },
+      data: { status: "REVOKED", revokedAt: new Date(), revocationReason, tokenEncrypted: null, refreshTokenEncrypted: null },
     });
     await prisma.adminAuditLog.create({
       data: {
