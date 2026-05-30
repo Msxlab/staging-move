@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, type WorkspaceRole } from "@locateflow/shared";
+import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -17,7 +17,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (!can(caller.role as WorkspaceRole, "member.leave")) {
+  if (!can(caller.role as WorkspaceRole, "member.leave", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json(
       {
         error:

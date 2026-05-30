@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, type WorkspaceRole } from "@locateflow/shared";
+import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -20,7 +20,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
   const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!can(member.role as WorkspaceRole, "workspace.delete")) {
+  if (!can(member.role as WorkspaceRole, "workspace.delete", { status: member.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Only the owner can restore the workspace." }, { status: 403 });
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, type WorkspaceRole } from "@locateflow/shared";
+import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -16,7 +16,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!can(caller.role as WorkspaceRole, "member.invite")) {
+  if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

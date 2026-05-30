@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // Already a member?
-  const existingUser = await prisma.user.findUnique({ where: { email: invitedEmail }, select: { id: true } });
+  const existingUser = await prisma.user.findUnique({ where: { email: invitedEmail }, select: { id: true, preferredLocale: true } });
   if (existingUser) {
     const alreadyMember = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: existingUser.id } });
     if (alreadyMember) return NextResponse.json({ error: "Already a member." }, { status: 409 });
@@ -119,7 +119,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     inviterName,
     roleLabel: ROLE_LABELS[role] ?? role,
     acceptUrl: inviteUrl,
-    locale: inviter?.preferredLocale,
+    // Prefer the RECIPIENT's own language when they already have an account;
+    // fall back to the inviter's locale as a household signal for brand-new
+    // invitees (whose language we can't know yet).
+    locale: existingUser?.preferredLocale ?? inviter?.preferredLocale,
     dedupeKey: `ws-invite:${invitation.id}`,
     metadata: { workspaceId: id },
   }).catch(() => false);
