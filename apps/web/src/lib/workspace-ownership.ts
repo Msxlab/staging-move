@@ -20,7 +20,7 @@ export async function transferWorkspaceOwnership(
   toUserId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (fromUserId === toUserId) return { ok: false, error: "That member is already the owner." };
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const ws = await tx.workspace.findUnique({ where: { id: workspaceId }, select: { ownerUserId: true } });
     if (!ws || ws.ownerUserId !== fromUserId) return { ok: false, error: "Only the current owner can transfer ownership." };
 
@@ -42,8 +42,14 @@ export async function transferWorkspaceOwnership(
     }
     await tx.workspaceMember.update({ where: { id: target.id }, data: { role: "OWNER" } });
     await tx.workspace.update({ where: { id: workspaceId }, data: { ownerUserId: toUserId } });
-    return { ok: true };
+    return { ok: true as const };
   });
+
+  // Ownership is the billing/entitlement anchor, so the workspace's seat limit
+  // is now governed by the NEW owner's plan (which may be smaller). Reconcile
+  // so over-limit members are demoted to OVERFLOW (or restored if larger).
+  if (result.ok) await reconcileWorkspaceSeats(workspaceId).catch(() => {});
+  return result;
 }
 
 /**
@@ -75,7 +81,14 @@ export async function reconcileWorkspaceSeats(workspaceId: string): Promise<{ ov
   const ws = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { ownerUserId: true } });
   if (!ws) return { overflowed: 0, restored: 0 };
   const sub = await prisma.subscription.findUnique({ where: { userId: ws.ownerUserId } });
-  const limit = seatLimitForPlan(String(getEffectiveEntitlement(sub).effectivePlan));
+  const eff = getEffectiveEntitlement(sub);
+  // The owner is the billing/entitlement anchor. While they have access
+  // (active, trial, or grace) the normal tier seat limit applies. Once access
+  // has lapsed (canceled / refunded / expired → hasAccess false) the workspace
+  // collapses to a single seat, demoting non-owner members to OVERFLOW until
+  // the owner is paid again — otherwise members keep write access to a
+  // workspace nobody is paying for.
+  const limit = eff.hasAccess ? seatLimitForPlan(String(eff.effectivePlan)) : 1;
 
   const active = await prisma.workspaceMember.findMany({
     where: { workspaceId, status: "ACTIVE" },

@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { prisma, rawPrisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { deriveStripeEntitlementFields } from "@/lib/stripe-subscription-mapping";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { captureMessage } from "@/lib/sentry";
@@ -286,6 +287,10 @@ async function handleCron(request: NextRequest) {
             error: err?.message || String(err),
           });
         });
+      // Drift may have changed the tier (or revoked access) → reconcile seats
+      // for any workspaces this user owns, catching downgrades that arrived via
+      // a dropped webhook.
+      await reconcileSeatsForOwner(sub.userId).catch(() => {});
     }
 
     if (batch.length < PAGE_SIZE) break;

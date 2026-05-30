@@ -822,6 +822,9 @@ export async function POST(request: NextRequest) {
           ? await lookupUserByStripeCustomer(stripeCustomerId)
           : null;
         if (recipient) {
+          // Owner's access just lapsed → collapse any workspaces they own to a
+          // single seat so members stop having write access to an unpaid plan.
+          await reconcileSeatsForOwner(recipient.userId).catch(() => {});
           fireAndLogEmail(
             sendSubscriptionCanceledEmail({
               userEmail: recipient.email,
@@ -1100,6 +1103,12 @@ export async function POST(request: NextRequest) {
               version: { increment: 1 },
             },
           });
+          // Refunded owner has lost access → collapse owned workspaces to a
+          // single seat (members demoted to OVERFLOW).
+          const refundRecipient = await lookupUserByStripeCustomer(stripeCustomerId);
+          if (refundRecipient) {
+            await reconcileSeatsForOwner(refundRecipient.userId).catch(() => {});
+          }
         }
         break;
       }

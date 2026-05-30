@@ -9,6 +9,7 @@
 import { prisma } from "@/lib/db";
 import { createHash } from "node:crypto";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import {
   getAppleSubscriptionStatus,
   mapAppleStatus,
@@ -515,6 +516,9 @@ export async function applyIapStateToUser(opts: {
       create: { userId, ...data },
       update: data,
     });
+    // A store plan change/expiry shifts this owner's seat limit — reconcile any
+    // workspaces they own so over-limit members are demoted (best-effort).
+    await reconcileSeatsForOwner(userId).catch(() => {});
     await sendIapLifecycleEmail({
       userId,
       subscriptionId: subscription.id,
@@ -541,6 +545,7 @@ export async function applyIapStateToUser(opts: {
         create: { userId, ...legacyData },
         update: legacyData,
       });
+      await reconcileSeatsForOwner(userId).catch(() => {});
       await sendIapLifecycleEmail({
         userId,
         subscriptionId: subscription.id,
