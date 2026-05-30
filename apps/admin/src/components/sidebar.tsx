@@ -274,6 +274,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
           <input
             type="text"
             placeholder={tCommon("search")}
+            aria-label={tCommon("search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
