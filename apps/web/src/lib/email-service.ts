@@ -563,6 +563,70 @@ export async function sendWorkspaceInvitationEmail(opts: {
 }
 
 /**
+ * Workspace ownership transfer — sent to the NEW owner when ownership moves to
+ * them (manual transfer, or auto-transfer when the previous owner deletes their
+ * account). Transactional. Without this the new owner silently inherits the
+ * billing/management responsibility for the workspace.
+ */
+export async function sendWorkspaceOwnershipEmail(opts: {
+  newOwnerEmail: string;
+  newOwnerName?: string | null;
+  workspaceName: string;
+  manageUrl: string;
+  reason?: "transfer" | "previous_owner_left";
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const name = opts.newOwnerName?.trim() || "there";
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const becauseLeft = opts.reason === "previous_owner_left";
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`Ahora eres propietario de ${opts.workspaceName} en LocateFlow`),
+        title: `Eres el propietario de ${opts.workspaceName}`,
+        preheader: `La propiedad de ${opts.workspaceName} ahora es tuya.`,
+        userName: name === "there" ? "hola" : name,
+        bodyLines: [
+          becauseLeft
+            ? `El propietario anterior cerró su cuenta, así que la propiedad de ${opts.workspaceName} pasó a ti. Nada se perdió.`
+            : `La propiedad de ${opts.workspaceName} se transfirió a ti.`,
+          "Como propietario administras los miembros, los roles y el plan del espacio.",
+        ],
+        details: [["Espacio", opts.workspaceName]],
+        cta: { href: opts.manageUrl, label: "Administrar espacio" },
+        securityNote: false,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`You're now the owner of ${opts.workspaceName} on LocateFlow`),
+        title: `You own ${opts.workspaceName}`,
+        preheader: `Ownership of ${opts.workspaceName} is now yours.`,
+        userName: name,
+        bodyLines: [
+          becauseLeft
+            ? `The previous owner closed their account, so ownership of ${opts.workspaceName} passed to you. Nothing was lost.`
+            : `Ownership of ${opts.workspaceName} was transferred to you.`,
+          "As the owner you manage the workspace's members, roles, and plan.",
+        ],
+        details: [["Workspace", opts.workspaceName]],
+        cta: { href: opts.manageUrl, label: "Manage workspace" },
+        securityNote: false,
+        locale: opts.locale,
+      });
+  const result = await sendLoggedEmail({
+    to: opts.newOwnerEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-ownership",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-ownership", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
  * Connector "action needed" — sent when an address sync to a partner can't
  * complete automatically (NEEDS_USER: token expired, validation rejected, or
  * unsupported). Transactional; the user must act, so it always sends. Without
