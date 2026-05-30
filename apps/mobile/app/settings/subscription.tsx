@@ -918,6 +918,25 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
+            ) : plan.key === "FAMILY" || plan.key === "PRO" ? (
+              // Family/Pro are web-only purchases (Apple/Play policy). Never run
+              // a native store purchase for them — open the web pricing page so
+              // the upgrade happens where billing is managed.
+              <TouchableOpacity
+                style={styles.upgradeBtn}
+                activeOpacity={0.7}
+                onPress={() => openWebUrl(`${APP_WEB_URL}/pricing#family-pro`)}
+                accessibilityRole="button"
+                accessibilityLabel={t("settings.subscription_a11yUpgradeWeb", {
+                  plan: plan.name,
+                  defaultValue: `Upgrade to ${plan.name} on the web`,
+                })}
+              >
+                <ExternalLink size={16} color="#fff" />
+                <Text style={styles.upgradeBtnText}>
+                  {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
+                </Text>
+              </TouchableOpacity>
             ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>

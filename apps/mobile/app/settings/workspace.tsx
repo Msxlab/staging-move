@@ -12,10 +12,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Users, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Users, Trash2, ExternalLink } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { api } from "@/lib/api";
+import { api, APP_WEB_URL } from "@/lib/api";
+import { openWebUrl } from "@/lib/in-app-browser";
 import { useAuthStore } from "@/lib/auth-store";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
@@ -290,9 +291,31 @@ export default function WorkspaceScreen() {
         {featureOff ? (
           <Text style={styles.empty}>{t("workspace.unavailable", "Shared workspaces aren't available on your account yet.")}</Text>
         ) : workspaces.length === 0 ? (
-          <Text style={styles.empty}>
-            {t("workspace.none", "You're not part of any shared workspace yet. A Family or Pro plan lets you create one.")}
-          </Text>
+          <View style={{ alignItems: "center" }}>
+            <Text style={styles.empty}>
+              {t("workspace.none", "You're not part of any shared workspace yet. A Family or Pro plan lets you create one.")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => openWebUrl(`${APP_WEB_URL}/pricing#family-pro`)}
+              style={{
+                marginTop: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                backgroundColor: theme.colors.primary,
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t("workspace.upgradeWebA11y", "See Family and Pro plans on the web")}
+            >
+              <ExternalLink size={16} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>
+                {t("workspace.upgradeWeb", "See Family & Pro on the web")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <>
             {workspaces.length > 1 && (
