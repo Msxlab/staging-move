@@ -1,7 +1,8 @@
 /**
  * Workspace ownership transfer. Used by the owner-initiated transfer endpoint
  * and by account deletion (auto-transfer a shared workspace to an heir before
- * the owner's user row is removed). Imports only prisma to stay cycle-free.
+ * the owner's user row is removed). Also emits best-effort in-app seat-change
+ * notices when reconcile demotes a member to read-only OVERFLOW or restores them.
  *
  * NOTE: Workspace.ownerUserId is also the billing/entitlement anchor, so a
  * transfer moves which subscription resolves the workspace's plan/seat limits.
@@ -9,6 +10,23 @@
 
 import { getEffectiveEntitlement, seatLimitForPlan } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { createInAppNotification } from "@/lib/in-app-notifications";
+
+/** Best-effort in-app notice when a member's seat status flips (read-only ↔ full). */
+async function notifySeatChange(userIds: Array<string | null | undefined>, demoted: boolean, workspaceName: string): Promise<void> {
+  for (const userId of userIds) {
+    if (!userId) continue;
+    await createInAppNotification({
+      userId,
+      type: "WORKSPACE_MEMBERSHIP",
+      title: demoted ? "Workspace access is now read-only" : "Full workspace access restored",
+      body: demoted
+        ? `${workspaceName} reached its plan's seat limit, so your access is read-only for now. Your data is safe — full access returns when a seat frees up or the plan is upgraded.`
+        : `A seat opened up in ${workspaceName}, so your full access is back.`,
+      href: "/settings/workspace",
+    }).catch(() => {});
+  }
+}
 
 /**
  * Transfer ownership from the current owner to another ACTIVE member in one
@@ -97,8 +115,9 @@ export async function pickOwnershipHeir(
  * OLDEST OVERFLOW members to ACTIVE. The OWNER always keeps a seat. Idempotent.
  */
 export async function reconcileWorkspaceSeats(workspaceId: string): Promise<{ overflowed: number; restored: number }> {
-  const ws = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { ownerUserId: true } });
+  const ws = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { ownerUserId: true, name: true } });
   if (!ws) return { overflowed: 0, restored: 0 };
+  const wsName = ws.name || "your workspace";
   const sub = await prisma.subscription.findUnique({ where: { userId: ws.ownerUserId } });
   const eff = getEffectiveEntitlement(sub);
   // The owner is the billing/entitlement anchor. While they have access
@@ -112,34 +131,36 @@ export async function reconcileWorkspaceSeats(workspaceId: string): Promise<{ ov
   const active = await prisma.workspaceMember.findMany({
     where: { workspaceId, status: "ACTIVE" },
     orderBy: { joinedAt: "asc" },
-    select: { id: true, role: true },
+    select: { id: true, role: true, userId: true },
   });
 
   if (active.length > limit) {
-    const removable = active.filter((m) => m.role !== "OWNER").reverse(); // newest first
-    const toDemote = removable.slice(0, active.length - limit).map((m) => m.id);
-    if (toDemote.length === 0) return { overflowed: 0, restored: 0 };
+    const demoted = active.filter((m) => m.role !== "OWNER").reverse() // newest first
+      .slice(0, active.length - limit);
+    if (demoted.length === 0) return { overflowed: 0, restored: 0 };
     await prisma.workspaceMember.updateMany({
-      where: { id: { in: toDemote } },
+      where: { id: { in: demoted.map((m) => m.id) } },
       data: { status: "OVERFLOW", overflowSince: new Date() },
     });
-    return { overflowed: toDemote.length, restored: 0 };
+    await notifySeatChange(demoted.map((m) => m.userId), true, wsName);
+    return { overflowed: demoted.length, restored: 0 };
   }
 
   // Under (or at) the limit → restore overflow members into any free seats.
   const overflow = await prisma.workspaceMember.findMany({
     where: { workspaceId, status: "OVERFLOW" },
     orderBy: { joinedAt: "asc" },
-    select: { id: true },
+    select: { id: true, userId: true },
   });
   const freeSeats = limit - active.length;
-  const toRestore = overflow.slice(0, Math.max(0, freeSeats)).map((m) => m.id);
-  if (toRestore.length === 0) return { overflowed: 0, restored: 0 };
+  const restored = overflow.slice(0, Math.max(0, freeSeats));
+  if (restored.length === 0) return { overflowed: 0, restored: 0 };
   await prisma.workspaceMember.updateMany({
-    where: { id: { in: toRestore } },
+    where: { id: { in: restored.map((m) => m.id) } },
     data: { status: "ACTIVE", overflowSince: null },
   });
-  return { overflowed: 0, restored: toRestore.length };
+  await notifySeatChange(restored.map((m) => m.userId), false, wsName);
+  return { overflowed: 0, restored: restored.length };
 }
 
 /** Reconcile every workspace a user OWNS (call after their plan changes). */
