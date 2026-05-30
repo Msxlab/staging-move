@@ -542,6 +542,10 @@ model Service {
   @@index([userId, category])
   @@index([userId, addressId, isActive])
   @@index([deletedAt])
+  // Reminder crons scan active services by contract/billing windows across all
+  // users — index those hot paths so they don't full-scan the table.
+  @@index([isActive, contractEndDate])
+  @@index([isActive, billingDay])
 }
 
 // ==================== MOVING PLAN ====================
@@ -1133,6 +1137,10 @@ model AdminAuditLog {
 
   @@index([adminUserId, createdAt])
   @@index([entityType, entityId])
+  // Security/settings dashboards filter primarily by `action` (LOGIN,
+  // SECURITY_ALERT, *ERROR*, USER_INTERNAL_NOTE) — index it so an append-only,
+  // high-volume audit log doesn't full-scan.
+  @@index([action, createdAt])
 }
 
 model RuntimeConfigEntry {
