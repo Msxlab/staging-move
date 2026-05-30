@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { PricingSection } from "@/components/marketing/pricing-section";
+import { WorkspacePlansSection } from "@/components/marketing/workspace-plans-section";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
@@ -65,6 +66,8 @@ export default async function PricingPage() {
         offers={publicCampaign}
         headingLevel="h1"
       />
+
+      <WorkspacePlansSection ctaHref={ctaTarget.href} loggedIn={!!userId} />
 
       <section className="container pb-4">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">
