@@ -16,6 +16,9 @@ vi.mock("@/lib/db", () => ({
     movingPlan: { findMany: vi.fn() },
     userSession: { findMany: vi.fn() },
     subscription: { findUnique: vi.fn() },
+    workspaceMember: { findMany: vi.fn() },
+    workspaceInvitation: { findMany: vi.fn() },
+    user: { findUnique: vi.fn() },
   },
 }));
 
@@ -69,6 +72,9 @@ const mockPrisma = {
   movingPlan: { findMany: prisma.movingPlan.findMany as Mock },
   userSession: { findMany: (prisma as any).userSession.findMany as Mock },
   subscription: { findUnique: (prisma as any).subscription.findUnique as Mock },
+  workspaceMember: { findMany: (prisma as any).workspaceMember.findMany as Mock },
+  workspaceInvitation: { findMany: (prisma as any).workspaceInvitation.findMany as Mock },
+  user: { findUnique: (prisma as any).user.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
 const mockVerifyUserStepUp = verifyUserStepUp as any;
@@ -101,6 +107,9 @@ describe("export route", () => {
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
     mockPrisma.userSession.findMany.mockResolvedValue([]);
     mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    mockPrisma.workspaceMember.findMany.mockResolvedValue([]);
+    mockPrisma.workspaceInvitation.findMany.mockResolvedValue([]);
+    mockPrisma.user.findUnique.mockResolvedValue({ email: "user@example.com" });
     mockVerifyUserStepUp.mockResolvedValue({ ok: true, method: "password" });
     mockEnforceRateLimitPolicy.mockResolvedValue({
       success: true,
@@ -141,6 +150,37 @@ describe("export route", () => {
     expect(data.services[0].accountNumber).toBe("****1234");
     expect(data.services[0].email).toBe("cu****@example.com");
     expect(data.services[0].phone).toBe("****4567");
+  });
+
+  it("includes the user's own workspace context with sent-invite emails masked", async () => {
+    mockPrisma.workspaceMember.findMany.mockResolvedValue([
+      {
+        role: "OWNER",
+        status: "ACTIVE",
+        joinedAt: new Date("2026-01-01"),
+        workspace: { name: "Our Home", ownerUserId: "user-1", createdAt: new Date("2026-01-01") },
+      },
+    ]);
+    mockPrisma.workspaceInvitation.findMany
+      .mockResolvedValueOnce([
+        {
+          invitedEmail: "partner@example.com",
+          role: "MEMBER",
+          status: "PENDING",
+          createdAt: new Date("2026-02-01"),
+          expiresAt: new Date("2026-02-08"),
+          workspace: { name: "Our Home" },
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const response = await POST(makeRequest({ type: "workspace", format: "json" }));
+    const data = JSON.parse(await response.text());
+
+    expect(response.status).toBe(200);
+    expect(data.workspaceMemberships).toHaveLength(1);
+    expect(data.workspaceMemberships[0]).toMatchObject({ workspaceName: "Our Home", isOwner: true, role: "OWNER" });
+    expect(data.workspaceInvitationsSent[0].invitedEmail).toBe("pa****@example.com");
   });
 
   it("omits notes by default and decrypts them only when includeNotes=true", async () => {
