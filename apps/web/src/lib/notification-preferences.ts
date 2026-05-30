@@ -31,6 +31,12 @@ export const WEB_NOTIFICATION_PREFERENCE_DEFINITIONS: WebNotificationDefinition[
   { key: "moveUpdate", channel: "EMAIL", type: "MOVE_ALERT", defaultEnabled: true, frequency: "IMMEDIATE" },
   { key: "weeklySummary", channel: "EMAIL", type: "WEEKLY_DIGEST", defaultEnabled: false, frequency: "WEEKLY", legacyKeys: ["EMAIL:MARKETING"] },
   { key: "monthlyReport", channel: "EMAIL", type: "MONTHLY_REPORT", defaultEnabled: false, frequency: "MONTHLY" },
+  // Workspace + Connections (Family/Pro). connectorActionNeeded gates the
+  // "sync needs your attention" email (enforced in connector-runtime);
+  // workspaceMembership governs membership emails (invite accepted, role
+  // change, removed) as those are built out.
+  { key: "connectorActionNeeded", channel: "EMAIL", type: "CONNECTOR_ACTION_NEEDED", defaultEnabled: true, frequency: "IMMEDIATE" },
+  { key: "workspaceMembership", channel: "EMAIL", type: "WORKSPACE_MEMBERSHIP", defaultEnabled: true, frequency: "IMMEDIATE" },
 ];
 
 export const WEB_NOTIFICATION_CONFIG_DEFINITIONS: WebNotificationConfigDefinition[] = [

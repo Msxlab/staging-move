@@ -31,6 +31,7 @@ import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { refreshConsentAccessToken } from "@/lib/connector-oauth";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendConnectorActionNeededEmail } from "@/lib/email-service";
+import { isWebNotificationEnabled } from "@/lib/notification-preferences";
 
 /** The connectors LocateFlow ships. Adding one = add it here (+ its folder). */
 export const connectorRegistry = createConnectorRegistry([uspsConnector]);
@@ -186,7 +187,15 @@ async function notifyNeedsUser(userId: string, connectorKey: string, dispatchId:
     });
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, firstName: true } });
     if (user?.email) {
-      await sendConnectorActionNeededEmail({ userEmail: user.email, userName: user.firstName, connectorKey, dedupeKey });
+      // The in-app notification above is always written (it's the feed record);
+      // the email respects the user's "Connection action needed" preference.
+      const prefs = await prisma.notificationPreference.findMany({
+        where: { userId },
+        select: { channel: true, type: true, enabled: true, frequency: true },
+      });
+      if (isWebNotificationEnabled(prefs, "connectorActionNeeded")) {
+        await sendConnectorActionNeededEmail({ userEmail: user.email, userName: user.firstName, connectorKey, dedupeKey });
+      }
     }
   } catch {
     // Best-effort: a notification failure must never fail the dispatch.
