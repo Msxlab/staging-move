@@ -78,6 +78,170 @@ async function createStripeCustomer(stripe: Stripe, user: { email: string }, use
   });
 }
 
+/**
+ * Family/Pro checkout — a straight paid recurring subscription with no
+ * acquisition campaign and no trial. Kept self-contained so the battle-tested
+ * Individual + campaign flow below stays byte-for-byte unchanged. Self-serve
+ * only succeeds once the Family/Pro Stripe price IDs are configured
+ * (STRIPE_PRICE_FAMILY_ and STRIPE_PRICE_PRO_ keys); until then it returns 503
+ * and admin-granted Family/Pro is unaffected (it never hits checkout).
+ * NOTE (legal): this stamps acceptedSubscriptionTerms + policy
+ * versions but not the campaign-style disclosure/consent snapshot — review the
+ * disclosure wording with legal before enabling public Family/Pro self-serve.
+ */
+async function createWorkspacePlanCheckout(params: {
+  stripeSecretKey: string;
+  userId: string;
+  plan: "FAMILY" | "PRO";
+  rawBillingInterval: unknown;
+  rawCycle: unknown;
+  acceptedSubscriptionTerms: unknown;
+  uiMode: "hosted" | "embedded";
+}): Promise<NextResponse> {
+  const { stripeSecretKey, userId, plan, rawBillingInterval, rawCycle, acceptedSubscriptionTerms, uiMode } = params;
+
+  if (!acceptedSubscriptionTerms) {
+    return NextResponse.json(
+      { code: "TERMS_NOT_ACCEPTED", error: "Please accept the subscription terms before checkout." },
+      { status: 400 },
+    );
+  }
+
+  const billingInterval = normalizeBillingIntervalInput(rawBillingInterval, rawCycle);
+  const cycle = billingIntervalToCycle(billingInterval);
+
+  // Block re-checkout when a real paid subscription already exists (mirrors the
+  // Individual guards; admin-granted Free Access is provider=ADMIN so it is not
+  // blocked here).
+  const existingSubscription = await prisma.subscription.findUnique({
+    where: { userId },
+    select: { status: true, provider: true, accessType: true, stripeSubscriptionId: true, platform: true },
+  });
+  const hasRealStripeSubscription =
+    existingSubscription?.provider === "STRIPE" &&
+    Boolean(existingSubscription?.stripeSubscriptionId) &&
+    existingSubscription?.accessType !== "FREE_ACCESS";
+  if (
+    hasRealStripeSubscription &&
+    (existingSubscription?.status === "ACTIVE" ||
+      existingSubscription?.status === "CANCEL_AT_PERIOD_END" ||
+      existingSubscription?.status === "TRIALING")
+  ) {
+    return NextResponse.json(
+      { code: "ALREADY_ACTIVE", error: "You already have an active subscription. Manage it from billing settings." },
+      { status: 409 },
+    );
+  }
+  const hasActiveStoreSubscription =
+    (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
+    existingSubscription?.accessType !== "FREE_ACCESS" &&
+    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(existingSubscription?.status || "");
+  if (hasActiveStoreSubscription) {
+    return NextResponse.json(
+      { code: "SUBSCRIPTION_MANAGED_ELSEWHERE", error: "Your subscription is managed by the app store." },
+      { status: 409 },
+    );
+  }
+
+  const priceId = await getStripePriceIdForPlanAndInterval(plan, billingInterval);
+  if (!priceId) {
+    return NextResponse.json(
+      { code: "PLAN_NOT_AVAILABLE", error: `${plan === "FAMILY" ? "Family" : "Pro"} checkout is not available yet.` },
+      { status: 503 },
+    );
+  }
+
+  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  let subscription = await prisma.subscription.findUnique({ where: { userId } });
+  if (!subscription) {
+    subscription = await prisma.subscription.create({
+      data: { userId, plan, status: "PENDING_CHECKOUT", provider: "STRIPE", platform: "web" },
+    });
+  }
+
+  let stripeCustomerId = subscription?.stripeCustomerId ?? undefined;
+  let shouldCreateStripeCustomer = !stripeCustomerId;
+  if (stripeCustomerId) {
+    try {
+      const existingCustomer = await stripe.customers.retrieve(stripeCustomerId);
+      if ("deleted" in existingCustomer && existingCustomer.deleted) shouldCreateStripeCustomer = true;
+    } catch (error) {
+      if (!isMissingStripeCustomerError(error)) throw error;
+      shouldCreateStripeCustomer = true;
+    }
+  }
+  if (shouldCreateStripeCustomer) {
+    const customer = await createStripeCustomer(stripe, user, userId);
+    stripeCustomerId = customer.id;
+    await prisma.subscription.update({
+      where: { userId },
+      data: { stripeCustomerId, platform: "web", lastSyncedAt: new Date() },
+    });
+  }
+
+  const appUrl = await getConfiguredAppUrl();
+  await prisma.subscription.update({
+    where: { userId },
+    data: {
+      status: "PENDING_CHECKOUT",
+      billingInterval,
+      termsVersion: TERMS_VERSION,
+      subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+      refundPolicyVersion: REFUND_POLICY_VERSION,
+      stripePriceId: priceId,
+      billingProductId: priceId,
+      lastSyncedAt: new Date(),
+    },
+  });
+
+  const successPath = `/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=false`;
+  const metadata: Record<string, string> = {
+    userId,
+    plan,
+    cycle,
+    billingInterval,
+    provider: "STRIPE",
+    platform: "web",
+  };
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    customer: stripeCustomerId,
+    client_reference_id: userId,
+    mode: "subscription",
+    ui_mode: uiMode,
+    line_items: [{ price: priceId, quantity: 1 }],
+    allow_promotion_codes: true,
+    payment_method_collection: "always",
+    subscription_data: { metadata },
+    metadata,
+  };
+  if (uiMode === "embedded") {
+    sessionParams.return_url = `${appUrl}${successPath}`;
+  } else {
+    sessionParams.success_url = `${appUrl}${successPath}`;
+    sessionParams.cancel_url = `${appUrl}/api/stripe/checkout/cancel`;
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams, {
+    idempotencyKey: buildStripeIdempotencyKey([
+      "stripe-checkout",
+      userId,
+      stripeCustomerId || "no-customer",
+      plan,
+      billingInterval,
+      uiMode,
+      String(Math.floor(Date.now() / 60_000)),
+    ]),
+  });
+
+  if (uiMode === "embedded") {
+    return NextResponse.json({ clientSecret: session.client_secret, sessionId: session.id });
+  }
+  return NextResponse.json({ url: session.url });
+}
+
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
   try {
@@ -114,8 +278,21 @@ export async function POST(request: NextRequest) {
     } = await request.json();
     const uiMode: "hosted" | "embedded" = rawUiMode === "embedded" ? "embedded" : "hosted";
 
+    // Family/Pro take an isolated paid-subscription path (no campaign/trial),
+    // keeping the Individual campaign flow below untouched.
+    if (plan === "FAMILY" || plan === "PRO") {
+      return createWorkspacePlanCheckout({
+        stripeSecretKey,
+        userId,
+        plan,
+        rawBillingInterval,
+        rawCycle,
+        acceptedSubscriptionTerms,
+        uiMode,
+      });
+    }
     if (plan !== "INDIVIDUAL") {
-      return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL, FAMILY, or PRO." }, { status: 400 });
     }
 
     let billingInterval = normalizeBillingIntervalInput(rawBillingInterval, rawCycle);
