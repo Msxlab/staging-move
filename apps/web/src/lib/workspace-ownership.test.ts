@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   subscriptionFindUnique: vi.fn(),
   memberFindMany: vi.fn(),
   memberUpdateMany: vi.fn(),
+  memberFindFirst: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -14,11 +15,12 @@ vi.mock("@/lib/db", () => ({
     workspaceMember: {
       findMany: (...a: unknown[]) => mocks.memberFindMany(...a),
       updateMany: (...a: unknown[]) => mocks.memberUpdateMany(...a),
+      findFirst: (...a: unknown[]) => mocks.memberFindFirst(...a),
     },
   },
 }));
 
-import { reconcileWorkspaceSeats } from "./workspace-ownership";
+import { pickOwnershipHeir, reconcileWorkspaceSeats } from "./workspace-ownership";
 
 const FUTURE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -104,5 +106,35 @@ describe("reconcileWorkspaceSeats (seat-overflow, access-aware)", () => {
     expect(res.restored).toBe(2);
     const call = mocks.memberUpdateMany.mock.calls[0][0];
     expect(call.data).toMatchObject({ status: "ACTIVE", overflowSince: null });
+  });
+});
+
+describe("pickOwnershipHeir (M4: preserve data on owner deletion)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("prefers an ADMIN/MEMBER heir", async () => {
+    mocks.memberFindFirst.mockResolvedValueOnce({ userId: "admin_1" });
+    await expect(pickOwnershipHeir("ws_1", "owner_1")).resolves.toBe("admin_1");
+    // No any-role fallback query when a preferred heir exists.
+    expect(mocks.memberFindFirst).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns null when there is no ADMIN/MEMBER and includeAnyRole is off", async () => {
+    mocks.memberFindFirst.mockResolvedValueOnce(null);
+    await expect(pickOwnershipHeir("ws_1", "owner_1")).resolves.toBeNull();
+    expect(mocks.memberFindFirst).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to ANY active member (e.g. a CHILD) with includeAnyRole — no data loss", async () => {
+    mocks.memberFindFirst
+      .mockResolvedValueOnce(null) // no ADMIN/MEMBER
+      .mockResolvedValueOnce({ userId: "child_1" }); // any-role fallback
+    await expect(pickOwnershipHeir("ws_1", "owner_1", { includeAnyRole: true })).resolves.toBe("child_1");
+    expect(mocks.memberFindFirst).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns null for a truly sole-member workspace even with includeAnyRole", async () => {
+    mocks.memberFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    await expect(pickOwnershipHeir("ws_1", "owner_1", { includeAnyRole: true })).resolves.toBeNull();
   });
 });

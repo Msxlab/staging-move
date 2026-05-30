@@ -18,6 +18,7 @@ export async function transferWorkspaceOwnership(
   workspaceId: string,
   fromUserId: string,
   toUserId: string,
+  options: { allowAnyRole?: boolean } = {},
 ): Promise<{ ok: boolean; error?: string }> {
   if (fromUserId === toUserId) return { ok: false, error: "That member is already the owner." };
   const result = await prisma.$transaction(async (tx) => {
@@ -29,7 +30,11 @@ export async function transferWorkspaceOwnership(
       select: { id: true, role: true },
     });
     if (!target) return { ok: false, error: "Choose an active member to receive ownership." };
-    if (target.role === "CHILD" || target.role === "VIEW_ONLY") {
+    // A user-initiated transfer can only hand ownership to a MEMBER/ADMIN.
+    // allowAnyRole is the forced auto-transfer (owner account deletion): it may
+    // promote a CHILD/VIEW_ONLY so the workspace + everyone's data survives
+    // instead of being deleted.
+    if (!options.allowAnyRole && (target.role === "CHILD" || target.role === "VIEW_ONLY")) {
       return { ok: false, error: "Ownership can only go to a member or admin." };
     }
 
@@ -54,11 +59,18 @@ export async function transferWorkspaceOwnership(
 
 /**
  * Best heir for an auto-transfer (owner account deletion): the longest-tenured
- * ACTIVE ADMIN, else the longest-tenured ACTIVE MEMBER. null when the owner is
- * the only eligible member (caller then hard-deletes the workspace instead).
+ * ACTIVE ADMIN, else the longest-tenured ACTIVE MEMBER. With includeAnyRole, a
+ * final fallback returns the longest-tenured ACTIVE member of ANY role
+ * (incl. CHILD/VIEW_ONLY) so a parent deleting their account doesn't destroy a
+ * child's data. null only when the owner is the workspace's sole member (caller
+ * then hard-deletes the now-empty workspace).
  */
-export async function pickOwnershipHeir(workspaceId: string, excludeUserId: string): Promise<string | null> {
-  const heir = await prisma.workspaceMember.findFirst({
+export async function pickOwnershipHeir(
+  workspaceId: string,
+  excludeUserId: string,
+  options: { includeAnyRole?: boolean } = {},
+): Promise<string | null> {
+  const preferred = await prisma.workspaceMember.findFirst({
     where: {
       workspaceId,
       status: "ACTIVE",
@@ -68,7 +80,14 @@ export async function pickOwnershipHeir(workspaceId: string, excludeUserId: stri
     orderBy: [{ role: "asc" }, { joinedAt: "asc" }], // ADMIN before MEMBER, oldest first
     select: { userId: true },
   });
-  return heir?.userId ?? null;
+  if (preferred) return preferred.userId;
+  if (!options.includeAnyRole) return null;
+  const anyMember = await prisma.workspaceMember.findFirst({
+    where: { workspaceId, status: "ACTIVE", userId: { not: excludeUserId } },
+    orderBy: { joinedAt: "asc" },
+    select: { userId: true },
+  });
+  return anyMember?.userId ?? null;
 }
 
 /**

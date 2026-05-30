@@ -180,9 +180,12 @@ export async function processAccountDeletionRequest(requestId: string) {
         select: { id: true },
       });
       for (const ownedWorkspace of ownedWorkspaces) {
-        const heir = await pickOwnershipHeir(ownedWorkspace.id, request.userId);
+        // Preserve data: promote ANY remaining active member (incl. a CHILD)
+        // to owner rather than destroying their workspace data. Only a truly
+        // sole-member (no other members) workspace is hard-deleted.
+        const heir = await pickOwnershipHeir(ownedWorkspace.id, request.userId, { includeAnyRole: true });
         if (heir) {
-          await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir);
+          await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir, { allowAnyRole: true });
         } else {
           await rawPrisma.workspace.delete({ where: { id: ownedWorkspace.id } });
         }
