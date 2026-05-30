@@ -33,15 +33,24 @@ export async function isApiConnectorsEnabled(): Promise<boolean> {
 }
 
 /**
- * Plan-level entitlement gate: whether a user's effective plan unlocks API
- * connectors (PRO per the entitlement matrix). The master flag turns the
- * surface ON; THIS gates WHO may use it, so Free/Individual/Family users cannot
- * connect a partner or trigger a sync even when the flag is on.
+ * Plan-level entitlement gate: whether a user may use API connectors (sync).
+ * The master flag turns the surface ON; THIS gates WHO may use it.
+ *
+ * Requires, in order:
+ *  1. active access (canceled/expired Pro does not sync),
+ *  2. a plan whose matrix unlocks API connectors (PRO), and
+ *  3. an ANNUAL commitment — owner pricing decision (2026-05-30): automatic
+ *     connections are an annual-commitment feature, so a one-time mover can't
+ *     buy a single $19.99 month of Pro, run the sync, and churn. Admin-granted
+ *     Pro (manual comp) is exempt from the annual requirement.
  */
 export async function userHasApiConnectorEntitlement(userId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({ where: { userId } });
-  const plan = String(getEffectiveEntitlement(sub).effectivePlan);
-  return planFeatures(plan).apiConnectors === true;
+  const eff = getEffectiveEntitlement(sub);
+  if (!eff.hasAccess) return false;
+  if (planFeatures(String(eff.effectivePlan)).apiConnectors !== true) return false;
+  if (eff.isManualOverride) return true;
+  return (sub as { billingInterval?: string | null } | null)?.billingInterval === "YEAR";
 }
 
 /** Lowercase kebab-case connector keys only (matches the manifest contract). */
