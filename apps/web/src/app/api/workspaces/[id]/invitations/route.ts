@@ -75,6 +75,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Only the owner can invite an Admin." }, { status: 403 });
   }
 
+  // COPPA: inviting a CHILD knowingly onboards a minor, so when the age gate is
+  // on the inviter must affirm guardian consent (simplified parental consent,
+  // doc 22). Inert when COPPA_AGE_GATE_ENABLED is off — pairs with the register
+  // age gate so both flip together at launch (behind legal sign-off).
+  const ageGateOn = ["true", "1"].includes((process.env.COPPA_AGE_GATE_ENABLED || "").toLowerCase());
+  if (ageGateOn && role === "CHILD" && body?.guardianConsent !== true) {
+    return NextResponse.json(
+      {
+        error: "Confirm you are this child's parent or guardian and consent to LocateFlow processing their information.",
+        code: "GUARDIAN_CONSENT_REQUIRED",
+      },
+      { status: 400 },
+    );
+  }
+
   // Seat ceiling from the owner's plan.
   const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true, name: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
