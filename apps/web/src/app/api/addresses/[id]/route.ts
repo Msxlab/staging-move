@@ -9,7 +9,7 @@ import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
-import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
+import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -98,7 +98,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         (k) => (validated as any)[k] !== undefined && (validated as any)[k] !== (existing as any)[k],
       );
       const becamePrimary = validated.isPrimary === true && !existing.isPrimary;
-      if (address.isPrimary && (locationChanged || becamePrimary) && (await isApiConnectorsEnabled())) {
+      // Gate the auto-sync on the SAME annual-Pro entitlement the explicit
+      // dispatch entry points check — a downgraded user with a lingering
+      // consent must not get address edits auto-enqueued (P1, was flag-only).
+      if (
+        address.isPrimary &&
+        (locationChanged || becamePrimary) &&
+        (await isApiConnectorsEnabled()) &&
+        (await userHasApiConnectorEntitlement(userId))
+      ) {
         await enqueueAddressChange({ userId, toAddressId: id });
       }
     } catch {

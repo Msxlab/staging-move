@@ -5,6 +5,7 @@ import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceMembershipEmail } from "@/lib/email-service";
+import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
 
 export const runtime = "nodejs";
 
@@ -120,5 +121,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     href: "/settings/workspace",
   }).catch(() => {});
   await emailMembershipChange("removed", id, removedUserId);
+  // Removing a member frees a seat — restore an OVERFLOW member if one is waiting.
+  await reconcileWorkspaceSeats(id).catch(() => {});
   return NextResponse.json({ removed: true });
 }

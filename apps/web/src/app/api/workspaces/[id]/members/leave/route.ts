@@ -3,6 +3,7 @@ import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
+import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
 
 export const runtime = "nodejs";
 
@@ -30,5 +31,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   }
 
   await prisma.workspaceMember.delete({ where: { id: caller.id } });
+  // Freeing a seat may let an OVERFLOW (read-only) member regain full access.
+  await reconcileWorkspaceSeats(id).catch(() => {});
   return NextResponse.json({ left: true });
 }

@@ -62,6 +62,19 @@ export async function POST(request: NextRequest) {
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : "";
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 422 });
 
+  // Cap workspaces per owner. The seat limit is per-workspace, so without a cap
+  // an owner could create many workspaces and multiply their seats — bypassing
+  // the plan's seat limit. The auto-provisioned personal workspace counts as 1.
+  // (Product-tunable constant.)
+  const MAX_OWNED_WORKSPACES = 3;
+  const ownedCount = await prisma.workspace.count({ where: { ownerUserId: session.userId } });
+  if (ownedCount >= MAX_OWNED_WORKSPACES) {
+    return NextResponse.json(
+      { error: `You can own at most ${MAX_OWNED_WORKSPACES} workspaces.` },
+      { status: 409 },
+    );
+  }
+
   const workspace = await prisma.workspace.create({
     data: {
       ownerUserId: session.userId,
