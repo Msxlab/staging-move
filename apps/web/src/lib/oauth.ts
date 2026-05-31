@@ -240,7 +240,9 @@ export async function exchangeGoogleCode(opts: {
     body,
   });
   if (!res.ok) {
-    console.error("[OAUTH] google token exchange failed:", res.status, await res.text().catch(() => ""));
+    // Status only — the provider error body can echo back the auth code or
+    // client_secret on a misconfigured request; never log it.
+    console.error("[OAUTH] google token exchange failed (status only):", res.status);
     return null;
   }
   const json = await res.json();
@@ -326,7 +328,8 @@ export async function exchangeAppleCode(opts: {
     body,
   });
   if (!res.ok) {
-    console.error("[OAUTH] apple token exchange failed:", res.status, await res.text().catch(() => ""));
+    // Status only — see the google branch; the body can carry secrets.
+    console.error("[OAUTH] apple token exchange failed (status only):", res.status);
     return null;
   }
   const json = await res.json();

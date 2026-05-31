@@ -88,6 +88,11 @@ export async function GET(req: NextRequest) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     console.error("[Reports API Error]", e.message, e.stack);
-    return NextResponse.json({ error: "Internal error", detail: e.message }, { status: 500 });
+    // Don't leak the raw exception message to the client — gate behind dev
+    // like the sibling admin routes (providers/moving). Server log keeps it.
+    return NextResponse.json(
+      { error: "Internal error", ...(process.env.NODE_ENV === "development" ? { detail: e.message } : {}) },
+      { status: 500 },
+    );
   }
 }

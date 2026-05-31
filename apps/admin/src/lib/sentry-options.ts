@@ -24,6 +24,17 @@ function scrubObject(obj: unknown): unknown {
   return out;
 }
 
+/** Value-level scrubber for free-text strings (exception/breadcrumb messages)
+ *  that scrubObject's key-based pass can't reach — emails, Bearer tokens, long
+ *  token-like runs. Mirrors packages/shared scrubText. */
+function scrubText(text: unknown): string {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[email]")
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[token]");
+}
+
 export function buildSentryOptions(runtime: Runtime) {
   const isProd = process.env.NODE_ENV === "production";
   return {
@@ -47,6 +58,20 @@ export function buildSentryOptions(runtime: Runtime) {
       }
       if (event.extra) event.extra = scrubObject(event.extra) as any;
       if (event.tags) event.tags = scrubObject(event.tags) as any;
+      if (event.exception?.values) {
+        for (const ex of event.exception.values) {
+          if (ex && typeof ex.value === "string") ex.value = scrubText(ex.value);
+        }
+      }
+      const crumbs = Array.isArray(event.breadcrumbs)
+        ? event.breadcrumbs
+        : event.breadcrumbs?.values;
+      if (Array.isArray(crumbs)) {
+        for (const b of crumbs) {
+          if (b && typeof b.message === "string") b.message = scrubText(b.message);
+          if (b?.data) b.data = scrubObject(b.data);
+        }
+      }
       return event;
     },
     ...(runtime === "edge"

@@ -35,3 +35,19 @@ export function scrubObject(obj: unknown): unknown {
   }
   return out;
 }
+
+/**
+ * Value-level scrubber for FREE-TEXT strings — exception messages, breadcrumb
+ * messages, log lines — where a secret/PII can be interpolated into the text
+ * itself (e.g. a Prisma unique-constraint error that echoes the field value, a
+ * JSON parse error that echoes the payload, a URL carrying a token). scrubObject
+ * is key-based and can't reach these. Redacts emails, Bearer tokens, and long
+ * token-like runs. Conservative: over-redaction in an error string is harmless.
+ */
+export function scrubText(text: unknown): string {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[email]")
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[token]");
+}
