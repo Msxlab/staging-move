@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { getCategoryIcon, getCategoryLabel, getCategoryOrder, PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { validateCsvFileMetadata } from "@/lib/privacy";
 
 interface Provider {
@@ -56,6 +57,8 @@ export default function ProvidersPage() {
   // Bulk
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState("");
+  const [pendingBulk, setPendingBulk] = useState<{ body: { action: string; ids: string[]; data?: Record<string, unknown> }; label: string } | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkCategory, setBulkCategory] = useState("");
   const [bulkScore, setBulkScore] = useState("");
 
@@ -136,7 +139,7 @@ export default function ProvidersPage() {
   }
   function deselectAll() { resetBulk(); }
 
-  async function handleBulk() {
+  function handleBulk() {
     if (!bulkAction || selected.size === 0) return;
     const ids = Array.from(selected);
 
@@ -147,29 +150,42 @@ export default function ProvidersPage() {
     }
 
     const body: { action: string; ids: string[]; data?: Record<string, unknown> } = { action: bulkAction, ids };
+    let label = bulkAction;
     if (bulkAction === "change_category") {
       if (!bulkCategory) { toast.error("Choose a category to apply."); return; }
       body.data = { category: bulkCategory };
-    }
-    if (bulkAction === "set_score") {
+      label = `set category to "${bulkCategory}"`;
+    } else if (bulkAction === "set_score") {
       const score = Number.parseInt(bulkScore, 10);
       if (!Number.isFinite(score) || score < 0 || score > 100) {
         toast.error("Enter a score between 0 and 100.");
         return;
       }
       body.data = { score };
+      label = `set score to ${score}`;
     }
+    // Confirm before firing — these write to the PUBLIC catalog and an
+    // accidental "select all → deactivate" would otherwise silently take it
+    // offline with no undo. (No step-up here: a UX guard, not new auth.)
+    setPendingBulk({ body, label });
+  }
+
+  async function runBulk() {
+    if (!pendingBulk) return;
+    setBulkBusy(true);
     try {
       const res = await fetch("/api/providers/bulk", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(pendingBulk.body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed"); return; }
       toast.success(`${data.affected} providers updated`);
+      setPendingBulk(null);
       resetBulk();
       fetchProviders();
     } catch { toast.error("Bulk operation failed"); }
+    finally { setBulkBusy(false); }
   }
 
   function handleDelete(id: string, name: string) {
@@ -720,6 +736,20 @@ export default function ProvidersPage() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(pendingBulk)}
+        title="Apply bulk change?"
+        description={
+          pendingBulk
+            ? `This will ${pendingBulk.label} for ${pendingBulk.body.ids.length} provider${pendingBulk.body.ids.length === 1 ? "" : "s"} in the public catalog.`
+            : ""
+        }
+        confirmLabel="Apply"
+        tone="default"
+        busy={bulkBusy}
+        onClose={() => { if (!bulkBusy) setPendingBulk(null); }}
+        onConfirm={runBulk}
+      />
       <PasswordConfirmModal
         open={Boolean(pendingDelete)}
         title={pendingDelete?.type === "bulk" ? "Delete providers" : "Delete provider"}
