@@ -12,6 +12,7 @@ import { getCategoryIcon, getCategoryLabel, getCategoryOrder, PROVIDER_CATEGORY_
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { validateCsvFileMetadata } from "@/lib/privacy";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Provider {
   id: string; name: string; slug: string; category: string; subCategory: string | null;
@@ -362,34 +363,34 @@ export default function ProvidersPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Service Providers</h1>
-          <p className="mt-1 text-muted-foreground">{total} providers in catalog</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
-            <Upload className="h-4 w-4" /> Import CSV
-          </button>
-          <button onClick={handleExport} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
-            <Download className="h-4 w-4" /> Export
-          </button>
-          <button onClick={() => window.location.assign("/providers/needs-logo")}
-            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
-            <ImageOff className="h-4 w-4" /> Logo backfill
-            {missingLogoCount > 0 && (
-              <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-xs font-semibold text-tone-honey-fg">
-                {missingLogoCount}
-              </span>
-            )}
-          </button>
-          <button onClick={() => window.location.assign("/providers/new")}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Add Provider
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="Service <em>Providers</em>"
+        subtitle={`${total} providers in catalog`}
+        actions={
+          <>
+            <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              <Upload className="h-4 w-4" /> Import CSV
+            </button>
+            <button onClick={handleExport} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              <Download className="h-4 w-4" /> Export
+            </button>
+            <button onClick={() => window.location.assign("/providers/needs-logo")}
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              <ImageOff className="h-4 w-4" /> Logo backfill
+              {missingLogoCount > 0 && (
+                <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-xs font-semibold text-tone-honey-fg">
+                  {missingLogoCount}
+                </span>
+              )}
+            </button>
+            <button onClick={() => window.location.assign("/providers/new")}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-4 w-4" /> Add Provider
+            </button>
+          </>
+        }
+      />
 
       {/* CSV Import Panel */}
       {showImport && (

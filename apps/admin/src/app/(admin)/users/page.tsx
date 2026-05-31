@@ -438,7 +438,7 @@ export default function UsersPage() {
           <thead className="bg-muted/50">
             <tr>
               <th className="px-3 py-3 text-left">
-                <button onClick={bulk.toggleAll} className="text-muted-foreground hover:text-foreground">
+                <button onClick={bulk.toggleAll} aria-label="Select all users on this page" className="text-muted-foreground hover:text-foreground">
                   {bulk.allVisibleSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
                 </button>
               </th>
@@ -481,6 +481,8 @@ export default function UsersPage() {
                     <button
                       onClick={() => !user.deletedAt && bulk.toggle(user.id)}
                       disabled={Boolean(user.deletedAt)}
+                      aria-pressed={bulk.isSelected(user.id)}
+                      aria-label={bulk.isSelected(user.id) ? "Deselect user" : "Select user"}
                       className="text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {bulk.isSelected(user.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
@@ -537,11 +539,11 @@ export default function UsersPage() {
                   )}
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => window.location.assign(`/users/${user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
+                      <button onClick={() => window.location.assign(`/users/${user.id}`)} aria-label="View user details" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
                         <Eye className="h-4 w-4" />
                       </button>
                       {!user.deletedAt && (
-                        <button onClick={() => handleDelete(user.id, user.email)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete user">
+                        <button onClick={() => handleDelete(user.id, user.email)} aria-label="Delete user" className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete user">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}
