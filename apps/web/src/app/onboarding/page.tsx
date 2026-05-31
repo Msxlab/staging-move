@@ -334,6 +334,25 @@ export default function OnboardingPage() {
     setError("");
     setSaving(true);
     try {
+      // Sensitive profile fields (disability / immigration) are gated server-side
+      // behind a current SENSITIVE DataConsent. The opt-in checkbox above is the
+      // user's consent gesture, so record it BEFORE saving the profile — otherwise
+      // /api/profile rejects the payload with SENSITIVE_CONSENT_REQUIRED and the
+      // user is stuck at this step. Mirrors apps/web settings/profile handleSave.
+      const needsSensitiveConsent =
+        profile.hasDisability || profile.isImmigrant || Boolean(profile.immigrationStatus);
+      if (needsSensitiveConsent) {
+        const consentRes = await fetch("/api/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ grants: [{ category: "SENSITIVE", granted: true }] }),
+        });
+        if (!consentRes.ok) {
+          const data = await consentRes.json().catch(() => ({}));
+          throw new Error(data.error || "Sensitive profile consent is required.");
+        }
+      }
+
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
