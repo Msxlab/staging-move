@@ -58,6 +58,18 @@ function hasRawProviderIdentifier(value: string | null | undefined) {
   return Boolean(value && !value.includes("****"));
 }
 
+// Tabs for the user-detail page. The header + stat cards stay always-visible
+// above the tab bar; every content section below is assigned to one tab and
+// hidden when its tab isn't active, so the page stops being one long scroll.
+type UserDetailTab = "overview" | "billing" | "security" | "privacy" | "data";
+const USER_DETAIL_TABS: { key: UserDetailTab; label: string; icon: React.ElementType }[] = [
+  { key: "overview", label: "Overview", icon: Sparkles },
+  { key: "billing", label: "Subscription", icon: CreditCard },
+  { key: "security", label: "Security", icon: KeyRound },
+  { key: "privacy", label: "Privacy & GDPR", icon: Shield },
+  { key: "data", label: "Data", icon: Monitor },
+];
+
 export default function UserDetailClient() {
   const params = useParams();
   const [user, setUser] = useState<any>(null);
@@ -109,6 +121,11 @@ export default function UserDetailClient() {
   const [grantActionBusy, setGrantActionBusy] = useState(false);
   const [advancedBillingOpen, setAdvancedBillingOpen] = useState(false);
   const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<UserDetailTab>("overview");
+  // A section is shown only when its tab is active. Keeps every section in
+  // place (no JSX reordering) while collapsing the page to one tab at a time.
+  const sectionCls = (tab: UserDetailTab) =>
+    `rounded-xl border border-border bg-card p-6${activeTab === tab ? "" : " hidden"}`;
   // Per-modal flag: server returned `requiresMfa: true` last attempt, so
   // the PasswordConfirmModal should mark the MFA field as required and
   // refuse to submit until the operator fills one of MFA / backup code.
@@ -816,7 +833,31 @@ export default function UserDetailClient() {
         );
       })()}
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      {/* Section tabs — collapse the long detail page to one group at a time. */}
+      <div className="flex flex-wrap gap-1 border-b border-border" role="tablist" aria-label="User detail sections">
+        {USER_DETAIL_TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.key)}
+              className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={sectionCls("overview")}>
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-foreground">
             <Shield className="mr-2 inline h-5 w-5" /> Onboarding & Auth Health
@@ -869,7 +910,7 @@ export default function UserDetailClient() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className={sectionCls("security")}>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">
             <KeyRound className="mr-2 inline h-5 w-5" /> Account Security & Access
@@ -1014,7 +1055,7 @@ export default function UserDetailClient() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className={sectionCls("privacy")}>
         <h2 className="mb-4 text-lg font-semibold text-foreground">
           <Shield className="mr-2 inline h-5 w-5" /> Privacy, GDPR & Admin Notes
         </h2>
@@ -1132,7 +1173,7 @@ export default function UserDetailClient() {
       </div>
 
       {supportTimeline.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("overview")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             <Bell className="mr-2 inline h-5 w-5" /> Support Timeline
           </h2>
@@ -1154,7 +1195,7 @@ export default function UserDetailClient() {
       )}
 
       {/* Premium Management */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className={sectionCls("billing")}>
         <h2 className="mb-4 text-lg font-semibold text-foreground">
           <CreditCard className="mr-2 inline h-5 w-5" /> Subscription & Premium
         </h2>
@@ -1505,7 +1546,7 @@ export default function UserDetailClient() {
 
       {/* Profile */}
       {user.profile && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("data")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">Profile</h2>
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:grid-cols-6">
             <InfoItem label="Family Status" value={user.profile.familyStatus || "—"} />
@@ -1528,7 +1569,7 @@ export default function UserDetailClient() {
 
       {/* Device & Sessions */}
       {sessions.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("security")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             <Monitor className="mr-2 inline h-5 w-5" /> Device & Sessions ({sessions.length})
           </h2>
@@ -1628,7 +1669,7 @@ export default function UserDetailClient() {
 
       {/* Behavior Tracking */}
       {(eventCounts.length > 0 || recentEvents.length > 0) && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("overview")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             <MousePointer className="mr-2 inline h-5 w-5" /> User Behavior
           </h2>
@@ -1756,7 +1797,7 @@ export default function UserDetailClient() {
 
       {/* User-created Providers */}
       {customProviders.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("data")}>
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-foreground">User-Created Providers ({customProviders.length})</h2>
@@ -1798,7 +1839,7 @@ export default function UserDetailClient() {
 
       {/* Addresses */}
       {user.addresses?.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("data")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             <MapPin className="mr-2 inline h-5 w-5" /> Addresses ({user.addresses.length})
           </h2>
@@ -1822,7 +1863,7 @@ export default function UserDetailClient() {
 
       {/* Push Devices */}
       {pushDevices.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("data")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             <Bell className="mr-2 inline h-5 w-5" /> Push Devices ({pushDevices.length})
           </h2>
@@ -1850,7 +1891,7 @@ export default function UserDetailClient() {
 
       {/* Moving Plans */}
       {user.movingPlans?.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("data")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">Moving Plans ({user.movingPlans.length})</h2>
           <div className="space-y-3">
             {user.movingPlans.map((plan: any) => (
@@ -1874,7 +1915,7 @@ export default function UserDetailClient() {
 
       {/* Support Tickets */}
       {supportTickets.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("overview")}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">
               <LifeBuoy className="mr-2 inline h-5 w-5" /> Recent Support Tickets ({supportTickets.length})
@@ -1915,7 +1956,7 @@ export default function UserDetailClient() {
 
       {/* Audit Log */}
       {auditLogs.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className={sectionCls("overview")}>
           <h2 className="mb-4 text-lg font-semibold text-foreground">Activity Log (Recent 20)</h2>
           <div className="space-y-2">
             {auditLogs.map((log: any) => (
