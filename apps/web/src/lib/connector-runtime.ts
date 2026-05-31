@@ -146,6 +146,10 @@ export async function enqueueAddressChange(input: {
     const config = configByKey.get(consent.connectorKey);
     if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
     if (!isConnectorDispatchable(config, input.userId)) continue;
+    // Skip a connector that needs an origin when we have none (e.g. a primary-
+    // address EDIT auto-sync with no `from`) — don't file a doomed null-origin
+    // COA the partner would reject. A real move (from+to) still dispatches.
+    if (base.from === null && connectorRegistry.get(consent.connectorKey)?.manifest.requiresOrigin) continue;
     // Enforce the manifest's per-user-per-day cap (fraud control for COA-style
     // filings, e.g. USPS perUserPerDay:2) — declared but previously unenforced.
     // Count live/successful filings in the last 24h; skip a connector at its cap.

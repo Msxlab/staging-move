@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEffectiveEntitlement } from "@locateflow/shared";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -58,10 +59,16 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         where: { id: inv.id },
         data: { status: "ACCEPTED", acceptedAt: new Date(), acceptedByUserId: session.userId },
       });
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (e) {
     if (e instanceof Error && e.message === "SEAT_FULL") {
       return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
+    }
+    // Serializable write-conflict (P2034): two accepts raced for the last seat.
+    // Ask the loser to retry — the re-check then sees the seat is taken, so the
+    // member count can never exceed the limit under concurrency.
+    if ((e as { code?: string })?.code === "P2034") {
+      return NextResponse.json({ error: "Please try again." }, { status: 409 });
     }
     throw e;
   }

@@ -46,6 +46,8 @@ export const uspsManifest: ConnectorManifest = {
   },
   // COA is a fraud-controlled action — cap how many a single user can file.
   rateLimit: { perUserPerDay: 2, perConnectorPerMinute: 60 },
+  // A COA must know the FROM address; never file one without an origin.
+  requiresOrigin: true,
   fallbackActionKey: "usps:MAIL_FORWARDING:DEEP_LINK",
 };
 

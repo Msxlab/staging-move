@@ -107,6 +107,13 @@ export interface ConnectorManifest {
   capabilities: ConnectorCapabilities;
   rateLimit?: ConnectorRateLimit;
   /**
+   * Whether the connector needs a prior (origin) address to act — e.g. a USPS
+   * change-of-address must know where the user moved FROM. When true, the
+   * dispatcher skips an enqueue with no `from` rather than filing a doomed
+   * null-origin change that the partner would reject.
+   */
+  requiresOrigin?: boolean;
+  /**
    * Registry key of the manual fallback action (deep-link / mailto / PDF) that
    * a failed or disabled connector degrades to. REQUIRED whenever
    * `capabilities.addressUpdatePush` is true — the golden rule is that a
