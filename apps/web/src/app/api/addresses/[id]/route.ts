@@ -142,13 +142,30 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
+    // If the address being removed is the user's PRIMARY, line up the most
+    // recent remaining address to inherit primary status in the same
+    // transaction. provider detail, /api/providers/compare and connector
+    // dispatch all read the primary address directly with NO fallback, so
+    // leaving the user with addresses-but-no-primary silently degrades those
+    // surfaces. Resolved before the tx (read-only); the user is acting on
+    // their own addresses single-threaded, so there is no meaningful race.
+    let promotedPrimaryId: string | null = null;
+    if (existing.isPrimary) {
+      const nextPrimary = await prisma.address.findFirst({
+        where: { userId, deletedAt: null, id: { not: id } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+      promotedPrimaryId = nextPrimary?.id ?? null;
+    }
+
     // Cascade the soft-delete to the address's services AND budgets in one
     // transaction. The schema's onDelete: SetNull never fires for our soft
     // deletes, so without this the services keep isActive=true and the budgets
     // keep deletedAt=null, both surfacing in their list endpoints while
     // pointing at an address the user just removed.
     const now = new Date();
-    const [servicesResult, budgetsResult] = await prisma.$transaction([
+    const ops = [
       prisma.service.updateMany({
         where: { addressId: id, userId, deletedAt: null },
         data: { isActive: false, deactivatedAt: now, deletedAt: now },
@@ -158,7 +175,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         data: { deletedAt: now },
       }),
       prisma.address.update({ where: { id }, data: { deletedAt: now } }),
-    ]);
+    ];
+    if (promotedPrimaryId) {
+      ops.push(
+        prisma.address.update({
+          where: { id: promotedPrimaryId },
+          data: { isPrimary: true },
+        }),
+      );
+    }
+    const txResults = await prisma.$transaction(ops);
+    const servicesResult = txResults[0] as { count: number };
+    const budgetsResult = txResults[1] as { count: number };
 
     const meta = extractRequestMeta(request);
     await createAuditLog({
@@ -170,6 +198,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         nickname: existing.nickname,
         servicesDeactivated: servicesResult.count,
         budgetsDeleted: budgetsResult.count,
+        ...(promotedPrimaryId ? { promotedPrimaryId } : {}),
       },
       ...meta,
     });

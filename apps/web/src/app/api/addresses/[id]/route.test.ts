@@ -4,6 +4,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     address: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
     },
@@ -63,6 +64,7 @@ const mockRequireAppMutationUser = requireAppMutationUser as unknown as Mock;
 const mockCreateAuditLog = createAuditLog as unknown as Mock;
 const mockAddress = prisma.address as unknown as {
   findUnique: Mock;
+  findFirst: Mock;
   update: Mock;
 };
 const mockService = (prisma as unknown as { service: { updateMany: Mock } }).service;
@@ -246,6 +248,73 @@ describe("address detail route", () => {
       expect(mockTransaction).not.toHaveBeenCalled();
       expect(mockService.updateMany).not.toHaveBeenCalled();
       expect(mockBudget.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("promotes the most recent remaining address when the deleted one was primary", async () => {
+      mockAddress.findUnique.mockResolvedValueOnce({
+        id: "address-1",
+        userId: "user-1",
+        deletedAt: null,
+        nickname: "Home",
+        isPrimary: true,
+      });
+      mockAddress.findFirst.mockResolvedValueOnce({ id: "address-2" });
+      mockAddress.update.mockReturnValue("address-update-op");
+      mockTransaction.mockResolvedValueOnce([
+        { count: 0 },
+        { count: 0 },
+        "address-delete-op",
+        "address-promote-op",
+      ]);
+
+      const response = await DELETE(
+        new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
+        addressParams() as any,
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({ success: true });
+      // Most-recent remaining address is selected as the replacement primary.
+      expect(mockAddress.findFirst).toHaveBeenCalledWith({
+        where: { userId: "user-1", deletedAt: null, id: { not: "address-1" } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+      // The promote write is part of the same atomic delete transaction.
+      expect(mockAddress.update).toHaveBeenCalledWith({
+        where: { id: "address-2" },
+        data: { isPrimary: true },
+      });
+      expect(mockTransaction).toHaveBeenCalledWith([
+        "service-updateMany-op",
+        "budget-updateMany-op",
+        "address-update-op",
+        "address-update-op",
+      ]);
+      // The promotion is traceable in the audit log.
+      expect(mockCreateAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "DELETE",
+          changes: expect.objectContaining({ promotedPrimaryId: "address-2" }),
+        }),
+      );
+    });
+
+    it("does not promote a replacement when the deleted address was not primary", async () => {
+      // existing.isPrimary is falsy in the shared beforeEach fixture, so the
+      // promote branch must stay inert — no candidate lookup, 3-op transaction.
+      await DELETE(
+        new Request("http://localhost/api/addresses/address-1", { method: "DELETE" }) as any,
+        addressParams() as any,
+      );
+
+      expect(mockAddress.findFirst).not.toHaveBeenCalled();
+      expect(mockCreateAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          changes: expect.not.objectContaining({ promotedPrimaryId: expect.anything() }),
+        }),
+      );
     });
   });
 });
