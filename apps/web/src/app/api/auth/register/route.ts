@@ -20,6 +20,9 @@ const registerSchema = z.object({
   password: z.string().max(200),
   firstName: z.string().trim().max(100).optional(),
   lastName: z.string().trim().max(100).optional(),
+  // Self-attestation that the account holder meets the minimum age. Only
+  // enforced when the COPPA age gate is enabled (see below); optional otherwise.
+  confirmedAgeEligible: z.boolean().optional(),
   legalConsents: z
     .object({
       termsAccepted: z.boolean().optional(),
@@ -69,6 +72,22 @@ export async function POST(request: NextRequest) {
   const policyError = validatePasswordPolicy(password);
   if (policyError) {
     return NextResponse.json({ error: policyError }, { status: 400 });
+  }
+
+  // COPPA / minimum-age gate. Inert unless COPPA_AGE_GATE_ENABLED is on, so the
+  // live signup is unchanged until legal flips it on at launch (doc 22-child-role).
+  // When on, the caller must affirm they meet the minimum age (self-attestation;
+  // a stronger birthdate-based gate can replace this in a later phase). The UI
+  // surfaces the checkbox only once the flag is on.
+  const ageGateOn = ["true", "1"].includes((process.env.COPPA_AGE_GATE_ENABLED || "").toLowerCase());
+  if (ageGateOn && parsed.data.confirmedAgeEligible !== true) {
+    return NextResponse.json(
+      {
+        error: "You must confirm you meet the minimum age requirement to create an account.",
+        code: "AGE_CONFIRMATION_REQUIRED",
+      },
+      { status: 400 },
+    );
   }
 
   // Is email taken?
