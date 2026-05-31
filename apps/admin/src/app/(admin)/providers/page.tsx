@@ -8,8 +8,9 @@ import {
   AlertTriangle, ImageOff,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getCategoryIcon, getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
+import { getCategoryIcon, getCategoryLabel, getCategoryOrder, PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { validateCsvFileMetadata } from "@/lib/privacy";
 
 interface Provider {
@@ -24,6 +25,11 @@ interface Provider {
 interface CategoryStat { category: string; count: number; avgScore: number; }
 
 type ViewMode = "accordion" | "table" | "grid";
+
+// Full category list for bulk "Change category" (the filter dropdown only
+// lists categories present in the current result set; bulk edits need every
+// valid target). Sorted to match the create/edit forms.
+const BULK_CATEGORY_OPTIONS = [...PROVIDER_CATEGORY_OPTIONS].sort((a, b) => a.order - b.order);
 
 export default function ProvidersPage() {
   const [groups, setGroups] = useState<Record<string, Provider[]>>({});
@@ -51,6 +57,10 @@ export default function ProvidersPage() {
   // Bulk
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState("");
+  const [pendingBulk, setPendingBulk] = useState<{ body: { action: string; ids: string[]; data?: Record<string, unknown> }; label: string } | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkScore, setBulkScore] = useState("");
 
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -121,9 +131,15 @@ export default function ProvidersPage() {
     const allIds = Object.values(groups).flat().map((p) => p.id);
     setSelected(new Set(allIds));
   }
-  function deselectAll() { setSelected(new Set()); }
+  function resetBulk() {
+    setSelected(new Set());
+    setBulkAction("");
+    setBulkCategory("");
+    setBulkScore("");
+  }
+  function deselectAll() { resetBulk(); }
 
-  async function handleBulk() {
+  function handleBulk() {
     if (!bulkAction || selected.size === 0) return;
     const ids = Array.from(selected);
 
@@ -133,29 +149,43 @@ export default function ProvidersPage() {
       return;
     }
 
-    let body: any = { action: bulkAction, ids };
+    const body: { action: string; ids: string[]; data?: Record<string, unknown> } = { action: bulkAction, ids };
+    let label = bulkAction;
     if (bulkAction === "change_category") {
-      const cat = prompt("Enter new category:");
-      if (!cat) return;
-      body.data = { category: cat };
+      if (!bulkCategory) { toast.error("Choose a category to apply."); return; }
+      body.data = { category: bulkCategory };
+      label = `set category to "${bulkCategory}"`;
+    } else if (bulkAction === "set_score") {
+      const score = Number.parseInt(bulkScore, 10);
+      if (!Number.isFinite(score) || score < 0 || score > 100) {
+        toast.error("Enter a score between 0 and 100.");
+        return;
+      }
+      body.data = { score };
+      label = `set score to ${score}`;
     }
-    if (bulkAction === "set_score") {
-      const score = prompt("Enter new score (0-100):");
-      if (!score) return;
-      body.data = { score: parseInt(score) };
-    }
+    // Confirm before firing — these write to the PUBLIC catalog and an
+    // accidental "select all → deactivate" would otherwise silently take it
+    // offline with no undo. (No step-up here: a UX guard, not new auth.)
+    setPendingBulk({ body, label });
+  }
+
+  async function runBulk() {
+    if (!pendingBulk) return;
+    setBulkBusy(true);
     try {
       const res = await fetch("/api/providers/bulk", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(pendingBulk.body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed"); return; }
       toast.success(`${data.affected} providers updated`);
-      setSelected(new Set());
-      setBulkAction("");
+      setPendingBulk(null);
+      resetBulk();
       fetchProviders();
     } catch { toast.error("Bulk operation failed"); }
+    finally { setBulkBusy(false); }
   }
 
   function handleDelete(id: string, name: string) {
@@ -474,7 +504,7 @@ export default function ProvidersPage() {
       {selected.size > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
           <span className="text-sm font-medium text-primary">{selected.size} selected</span>
-          <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground">
+          <select value={bulkAction} onChange={(e) => { setBulkAction(e.target.value); setBulkCategory(""); setBulkScore(""); }} className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground">
             <option value="">Choose action...</option>
             <option value="activate">Activate</option>
             <option value="deactivate">Deactivate</option>
@@ -482,7 +512,38 @@ export default function ProvidersPage() {
             <option value="set_score">Set Score</option>
             <option value="delete">Delete</option>
           </select>
-          <button onClick={handleBulk} disabled={!bulkAction} className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          {bulkAction === "change_category" && (
+            <select
+              value={bulkCategory}
+              onChange={(e) => setBulkCategory(e.target.value)}
+              className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+            >
+              <option value="">Select category…</option>
+              {BULK_CATEGORY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
+              ))}
+            </select>
+          )}
+          {bulkAction === "set_score" && (
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={bulkScore}
+              onChange={(e) => setBulkScore(e.target.value)}
+              placeholder="Score 0–100"
+              className="w-32 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+            />
+          )}
+          <button
+            onClick={handleBulk}
+            disabled={
+              !bulkAction ||
+              (bulkAction === "change_category" && !bulkCategory) ||
+              (bulkAction === "set_score" && bulkScore.trim() === "")
+            }
+            className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
             Apply
           </button>
           <button onClick={deselectAll} className="ml-auto text-sm text-muted-foreground hover:text-foreground">
@@ -675,6 +736,20 @@ export default function ProvidersPage() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(pendingBulk)}
+        title="Apply bulk change?"
+        description={
+          pendingBulk
+            ? `This will ${pendingBulk.label} for ${pendingBulk.body.ids.length} provider${pendingBulk.body.ids.length === 1 ? "" : "s"} in the public catalog.`
+            : ""
+        }
+        confirmLabel="Apply"
+        tone="default"
+        busy={bulkBusy}
+        onClose={() => { if (!bulkBusy) setPendingBulk(null); }}
+        onConfirm={runBulk}
+      />
       <PasswordConfirmModal
         open={Boolean(pendingDelete)}
         title={pendingDelete?.type === "bulk" ? "Delete providers" : "Delete provider"}

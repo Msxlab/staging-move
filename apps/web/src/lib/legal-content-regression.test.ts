@@ -150,7 +150,13 @@ describe("public legal and policy content", () => {
     const trackingRoute = read("src/app/api/tracking/event/route.ts");
 
     expect(webAnalytics).toContain("{ query_length: query.length }");
-    expect(mobileAnalytics).toContain("{ query_length: query.length }");
+    // Mobile no longer ships a search-tracking helper (the unused trackSearch
+    // export was removed as dead code). The privacy guarantee now lives in its
+    // metadata sanitizer: raw `query` keys are dropped via PII_KEY_PATTERN and
+    // only the aggregate `query_length` is whitelisted. Assert that mechanism
+    // rather than a since-removed call site.
+    expect(mobileAnalytics).toContain("SAFE_AGGREGATE_KEYS");
+    expect(mobileAnalytics).toContain('"query_length"');
     expect(mobileAnalytics).not.toContain("{ query }");
     expect(trackingRoute).toContain("sanitizeMetadata");
     expect(trackingRoute).toContain("SAFE_AGGREGATE_KEYS");

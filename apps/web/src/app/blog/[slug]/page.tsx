@@ -21,7 +21,7 @@ import {
   listPublishedLocalesForSlug,
   listRelatedPosts,
 } from "@/lib/blog/queries";
-import { blogHreflangUrls, blogPostPath, blogPostUrl } from "@/lib/blog/urls";
+import { blogCategoryPath, blogHreflangUrls, blogPostPath, blogPostUrl } from "@/lib/blog/urls";
 import {
   JsonLd,
   articleSchema,
@@ -29,7 +29,7 @@ import {
 } from "@/components/seo/json-ld";
 import { BlogViewTracker } from "@/components/blog/view-tracker";
 import { Button } from "@/components/ui/button";
-import { SITE_URL, absoluteUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +65,7 @@ export async function generateMetadata({
   const publishedLocales = await listPublishedLocalesForSlug(post.slug).catch(() => [post.locale]);
   const hreflangLocales = publishedLocales.length > 0 ? publishedLocales : [post.locale];
 
-  const ogImageUrl = post.ogImageUrl ?? absoluteUrl(DEFAULT_OG_IMAGE);
+  const ogImageUrl = post.ogImageUrl ?? absoluteUrl(`/blog/${post.slug}/opengraph-image`);
   const ogImageAlt = post.ogImageUrl ? (post.ogImageAlt ?? post.title) : post.title;
 
   return {
@@ -146,7 +146,7 @@ export default async function BlogPostPage({
           url,
           headline: post.title,
           description: post.excerpt,
-          image: post.ogImageUrl ?? absoluteUrl(DEFAULT_OG_IMAGE),
+          image: post.ogImageUrl ?? absoluteUrl(`/blog/${post.slug}/opengraph-image`),
           datePublished: post.publishedAt,
           dateModified: post.updatedAt,
           authorName: post.author.name,
@@ -176,7 +176,12 @@ export default async function BlogPostPage({
             {post.category ? (
               <>
                 <span aria-hidden="true">·</span>
-                <span className="text-primary/80">{post.category.name}</span>
+                <Link
+                  href={blogCategoryPath(post.category.slug, post.locale)}
+                  className="text-primary/80 transition hover:text-primary"
+                >
+                  {post.category.name}
+                </Link>
               </>
             ) : null}
           </nav>

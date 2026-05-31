@@ -36,6 +36,10 @@ async function handleCron(request: NextRequest) {
         where: {
           moveDate: { gte: startOfDay, lt: endOfDay },
           status: { in: ["PLANNING", "IN_PROGRESS"] },
+          // The soft-delete extension scopes the plan itself, but not the
+          // included user relation — exclude plans whose owner was deleted so
+          // we don't email a removed account (mirrors task-reminders).
+          user: { deletedAt: null },
         },
         include: {
           user: { select: { email: true, firstName: true } },

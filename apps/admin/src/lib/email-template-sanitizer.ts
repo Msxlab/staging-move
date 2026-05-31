@@ -366,6 +366,6 @@ export function sanitizeEmailHtml(input: string): string {
  */
 export function sanitizeEmailSubject(input: string): string {
   if (typeof input !== "string") return "";
-  const stripped = input.replace(/[ -]/g, "").replace(/\r?\n/g, " ");
+  const stripped = input.replace(/[\x00-\x1F\x7F]/g, "").replace(/\r?\n/g, " ");
   return stripped.slice(0, 255).trim();
 }

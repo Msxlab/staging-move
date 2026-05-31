@@ -6,9 +6,14 @@ import { getEffectiveEntitlement } from "@/lib/shared-billing";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
- * Plan limits configuration.
- * FREE_TRIAL: 7-day full-feature trial
- * INDIVIDUAL: Full features for single user
+ * Plan limits configuration (canonical §C1, docs 20/30).
+ * FREE_TRIAL: full-feature trial floor
+ * INDIVIDUAL: single user
+ * FAMILY: household (6 members)
+ * PRO: power users / portfolios (10 members)
+ *
+ * Seat ceilings live in workspace-entitlements.ts; these are the per-owner
+ * address/service caps enforced on write.
  */
 const PLAN_LIMITS: Record<string, {
   maxAddresses: number;
@@ -21,6 +26,14 @@ const PLAN_LIMITS: Record<string, {
   INDIVIDUAL: {
     maxAddresses: 10,
     maxServices: 100,
+  },
+  FAMILY: {
+    maxAddresses: 17,
+    maxServices: 250,
+  },
+  PRO: {
+    maxAddresses: 25,
+    maxServices: 1000,
   },
 };
 
@@ -82,19 +95,22 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   const accessType = (subscription as { accessType?: string | null }).accessType;
 
   // Free Access and Free Trial keep users on FREE_TRIAL feature limits
-  // even when the underlying plan tier is INDIVIDUAL — the trial is a
-  // taste of premium with metered limits. Manual admin premium overrides
-  // that and grants Individual limits, since the whole point of the
-  // grant is full access. Provider-paid ACTIVE users get the plan tier
-  // on their row. Everyone else is held to FREE_TRIAL limits even when
-  // they keep read-only access.
+  // even when the underlying plan tier is higher — the trial is a taste of
+  // premium with metered limits. Manual admin premium and provider-paid
+  // ACTIVE subscriptions get the granted tier's limits (INDIVIDUAL/FAMILY/PRO);
+  // a manual grant with no resolvable tier falls back to INDIVIDUAL since the
+  // whole point of the grant is full access. Everyone else is held to
+  // FREE_TRIAL limits even when they keep read-only access.
+  const tier = effective.effectivePlan;
+  const paidTier: PlanName | null =
+    tier === "INDIVIDUAL" || tier === "FAMILY" || tier === "PRO" ? tier : null;
   let effectivePlan: PlanName;
   if (effective.isManualOverride && effective.hasPremium) {
-    effectivePlan = "INDIVIDUAL";
+    effectivePlan = paidTier ?? "INDIVIDUAL";
   } else if (accessType === "FREE_TRIAL" || accessType === "FREE_ACCESS") {
     effectivePlan = "FREE_TRIAL";
-  } else if (effective.hasPremium && effective.effectivePlan === "INDIVIDUAL") {
-    effectivePlan = "INDIVIDUAL";
+  } else if (effective.hasPremium && paidTier) {
+    effectivePlan = paidTier;
   } else {
     effectivePlan = "FREE_TRIAL";
   }

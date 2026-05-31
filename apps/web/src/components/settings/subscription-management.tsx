@@ -19,6 +19,7 @@ import {
   type CancelReasonCode,
 } from "@/components/settings/cancel-survey-modal";
 import { EmbeddedCheckoutCard } from "@/components/marketing/embedded-checkout-card";
+import { PlanChangeSection } from "@/components/settings/plan-change-section";
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -726,6 +727,8 @@ export default function SubscriptionManagementPage() {
               );
             })()
           ) : null}
+
+          <PlanChangeSection />
 
           {showAnnualTrialOffer ? (
           <div className="space-y-4">

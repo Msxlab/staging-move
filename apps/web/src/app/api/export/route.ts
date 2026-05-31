@@ -36,6 +36,7 @@ const ALLOWED_TYPES = new Set([
   "support",
   "notifications",
   "subscription",
+  "workspace",
   "analytics",
   "full",
 ]);
@@ -475,6 +476,74 @@ export async function POST(request: NextRequest) {
       data.analyticsEvents = events;
     }
 
+    if (type === "workspace" || type === "full") {
+      // The requester's own shared-workspace context (GDPR Art. 15): which
+      // workspaces they belong to and their role, plus invitations they sent
+      // or received. Other members' personal data is never included; emails on
+      // sent invitations are masked.
+      const me = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+      const [memberships, invitationsSent, invitationsReceived] = await Promise.all([
+        prisma.workspaceMember.findMany({
+          where: { userId },
+          select: {
+            role: true,
+            status: true,
+            joinedAt: true,
+            workspace: { select: { name: true, ownerUserId: true, createdAt: true } },
+          },
+          orderBy: { joinedAt: "asc" },
+        }),
+        prisma.workspaceInvitation.findMany({
+          where: { invitedByUserId: userId },
+          select: {
+            invitedEmail: true,
+            role: true,
+            status: true,
+            createdAt: true,
+            expiresAt: true,
+            workspace: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        me?.email
+          ? prisma.workspaceInvitation.findMany({
+              where: { invitedEmail: me.email },
+              select: {
+                role: true,
+                status: true,
+                createdAt: true,
+                expiresAt: true,
+                workspace: { select: { name: true } },
+              },
+              orderBy: { createdAt: "desc" },
+            })
+          : Promise.resolve([]),
+      ]);
+      data.workspaceMemberships = memberships.map((m) => ({
+        workspaceName: m.workspace?.name ?? null,
+        isOwner: m.workspace?.ownerUserId === userId,
+        role: m.role,
+        status: m.status,
+        joinedAt: m.joinedAt,
+        workspaceCreatedAt: m.workspace?.createdAt ?? null,
+      }));
+      data.workspaceInvitationsSent = invitationsSent.map((i) => ({
+        workspaceName: i.workspace?.name ?? null,
+        invitedEmail: maskEmail(i.invitedEmail),
+        role: i.role,
+        status: i.status,
+        createdAt: i.createdAt,
+        expiresAt: i.expiresAt,
+      }));
+      data.workspaceInvitationsReceived = invitationsReceived.map((i) => ({
+        workspaceName: i.workspace?.name ?? null,
+        role: i.role,
+        status: i.status,
+        createdAt: i.createdAt,
+        expiresAt: i.expiresAt,
+      }));
+    }
+
     emitSecurityEvent({
       type: "EXPORT_ATTEMPT",
       severity: "info",
@@ -501,6 +570,7 @@ export async function POST(request: NextRequest) {
         subscription: "subscription",
         analytics: "analyticsEvents",
         legal: "legalConsents",
+        workspace: "workspaceMemberships",
       };
       const dataKey = type === "full" ? "services" : (dataKeyMap[type] || type);
       const items = data[dataKey as keyof typeof data] || [];

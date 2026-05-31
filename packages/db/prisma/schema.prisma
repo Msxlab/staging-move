@@ -66,6 +66,10 @@ model User {
   pushDevices             PushDevice[]
   dataConsents            DataConsent[]
   acquisitionRedemptions  AcquisitionRedemption[]
+  partnerConsents         PartnerConsent[]
+  connectorDispatches     ConnectorDispatch[]
+  ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
+  workspaceMemberships    WorkspaceMember[]
 
   // Soft-delete. Populated by admin UI "delete" action; hard-delete runs
   // from cron/data-retention after the undo window. Queries must filter
@@ -250,6 +254,7 @@ model Subscription {
   accessType                        String?                 @db.VarChar(30)
   billingInterval                   String?                 @db.VarChar(20)
   pendingBillingInterval            String?                 @db.VarChar(20)
+  pendingPlan                       String?                 @db.VarChar(20)
   pendingBillingIntervalEffectiveAt DateTime?
   freeAccessEndsAt                  DateTime?
   cancelAtPeriodEnd                 Boolean                 @default(false)
@@ -424,6 +429,12 @@ model Address {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Workspace isolation axis (Family/Pro). Nullable in Phase 1; backfilled by
+  // the migration script, then promoted to NOT NULL in Phase 3. `userId` stays
+  // as the record-owner. Inert until WORKSPACE_MODEL_ENABLED.
+  workspaceId String?    @db.VarChar(30)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
   type     String  @db.VarChar(20)
   nickname String? @db.VarChar(50)
 
@@ -458,6 +469,7 @@ model Address {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([workspaceId])
   @@index([zip])
   @@index([state])
   @@index([userId, zip])
@@ -470,6 +482,9 @@ model Service {
   id     String @id @default(cuid()) @db.VarChar(30)
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String?    @db.VarChar(30) // workspace isolation axis (Family/Pro), nullable Phase 1
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   addressId String  @db.VarChar(30)
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
@@ -518,6 +533,7 @@ model Service {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([workspaceId])
   @@index([addressId])
   @@index([category])
   @@index([providerName])
@@ -527,6 +543,10 @@ model Service {
   @@index([userId, category])
   @@index([userId, addressId, isActive])
   @@index([deletedAt])
+  // Reminder crons scan active services by contract/billing windows across all
+  // users — index those hot paths so they don't full-scan the table.
+  @@index([isActive, contractEndDate])
+  @@index([isActive, billingDay])
 }
 
 // ==================== MOVING PLAN ====================
@@ -535,6 +555,9 @@ model MovingPlan {
   id     String @id @default(cuid()) @db.VarChar(30)
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String?    @db.VarChar(30) // workspace isolation axis (Family/Pro), nullable Phase 1
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   // Explicit ON DELETE RESTRICT — the SQL FK already behaves this way
   // (Prisma's MySQL default for required relations) but we name it here
@@ -563,6 +586,7 @@ model MovingPlan {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([workspaceId])
   @@index([fromAddressId])
   @@index([toAddressId])
   @@index([moveDate])
@@ -575,6 +599,9 @@ model Budget {
   id     String @id @default(cuid()) @db.VarChar(30)
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String?    @db.VarChar(30) // workspace isolation axis (Family/Pro), nullable Phase 1
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   addressId String?  @db.VarChar(30)
   address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
@@ -600,6 +627,7 @@ model Budget {
 
   @@unique([userId, scopeKey, month])
   @@index([userId])
+  @@index([workspaceId])
   @@index([scopeKey])
   @@index([month])
   @@index([deletedAt])
@@ -1110,6 +1138,10 @@ model AdminAuditLog {
 
   @@index([adminUserId, createdAt])
   @@index([entityType, entityId])
+  // Security/settings dashboards filter primarily by `action` (LOGIN,
+  // SECURITY_ALERT, *ERROR*, USER_INTERNAL_NOTE) — index it so an append-only,
+  // high-volume audit log doesn't full-scan.
+  @@index([action, createdAt])
 }
 
 model RuntimeConfigEntry {
@@ -1667,4 +1699,233 @@ model BlogView {
   @@unique([postId, ipHash, viewDay])
   @@index([postId, createdAt])
   @@index([createdAt])
+}
+
+// ==================== CONNECTOR FRAMEWORK (Faz 2, flag-gated) ====================
+// Outbound connector network: propagate an address change to external partners
+// (USPS, Amazon, banks, …) through @locateflow/connectors. These three tables
+// are self-contained — they reference only User, and keep loose string refs to
+// the future AddressChangeEvent / Service so the framework can land before the
+// rest of the Family/Pro foundation. Everything stays inert until
+// FEATURE_API_CONNECTORS is enabled and a ConnectorConfig row is turned on.
+
+// OAuth/API delegation a user granted for one connector. Holds the encrypted
+// token vault entry. Revocable from either side; immutable consent snapshot.
+model PartnerConsent {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Connector manifest key (e.g. "usps") — NOT an FK to the provider catalog,
+  // so the framework stays decoupled from ServiceProvider.
+  connectorKey String @db.VarChar(40)
+
+  scopesJson String @db.Text // JSON array of granted scopes
+
+  status           String  @db.VarChar(20) // GRANTED | REVOKED | EXPIRED
+  revocationReason String? @db.VarChar(40) // USER_REQUESTED | PARTNER_REVOKED | AUTO_EXPIRED | ADMIN_REVOKED | SECURITY_INCIDENT
+
+  grantedAt DateTime
+  revokedAt DateTime?
+  expiresAt DateTime?
+
+  tokenEncrypted        String?   @db.Text // ACCESS token, encrypted with FIELD_ENCRYPTION_KEY
+  refreshTokenEncrypted String?   @db.Text // refresh token, encrypted; mints new access tokens
+  tokenExpiresAt        DateTime? // expiry of the ACCESS token above
+
+  consentSnapshotJson String @db.Text // immutable terms + scope shown at grant time
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dispatches ConnectorDispatch[]
+
+  @@index([userId, status])
+  @@index([connectorKey, status])
+  @@index([status, expiresAt])
+}
+
+// Runtime control plane for one connector. Flippable without a deploy: kill
+// switch, gradual rollout, lifecycle stage, and a mirror of the breaker state.
+model ConnectorConfig {
+  id           String @id @default(cuid()) @db.VarChar(30)
+  connectorKey String @unique @db.VarChar(40)
+
+  enabled        Boolean @default(false) // kill switch — false drains to fallback
+  rolloutPercent Int     @default(0) // 0..100 of eligible users
+  circuitState   String  @default("CLOSED") @db.VarChar(20) // CLOSED | OPEN | HALF_OPEN | DISABLED
+  stage          String  @default("SHADOW") @db.VarChar(20) // SHADOW | ROLLOUT | GA | RETIRED
+
+  version String  @db.VarChar(20)
+  notes   String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+}
+
+// The durable dispatch (transactional-outbox row) carrying one address change
+// to one connector. Idempotent; retried with backoff; degrades to NEEDS_USER.
+model ConnectorDispatch {
+  id           String @id @default(cuid()) @db.VarChar(30)
+  connectorKey String @db.VarChar(40)
+
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  consentId String?         @db.VarChar(30)
+  consent   PartnerConsent? @relation(fields: [consentId], references: [id], onDelete: SetNull)
+
+  // Loose refs to the future AddressChangeEvent / Service — no FK yet (those
+  // models don't exist); tighten when they land.
+  eventId   String? @db.VarChar(30)
+  serviceId String? @db.VarChar(30)
+
+  idempotencyKey String @unique @db.VarChar(120)
+
+  status        String  @default("QUEUED") @db.VarChar(20) // QUEUED|DISPATCHING|SUBMITTED|CONFIRMED|NEEDS_USER|FAILED
+  attemptCount  Int     @default(0)
+  lastErrorCode String? @db.VarChar(30) // normalized ConnectorErrorCode
+
+  confirmationEncrypted String? @db.Text // partner confirmation #, encrypted with FIELD_ENCRYPTION_KEY
+  resultMetadataJson    String? @db.Text
+  // CanonicalAddressChange snapshot, encrypted with FIELD_ENCRYPTION_KEY. Keeps
+  // the outbox row self-contained so the worker can run without depending on
+  // the (not-yet-built) AddressChangeEvent model.
+  payloadEncrypted String? @db.Text
+
+  nextRetryAt  DateTime?
+  dispatchedAt DateTime?
+  confirmedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([connectorKey, status])
+  @@index([userId])
+  @@index([status, nextRetryAt])
+  @@index([consentId])
+}
+
+// ==================== WORKSPACES (Family/Pro, flag-gated) ====================
+// The new isolation root. Every User owns at least one Workspace (backfilled by
+// the migration script); Family/Pro share one with extra members. Enum-like
+// fields use String @db.VarChar to match the existing schema convention.
+// Inert until WORKSPACE_MODEL_ENABLED — domain workspaceId columns are nullable
+// and nothing reads them until the dual-read window opens.
+
+model Workspace {
+  id          String @id @default(cuid()) @db.VarChar(30)
+  ownerUserId String @db.VarChar(30)
+  owner       User   @relation("WorkspaceOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  name String @db.VarChar(120) // display name; plan drives the UI label (My Move/Household/Workspace)
+
+  // Faz 3 ownership transfer skeleton — unset in MVP.
+  transferRequestedToUserId String?   @db.VarChar(30)
+  transferRequestedAt       DateTime?
+
+  // Soft delete + 7-day grace; hard-delete cron clears expired rows.
+  deletedAt          DateTime?
+  deletionGraceUntil DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     WorkspaceMember[]
+  invitations WorkspaceInvitation[]
+  addresses   Address[]
+  services    Service[]
+  movingPlans MovingPlan[]
+  budgets     Budget[]
+
+  @@index([ownerUserId])
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  workspaceId String    @db.VarChar(30)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String    @db.VarChar(30)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role   String @default("MEMBER") @db.VarChar(20) // OWNER|ADMIN|MEMBER|CHILD|VIEW_ONLY
+  status String @default("ACTIVE") @db.VarChar(20) // ACTIVE|SUSPENDED|OVERFLOW
+
+  // Member consent for owner/admin-initiated "managed sync": pushing an address
+  // change to THIS member's connected partners on their behalf (using their own
+  // server-held tokens). null = unset → defaults to true for CHILD
+  // (guardian-managed), false otherwise. Resolve via resolveManagedSyncEnabled.
+  managedSyncEnabled Boolean?
+
+  // Optional guardian link for CHILD (UI hint only; permission is role-based).
+  parentMemberId String?           @db.VarChar(30)
+  parentMember   WorkspaceMember?  @relation("ChildParent", fields: [parentMemberId], references: [id], onDelete: SetNull)
+  childMembers   WorkspaceMember[] @relation("ChildParent")
+
+  invitedByUserId String?   @db.VarChar(30)
+  invitationId    String?   @db.VarChar(30)
+  joinedAt        DateTime  @default(now())
+  lastActiveAt    DateTime?
+  suspendedAt     DateTime?
+  suspendedReason String?   @db.VarChar(255)
+  overflowSince   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, role])
+  @@index([userId])
+  @@index([status])
+}
+
+model WorkspaceInvitation {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  workspaceId String    @db.VarChar(30)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  invitedEmail    String @db.VarChar(191) // lowercased + trimmed
+  role            String @default("MEMBER") @db.VarChar(20)
+  invitedByUserId String @db.VarChar(30)
+
+  tokenHash  String @unique @db.VarChar(64) // sha256(token); plaintext only in the email
+  tokenLast4 String @db.VarChar(8)
+
+  status           String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REVOKED|EXPIRED
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  acceptedByUserId String?   @db.VarChar(30)
+  revokedAt        DateTime?
+  revokedByUserId  String?   @db.VarChar(30)
+
+  locale String? @db.VarChar(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, invitedEmail, expiresAt])
+  @@index([workspaceId, status])
+  @@index([invitedEmail, status])
+  @@index([expiresAt])
+}
+
+// Step-up auth proof for sensitive workspace actions (event create, member
+// remove, ownership change). Short-lived; plain user/workspace refs by design.
+model WorkspaceAuthChallenge {
+  id           String    @id @default(cuid()) @db.VarChar(30)
+  userId       String    @db.VarChar(30)
+  workspaceId  String    @db.VarChar(30)
+  method       String    @db.VarChar(20) // PASSWORD|TOTP|SMS|EMAIL_OTP
+  tokenHash    String    @db.VarChar(64)
+  challengeFor String    @db.VarChar(40) // ADDRESS_CHANGE_EVENT|MEMBER_REMOVE|ROLE_OWNER_CHANGE|WORKSPACE_DELETE
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+  @@index([workspaceId])
 }

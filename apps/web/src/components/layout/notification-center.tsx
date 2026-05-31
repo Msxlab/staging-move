@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
-import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
+import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone, Users, Plug } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
@@ -40,6 +40,12 @@ function notificationPresentation(notification: FeedNotification): {
   }
   if (key.includes("SYSTEM") || key.includes("INFO")) {
     return { icon: Info, iconColor: "text-tone-sky-fg", bg: "bg-tone-sky-bg" };
+  }
+  if (key.includes("CONNECTOR")) {
+    return { icon: Plug, iconColor: "text-tone-honey-fg", bg: "bg-tone-honey-bg" };
+  }
+  if (key.includes("WORKSPACE") || key.includes("MEMBER")) {
+    return { icon: Users, iconColor: "text-tone-sky-fg", bg: "bg-tone-sky-bg" };
   }
   return { icon: Bell, iconColor: "text-muted-foreground", bg: "bg-foreground/5" };
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
-import { maskEmail, maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
+import { canSeeRawBillingIds, maskEmail, maskProviderIdentifier, redactBillingIds, redactUserDetail } from "@/lib/privacy";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
@@ -12,11 +12,12 @@ import { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 // at the API boundary or risk drift the rest of the app can't safely
 // read (`normalizeMovingPlanStatus` style workarounds).
 //
-// FAMILY/BUSINESS were previously listed but have no entry in
-// BILLING_PLAN_DEFINITIONS — writes that landed silently downgraded to
-// FREE_TRIAL on read. Removed from the allowlist; the user-detail UI
-// no longer surfaces them either.
-const SUBSCRIPTION_PLAN_VALUES = ["INDIVIDUAL", "FREE_TRIAL"] as const;
+// FAMILY/PRO are now first-class plans (doc 62 cascade): they have
+// BILLING_PLAN_DEFINITIONS entries, plan-limits rows, and seat ceilings, so
+// an admin grant flows end-to-end (entitlement → workspace creation → seats).
+// BUSINESS stays out — it has no definition and would silently downgrade to
+// FREE_TRIAL on read.
+const SUBSCRIPTION_PLAN_VALUES = ["INDIVIDUAL", "FAMILY", "PRO", "FREE_TRIAL"] as const;
 // FREE_ACCESS / FREE_ACCESS_EXPIRED were missing from the allowlist
 // even though the system writes them as the default and the user-detail
 // dropdown offers them. Admins picking those values previously got a
@@ -104,14 +105,6 @@ const userDetailSubscriptionSelect = {
   updatedAt: true,
 };
 
-function canSeeRawBillingIds(role: string | null | undefined) {
-  return role === "ADMIN" || role === "SUPER_ADMIN";
-}
-
-function maskNullableProviderId(value: string | null | undefined) {
-  return value ? maskProviderIdentifier(value) : null;
-}
-
 function redactUserDetailSubscription(subscription: any, role: string | null | undefined) {
   if (!subscription) return null;
   const showRawBillingIds = canSeeRawBillingIds(role);
@@ -122,25 +115,8 @@ function redactUserDetailSubscription(subscription: any, role: string | null | u
     status: subscription.status,
     provider: subscription.provider,
     platform: subscription.platform,
-    stripeCustomerId: showRawBillingIds
-      ? subscription.stripeCustomerId
-      : maskNullableProviderId(subscription.stripeCustomerId),
-    stripeSubscriptionId: showRawBillingIds
-      ? subscription.stripeSubscriptionId
-      : maskNullableProviderId(subscription.stripeSubscriptionId),
-    stripePriceId: showRawBillingIds
-      ? subscription.stripePriceId
-      : maskNullableProviderId(subscription.stripePriceId),
+    ...redactBillingIds(subscription, showRawBillingIds),
     stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
-    billingProductId: showRawBillingIds
-      ? subscription.billingProductId
-      : maskNullableProviderId(subscription.billingProductId),
-    originalTransactionId: showRawBillingIds
-      ? subscription.originalTransactionId
-      : maskNullableProviderId(subscription.originalTransactionId),
-    latestTransactionId: showRawBillingIds
-      ? subscription.latestTransactionId
-      : maskNullableProviderId(subscription.latestTransactionId),
     currentPeriodEndsAt: subscription.currentPeriodEndsAt,
     gracePeriodEndsAt: subscription.gracePeriodEndsAt,
     lastValidatedAt: subscription.lastValidatedAt,

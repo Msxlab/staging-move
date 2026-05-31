@@ -135,6 +135,23 @@ export function softwareApplicationSchema(
   return schema;
 }
 
+export function collectionPageSchema(
+  ctx: SiteContext,
+  input: { url: string; name: string; description: string; inLanguage?: string },
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${input.url}#collectionpage`,
+    url: input.url,
+    name: input.name,
+    description: input.description,
+    inLanguage: input.inLanguage || "en-US",
+    isPartOf: { "@id": `${ctx.siteUrl}#website` },
+    publisher: { "@id": `${ctx.siteUrl}#organization` },
+  };
+}
+
 export interface ArticleSchemaInput {
   url: string;
   headline: string;

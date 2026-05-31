@@ -23,6 +23,7 @@ const PATHS = [
   "/mobile/oauth/*",
   "/reset-password",
   "/reset-password/*",
+  "/invitations/*",
 ];
 
 export const dynamic = "force-dynamic";

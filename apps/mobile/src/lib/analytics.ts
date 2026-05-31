@@ -119,32 +119,3 @@ async function flushEvents() {
 export function trackScreenView(screen: string) {
   trackEvent("SCREEN_VIEW", screen);
 }
-
-export function trackTap(element: string, screen?: string) {
-  trackEvent("TAP", screen, { element });
-}
-
-export function trackSearch(query: string, screen?: string) {
-  trackEvent("SEARCH", screen, { query_length: query.length });
-}
-
-export function trackFormSubmit(form: string, screen?: string) {
-  trackEvent("FORM_SUBMIT", screen, { form });
-}
-
-export function trackError(error: string, screen?: string, extra?: Record<string, any>) {
-  trackEvent("ERROR", screen, { error, ...extra });
-}
-
-export function trackFeatureUse(feature: string, screen?: string) {
-  trackEvent("FEATURE_USE", screen, { feature });
-}
-
-export function trackLogin() {
-  trackEvent("LOGIN");
-}
-
-export function trackLogout() {
-  trackEvent("LOGOUT");
-  flushEvents();
-}

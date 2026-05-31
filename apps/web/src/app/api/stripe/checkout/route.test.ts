@@ -722,4 +722,102 @@ describe("stripe checkout route", () => {
     expect(body).toMatchObject({ code: "TRIAL_ALREADY_REDEEMED" });
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
+
+  it("creates a Family checkout session without a campaign or trial", async () => {
+    const response = await POST(
+      checkoutRequest({ plan: "FAMILY", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getStripePriceIdForPlanAndInterval).toHaveBeenCalledWith("FAMILY", "MONTH");
+    expect(mocks.findActivePublicIndividualAnnualTrialCampaign).not.toHaveBeenCalled();
+    expect(mocks.findActivePublicIndividualMonthlyPaidOffer).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        line_items: [{ price: "price_monthly", quantity: 1 }],
+        metadata: expect.objectContaining({
+          plan: "FAMILY",
+          billingInterval: "MONTH",
+          provider: "STRIPE",
+          platform: "web",
+        }),
+      }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
+    expect(mocks.sessionsCreate.mock.calls[0][0].subscription_data).not.toHaveProperty("trial_period_days");
+  });
+
+  it("creates a Pro yearly checkout session", async () => {
+    const response = await POST(
+      checkoutRequest({ plan: "PRO", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getStripePriceIdForPlanAndInterval).toHaveBeenCalledWith("PRO", "YEAR");
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: "price_yearly", quantity: 1 }],
+        metadata: expect.objectContaining({ plan: "PRO", billingInterval: "YEAR" }),
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("returns 503 PLAN_NOT_AVAILABLE for Family when the price is not configured", async () => {
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);
+
+    const response = await POST(
+      checkoutRequest({ plan: "FAMILY", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({ code: "PLAN_NOT_AVAILABLE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects Family checkout without accepted subscription terms", async () => {
+    const response = await POST(checkoutRequest({ plan: "FAMILY", billingInterval: "MONTH" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toMatchObject({ code: "TERMS_NOT_ACCEPTED" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("blocks Family re-checkout for an existing real Stripe subscription", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_paid",
+      stripeSubscriptionId: "sub_paid_123",
+      provider: "STRIPE",
+      accessType: "PAID",
+      status: "ACTIVE",
+      platform: "web",
+    });
+
+    const response = await POST(
+      checkoutRequest({ plan: "FAMILY", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "ALREADY_ACTIVE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects Family checkout from the mobile app client", async () => {
+    const response = await POST(
+      checkoutRequest(
+        { plan: "FAMILY", billingInterval: "MONTH", acceptedSubscriptionTerms: true },
+        { "x-client-type": "mobile", "x-client-platform": "ios" },
+      ),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({ code: "MOBILE_EXTERNAL_BILLING_NOT_ALLOWED" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
 });

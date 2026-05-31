@@ -64,7 +64,7 @@ async function main() {
     "users", "subscriptions", "reviews", "providers",
     "state_rules", "badges", "documents", "moving_plans", "tickets",
     "audit_logs", "admin_users", "settings",
-    "blog", "acquisition_campaigns",
+    "blog", "acquisition_campaigns", "connectors",
   ];
 
   for (const resource of adminResources) {

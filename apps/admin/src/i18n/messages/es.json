@@ -54,6 +54,7 @@
     "analyticsPage": "Analítica",
     "reports": "Reportes",
     "featureFlags": "Banderas de funciones",
+    "connectors": "Conectores",
     "security": "Seguridad",
     "runtimeConfig": "Configuración de ejecución",
     "settings": "Configuración",
@@ -61,7 +62,14 @@
     "auditLogs": "Registros de auditoria",
     "tickets": "Tickets",
     "support": "Soporte",
-    "adminTeam": "Equipo de Admin"
+    "adminTeam": "Equipo de Admin",
+    "governance": "Gobernanza",
+    "needsLogo": "Sin logo",
+    "intelligence": "Inteligencia",
+    "sessions": "Sesiones",
+    "activity": "Actividad",
+    "health": "Estado",
+    "twoFactor": "Doble factor"
   },
   "login": {
     "title": "Inicio de sesión de admin",

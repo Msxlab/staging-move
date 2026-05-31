@@ -3,15 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { parsePaginationParams } from "@/lib/pagination";
-import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
-
-function canSeeRawBillingIds(role: string | null | undefined) {
-  return role === "ADMIN" || role === "SUPER_ADMIN";
-}
-
-function maskNullableProviderId(value: string | null | undefined) {
-  return value ? maskProviderIdentifier(value) : null;
-}
+import { canSeeRawBillingIds, maskEmail, redactBillingIds } from "@/lib/privacy";
 
 function redactSubscriptionUser(user: any, showRawBillingIds: boolean) {
   if (!user) return null;
@@ -43,25 +35,8 @@ function redactSubscriptionRow(subscription: any, showRawBillingIds: boolean) {
     platform: subscription.platform,
     billingInterval: subscription.billingInterval,
     accessType: subscription.accessType,
-    stripeCustomerId: showRawBillingIds
-      ? subscription.stripeCustomerId
-      : maskNullableProviderId(subscription.stripeCustomerId),
-    stripeSubscriptionId: showRawBillingIds
-      ? subscription.stripeSubscriptionId
-      : maskNullableProviderId(subscription.stripeSubscriptionId),
-    stripePriceId: showRawBillingIds
-      ? subscription.stripePriceId
-      : maskNullableProviderId(subscription.stripePriceId),
+    ...redactBillingIds(subscription, showRawBillingIds),
     stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
-    billingProductId: showRawBillingIds
-      ? subscription.billingProductId
-      : maskNullableProviderId(subscription.billingProductId),
-    originalTransactionId: showRawBillingIds
-      ? subscription.originalTransactionId
-      : maskNullableProviderId(subscription.originalTransactionId),
-    latestTransactionId: showRawBillingIds
-      ? subscription.latestTransactionId
-      : maskNullableProviderId(subscription.latestTransactionId),
     purchaseTokenPresent: Boolean(subscription.purchaseToken),
     currentPeriodEndsAt: subscription.currentPeriodEndsAt,
     gracePeriodEndsAt: subscription.gracePeriodEndsAt,

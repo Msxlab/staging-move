@@ -15,6 +15,8 @@ import {
   User,
   Bell,
   Shield,
+  Link2,
+  Users,
   Download,
   CreditCard,
   Palette,
@@ -48,6 +50,9 @@ export default function SettingsScreen() {
     { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
     { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
     { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
+    // Cast pending expo-router typed-route regeneration for the new screen.
+    { icon: Link2, label: t("settings.connections", "Connections"), route: "/settings/connections" as Href },
+    { icon: Users, label: t("settings.workspace", "Workspace"), route: "/settings/workspace" as Href },
     { icon: Download, label: t("settings.export"), route: "/settings/export" },
   ];
 

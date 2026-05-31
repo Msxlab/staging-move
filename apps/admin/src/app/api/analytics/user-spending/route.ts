@@ -40,7 +40,11 @@ interface StateRow {
 
 export async function GET() {
   try {
-    await requirePermission("analytics", "canRead", { minimumRole: "VIEWER" });
+    // "analytics" is not a real permission resource (not in ADMIN_RESOURCES),
+    // so checkPermission failed closed and 403'd every non-SUPER_ADMIN. Gate
+    // on "users" like the sibling analytics routes, and raise the floor to
+    // ADMIN since this exposes per-user spending (PII/billing).
+    await requirePermission("users", "canRead", { minimumRole: "ADMIN" });
 
     const services = await prisma.service.findMany({
       where: {

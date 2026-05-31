@@ -12,6 +12,7 @@ const ALLOWED_APP_REDIRECT_PREFIXES = [
   "/help",
   "/documents",
   "/community",
+  "/invitations",
 ] as const;
 
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;

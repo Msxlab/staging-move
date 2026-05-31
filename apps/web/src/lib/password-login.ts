@@ -202,7 +202,10 @@ export async function handlePasswordLogin(
   if (user.mfaEnabled && user.mfaSecret) {
     if (!mfaCode && !backupCode) {
       return NextResponse.json(
-        { requiresMfa: true, message: "MFA verification required. Provide mfaCode or backupCode." },
+        // `code` lets the mobile API client (which drops the body on non-2xx
+        // and surfaces only error+code) detect the MFA challenge. `requiresMfa`
+        // is kept for the web browser flow. Additive — no status/contract change.
+        { requiresMfa: true, code: "MFA_REQUIRED", message: "MFA verification required. Provide mfaCode or backupCode." },
         { status: 403 },
       );
     }

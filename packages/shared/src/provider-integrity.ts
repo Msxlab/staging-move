@@ -218,6 +218,19 @@ export function hasMarketingProviderDescription(
   return MARKETING_DESCRIPTION_PATTERN.test(description || "");
 }
 
+const COVERAGE_CONFIDENCE_LEVEL: Record<
+  CoverageConfidence,
+  ProviderCoverageConfidenceLevel
+> = {
+  EXACT_ZIP: "high",
+  ZIP_PREFIX: "medium",
+  MAPPED_SERVICE_AREA: "medium",
+  STATE_LEVEL: "low",
+  NATIONAL_OR_FEDERAL: "low",
+  ADDRESS_CHECK_REQUIRED: "low",
+  UNKNOWN: "unknown",
+};
+
 export function getProviderCoverageConfidence(
   record: ProviderTrustRecord,
 ): ProviderCoverageConfidence {
@@ -232,69 +245,14 @@ export function getProviderCoverageConfidence(
   });
   const presentation = getCoverageConfidencePresentation(confidence);
 
-  if (matchLevel === "exact") {
-    return {
-      confidence,
-      level: "high",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
-  if (matchLevel === "prefix") {
-    return {
-      confidence,
-      level: "medium",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
-  if (matchLevel === "polygon" || record.requiresPolygonCheck) {
-    return {
-      confidence,
-      level: "medium",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
-  if (matchLevel === "live_address" || record.requiresAddressCheck) {
-    return {
-      confidence,
-      level: "low",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
-  if (record.scope === "FEDERAL") {
-    return {
-      confidence,
-      level: "low",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
-  if (matchLevel === "state") {
-    return {
-      confidence,
-      level: "low",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
-
+  // Derive the trust level directly from the resolved coverage confidence so it
+  // can never drift from the label/message (which already follow `confidence`).
+  // Previously a separate branch chain set `level` on its own, so an
+  // unconfirmable polygon match could report an "Address check required" label
+  // while still claiming a "medium" level.
   return {
     confidence,
-    level: "unknown",
+    level: COVERAGE_CONFIDENCE_LEVEL[confidence],
     label: presentation.label,
     message: presentation.description,
     requiresConfirmation: true,

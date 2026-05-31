@@ -498,6 +498,233 @@ export async function sendWelcomeEmail(user: {
 }
 
 /**
+ * Workspace invitation — sent when an owner/admin invites someone to a
+ * workspace. Transactional (no unsubscribe). Inline content so it works without
+ * a DB template; in dev with no email provider configured it logs as failed and
+ * the route still surfaces the link to the inviter.
+ */
+export async function sendWorkspaceInvitationEmail(opts: {
+  invitedEmail: string;
+  workspaceName: string;
+  inviterName?: string | null;
+  roleLabel: string;
+  acceptUrl: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const inviter = opts.inviterName?.trim() || "A LocateFlow member";
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`Te invitaron a unirte a ${opts.workspaceName} en LocateFlow`),
+        title: `Unirse a ${opts.workspaceName}`,
+        preheader: `${inviter} te invitó a ${opts.workspaceName}.`,
+        userName: "hola",
+        bodyLines: [
+          `${inviter} te invitó a unirte a ${opts.workspaceName} como ${opts.roleLabel}.`,
+          "Abre la invitación para revisarla y unirte. Puedes salir del espacio cuando quieras.",
+        ],
+        details: [
+          ["Espacio", opts.workspaceName],
+          ["Rol", opts.roleLabel],
+        ],
+        cta: { href: opts.acceptUrl, label: "Revisar invitación" },
+        securityNote: true,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`You're invited to join ${opts.workspaceName} on LocateFlow`),
+        title: `Join ${opts.workspaceName}`,
+        preheader: `${inviter} invited you to ${opts.workspaceName}.`,
+        userName: "there",
+        bodyLines: [
+          `${inviter} invited you to join ${opts.workspaceName} as ${opts.roleLabel}.`,
+          "Open the invitation to review it and join. You can leave the workspace at any time.",
+        ],
+        details: [
+          ["Workspace", opts.workspaceName],
+          ["Role", opts.roleLabel],
+        ],
+        cta: { href: opts.acceptUrl, label: "Review invitation" },
+        securityNote: true,
+        locale: opts.locale,
+      });
+  const result = await sendLoggedEmail({
+    to: opts.invitedEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-invitation",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-invitation", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Workspace ownership transfer — sent to the NEW owner when ownership moves to
+ * them (manual transfer, or auto-transfer when the previous owner deletes their
+ * account). Transactional. Without this the new owner silently inherits the
+ * billing/management responsibility for the workspace.
+ */
+export async function sendWorkspaceOwnershipEmail(opts: {
+  newOwnerEmail: string;
+  newOwnerName?: string | null;
+  workspaceName: string;
+  manageUrl: string;
+  reason?: "transfer" | "previous_owner_left";
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const name = opts.newOwnerName?.trim() || "there";
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const becauseLeft = opts.reason === "previous_owner_left";
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`Ahora eres propietario de ${opts.workspaceName} en LocateFlow`),
+        title: `Eres el propietario de ${opts.workspaceName}`,
+        preheader: `La propiedad de ${opts.workspaceName} ahora es tuya.`,
+        userName: name === "there" ? "hola" : name,
+        bodyLines: [
+          becauseLeft
+            ? `El propietario anterior cerró su cuenta, así que la propiedad de ${opts.workspaceName} pasó a ti. Nada se perdió.`
+            : `La propiedad de ${opts.workspaceName} se transfirió a ti.`,
+          "Como propietario administras los miembros, los roles y el plan del espacio.",
+        ],
+        details: [["Espacio", opts.workspaceName]],
+        cta: { href: opts.manageUrl, label: "Administrar espacio" },
+        securityNote: false,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(`You're now the owner of ${opts.workspaceName} on LocateFlow`),
+        title: `You own ${opts.workspaceName}`,
+        preheader: `Ownership of ${opts.workspaceName} is now yours.`,
+        userName: name,
+        bodyLines: [
+          becauseLeft
+            ? `The previous owner closed their account, so ownership of ${opts.workspaceName} passed to you. Nothing was lost.`
+            : `Ownership of ${opts.workspaceName} was transferred to you.`,
+          "As the owner you manage the workspace's members, roles, and plan.",
+        ],
+        details: [["Workspace", opts.workspaceName]],
+        cta: { href: opts.manageUrl, label: "Manage workspace" },
+        securityNote: false,
+        locale: opts.locale,
+      });
+  const result = await sendLoggedEmail({
+    to: opts.newOwnerEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-ownership",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-ownership", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Workspace membership change — sent to a member when their role changes or
+ * they're removed from a workspace. Transactional, mirrors the in-app notice.
+ */
+export async function sendWorkspaceMembershipEmail(opts: {
+  kind: "role_changed" | "removed";
+  userEmail: string;
+  userName?: string | null;
+  workspaceName: string;
+  roleLabel?: string | null;
+  manageUrl: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const name = opts.userName?.trim() || "there";
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const removed = opts.kind === "removed";
+  const ws = opts.workspaceName;
+  const role = opts.roleLabel || "Member";
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(removed ? `Te quitaron de ${ws}` : `Tu rol en ${ws} cambió`),
+        title: removed ? `Saliste de ${ws}` : `Tu rol en ${ws}`,
+        preheader: removed ? `Ya no eres miembro de ${ws}.` : `Tu rol ahora es ${role}.`,
+        userName: name === "there" ? "hola" : name,
+        bodyLines: removed
+          ? [`Te quitaron de ${ws} en LocateFlow.`, "Tu cuenta y tus datos personales no se ven afectados."]
+          : [`Tu rol en ${ws} ahora es ${role}.`],
+        details: removed ? [["Espacio", ws]] : [["Espacio", ws], ["Nuevo rol", role]],
+        cta: { href: opts.manageUrl, label: "Ver espacio" },
+        securityNote: false,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(removed ? `You were removed from ${ws}` : `Your role in ${ws} changed`),
+        title: removed ? `Removed from ${ws}` : `Role updated in ${ws}`,
+        preheader: removed ? `You're no longer a member of ${ws}.` : `Your role is now ${role}.`,
+        userName: name,
+        bodyLines: removed
+          ? [`You were removed from ${ws} on LocateFlow.`, "Your own account and personal data are unaffected."]
+          : [`Your role in ${ws} is now ${role}.`],
+        details: removed ? [["Workspace", ws]] : [["Workspace", ws], ["New role", role]],
+        cta: { href: opts.manageUrl, label: "View workspace" },
+        securityNote: false,
+        locale: opts.locale,
+      });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-membership",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-membership", event: opts.kind, ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Connector "action needed" — sent when an address sync to a partner can't
+ * complete automatically (NEEDS_USER: token expired, validation rejected, or
+ * unsupported). Transactional; the user must act, so it always sends. Without
+ * this the sync fails silently and the user thinks their address was updated.
+ */
+export async function sendConnectorActionNeededEmail(opts: {
+  userEmail: string;
+  userName?: string | null;
+  connectorKey: string;
+  dedupeKey?: string;
+}): Promise<boolean> {
+  const partner = opts.connectorKey.toUpperCase();
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: `Action needed: finish updating your address with ${partner}`,
+    title: "Action needed to sync your address",
+    preheader: `We couldn't finish updating your address with ${partner}.`,
+    userName: opts.userName || "there",
+    bodyLines: [
+      `We couldn't finish updating your address with ${partner} automatically.`,
+      "Open Connections to reconnect the partner or complete the change yourself.",
+    ],
+    details: [["Partner", partner]],
+    cta: { href: `${appUrl}/settings/connections`, label: "Open Connections" },
+    securityNote: true,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "connector-action-needed",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "connector-action-needed" },
+  });
+  return result.success;
+}
+
+/**
  * Email verification, sent after registration.
  */
 function isNonEnglishLocale(locale?: string | null): boolean {

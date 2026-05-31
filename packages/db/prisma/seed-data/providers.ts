@@ -433,7 +433,9 @@ export const FEDERAL_NEW = [
   { name: "Spectrum", slug: "spectrum", category: "UTILITY_INTERNET", description: "Internet, TV, and voice", website: "https://www.spectrum.com", phone: "1-833-267-6094", scope: "FEDERAL", popularityScore: 80, tags: ["internet", "tv", "cable"] },
   { name: "AT&T Fiber", slug: "att-fiber", category: "UTILITY_INTERNET", description: "Fiber internet service", website: "https://www.att.com/internet/fiber", phone: "1-855-220-5211", scope: "FEDERAL", popularityScore: 78, tags: ["internet", "fiber"] },
   { name: "Verizon Fios", slug: "verizon-fios", category: "UTILITY_INTERNET", description: "100% fiber optic internet", website: "https://www.verizon.com/fios", phone: "1-800-837-4966", scope: "FEDERAL", popularityScore: 76, tags: ["internet", "fiber"] },
-  { name: "T-Mobile Home Internet", slug: "t-mobile-home", category: "UTILITY_INTERNET", description: "5G home internet", website: "https://www.t-mobile.com/home-internet", scope: "FEDERAL", popularityScore: 60, tags: ["internet", "5g"] },
+  // T-Mobile Home Internet is defined once below as slug "tmobile-home-internet"
+  // (with a phone + nationwide copy). The duplicate FEDERAL row that used to sit
+  // here was removed so it isn't listed twice in every state's internet results.
   { name: "Starlink", slug: "starlink", category: "UTILITY_INTERNET", description: "Satellite internet by SpaceX", website: "https://www.starlink.com", scope: "FEDERAL", popularityScore: 55, tags: ["internet", "satellite", "rural"] },
 
   // ══════════════════════════════════════════════════════════

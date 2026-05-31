@@ -39,6 +39,7 @@ export async function listPublicPosts(opts: {
   locale?: string;
   page?: number;
   pageSize?: number;
+  categoryId?: string;
 } = {}): Promise<{ items: BlogListItem[]; total: number; pageSize: number; page: number }> {
   const pageSize = Math.min(Math.max(opts.pageSize ?? 20, 1), 50);
   const page = Math.max(opts.page ?? 1, 1);
@@ -48,6 +49,7 @@ export async function listPublicPosts(opts: {
     noIndex: false,
     deletedAt: null,
     ...(opts.locale ? { locale: opts.locale } : {}),
+    ...(opts.categoryId ? { categoryId: opts.categoryId } : {}),
   };
   const [posts, total] = await Promise.all([
     prisma.blogPost.findMany({
@@ -145,6 +147,53 @@ export async function getPublicPostBySlug(
       noIndex: post.noIndex,
     },
   };
+}
+
+export interface BlogCategorySummary {
+  slug: string;
+  name: string;
+  description: string | null;
+}
+
+/**
+ * Look up a single category by slug. Categories are seeded per (slug, locale)
+ * but the slug is effectively the public handle, so we resolve by slug and
+ * let the post listing handle locale scoping.
+ */
+export async function getPublicCategoryBySlug(
+  slug: string,
+): Promise<BlogCategorySummary & { id: string } | null> {
+  const category = await prisma.blogCategory.findFirst({
+    where: { slug },
+    select: { id: true, slug: true, name: true, description: true },
+  });
+  return category ?? null;
+}
+
+/**
+ * Categories that currently have at least one publicly visible post (in the
+ * given locale when provided). Used for the blog index's category nav and the
+ * sitemap — both want only categories a visitor can actually land on.
+ */
+export async function listPublicCategories(
+  locale?: string,
+): Promise<BlogCategorySummary[]> {
+  const categories = await prisma.blogCategory.findMany({
+    where: {
+      posts: {
+        some: {
+          status: "PUBLISHED",
+          publishedAt: { lte: NOW() },
+          noIndex: false,
+          deletedAt: null,
+          ...(locale ? { locale } : {}),
+        },
+      },
+    },
+    select: { slug: true, name: true, description: true },
+    orderBy: [{ order: "asc" }, { name: "asc" }],
+  });
+  return categories;
 }
 
 /** Shared by sitemap + the public JSON API to enumerate slugs. */

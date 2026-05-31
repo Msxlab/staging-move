@@ -121,6 +121,21 @@
               "scheme": "https",
               "host": "app.locateflow.com",
               "pathPrefix": "/reset-password"
+            },
+            {
+              "scheme": "https",
+              "host": "locateflow.com",
+              "pathPrefix": "/invitations"
+            },
+            {
+              "scheme": "https",
+              "host": "locateflow.app",
+              "pathPrefix": "/invitations"
+            },
+            {
+              "scheme": "https",
+              "host": "app.locateflow.com",
+              "pathPrefix": "/invitations"
             }
           ],
           "category": [

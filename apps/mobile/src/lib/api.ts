@@ -87,11 +87,6 @@ if (__DEV__) {
   console.info("[API] mobile base URL", API_URL);
 }
 
-// Keep setTokenGetter as a no-op for any legacy callers (pre-migration).
-export function setTokenGetter(_fn: () => Promise<string | null>) {
-  /* no-op — token is now persisted in auth-store / SecureStore */
-}
-
 async function getToken(): Promise<string | null> {
   try {
     return await getStoreToken();

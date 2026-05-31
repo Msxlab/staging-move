@@ -384,7 +384,36 @@ async function tryCandidates(
         continue;
       }
 
-      return { candidate, contentType: res.contentType, bytes: buf };
+      // Magic-byte gate — identical to the manual-upload path. The remote
+      // Content-Type is advisory: icons.duckduckgo.com / www.google.com are
+      // open favicon proxies that can serve HTML or an SVG-with-script under
+      // an image/* header. Reject dangerous payloads, require a recognized
+      // image format, and derive the stored content-type from the sniff (not
+      // the response header) so a lying upstream can't get arbitrary bytes
+      // published as a provider logo.
+      const dangerous = detectDangerousPayload(buf);
+      if (dangerous) {
+        attempted.push({
+          source: candidate.source,
+          reason: "dangerous_payload",
+          message: dangerous.slice(0, 120),
+        });
+        continue;
+      }
+      const sniffed = sniffImageFormat(buf);
+      if (!sniffed) {
+        attempted.push({ source: candidate.source, reason: "not_an_image" });
+        continue;
+      }
+      let sniffedContentType: string;
+      try {
+        sniffedContentType = normalizeLogoContentType(contentTypeForSniffed(sniffed));
+      } catch {
+        attempted.push({ source: candidate.source, reason: "unsupported_image_format" });
+        continue;
+      }
+
+      return { candidate, contentType: sniffedContentType, bytes: buf };
     } catch (err: any) {
       let reason: string;
       if (err instanceof LogoIngestError) {

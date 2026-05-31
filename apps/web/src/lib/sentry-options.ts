@@ -9,7 +9,7 @@
  * useful during triage.
  */
 
-import { scrubObject } from "@locateflow/shared";
+import { scrubObject, scrubText } from "@locateflow/shared";
 
 type Runtime = "client" | "server" | "edge";
 
@@ -37,6 +37,23 @@ export function buildSentryOptions(runtime: Runtime) {
       }
       if (event.extra) event.extra = scrubObject(event.extra) as any;
       if (event.tags) event.tags = scrubObject(event.tags) as any;
+      // The exception message/type and breadcrumb messages are free text that
+      // can carry interpolated PII (Prisma errors echo field values, etc.) —
+      // scrubObject is key-based and never reaches them.
+      if (event.exception?.values) {
+        for (const ex of event.exception.values) {
+          if (ex && typeof ex.value === "string") ex.value = scrubText(ex.value);
+        }
+      }
+      const crumbs = Array.isArray(event.breadcrumbs)
+        ? event.breadcrumbs
+        : event.breadcrumbs?.values;
+      if (Array.isArray(crumbs)) {
+        for (const b of crumbs) {
+          if (b && typeof b.message === "string") b.message = scrubText(b.message);
+          if (b?.data) b.data = scrubObject(b.data);
+        }
+      }
       return event;
     },
     // Edge runtime has a tighter API surface; skip integrations it can't run.

@@ -102,6 +102,12 @@ function invalidValueMessage(reason: string): string {
       return "Google Play package name must look like an Android package name.";
     case "service_account_email_required":
       return "Google Play service account email must be an iam.gserviceaccount.com address.";
+    case "json_invalid":
+      return "Value must be valid JSON.";
+    case "json_object_required":
+      return "Value must be a JSON object, not an array or a primitive.";
+    case "scoring_weights_empty":
+      return "Provide at least one numeric weight under urgencyTier, coverageScore, addressSensitivePenalty, or essentialCategories.";
     default:
       return "Value does not match the format required for this key.";
   }

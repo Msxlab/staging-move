@@ -9,6 +9,7 @@
 import { prisma } from "@/lib/db";
 import { createHash } from "node:crypto";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import {
   getAppleSubscriptionStatus,
   mapAppleStatus,
@@ -495,6 +496,16 @@ export async function applyIapStateToUser(opts: {
     cancelAtPeriodEnd: state.status === "CANCEL_AT_PERIOD_END",
     autoRenew: !IAP_CANCELED_STATUSES.has(state.status),
     canceledAt: IAP_CANCELED_STATUSES.has(state.status) ? now : null,
+    // A real store purchase takes over the single per-user subscription row.
+    // Clear any admin-grant / free-access remnants so the row can't end up
+    // both provider=APP_STORE/PLAY_STORE AND still carrying premiumGrantedBy /
+    // premiumUntil / freeAccessEndsAt from a prior admin comp (a contradictory
+    // row the entitlement resolver and MRR accounting would misread).
+    premiumGrantedBy: null,
+    premiumUntil: null,
+    premiumGrantedAt: null,
+    premiumNote: null,
+    freeAccessEndsAt: null,
     lastValidatedAt: now,
     lastSyncedAt: now,
   };
@@ -505,6 +516,9 @@ export async function applyIapStateToUser(opts: {
       create: { userId, ...data },
       update: data,
     });
+    // A store plan change/expiry shifts this owner's seat limit — reconcile any
+    // workspaces they own so over-limit members are demoted (best-effort).
+    await reconcileSeatsForOwner(userId).catch(() => {});
     await sendIapLifecycleEmail({
       userId,
       subscriptionId: subscription.id,
@@ -531,6 +545,7 @@ export async function applyIapStateToUser(opts: {
         create: { userId, ...legacyData },
         update: legacyData,
       });
+      await reconcileSeatsForOwner(userId).catch(() => {});
       await sendIapLifecycleEmail({
         userId,
         subscriptionId: subscription.id,

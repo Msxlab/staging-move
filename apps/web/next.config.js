@@ -15,7 +15,7 @@ const isStagingLike =
 const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  transpilePackages: ["@locateflow/db", "@locateflow/shared"],
+  transpilePackages: ["@locateflow/connectors", "@locateflow/db", "@locateflow/shared"],
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   webpack(config) {
     config.resolve = config.resolve || {};

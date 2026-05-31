@@ -312,3 +312,87 @@ describe("plan limits setup grace", () => {
     });
   });
 });
+
+describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(0);
+    mocks.addressCount.mockResolvedValue(0);
+    mocks.movingPlanCount.mockResolvedValue(0);
+    mocks.userCustomProviderCount.mockResolvedValue(0);
+  });
+
+  const paidActive = (plan: string) => ({
+    plan,
+    status: "ACTIVE",
+    accessType: "PAID",
+    provider: "STRIPE",
+    currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+
+  it("resolves a paid-active Family subscription to Family limits (17/250)", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+
+    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+      plan: "FAMILY",
+      isActive: true,
+      hasPremium: true,
+      limits: { maxAddresses: 17, maxServices: 250 },
+    });
+  });
+
+  it("resolves a paid-active Pro subscription to Pro limits (25/1000)", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("PRO"));
+
+    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+      plan: "PRO",
+      isActive: true,
+      hasPremium: true,
+      limits: { maxAddresses: 25, maxServices: 1000 },
+    });
+  });
+
+  it("lets a Family user add a service past the Individual 100 cap", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+    mocks.serviceCount.mockResolvedValue(150);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
+  it("still enforces the Family service ceiling at 250", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+    mocks.serviceCount.mockResolvedValue(250);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 250,
+    });
+  });
+
+  it("lets a Pro user add an address past the Individual 10 cap", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("PRO"));
+    mocks.addressCount.mockResolvedValue(20);
+
+    await expect(canCreateAddress("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
+  it("honors an admin manual Family grant (provider=ADMIN) as Family limits", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "FAMILY",
+      status: "ACTIVE",
+      accessType: "PAID",
+      provider: "ADMIN",
+      premiumGrantedBy: "admin_1",
+      premiumUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+      plan: "FAMILY",
+      isActive: true,
+      hasPremium: true,
+      limits: { maxAddresses: 17, maxServices: 250 },
+    });
+  });
+});

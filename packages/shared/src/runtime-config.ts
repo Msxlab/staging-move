@@ -52,6 +52,10 @@ export const ENV_FIRST_RUNTIME_CONFIG_KEYS = [
   "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
   "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
   "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  "STRIPE_PRICE_FAMILY_MONTHLY",
+  "STRIPE_PRICE_FAMILY_YEARLY",
+  "STRIPE_PRICE_PRO_MONTHLY",
+  "STRIPE_PRICE_PRO_YEARLY",
   "STRIPE_ANNUAL_TRIAL_DAYS",
 ] as const;
 
@@ -61,6 +65,10 @@ const RUNTIME_CONFIG_DB_OVERRIDE_KEYS = [
   "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
   "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
   "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  "STRIPE_PRICE_FAMILY_MONTHLY",
+  "STRIPE_PRICE_FAMILY_YEARLY",
+  "STRIPE_PRICE_PRO_MONTHLY",
+  "STRIPE_PRICE_PRO_YEARLY",
   "STRIPE_ANNUAL_TRIAL_DAYS",
 ] as const;
 
@@ -241,6 +249,46 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     category: "BILLING",
     isSecret: false,
     requiredInProduction: true,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_PRICE_FAMILY_MONTHLY",
+    label: "Stripe Price ID - Family (monthly)",
+    description: "Stripe recurring price for the Family monthly web plan. NOT required yet: Family/Pro self-serve checkout 503s until this is set, and admin-granted Family works without it. Flip requiredInProduction when Family/Pro self-serve launches.",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_PRICE_FAMILY_YEARLY",
+    label: "Stripe Price ID - Family (yearly)",
+    description: "Stripe recurring price for the Family yearly web plan. NOT required yet (see Family monthly).",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_PRICE_PRO_MONTHLY",
+    label: "Stripe Price ID - Pro (monthly)",
+    description: "Stripe recurring price for the Pro monthly web plan. NOT required yet (see Family monthly).",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_PRICE_PRO_YEARLY",
+    label: "Stripe Price ID - Pro (yearly)",
+    description: "Stripe recurring price for the Pro yearly web plan. NOT required yet (see Family monthly).",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: false,
     maskStrategy: "id",
   },
   {
@@ -1229,6 +1277,39 @@ function validateServiceAccountEmail(value: string): RuntimeConfigValidationResu
   return null;
 }
 
+// The recommendation engine reads this key as a JSON object of scoring-weight
+// overrides (urgencyTier / coverageScore / addressSensitivePenalty /
+// essentialCategories), each a record of finite numbers. The reader silently
+// ignores anything malformed and falls back to defaults, so without this check
+// an admin could "successfully" save JSON that does nothing. Mirror the
+// reader's contract here so a typo is rejected with a clear message instead.
+function validateScoringWeightsJson(value: string): RuntimeConfigValidationResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return invalid("json_invalid");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return invalid("json_object_required");
+  }
+  const source = parsed as Record<string, unknown>;
+  const numericGroups = [
+    "urgencyTier",
+    "coverageScore",
+    "addressSensitivePenalty",
+    "essentialCategories",
+  ];
+  const hasUsableWeight = numericGroups.some((group) => {
+    const sub = source[group];
+    if (!sub || typeof sub !== "object" || Array.isArray(sub)) return false;
+    return Object.values(sub as Record<string, unknown>).some(
+      (n) => typeof n === "number" && Number.isFinite(n),
+    );
+  });
+  return hasUsableWeight ? valid() : invalid("scoring_weights_empty");
+}
+
 export function validateRuntimeConfigValueShape(
   key: string,
   rawValue: string | null | undefined,
@@ -1445,6 +1526,10 @@ export function validateRuntimeConfigValueShape(
   }
   if (key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL" || key === "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL") {
     return validateServiceAccountEmail(value) || valid();
+  }
+
+  if (key === "RECOMMENDATION_SCORING_WEIGHTS") {
+    return validateScoringWeightsJson(value);
   }
 
   if (definition?.isSecret) {

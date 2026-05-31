@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/db", () => ({
@@ -98,6 +98,13 @@ describe("register route", () => {
     rawUserMock.findUnique.mockResolvedValue(null);
     userMock.create.mockResolvedValue({ id: "user-new", email: "new@example.com" });
     tokenMock.create.mockResolvedValue({});
+    delete process.env.COPPA_AGE_GATE_ENABLED;
+  });
+
+  const OLD_AGE_GATE = process.env.COPPA_AGE_GATE_ENABLED;
+  afterEach(() => {
+    if (OLD_AGE_GATE === undefined) delete process.env.COPPA_AGE_GATE_ENABLED;
+    else process.env.COPPA_AGE_GATE_ENABLED = OLD_AGE_GATE;
   });
 
   it("returns 409 for an existing password account", async () => {
@@ -238,4 +245,34 @@ describe("register route", () => {
       });
     },
   );
+
+  // COPPA / minimum-age gate — inert unless COPPA_AGE_GATE_ENABLED is on.
+  it("COPPA gate OFF (default): age confirmation is ignored, signup proceeds", async () => {
+    const response = await POST(makeRequest(validBody));
+    expect(response.status).toBe(201);
+    expect(userMock.create).toHaveBeenCalled();
+  });
+
+  it("COPPA gate ON + not confirmed: 400 AGE_CONFIRMATION_REQUIRED, no user created", async () => {
+    process.env.COPPA_AGE_GATE_ENABLED = "true";
+    const response = await POST(makeRequest(validBody));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("AGE_CONFIRMATION_REQUIRED");
+    expect(userMock.create).not.toHaveBeenCalled();
+  });
+
+  it("COPPA gate ON + confirmedAgeEligible=true: signup proceeds", async () => {
+    process.env.COPPA_AGE_GATE_ENABLED = "true";
+    const response = await POST(makeRequest({ ...validBody, confirmedAgeEligible: true }));
+    expect(response.status).toBe(201);
+    expect(userMock.create).toHaveBeenCalled();
+  });
+
+  it("COPPA gate accepts the '1' flag value too", async () => {
+    process.env.COPPA_AGE_GATE_ENABLED = "1";
+    const response = await POST(makeRequest(validBody));
+    expect(response.status).toBe(400);
+    expect(userMock.create).not.toHaveBeenCalled();
+  });
 });

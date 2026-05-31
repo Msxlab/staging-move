@@ -1,10 +1,13 @@
 export const TRIAL_DURATION_DAYS = 14;
 
-// Plans that are actually purchasable today.
-export const BILLING_PLAN_ORDER = ["FREE_TRIAL", "INDIVIDUAL"] as const;
+// All known plan tiers (doc 20/30/62). FAMILY/PRO are admin-grantable today;
+// their Stripe self-serve purchase additionally needs STRIPE_PRICE_FAMILY_*/
+// PRO_* in env (see BILLING_PRODUCT_CONFIG_KEYS). Subscription.plan is
+// VarChar(30), so adding tiers needs NO DB migration — this is purely additive.
+export const BILLING_PLAN_ORDER = ["FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"] as const;
 export type BillingPlan = (typeof BILLING_PLAN_ORDER)[number];
 
-export const PAID_BILLING_PLANS = ["INDIVIDUAL"] as const;
+export const PAID_BILLING_PLANS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
 export type PaidBillingPlan = (typeof PAID_BILLING_PLANS)[number];
 
 export const BILLING_PROVIDER_VALUES = ["TRIAL", "STRIPE", "APP_STORE", "PLAY_STORE", "ADMIN", "UNKNOWN"] as const;
@@ -83,12 +86,58 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
       "Export anytime (CSV, PDF)",
     ],
   },
+  FAMILY: {
+    id: "FAMILY",
+    displayName: "Family",
+    shortDescription: "For households sharing a home and bills. Up to 6 members.",
+    priceLabel: "$9.99",
+    periodLabel: "/month",
+    monthlyPriceUsd: 9.99,
+    yearlyPriceLabel: "$99/year",
+    yearlyPriceUsd: 99,
+    isPaid: true,
+    features: [
+      "Up to 6 members (1 owner + 5)",
+      "17 addresses",
+      "250 services",
+      "Shared services (who pays, who uses)",
+      "Family budget view",
+      "Consolidated household reminders",
+      "Child accounts (no financial visibility)",
+      "Export anytime (CSV, PDF)",
+    ],
+  },
+  PRO: {
+    id: "PRO",
+    displayName: "Pro",
+    shortDescription: "For power users, portfolios, and home-office pros. Up to 10 members.",
+    priceLabel: "$19.99",
+    periodLabel: "/month",
+    monthlyPriceUsd: 19.99,
+    yearlyPriceLabel: "$199/year",
+    yearlyPriceUsd: 199,
+    isPaid: true,
+    features: [
+      "Up to 10 members",
+      "25 addresses",
+      "1,000 services",
+      "Address labels (Home, Office, Rental…)",
+      "Partner Hub — guided open & update",
+      "Bulk sync queue",
+      "Tax & property export (CSV + PDF)",
+      "Unlimited move history",
+    ],
+  },
 };
 
 export const BILLING_PRODUCT_CONFIG_KEYS = {
   web: {
     INDIVIDUAL_MONTHLY: "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
     INDIVIDUAL_YEARLY: "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+    FAMILY_MONTHLY: "STRIPE_PRICE_FAMILY_MONTHLY",
+    FAMILY_YEARLY: "STRIPE_PRICE_FAMILY_YEARLY",
+    PRO_MONTHLY: "STRIPE_PRICE_PRO_MONTHLY",
+    PRO_YEARLY: "STRIPE_PRICE_PRO_YEARLY",
   },
 } as const;
 
@@ -116,6 +165,15 @@ export function getBillingPlanDefinition(plan: string | null | undefined): Billi
 
 export function isPaidBillingPlan(plan: string | null | undefined): plan is PaidBillingPlan {
   return PAID_BILLING_PLANS.includes(plan as PaidBillingPlan);
+}
+
+/**
+ * Type guard for a recognized billing plan. Use before persisting a plan value
+ * sourced from outside the app (Stripe metadata, query params) so an unknown
+ * string is rejected rather than silently stored and mis-read downstream.
+ */
+export function isBillingPlan(plan: string | null | undefined): plan is BillingPlan {
+  return BILLING_PLAN_ORDER.includes(plan as BillingPlan);
 }
 
 export function isActiveSubscriptionStatus(status: string | null | undefined): boolean {

@@ -5,6 +5,7 @@
 
 import { Ratelimit, type Duration } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 
 // ── Redis-backed rate limiters (production) ──────────────────
 
@@ -258,24 +259,9 @@ export async function rateLimit(
  * Each platform sets its trusted header — we check the most reliable first.
  */
 export function resolveClientIP(request: Request): string {
-  if (process.env.VERCEL_ENV) {
-    const vercelIp = request.headers.get("x-vercel-forwarded-for");
-    if (vercelIp) return vercelIp.split(",")[0].trim();
-  }
-
-  // Cloudflare's trusted header
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp.trim();
-
-  // Nginx / reverse proxy trusted header
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-
-  // Standard forwarded header — take leftmost (original client)
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-
-  return "anonymous";
+  // Delegates to the shared resolver so the rate-limit key and the session
+  // fingerprint agree on the client IP (see lib/client-ip.ts).
+  return resolveClientIpFromHeaders(request.headers);
 }
 
 /**

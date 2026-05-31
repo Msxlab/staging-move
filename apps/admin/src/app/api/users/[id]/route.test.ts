@@ -629,7 +629,7 @@ describe("admin user detail billing updates", () => {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          plan: "FAMILY",
+          plan: "BUSINESS",
           confirmPassword: "admin-password",
         }),
       }),
@@ -638,6 +638,29 @@ describe("admin user detail billing updates", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it.each(["FAMILY", "PRO"])("accepts %s as a grantable plan (doc 62 cascade)", async (plan) => {
+    mocks.subscriptionUpdate.mockResolvedValue({});
+
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          plan,
+          subscriptionStatus: "ACTIVE",
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({ plan, status: "ACTIVE" }),
+    });
   });
 
   it("accepts FREE_ACCESS as a valid status (round-trips the dropdown)", async () => {

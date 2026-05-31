@@ -70,7 +70,7 @@ export default function NewBudgetScreen() {
         const hasPremiumAccess =
           entitlement.accessType === "PAID" ||
           entitlement.isTrial === true ||
-          (entitlement.plan === "INDIVIDUAL" && entitlement.isActive === true && entitlement.accessType !== "FREE_ACCESS");
+          (["INDIVIDUAL", "FAMILY", "PRO"].includes(entitlement.plan) && entitlement.isActive === true && entitlement.accessType !== "FREE_ACCESS");
         setSubscriptionRequired(!hasPremiumAccess);
         return;
       }

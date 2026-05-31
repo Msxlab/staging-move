@@ -4,9 +4,11 @@ import {
   DEFAULT_BILLING_PLAN,
   DEFAULT_SUBSCRIPTION_STATUS,
   getEffectiveEntitlement,
+  isPaidBillingPlan,
   TRIAL_DURATION_DAYS,
   type BillingPlan,
   type BillingProvider,
+  type PaidBillingPlan,
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
@@ -39,24 +41,35 @@ export function billingIntervalToCycle(interval: StripeBillingInterval): Billing
  * DigitalOcean/deployment env is the production source of truth for these
  * keys unless STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED=true is set. The legacy
  * STRIPE_PRICE_INDIVIDUAL key is monthly-only and never beats the new
- * monthly/yearly keys.
+ * monthly/yearly keys. FAMILY/PRO resolve only when their price IDs are
+ * configured; until then self-serve checkout for those tiers 503s while
+ * admin-granted Family/Pro keeps working (it never reads a price ID).
  */
 export async function getStripePriceIdForPlanAndInterval(
-  _plan: Extract<BillingPlan, "INDIVIDUAL">,
+  plan: PaidBillingPlan,
   billingInterval: StripeBillingInterval,
 ): Promise<string | null> {
-  const [monthly, yearly, legacyMonthly] = await Promise.all([
-    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_MONTHLY"),
-    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
-    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
-  ]);
+  if (plan === "INDIVIDUAL") {
+    const [monthly, yearly, legacyMonthly] = await Promise.all([
+      getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_MONTHLY"),
+      getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
+      getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
+    ]);
+    if (billingInterval === "MONTH") return monthly || legacyMonthly || null;
+    return yearly || null;
+  }
 
-  if (billingInterval === "MONTH") return monthly || legacyMonthly || null;
-  return yearly || null;
+  const monthlyKey = plan === "FAMILY" ? "STRIPE_PRICE_FAMILY_MONTHLY" : "STRIPE_PRICE_PRO_MONTHLY";
+  const yearlyKey = plan === "FAMILY" ? "STRIPE_PRICE_FAMILY_YEARLY" : "STRIPE_PRICE_PRO_YEARLY";
+  const [monthly, yearly] = await Promise.all([
+    getRuntimeConfigValue(monthlyKey),
+    getRuntimeConfigValue(yearlyKey),
+  ]);
+  return billingInterval === "MONTH" ? monthly || null : yearly || null;
 }
 
 export async function getStripePriceIdForPlan(
-  plan: Extract<BillingPlan, "INDIVIDUAL">,
+  plan: PaidBillingPlan,
   cycle: BillingCycle = "monthly",
 ) {
   return getStripePriceIdForPlanAndInterval(plan, billingCycleToInterval(cycle));
@@ -64,16 +77,32 @@ export async function getStripePriceIdForPlan(
 
 export async function mapStripePriceIdToPlanAndInterval(
   priceId: string | null | undefined,
-): Promise<{ plan: Extract<BillingPlan, "INDIVIDUAL">; billingInterval: StripeBillingInterval } | null> {
+): Promise<{ plan: PaidBillingPlan; billingInterval: StripeBillingInterval } | null> {
   if (!priceId) return null;
-  const [monthly, yearly, legacyMonthly] = await Promise.all([
+  const [
+    indMonthly,
+    indYearly,
+    indLegacy,
+    famMonthly,
+    famYearly,
+    proMonthly,
+    proYearly,
+  ] = await Promise.all([
     getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_MONTHLY"),
     getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
     getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
+    getRuntimeConfigValue("STRIPE_PRICE_FAMILY_MONTHLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_FAMILY_YEARLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_PRO_MONTHLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_PRO_YEARLY"),
   ]);
-  if (monthly && priceId === monthly) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
-  if (yearly && priceId === yearly) return { plan: "INDIVIDUAL", billingInterval: "YEAR" };
-  if (legacyMonthly && priceId === legacyMonthly) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  if (indMonthly && priceId === indMonthly) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  if (indYearly && priceId === indYearly) return { plan: "INDIVIDUAL", billingInterval: "YEAR" };
+  if (indLegacy && priceId === indLegacy) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  if (famMonthly && priceId === famMonthly) return { plan: "FAMILY", billingInterval: "MONTH" };
+  if (famYearly && priceId === famYearly) return { plan: "FAMILY", billingInterval: "YEAR" };
+  if (proMonthly && priceId === proMonthly) return { plan: "PRO", billingInterval: "MONTH" };
+  if (proYearly && priceId === proYearly) return { plan: "PRO", billingInterval: "YEAR" };
   return null;
 }
 
@@ -126,7 +155,7 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   const status = subscription.status || DEFAULT_SUBSCRIPTION_STATUS;
   const provider = inferredProvider as BillingProvider;
   const accessType =
-    effective.accessType || (plan === "INDIVIDUAL" ? "PAID" : null);
+    effective.accessType || (isPaidBillingPlan(plan) ? "PAID" : null);
   const trialEndsAt = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
   const freeAccessEndsAt = subscription.freeAccessEndsAt ? new Date(subscription.freeAccessEndsAt) : null;
   const firstChargeAt = subscription.firstChargeAt ? new Date(subscription.firstChargeAt) : null;

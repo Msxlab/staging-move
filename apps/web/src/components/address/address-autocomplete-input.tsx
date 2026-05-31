@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,11 @@ export function AddressAutocompleteInput({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [enabled, setEnabled] = useState(true);
+  // Index of the keyboard-highlighted suggestion (-1 = none / typing).
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const reactId = useId();
+  const listboxId = `${reactId}-listbox`;
+  const optionId = (index: number) => `${listboxId}-opt-${index}`;
 
   useEffect(() => {
     const query = value.trim();
@@ -98,6 +103,18 @@ export function AddressAutocompleteInput({
     };
   }, [value, enabled]);
 
+  // A fresh result set clears the keyboard highlight.
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [predictions]);
+
+  // Keep the highlighted option scrolled into view as the user arrows through.
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: "nearest" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex]);
+
   async function handleSelect(prediction: AddressAutocompletePrediction) {
     setLoading(true);
     try {
@@ -117,11 +134,40 @@ export function AddressAutocompleteInput({
       onSelect(data.result);
       setPredictions([]);
       setOpen(false);
+      setActiveIndex(-1);
       sessionTokenRef.current = createAddressAutocompleteSessionToken();
     } finally {
       setLoading(false);
     }
   }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    const hasOptions = predictions.length > 0;
+    if (event.key === "ArrowDown") {
+      if (!hasOptions) return;
+      event.preventDefault();
+      if (!open) setOpen(true);
+      setActiveIndex((i) => (i + 1) % predictions.length);
+    } else if (event.key === "ArrowUp") {
+      if (!hasOptions) return;
+      event.preventDefault();
+      if (!open) setOpen(true);
+      setActiveIndex((i) => (i <= 0 ? predictions.length - 1 : i - 1));
+    } else if (event.key === "Enter") {
+      if (open && activeIndex >= 0 && activeIndex < predictions.length) {
+        event.preventDefault();
+        void handleSelect(predictions[activeIndex]);
+      }
+    } else if (event.key === "Escape") {
+      if (open) {
+        event.preventDefault();
+        setOpen(false);
+        setActiveIndex(-1);
+      }
+    }
+  }
+
+  const expanded = open && predictions.length > 0;
 
   return (
     <div className="space-y-2">
@@ -133,8 +179,15 @@ export function AddressAutocompleteInput({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
+          role="combobox"
+          aria-expanded={expanded}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={expanded && activeIndex >= 0 ? optionId(activeIndex) : undefined}
+          autoComplete="off"
           onFocus={() => setOpen(predictions.length > 0)}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onKeyDown={handleKeyDown}
           onChange={(event) => {
             onValueChange(event.target.value);
             onManualChange?.();
@@ -143,15 +196,21 @@ export function AddressAutocompleteInput({
         <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-2 text-muted-foreground">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : enabled ? <MapPin className="h-4 w-4" /> : null}
         </div>
-        {open && predictions.length > 0 ? (
+        {expanded ? (
           <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
-            <div className="max-h-56 overflow-y-auto">
-              {predictions.map((prediction) => (
+            <div className="max-h-56 overflow-y-auto" role="listbox" id={listboxId} aria-label="Address suggestions">
+              {predictions.map((prediction, index) => (
                 <button
                   key={prediction.placeId}
                   type="button"
-                  className="flex w-full flex-col items-start gap-1 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent"
+                  role="option"
+                  id={optionId(index)}
+                  aria-selected={index === activeIndex}
+                  className={`flex w-full flex-col items-start gap-1 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent ${
+                    index === activeIndex ? "bg-accent" : ""
+                  }`}
                   onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => void handleSelect(prediction)}
                 >
                   <span className="text-sm font-medium text-foreground">{prediction.primaryText}</span>

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
+import { isBillingPlan } from "@/lib/shared-billing";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { emitSecurityEvent } from "@/lib/security-events";
@@ -18,6 +20,20 @@ import {
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
+
+/**
+ * Resolve a Subscription.plan from webhook inputs, preserving each call site's
+ * candidate precedence. Every candidate is validated against the BillingPlan
+ * union so unrecognized Stripe metadata (typos, a removed tier like BUSINESS)
+ * is rejected rather than persisted verbatim and silently mis-read on the next
+ * entitlement read. Falls back to INDIVIDUAL when nothing resolves.
+ */
+function resolveWebhookPlan(...candidates: Array<string | null | undefined>): string {
+  for (const candidate of candidates) {
+    if (isBillingPlan(candidate)) return candidate;
+  }
+  return "INDIVIDUAL";
+}
 
 async function lookupUserByStripeCustomer(stripeCustomerId: string | null | undefined) {
   if (!stripeCustomerId) return null;
@@ -327,6 +343,7 @@ async function syncLocalSubscriptionFromStripe(input: {
   }
   if (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval) {
     updateData.pendingBillingInterval = null;
+    updateData.pendingPlan = null;
     updateData.pendingBillingIntervalEffectiveAt = null;
     updateData.stripeSubscriptionScheduleId = null;
   }
@@ -372,6 +389,11 @@ async function syncLocalSubscriptionFromStripe(input: {
       newLocalStatus: newStatus,
     });
   }
+
+  // A plan change can shrink the seat limit — reconcile the owner's workspaces
+  // (best-effort; demotes the newest over-limit members to read-only OVERFLOW,
+  // restores them on upgrade). No-op for personal/solo workspaces.
+  await reconcileSeatsForOwner(local.userId).catch(() => {});
 
   logStripeSubscriptionSync({
     eventType: input.eventType,
@@ -572,7 +594,7 @@ export async function POST(request: NextRequest) {
         const stripeSubscription = await retrieveStripeSubscription(stripe, stripeSubId, event.type);
         const priceId = stripeSubscription.items?.data?.[0]?.price?.id;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(priceId);
-        const plan = (session.metadata?.plan as string) || mappedPrice?.plan || "INDIVIDUAL";
+        const plan = resolveWebhookPlan(session.metadata?.plan as string, mappedPrice?.plan);
         await syncLocalSubscriptionFromStripe({
           eventType: event.type,
           eventDate,
@@ -651,9 +673,10 @@ export async function POST(request: NextRequest) {
         const metadataUserIdExists = Boolean(userId);
 
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
-        const plan = mappedPrice?.plan ||
-          (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
-          "INDIVIDUAL";
+        const plan = resolveWebhookPlan(
+          mappedPrice?.plan,
+          typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null,
+        );
 
         const sync = await syncLocalSubscriptionFromStripe({
           eventType: event.type,
@@ -749,9 +772,10 @@ export async function POST(request: NextRequest) {
         const stripeCustomerId = String(subscription.customer);
         const stripePriceId = subscription.items?.data?.[0]?.price?.id;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
-        const plan = mappedPrice?.plan ||
-          (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
-          "INDIVIDUAL";
+        const plan = resolveWebhookPlan(
+          mappedPrice?.plan,
+          typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null,
+        );
         const periodEnd = stripeDate(subscription.current_period_end);
         const trialEnd = stripeDate(subscription.trial_end);
 
@@ -799,6 +823,9 @@ export async function POST(request: NextRequest) {
           ? await lookupUserByStripeCustomer(stripeCustomerId)
           : null;
         if (recipient) {
+          // Owner's access just lapsed → collapse any workspaces they own to a
+          // single seat so members stop having write access to an unpaid plan.
+          await reconcileSeatsForOwner(recipient.userId).catch(() => {});
           fireAndLogEmail(
             sendSubscriptionCanceledEmail({
               userEmail: recipient.email,
@@ -849,11 +876,11 @@ export async function POST(request: NextRequest) {
             stripeCustomerId: subscriptionCustomerId,
             stripeSubscriptionId,
             stripeSubscription,
-            plan:
-              subscriptionMappedPrice?.plan ||
-              (typeof stripeSubscription.metadata?.plan === "string" ? stripeSubscription.metadata.plan : null) ||
-              mappedPrice?.plan ||
-              "INDIVIDUAL",
+            plan: resolveWebhookPlan(
+              subscriptionMappedPrice?.plan,
+              typeof stripeSubscription.metadata?.plan === "string" ? stripeSubscription.metadata.plan : null,
+              mappedPrice?.plan,
+            ),
             billingInterval:
               subscriptionMappedPrice?.billingInterval ||
               mappedPrice?.billingInterval ||
@@ -1010,6 +1037,7 @@ export async function POST(request: NextRequest) {
               where: { userId: candidate.userId },
               data: {
                 pendingBillingInterval: null,
+                pendingPlan: null,
                 pendingBillingIntervalEffectiveAt: null,
                 stripeSubscriptionScheduleId: null,
                 lastSyncedAt: new Date(),
@@ -1077,6 +1105,12 @@ export async function POST(request: NextRequest) {
               version: { increment: 1 },
             },
           });
+          // Refunded owner has lost access → collapse owned workspaces to a
+          // single seat (members demoted to OVERFLOW).
+          const refundRecipient = await lookupUserByStripeCustomer(stripeCustomerId);
+          if (refundRecipient) {
+            await reconcileSeatsForOwner(refundRecipient.userId).catch(() => {});
+          }
         }
         break;
       }

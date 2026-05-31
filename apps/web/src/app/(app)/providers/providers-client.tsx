@@ -182,6 +182,7 @@ export function ProvidersClient({
 }) {
   const [providers, setProviders] = useState<ProviderItem[]>(initialProviders);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [selectedState, setSelectedState] = useState<string | null>(initialState);
   const [selectedZip, setSelectedZip] = useState<string | null>(initialZip);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(initialAddressId);
@@ -194,15 +195,20 @@ export function ProvidersClient({
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
   const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const params = new URLSearchParams();
       if (state) params.set("state", state);
       if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
       const res = await fetch(`/api/providers?${params.toString()}`);
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`Providers request failed (${res.status})`);
       const data = await res.json();
       setProviders((data.providers || []) as ProviderItem[]);
+    } catch {
+      // Surface the failure instead of rendering an empty list that reads as
+      // "no providers found" — the user gets an explicit retry.
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -217,9 +223,13 @@ export function ProvidersClient({
     setRecsLoading(true);
     try {
       const res = await fetch(`/api/providers/recommendations?addressId=${encodeURIComponent(addressId)}`);
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`Recommendations request failed (${res.status})`);
       const data = (await res.json()) as RecommendationsResponse;
       setRecs(data);
+    } catch {
+      // Recommendations are a bonus panel — degrade silently to no highlights
+      // rather than blocking the page.
+      setRecs(null);
     } finally {
       setRecsLoading(false);
     }
@@ -448,6 +458,14 @@ export function ProvidersClient({
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Couldn't load providers"
+          description="Something went wrong loading providers. Check your connection and try again."
+          actionLabel="Try again"
+          onAction={() => fetchProviders(selectedState, selectedZip, search.trim())}
+        />
       ) : visibleProviders.length === 0 ? (
         <EmptyState
           icon={Building2}
