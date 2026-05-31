@@ -66,6 +66,14 @@ export default function EmailTemplatesClient() {
 
   useEffect(() => { load(); }, []);
 
+  // Escape closes the preview modal (keyboard parity with the backdrop click).
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPreview(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+
   const save = async () => {
     if (saving) return; // guard against double-submit (would create duplicate templates)
     if (!form.name || !form.subject || !form.body) { toast.error("Name, subject, and body required"); return; }
@@ -112,9 +120,9 @@ export default function EmailTemplatesClient() {
       </div>
 
       {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setPreview(null)}>
-          <div className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" role="presentation" onClick={() => setPreview(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="email-preview-title" className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4"><h2 id="email-preview-title" className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button aria-label="Close preview" onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <p className="text-sm text-muted-foreground mb-2">Subject: {preview.subject}</p>
             <iframe
               title={`Email preview: ${preview.name}`}

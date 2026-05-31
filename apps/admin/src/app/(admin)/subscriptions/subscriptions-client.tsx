@@ -89,6 +89,14 @@ export default function SubscriptionsClient() {
 
   useEffect(() => { fetchSubs(); }, [fetchSubs]);
 
+  // Escape closes the detail modal (keyboard parity with the backdrop click).
+  useEffect(() => {
+    if (!detail) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDetail(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [detail]);
+
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
   const totalPages = Math.ceil(total / perPage);
 
@@ -354,11 +362,11 @@ export default function SubscriptionsClient() {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setDetail(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" role="presentation" onClick={() => setDetail(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="subscription-detail-title" className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-foreground">Subscription Detail</h2>
-              <button onClick={() => setDetail(null)} className="rounded-lg p-1 text-muted-foreground hover:bg-accent"><X className="h-5 w-5" /></button>
+              <h2 id="subscription-detail-title" className="text-lg font-semibold text-foreground">Subscription Detail</h2>
+              <button aria-label="Close detail" onClick={() => setDetail(null)} className="rounded-lg p-1 text-muted-foreground hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="space-y-4">
