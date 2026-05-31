@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import Stripe from "stripe";
 import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { prisma, rawPrisma } from "@/lib/db";
@@ -7,6 +8,61 @@ import { destroyAllUserSessions } from "@/lib/user-auth";
 import { pickOwnershipHeir, transferWorkspaceOwnership } from "@/lib/workspace-ownership";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceOwnershipEmail } from "@/lib/email-service";
+
+/**
+ * Optional "grace window" before a self-service deletion is physically purged.
+ * Default 0 = immediate physical erasure (the original behavior — no change
+ * unless an operator opts in). When set (clamped to ≤90d so erasure is never
+ * deferred unreasonably), the account is soft-deleted (locked out) immediately
+ * and only physically purged by the data-retention cron after the window, so
+ * an accidental or coerced deletion can be undone via the emailed restore link.
+ */
+export function getAccountDeletionGraceDays(): number {
+  const raw = process.env.ACCOUNT_DELETION_GRACE_DAYS;
+  const n = raw ? Number.parseInt(raw, 10) : 0;
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(n, 90);
+}
+
+const RESTORE_TOKEN_MIN_SECRET = 32;
+
+function getRestoreSecret(): string | null {
+  const dedicated = process.env.ACCOUNT_RESTORE_SECRET;
+  if (dedicated && dedicated.length >= RESTORE_TOKEN_MIN_SECRET) return dedicated;
+  const jwt = process.env.USER_JWT_SECRET;
+  if (jwt && jwt.length >= RESTORE_TOKEN_MIN_SECRET) return jwt;
+  return null;
+}
+
+/**
+ * Signed, request-bound restore token for the emailed "undo deletion" link.
+ * Bound to (userId, requestId) so an old link can't cancel a *new* deletion,
+ * and forgery-resistant via HMAC. Returns null if no signing secret is set.
+ */
+export function signAccountRestoreToken(userId: string, requestId: string): string | null {
+  const secret = getRestoreSecret();
+  if (!secret) return null;
+  const sig = createHmac("sha256", secret).update(`${userId}:${requestId}`).digest("base64url");
+  return `${userId}.${requestId}.${sig}`;
+}
+
+export function verifyAccountRestoreToken(
+  token: string | null | undefined,
+): { userId: string; requestId: string } | null {
+  if (!token || typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [userId, requestId, sig] = parts;
+  if (!userId || !requestId || !sig) return null;
+  const secret = getRestoreSecret();
+  if (!secret) return null;
+  const expected = createHmac("sha256", secret).update(`${userId}:${requestId}`).digest("base64url");
+  const provided = Buffer.from(sig);
+  const expectedBuf = Buffer.from(expected);
+  if (provided.length !== expectedBuf.length) return null;
+  if (!timingSafeEqual(provided, expectedBuf)) return null;
+  return { userId, requestId };
+}
 
 /** Best-effort notice to a member who inherited ownership because the previous
  *  owner deleted their account. Never blocks the (GDPR) deletion. */
@@ -49,6 +105,9 @@ export interface AccountDeletionRequestData {
   stripeSubscriptionId?: string | null;
   initiatedAt?: string;
   initiatedByAdminId?: string | null;
+  /** When set + in the future, the physical purge is deferred until this time
+   *  (grace window). null/absent = purge as soon as the cron runs. */
+  scheduledPurgeAt?: string | null;
   cleanup?: {
     stripeCanceled?: boolean;
     userDeleted?: boolean;
@@ -68,6 +127,7 @@ function parseRequestData(raw: string | null | undefined): AccountDeletionReques
       stripeSubscriptionId: parsed.stripeSubscriptionId || null,
       initiatedAt: parsed.initiatedAt,
       initiatedByAdminId: parsed.initiatedByAdminId || null,
+      scheduledPurgeAt: parsed.scheduledPurgeAt || null,
       cleanup: parsed.cleanup || {},
     };
   } catch {
@@ -82,6 +142,7 @@ function toRequestDataJson(data: AccountDeletionRequestData) {
     stripeSubscriptionId: data.stripeSubscriptionId || null,
     initiatedAt: data.initiatedAt || new Date().toISOString(),
     initiatedByAdminId: data.initiatedByAdminId || null,
+    scheduledPurgeAt: data.scheduledPurgeAt || null,
     cleanup: data.cleanup || {},
   });
 }
@@ -138,7 +199,19 @@ export async function processAccountDeletionRequest(requestId: string) {
   }
 
   const requestData = parseRequestData(request.requestData);
-  const user = await prisma.user.findUnique({
+
+  // Grace window: if a future purge time is set, defer. The data-retention
+  // cron re-invokes this daily and proceeds once the window elapses. (A user
+  // who restores in the meantime flips the request to REJECTED, caught above.)
+  const scheduledPurgeAt = requestData.scheduledPurgeAt ? new Date(requestData.scheduledPurgeAt) : null;
+  if (scheduledPurgeAt && Number.isFinite(scheduledPurgeAt.getTime()) && Date.now() < scheduledPurgeAt.getTime()) {
+    return { id: request.id, status: "SCHEDULED" as const, scheduledPurgeAt: scheduledPurgeAt.toISOString() };
+  }
+
+  // rawPrisma (not the soft-delete-extended client) so a user soft-deleted at
+  // grace-start is still found here — otherwise the purge below would see
+  // `!user`, think the work was done, and mark COMPLETED without erasing.
+  const user = await rawPrisma.user.findUnique({
     where: { id: request.userId },
     include: {
       subscription: { select: { stripeSubscriptionId: true } },
@@ -286,4 +359,117 @@ export async function processPendingAccountDeletionRequests(limit: number = 10) 
     results.push(await processAccountDeletionRequest(request.id));
   }
   return results;
+}
+
+/**
+ * Start a grace-windowed deletion: soft-delete (lock out) the user now, pause
+ * Stripe renewal (reversibly), kill sessions, and record `scheduledPurgeAt` so
+ * the retention cron physically purges only after the window. Reversible via
+ * `restoreAccountFromDeletion` until then. Idempotent: a re-request keeps the
+ * original window rather than extending it.
+ */
+export async function scheduleAccountDeletionWithGrace(requestId: string, graceDays: number) {
+  const request = await prisma.gDPRRequest.findUnique({ where: { id: requestId } });
+  if (!request || request.type !== "DELETE") return { id: requestId, status: "NOT_FOUND" as const };
+  if (request.status === "COMPLETED" || request.status === "REJECTED") {
+    return { id: request.id, status: request.status as "COMPLETED" | "REJECTED" };
+  }
+
+  const requestData = parseRequestData(request.requestData);
+  const scheduledPurgeAt = requestData.scheduledPurgeAt
+    ? new Date(requestData.scheduledPurgeAt)
+    : new Date(Date.now() + graceDays * 24 * 60 * 60 * 1000);
+
+  const user = await rawPrisma.user.findUnique({
+    where: { id: request.userId },
+    include: { subscription: { select: { stripeSubscriptionId: true } } },
+  });
+  const stripeSubscriptionId = requestData.stripeSubscriptionId || user?.subscription?.stripeSubscriptionId || null;
+
+  // Pause renewal (reversible) — NOT a full cancel, so a restore resumes cleanly
+  // and the user keeps the period they already paid for during the window.
+  if (stripeSubscriptionId) {
+    try {
+      const stripeSecretKey = requireStripeSecretKeyForMutation(
+        await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+        process.env,
+      );
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+      await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: true });
+    } catch (error) {
+      logger.error("account_deletion_grace_stripe_pause_failed", { requestId, error: String(error) });
+    }
+  }
+
+  // Soft-delete → locked out everywhere via the soft-delete extension (login +
+  // session + requireDbUserId all reject), data preserved for restore.
+  if (user) {
+    await rawPrisma.user.update({ where: { id: request.userId }, data: { deletedAt: new Date() } }).catch(() => {});
+    await destroyAllUserSessions(request.userId).catch(() => {});
+  }
+
+  await prisma.gDPRRequest.update({
+    where: { id: request.id },
+    data: {
+      status: "PENDING",
+      requestData: toRequestDataJson({ ...requestData, stripeSubscriptionId, scheduledPurgeAt: scheduledPurgeAt.toISOString() }),
+    },
+  });
+
+  return { id: request.id, status: "SCHEDULED" as const, scheduledPurgeAt: scheduledPurgeAt.toISOString() };
+}
+
+/**
+ * Undo a grace-windowed deletion from the emailed restore link. Clears the
+ * soft-delete, resumes Stripe renewal, and marks the request REJECTED. Only
+ * works while the window is still open and the user row still exists.
+ */
+export async function restoreAccountFromDeletion(
+  token: string | null | undefined,
+): Promise<{ ok: boolean; reason?: string }> {
+  const parsed = verifyAccountRestoreToken(token);
+  if (!parsed) return { ok: false, reason: "invalid_token" };
+  const { userId, requestId } = parsed;
+
+  const request = await prisma.gDPRRequest.findUnique({ where: { id: requestId } });
+  if (!request || request.type !== "DELETE" || request.userId !== userId) {
+    return { ok: false, reason: "not_found" };
+  }
+  if (request.status === "COMPLETED") return { ok: false, reason: "already_purged" };
+  if (request.status === "REJECTED") return { ok: true }; // idempotent — already restored
+
+  const requestData = parseRequestData(request.requestData);
+  const scheduledPurgeAt = requestData.scheduledPurgeAt ? new Date(requestData.scheduledPurgeAt) : null;
+  if (scheduledPurgeAt && Date.now() >= scheduledPurgeAt.getTime()) {
+    return { ok: false, reason: "window_elapsed" };
+  }
+
+  const user = await rawPrisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, subscription: { select: { stripeSubscriptionId: true } } },
+  });
+  if (!user) return { ok: false, reason: "already_purged" };
+
+  await rawPrisma.user.update({ where: { id: userId }, data: { deletedAt: null } });
+
+  const stripeSubscriptionId = requestData.stripeSubscriptionId || user.subscription?.stripeSubscriptionId || null;
+  if (stripeSubscriptionId) {
+    try {
+      const stripeSecretKey = requireStripeSecretKeyForMutation(
+        await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+        process.env,
+      );
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+      await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: false });
+    } catch (error) {
+      logger.error("account_restore_stripe_resume_failed", { requestId, error: String(error) });
+    }
+  }
+
+  await prisma.gDPRRequest.update({
+    where: { id: request.id },
+    data: { status: "REJECTED", requestData: toRequestDataJson({ ...requestData, scheduledPurgeAt: null }) },
+  });
+
+  return { ok: true };
 }

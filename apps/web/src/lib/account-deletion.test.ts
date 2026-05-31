@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   gdprUpdate: vi.fn(),
   userFindUnique: vi.fn(),
   rawMovingPlanDeleteMany: vi.fn(),
+  rawUserUpdate: vi.fn(),
   rawUserDelete: vi.fn(),
   rawWorkspaceFindMany: vi.fn(),
   rawWorkspaceDelete: vi.fn(),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   destroyAllUserSessions: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   stripeCancel: vi.fn(),
+  stripeUpdate: vi.fn(),
   loggerError: vi.fn(),
 }));
 
@@ -22,6 +24,7 @@ vi.mock("stripe", () => ({
     return {
     subscriptions: {
       cancel: (...args: unknown[]) => mocks.stripeCancel(...args),
+      update: (...args: unknown[]) => mocks.stripeUpdate(...args),
     },
     };
   },
@@ -47,6 +50,10 @@ vi.mock("@/lib/db", () => ({
       deleteMany: (...args: unknown[]) => mocks.rawMovingPlanDeleteMany(...args),
     },
     user: {
+      // processAccountDeletionRequest now looks the user up via rawPrisma so a
+      // grace-soft-deleted user is still found at purge time.
+      findUnique: (...args: unknown[]) => mocks.userFindUnique(...args),
+      update: (...args: unknown[]) => mocks.rawUserUpdate(...args),
       delete: (...args: unknown[]) => mocks.rawUserDelete(...args),
     },
     workspace: {
@@ -70,7 +77,12 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
-import { processAccountDeletionRequest } from "./account-deletion";
+import {
+  processAccountDeletionRequest,
+  scheduleAccountDeletionWithGrace,
+  restoreAccountFromDeletion,
+  signAccountRestoreToken,
+} from "./account-deletion";
 
 function deletionRequest(overrides: Record<string, unknown> = {}) {
   return {
@@ -105,9 +117,13 @@ describe("account deletion processor", () => {
     });
     mocks.getRuntimeConfigValue.mockResolvedValue("sk_test_account_deletion");
     mocks.stripeCancel.mockResolvedValue({ id: "sub_live_123" });
+    mocks.stripeUpdate.mockResolvedValue({ id: "sub_live_123" });
     mocks.destroyAllUserSessions.mockResolvedValue(undefined);
     mocks.rawMovingPlanDeleteMany.mockResolvedValue({ count: 1 });
+    mocks.rawUserUpdate.mockResolvedValue({ id: "user-1" });
     mocks.rawUserDelete.mockResolvedValue({ id: "user-1" });
+    // Restore tokens are signed with USER_JWT_SECRET when no dedicated secret.
+    process.env.USER_JWT_SECRET = "test-user-jwt-secret-at-least-32-chars-long";
     mocks.rawWorkspaceFindMany.mockResolvedValue([]);
     mocks.rawWorkspaceDelete.mockResolvedValue({ id: "ws-1" });
     mocks.workspaceMemberFindFirst.mockResolvedValue(null);
@@ -167,5 +183,67 @@ describe("account deletion processor", () => {
       }),
     );
     expect(JSON.stringify(mocks.loggerError.mock.calls)).not.toContain("sk_test_should_not_appear");
+  });
+
+  it("defers the purge while a grace window is still open (no erasure yet)", async () => {
+    mocks.gdprFindUnique.mockResolvedValue(
+      deletionRequest({
+        requestData: JSON.stringify({
+          source: "self_service",
+          stripeSubscriptionId: "sub_live_123",
+          scheduledPurgeAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          cleanup: {},
+        }),
+      }),
+    );
+
+    const result = await processAccountDeletionRequest("gdpr-1");
+
+    expect(result.status).toBe("SCHEDULED");
+    expect(mocks.rawUserDelete).not.toHaveBeenCalled();
+    expect(mocks.rawMovingPlanDeleteMany).not.toHaveBeenCalled();
+    expect(mocks.stripeCancel).not.toHaveBeenCalled();
+  });
+
+  it("schedules a grace deletion: pauses renewal, soft-deletes, kills sessions", async () => {
+    const result = await scheduleAccountDeletionWithGrace("gdpr-1", 14);
+
+    expect(mocks.stripeUpdate).toHaveBeenCalledWith("sub_live_123", { cancel_at_period_end: true });
+    expect(mocks.rawUserUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "user-1" }, data: expect.objectContaining({ deletedAt: expect.any(Date) }) }),
+    );
+    expect(mocks.destroyAllUserSessions).toHaveBeenCalledWith("user-1");
+    expect(mocks.rawUserDelete).not.toHaveBeenCalled(); // NOT physically purged yet
+    expect(result.status).toBe("SCHEDULED");
+  });
+
+  it("restores a grace-deleted account from a valid token (un-soft-delete + resume + cancel request)", async () => {
+    const token = signAccountRestoreToken("user-1", "gdpr-1")!;
+    mocks.gdprFindUnique.mockResolvedValue(
+      deletionRequest({
+        status: "PENDING",
+        requestData: JSON.stringify({
+          source: "self_service",
+          stripeSubscriptionId: "sub_live_123",
+          scheduledPurgeAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          cleanup: {},
+        }),
+      }),
+    );
+
+    const result = await restoreAccountFromDeletion(token);
+
+    expect(result.ok).toBe(true);
+    expect(mocks.rawUserUpdate).toHaveBeenCalledWith({ where: { id: "user-1" }, data: { deletedAt: null } });
+    expect(mocks.stripeUpdate).toHaveBeenCalledWith("sub_live_123", { cancel_at_period_end: false });
+    expect(mocks.gdprUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "REJECTED" }) }),
+    );
+  });
+
+  it("rejects a forged or wrong-request restore token", async () => {
+    const result = await restoreAccountFromDeletion("user-1.gdpr-1.not-a-valid-signature");
+    expect(result.ok).toBe(false);
+    expect(mocks.rawUserUpdate).not.toHaveBeenCalled();
   });
 });

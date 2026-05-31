@@ -86,6 +86,7 @@ const PUBLIC_API_EXACT = [
 ];
 const PUBLIC_API_GET = [
   "/api/acquisition/public-trial-campaign",
+  "/api/account/restore", // emailed account-restore link; HMAC token is the auth
   "/api/providers",
   "/api/blog/image",
   "/api/blog/indexnow-key",

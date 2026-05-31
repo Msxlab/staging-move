@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   getActiveAccountDeletionRequest: vi.fn(),
   createAccountDeletionRequest: vi.fn(),
   processAccountDeletionRequest: vi.fn(),
+  getAccountDeletionGraceDays: vi.fn(() => 0),
+  scheduleAccountDeletionWithGrace: vi.fn(),
+  signAccountRestoreToken: vi.fn(() => null),
   createAuditLog: vi.fn(() => Promise.resolve()),
   sendSecurityNoticeEmail: vi.fn(() => Promise.resolve(true)),
 }));
@@ -52,6 +55,13 @@ vi.mock("@/lib/account-deletion", () => ({
   getActiveAccountDeletionRequest: (userId: string) => (mocks.getActiveAccountDeletionRequest as any)(userId),
   createAccountDeletionRequest: (input: any) => (mocks.createAccountDeletionRequest as any)(input),
   processAccountDeletionRequest: (id: string) => (mocks.processAccountDeletionRequest as any)(id),
+  // Default grace = 0 → immediate physical erasure (the path these tests
+  // assert). The grace branch is covered in account-deletion.test.ts.
+  getAccountDeletionGraceDays: () => (mocks.getAccountDeletionGraceDays as any)(),
+  scheduleAccountDeletionWithGrace: (id: string, days: number) =>
+    (mocks.scheduleAccountDeletionWithGrace as any)(id, days),
+  signAccountRestoreToken: (userId: string, requestId: string) =>
+    (mocks.signAccountRestoreToken as any)(userId, requestId),
 }));
 
 vi.mock("@/lib/email-service", () => ({

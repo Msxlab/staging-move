@@ -4,7 +4,14 @@ import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
-import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processAccountDeletionRequest } from "@/lib/account-deletion";
+import {
+  createAccountDeletionRequest,
+  getAccountDeletionGraceDays,
+  getActiveAccountDeletionRequest,
+  processAccountDeletionRequest,
+  scheduleAccountDeletionWithGrace,
+  signAccountRestoreToken,
+} from "@/lib/account-deletion";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 
@@ -150,19 +157,62 @@ export async function POST(request: NextRequest) {
       });
     })();
 
+    // Optional recoverable grace window (env ACCOUNT_DELETION_GRACE_DAYS;
+    // default 0 = immediate physical erasure, unchanged). When set, the account
+    // is locked now but only purged after the window, undoable via the email link.
+    const graceDays = getAccountDeletionGraceDays();
+    const appBase = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    const restoreToken = graceDays > 0 ? signAccountRestoreToken(userId, deleteRequest.id) : null;
+    const restoreUrl = restoreToken ? `${appBase}/api/account/restore?token=${encodeURIComponent(restoreToken)}` : null;
+
     // Email the user only on initial request — re-clicks of "delete my
     // account" while a request is pending shouldn't spam.
     if (!existingRequest) {
       const isEs = (user.preferredLocale || "").toLowerCase().startsWith("es");
+      let detail: string;
+      if (graceDays > 0) {
+        const linkPart = restoreUrl
+          ? (isEs ? ` Restáurala aquí: ${restoreUrl}` : ` Restore it here: ${restoreUrl}`)
+          : "";
+        detail = isEs
+          ? `Tu cuenta se cerró y se eliminará definitivamente en ${graceDays} días.${linkPart}`
+          : `Your account is closed and will be permanently deleted in ${graceDays} days.${linkPart}`;
+      } else {
+        detail = isEs ? "Tus datos se eliminarán pronto." : "Your data will be removed shortly.";
+      }
       void sendSecurityNoticeEmail({
         userEmail: user.email,
         userName: user.firstName || "there",
         kind: "account-deletion-requested",
-        detail: isEs ? "Tus datos se eliminarán pronto." : "Your data will be removed shortly.",
+        detail,
         occurredAt: new Date(),
         locale: user.preferredLocale,
         dedupeKey: `account-deletion:${deleteRequest.id}`,
       }).catch((err) => console.error("[ACCOUNT] deletion-confirm email failed:", err));
+    }
+
+    if (graceDays > 0) {
+      const scheduled = await scheduleAccountDeletionWithGrace(deleteRequest.id, graceDays);
+      const scheduledPurgeAt = "scheduledPurgeAt" in scheduled ? scheduled.scheduledPurgeAt : null;
+      await createAuditLog({
+        userId,
+        action: "ACCOUNT_DEL_SCHED",
+        entityType: "GDPRRequest",
+        entityId: deleteRequest.id,
+        changes: { status: scheduled.status, graceDays, scheduledPurgeAt },
+        ...extractRequestMeta(request),
+      });
+      return NextResponse.json(
+        {
+          success: true,
+          status: "SCHEDULED",
+          requestId: deleteRequest.id,
+          scheduledPurgeAt,
+          message:
+            "Account closed. It will be permanently deleted after the grace period unless you restore it from the email we sent.",
+        },
+        { status: 202 },
+      );
     }
 
     const processed = await processAccountDeletionRequest(deleteRequest.id);
