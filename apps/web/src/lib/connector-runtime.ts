@@ -290,8 +290,29 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
 }
 
 /** Claim and process due dispatches. One bad row never stops the batch. */
-export async function runDueDispatches(limit = 25): Promise<{ processed: number }> {
+export async function runDueDispatches(limit = 25): Promise<{ processed: number; failed: number }> {
   const now = new Date();
+
+  // Recovery sweep for rows stranded in DISPATCHING (worker crashed / transient
+  // DB error after the atomic claim but before a terminal write). We do NOT
+  // blindly re-queue → re-send: a fraud-controlled COA filing may already have
+  // reached the partner, so re-sending could double-file. Instead flip a stale
+  // row to NEEDS_USER and notify the owner, so they retry deliberately. (A
+  // per-connector verify-then-resume sweep is the fuller solution.)
+  const STALE_DISPATCHING_MS = 15 * 60 * 1000;
+  const stale = await prisma.connectorDispatch.findMany({
+    where: { status: "DISPATCHING", dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
+    select: { id: true, userId: true, connectorKey: true },
+    take: 100,
+  });
+  for (const s of stale) {
+    const flipped = await prisma.connectorDispatch.updateMany({
+      where: { id: s.id, status: "DISPATCHING" },
+      data: { status: "NEEDS_USER" },
+    });
+    if (flipped.count > 0) await notifyNeedsUser(s.userId, s.connectorKey, s.id).catch(() => {});
+  }
+
   const due = await prisma.connectorDispatch.findMany({
     where: { status: "QUEUED", OR: [{ nextRetryAt: null }, { nextRetryAt: { lte: now } }] },
     orderBy: { createdAt: "asc" },
@@ -308,6 +329,7 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number 
   });
 
   let processed = 0;
+  let failed = 0;
   for (const row of due) {
     try {
       // Atomic claim: only the worker that flips QUEUED→DISPATCHING owns this
@@ -320,10 +342,13 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number 
       if (claim.count === 0) continue;
       await runDispatchRow(row);
       processed += 1;
-    } catch {
-      // The row is left mid-flight (DISPATCHING); a reconciliation/retry sweep
-      // recovers it. Never let one row poison the whole batch.
+    } catch (err) {
+      // Don't let one row poison the batch — it's left mid-flight (DISPATCHING)
+      // and the recovery sweep above reclaims it on a later run. Count + log so
+      // an operator can tell a healthy run from one where every row threw.
+      failed += 1;
+      console.error(`[connector-dispatch] row ${row.id} failed:`, (err as Error)?.message ?? err);
     }
   }
-  return { processed };
+  return { processed, failed };
 }
