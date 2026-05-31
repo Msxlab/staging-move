@@ -627,6 +627,65 @@ export async function sendWorkspaceOwnershipEmail(opts: {
 }
 
 /**
+ * Workspace membership change — sent to a member when their role changes or
+ * they're removed from a workspace. Transactional, mirrors the in-app notice.
+ */
+export async function sendWorkspaceMembershipEmail(opts: {
+  kind: "role_changed" | "removed";
+  userEmail: string;
+  userName?: string | null;
+  workspaceName: string;
+  roleLabel?: string | null;
+  manageUrl: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const name = opts.userName?.trim() || "there";
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const removed = opts.kind === "removed";
+  const ws = opts.workspaceName;
+  const role = opts.roleLabel || "Member";
+  const content = isEs
+    ? buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(removed ? `Te quitaron de ${ws}` : `Tu rol en ${ws} cambió`),
+        title: removed ? `Saliste de ${ws}` : `Tu rol en ${ws}`,
+        preheader: removed ? `Ya no eres miembro de ${ws}.` : `Tu rol ahora es ${role}.`,
+        userName: name === "there" ? "hola" : name,
+        bodyLines: removed
+          ? [`Te quitaron de ${ws} en LocateFlow.`, "Tu cuenta y tus datos personales no se ven afectados."]
+          : [`Tu rol en ${ws} ahora es ${role}.`],
+        details: removed ? [["Espacio", ws]] : [["Espacio", ws], ["Nuevo rol", role]],
+        cta: { href: opts.manageUrl, label: "Ver espacio" },
+        securityNote: false,
+        locale: opts.locale,
+      })
+    : buildSimpleContent({
+        subject: sharedSanitizeEmailSubject(removed ? `You were removed from ${ws}` : `Your role in ${ws} changed`),
+        title: removed ? `Removed from ${ws}` : `Role updated in ${ws}`,
+        preheader: removed ? `You're no longer a member of ${ws}.` : `Your role is now ${role}.`,
+        userName: name,
+        bodyLines: removed
+          ? [`You were removed from ${ws} on LocateFlow.`, "Your own account and personal data are unaffected."]
+          : [`Your role in ${ws} is now ${role}.`],
+        details: removed ? [["Workspace", ws]] : [["Workspace", ws], ["New role", role]],
+        cta: { href: opts.manageUrl, label: "View workspace" },
+        securityNote: false,
+        locale: opts.locale,
+      });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "workspace-membership",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "workspace-membership", event: opts.kind, ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
  * Connector "action needed" — sent when an address sync to a partner can't
  * complete automatically (NEEDS_USER: token expired, validation rejected, or
  * unsupported). Transactional; the user must act, so it always sends. Without

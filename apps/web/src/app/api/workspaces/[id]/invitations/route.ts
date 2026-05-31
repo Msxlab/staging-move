@@ -99,10 +99,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { token, tokenHash, tokenLast4 } = generateInvitationToken();
   const expiresAt = invitationExpiry();
-  const invitation = await prisma.workspaceInvitation.create({
-    data: { workspaceId: id, invitedEmail, role, invitedByUserId: session.userId, tokenHash, tokenLast4, status: "PENDING", expiresAt },
-    select: { id: true, invitedEmail: true, role: true, expiresAt: true, tokenLast4: true },
-  });
+  let invitation;
+  try {
+    invitation = await prisma.workspaceInvitation.create({
+      data: { workspaceId: id, invitedEmail, role, invitedByUserId: session.userId, tokenHash, tokenLast4, status: "PENDING", expiresAt },
+      select: { id: true, invitedEmail: true, role: true, expiresAt: true, tokenLast4: true },
+    });
+  } catch (error) {
+    // The unique index can collide on a near-simultaneous re-invite — translate
+    // it to a clean 409 instead of an unhandled 500.
+    if ((error as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ error: "An invitation for this email was just created. Try again in a moment." }, { status: 409 });
+    }
+    throw error;
+  }
 
   // Send the invitation email (doc 66). Transactional + inert when the feature
   // is off (this route 404s before reaching here). In dev with no email provider

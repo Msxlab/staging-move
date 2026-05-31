@@ -4,8 +4,42 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { createInAppNotification } from "@/lib/in-app-notifications";
+import { sendWorkspaceMembershipEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
+
+function appBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+}
+
+/** Best-effort email mirroring the in-app role-change / removal notice. */
+async function emailMembershipChange(
+  kind: "role_changed" | "removed",
+  workspaceId: string,
+  targetUserId: string,
+  roleLabel?: string,
+): Promise<void> {
+  try {
+    const [user, ws] = await Promise.all([
+      prisma.user.findUnique({ where: { id: targetUserId }, select: { email: true, firstName: true, preferredLocale: true } }),
+      prisma.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
+    ]);
+    if (!user?.email) return;
+    await sendWorkspaceMembershipEmail({
+      kind,
+      userEmail: user.email,
+      userName: user.firstName,
+      workspaceName: ws?.name || "your workspace",
+      roleLabel,
+      manageUrl: `${appBaseUrl()}/settings/workspace`,
+      locale: user.preferredLocale,
+      dedupeKey: kind === "role_changed" ? `ws-role:${workspaceId}:${targetUserId}:${roleLabel}` : `ws-removed:${workspaceId}:${targetUserId}`,
+      metadata: { workspaceId },
+    });
+  } catch {
+    // best-effort — never fail the mutation on a notification error
+  }
+}
 
 const ASSIGNABLE_ROLES = ["ADMIN", "MEMBER", "CHILD", "VIEW_ONLY"]; // OWNER goes through transfer, not role change
 
@@ -52,6 +86,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     body: `Your role in this workspace is now ${updated.role}.`,
     href: "/settings/workspace",
   }).catch(() => {});
+  await emailMembershipChange("role_changed", id, target.userId, updated.role);
   return NextResponse.json({ id: updated.id, role: updated.role });
 }
 
@@ -75,13 +110,15 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   // Removing the member deletes only the membership row. Their domain data
   // (Address/Service carrying this workspaceId) stays with the workspace, and
   // their personal connector consents are user-scoped — untouched by design.
+  const removedUserId = target.userId;
   await prisma.workspaceMember.delete({ where: { id: memberId } });
   await createInAppNotification({
-    userId: target.userId,
+    userId: removedUserId,
     type: "WORKSPACE_MEMBERSHIP",
     title: "Removed from workspace",
     body: "You were removed from a shared workspace.",
     href: "/settings/workspace",
   }).catch(() => {});
+  await emailMembershipChange("removed", id, removedUserId);
   return NextResponse.json({ removed: true });
 }
