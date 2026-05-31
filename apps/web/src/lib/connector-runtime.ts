@@ -146,6 +146,22 @@ export async function enqueueAddressChange(input: {
     const config = configByKey.get(consent.connectorKey);
     if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
     if (!isConnectorDispatchable(config, input.userId)) continue;
+    // Enforce the manifest's per-user-per-day cap (fraud control for COA-style
+    // filings, e.g. USPS perUserPerDay:2) — declared but previously unenforced.
+    // Count live/successful filings in the last 24h; skip a connector at its cap.
+    const perUserPerDay = connectorRegistry.get(consent.connectorKey)?.manifest.rateLimit?.perUserPerDay;
+    if (perUserPerDay && perUserPerDay > 0) {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recent = await prisma.connectorDispatch.count({
+        where: {
+          userId: input.userId,
+          connectorKey: consent.connectorKey,
+          createdAt: { gte: since },
+          status: { in: ["QUEUED", "DISPATCHING", "SUBMITTED", "CONFIRMED"] },
+        },
+      });
+      if (recent >= perUserPerDay) continue;
+    }
     const payload: CanonicalAddressChange = { ...base, fields: {} };
     await prisma.connectorDispatch.create({
       data: {
