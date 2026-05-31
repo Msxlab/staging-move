@@ -74,7 +74,10 @@ export async function GET(req: NextRequest) {
 
   // State listing check based on the user's state. This is not an address-level
   // serviceability or official availability check.
-  const user = await prisma.user.findUnique({ where: { id: userId }, include: { addresses: { where: { isPrimary: true }, take: 1 } } });
+  // NOTE: the withSoftDelete extension only filters TOP-LEVEL reads, not nested
+  // relation includes — so deletedAt:null must be set explicitly here, otherwise
+  // a user who deleted their primary address would still resolve its stale state.
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { addresses: { where: { isPrimary: true, deletedAt: null }, take: 1 } } });
   const userState = user?.addresses?.[0]?.state || "";
 
   if (userState) {
