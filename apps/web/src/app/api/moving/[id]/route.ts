@@ -89,7 +89,33 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     });
 
-    const moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+    // Keep move tasks consistent with the plan's lifecycle. The global
+    // move-task feed (GET /api/move-tasks with no movingPlanId filter) is NOT
+    // filtered by plan status, so a terminal plan must not leave — or worse,
+    // regenerate — machine-suggested tasks behind:
+    //   - CANCELED: retire the plan's CLASSIFIER (suggested) tasks, mirroring
+    //     the DELETE cascade, so they stop surfacing. The previous
+    //     unconditional syncMoveTasksForPlans actively RE-CREATED tasks for a
+    //     just-canceled move.
+    //   - COMPLETED: don't spawn fresh suggestions for a finished move; leave
+    //     existing tasks intact as history.
+    //   - otherwise (PLANNING / IN_PROGRESS, e.g. a moveDate edit): re-sync.
+    // Keyed off the effective post-update status so editing an already-canceled
+    // plan can't reintroduce suggestions either. syncMoveTasksForAddress
+    // already skips COMPLETED + CANCELED for the same reason.
+    const effectiveStatus = normalizeMovingPlanStatus(plan.status);
+    let moveTaskSync: unknown;
+    if (effectiveStatus === "CANCELED") {
+      const retired = await prisma.moveTask.updateMany({
+        where: { movingPlanId: plan.id, userId, source: "CLASSIFIER", deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      moveTaskSync = { retiredSuggestedTasks: retired.count };
+    } else if (effectiveStatus === "COMPLETED") {
+      moveTaskSync = { skipped: "plan_completed" };
+    } else {
+      moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+    }
 
     return NextResponse.json({ plan, moveTaskSync });
   } catch (error: any) {

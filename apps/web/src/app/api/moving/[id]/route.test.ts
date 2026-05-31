@@ -37,10 +37,12 @@ vi.mock("@/lib/move-task-sync", () => ({
 import { prisma } from "@/lib/db";
 import { requireAppMutationUser } from "@/lib/api-gates";
 import { createAuditLog } from "@/lib/audit";
-import { DELETE } from "./route";
+import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { DELETE, PATCH } from "./route";
 
 const mockRequireAppMutationUser = requireAppMutationUser as unknown as Mock;
 const mockCreateAuditLog = createAuditLog as unknown as Mock;
+const mockSyncMoveTasksForPlans = syncMoveTasksForPlans as unknown as Mock;
 const mockPlan = (prisma as unknown as {
   movingPlan: { findUnique: Mock; update: Mock };
 }).movingPlan;
@@ -123,6 +125,77 @@ describe("moving plan DELETE", () => {
     expect(response.status).toBe(404);
     expect(body.error).toBe("Moving plan not found");
     expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockMoveTask.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("moving plan PATCH lifecycle sync", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAppMutationUser.mockResolvedValue("user-1");
+    mockPlan.findUnique.mockResolvedValue({
+      id: "plan-1",
+      userId: "user-1",
+      deletedAt: null,
+      status: "PLANNING",
+    });
+    mockMoveTask.updateMany.mockResolvedValue({ count: 3 });
+    mockSyncMoveTasksForPlans.mockResolvedValue({ attemptedPlans: 1 });
+  });
+
+  function patchRequest(body: unknown) {
+    return new Request("http://localhost/api/moving/plan-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("retires the plan's suggested tasks on cancel instead of regenerating them", async () => {
+    mockPlan.update.mockResolvedValue({ id: "plan-1", userId: "user-1", status: "CANCELED" });
+
+    const response = await PATCH(patchRequest({ status: "CANCELED" }) as any, idParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // Canceled plan's CLASSIFIER tasks are soft-deleted so they leave the feed.
+    expect(mockMoveTask.updateMany).toHaveBeenCalledWith({
+      where: { movingPlanId: "plan-1", userId: "user-1", source: "CLASSIFIER", deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
+    // The bug being guarded against: cancel must NOT re-run generation.
+    expect(mockSyncMoveTasksForPlans).not.toHaveBeenCalled();
+    expect(body.moveTaskSync).toEqual({ retiredSuggestedTasks: 3 });
+  });
+
+  it("does not spawn fresh suggestions when a plan is completed", async () => {
+    mockPlan.findUnique.mockResolvedValue({
+      id: "plan-1",
+      userId: "user-1",
+      deletedAt: null,
+      status: "IN_PROGRESS",
+    });
+    mockPlan.update.mockResolvedValue({ id: "plan-1", userId: "user-1", status: "COMPLETED" });
+
+    const response = await PATCH(patchRequest({ status: "COMPLETED" }) as any, idParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mockSyncMoveTasksForPlans).not.toHaveBeenCalled();
+    expect(mockMoveTask.updateMany).not.toHaveBeenCalled();
+    expect(body.moveTaskSync).toEqual({ skipped: "plan_completed" });
+  });
+
+  it("still re-syncs suggested tasks for a non-terminal edit (e.g. moveDate)", async () => {
+    mockPlan.update.mockResolvedValue({ id: "plan-1", userId: "user-1", status: "PLANNING" });
+
+    const response = await PATCH(
+      patchRequest({ moveDate: "2026-09-01T00:00:00.000Z" }) as any,
+      idParams() as any,
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockSyncMoveTasksForPlans).toHaveBeenCalledWith("user-1", ["plan-1"]);
     expect(mockMoveTask.updateMany).not.toHaveBeenCalled();
   });
 });
