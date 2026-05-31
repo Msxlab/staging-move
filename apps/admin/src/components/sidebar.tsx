@@ -11,6 +11,18 @@ import { ThemeToggle } from "./theme-toggle";
 import { LanguageSelector } from "./language-selector";
 import { filterNavGroups, type NavGroup, type NavItem } from "@/lib/admin-nav";
 
+/**
+ * Role → display label + tone. Surfaced as a badge in the sidebar identity
+ * footer so an operator always sees their privilege level (an enterprise
+ * console expectation). Display only — the server role gate is authoritative.
+ */
+const ROLE_META: Record<AdminRoleString, { label: string; tone: string }> = {
+  SUPER_ADMIN: { label: "Super Admin", tone: "bg-tone-orange-bg text-tone-orange-fg" },
+  ADMIN: { label: "Admin", tone: "bg-tone-sky-bg text-tone-sky-fg" },
+  MODERATOR: { label: "Moderator", tone: "bg-tone-sage-bg text-tone-sage-fg" },
+  VIEWER: { label: "Viewer", tone: "bg-tone-slate-bg text-muted-foreground" },
+};
+
 function getInitialCollapsed(pathname: string, groups: NavGroup[]): Record<string, boolean> {
   const collapsed: Record<string, boolean> = {};
   groups.forEach((group) => {
@@ -31,7 +43,7 @@ interface SidebarProps {
    * links, since this is purely a display affordance — page-guard and
    * API guards are authoritative.
    */
-  ctx?: { role: AdminRoleString; permissions: AdminPermissionsMap };
+  ctx?: { role: AdminRoleString; permissions: AdminPermissionsMap; email?: string };
 }
 
 export function Sidebar({ ctx }: SidebarProps = {}) {
@@ -42,6 +54,19 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname, filteredGroups));
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
+
+  // Identity footer: who is signed in + at what privilege level.
+  const email = ctx?.email ?? "";
+  const roleMeta = ctx ? ROLE_META[ctx.role] : null;
+  const initial = (email.trim()[0] || "A").toUpperCase();
+
+  // Platform-correct command-palette hint (⌘K on Apple, Ctrl K elsewhere).
+  // Defaults to the non-Apple form for SSR; corrected on mount — the <kbd>
+  // carries suppressHydrationWarning so the swap is silent.
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent));
+  }, []);
 
   // Auto-expand group when navigating
   useEffect(() => {
@@ -155,8 +180,15 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
             aria-label={tCommon("search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+            className="w-full rounded-lg border border-border bg-background pl-8 pr-14 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
+          {/* Discoverability cue for the global ⌘K command palette. */}
+          <kbd
+            suppressHydrationWarning
+            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+          >
+            {isMac ? "⌘K" : "Ctrl K"}
+          </kbd>
         </div>
       </div>
 
@@ -176,7 +208,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "relative bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     )}
                   >
@@ -227,7 +259,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                             className={cn(
                               "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                               isActive
-                                ? "bg-primary/10 text-primary"
+                                ? "relative bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
                             )}
                           >
@@ -245,8 +277,37 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
         )}
       </nav>
 
-      {/* Theme + language + logout */}
+      {/* Operator identity + theme + language + logout */}
       <div className="border-t border-border p-3 space-y-1">
+        {/* Who is signed in + privilege level — display only; the server role
+            gate remains authoritative. */}
+        {ctx && (
+          <div className="mb-1.5 flex items-center gap-2.5 rounded-lg px-2 py-2">
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20"
+              aria-hidden="true"
+            >
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              {email && (
+                <p className="truncate text-xs font-medium text-foreground" title={email}>
+                  {email}
+                </p>
+              )}
+              {roleMeta && (
+                <span
+                  className={cn(
+                    "mt-1 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+                    roleMeta.tone,
+                  )}
+                >
+                  {roleMeta.label}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
         <ThemeToggle />
         <LanguageSelector />
         <button

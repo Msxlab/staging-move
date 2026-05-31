@@ -32,7 +32,7 @@ export default async function AdminLayout({
       >
         Skip to main content
       </a>
-      <Sidebar ctx={{ role: ctx.role, permissions: ctx.permissions }} />
+      <Sidebar ctx={{ role: ctx.role, permissions: ctx.permissions, email: ctx.email }} />
       {/* Global ⌘K / Ctrl+K command palette — instant nav + quick actions +
           user/provider search. Renders nothing until invoked. */}
       <CommandPalette ctx={{ role: ctx.role, permissions: ctx.permissions }} />
