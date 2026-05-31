@@ -54,6 +54,7 @@ export default function EmailTemplatesClient() {
   const [form, setForm] = useState({ slug: "", name: "", subject: "", body: "", category: "SYSTEM", variables: "", isActive: true });
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => {
     fetch("/api/email-templates").then((r) => r.json()).then((d) => {
@@ -66,13 +67,19 @@ export default function EmailTemplatesClient() {
   useEffect(() => { load(); }, []);
 
   const save = async () => {
+    if (saving) return; // guard against double-submit (would create duplicate templates)
     if (!form.name || !form.subject || !form.body) { toast.error("Name, subject, and body required"); return; }
     const method = editing ? "PUT" : "POST";
     const payload = editing ? { id: editing.id, ...form } : form;
     if (!editing && !form.slug) { toast.error("Slug required"); return; }
-    const res = await fetch("/api/email-templates", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (res.ok) { toast.success(editing ? "Updated" : "Created"); reset(); load(); }
-    else { const d = await res.json(); toast.error(d.error || "Failed"); }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/email-templates", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) { toast.success(editing ? "Updated" : "Created"); reset(); load(); }
+      else { const d = await res.json(); toast.error(d.error || "Failed"); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -131,7 +138,7 @@ export default function EmailTemplatesClient() {
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Variables (comma-separated)</label><input value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="firstName, email, link" /></div>
             <div className="flex items-end"><label className="flex items-center gap-2 text-sm text-foreground cursor-pointer"><input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="accent-primary" /> Active</label></div>
           </div>
-          <div className="flex gap-2"><button onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">{editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
+          <div className="flex gap-2"><button onClick={save} disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">{saving ? "Saving…" : editing ? "Update" : "Create"}</button><button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
         </div>
       )}
 
