@@ -132,6 +132,9 @@ export function createConnectorHttpClient(options: ConnectorHttpClientOptions): 
           signal: controller.signal,
           redirect: "manual" as const,
         };
+        const originalHost = (() => {
+          try { return new URL(request.url).host.toLowerCase(); } catch { return ""; }
+        })();
         let currentUrl = request.url;
         let res = await doFetch(currentUrl, fetchInit);
 
@@ -154,7 +157,16 @@ export function createConnectorHttpClient(options: ConnectorHttpClientOptions): 
             );
           }
           currentUrl = nextUrl.toString();
-          res = await doFetch(currentUrl, fetchInit);
+          // Defense-in-depth: drop the Authorization header when a redirect
+          // crosses to a DIFFERENT host, even an allowlisted one — a connector's
+          // bearer token should only reach the host it was minted for.
+          const hopHeaders =
+            nextUrl.host.toLowerCase() === originalHost
+              ? headers
+              : Object.fromEntries(
+                  Object.entries(headers).filter(([k]) => k.toLowerCase() !== "authorization"),
+                );
+          res = await doFetch(currentUrl, { ...fetchInit, headers: hopHeaders });
         }
 
         const response: ConnectorHttpResponse = {

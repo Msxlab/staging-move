@@ -600,7 +600,7 @@ export default function WorkspaceSettingsPage() {
                     onChange={(e) => setInviteRole(e.target.value)}
                     className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    {ASSIGNABLE_ROLES.map((r) => (
+                    {ASSIGNABLE_ROLES.filter((r) => r !== "ADMIN" || iAmOwner).map((r) => (
                       <option key={r} value={r}>
                         {ROLE_LABEL[r]}
                       </option>
