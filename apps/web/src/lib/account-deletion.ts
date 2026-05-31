@@ -5,6 +5,43 @@ import { logger } from "@/lib/logger";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { destroyAllUserSessions } from "@/lib/user-auth";
 import { pickOwnershipHeir, transferWorkspaceOwnership } from "@/lib/workspace-ownership";
+import { createInAppNotification } from "@/lib/in-app-notifications";
+import { sendWorkspaceOwnershipEmail } from "@/lib/email-service";
+
+/** Best-effort notice to a member who inherited ownership because the previous
+ *  owner deleted their account. Never blocks the (GDPR) deletion. */
+async function notifyInheritedOwner(workspaceId: string, heirUserId: string): Promise<void> {
+  try {
+    const [heir, ws] = await Promise.all([
+      prisma.user.findUnique({ where: { id: heirUserId }, select: { email: true, firstName: true, preferredLocale: true } }),
+      prisma.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
+    ]);
+    const wsName = ws?.name || "your workspace";
+    await createInAppNotification({
+      userId: heirUserId,
+      type: "WORKSPACE_MEMBERSHIP",
+      title: "You're now the workspace owner",
+      body: `The previous owner closed their account, so ${wsName} is now yours. Nothing was lost — you manage its members, roles, and plan.`,
+      href: "/settings/workspace",
+      dedupeKey: `ws-owner-inherit:${workspaceId}:${heirUserId}`,
+    }).catch(() => {});
+    if (heir?.email) {
+      const base = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+      await sendWorkspaceOwnershipEmail({
+        newOwnerEmail: heir.email,
+        newOwnerName: heir.firstName,
+        workspaceName: wsName,
+        manageUrl: `${base}/settings/workspace`,
+        reason: "previous_owner_left",
+        locale: heir.preferredLocale,
+        dedupeKey: `ws-owner-inherit-email:${workspaceId}:${heirUserId}`,
+        metadata: { workspaceId },
+      }).catch(() => {});
+    }
+  } catch {
+    // best-effort — never block account deletion on a notification
+  }
+}
 
 export interface AccountDeletionRequestData {
   source: string;
@@ -185,7 +222,8 @@ export async function processAccountDeletionRequest(requestId: string) {
         // sole-member (no other members) workspace is hard-deleted.
         const heir = await pickOwnershipHeir(ownedWorkspace.id, request.userId, { includeAnyRole: true });
         if (heir) {
-          await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir, { allowAnyRole: true });
+          const transfer = await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir, { allowAnyRole: true });
+          if (transfer.ok) await notifyInheritedOwner(ownedWorkspace.id, heir);
         } else {
           await rawPrisma.workspace.delete({ where: { id: ownedWorkspace.id } });
         }
