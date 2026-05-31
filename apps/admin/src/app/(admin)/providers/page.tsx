@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Search, Plus, Pencil, Trash2, ChevronDown, ChevronRight,
+  Search, Plus, Pencil, Trash2, ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown,
   Filter, X, Download, ToggleLeft, ToggleRight, LayoutGrid, List, Layers,
   Building2, Globe, MapPin, CheckSquare, Square, Eye, Upload, Loader2,
   AlertTriangle, ImageOff,
@@ -25,6 +25,7 @@ interface Provider {
 interface CategoryStat { category: string; count: number; avgScore: number; }
 
 type ViewMode = "accordion" | "table" | "grid";
+type SortField = "name" | "category" | "scope" | "score" | "status";
 
 // Full category list for bulk "Change category" (the filter dropdown only
 // lists categories present in the current result set; bulk edits need every
@@ -52,6 +53,7 @@ export default function ProvidersPage() {
 
   // View
   const [viewMode, setViewMode] = useState<ViewMode>("accordion");
+  const [tableSort, setTableSort] = useState<{ field: SortField; dir: "asc" | "desc" }>({ field: "name", dir: "asc" });
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   // Bulk
@@ -307,6 +309,52 @@ export default function ProvidersPage() {
   const federalCount = allProviders.filter((p) => p.scope === "FEDERAL").length;
   const stateCount = allProviders.filter((p) => p.scope === "STATE").length;
   const missingLogoCount = allProviders.filter((p) => p.isActive && !p.logoUrl).length;
+
+  // Table-view sorting is intentionally client-side. The page already loads the
+  // full (bounded) provider set for the grouped accordion, so re-fetching per
+  // sort would add latency for zero benefit — sorting the in-memory list is
+  // instant and correct. (Server-side pagination for an unbounded catalog is a
+  // separate change: it would replace the load-all fetch entirely, not this.)
+  const toggleSort = (field: SortField) =>
+    setTableSort((prev) =>
+      prev.field === field
+        ? { field, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { field, dir: field === "score" ? "desc" : "asc" },
+    );
+  const sortedProviders = [...allProviders].sort((a, b) => {
+    const dir = tableSort.dir === "asc" ? 1 : -1;
+    switch (tableSort.field) {
+      case "score": return (a.popularityScore - b.popularityScore) * dir;
+      case "status": return ((a.isActive ? 1 : 0) - (b.isActive ? 1 : 0)) * dir;
+      case "category": return getCategoryLabel(a.category).localeCompare(getCategoryLabel(b.category)) * dir;
+      case "scope": return a.scope.localeCompare(b.scope) * dir;
+      default: return a.name.localeCompare(b.name) * dir;
+    }
+  });
+  const sortTh = (field: SortField, label: string, align: "left" | "center" | "right" = "left") => {
+    const active = tableSort.field === field;
+    const alignCls = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
+    const justify = align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start";
+    return (
+      <th
+        className={`px-4 py-3 ${alignCls} text-xs font-medium uppercase text-muted-foreground`}
+        aria-sort={active ? (tableSort.dir === "asc" ? "ascending" : "descending") : "none"}
+      >
+        <button
+          type="button"
+          onClick={() => toggleSort(field)}
+          className={`inline-flex w-full items-center gap-1 ${justify} uppercase transition-colors hover:text-foreground ${active ? "text-foreground" : ""}`}
+        >
+          {label}
+          {active ? (
+            tableSort.dir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+          ) : (
+            <ChevronsUpDown className="h-3 w-3 opacity-40" />
+          )}
+        </button>
+      </th>
+    );
+  };
   const qualityWarningTotal = Object.values(qualitySummary).reduce((sum, count) => sum + count, 0);
   const qualityIssues = Object.entries(qualitySummary)
     .sort((a, b) => b[1] - a[1])
@@ -695,17 +743,17 @@ export default function ProvidersPage() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="w-10 px-3 py-3"><button onClick={() => selected.size === allProviders.length ? deselectAll() : selectAll()}><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Provider</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Scope</th>
+                {sortTh("name", "Provider", "left")}
+                {sortTh("category", "Category", "left")}
+                {sortTh("scope", "Scope", "left")}
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">States</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Score</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Status</th>
+                {sortTh("score", "Score", "center")}
+                {sortTh("status", "Status", "center")}
                 <th className="px-4 py-3 text-right text-xs font-medium uppercase text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {allProviders.map((p) => {
+              {sortedProviders.map((p) => {
                 const states = parseJSON(p.states);
                 return (
                   <tr key={p.id} className="bg-card hover:bg-accent/50 transition-colors">
