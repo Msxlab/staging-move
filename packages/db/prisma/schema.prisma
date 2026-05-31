@@ -254,6 +254,7 @@ model Subscription {
   accessType                        String?                 @db.VarChar(30)
   billingInterval                   String?                 @db.VarChar(20)
   pendingBillingInterval            String?                 @db.VarChar(20)
+  pendingPlan                       String?                 @db.VarChar(20)
   pendingBillingIntervalEffectiveAt DateTime?
   freeAccessEndsAt                  DateTime?
   cancelAtPeriodEnd                 Boolean                 @default(false)

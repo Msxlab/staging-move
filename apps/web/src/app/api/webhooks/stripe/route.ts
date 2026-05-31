@@ -343,6 +343,7 @@ async function syncLocalSubscriptionFromStripe(input: {
   }
   if (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval) {
     updateData.pendingBillingInterval = null;
+    updateData.pendingPlan = null;
     updateData.pendingBillingIntervalEffectiveAt = null;
     updateData.stripeSubscriptionScheduleId = null;
   }
@@ -1036,6 +1037,7 @@ export async function POST(request: NextRequest) {
               where: { userId: candidate.userId },
               data: {
                 pendingBillingInterval: null,
+                pendingPlan: null,
                 pendingBillingIntervalEffectiveAt: null,
                 stripeSubscriptionScheduleId: null,
                 lastSyncedAt: new Date(),

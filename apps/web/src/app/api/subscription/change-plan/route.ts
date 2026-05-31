@@ -300,6 +300,7 @@ export async function POST(request: NextRequest) {
           data: {
             stripeSubscriptionScheduleId: schedule.id,
             pendingBillingInterval: targetInterval,
+            pendingPlan: targetPlan,
             pendingBillingIntervalEffectiveAt: periodEnd,
             currentPeriodEndsAt: periodEnd,
             stripeCurrentPeriodEnd: periodEnd,
