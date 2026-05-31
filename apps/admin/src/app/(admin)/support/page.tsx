@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const statusBadge: Record<string, string> = {
   OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
@@ -103,10 +104,11 @@ export default function AdminSupportPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Support Tickets</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage and respond to user support requests</p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Inbox"
+        title="Support <em>Tickets</em>"
+        subtitle="Manage and respond to user support requests"
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -279,7 +281,7 @@ export default function AdminSupportPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Link href={`/support/${ticket.id}`}>
-                      <button className="p-1.5 rounded-lg hover:bg-accent transition">
+                      <button aria-label="View ticket" className="p-1.5 rounded-lg hover:bg-accent transition">
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </Link>
@@ -301,6 +303,7 @@ export default function AdminSupportPage() {
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={pagination.page <= 1}
+              aria-label="Previous page"
               className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -311,6 +314,7 @@ export default function AdminSupportPage() {
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
               disabled={pagination.page >= pagination.totalPages}
+              aria-label="Next page"
               className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
             >
               <ChevronRight className="h-4 w-4" />

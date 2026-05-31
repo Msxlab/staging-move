@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 type StatusFilter = "ALL" | "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
 
@@ -162,31 +163,29 @@ export default async function BlogListPage({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Blog</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Drafts, scheduled posts, and published articles. Edits revalidate the public site
-            within seconds.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/blog/analytics"
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition hover:bg-accent"
-          >
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </Link>
-          <Link
-            href="/blog/new"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" />
-            New post
-          </Link>
-        </div>
-      </header>
+      <AdminPageHeader
+        eyebrow="Content"
+        title="<em>Blog</em>"
+        subtitle="Drafts, scheduled posts, and published articles. Edits revalidate the public site within seconds."
+        actions={
+          <>
+            <Link
+              href="/blog/analytics"
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition hover:bg-accent"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </Link>
+            <Link
+              href="/blog/new"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              New post
+            </Link>
+          </>
+        }
+      />
 
       {/* Status tabs + filters */}
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">

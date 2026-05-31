@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Sub {
   id: string;
@@ -124,11 +125,11 @@ export default function SubscriptionsClient() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Subscriptions</h1>
-        <p className="mt-1 text-muted-foreground">{total} subscription{total !== 1 ? "s" : ""} found</p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Billing"
+        title="<em>Subscriptions</em>"
+        subtitle={`${total} subscription${total !== 1 ? "s" : ""} found`}
+      />
 
       {/* KPI Cards — Active / Trialing / Canceled cards double as status filters. */}
       {stats && (
@@ -329,10 +330,10 @@ export default function SubscriptionsClient() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setDetail(sub)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
+                      <button onClick={() => setDetail(sub)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details" aria-label="View details">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button onClick={() => window.location.assign(`/users/${sub.user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View user">
+                      <button onClick={() => window.location.assign(`/users/${sub.user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View user" aria-label="View user">
                         <Users className="h-4 w-4" />
                       </button>
                     </div>
@@ -349,11 +350,11 @@ export default function SubscriptionsClient() {
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50">
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50" aria-label="Previous page">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50">
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50" aria-label="Next page">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

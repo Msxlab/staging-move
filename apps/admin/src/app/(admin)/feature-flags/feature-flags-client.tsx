@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface FeatureFlag { id: string; name: string; description: string | null; enabled: boolean; targetType: string; targetValue: string | null; createdAt: string }
 const TARGET_TYPES = ["ALL", "PERCENTAGE", "USER_LIST", "PLAN"];
@@ -119,10 +120,14 @@ export default function FeatureFlagsClient() {
         onConfirm={confirmStepUp}
       />
 
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-foreground">Feature Flags</h1><p className="mt-1 text-muted-foreground">Toggle features and manage rollouts</p></div>
-        <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>
-      </div>
+      <AdminPageHeader
+        eyebrow="System"
+        title="Feature <em>Flags</em>"
+        subtitle="Toggle features and manage rollouts"
+        actions={
+          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>
+        }
+      />
 
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Flags</p><p className="mt-1 text-2xl font-bold text-foreground">{flags.length}</p></div>
@@ -150,7 +155,7 @@ export default function FeatureFlagsClient() {
         {loading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : flags.length === 0 ? <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No feature flags yet</div> : flags.map(f => (
           <div key={f.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => toggle(f)} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>
+              <button onClick={() => toggle(f)} aria-label={f.enabled ? "Disable flag" : "Enable flag"} aria-pressed={f.enabled} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>
               <div>
                 <div className="flex items-center gap-2"><p className="font-mono font-medium text-foreground">{f.name}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${f.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{f.enabled ? "ON" : "OFF"}</span></div>
                 {f.description && <p className="text-xs text-muted-foreground mt-0.5">{f.description}</p>}
@@ -161,8 +166,8 @@ export default function FeatureFlagsClient() {
               </div>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => startEdit(f)} className="rounded p-1.5 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-              <button onClick={() => remove(f.id)} className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => startEdit(f)} aria-label="Edit flag" className="rounded p-1.5 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
+              <button onClick={() => remove(f.id)} aria-label="Delete flag" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}

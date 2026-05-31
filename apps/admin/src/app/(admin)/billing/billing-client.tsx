@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Users, CreditCard, AlertTriangle, ArrowUpRight, ArrowDownRight, Clock, Smartphone, ShieldAlert, Store } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail } from "@/lib/privacy";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface BillingData {
   mrr: number;
@@ -89,10 +90,11 @@ export default function BillingClient() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Billing & Revenue</h1>
-        <p className="mt-1 text-muted-foreground">Financial overview and subscription analytics</p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Revenue"
+        title="<em>Billing</em> & Revenue"
+        subtitle="Financial overview and subscription analytics"
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (

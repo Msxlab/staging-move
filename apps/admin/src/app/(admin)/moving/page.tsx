@@ -19,6 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Plan {
   id: string;
@@ -199,12 +200,11 @@ export default function MovingPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Moving Plans</h1>
-        <p className="mt-1 text-muted-foreground">
-          Track and manage all user relocations
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Operations"
+        title="<em>Moving</em> Plans"
+        subtitle="Track and manage all user relocations"
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-6 gap-3">

@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect } from "react";
 import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Template {
   id: string;
@@ -110,10 +111,14 @@ export default function EmailTemplatesClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-foreground">Email Templates</h1><p className="mt-1 text-muted-foreground">Manage email templates and view send logs</p></div>
-        <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Template</button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Comms"
+        title="Email <em>Templates</em>"
+        subtitle="Manage email templates and view send logs"
+        actions={
+          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Template</button>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4">
         {statCards.map((c) => (<div key={c.label} className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{c.label}</p><p className={`mt-1 text-2xl font-bold ${c.color}`}>{c.value}</p></div>))}
@@ -168,9 +173,9 @@ export default function EmailTemplatesClient() {
                   <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.failed ?? 0}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{t.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => setPreview(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
-                    <button onClick={() => startEdit(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPreview(t)} aria-label="Preview template" className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                    <button onClick={() => startEdit(t)} aria-label="Edit template" className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plug, Plus, ToggleLeft, ToggleRight, Edit2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface ConnectorConfig {
   id: string;
@@ -164,15 +165,16 @@ export default function ConnectorsClient() {
         onConfirm={confirmStepUp}
       />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Connectors</h1>
-          <p className="mt-1 text-muted-foreground">Enable, stage, and roll out partner connectors — and kill them fast.</p>
-        </div>
-        <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Register
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Integrations"
+        title="<em>Connectors</em>"
+        subtitle="Enable, stage, and roll out partner connectors — and kill them fast."
+        actions={
+          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Register
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Connectors</p><p className="mt-1 text-2xl font-bold text-foreground">{connectors.length}</p></div>
@@ -226,7 +228,7 @@ export default function ConnectorsClient() {
           connectors.map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button onClick={() => toggle(c)} className="transition-colors" title={c.enabled ? "Disable (kill switch)" : "Enable"}>
+                <button onClick={() => toggle(c)} aria-label={c.enabled ? "Disable connector (kill switch)" : "Enable connector"} aria-pressed={c.enabled} className="transition-colors" title={c.enabled ? "Disable (kill switch)" : "Enable"}>
                   {c.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}
                 </button>
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background"><Plug className="h-4 w-4 text-muted-foreground" /></div>
@@ -245,8 +247,8 @@ export default function ConnectorsClient() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => startEdit(c)} className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Edit2 className="h-4 w-4" /></button>
-                <button onClick={() => bulkRevoke(c)} className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
+                <button onClick={() => startEdit(c)} aria-label="Edit connector" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                <button onClick={() => bulkRevoke(c)} aria-label="Revoke all consents (incident)" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
               </div>
             </div>
           ))

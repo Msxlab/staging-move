@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface NotificationItem {
   id: string;
@@ -340,21 +341,19 @@ export default function NotificationsClient() {
         onConfirm={confirmStepUp}
       />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
-          <p className="mt-1 text-muted-foreground">
-            Send broadcasts, target individual users, and inspect delivery
-            records.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm((current) => !current)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" /> Send Notification
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Comms"
+        title="<em>Notifications</em>"
+        subtitle="Send broadcasts, target individual users, and inspect delivery records."
+        actions={
+          <button
+            onClick={() => setShowForm((current) => !current)}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> Send Notification
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4">
         {statCards.map((card) => (
@@ -565,6 +564,7 @@ export default function NotificationsClient() {
                       <span>{getRecipientLabel(selectedRecipient)}</span>
                     </div>
                     <button
+                      aria-label="Remove recipient"
                       onClick={() => {
                         setSelectedRecipient(null);
                         setRecipientSearch("");

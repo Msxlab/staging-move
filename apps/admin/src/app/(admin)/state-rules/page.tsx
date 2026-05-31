@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const US_STATES: Record<string, string> = {
   AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
@@ -196,22 +197,23 @@ export default function StateRulesPage() {
         onConfirm={confirmStepUp}
       />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">State Rules</h1>
-          <p className="mt-1 text-muted-foreground">{rules.length} states configured</p>
-        </div>
-        <button onClick={openCreate} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Add State
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="State <em>Rules</em>"
+        subtitle={`${rules.length} states configured`}
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Add State
+          </button>
+        }
+      />
 
       {/* Form Modal */}
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-foreground">{editingId ? "Edit" : "New"} State Rule</h3>
-            <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+            <button type="button" aria-label="Close form" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -253,6 +255,11 @@ export default function StateRulesPage() {
       {/* Grid */}
       {loading ? (
         <div className="py-12 text-center text-muted-foreground">Loading...</div>
+      ) : rules.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-12 text-center">
+          <Plus className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No state rules found</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rules.map((rule) => (
@@ -263,10 +270,10 @@ export default function StateRulesPage() {
                   <p className="text-sm text-muted-foreground">{rule.stateName}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => openEdit(rule)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit">
+                  <button onClick={() => openEdit(rule)} aria-label="Edit state rule" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleDelete(rule.id, rule.stateCode)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+                  <button onClick={() => handleDelete(rule.id, rule.stateCode)} aria-label="Delete state rule" className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -295,6 +302,7 @@ export default function StateRulesPage() {
               </div>
               <button
                 type="button"
+                aria-label="Close"
                 disabled={deleting}
                 onClick={() => setDeleteTarget(null)}
                 className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"

@@ -14,6 +14,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 type Target =
   | "MOBILE_IOS"
@@ -177,20 +178,19 @@ export default function WaitlistPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Waitlist</h1>
-          <p className="mt-1 text-muted-foreground">
-            Historical mobile and legacy waitlist tracking. These entries do not create launch promises.
-          </p>
-        </div>
-        <button
-          onClick={exportCSV}
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-        >
-          <Download className="h-4 w-4" /> Export CSV
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Growth"
+        title="<em>Waitlist</em>"
+        subtitle="Historical mobile and legacy waitlist tracking. These entries do not create launch promises."
+        actions={
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <SummaryCard label="Total signups" value={summary.totalAll} />
