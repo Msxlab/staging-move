@@ -603,6 +603,24 @@ export default function ProvidersPage() {
       {/* Content */}
       {loading ? (
         <div className="py-20 text-center text-muted-foreground">Loading providers...</div>
+      ) : allProviders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 text-center">
+          <Building2 className="mb-3 h-10 w-10 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-foreground">No providers found</p>
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+            {search || activeFilters > 0
+              ? "No providers match your current search and filters."
+              : "Get started by adding your first provider."}
+          </p>
+          {(search || activeFilters > 0) && (
+            <button
+              onClick={clearFilters}
+              className="mt-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       ) : viewMode === "accordion" ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
@@ -637,7 +655,7 @@ export default function ProvidersPage() {
                     <table className="w-full">
                       <thead className="bg-muted/30">
                         <tr>
-                          <th className="w-10 px-3 py-2"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }}><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
+                          <th className="w-10 px-3 py-2"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }} aria-label="Select all providers in this category"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
                           <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Provider</th>
                           <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Scope</th>
                           <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">States</th>
@@ -652,7 +670,7 @@ export default function ProvidersPage() {
                           return (
                             <tr key={p.id} className="bg-card/50 hover:bg-accent/30 transition-colors">
                               <td className="px-3 py-2.5">
-                                <button onClick={() => toggleSelect(p.id)}>
+                                <button onClick={() => toggleSelect(p.id)} aria-pressed={selected.has(p.id)} aria-label={selected.has(p.id) ? `Deselect ${p.name}` : `Select ${p.name}`}>
                                   {selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
                                 </button>
                               </td>
@@ -685,9 +703,9 @@ export default function ProvidersPage() {
                               </td>
                               <td className="px-3 py-2.5">
                                 <div className="flex items-center justify-end gap-0.5">
-                                  <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                                  <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                                  <button onClick={() => handleDelete(p.id, p.name)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                                  <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`View ${p.name}`} title="View"><Eye className="h-3.5 w-3.5" /></button>
+                                  <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`Edit ${p.name}`} title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                                  <button onClick={() => handleDelete(p.id, p.name)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${p.name}`} title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                                 </div>
                               </td>
                             </tr>
@@ -707,7 +725,7 @@ export default function ProvidersPage() {
             <div key={p.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => toggleSelect(p.id)}>
+                  <button onClick={() => toggleSelect(p.id)} aria-pressed={selected.has(p.id)} aria-label={selected.has(p.id) ? `Deselect ${p.name}` : `Select ${p.name}`}>
                     {selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
                   </button>
                   <div>
@@ -731,7 +749,7 @@ export default function ProvidersPage() {
               <div className="mt-3 flex items-center gap-1">
                 <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">View</button>
                 <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">Edit</button>
-                <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg bg-muted/50 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg bg-muted/50 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${p.name}`} title="Delete"><Trash2 className="h-3 w-3" /></button>
               </div>
             </div>
           ))}
@@ -742,7 +760,7 @@ export default function ProvidersPage() {
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
-                <th className="w-10 px-3 py-3"><button onClick={() => selected.size === allProviders.length ? deselectAll() : selectAll()}><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
+                <th className="w-10 px-3 py-3"><button onClick={() => selected.size === allProviders.length ? deselectAll() : selectAll()} aria-label="Select all providers"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
                 {sortTh("name", "Provider", "left")}
                 {sortTh("category", "Category", "left")}
                 {sortTh("scope", "Scope", "left")}
@@ -757,7 +775,7 @@ export default function ProvidersPage() {
                 const states = parseJSON(p.states);
                 return (
                   <tr key={p.id} className="bg-card hover:bg-accent/50 transition-colors">
-                    <td className="px-3 py-3"><button onClick={() => toggleSelect(p.id)}>{selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}</button></td>
+                    <td className="px-3 py-3"><button onClick={() => toggleSelect(p.id)} aria-pressed={selected.has(p.id)} aria-label={selected.has(p.id) ? `Deselect ${p.name}` : `Select ${p.name}`}>{selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}</button></td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{p.name}</p>
                       <p className="text-xs text-muted-foreground">{p.slug}</p>
@@ -773,9 +791,9 @@ export default function ProvidersPage() {
                     <td className="px-4 py-3 text-center text-sm font-bold text-foreground">{p.popularityScore}</td>
                     <td className="px-4 py-3 text-center"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{p.isActive ? "Active" : "Inactive"}</span></td>
                     <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
-                      <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Eye className="h-4 w-4" /></button>
-                      <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`View ${p.name}`} title="View"><Eye className="h-4 w-4" /></button>
+                      <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={`Edit ${p.name}`} title="Edit"><Pencil className="h-4 w-4" /></button>
+                      <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${p.name}`} title="Delete"><Trash2 className="h-4 w-4" /></button>
                     </div></td>
                   </tr>
                 );
