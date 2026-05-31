@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 type Campaign = {
   id: string;
@@ -571,14 +572,11 @@ export default function AcquisitionCampaignsClient() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Acquisition Campaigns</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Each public surface (homepage, /pricing, settings upgrade banner) reads from the active
-          campaign in its slot. Slots are independent — Annual Trial and Monthly Paid each need
-          their own campaign. Public site updates within 60 seconds after activation.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Growth"
+        title="Acquisition <em>Campaigns</em>"
+        subtitle="Each public surface (homepage, /pricing, settings upgrade banner) reads from the active campaign in its slot. Slots are independent — Annual Trial and Monthly Paid each need their own campaign. Public site updates within 60 seconds after activation."
+      />
 
       {slotConflicts.length > 0 ? (
         <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm">

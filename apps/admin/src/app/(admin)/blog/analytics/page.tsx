@@ -19,6 +19,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const WINDOW_DAYS = 30;
 
@@ -100,11 +101,11 @@ export default async function BlogAnalyticsPage({
 
   return (
     <div className="p-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-2">Blog analytics</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Last {WINDOW_DAYS} days. View counts exclude duplicate visits within
-        the same UTC day from the same hashed IP.
-      </p>
+      <AdminPageHeader
+        eyebrow="Content"
+        title="Blog <em>Analytics</em>"
+        subtitle={`Last ${WINDOW_DAYS} days. View counts exclude duplicate visits within the same UTC day from the same hashed IP.`}
+      />
 
       <section className="grid grid-cols-2 gap-4 mb-8">
         <div className="border rounded-md p-4">
@@ -238,11 +239,18 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
 
   return (
     <div className="p-6 max-w-5xl">
-      <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" />
-        Back to overview
-      </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{post.title}</h1>
+      <AdminPageHeader
+        eyebrow="Content"
+        title={post.title}
+        actions={
+          <>
+            <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+              Back to overview
+            </Link>
+          </>
+        }
+      />
       <p className="mt-1 text-sm text-muted-foreground">
         /{post.slug} · {post.locale.toUpperCase()} · {post.status}
         {post.publishedAt ? ` · published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}

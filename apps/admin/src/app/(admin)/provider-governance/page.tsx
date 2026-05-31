@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, Rocket, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const QUEUE_LABELS: Record<string, string> = {
   userCreatedProviderReview: "User-Submitted Provider Requests",
@@ -129,23 +130,21 @@ export default function ProviderGovernancePage() {
         onConfirm={confirmPromote}
       />
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Provider operations</p>
-          <h1 className="text-2xl font-semibold">Data Governance Center</h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Review listed provider quality, broad coverage assumptions, duplicate candidates, missing contact data, and private user-created providers. This does not mark providers verified or official.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-accent">
-            <RefreshCw className="h-4 w-4" /> Refresh
-          </button>
-          <button onClick={exportQueue} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
-            <Download className="h-4 w-4" /> Export queue
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="Data Governance <em>Center</em>"
+        subtitle="Review listed provider quality, broad coverage assumptions, duplicate candidates, missing contact data, and private user-created providers. This does not mark providers verified or official."
+        actions={
+          <>
+            <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-accent">
+              <RefreshCw className="h-4 w-4" /> Refresh
+            </button>
+            <button onClick={exportQueue} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+              <Download className="h-4 w-4" /> Export queue
+            </button>
+          </>
+        }
+      />
 
       <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg dark:text-tone-honey-fg">
         <div className="flex gap-2">

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { PasswordChangeForm } from "./password-form";
 import { InfoHint } from "@/components/info-hint";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const MODEL_ICONS: Record<string, typeof Users> = {
   users: Users,
@@ -203,12 +204,11 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="mt-1 text-muted-foreground">
-          Runtime readiness, admin account controls, exports, and operational links
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="System"
+        title="<em>Settings</em>"
+        subtitle="Runtime readiness, admin account controls, exports, and operational links"
+      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">

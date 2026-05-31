@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface IPRule { id: string; ipAddress: string; type: string; reason: string | null; isActive: boolean; expiresAt: string | null; createdAt: string }
 interface RateLimitLog { id: string; ipAddress: string; endpoint: string; count: number; blocked: boolean; windowStart: string; createdAt: string }
@@ -218,15 +219,18 @@ export default function SecurityClient() {
         onConfirm={confirmStepUp}
       />
 
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Security & Compliance</h1>
-          <p className="mt-1 text-muted-foreground">IP rules, rate limiting, GDPR requests, and system security baseline</p>
-        </div>
-        <a href="/security/dashboard" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          <Shield className="h-4 w-4" /> Security Dashboard
-        </a>
-      </div>
+      <AdminPageHeader
+        eyebrow="Security"
+        title="Security & <em>Compliance</em>"
+        subtitle="IP rules, rate limiting, GDPR requests, and system security baseline"
+        actions={
+          <>
+            <a href="/security/dashboard" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              <Shield className="h-4 w-4" /> Security Dashboard
+            </a>
+          </>
+        }
+      />
       <div className="flex items-center justify-end">
         {tab === "ip" && <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> Add IP Rule</button>}
       </div>
@@ -389,8 +393,8 @@ export default function SecurityClient() {
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{r.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{r.expiresAt ? new Date(r.expiresAt).toLocaleString() : "Never"}</td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => toggleIPRule(r)} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4" />}</button>
-                    <button onClick={() => deleteIPRule(r)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => toggleIPRule(r)} aria-label={r.isActive ? "Deactivate IP rule" : "Activate IP rule"} aria-pressed={r.isActive} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4" />}</button>
+                    <button onClick={() => deleteIPRule(r)} aria-label="Delete IP rule" className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}

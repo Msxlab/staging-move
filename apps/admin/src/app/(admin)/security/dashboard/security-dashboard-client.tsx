@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import {
   Shield, ShieldAlert, Monitor, Clock, XCircle, CheckCircle2, Loader2,
   ChevronLeft, ChevronRight, Power, Globe, Smartphone, Laptop, ArrowLeft,
@@ -174,15 +175,18 @@ export default function SecurityDashboardClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/security" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Security Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Active sessions, login history, and security events</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Security"
+        title="Security <em>Dashboard</em>"
+        subtitle="Active sessions, login history, and security events"
+        actions={
+          <>
+            <Link href="/security" aria-label="Back to security" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -292,7 +296,7 @@ export default function SecurityDashboardClient() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => revokeSession(s)}
+                    <button onClick={() => revokeSession(s)} aria-label="Revoke session"
                       className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
                       <Power className="h-3.5 w-3.5" />
                     </button>
@@ -434,8 +438,8 @@ export default function SecurityDashboardClient() {
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">Page {loginPage} of {loginPageCount}</p>
               <div className="flex items-center gap-2">
-                <button onClick={() => setLoginPage(loginPage - 1)} disabled={loginPage <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
-                <button onClick={() => setLoginPage(loginPage + 1)} disabled={loginPage >= loginPageCount} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
+                <button onClick={() => setLoginPage(loginPage - 1)} disabled={loginPage <= 1} aria-label="Previous page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
+                <button onClick={() => setLoginPage(loginPage + 1)} disabled={loginPage >= loginPageCount} aria-label="Next page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
               </div>
             </div>
           )}

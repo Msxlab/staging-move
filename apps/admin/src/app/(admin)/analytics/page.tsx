@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
 import { EmailHealthWidget } from "@/components/email-health-widget";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface AnalyticsData {
   activeUsers: { total: number; today: number; week: number; month: number };
@@ -152,15 +153,18 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
-          <p className="mt-1 text-muted-foreground">User behavior, devices, platforms, and engagement metrics</p>
-        </div>
-        <a href="/analytics/intelligence" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          <TrendingUp className="h-4 w-4" /> Activity Intelligence
-        </a>
-      </div>
+      <AdminPageHeader
+        eyebrow="Insights"
+        title="<em>Analytics</em>"
+        subtitle="User behavior, devices, platforms, and engagement metrics"
+        actions={
+          <>
+            <a href="/analytics/intelligence" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              <TrendingUp className="h-4 w-4" /> Activity Intelligence
+            </a>
+          </>
+        }
+      />
 
       {/* Active Users */}
       <div className="grid grid-cols-4 gap-4">

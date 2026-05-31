@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ADMIN_RESOURCES } from "@/lib/admin-permissions";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface PermissionRow {
   resource: string;
@@ -393,22 +394,21 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Team</h1>
-          <p className="mt-1 text-muted-foreground">
-            Roster, role boundaries, permission matrices, and admin-session visibility
-          </p>
-        </div>
-        {currentAdminRole === "SUPER_ADMIN" && (
-          <button
-            onClick={() => setShowForm((current) => !current)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" /> Add Admin
-          </button>
-        )}
-      </div>
+      <AdminPageHeader
+        eyebrow="Access"
+        title="Admin <em>Team</em>"
+        subtitle="Roster, role boundaries, permission matrices, and admin-session visibility"
+        actions={
+          currentAdminRole === "SUPER_ADMIN" && (
+            <button
+              onClick={() => setShowForm((current) => !current)}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" /> Add Admin
+            </button>
+          )
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard label="Admins" value={admins.length} icon={Users} />
@@ -736,6 +736,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               </div>
               <button
                 onClick={() => setEditAdmin(null)}
+                aria-label="Close"
                 className="rounded-lg p-1 text-muted-foreground hover:bg-accent"
               >
                 <X className="h-5 w-5" />

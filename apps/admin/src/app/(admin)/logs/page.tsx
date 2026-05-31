@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
@@ -147,20 +148,21 @@ export default function LogsPage() {
         }}
         onConfirm={(_password, values) => exportCSV(values)}
       />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
-          <p className="mt-1 text-muted-foreground">{total} log entries</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <a href="/logs/activity" className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-            <BarChart3 className="h-3.5 w-3.5" /> Activity Analytics
-          </a>
-          <button onClick={() => setExportStepUpOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
-            <Download className="h-3.5 w-3.5" /> Export CSV
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Security"
+        title="Audit <em>Logs</em>"
+        subtitle={`${total} log entries`}
+        actions={
+          <>
+            <a href="/logs/activity" className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+              <BarChart3 className="h-3.5 w-3.5" /> Activity Analytics
+            </a>
+            <button onClick={() => setExportStepUpOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </button>
+          </>
+        }
+      />
 
       {/* Tabs */}
       <div className="flex gap-2">
@@ -280,6 +282,8 @@ export default function LogsPage() {
                   <td className="px-4 py-3 text-center">
                     {changes ? (
                       <button onClick={() => setExpandedLog(isExpanded ? null : log.id)}
+                        aria-label={isExpanded ? "Collapse log details" : "Expand log details"}
+                        aria-pressed={isExpanded}
                         className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
@@ -317,9 +321,9 @@ export default function LogsPage() {
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1} aria-label="Previous page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
             <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} aria-label="Next page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
           </div>
         </div>
       )}

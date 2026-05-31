@@ -14,6 +14,7 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Metric {
   label: string;
@@ -131,21 +132,20 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-          <p className="mt-1 text-muted-foreground">
-            Custom date range analytics with period comparison
-          </p>
-        </div>
-        <button
-          onClick={exportCSV}
-          disabled={!data}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" /> Export CSV
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Insights"
+        title="<em>Reports</em>"
+        subtitle="Custom date range analytics with period comparison"
+        actions={
+          <button
+            onClick={exportCSV}
+            disabled={!data}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
+        }
+      />
 
       <div className="flex items-center gap-3 flex-wrap">
         {["7d", "30d", "90d", "1y"].map((p) => (

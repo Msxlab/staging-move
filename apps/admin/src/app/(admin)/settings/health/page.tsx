@@ -23,6 +23,7 @@ import {
   Clock,
   HardDrive,
 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 const STATUS_CONFIG = {
   healthy: {
@@ -108,30 +109,32 @@ export default function HealthPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/settings"
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">System Health</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Service connectivity, system metrics, and infrastructure status
-          </p>
-        </div>
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-          />{" "}
-          Refresh
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="System"
+        title="System <em>Health</em>"
+        subtitle="Service connectivity, system metrics, and infrastructure status"
+        actions={
+          <>
+            <Link
+              href="/settings"
+              aria-label="Back to settings"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <button
+              onClick={refresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />{" "}
+              Refresh
+            </button>
+          </>
+        }
+      />
 
       {/* Overall Status */}
       <div

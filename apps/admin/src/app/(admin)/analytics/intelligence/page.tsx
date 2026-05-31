@@ -7,6 +7,7 @@ import {
   ArrowLeft, Loader2, TrendingUp, TrendingDown, Users, Zap,
   AlertTriangle, Smartphone, Monitor, BarChart3, Activity,
 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 export default function ActivityIntelligencePage() {
   const [data, setData] = useState<any>(null);
@@ -28,15 +29,18 @@ export default function ActivityIntelligencePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/analytics" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">User Activity Intelligence</h1>
-          <p className="text-sm text-muted-foreground mt-1">Onboarding funnel, engagement scoring, churn risk, and behavior insights</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Insights"
+        title="User Activity <em>Intelligence</em>"
+        subtitle="Onboarding funnel, engagement scoring, churn risk, and behavior insights"
+        actions={
+          <>
+            <Link href="/analytics" aria-label="Back to analytics" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Onboarding Funnel */}

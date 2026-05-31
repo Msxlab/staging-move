@@ -7,6 +7,7 @@ import {
   ArrowLeft, Loader2, Users, Activity, BarChart3, Shield,
   AlertTriangle, Clock, TrendingUp,
 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 export default function AdminActivityPage() {
   const [data, setData] = useState<any>(null);
@@ -28,15 +29,14 @@ export default function AdminActivityPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/logs" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Admin Activity Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-1">Per-admin actions, action types, and activity trends</p>
-        </div>
-      </div>
+      <Link href="/logs" className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back to logs
+      </Link>
+      <AdminPageHeader
+        eyebrow="Security"
+        title="Admin Activity <em>Analytics</em>"
+        subtitle="Per-admin actions, action types, and activity trends"
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-3 gap-4">

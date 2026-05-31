@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EyeOff, KeyRound, RefreshCw, Save, ShieldAlert } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 type RuntimeConfigCatalogStatus =
   | "Verified from ENV"
@@ -222,18 +223,19 @@ export default function RuntimeConfigClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Runtime Config</h1>
-          <p className="mt-1 text-muted-foreground">Manage masked runtime settings with step-up authentication and env fallback.</p>
-        </div>
-        <button
-          onClick={() => void load()}
-          className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-        >
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
-      </div>
+      <AdminPageHeader
+        eyebrow="System"
+        title="Runtime <em>Config</em>"
+        subtitle="Manage masked runtime settings with step-up authentication and env fallback."
+        actions={
+          <button
+            onClick={() => void load()}
+            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard

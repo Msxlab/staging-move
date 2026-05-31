@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 interface Article { id: string; slug: string; title: string; content: string; excerpt: string | null; category: string; tags: string; order: number; isPublished: boolean; viewCount: number; helpfulYes: number; helpfulNo: number; createdAt: string }
 interface FAQ { id: string; question: string; answer: string; category: string; order: number; isPublished: boolean }
@@ -62,10 +63,14 @@ export default function HelpCenterPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-foreground">Help Center</h1><p className="mt-1 text-muted-foreground">Manage articles and FAQs</p></div>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> {tab === "articles" ? "New Article" : "New FAQ"}</button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Content"
+        title="Help <em>Center</em>"
+        subtitle="Manage articles and FAQs"
+        actions={
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> {tab === "articles" ? "New Article" : "New FAQ"}</button>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Articles</p><p className="mt-1 text-2xl font-bold text-foreground">{articles.length}</p></div>
@@ -126,9 +131,9 @@ export default function HelpCenterPage() {
                   <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} 👍 {a.helpfulNo} 👎</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.isPublished ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{a.isPublished ? "Published" : "Draft"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => togglePublish(a, "article")} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                    <button onClick={() => editArticle(a)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                    <button onClick={() => setPendingDelete({ id: a.id, type: "article", label: a.title })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => togglePublish(a, "article")} aria-label={a.isPublished ? "Unpublish article" : "Publish article"} aria-pressed={a.isPublished} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                    <button onClick={() => editArticle(a)} aria-label="Edit article" className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => setPendingDelete({ id: a.id, type: "article", label: a.title })} aria-label="Delete article" className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -151,9 +156,9 @@ export default function HelpCenterPage() {
                   <p className="text-sm text-muted-foreground mt-1">{f.answer}</p>
                 </div>
                 <div className="flex gap-1 ml-4">
-                  <button onClick={() => togglePublish(f, "faq")} className="rounded p-1 text-muted-foreground hover:bg-accent">{f.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                  <button onClick={() => editFaq(f)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
-                  <button onClick={() => setPendingDelete({ id: f.id, type: "faq", label: f.question })} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => togglePublish(f, "faq")} aria-label={f.isPublished ? "Unpublish FAQ" : "Publish FAQ"} aria-pressed={f.isPublished} className="rounded p-1 text-muted-foreground hover:bg-accent">{f.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  <button onClick={() => editFaq(f)} aria-label="Edit FAQ" className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
+                  <button onClick={() => setPendingDelete({ id: f.id, type: "faq", label: f.question })} aria-label="Delete FAQ" className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             </div>
