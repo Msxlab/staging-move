@@ -35,6 +35,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { cn, formatDateTime, truncate } from "@/lib/utils";
 
 interface BackupArchiveDiagnostics {
@@ -1136,38 +1137,33 @@ export function BackupControlPlane() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Backup Control Plane
-            </h1>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              Create encrypted archives, inspect replication health, verify
-              restore safety, and manage historical backup jobs from one
-              operational console.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => void loadBackups(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
-            >
-              <RefreshCw
-                className={cn("h-4 w-4", refreshing && "animate-spin")}
-              />
-              Refresh
-            </button>
-            <div
-              className={cn(
-                "rounded-lg border px-4 py-2 text-sm font-medium",
-                buildToneClass(recoveryPosture.tone),
-              )}
-            >
-              {recoveryPosture.title}
-            </div>
-          </div>
-        </div>
+        <AdminPageHeader
+          eyebrow="System"
+          title="Backup Control <em>Plane</em>"
+          subtitle="Create encrypted archives, inspect replication health, verify restore safety, and manage historical backup jobs from one operational console."
+          actions={
+            <>
+              <button
+                onClick={() => void loadBackups(true)}
+                disabled={refreshing}
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", refreshing && "animate-spin")}
+                />
+                Refresh
+              </button>
+              <div
+                className={cn(
+                  "rounded-lg border px-4 py-2 text-sm font-medium",
+                  buildToneClass(recoveryPosture.tone),
+                )}
+              >
+                {recoveryPosture.title}
+              </div>
+            </>
+          }
+        />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
@@ -2355,6 +2351,7 @@ export function BackupControlPlane() {
               </div>
               <button
                 onClick={() => resolveStepUpPrompt(null)}
+                aria-label="Close"
                 className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <X className="h-4 w-4" />

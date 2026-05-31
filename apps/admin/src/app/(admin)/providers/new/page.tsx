@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
 
 const US_STATES = [
@@ -220,14 +221,21 @@ export default function NewProviderPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <button
-        onClick={() => window.location.assign("/providers")}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Providers
-      </button>
-
-      <h1 className="text-3xl font-bold text-foreground">New Provider</h1>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="New <em>Provider</em>"
+        actions={
+          <>
+            <button
+              onClick={() => window.location.assign("/providers")}
+              aria-label="Back to providers"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Providers
+            </button>
+          </>
+        }
+      />
 
       {/* Stepper */}
       <div className="flex items-center gap-2">

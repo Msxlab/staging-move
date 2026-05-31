@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
 
 const US_STATES = [
@@ -119,11 +120,17 @@ export default function EditProviderPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <button onClick={() => window.location.assign("/providers")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Back to Providers
-      </button>
-
-      <h1 className="text-3xl font-bold text-foreground">Edit Provider</h1>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="Edit <em>Provider</em>"
+        actions={
+          <>
+            <button onClick={() => window.location.assign("/providers")} aria-label="Back to providers" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" /> Back to Providers
+            </button>
+          </>
+        }
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">

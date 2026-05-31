@@ -8,6 +8,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowLeft, Eye, EyeOff, Lock,
 } from "lucide-react";
 import Link from "next/link";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 type MfaStatus = "loading" | "disabled" | "enabled";
 type SetupStep = "idle" | "confirming" | "scanning" | "verifying" | "done";
@@ -172,19 +173,20 @@ export default function TwoFactorPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center gap-3">
-        {!showEnrollmentBanner && (
-          <Link href="/settings" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        )}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Two-Factor Authentication</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Add an extra layer of security to your admin account
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Security"
+        title="Two-Factor <em>Authentication</em>"
+        subtitle="Add an extra layer of security to your admin account"
+        actions={
+          <>
+            {!showEnrollmentBanner && (
+              <Link href="/settings" aria-label="Back to settings" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            )}
+          </>
+        }
+      />
 
       {showEnrollmentBanner && (
         <div
@@ -299,10 +301,10 @@ export default function TwoFactorPage() {
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground uppercase">Manual Entry Key</p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setShowSecret(!showSecret)} className="rounded p-1 text-muted-foreground hover:text-foreground">
+                  <button onClick={() => setShowSecret(!showSecret)} aria-label={showSecret ? "Hide secret key" : "Show secret key"} aria-pressed={showSecret} className="rounded p-1 text-muted-foreground hover:text-foreground">
                     {showSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
-                  <button onClick={() => copyToClipboard(secret, "Secret key")} className="rounded p-1 text-muted-foreground hover:text-foreground">
+                  <button onClick={() => copyToClipboard(secret, "Secret key")} aria-label="Copy secret key" className="rounded p-1 text-muted-foreground hover:text-foreground">
                     <Copy className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -331,7 +333,7 @@ export default function TwoFactorPage() {
               {backupCodes.map((code, i) => (
                 <div key={i} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
                   <span className="font-mono text-sm text-foreground">{code}</span>
-                  <button onClick={() => copyToClipboard(code, "Code")} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => copyToClipboard(code, "Code")} aria-label="Copy backup code" className="text-muted-foreground hover:text-foreground">
                     <Copy className="h-3 w-3" />
                   </button>
                 </div>

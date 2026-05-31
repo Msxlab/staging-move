@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import {
   apiErrorMessage,
   PROVIDER_LOGO_AUTO_FETCH_BULK_CONCURRENCY,
@@ -388,60 +389,58 @@ export default function NeedsLogoPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link
-            href="/providers"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to providers
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold flex items-center gap-2">
-            <ImageOff className="h-6 w-6" /> Providers needing logos
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {loading ? "Loading…" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => load()}
-            className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-          </button>
-          <button
-            type="button"
-            onClick={handleAutoFetchAll}
-            disabled={bulkRunning || providers.length === 0}
-            className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
-          >
-            {bulkRunning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {autoAcceptGenerated ? "Generate + accept page" : "Generate page"}
-          </button>
-          <button
-            type="button"
-            onClick={handleAutoFetchEntireCatalog}
-            disabled={bulkRunning || total === 0}
-            className="inline-flex items-center gap-1 rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {bulkRunning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {autoAcceptGenerated
-              ? "Generate + accept next 50"
-              : "Generate next 50 candidates"}
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Catalog"
+        title="Providers needing <em>logos</em>"
+        subtitle={loading ? "Loading…" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
+        actions={
+          <>
+            <Link
+              href="/providers"
+              aria-label="Back to providers"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to providers
+            </Link>
+            <button
+              type="button"
+              onClick={() => load()}
+              className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+            </button>
+            <button
+              type="button"
+              onClick={handleAutoFetchAll}
+              disabled={bulkRunning || providers.length === 0}
+              className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+            >
+              {bulkRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {autoAcceptGenerated ? "Generate + accept page" : "Generate page"}
+            </button>
+            <button
+              type="button"
+              onClick={handleAutoFetchEntireCatalog}
+              disabled={bulkRunning || total === 0}
+              className="inline-flex items-center gap-1 rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {bulkRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {autoAcceptGenerated
+                ? "Generate + accept next 50"
+                : "Generate next 50 candidates"}
+            </button>
+          </>
+        }
+      />
 
       {bulkProgress && (
         <div className="rounded border bg-card p-3">
