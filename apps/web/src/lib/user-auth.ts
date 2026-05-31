@@ -12,6 +12,7 @@ import bcrypt from "bcryptjs";
 import { prisma, rawPrisma } from "@/lib/db";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { needsEmailVerificationGate } from "@/lib/email-verification-gate";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import {
   hashForOAuthLog,
   logSafeOAuthEvent,
@@ -520,9 +521,10 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
         fpMode === "mobile"
           ? await generateMobileFingerprint(userAgent).catch(() => null)
           : await generateFingerprint(
-              getRequestIpFromHeaderValue(
-                hdrs?.get("x-forwarded-for") || hdrs?.get("x-real-ip") || null,
-              ),
+              // Must use the SAME precedence as session creation
+              // (resolveClientIP → resolveClientIpFromHeaders) or the
+              // fingerprint won't match and the session is spuriously killed.
+              resolveClientIpFromHeaders(hdrs),
               userAgent,
             ).catch(() => null);
       if (!currentFp || currentFp !== payload.fp) {
@@ -594,10 +596,6 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
     if (store) clearSessionCookie(store);
   }
   return null;
-}
-
-function getRequestIpFromHeaderValue(value: string | null): string {
-  return value?.split(",")[0].trim() || "unknown";
 }
 
 export async function destroyUserSession(): Promise<void> {
