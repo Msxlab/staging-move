@@ -64,24 +64,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const validated = addressSchema.partial().parse(body);
 
-    // If setting as primary, unset all other primary addresses for this user
-    if (validated.isPrimary) {
-      await prisma.address.updateMany({
-        where: { userId, isPrimary: true, id: { not: id } },
-        data: { isPrimary: false },
-      });
-    }
+    const updateData = {
+      ...validated,
+      ...(validated.formattedAddress !== undefined && {
+        formattedAddress: validated.formattedAddress ? encrypt(validated.formattedAddress) : validated.formattedAddress,
+      }),
+      startDate: validated.startDate ? new Date(validated.startDate) : undefined,
+      endDate: validated.endDate ? new Date(validated.endDate) : undefined,
+    };
 
-    const address = await prisma.address.update({
-      where: { id },
-      data: {
-        ...validated,
-        ...(validated.formattedAddress !== undefined && {
-          formattedAddress: validated.formattedAddress ? encrypt(validated.formattedAddress) : validated.formattedAddress,
-        }),
-        startDate: validated.startDate ? new Date(validated.startDate) : undefined,
-        endDate: validated.endDate ? new Date(validated.endDate) : undefined,
-      },
+    // Demote other primaries + set this one in ONE transaction so a failed
+    // update can't leave the user with zero primary addresses (the unset
+    // already ran). Mirrors the POST create path, which is transactional for
+    // the same reason.
+    const address = await prisma.$transaction(async (tx) => {
+      if (validated.isPrimary) {
+        await tx.address.updateMany({
+          where: { userId, isPrimary: true, id: { not: id } },
+          data: { isPrimary: false },
+        });
+      }
+      return tx.address.update({ where: { id }, data: updateData });
     });
 
     const meta = extractRequestMeta(request);

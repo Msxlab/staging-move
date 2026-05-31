@@ -186,6 +186,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       where: { id },
       data: {
         ...encryptedData,
+        // Keep the listed-vs-custom provider link mutually exclusive: switching
+        // a service to one kind clears the other, so a PATCH that sends only
+        // the new id can't leave the row pointing at BOTH a listed and a custom
+        // provider. (The both-in-one-request case is already 400'd above.)
+        ...(validated.providerId ? { customProviderId: null } : {}),
+        ...(validated.customProviderId ? { providerId: null } : {}),
         contractEndDate: validated.contractEndDate ? new Date(validated.contractEndDate) : undefined,
       },
     });
