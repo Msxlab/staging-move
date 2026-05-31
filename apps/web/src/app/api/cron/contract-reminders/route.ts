@@ -35,6 +35,9 @@ async function handleCron(request: NextRequest) {
         where: {
           isActive: true,
           contractEndDate: { gte: startOfDay, lt: endOfDay },
+          // Soft-delete scopes the service row but not the included user —
+          // skip services whose owner was deleted (mirrors task-reminders).
+          user: { deletedAt: null },
         },
         include: {
           user: { select: { id: true, email: true, firstName: true, lastName: true } },

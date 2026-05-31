@@ -141,6 +141,21 @@ export const withSoftDelete = Prisma.defineExtension({
           data: { deletedAt: new Date() },
         });
       },
+      async updateMany({ args, query, model }) {
+        if (!isSoftDeleteModel(model)) return query(args);
+        // updateMany takes a non-unique WhereInput, so (like the read ops) we
+        // scope it to live rows — a bare `updateMany({ where: { userId } })`
+        // must not silently mutate soft-deleted rows. Callers that intend to
+        // touch deleted rows pass an explicit `deletedAt` (respected by
+        // applyDeletedAtFilter) or use the raw client.
+        //
+        // NOTE: `update`/`upsert` are intentionally NOT intercepted —
+        // `update` takes a unique where (can't carry a deletedAt filter) and
+        // the budget resurrect-on-conflict pattern relies on `upsert` seeing
+        // the soft-deleted row. The deleteMany rewrite above re-enters here,
+        // which is fine: it just won't re-soft-delete an already-deleted row.
+        return query(applyDeletedAtFilter(args));
+      },
     },
   },
 });
