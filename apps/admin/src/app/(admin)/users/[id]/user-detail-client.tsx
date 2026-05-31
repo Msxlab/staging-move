@@ -11,6 +11,7 @@ import { maskEmail } from "@/lib/privacy";
 import {
   accessSourceLabel,
   effectiveStatusLabel,
+  getBillingPlanDefinition,
   getEffectiveEntitlement,
   TRIAL_DURATION_DAYS,
 } from "@/lib/shared-billing";
@@ -1170,7 +1171,7 @@ export default function UserDetailClient() {
                   {effectiveStatusLabel(eff.effectiveStatus)}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Plan tier: {eff.effectivePlan === "INDIVIDUAL" ? "Individual" : "Free"}
+                  Plan tier: {getBillingPlanDefinition(eff.effectivePlan).displayName}
                 </p>
               </div>
               <div>

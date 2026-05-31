@@ -4,6 +4,7 @@ import {
   DEFAULT_BILLING_PLAN,
   DEFAULT_SUBSCRIPTION_STATUS,
   getEffectiveEntitlement,
+  isPaidBillingPlan,
   TRIAL_DURATION_DAYS,
   type BillingPlan,
   type BillingProvider,
@@ -154,7 +155,7 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   const status = subscription.status || DEFAULT_SUBSCRIPTION_STATUS;
   const provider = inferredProvider as BillingProvider;
   const accessType =
-    effective.accessType || (plan === "INDIVIDUAL" ? "PAID" : null);
+    effective.accessType || (isPaidBillingPlan(plan) ? "PAID" : null);
   const trialEndsAt = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
   const freeAccessEndsAt = subscription.freeAccessEndsAt ? new Date(subscription.freeAccessEndsAt) : null;
   const firstChargeAt = subscription.firstChargeAt ? new Date(subscription.firstChargeAt) : null;
