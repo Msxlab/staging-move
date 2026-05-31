@@ -9,6 +9,7 @@ vi.mock("@/lib/db", () => ({
     passwordResetToken: {
       findFirst: vi.fn(),
       create: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }));
@@ -32,7 +33,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { GENERIC_FORGOT_PASSWORD_MESSAGE, POST } from "./route";
 
 const userMock = prisma.user as unknown as { findUnique: Mock };
-const tokenMock = prisma.passwordResetToken as unknown as { findFirst: Mock; create: Mock };
+const tokenMock = prisma.passwordResetToken as unknown as { findFirst: Mock; create: Mock; updateMany: Mock };
 const sendPasswordResetEmailMock = sendPasswordResetEmail as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
 
@@ -55,6 +56,7 @@ describe("password reset request route", () => {
     vi.clearAllMocks();
     tokenMock.findFirst.mockResolvedValue(null);
     tokenMock.create.mockResolvedValue({});
+    tokenMock.updateMany.mockResolvedValue({ count: 0 });
     sendPasswordResetEmailMock.mockResolvedValue(true);
     rateLimitMock.mockResolvedValue({ success: true });
   });

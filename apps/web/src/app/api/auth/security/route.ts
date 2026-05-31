@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 
 const setPasswordSchema = z.object({
   action: z.literal("set_password"),
-  newPassword: z.string().max(200),
+  newPassword: z.string().min(12).max(200),
 });
 
 const requestSetPasswordSchema = z.object({

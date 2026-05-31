@@ -51,6 +51,12 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, hash } = generateOpaqueToken();
+  // Supersede any still-valid verification token for this user so an older,
+  // un-clicked link can't be used after a fresh one is issued.
+  await prisma.emailVerificationToken.updateMany({
+    where: { userId: user.id, consumedAt: null },
+    data: { consumedAt: new Date() },
+  });
   await prisma.emailVerificationToken.create({
     data: {
       userId: user.id,

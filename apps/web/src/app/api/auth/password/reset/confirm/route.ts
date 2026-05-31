@@ -16,7 +16,7 @@ export const runtime = "nodejs";
 
 const schema = z.object({
   token: z.string().min(10).max(200),
-  newPassword: z.string().max(200),
+  newPassword: z.string().min(12).max(200),
 });
 
 function invalidResetLink() {

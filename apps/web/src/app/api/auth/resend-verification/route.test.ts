@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   generateOpaqueToken: vi.fn(() => ({ token: "verify-token", hash: "verify-hash" })),
   userFindFirst: vi.fn(),
   tokenCreate: vi.fn(),
+  tokenUpdateMany: vi.fn(),
   sendEmailVerificationEmail: vi.fn(),
   rateLimit: vi.fn(),
   getRateLimitKey: vi.fn(() => "rate-key"),
@@ -23,6 +24,7 @@ vi.mock("@/lib/db", () => ({
     },
     emailVerificationToken: {
       create: (...args: unknown[]) => mocks.tokenCreate(...args),
+      updateMany: (...args: unknown[]) => mocks.tokenUpdateMany(...args),
     },
   },
 }));
@@ -60,6 +62,7 @@ describe("resend verification route", () => {
       oauthAccounts: [],
     });
     mocks.tokenCreate.mockResolvedValue({});
+    mocks.tokenUpdateMany.mockResolvedValue({ count: 0 });
     mocks.sendEmailVerificationEmail.mockResolvedValue(undefined);
   });
 

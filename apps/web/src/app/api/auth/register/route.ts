@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 const registerSchema = z.object({
   email: z.string().email().max(191).transform((v) => v.toLowerCase()),
-  password: z.string().max(200),
+  password: z.string().min(12).max(200),
   firstName: z.string().trim().max(100).optional(),
   lastName: z.string().trim().max(100).optional(),
   // Self-attestation that the account holder meets the minimum age. Only

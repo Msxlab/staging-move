@@ -106,6 +106,12 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, hash } = generateOpaqueToken();
+  // Supersede any still-valid reset token for this user so an older reset link
+  // stops working the moment a new one is requested.
+  await prisma.passwordResetToken.updateMany({
+    where: { userId: user.id, usedAt: null },
+    data: { usedAt: new Date() },
+  });
   await prisma.passwordResetToken.create({
     data: {
       userId: user.id,
