@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { isApiConnectorsEnabled } from "@/lib/connector-oauth";
 import { runDueDispatches } from "@/lib/connector-runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-/** Cron/system auth: Bearer CRON_SECRET. */
-async function isCronAuthorized(request: NextRequest): Promise<boolean> {
-  const secret = (await getRuntimeConfigValue("CRON_SECRET")) ?? process.env.CRON_SECRET ?? "";
-  if (!secret) return false;
-  const header = request.headers.get("authorization") ?? "";
-  const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
-  return bearer.length > 0 && bearer === secret;
-}
 
 /**
  * POST /api/cron/connector-dispatch
@@ -24,9 +15,11 @@ async function isCronAuthorized(request: NextRequest): Promise<boolean> {
  * no-op when the feature is off.
  */
 async function handle(request: NextRequest): Promise<NextResponse> {
-  if (!(await isCronAuthorized(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Shared cron guard: constant-time secret check + per-route rate limit
+  // (the bespoke bearer===secret check this replaces was timing-attackable
+  // and had no rate limit — the highest-value target since it drives egress).
+  const guard = await guardCronRequest(request, "connector-dispatch");
+  if (!guard.ok) return guard.response;
   if (!(await isApiConnectorsEnabled())) {
     return NextResponse.json({ skipped: "disabled" });
   }
