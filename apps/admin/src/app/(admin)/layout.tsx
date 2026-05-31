@@ -1,6 +1,7 @@
 import { AuroraBackground } from "@/components/aurora";
 import { Sidebar } from "@/components/sidebar";
 import { SubNav } from "@/components/sub-nav";
+import { CommandPalette } from "@/components/command-palette";
 import { requirePageAdmin } from "@/lib/page-guard";
 import "../aurora.css";
 
@@ -32,6 +33,9 @@ export default async function AdminLayout({
         Skip to main content
       </a>
       <Sidebar ctx={{ role: ctx.role, permissions: ctx.permissions }} />
+      {/* Global ⌘K / Ctrl+K command palette — instant nav + quick actions +
+          user/provider search. Renders nothing until invoked. */}
+      <CommandPalette ctx={{ role: ctx.role, permissions: ctx.permissions }} />
       <main
         id="admin-main"
         tabIndex={-1}
