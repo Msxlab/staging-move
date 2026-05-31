@@ -72,6 +72,9 @@ export default function WorkspaceSettingsPage() {
   const [inviting, setInviting] = useState(false);
   const [devInviteUrl, setDevInviteUrl] = useState<string | null>(null);
   const [busyMember, setBusyMember] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [householdName, setHouseholdName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const selected = workspaces.find((w) => w.id === selectedId) ?? null;
   const iAmManager = selected ? isManagerRole(selected.role) : false;
@@ -287,6 +290,35 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  const saveHouseholdName = async () => {
+    if (!selectedId) return;
+    const name = householdName.trim();
+    if (name.length < 1 || name.length > 60) {
+      toast.error("Name must be between 1 and 60 characters.");
+      return;
+    }
+    setSavingName(true);
+    try {
+      const res = await fetch(`/api/workspaces/${selectedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Couldn't rename your household.");
+        return;
+      }
+      toast.success("Household name saved.");
+      setWorkspaces((prev) => prev.map((w) => (w.id === selectedId ? { ...w, name: data.name ?? name } : w)));
+      setEditingName(false);
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   const toggleMyManagedSync = async () => {
     if (!selectedId) return;
     const next = !(myManagedSync ?? false);
@@ -367,7 +399,51 @@ export default function WorkspaceSettingsPage() {
           <div className="rounded-2xl border border-border bg-foreground/5 p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">{selected.name}</h2>
+                {iAmOwner && editingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={householdName}
+                      onChange={(e) => setHouseholdName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveHouseholdName();
+                        if (e.key === "Escape") setEditingName(false);
+                      }}
+                      maxLength={60}
+                      autoFocus
+                      aria-label="Workspace name"
+                      className="rounded-lg border border-input bg-background px-2 py-1 text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <button
+                      onClick={saveHouseholdName}
+                      disabled={savingName}
+                      className="rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingName(false)}
+                      disabled={savingName}
+                      className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition hover:bg-foreground/10"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-foreground">{selected.name}</h2>
+                    {iAmOwner && (
+                      <button
+                        onClick={() => {
+                          setHouseholdName(selected.name);
+                          setEditingName(true);
+                        }}
+                        className="rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground"
+                      >
+                        Rename
+                      </button>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {selected.planLabel} · You are {ROLE_LABEL[selected.role] ?? selected.role} ·{" "}
                   {selected.memberCount} / {selected.seatLimit} members
@@ -385,6 +461,25 @@ export default function WorkspaceSettingsPage() {
               )}
             </div>
           </div>
+
+          {/* Household setup — guides a new Family/Pro owner who hasn't built
+              their household yet (only themselves, no pending invites). */}
+          {iAmOwner && selected.seatLimit > 1 && selected.memberCount <= 1 && invitations.length === 0 && (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+              <h3 className="text-sm font-semibold text-foreground">Finish setting up your household</h3>
+              <ol className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                <li>
+                  <span className="font-medium text-foreground">1.</span> Name your household — tap{" "}
+                  <span className="font-medium text-foreground">Rename</span> above so members recognize it.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">2.</span> Invite up to {selected.seatLimit - 1}{" "}
+                  {selected.seatLimit - 1 === 1 ? "person" : "people"} using the form below. Everyone keeps their own
+                  login and private data — they just share this {selected.planLabel} plan.
+                </li>
+              </ol>
+            </div>
+          )}
 
           {/* My managed-sync consent */}
           <div className="rounded-2xl border border-border bg-foreground/5 p-5">
