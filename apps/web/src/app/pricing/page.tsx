@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { PricingSection } from "@/components/marketing/pricing-section";
-import { WorkspacePlansSection } from "@/components/marketing/workspace-plans-section";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
@@ -14,7 +13,7 @@ import { JsonLd, breadcrumbSchema, softwareApplicationSchema } from "@/component
 export const metadata = createPublicPageMetadata({
   title: "Pricing",
   description:
-    "LocateFlow pricing for the Individual plan, including monthly and annual pricing, trial disclosures, cancellation terms, and refund policy links.",
+    "LocateFlow pricing for Individual, Family, and Pro plans, including monthly and annual pricing, trial disclosures, cancellation terms, and refund policy links.",
   path: "/pricing",
 });
 
@@ -66,8 +65,6 @@ export default async function PricingPage() {
         offers={publicCampaign}
         headingLevel="h1"
       />
-
-      <WorkspacePlansSection ctaHref={ctaTarget.href} loggedIn={!!userId} />
 
       <section className="container pb-4">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">

@@ -174,6 +174,20 @@ describe("acquisition campaign DB helpers", () => {
     expect(JSON.stringify(viewModel)).not.toContain("maxRedemptions");
   });
 
+  it("normalizes stale default annual campaign pricing before public rendering", () => {
+    const viewModel = toPublicCampaignViewModel(campaign({
+      code: "INDIVIDUAL90",
+      displayPriceLabel: "$79/year",
+    }) as any);
+
+    expect(viewModel).toMatchObject({
+      campaignCode: "INDIVIDUAL90",
+      displayPriceLabel: "$39.99/year",
+      priceCopy: "$39.99/year after trial",
+    });
+    expect(JSON.stringify(viewModel)).not.toContain("$79/year");
+  });
+
   it("returns annual trial and monthly paid offers together", async () => {
     mocks.findMany
       .mockResolvedValueOnce([campaign()])

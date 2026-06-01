@@ -121,7 +121,7 @@ describe("admin service worker", () => {
     expect(register).toContain("registration.unregister()");
     expect(register).toContain('key.indexOf("locateflow-") === 0');
     expect(register).not.toContain("navigator.serviceWorker.register");
-    expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} />');
+    expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />');
     expect(nextConfig).toContain('source: "/register-sw.js"');
     expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
   });

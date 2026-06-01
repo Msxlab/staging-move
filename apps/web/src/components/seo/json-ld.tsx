@@ -49,6 +49,7 @@ export async function JsonLd({ data, id }: JsonLdProps): Promise<ReactElement> {
       type="application/ld+json"
       id={id}
       nonce={nonce}
+      suppressHydrationWarning
       // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: safeStringify(data) }}
     />

@@ -12,8 +12,11 @@ vi.mock("next/link", () => ({
 vi.mock("lucide-react", () => {
   const Icon = (props: any) => <svg aria-hidden="true" {...props} />;
   return {
+    Baby: Icon,
     Bell: Icon,
     Building2: Icon,
+    CheckCircle2: Icon,
+    Crown: Icon,
     Download: Icon,
     FileText: Icon,
     Home: Icon,
@@ -23,7 +26,9 @@ vi.mock("lucide-react", () => {
     Smartphone: Icon,
     Sparkles: Icon,
     Truck: Icon,
+    Users: Icon,
     Wallet: Icon,
+    Wrench: Icon,
   };
 });
 
@@ -67,8 +72,8 @@ describe("PricingSection", () => {
       />,
     );
 
-    expect(html).toContain("Individual Annual");
-    expect(html).toContain("Continue with annual");
+    expect(html).toContain("Simple pricing for every move and household");
+    expect(html).toContain("Choose Individual");
     expect(html).not.toContain("Today: $0");
     expect(html).not.toContain("3 months free, then annual billing");
   });
@@ -120,9 +125,11 @@ describe("PricingSection", () => {
     );
 
     expect(html).toContain("Start with 90 days free");
-    expect(html).toContain("Individual Monthly");
-    expect(html).toContain("$3.99");
-    expect(html).toContain("/month");
-    expect(html).toContain("Subscribe monthly");
+    expect(html).toContain("Monthly");
+    expect(html).toContain("Family");
+    expect(html).toContain("Pro");
+    expect(html).toContain("$39.99");
+    expect(html).toContain("/year after trial");
+    expect(html).toContain('id="tab-monthly"');
   });
 });

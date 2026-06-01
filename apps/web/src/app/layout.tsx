@@ -185,6 +185,7 @@ export default async function RootLayout({
          */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var q=new URLSearchParams(location.search);var hit=q.get('embed')==='mobile'||sessionStorage.getItem('lf:embed-mobile')==='1';if(q.get('embed')==='mobile'){sessionStorage.setItem('lf:embed-mobile','1');}if(hit){document.documentElement.setAttribute('data-embed','mobile');}}catch(e){}})();`,
           }}
@@ -200,7 +201,7 @@ export default async function RootLayout({
             </ThemeProvider>
           </QueryProvider>
         </NextIntlClientProvider>
-        <script src="/register-sw.js" defer nonce={nonce} />
+        <script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />
       </body>
     </html>
   );

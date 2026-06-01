@@ -60,9 +60,8 @@ describe("ServiceLogoMark", () => {
 
     expect(resolveServiceLogoUrl(service({ providerLogoUrl: logoUrl }))).toBe(logoUrl);
     expect(resolveServiceLogoUrl(service({ logoUrl }))).toBe(logoUrl);
-    expect(resolveServiceLogoUrl(service({ provider: { website: "https://www.usps.com" } }))).toBe(
-      "https://www.google.com/s2/favicons?domain=usps.com&sz=64",
-    );
+    expect(resolveServiceLogoUrl(service({ provider: { website: "https://www.usps.com" } }))).toBeNull();
+    expect(resolveServiceLogoUrl(service({ logoUrl: "https://www.google.com/s2/favicons?domain=usps.com&sz=64" }))).toBeNull();
     expect(shouldShowServiceLogo(logoUrl, null)).toBe(true);
     expect(shouldShowServiceLogo(logoUrl, logoUrl)).toBe(false);
     expect(shouldShowServiceLogo(null, null)).toBe(false);

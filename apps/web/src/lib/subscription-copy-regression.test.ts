@@ -7,15 +7,15 @@ function readRepoFile(relativePath: string) {
 }
 
 describe("subscription acquisition copy", () => {
-  it("pricing focuses on Individual offers and does not launch Family or Pro cards", () => {
+  it("pricing renders Individual, Family, and Pro with monthly/annual tabs", () => {
     const source = readRepoFile("src/components/marketing/pricing-section.tsx");
 
-    expect(source).toContain("Individual Annual");
-    expect(source).toContain("Individual Monthly");
+    expect(source).toContain('type BillingCycle = "yearly" | "monthly"');
+    expect(source).toContain('type PaidPlanId = "INDIVIDUAL" | "FAMILY" | "PRO"');
+    expect(source).toContain('role="tablist"');
+    expect(source).toContain("PLAN_FEATURES");
     expect(source).toContain("annualOffer?.publicHeadline");
-    expect(source).toContain("monthlyOffer.displayPriceLabel");
-    expect(source).not.toContain("FAMILY");
-    expect(source).not.toContain("PRO");
+    expect(source).toContain("monthlyOffer?.publicHeadline");
   });
 
   it("settings checkout copy keeps required terms clear without refund-heavy language", () => {

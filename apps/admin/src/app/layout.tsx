@@ -74,7 +74,7 @@ export default async function RootLayout({
             <Toaster position="top-right" richColors />
           </ThemeProvider>
         </NextIntlClientProvider>
-        <script src="/register-sw.js" defer nonce={nonce} />
+        <script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />
       </body>
     </html>
   );

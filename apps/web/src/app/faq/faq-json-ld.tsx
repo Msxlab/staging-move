@@ -24,6 +24,7 @@ export function FaqJsonLd({ nonce, siteUrl }: FaqJsonLdProps) {
             id={schema.id}
             type="application/ld+json"
             nonce={nonce}
+            suppressHydrationWarning
             // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema.data) }}
           />

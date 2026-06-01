@@ -46,4 +46,21 @@ describe("ProviderLogoMark", () => {
     expect(shouldShowProviderLogo(logoUrl, logoUrl)).toBe(false);
     expect(shouldShowProviderLogo(null, null)).toBe(false);
   });
+
+  it("falls back instead of requesting Google favicon placeholder URLs", () => {
+    const markup = renderToStaticMarkup(
+      <ProviderLogoMark
+        provider={{
+          name: "USPS",
+          category: "GOVERNMENT_POSTAL",
+          logoUrl: "https://www.google.com/s2/favicons?domain=usps.com&sz=64",
+        }}
+        className="h-12 w-12 rounded-xl"
+        fallbackClassName="text-2xl"
+      />,
+    );
+
+    expect(markup).not.toContain("<img");
+    expect(markup).toContain(getMergedDisplayCategoryIcon("GOVERNMENT_POSTAL"));
+  });
 });

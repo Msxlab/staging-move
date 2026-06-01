@@ -189,6 +189,20 @@ export function getTrialLabel(days: number | null | undefined) {
   return `${normalizedDays} day${normalizedDays === 1 ? "" : "s"}`;
 }
 
+function publicDisplayPriceLabel(campaign: AcquisitionCampaignLike, isMonthly: boolean) {
+  const normalizedCode = (campaign.code || "").trim().toUpperCase();
+  if (
+    normalizedCode === INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE &&
+    campaign.plan === "INDIVIDUAL" &&
+    campaign.accessType === "FREE_TRIAL" &&
+    campaign.billingInterval === "YEAR"
+  ) {
+    return INDIVIDUAL_ANNUAL_PRICE_LABEL;
+  }
+  return campaign.displayPriceLabel ||
+    (isMonthly ? "Price shown at checkout" : INDIVIDUAL_ANNUAL_PRICE_LABEL);
+}
+
 export function toPublicCampaignViewModel(
   campaign: AcquisitionCampaignLike | null | undefined,
 ): PublicCampaignViewModel | null {
@@ -196,8 +210,7 @@ export function toPublicCampaignViewModel(
   const isTrial = campaign.accessType === "FREE_TRIAL";
   const isMonthly = campaign.billingInterval === "MONTH";
   const trialDays = isTrial ? Number(campaign.trialDays ?? INDIVIDUAL_ANNUAL_TRIAL_DAYS) : null;
-  const displayPriceLabel = campaign.displayPriceLabel ||
-    (isMonthly ? "Price shown at checkout" : INDIVIDUAL_ANNUAL_PRICE_LABEL);
+  const displayPriceLabel = publicDisplayPriceLabel(campaign, isMonthly);
   const trialLabel = getTrialLabel(trialDays);
   return {
     campaignCode: campaign.code,

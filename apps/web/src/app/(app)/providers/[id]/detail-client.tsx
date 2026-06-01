@@ -18,6 +18,7 @@ import {
   getMergedDisplayCategoryLabel,
   getMergedDisplaySubcategoryLabel,
 } from "@/lib/recommendation-engine";
+import { resolveLogoUrl } from "@/lib/logo-url";
 import type {
   ProviderCoverageConfidence,
   ProviderTrustSummary,
@@ -117,6 +118,7 @@ export function ProviderDetailClient({
     getMergedDisplayCategoryLabel(provider.category),
     getMergedDisplaySubcategoryLabel(provider.category),
   ].filter(Boolean).join(" - ");
+  const logoUrl = resolveLogoUrl(provider.logoUrl);
 
   return (
     <div className="space-y-6">
@@ -131,9 +133,9 @@ export function ProviderDetailClient({
       <div className="rounded-2xl border border-border bg-foreground/5 p-6 space-y-4">
         <div className="flex items-start gap-4">
           <div className="h-16 w-16 shrink-0 rounded-2xl bg-foreground/5 border border-border flex items-center justify-center text-3xl overflow-hidden">
-            {provider.logoUrl ? (
+            {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={provider.logoUrl} alt={`${provider.name} logo`} className="h-full w-full object-contain" />
+              <img src={logoUrl} alt={`${provider.name} logo`} className="h-full w-full object-contain" />
             ) : (
               getMergedDisplayCategoryIcon(provider.category)
             )}
@@ -152,7 +154,7 @@ export function ProviderDetailClient({
                 </span>
               )}
             </div>
-            {!provider.logoUrl && (
+            {!logoUrl && (
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Logo unavailable; category icon shown.
               </p>

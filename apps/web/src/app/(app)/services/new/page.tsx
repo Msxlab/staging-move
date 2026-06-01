@@ -26,6 +26,7 @@ import {
   type ServiceLimitDetails,
 } from "@/components/shared/service-limit-upsell";
 import { ServiceUsageIndicator } from "@/components/shared/service-usage-indicator";
+import { resolveLogoUrl } from "@/lib/logo-url";
 
 const BILLING_CYCLES = [
   { value: "MONTHLY", label: "Monthly" },
@@ -724,6 +725,7 @@ export default function NewServicePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
                   const isSelected = selectedProviders.has(provider.id);
+                  const logoUrl = resolveLogoUrl(provider.logoUrl);
                   return (
                     <button key={`rec-${provider.id}`} type="button" onClick={() => toggleProvider(provider)}
                       className={`group relative text-left p-3 rounded-xl border transition-all ${
@@ -734,10 +736,10 @@ export default function NewServicePage() {
                     >
                       {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-tone-orange-fg" />}
                       <div className="flex items-center gap-3">
-                        {provider.logoUrl ? (
+                        {logoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={provider.logoUrl}
+                            src={logoUrl}
                             alt=""
                             className="shrink-0 w-9 h-9 rounded-lg object-contain bg-foreground/5"
                           />
@@ -803,6 +805,7 @@ export default function NewServicePage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-3 pt-1">
                         {items.map((provider) => {
                           const isSelected = selectedProviders.has(provider.id);
+                          const logoUrl = resolveLogoUrl(provider.logoUrl);
                           return (
                             <button key={provider.id} type="button" onClick={() => toggleProvider(provider)}
                               className={`group relative text-left p-3 rounded-xl border transition-all ${
@@ -813,10 +816,10 @@ export default function NewServicePage() {
                             >
                               {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-tone-orange-fg" />}
                               <div className="flex items-center gap-3">
-                                {provider.logoUrl ? (
+                                {logoUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
-                                    src={provider.logoUrl}
+                                    src={logoUrl}
                                     alt=""
                                     className="shrink-0 w-9 h-9 rounded-lg object-contain bg-foreground/5"
                                   />
