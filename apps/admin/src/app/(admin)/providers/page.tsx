@@ -13,6 +13,7 @@ import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { validateCsvFileMetadata } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface Provider {
   id: string; name: string; slug: string; category: string; subCategory: string | null;
@@ -605,23 +606,26 @@ export default function ProvidersPage() {
       {loading ? (
         <div className="py-20 text-center text-muted-foreground">Loading providers...</div>
       ) : allProviders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 text-center">
-          <Building2 className="mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm font-medium text-foreground">No providers found</p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-            {search || activeFilters > 0
+        <EmptyState
+          icon={Building2}
+          title="No providers found"
+          description={
+            search || activeFilters > 0
               ? "No providers match your current search and filters."
-              : "Get started by adding your first provider."}
-          </p>
-          {(search || activeFilters > 0) && (
-            <button
-              onClick={clearFilters}
-              className="mt-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
+              : "Get started by adding your first provider."
+          }
+          action={
+            search || activeFilters > 0 ? (
+              <button
+                onClick={clearFilters}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Clear filters
+              </button>
+            ) : undefined
+          }
+          className="rounded-xl border border-dashed border-border"
+        />
       ) : viewMode === "accordion" ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">

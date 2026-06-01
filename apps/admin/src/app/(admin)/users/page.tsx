@@ -16,6 +16,7 @@ import { HealthPill } from "@/components/premium/health-pill";
 import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 // Health column is on by default — support team's #1 ask. Sticker is part
 // of the "user" cell, not its own column, so it always rides next to the
@@ -470,7 +471,17 @@ export default function UsersPage() {
                 return <tr><td colSpan={visibleColCount} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>;
               }
               if (users.length === 0) {
-                return <tr><td colSpan={visibleColCount} className="px-4 py-12 text-center text-muted-foreground">No users found</td></tr>;
+                return (
+                  <tr>
+                    <td colSpan={visibleColCount} className="px-4">
+                      <EmptyState
+                        icon={Users}
+                        title="No users found"
+                        description={search || activeFilterCount > 0 ? "No users match your current search and filters." : "No users have signed up yet."}
+                      />
+                    </td>
+                  </tr>
+                );
               }
               return null;
             })()}

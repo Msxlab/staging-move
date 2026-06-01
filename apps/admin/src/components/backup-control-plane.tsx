@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 import { cn, formatDateTime, truncate } from "@/lib/utils";
 
 interface BackupArchiveDiagnostics {
@@ -2597,27 +2598,4 @@ function MiniStat(props: {
   );
 }
 
-function EmptyState(props: {
-  icon: ElementType;
-  title: string;
-  description: string;
-  compact?: boolean;
-}) {
-  const Icon = props.icon;
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center text-center",
-        props.compact ? "py-4" : "py-8",
-      )}
-    >
-      <div className="rounded-full bg-muted/30 p-3 text-muted-foreground">
-        <Icon className={cn(props.compact ? "h-5 w-5" : "h-6 w-6")} />
-      </div>
-      <p className="mt-3 text-sm font-medium text-foreground">{props.title}</p>
-      <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-        {props.description}
-      </p>
-    </div>
-  );
-}
+// EmptyState now lives in @/components/empty-state (shared across modules).
