@@ -482,6 +482,7 @@ export function BackupControlPlane() {
   const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(
     null,
   );
+  const [downloadingSqlDump, setDownloadingSqlDump] = useState(false);
   const [selectedType, setSelectedType] = useState("FULL");
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
@@ -938,6 +939,34 @@ export function BackupControlPlane() {
     }
   }
 
+  async function downloadSqlDump() {
+    setDownloadingSqlDump(true);
+    try {
+      const blob = await submitBlobWithStepUp(
+        "/api/backup/sql-dump",
+        {},
+        {
+          title: "Download full SQL dump",
+          description:
+            "Confirm your admin password and MFA. This streams a complete mysqldump — schema + EVERY table, including sensitive ones (sessions, tokens, hashes). SUPER_ADMIN only. Restore with: gunzip -c file.sql.gz | mysql <database>.",
+          actionLabel: "Download .sql.gz",
+          errorMessage: "Failed to generate SQL dump",
+          requireMfa: true,
+        },
+      );
+      downloadFile(
+        blob,
+        `locateflow-full-${new Date().toISOString().slice(0, 10)}.sql.gz`,
+        "application/gzip",
+      );
+      toast.success("Full SQL dump downloaded");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to generate SQL dump");
+    } finally {
+      setDownloadingSqlDump(false);
+    }
+  }
+
   async function handleHistoricalDownload(backup: BackupRecord) {
     setDownloadingBackupId(backup.id);
     try {
@@ -1212,26 +1241,41 @@ export function BackupControlPlane() {
               title="Create encrypted backup"
               description="Issue a new archive immediately. Production jobs require encryption, signing, and offsite retention; browser fallback is non-production only."
               action={
-                <button
-                  onClick={createBackup}
-                  disabled={
-                    creating ||
-                    (selectedType !== "FULL" && selectedTables.length === 0) ||
-                    Boolean(
-                      archivePolicy?.encryptionRequired &&
-                        !archivePolicy.cryptoReady,
-                    ) ||
-                    Boolean(archivePolicy?.offsiteRequired && !storage?.ready)
-                  }
-                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
-                  {creating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  {creating ? "Creating..." : "Create backup"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={downloadSqlDump}
+                    disabled={downloadingSqlDump}
+                    title="Raw mysqldump of the ENTIRE database (schema + every table, incl. sensitive ones) as .sql.gz. SUPER_ADMIN + MFA. Requires mysql-client in the runtime."
+                    className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+                  >
+                    {downloadingSqlDump ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4" />
+                    )}
+                    {downloadingSqlDump ? "Dumping…" : "Full SQL dump"}
+                  </button>
+                  <button
+                    onClick={createBackup}
+                    disabled={
+                      creating ||
+                      (selectedType !== "FULL" && selectedTables.length === 0) ||
+                      Boolean(
+                        archivePolicy?.encryptionRequired &&
+                          !archivePolicy.cryptoReady,
+                      ) ||
+                      Boolean(archivePolicy?.offsiteRequired && !storage?.ready)
+                    }
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {creating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    {creating ? "Creating..." : "Create backup"}
+                  </button>
+                </div>
               }
             >
               <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">

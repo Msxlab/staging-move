@@ -44,10 +44,15 @@ export interface AddressConnector {
   verify?(input: CanonicalAddressChange, ctx: ConnectorContext): Promise<ConnectorResult>;
 
   /**
-   * Optional: translate an inbound partner webhook payload into a result.
-   * Only meaningful when `manifest.capabilities.asyncConfirm` is true.
+   * Optional: translate an inbound partner webhook payload into a result, plus
+   * the `ref` — the client reference WE supplied at submit time (the dispatch's
+   * idempotencyKey) that the partner echoes back. Only the connector knows the
+   * partner's payload shape, so only it can extract the ref; the framework uses
+   * it to find the matching ConnectorDispatch. Return `null` for an unrecognized
+   * or unparseable payload. Only meaningful when
+   * `manifest.capabilities.asyncConfirm` is true.
    */
-  parseWebhook?(payload: unknown): ConnectorResult;
+  parseWebhook?(payload: unknown): { ref: string; result: ConnectorResult } | null;
 
   /**
    * Optional canary used for drift detection. The framework calls this on a

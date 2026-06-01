@@ -22,6 +22,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@locateflow/connectors':
+        specifier: workspace:*
+        version: link:../../packages/connectors
       '@locateflow/db':
         specifier: workspace:*
         version: link:../../packages/db

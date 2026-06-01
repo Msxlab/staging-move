@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
     },
     notificationQueue: {
       create: vi.fn(),
+      // Duplicate-broadcast guard probes this; undefined → no recent duplicate.
+      findFirst: vi.fn(),
+    },
+    processedWebhookEvent: {
+      create: vi.fn(),
     },
     user: {
       findMany: vi.fn(),
@@ -41,6 +46,8 @@ describe("admin notification send boundaries", () => {
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.prisma.user.count.mockResolvedValue(1);
+    mocks.prisma.notificationQueue.findFirst.mockResolvedValue(null);
+    mocks.prisma.processedWebhookEvent.create.mockResolvedValue({ id: "claim_1" });
   });
 
   it("rejects unsupported delivery channels before creating records", async () => {
@@ -129,5 +136,22 @@ describe("admin notification send boundaries", () => {
     expect(res.status).toBe(200);
     expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
     expect(mocks.prisma.notificationQueue.create).toHaveBeenCalled();
+  });
+
+  it("blocks a concurrent duplicate broadcast before fan-out", async () => {
+    mocks.prisma.processedWebhookEvent.create.mockRejectedValue({ code: "P2002" });
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Broadcast",
+      body: "Important announcement.",
+      channel: "IN_APP",
+      broadcast: true,
+    }));
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.code).toBe("DUPLICATE_BROADCAST");
+    expect(mocks.prisma.notification.createMany).not.toHaveBeenCalled();
+    expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
   });
 });

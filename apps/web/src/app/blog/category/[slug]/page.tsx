@@ -58,7 +58,7 @@ export async function generateMetadata({
   const locale = await resolveLocale(sp.locale);
   const page = normalizePageParam(sp.page);
 
-  const category = await getPublicCategoryBySlug(slug).catch(() => null);
+  const category = await getPublicCategoryBySlug(slug, locale).catch(() => null);
   if (!category) return { title: "Not found" };
 
   const canonical = categoryCanonical(slug, locale, page);
@@ -106,7 +106,7 @@ export default async function BlogCategoryPage({
   const locale = await resolveLocale(sp.locale);
   const page = normalizePageParam(sp.page);
 
-  const category = await getPublicCategoryBySlug(slug).catch(() => null);
+  const category = await getPublicCategoryBySlug(slug, locale).catch(() => null);
   if (!category) notFound();
 
   let listing = await listPublicPosts({

@@ -37,6 +37,16 @@ describe("upsertRuntimeConfigEntry value validation", () => {
     ).rejects.toThrow(/UNKNOWN_RUNTIME_CONFIG_KEY/);
   });
 
+  it("accepts dynamic connector credential keys as runtime-editable config", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "CONNECTOR_USPS_OAUTH_CLIENT_SECRET",
+        value: "uspsclientabcdef123456",
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("rejects an empty value", async () => {
     await expect(
       upsertRuntimeConfigEntry({ ...baseInput, key: "STRIPE_SECRET_KEY", value: "" }),
@@ -292,5 +302,27 @@ describe("listRuntimeConfigCatalog status surfacing", () => {
     const item = catalog.find((entry) => entry.key === "USER_JWT_SECRET");
     expect(item?.editable).toBe("No");
     expect(item?.status).toBe("Verified from ENV");
+  });
+
+  it("surfaces dynamic connector keys that already exist in Runtime Config", async () => {
+    mocks.findMany.mockResolvedValue([
+      {
+        key: "CONNECTOR_USPS_WEBHOOK_SECRET",
+        isSecret: true,
+        valueEncrypted: "enc:whsecconnectorabcdef123456",
+        valuePlain: null,
+        isActive: true,
+        source: "DB",
+        updatedAt: new Date(),
+        lastValidatedAt: null,
+        lastValidationStatus: null,
+      },
+    ]);
+
+    const catalog = await listRuntimeConfigCatalog();
+    const item = catalog.find((entry) => entry.key === "CONNECTOR_USPS_WEBHOOK_SECRET");
+    expect(item?.status).toBe("Verified from Runtime Config");
+    expect(item?.editable).toBe("Restricted");
+    expect(item?.isSecret).toBe(true);
   });
 });

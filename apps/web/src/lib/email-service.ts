@@ -872,7 +872,14 @@ export async function sendBillReminderEmail(opts: {
   }
   const appUrl = await resolveAppUrl();
   const locale = resolveEmailLocale(opts.locale);
-  const subject = `Bill reminder: ${opts.serviceName} - $${opts.amount.toFixed(2)} due in ${opts.daysUntilDue} day${opts.daysUntilDue !== 1 ? "s" : ""}`;
+  // Pre-formatted, grammatical due phrase shared by the subject, the DB
+  // template, and the inline fallback so all three read identically
+  // ("today" / "in 1 day" / "in 3 days").
+  const dueText =
+    opts.daysUntilDue === 0
+      ? "today"
+      : `in ${opts.daysUntilDue} day${opts.daysUntilDue === 1 ? "" : "s"}`;
+  const subject = `Bill reminder: ${opts.serviceName} - $${opts.amount.toFixed(2)} due ${dueText}`;
   const emailData = {
     userName: opts.userName,
     serviceName: opts.serviceName,
@@ -882,24 +889,47 @@ export async function sendBillReminderEmail(opts: {
     daysUntilDue: opts.daysUntilDue,
     appUrl,
   };
+  // Prefer the admin-editable DB template so panel edits take effect on the
+  // real email; fall back to the inline builder when the template is missing,
+  // inactive, or empty. The seed `bill-reminder` template is kept at content
+  // parity with billReminderHtml (same greeting, due phrasing, Service /
+  // Category / Amount / Due Date rows, and CTA), so this reroute changes
+  // nothing visible until an admin customizes the template.
+  const rendered = await renderTemplate(
+    "bill-reminder",
+    {
+      firstName: opts.userName,
+      serviceName: opts.serviceName,
+      category: opts.category,
+      amount: opts.amount.toFixed(2),
+      dueDate: opts.dueDate,
+      dueText,
+      appUrl,
+    },
+    opts.locale,
+  );
+  const renderedBill = hasRenderableEmailBody(rendered) ? rendered : null;
+  if (!renderedBill) {
+    console.warn("[EMAIL] Bill reminder template missing or empty; using inline fallback");
+  }
   const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
-  const baseContent: EmailContent = {
-    subject,
-    html: billReminderHtml(emailData),
-    text: billReminderText(emailData),
-  };
+  const baseContent: EmailContent = renderedBill
+    ? { subject: renderedBill.subject, html: renderedBill.html, text: renderedBill.text }
+    : { subject, html: billReminderHtml(emailData), text: billReminderText(emailData) };
   const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject: finalContent.subject,
     html: finalContent.html,
     text: finalContent.text,
-    templateSlug: "bill-reminder",
+    templateId: renderedBill?.templateId,
+    templateSlug: renderedBill?.slug || "bill-reminder",
     dedupeKey: opts.dedupeKey,
     headers: unsubscribe?.headers,
     metadata: {
       kind: "bill-reminder",
       daysUntilDue: opts.daysUntilDue,
+      templateUnavailable: !renderedBill,
       ...(opts.metadata || {}),
     },
   });
@@ -977,7 +1007,11 @@ export async function sendContractReminderEmail(opts: {
   }
   const appUrl = await resolveAppUrl();
   const locale = resolveEmailLocale(opts.locale);
-  const subject = `${opts.serviceName} contract ends in ${opts.daysRemaining} day${opts.daysRemaining === 1 ? "" : "s"}`;
+  // Pre-formatted, grammatical span shared by subject, DB template, and inline
+  // fallback ("1 day" / "3 days") — a static "{{daysRemaining}} days" would
+  // render "1 days".
+  const timeRemaining = `${opts.daysRemaining} day${opts.daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${opts.serviceName} contract ends in ${timeRemaining}`;
   const emailData = {
     userName: opts.userName || "there",
     serviceName: opts.serviceName,
@@ -985,24 +1019,43 @@ export async function sendContractReminderEmail(opts: {
     daysRemaining: opts.daysRemaining,
     serviceLink: opts.serviceLink,
   };
+  // Prefer the admin-editable DB template (so panel edits take effect); fall
+  // back to the inline builder when it is missing/inactive/empty. The seed
+  // contract-reminder template is kept at content parity with
+  // contractReminderHtml, so the reroute is invisible until an admin edits it.
+  const rendered = await renderTemplate(
+    "contract-reminder",
+    {
+      firstName: opts.userName || "there",
+      serviceName: opts.serviceName,
+      contractEndDate: opts.contractEndDate,
+      timeRemaining,
+      serviceLink: opts.serviceLink,
+    },
+    opts.locale,
+  );
+  const renderedContract = hasRenderableEmailBody(rendered) ? rendered : null;
+  if (!renderedContract) {
+    console.warn("[EMAIL] Contract reminder template missing or empty; using inline fallback");
+  }
   const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
-  const baseContent: EmailContent = {
-    subject,
-    html: contractReminderHtml(emailData),
-    text: contractReminderText(emailData),
-  };
+  const baseContent: EmailContent = renderedContract
+    ? { subject: renderedContract.subject, html: renderedContract.html, text: renderedContract.text }
+    : { subject, html: contractReminderHtml(emailData), text: contractReminderText(emailData) };
   const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject: finalContent.subject,
     html: finalContent.html,
     text: finalContent.text,
-    templateSlug: "contract-reminder",
+    templateId: renderedContract?.templateId,
+    templateSlug: renderedContract?.slug || "contract-reminder",
     dedupeKey: opts.dedupeKey,
     headers: unsubscribe?.headers,
     metadata: {
       kind: "contract-reminder",
       daysRemaining: opts.daysRemaining,
+      templateUnavailable: !renderedContract,
       ...(opts.metadata || {}),
     },
   });
@@ -1022,11 +1075,14 @@ export async function sendTrialExpiringEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "MARKETING"))) {
+  // Trial-expiry is a lifecycle/billing warning (imminent access loss +
+  // auto-charge), NOT a promotional offer. Gate it on the REMINDER opt-out so
+  // a user who unsubscribed from MARKETING offers still receives it.
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
     return false;
   }
   const appUrl = await resolveAppUrl();
-  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "marketing");
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "trial-expiring",
@@ -1370,34 +1426,59 @@ export async function sendBillOverdueEmail(opts: {
   const locale = resolveEmailLocale(opts.locale);
   const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
   const overdueText = opts.daysOverdue === 1 ? "1 day overdue" : `${opts.daysOverdue} days overdue`;
-  const baseContent = buildSimpleContent({
-    subject: `Overdue bill: ${opts.serviceName}`,
-    title: "Bill overdue",
-    preheader: `${opts.serviceName} appears to be ${overdueText}.`,
-    userName: opts.userName,
-    bodyLines: [
-      `Your ${opts.serviceName} bill appears to be ${overdueText}.`,
-      "If you already handled it, you can ignore this reminder or update the service details in LocateFlow.",
-    ],
-    details: [
-      ["Service", opts.serviceName],
-      ["Category", opts.category],
-      ["Amount", `$${opts.amount.toFixed(2)}`],
-      ["Due date", opts.dueDate],
-    ],
-    cta: {
-      href: opts.serviceId ? `${appUrl}/services/${opts.serviceId}` : `${appUrl}/services`,
-      label: "Review Service",
+  const reviewLink = opts.serviceId ? `${appUrl}/services/${opts.serviceId}` : `${appUrl}/services`;
+  // Prefer the admin-editable DB template (panel edits take effect); fall back
+  // to the inline builder when the template is missing/inactive/empty. The seed
+  // bill-overdue template is kept at content parity with the inline builder, so
+  // the reroute is invisible until an admin customizes it.
+  const rendered = await renderTemplate(
+    "bill-overdue",
+    {
+      firstName: opts.userName || "there",
+      serviceName: opts.serviceName,
+      category: opts.category,
+      amount: opts.amount.toFixed(2),
+      dueDate: opts.dueDate,
+      overdueText,
+      reviewLink,
     },
-    locale,
-  });
+    opts.locale,
+  );
+  const renderedOverdue = hasRenderableEmailBody(rendered) ? rendered : null;
+  if (!renderedOverdue) {
+    console.warn("[EMAIL] Bill overdue template missing or empty; using inline fallback");
+  }
+  const baseContent: EmailContent = renderedOverdue
+    ? { subject: renderedOverdue.subject, html: renderedOverdue.html, text: renderedOverdue.text }
+    : buildSimpleContent({
+        subject: `Overdue bill: ${opts.serviceName}`,
+        title: "Bill overdue",
+        preheader: `${opts.serviceName} appears to be ${overdueText}.`,
+        userName: opts.userName,
+        bodyLines: [
+          `Your ${opts.serviceName} bill appears to be ${overdueText}.`,
+          "If you already handled it, you can ignore this reminder or update the service details in LocateFlow.",
+        ],
+        details: [
+          ["Service", opts.serviceName],
+          ["Category", opts.category],
+          ["Amount", `$${opts.amount.toFixed(2)}`],
+          ["Due date", opts.dueDate],
+        ],
+        cta: {
+          href: reviewLink,
+          label: "Review Service",
+        },
+        locale,
+      });
   const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject: finalContent.subject,
     html: finalContent.html,
     text: finalContent.text,
-    templateSlug: "bill-overdue",
+    templateId: renderedOverdue?.templateId,
+    templateSlug: renderedOverdue?.slug || "bill-overdue",
     dedupeKey: opts.dedupeKey,
     headers: unsubscribe?.headers,
     metadata: {
@@ -1405,6 +1486,7 @@ export async function sendBillOverdueEmail(opts: {
       userId: opts.userId || null,
       serviceId: opts.serviceId || null,
       daysOverdue: opts.daysOverdue,
+      templateUnavailable: !renderedOverdue,
       ...(opts.metadata || {}),
     },
   });

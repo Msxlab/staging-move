@@ -415,7 +415,7 @@ export function PricingSection({
       </div>
 
       <p className="mx-auto mt-4 max-w-3xl text-center text-[11px] text-muted-foreground">
-        LocateFlow tracks your services and move workflow. It does not update external provider accounts or guarantee provider availability at an address.
+        LocateFlow tracks your services and move workflow. Provider account updates require a supported partner connection or guided handoff; availability varies and you stay in control.
       </p>
     </section>
   );

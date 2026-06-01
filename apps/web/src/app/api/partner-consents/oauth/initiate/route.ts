@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Connectors are not enabled." }, { status: 503 });
   }
   if (!(await userHasApiConnectorEntitlement(session.userId))) {
-    return NextResponse.json({ error: "Your plan doesn't include automatic connectors." }, { status: 403 });
+    return NextResponse.json({ error: "Your plan doesn't include partner API sync." }, { status: 403 });
   }
 
   const connectorKey = request.nextUrl.searchParams.get("connector") ?? "";

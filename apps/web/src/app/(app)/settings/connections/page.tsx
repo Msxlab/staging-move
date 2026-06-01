@@ -115,7 +115,7 @@ export default function ConnectionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Connections</h1>
           <p className="text-sm text-muted-foreground">
-            Connect a partner once and LocateFlow keeps your address up to date there when you move.
+            Connect supported partners for API sync, or use guided open-and-update steps when a partner needs you to submit.
           </p>
         </div>
       </div>

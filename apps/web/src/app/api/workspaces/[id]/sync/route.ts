@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!(await userHasApiConnectorEntitlement(workspace.ownerUserId))) {
-    return NextResponse.json({ error: "This workspace's plan doesn't include automatic connectors." }, { status: 403 });
+    return NextResponse.json({ error: "This workspace's plan doesn't include partner API sync." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -64,6 +64,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     const target = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: subjectUserId } });
     if (!target) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (target.status !== "ACTIVE") {
+      return NextResponse.json({ error: "This member is not active." }, { status: 403 });
+    }
     if (!resolveManagedSyncEnabled(target.role as WorkspaceRole, target.managedSyncEnabled)) {
       return NextResponse.json({ error: "This member hasn't allowed managed sync." }, { status: 403 });
     }
@@ -76,17 +79,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // The destination address must belong to the subject.
   const address = await prisma.address.findFirst({
-    where: { id: toAddressId, userId: subjectUserId },
+    where: { id: toAddressId, userId: subjectUserId, deletedAt: null },
     select: { id: true, workspaceId: true },
   });
   if (!address) return NextResponse.json({ error: "Address not found" }, { status: 404 });
-  // Defense-in-depth: once addresses carry a workspaceId, a workspace sync must
-  // only act on an address that belongs to THIS workspace. No-op while the
-  // column is null (dual-read not yet opened); enforcing once it's populated.
-  if (address.workspaceId && address.workspaceId !== id) {
+  if (address.workspaceId !== id) {
     return NextResponse.json({ error: "Address is not in this workspace." }, { status: 403 });
   }
 
-  const result = await enqueueAddressChange({ userId: subjectUserId, toAddressId, fromAddressId });
+  if (fromAddressId) {
+    const fromAddress = await prisma.address.findFirst({
+      where: { id: fromAddressId, userId: subjectUserId, deletedAt: null },
+      select: { id: true, workspaceId: true },
+    });
+    if (!fromAddress) return NextResponse.json({ error: "Origin address not found" }, { status: 404 });
+    if (fromAddress.workspaceId !== id) {
+      return NextResponse.json({ error: "Origin address is not in this workspace." }, { status: 403 });
+    }
+  }
+
+  const result = await enqueueAddressChange({ userId: subjectUserId, toAddressId, fromAddressId, workspaceId: id });
   return NextResponse.json(result);
 }

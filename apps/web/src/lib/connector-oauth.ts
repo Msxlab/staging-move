@@ -20,11 +20,13 @@ import {
   type OAuthTokens,
 } from "@locateflow/connectors";
 import { getEffectiveEntitlement, planFeatures } from "@locateflow/shared";
+import { connectorRegistry } from "@/lib/connector-registry";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 const FEATURE_FLAG_KEY = "FEATURE_API_CONNECTORS";
+const OAUTH_TIMEOUT_MS = 10_000;
 
 /** Master gate. Default OFF — the entire connector OAuth surface stays inert. */
 export async function isApiConnectorsEnabled(): Promise<boolean> {
@@ -63,6 +65,44 @@ function envKey(connectorKey: string, suffix: string): string {
   return `CONNECTOR_${connectorKey.toUpperCase().replace(/-/g, "_")}_OAUTH_${suffix}`;
 }
 
+function connectorAllowedHosts(connectorKey: string): readonly string[] | null {
+  return connectorRegistry.get(connectorKey)?.manifest.allowedHosts ?? null;
+}
+
+function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === "https:" && allowedHosts.includes(url.host.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+async function fetchOAuthForm(
+  tokenUrl: string,
+  body: URLSearchParams,
+): Promise<Response | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OAUTH_TIMEOUT_MS);
+  try {
+    const res = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      redirect: "manual",
+      signal: controller.signal,
+    });
+    // Token endpoints should not redirect. Treat a redirect as a failed token
+    // exchange so secrets in the form body are never resent to another host.
+    if (res.status >= 300 && res.status < 400) return null;
+    return res;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Per-connector OAuth client config from runtime config / env. Returns null
  * when not fully configured so callers can answer 503 (inert by default).
@@ -71,6 +111,8 @@ export async function getConnectorOAuthConfig(
   connectorKey: string,
   redirectUri: string,
 ): Promise<OAuthProviderConfig | null> {
+  const allowedHosts = connectorAllowedHosts(connectorKey);
+  if (!allowedHosts) return null;
   const [clientId, clientSecret, authorizeUrl, tokenUrl, scopesRaw] = await Promise.all([
     getRuntimeConfigValue(envKey(connectorKey, "CLIENT_ID")),
     getRuntimeConfigValue(envKey(connectorKey, "CLIENT_SECRET")),
@@ -79,6 +121,8 @@ export async function getConnectorOAuthConfig(
     getRuntimeConfigValue(envKey(connectorKey, "SCOPES")),
   ]);
   if (!clientId || !clientSecret || !authorizeUrl || !tokenUrl) return null;
+  if (!isAllowedConnectorUrl(authorizeUrl, allowedHosts)) return null;
+  if (!isAllowedConnectorUrl(tokenUrl, allowedHosts)) return null;
   const scopes = (scopesRaw ?? "").split(/[\s,]+/).filter(Boolean);
   return { clientId, clientSecret, authorizeUrl, tokenUrl, redirectUri, scopes };
 }
@@ -96,11 +140,8 @@ export async function exchangeConnectorCode(
   codeVerifier: string,
 ): Promise<OAuthTokens | null> {
   const body = new URLSearchParams(buildTokenExchangeBody({ config, code, codeVerifier }));
-  const res = await fetch(config.tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const res = await fetchOAuthForm(config.tokenUrl, body);
+  if (!res) return null;
   if (!res.ok) return null;
   try {
     return parseTokenResponse(await res.json());
@@ -115,11 +156,8 @@ export async function refreshConnectorToken(
   refreshToken: string,
 ): Promise<OAuthTokens | null> {
   const body = new URLSearchParams(buildRefreshBody({ config, refreshToken }));
-  const res = await fetch(config.tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const res = await fetchOAuthForm(config.tokenUrl, body);
+  if (!res) return null;
   if (!res.ok) return null;
   try {
     return parseTokenResponse(await res.json());
@@ -178,10 +216,12 @@ export async function upsertGrantedConsent(input: {
   const scopesJson = JSON.stringify(tokens.scope ? tokens.scope.split(/\s+/).filter(Boolean) : []);
   const consentSnapshotJson = JSON.stringify(consentSnapshot);
 
-  const existing = await prisma.partnerConsent.findFirst({
+  const existingGrants = await prisma.partnerConsent.findMany({
     where: { userId, connectorKey, status: "GRANTED" },
     select: { id: true },
+    orderBy: { grantedAt: "desc" },
   });
+  const existing = existingGrants[0] ?? null;
   if (existing) {
     await prisma.partnerConsent.update({
       where: { id: existing.id },
@@ -197,6 +237,18 @@ export async function upsertGrantedConsent(input: {
         revocationReason: null,
       },
     });
+    if (existingGrants.length > 1) {
+      await prisma.partnerConsent.updateMany({
+        where: { userId, connectorKey, status: "GRANTED", id: { not: existing.id } },
+        data: {
+          status: "REVOKED",
+          revokedAt: now,
+          revocationReason: "SUPERSEDED",
+          tokenEncrypted: null,
+          refreshTokenEncrypted: null,
+        },
+      });
+    }
     return existing.id;
   }
 
@@ -213,6 +265,16 @@ export async function upsertGrantedConsent(input: {
       consentSnapshotJson,
     },
     select: { id: true },
+  });
+  await prisma.partnerConsent.updateMany({
+    where: { userId, connectorKey, status: "GRANTED", id: { not: created.id } },
+    data: {
+      status: "REVOKED",
+      revokedAt: now,
+      revocationReason: "SUPERSEDED",
+      tokenEncrypted: null,
+      refreshTokenEncrypted: null,
+    },
   });
   return created.id;
 }

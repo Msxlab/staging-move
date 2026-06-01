@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@locateflow/connectors": "workspace:*",
     "@locateflow/db": "workspace:*",
     "@locateflow/shared": "workspace:*",
     "@prisma/client": "^5.22.0",

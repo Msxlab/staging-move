@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { connectorRegistry, toCanonicalAddress } from "./connector-runtime";
+import { connectorRegistry } from "./connector-registry";
+import { toCanonicalAddress } from "./connector-runtime";
 
 describe("toCanonicalAddress", () => {
   it("maps DB address fields and normalizes USA → US", () => {

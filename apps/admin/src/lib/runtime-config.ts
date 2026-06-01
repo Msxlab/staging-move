@@ -173,7 +173,17 @@ export async function listRuntimeConfigCatalog(): Promise<RuntimeConfigCatalogIt
     entries.map((entry: RuntimeConfigEntryRecord) => [entry.key, entry]),
   );
 
-  return RUNTIME_CONFIG_DEFINITIONS
+  const definitionsByKey = new Map(
+    RUNTIME_CONFIG_DEFINITIONS.map((definition) => [definition.key, definition]),
+  );
+  for (const entry of entries) {
+    const definition = getRuntimeConfigDefinition(entry.key);
+    if (definition && !definitionsByKey.has(definition.key)) {
+      definitionsByKey.set(definition.key, definition);
+    }
+  }
+
+  return [...definitionsByKey.values()]
     .map((definition) => buildCatalogItem(definition, entryMap.get(definition.key)))
     .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
 }
@@ -315,6 +325,7 @@ function assertRuntimeConfigValueShape(key: string, value: string): void {
   const BOOLEAN_KEYS = new Set([
     "STRIPE_RUNTIME_CONFIG_OVERRIDE",
     "FEATURE_FLAGS_ENABLED",
+    "FEATURE_API_CONNECTORS",
     "ALLOW_PRODUCTION_REPLACE_RESTORE",
   ]);
   if (BOOLEAN_KEYS.has(key)) {

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
@@ -42,6 +43,8 @@ const BROADCAST_MAX_USERS = 100_000;
 // past timestamps must surface as a validation error so an operator
 // who typed "yesterday" doesn't silently get an immediate broadcast.
 const SEND_AT_TOLERANCE_MS = 5_000;
+const BROADCAST_DEDUPE_WINDOW_MS = 30_000;
+const BROADCAST_DEDUPE_SOURCE = "admin-notification";
 
 const notificationCreateSchema = z
   .object({
@@ -59,6 +62,44 @@ const notificationCreateSchema = z
       .optional(),
   })
   .strict();
+
+function isUniqueConstraintError(error: unknown) {
+  return Boolean(error && typeof error === "object" && (error as any).code === "P2002");
+}
+
+function broadcastDedupeClaimId(input: {
+  type: string;
+  title: string;
+  body: string;
+  channel: string;
+}) {
+  const bucket = Math.floor(Date.now() / BROADCAST_DEDUPE_WINDOW_MS);
+  const hash = createHash("sha256")
+    .update(JSON.stringify([input.type, input.title, input.body, input.channel]))
+    .digest("hex")
+    .slice(0, 40);
+  return `admin-broadcast:${bucket}:${hash}`;
+}
+
+async function claimBroadcastDedupe(input: {
+  type: string;
+  title: string;
+  body: string;
+  channel: string;
+}) {
+  try {
+    await prisma.processedWebhookEvent.create({
+      data: {
+        id: broadcastDedupeClaimId(input),
+        source: BROADCAST_DEDUPE_SOURCE,
+      },
+    });
+    return true;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return false;
+    throw error;
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -191,11 +232,48 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Stream user IDs in batches and write one createMany per batch
-      // with skipDuplicates so a retried request doesn't double-send.
-      // The in-app feed row is always written (channel=IN_APP) so the
-      // user sees the message regardless of the chosen delivery channel.
-      // EMAIL and PUSH are extra fan-out on top of the feed row.
+      // Idempotency guard. The createMany below passes skipDuplicates, but
+      // Notification has NO unique index so that flag is a no-op — a retried or
+      // double-submitted broadcast would otherwise write the whole feed twice.
+      // Reject an IDENTICAL broadcast (same type/title/body/channel) sent in the
+      // last 30s; the NotificationQueue row written at the end is the ledger we
+      // check. A short window won't block an intentional re-send minutes later.
+      // (Pairs with the client's busy-disabled Send button for the truly
+      // simultaneous double-click.)
+      const recentDuplicateBroadcast = await prisma.notificationQueue.findFirst({
+        where: {
+          broadcast: true,
+          type: resolvedType,
+          title,
+          body: msgBody,
+          channel,
+          sentAt: { gte: new Date(Date.now() - 30_000) },
+        },
+        select: { id: true },
+      });
+      if (recentDuplicateBroadcast) {
+        return NextResponse.json(
+          { error: "An identical broadcast was just sent — wait a moment before resending.", code: "DUPLICATE_BROADCAST" },
+          { status: 409 },
+        );
+      }
+      const claimed = await claimBroadcastDedupe({
+        type: resolvedType,
+        title,
+        body: msgBody,
+        channel,
+      });
+      if (!claimed) {
+        return NextResponse.json(
+          { error: "An identical broadcast is already being sent.", code: "DUPLICATE_BROADCAST" },
+          { status: 409 },
+        );
+      }
+
+      // Stream user IDs in batches and write one createMany per batch. The
+      // in-app feed row is always written (channel=IN_APP) so the user sees the
+      // message regardless of the chosen delivery channel; EMAIL and PUSH are
+      // extra fan-out on top of the feed row.
       let cursor: string | undefined;
       let writtenCount = 0;
       let emailDelivered = 0;

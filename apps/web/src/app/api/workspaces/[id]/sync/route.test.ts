@@ -59,7 +59,7 @@ describe("POST /api/workspaces/[id]/sync", () => {
     connectorsMock.mockResolvedValue(true);
     entitlementMock.mockResolvedValue(true);
     workspaceMock.mockResolvedValue({ ownerUserId: "owner-1" });
-    addressMock.mockResolvedValue({ id: "a1" });
+    addressMock.mockResolvedValue({ id: "a1", workspaceId: "ws-1" });
     enqueueMock.mockResolvedValue({ enqueued: 1 });
   });
 
@@ -100,7 +100,7 @@ describe("POST /api/workspaces/[id]/sync", () => {
     membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
     const res = await call({ toAddressId: "a1" });
     expect(res.status).toBe(200);
-    expect(enqueueMock).toHaveBeenCalledWith({ userId: CALLER, toAddressId: "a1", fromAddressId: null });
+    expect(enqueueMock).toHaveBeenCalledWith({ userId: CALLER, toAddressId: "a1", fromAddressId: null, workspaceId: "ws-1" });
   });
 
   it("self: a CHILD cannot initiate a sync", async () => {
@@ -117,34 +117,34 @@ describe("POST /api/workspaces/[id]/sync", () => {
   });
 
   it("on-behalf: a non-manager (MEMBER) is forbidden", async () => {
-    membership({ caller: { role: "MEMBER", status: "ACTIVE" }, target: { role: "CHILD", managedSyncEnabled: null } });
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" }, target: { role: "CHILD", status: "ACTIVE", managedSyncEnabled: null } });
     const res = await call({ toAddressId: "a1", onBehalfOfUserId: TARGET });
     expect(res.status).toBe(403);
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 
   it("on-behalf: a target who hasn't consented is forbidden", async () => {
-    membership({ caller: { role: "OWNER", status: "ACTIVE" }, target: { role: "MEMBER", managedSyncEnabled: null } });
+    membership({ caller: { role: "OWNER", status: "ACTIVE" }, target: { role: "MEMBER", status: "ACTIVE", managedSyncEnabled: null } });
     const res = await call({ toAddressId: "a1", onBehalfOfUserId: TARGET });
     expect(res.status).toBe(403);
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 
   it("on-behalf: a consenting CHILD target enqueues for the target", async () => {
-    membership({ caller: { role: "OWNER", status: "ACTIVE" }, target: { role: "CHILD", managedSyncEnabled: null } });
+    membership({ caller: { role: "OWNER", status: "ACTIVE" }, target: { role: "CHILD", status: "ACTIVE", managedSyncEnabled: null } });
     addressMock.mockImplementation(({ where }: any) =>
-      Promise.resolve(where.userId === TARGET ? { id: "a1" } : null),
+      Promise.resolve(where.userId === TARGET ? { id: "a1", workspaceId: "ws-1" } : null),
     );
     const res = await call({ toAddressId: "a1", onBehalfOfUserId: TARGET });
     expect(res.status).toBe(200);
-    expect(enqueueMock).toHaveBeenCalledWith({ userId: TARGET, toAddressId: "a1", fromAddressId: null });
+    expect(enqueueMock).toHaveBeenCalledWith({ userId: TARGET, toAddressId: "a1", fromAddressId: null, workspaceId: "ws-1" });
   });
 
   it("on-behalf: an opted-in MEMBER target is allowed", async () => {
-    membership({ caller: { role: "ADMIN", status: "ACTIVE" }, target: { role: "MEMBER", managedSyncEnabled: true } });
+    membership({ caller: { role: "ADMIN", status: "ACTIVE" }, target: { role: "MEMBER", status: "ACTIVE", managedSyncEnabled: true } });
     const res = await call({ toAddressId: "a1", onBehalfOfUserId: TARGET });
     expect(res.status).toBe(200);
-    expect(enqueueMock).toHaveBeenCalledWith({ userId: TARGET, toAddressId: "a1", fromAddressId: null });
+    expect(enqueueMock).toHaveBeenCalledWith({ userId: TARGET, toAddressId: "a1", fromAddressId: null, workspaceId: "ws-1" });
   });
 
   it("on-behalf: a missing target member 404s", async () => {
@@ -158,6 +158,39 @@ describe("POST /api/workspaces/[id]/sync", () => {
     addressMock.mockResolvedValue(null);
     const res = await call({ toAddressId: "a1" });
     expect(res.status).toBe(404);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("on-behalf: a non-active target member is forbidden even if managed sync is enabled", async () => {
+    membership({ caller: { role: "OWNER", status: "ACTIVE" }, target: { role: "MEMBER", status: "SUSPENDED", managedSyncEnabled: true } });
+    const res = await call({ toAddressId: "a1", onBehalfOfUserId: TARGET });
+    expect(res.status).toBe(403);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a destination address outside the workspace", async () => {
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
+    addressMock.mockResolvedValue({ id: "a1", workspaceId: "ws-other" });
+    const res = await call({ toAddressId: "a1" });
+    expect(res.status).toBe(403);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a destination address that has not been workspace-bound", async () => {
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
+    addressMock.mockResolvedValue({ id: "a1", workspaceId: null });
+    const res = await call({ toAddressId: "a1" });
+    expect(res.status).toBe(403);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an origin address outside the workspace", async () => {
+    membership({ caller: { role: "MEMBER", status: "ACTIVE" } });
+    addressMock
+      .mockResolvedValueOnce({ id: "to", workspaceId: "ws-1" })
+      .mockResolvedValueOnce({ id: "from", workspaceId: "ws-other" });
+    const res = await call({ toAddressId: "to", fromAddressId: "from" });
+    expect(res.status).toBe(403);
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 });

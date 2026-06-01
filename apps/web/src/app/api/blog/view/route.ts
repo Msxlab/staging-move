@@ -99,6 +99,21 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      // A row already exists for (postId, ipHash, viewDay). If a BOT claimed the
+      // daily-unique slot first and this request is a human, upgrade the row to
+      // human and count it once — otherwise a bot from a shared/CGNAT IP would
+      // permanently suppress the human view for everyone behind that IP. Human-
+      // then-human stays deduped; we never downgrade a human row to bot.
+      if (!isBot) {
+        const existing = await prisma.blogView.findFirst({
+          where: { postId: post.id, ipHash, viewDay },
+          select: { id: true, isBot: true },
+        });
+        if (existing?.isBot) {
+          await prisma.blogView.update({ where: { id: existing.id }, data: { isBot: false } });
+          await prisma.blogPost.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } });
+        }
+      }
       return new NextResponse(null, { status: 204 });
     }
     throw e;

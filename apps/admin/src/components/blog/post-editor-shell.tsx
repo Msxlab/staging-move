@@ -404,7 +404,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                 <>
                   {" "}
                   / Public:{" "}
-                  <Link href={publicUrl} target="_blank" className="underline">
+                  <Link href={publicUrl} target="_blank" rel="noopener noreferrer" className="underline">
                     {publicUrl}
                   </Link>
                 </>

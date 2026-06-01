@@ -43,6 +43,27 @@ interface LogEntry {
 
 const CATEGORIES = ["SYSTEM", "MARKETING", "TRANSACTIONAL", "NOTIFICATION"];
 
+// Template `variables` is stored as JSON (an array of names) and the server
+// schema only accepts an array/object (or omitted). The form edits a
+// comma-separated string, so convert in both directions — this maps the stored
+// value back into the text input for editing.
+function variablesToInput(v: unknown): string {
+  if (!v) return "";
+  if (Array.isArray(v)) return v.join(", ");
+  if (typeof v === "object") return Object.keys(v as Record<string, unknown>).join(", ");
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return parsed.join(", ");
+      if (parsed && typeof parsed === "object") return Object.keys(parsed).join(", ");
+    } catch {
+      /* not JSON — treat as a plain comma string */
+    }
+    return v;
+  }
+  return "";
+}
+
 export default function EmailTemplatesClient() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -80,7 +101,14 @@ export default function EmailTemplatesClient() {
     if (saving) return; // guard against double-submit (would create duplicate templates)
     if (!form.name || !form.subject || !form.body) { toast.error("Name, subject, and body required"); return; }
     const method = editing ? "PUT" : "POST";
-    const payload = editing ? { id: editing.id, ...form } : form;
+    // Convert the comma-separated `variables` field into the array the server
+    // schema expects (array | object | omitted). Sending the raw string 400s
+    // ("Invalid template payload") — which previously broke EVERY create/edit.
+    const variablesArray = form.variables.trim()
+      ? form.variables.split(",").map((s) => s.trim()).filter(Boolean)
+      : undefined;
+    const base = { ...form, variables: variablesArray };
+    const payload = editing ? { id: editing.id, ...base } : base;
     if (!editing && !form.slug) { toast.error("Slug required"); return; }
     setSaving(true);
     try {
@@ -100,7 +128,7 @@ export default function EmailTemplatesClient() {
     if (res.ok) { toast.success("Deleted"); setPendingDelete(null); load(); } else toast.error("Failed");
   };
 
-  const startEdit = (t: Template) => { setEditing(t); setForm({ slug: t.slug, name: t.name, subject: t.subject, body: t.body, category: t.category, variables: t.variables || "", isActive: t.isActive }); setShowForm(true); };
+  const startEdit = (t: Template) => { setEditing(t); setForm({ slug: t.slug, name: t.name, subject: t.subject, body: t.body, category: t.category, variables: variablesToInput(t.variables), isActive: t.isActive }); setShowForm(true); };
   const reset = () => { setEditing(null); setShowForm(false); setForm({ slug: "", name: "", subject: "", body: "", category: "SYSTEM", variables: "", isActive: true }); };
 
   const statCards = [

@@ -19,18 +19,62 @@ function clampPercent(value: unknown): number | undefined {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-/** GET — list the connector control-plane rows. */
+// Most-recent errored dispatches scanned for the per-connector "last failure"
+// readout. Bounded so the query stays cheap — an operator wants the latest
+// error per connector, not a full history (that's what dispatch logs are for).
+const RECENT_FAILURE_SCAN = 200;
+
+/** GET — list the connector control-plane rows + per-connector ops health. */
 export async function GET() {
   try {
     await requirePermission("connectors", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const [connectors, dispatchCounts] = await Promise.all([
+    const [connectors, dispatchCounts, dispatchByConnectorRows, consentRows, recentFailures] = await Promise.all([
       prisma.connectorConfig.findMany({ orderBy: { connectorKey: "asc" } }),
       prisma.connectorDispatch.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.connectorDispatch.groupBy({ by: ["connectorKey", "status"], _count: { _all: true } }),
+      prisma.partnerConsent.groupBy({ by: ["connectorKey", "status"], _count: { _all: true } }),
+      prisma.connectorDispatch.findMany({
+        where: { lastErrorCode: { not: null } },
+        select: { connectorKey: true, lastErrorCode: true, status: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: RECENT_FAILURE_SCAN,
+      }),
     ]);
-    // Dispatch (outbox) health for ops: how many syncs are queued / confirmed /
-    // stuck needing the user — so a failing connector is visible, not silent.
+
+    // Global dispatch (outbox) health for the summary strip — kept for
+    // backward-compat with the existing client.
     const dispatchHealth = Object.fromEntries(dispatchCounts.map((c) => [c.status, c._count._all]));
-    return NextResponse.json({ connectors, dispatchHealth });
+
+    // Per-connector dispatch breakdown: { [connectorKey]: { [status]: count } }
+    // so a single failing connector is visible instead of being averaged into
+    // the global strip.
+    const dispatchByConnector: Record<string, Record<string, number>> = {};
+    for (const row of dispatchByConnectorRows) {
+      (dispatchByConnector[row.connectorKey] ??= {})[row.status] = row._count._all;
+    }
+
+    // Per-connector consent counts by status (GRANTED/REVOKED/EXPIRED) — shows
+    // real adoption + how many grants a kill-switch would revoke.
+    const consentsByConnector: Record<string, Record<string, number>> = {};
+    for (const row of consentRows) {
+      (consentsByConnector[row.connectorKey] ??= {})[row.status] = row._count._all;
+    }
+
+    // Latest errored dispatch per connector (first wins — rows are newest-first).
+    const lastFailureByConnector: Record<string, { errorCode: string; status: string; at: Date }> = {};
+    for (const f of recentFailures) {
+      if (!lastFailureByConnector[f.connectorKey] && f.lastErrorCode) {
+        lastFailureByConnector[f.connectorKey] = { errorCode: f.lastErrorCode, status: f.status, at: f.updatedAt };
+      }
+    }
+
+    return NextResponse.json({
+      connectors,
+      dispatchHealth,
+      dispatchByConnector,
+      consentsByConnector,
+      lastFailureByConnector,
+    });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

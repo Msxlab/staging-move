@@ -162,7 +162,20 @@ export interface BlogCategorySummary {
  */
 export async function getPublicCategoryBySlug(
   slug: string,
+  locale?: string | null,
 ): Promise<BlogCategorySummary & { id: string } | null> {
+  // Categories are unique per (slug, locale), so the same slug can exist in
+  // more than one locale. Prefer the row matching the request locale — the
+  // category page lists posts by this category.id, so resolving the
+  // wrong-locale row surfaces an empty set (and a 404) even when the requested
+  // locale has posts under that slug. Fall back to any-locale row.
+  if (locale) {
+    const localized = await prisma.blogCategory.findFirst({
+      where: { slug, locale },
+      select: { id: true, slug: true, name: true, description: true },
+    });
+    if (localized) return localized;
+  }
   const category = await prisma.blogCategory.findFirst({
     where: { slug },
     select: { id: true, slug: true, name: true, description: true },

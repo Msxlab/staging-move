@@ -89,31 +89,21 @@ export async function GET(req: Request) {
 
       const userPreferences = preferencesByUser.get(service.userId) || [];
       const notificationSettings = buildWebNotificationSettings(userPreferences);
-      if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.billOverdue) continue;
+      // Channels independent: `billOverdue` is the EMAIL toggle; email-off must
+      // not also kill the in-app feed record + push. Skip only when both are off.
+      const emailAllowed =
+        notificationSettings.config.emailEnabled && notificationSettings.prefs.billOverdue;
+      const pushAllowed = isPushTypeEnabled(userPreferences, "BILL_OVERDUE");
+      if (!emailAllowed && !pushAllowed) continue;
 
       const dueDateText = formatDate(dueDate, service.user.preferredLocale);
       const userName = [service.user.firstName, service.user.lastName].filter(Boolean).join(" ") || "there";
       const dedupeKey = `cron:bill-overdue:${service.id}:${dueDate.toISOString().slice(0, 10)}`;
+      const body = `${service.providerName} was due on ${dueDateText}.`;
 
       try {
-        const success = await sendBillOverdueEmail({
-          userEmail: service.user.email,
-          userName,
-          serviceName: service.providerName,
-          category: (service.category || "Service").replace(/_/g, " "),
-          amount: service.monthlyCost || 0,
-          dueDate: dueDateText,
-          daysOverdue,
-          serviceId: service.id,
-          userId: service.userId,
-          locale: service.user.preferredLocale,
-          dedupeKey,
-          metadata: { userId: service.userId, serviceId: service.id },
-        });
-
-        if (success) {
-          sentCount++;
-          const body = `${service.providerName} was due on ${dueDateText}.`;
+        // In-app feed entry — durable record, written when ≥1 channel is on.
+        try {
           const mirrored = await createInAppNotification({
             userId: service.userId,
             type: "BILL_OVERDUE",
@@ -122,27 +112,41 @@ export async function GET(req: Request) {
             href: `/services/${service.id}`,
             icon: "Receipt",
             dedupeKey,
-            metadata: {
-              kind: "bill-overdue",
-              serviceId: service.id,
-              daysOverdue,
-              channelMirror: "EMAIL",
-            },
+            metadata: { kind: "bill-overdue", serviceId: service.id, daysOverdue },
           });
-          if (mirrored) {
-            mirroredCount++;
-            if (isPushTypeEnabled(userPreferences, ["BILL_OVERDUE", "BILL_REMINDER"])) {
-              const pushed = await sendNotification({
-                userId: service.userId,
-                type: "PUSH",
-                subject: `Overdue bill: ${service.providerName}`,
-                body,
-                dedupeKey: `${dedupeKey}:push`,
-                metadata: { kind: "bill-overdue", serviceId: service.id, daysOverdue },
-              });
-              if (pushed) pushSentCount++;
-            }
-          }
+          if (mirrored) mirroredCount++;
+        } catch (mirrorError) {
+          errors.push(`In-app mirror failed for service ${service.id}: ${mirrorError}`);
+        }
+
+        if (emailAllowed) {
+          const success = await sendBillOverdueEmail({
+            userEmail: service.user.email,
+            userName,
+            serviceName: service.providerName,
+            category: (service.category || "Service").replace(/_/g, " "),
+            amount: service.monthlyCost || 0,
+            dueDate: dueDateText,
+            daysOverdue,
+            serviceId: service.id,
+            userId: service.userId,
+            locale: service.user.preferredLocale,
+            dedupeKey,
+            metadata: { userId: service.userId, serviceId: service.id },
+          });
+          if (success) sentCount++;
+        }
+
+        if (pushAllowed) {
+          const pushed = await sendNotification({
+            userId: service.userId,
+            type: "PUSH",
+            subject: `Overdue bill: ${service.providerName}`,
+            body,
+            dedupeKey: `${dedupeKey}:push`,
+            metadata: { kind: "bill-overdue", serviceId: service.id, daysOverdue },
+          });
+          if (pushed) pushSentCount++;
         }
       } catch (err) {
         errors.push(`Failed for service ${service.id}: ${err instanceof Error ? err.message : String(err)}`);
