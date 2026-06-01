@@ -5,7 +5,6 @@ const SECRET = "whsec_test_connector";
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
-  connectorRegistry: { get: vi.fn() },
   prisma: { connectorDispatch: { findUnique: vi.fn(), update: vi.fn() } },
   encrypt: vi.fn((s: string) => `enc:${s}`),
   hasProcessedWebhookEvent: vi.fn(),
@@ -19,14 +18,16 @@ vi.mock("@/lib/webhook-idempotency", () => ({
   hasProcessedWebhookEvent: mocks.hasProcessedWebhookEvent,
   markWebhookEventProcessed: mocks.markWebhookEventProcessed,
 }));
-vi.mock("@/lib/connector-registry", () => ({ connectorRegistry: mocks.connectorRegistry }));
-
-// A stand-in async-confirm connector: reads our echoed ref + outcome out of the
+// Mock the connector package so uspsConnector stands in as an async-confirm
+// connector: its parseWebhook reads our echoed ref + outcome out of the
 // (already signature-verified) payload — exactly what a real parseWebhook does.
-const asyncConnector = {
-  parseWebhook: (payload: any) =>
-    payload?.ref ? { ref: payload.ref, result: { outcome: payload.outcome, errorCode: payload.errorCode, confirmationNumber: payload.conf } } : null,
-};
+vi.mock("@locateflow/connectors", () => ({
+  uspsConnector: {
+    manifest: { allowedHosts: ["apis.usps.com"] },
+    parseWebhook: (payload: any) =>
+      payload?.ref ? { ref: payload.ref, result: { outcome: payload.outcome, errorCode: payload.errorCode, confirmationNumber: payload.conf } } : null,
+  },
+}));
 
 function signedRequest(key: string, bodyObj: unknown, opts: { secret?: string; sig?: string } = {}) {
   const body = JSON.stringify(bodyObj);
@@ -48,7 +49,6 @@ describe("inbound connector webhook receiver", () => {
       if (k === "CONNECTOR_USPS_WEBHOOK_SECRET") return Promise.resolve(SECRET);
       return Promise.resolve(null);
     });
-    mocks.connectorRegistry.get.mockReturnValue(asyncConnector);
     mocks.hasProcessedWebhookEvent.mockResolvedValue(false);
     mocks.markWebhookEventProcessed.mockResolvedValue("created");
     mocks.prisma.connectorDispatch.findUnique.mockResolvedValue({
