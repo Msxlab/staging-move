@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import {
   Check,
   Download,
@@ -286,12 +287,11 @@ export default function WaitlistPage() {
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
         ) : signups.length === 0 ? (
-          <div className="p-12 text-center">
-            <Mail className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              No signups match these filters yet.
-            </p>
-          </div>
+          <EmptyState
+            icon={Mail}
+            title="No signups match these filters yet."
+            description="Try adjusting or clearing the filters above."
+          />
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">

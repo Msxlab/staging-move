@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, Rocket, Shield
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 const QUEUE_LABELS: Record<string, string> = {
   userCreatedProviderReview: "User-Submitted Provider Requests",
@@ -286,7 +287,7 @@ export default function ProviderGovernancePage() {
                   );
                 })}
                 {items.length === 0 && (
-                  <div className="p-8 text-center text-sm text-muted-foreground">No open items in this queue.</div>
+                  <EmptyState icon={CheckCircle2} title="No open items" description="This queue is clear — nothing needs review right now." compact />
                 )}
               </div>
             </section>

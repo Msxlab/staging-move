@@ -23,6 +23,7 @@ import {
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 type StatusFilter = "ALL" | "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
 
@@ -267,19 +268,22 @@ export default async function BlogListPage({
           </p>
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card/40 p-12 text-center">
-          <p className="text-base font-medium text-foreground">
-            {query
-              ? "No posts match your search."
-              : activeStatus === "ALL"
-                ? "No posts yet."
-                : `No ${activeStatus.toLowerCase()} posts.`}
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {query
-              ? "Try a different keyword or clear filters."
-              : "Click New post to publish your first article."}
-          </p>
+        <div className="rounded-lg border border-dashed border-border bg-card/40">
+          <EmptyState
+            icon={PenSquare}
+            title={
+              query
+                ? "No posts match your search."
+                : activeStatus === "ALL"
+                  ? "No posts yet."
+                  : `No ${activeStatus.toLowerCase()} posts.`
+            }
+            description={
+              query
+                ? "Try a different keyword or clear filters."
+                : "Click New post to publish your first article."
+            }
+          />
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card">

@@ -5,6 +5,7 @@ import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface Template {
   id: string;
@@ -164,7 +165,7 @@ export default function EmailTemplatesClient() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Failed</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
             <tbody>
-              {templates.length === 0 ? (<tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No templates yet</td></tr>) : templates.map((t) => (
+              {templates.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." /></td></tr>) : templates.map((t) => (
                 <tr key={t.id} className="border-b border-border hover:bg-accent/30">
                   <td className="px-4 py-3 font-medium text-foreground">{t.name}</td>
                   <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{t.slug}</td>
@@ -189,7 +190,7 @@ export default function EmailTemplatesClient() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Provider ID</th><th className="px-4 py-3 font-medium">Details</th></tr></thead>
             <tbody>
-              {logs.length === 0 ? (<tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No emails sent yet</td></tr>) : logs.map((l) => (
+              {logs.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." /></td></tr>) : logs.map((l) => (
                 <Fragment key={l.id}>
                   <tr className="border-b border-border hover:bg-accent/30">
                     <td className="px-4 py-3 text-foreground">{l.to}</td>

@@ -5,6 +5,7 @@ import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface FeatureFlag { id: string; name: string; description: string | null; enabled: boolean; targetType: string; targetValue: string | null; createdAt: string }
 const TARGET_TYPES = ["ALL", "PERCENTAGE", "USER_LIST", "PLAN"];
@@ -152,7 +153,7 @@ export default function FeatureFlagsClient() {
       )}
 
       <div className="space-y-3">
-        {loading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : flags.length === 0 ? <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No feature flags yet</div> : flags.map(f => (
+        {loading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : flags.length === 0 ? <div className="rounded-xl border border-border bg-card"><EmptyState icon={Flag} title="No feature flags yet" description="Create your first feature flag to control rollouts." /></div> : flags.map(f => (
           <div key={f.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={() => toggle(f)} aria-label={f.enabled ? "Disable flag" : "Enable flag"} aria-pressed={f.enabled} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>

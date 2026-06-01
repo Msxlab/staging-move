@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface Sub {
   id: string;
@@ -285,7 +286,7 @@ export default function SubscriptionsClient() {
             {loading ? (
               <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
             ) : subs.length === 0 ? (
-              <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">No subscriptions found</td></tr>
+              <tr><td colSpan={9} className="px-4"><EmptyState icon={CreditCard} title="No subscriptions found" description="No subscriptions match your current search or filters." /></td></tr>
             ) : subs.map((sub) => {
               const trialDays = daysUntil(sub.trialEndsAt);
               const opsStatus = getOpsStatus(sub);

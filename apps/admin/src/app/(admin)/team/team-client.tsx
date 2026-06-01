@@ -22,6 +22,7 @@ import {
 import { ADMIN_RESOURCES } from "@/lib/admin-permissions";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface PermissionRow {
   resource: string;
@@ -560,8 +561,12 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         {loading ? (
           <div className="py-12 text-center text-muted-foreground">Loading...</div>
         ) : filteredAdmins.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">
-            No admins match the current filters.
+          <div className="rounded-xl border border-border bg-card">
+            <EmptyState
+              icon={Users}
+              title="No admins match the current filters."
+              description="Try adjusting the search, role, or status filters."
+            />
           </div>
         ) : (
           filteredAdmins.map((admin) => {

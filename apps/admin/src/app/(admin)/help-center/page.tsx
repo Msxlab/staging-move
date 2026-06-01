@@ -5,6 +5,7 @@ import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, 
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface Article { id: string; slug: string; title: string; content: string; excerpt: string | null; category: string; tags: string; order: number; isPublished: boolean; viewCount: number; helpfulYes: number; helpfulNo: number; createdAt: string }
 interface FAQ { id: string; question: string; answer: string; category: string; order: number; isPublished: boolean }
@@ -123,7 +124,7 @@ export default function HelpCenterPage() {
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Title</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Views</th><th className="px-4 py-3 font-medium">Helpful</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
             <tbody>
-              {articles.length === 0 ? (<tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No articles yet</td></tr>) : articles.map(a => (
+              {articles.length === 0 ? (<tr><td colSpan={6} className="px-4"><EmptyState icon={FileText} title="No articles yet" description="Create your first help article to get started." /></td></tr>) : articles.map(a => (
                 <tr key={a.id} className="border-b border-border hover:bg-accent/30">
                   <td className="px-4 py-3"><p className="font-medium text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">{a.slug}</p></td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{a.category}</span></td>
@@ -144,7 +145,7 @@ export default function HelpCenterPage() {
 
       {tab === "faqs" && (
         <div className="space-y-3">
-          {faqs.length === 0 ? (<div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No FAQs yet</div>) : faqs.map(f => (
+          {faqs.length === 0 ? (<div className="rounded-xl border border-border bg-card"><EmptyState icon={MessageCircle} title="No FAQs yet" description="Add your first FAQ to help users find answers." /></div>) : faqs.map(f => (
             <div key={f.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

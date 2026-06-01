@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface NotificationItem {
   id: string;
@@ -683,8 +684,13 @@ export default function NotificationsClient() {
         </div>
 
         {queue.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
-            No queued records currently visible.
+          <div className="mt-4 rounded-lg border border-dashed border-border">
+            <EmptyState
+              icon={Clock}
+              title="No queued records currently visible."
+              description="Scheduled or pending deliveries will appear here."
+              compact
+            />
           </div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-lg border border-border">
@@ -752,11 +758,12 @@ export default function NotificationsClient() {
               </tr>
             ) : notifications.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-muted-foreground"
-                >
-                  No notifications
+                <td colSpan={6} className="px-4">
+                  <EmptyState
+                    icon={Bell}
+                    title="No notifications"
+                    description="Sent notifications and delivery records will appear here."
+                  />
                 </td>
               </tr>
             ) : (

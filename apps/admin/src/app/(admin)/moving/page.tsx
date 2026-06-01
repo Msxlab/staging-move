@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface Plan {
   id: string;
@@ -404,9 +405,7 @@ export default function MovingPage() {
           Loading plans...
         </div>
       ) : plans.length === 0 ? (
-        <div className="py-20 text-center text-muted-foreground">
-          No moving plans found
-        </div>
+        <EmptyState icon={Truck} title="No moving plans found" description="No relocations match your current search or filters." />
       ) : (
         <div className="space-y-3">
           {plans.map((plan) => {

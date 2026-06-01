@@ -5,6 +5,7 @@ import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCir
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 type Campaign = {
   id: string;
@@ -901,7 +902,7 @@ export default function AcquisitionCampaignsClient() {
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Loading campaigns...</div>
         ) : campaigns.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">No campaigns match these filters.</div>
+          <EmptyState icon={Ticket} title="No campaigns found" description="No campaigns match your current filters." />
         ) : (
           <div className="divide-y divide-border">
             {campaigns.map((campaign) => {

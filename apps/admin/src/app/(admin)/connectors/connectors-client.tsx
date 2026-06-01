@@ -5,6 +5,7 @@ import { Plug, Plus, ToggleLeft, ToggleRight, Edit2, ShieldAlert } from "lucide-
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface ConnectorConfig {
   id: string;
@@ -223,7 +224,9 @@ export default function ConnectorsClient() {
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
         ) : connectors.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No connectors registered yet</div>
+          <div className="rounded-xl border border-border bg-card">
+            <EmptyState icon={Plug} title="No connectors registered yet" description="Register a connector to enable, stage, and roll it out." />
+          </div>
         ) : (
           connectors.map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">

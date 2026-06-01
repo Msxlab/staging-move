@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
@@ -250,7 +251,7 @@ export default function LogsPage() {
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">No logs found</td></tr>
+              <tr><td colSpan={6} className="px-4"><EmptyState icon={FileText} title="No logs found" description="No audit log entries match your current search or filters." /></td></tr>
             ) : logs.map((log: any) => {
               const who = tab === "admin" ? log.adminUser : log.user;
               const changes = tryParseJSON(log.changes);

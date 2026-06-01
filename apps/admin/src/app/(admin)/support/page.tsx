@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { EmptyState } from "@/components/empty-state";
 
 const statusBadge: Record<string, string> = {
   OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
@@ -217,9 +218,8 @@ export default function AdminSupportPage() {
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : tickets.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No tickets found</p>
+        <div className="rounded-xl border border-border bg-card">
+          <EmptyState icon={MessageSquare} title="No tickets found" description="No support tickets match your current filters." />
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
