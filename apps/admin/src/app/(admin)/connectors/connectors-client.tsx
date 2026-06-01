@@ -21,6 +21,16 @@ interface ConnectorConfig {
 
 const STAGES = ["SHADOW", "ROLLOUT", "GA", "RETIRED"];
 
+// Honest operating mode, derived server-side via resolveConnectorMode and shown
+// as a badge — the same truth the user Connections screen reads. API_SYNC needs
+// a signed production agreement, so it can't appear without one.
+const MODE_META: Record<string, { label: string; cls: string }> = {
+  API_SYNC: { label: "API sync", cls: "bg-tone-sage-bg text-tone-sage-fg" },
+  GUIDED_UPDATE: { label: "Guided update", cls: "bg-tone-sky-bg text-tone-sky-fg" },
+  COMING_SOON: { label: "Coming soon", cls: "bg-tone-honey-bg text-tone-honey-fg" },
+  DISABLED: { label: "Disabled", cls: "bg-foreground/5 text-muted-foreground" },
+};
+
 interface ConnectorLastFailure {
   errorCode: string;
   status: string;
@@ -53,6 +63,7 @@ export default function ConnectorsClient() {
   const [dispatchByConnector, setDispatchByConnector] = useState<Record<string, Record<string, number>>>({});
   const [consentsByConnector, setConsentsByConnector] = useState<Record<string, Record<string, number>>>({});
   const [lastFailureByConnector, setLastFailureByConnector] = useState<Record<string, ConnectorLastFailure>>({});
+  const [modeByConnector, setModeByConnector] = useState<Record<string, { mode: string; reason: string }>>({});
   const [healthChecks, setHealthChecks] = useState<Record<string, { ok: boolean; reason?: string; detail?: string; running?: boolean }>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ConnectorConfig | null>(null);
@@ -70,6 +81,7 @@ export default function ConnectorsClient() {
         setDispatchByConnector(d.dispatchByConnector || {});
         setConsentsByConnector(d.consentsByConnector || {});
         setLastFailureByConnector(d.lastFailureByConnector || {});
+        setModeByConnector(d.modeByConnector || {});
       })
       .finally(() => setLoading(false));
   };
@@ -333,6 +345,14 @@ export default function ConnectorsClient() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${c.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{c.enabled ? "ON" : "OFF"}</span>
                     <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{c.stage}</span>
                     {c.circuitState !== "CLOSED" && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">{c.circuitState}</span>}
+                    {modeByConnector[c.connectorKey] && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${MODE_META[modeByConnector[c.connectorKey].mode]?.cls ?? "bg-foreground/5 text-muted-foreground"}`}
+                        title={modeByConnector[c.connectorKey].reason}
+                      >
+                        {MODE_META[modeByConnector[c.connectorKey].mode]?.label ?? modeByConnector[c.connectorKey].mode}
+                      </span>
+                    )}
                     {healthChecks[c.connectorKey] && !healthChecks[c.connectorKey].running && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${healthChecks[c.connectorKey].ok ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}
