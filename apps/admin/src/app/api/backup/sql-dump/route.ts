@@ -1,13 +1,15 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createGzip } from "node:zlib";
 import { Readable } from "node:stream";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { writeBackupAudit } from "@/lib/backup-audit";
 import { getAuditRequestMeta } from "@/lib/audit";
+import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 /**
  * Raw full-database logical dump (`mysqldump` → gzip), streamed as a download.
@@ -23,6 +25,32 @@ import { getAuditRequestMeta } from "@/lib/audit";
  * rather than handing back a truncated archive.
  */
 
+const DEFAULT_DUMP_READY_TIMEOUT_MS = 20_000;
+const MYSQLDUMP_CONNECT_TIMEOUT_SECONDS = 10;
+
+class SqlDumpStartupError extends Error {
+  status: number;
+  code: string;
+  metadata: Record<string, unknown>;
+
+  constructor(
+    message: string,
+    options: { status: number; code: string; metadata?: Record<string, unknown> },
+  ) {
+    super(message);
+    this.name = "SqlDumpStartupError";
+    this.status = options.status;
+    this.code = options.code;
+    this.metadata = options.metadata || {};
+  }
+}
+
+function getDumpReadyTimeoutMs() {
+  const raw = Number(process.env.SQL_DUMP_READY_TIMEOUT_MS);
+  if (Number.isFinite(raw) && raw > 0) return Math.min(raw, 60_000);
+  return DEFAULT_DUMP_READY_TIMEOUT_MS;
+}
+
 function parseMysqlConnection(databaseUrl: string) {
   const url = new URL(databaseUrl);
   if (url.protocol !== "mysql:" && url.protocol !== "mariadb:") {
@@ -37,6 +65,93 @@ function parseMysqlConnection(databaseUrl: string) {
     password: decodeURIComponent(url.password || ""),
     database,
   };
+}
+
+async function waitForFirstDumpChunk(
+  child: ChildProcessWithoutNullStreams,
+  getStderr: () => string,
+  timeoutMs: number,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let sawSpawn = false;
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.off("spawn", onSpawn);
+      child.off("error", onError);
+      child.off("close", onClose);
+      child.stdout.off("data", onData);
+    };
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      fn();
+    };
+    const safeStderr = () => redactBackupSecretText(getStderr()).slice(0, 500);
+    const onSpawn = () => {
+      sawSpawn = true;
+    };
+    const onError = (err: NodeJS.ErrnoException) => {
+      const missing = err?.code === "ENOENT";
+      settle(() =>
+        reject(
+          new SqlDumpStartupError(
+            missing
+              ? "mysqldump is not installed in this runtime. Rebuild the image with default-mysql-client to enable raw SQL dumps."
+              : "Failed to start mysqldump.",
+            {
+              status: 503,
+              code: missing ? "MYSQLDUMP_NOT_AVAILABLE" : "MYSQLDUMP_SPAWN_FAILED",
+              metadata: { reason: missing ? "mysqldump_not_installed" : "spawn_failed" },
+            },
+          ),
+        ),
+      );
+    };
+    const onClose = (code: number | null, signal: NodeJS.Signals | null) => {
+      const stderr = safeStderr();
+      settle(() =>
+        reject(
+          new SqlDumpStartupError(
+            stderr || `mysqldump exited before streaming output with code ${code ?? "null"}.`,
+            {
+              status: 502,
+              code: "MYSQLDUMP_EXITED_BEFORE_OUTPUT",
+              metadata: { exitCode: code, signal, stderr },
+            },
+          ),
+        ),
+      );
+    };
+    const onData = (chunk: Buffer | string) => {
+      child.stdout.pause();
+      settle(() => resolve(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    };
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      const stderr = safeStderr();
+      settle(() =>
+        reject(
+          new SqlDumpStartupError(
+            stderr ||
+              `mysqldump did not produce output within ${timeoutMs}ms. Check database connectivity and dump privileges.`,
+            {
+              status: 504,
+              code: "MYSQLDUMP_START_TIMEOUT",
+              metadata: { timeoutMs, sawSpawn, stderr },
+            },
+          ),
+        ),
+      );
+    }, timeoutMs);
+
+    child.once("spawn", onSpawn);
+    child.once("error", onError);
+    child.once("close", onClose);
+    child.stdout.once("data", onData);
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -93,6 +208,7 @@ export async function POST(request: NextRequest) {
       "--events",
       "--no-tablespaces",
       "--default-character-set=utf8mb4",
+      `--connect-timeout=${MYSQLDUMP_CONNECT_TIMEOUT_SECONDS}`,
       "-h", conn.host,
       "-P", conn.port,
       "-u", conn.user,
@@ -102,50 +218,59 @@ export async function POST(request: NextRequest) {
       env: { ...process.env, MYSQL_PWD: conn.password },
     });
 
-    // Detect a missing binary / immediate spawn failure BEFORE we commit to a
-    // 200 streamed response, so the operator gets a clean error instead of a
-    // corrupt 0-byte archive.
-    try {
-      await new Promise<void>((resolve, reject) => {
-        child.once("spawn", () => resolve());
-        child.once("error", (err) => reject(err));
-      });
-    } catch (spawnError: any) {
-      const missing = spawnError?.code === "ENOENT";
-      await writeBackupAudit({
-        session,
-        action: "BACKUP_SQL_DUMP_FAILED",
-        entityId: "sql-dump",
-        request,
-        metadata: { database: conn.database, reason: missing ? "mysqldump_not_installed" : "spawn_failed" },
-        error: spawnError,
-      }).catch(() => {});
-      return NextResponse.json(
-        {
-          error: missing
-            ? "mysqldump is not installed in this runtime. Rebuild the image with default-mysql-client to enable raw SQL dumps."
-            : "Failed to start mysqldump.",
-          code: missing ? "MYSQLDUMP_NOT_AVAILABLE" : "MYSQLDUMP_SPAWN_FAILED",
-        },
-        { status: 503 },
-      );
-    }
-
     let stderr = "";
     child.stderr.on("data", (chunk) => {
       if (stderr.length < 4000) stderr += chunk.toString();
     });
+    let dumpExit: { code: number | null; signal: NodeJS.Signals | null } | null = null;
+    child.once("close", (code, signal) => {
+      dumpExit = { code, signal };
+    });
+
+    let firstChunk: Buffer;
+    try {
+      firstChunk = await waitForFirstDumpChunk(child, () => stderr, getDumpReadyTimeoutMs());
+    } catch (startupError: any) {
+      if (startupError instanceof SqlDumpStartupError) {
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_SQL_DUMP_FAILED",
+          entityId: "sql-dump",
+          request,
+          metadata: { database: conn.database, ...startupError.metadata },
+          error: startupError.message,
+        }).catch(() => {});
+        return NextResponse.json(
+          {
+            error: startupError.message,
+            code: startupError.code,
+          },
+          { status: startupError.status },
+        );
+      }
+      throw startupError;
+    }
 
     const gzip = createGzip();
-    child.stdout.pipe(gzip);
+    const dumpStream = Readable.from((async function* streamMysqlDump() {
+      yield firstChunk;
+      for await (const chunk of child.stdout) {
+        yield chunk;
+      }
+    })());
+    dumpStream.on("error", (err) => gzip.destroy(err));
+    dumpStream.pipe(gzip);
     // If mysqldump dies mid-stream, tear down the gzip stream so the client sees
     // a failed (not silently truncated-but-"successful") download.
     child.on("error", (err) => gzip.destroy(err));
-    child.on("close", (code) => {
+    const handleDumpClose = (code: number | null) => {
       if (code !== 0) {
-        gzip.destroy(new Error(`mysqldump exited with code ${code}: ${stderr.slice(0, 300)}`));
+        gzip.destroy(new Error(`mysqldump exited with code ${code ?? "null"}: ${redactBackupSecretText(stderr).slice(0, 300)}`));
       }
-    });
+    };
+    const exited = dumpExit as { code: number | null; signal: NodeJS.Signals | null } | null;
+    if (exited) handleDumpClose(exited.code);
+    else child.once("close", (code) => handleDumpClose(code));
 
     await writeBackupAudit({
       session,
@@ -164,6 +289,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/gzip",
         "Content-Disposition": `attachment; filename="${fileName}"`,
         "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
       },
     });
   } catch (error: any) {

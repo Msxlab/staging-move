@@ -815,9 +815,23 @@ export function BackupControlPlane() {
       actionLabel?: string;
       errorMessage: string;
       requireMfa?: boolean;
+      promptBeforeSubmit?: boolean;
     },
   ) {
     let requestBody: Record<string, unknown> = payload;
+
+    if (options.promptBeforeSubmit) {
+      const stepUp = await requestStepUp(
+        options.title,
+        options.description,
+        options.actionLabel || "Confirm",
+        Boolean(options.requireMfa),
+      );
+      if (!stepUp) {
+        throw new Error("Step-up confirmation required.");
+      }
+      requestBody = buildStepUpPayload(payload, stepUp);
+    }
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const response = await fetch(url, {
@@ -952,6 +966,7 @@ export function BackupControlPlane() {
           actionLabel: "Download .sql.gz",
           errorMessage: "Failed to generate SQL dump",
           requireMfa: true,
+          promptBeforeSubmit: true,
         },
       );
       downloadFile(
