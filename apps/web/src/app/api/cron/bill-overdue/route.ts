@@ -131,7 +131,9 @@ export async function GET(req: Request) {
           });
           if (mirrored) {
             mirroredCount++;
-            if (isPushTypeEnabled(userPreferences, ["BILL_OVERDUE", "BILL_REMINDER"])) {
+            // Own type only — a cross-type fallback list let an unrelated push
+            // toggle (e.g. task reminders) suppress overdue push.
+            if (isPushTypeEnabled(userPreferences, "BILL_OVERDUE")) {
               const pushed = await sendNotification({
                 userId: service.userId,
                 type: "PUSH",

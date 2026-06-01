@@ -16,9 +16,27 @@ async function handleCron(request: NextRequest) {
 
     const now = new Date();
     const reminderDays = [7, 3, 1];
-    const preferenceRecords = await prisma.notificationPreference.findMany({
-      select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+    // Bound the preference read to users who actually have an upcoming move in
+    // the reminder window — the previous unfiltered findMany loaded EVERY
+    // user's preferences into memory on every run. The extra userId-only scan
+    // is far cheaper than the full-table read it replaces.
+    const windowEnd = new Date(now);
+    windowEnd.setDate(windowEnd.getDate() + Math.max(...reminderDays) + 1);
+    const candidatePlans = await prisma.movingPlan.findMany({
+      where: {
+        moveDate: { gte: now, lt: windowEnd },
+        status: { in: ["PLANNING", "IN_PROGRESS"] },
+        user: { deletedAt: null },
+      },
+      select: { userId: true },
     });
+    const candidateUserIds = [...new Set(candidatePlans.map((p) => p.userId))];
+    const preferenceRecords = candidateUserIds.length > 0
+      ? await prisma.notificationPreference.findMany({
+          where: { userId: { in: candidateUserIds } },
+          select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+        })
+      : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
     let sent = 0;
     let mirrored = 0;

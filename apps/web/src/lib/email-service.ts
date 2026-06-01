@@ -1022,11 +1022,14 @@ export async function sendTrialExpiringEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "MARKETING"))) {
+  // Trial-expiry is a lifecycle/billing warning (imminent access loss +
+  // auto-charge), NOT a promotional offer. Gate it on the REMINDER opt-out so
+  // a user who unsubscribed from MARKETING offers still receives it.
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
     return false;
   }
   const appUrl = await resolveAppUrl();
-  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "marketing");
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "trial-expiring",

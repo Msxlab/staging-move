@@ -130,7 +130,10 @@ export async function GET(req: Request) {
             });
             if (mirrored) {
               mirroredCount++;
-              if (isPushTypeEnabled(userPreferences, ["BILL_REMINDER", "TASK_REMINDER"])) {
+              // Check ONLY this reminder's own push type. Passing a fallback
+              // list (e.g. TASK_REMINDER) meant disabling mobile "push task
+              // reminders" silently suppressed bill push too.
+              if (isPushTypeEnabled(userPreferences, "BILL_REMINDER")) {
                 const pushed = await sendNotification({
                   userId: svc.user.id,
                   type: "PUSH",

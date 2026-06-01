@@ -163,45 +163,9 @@ function toPushBody(body: string) {
     .slice(0, 180);
 }
 
-/**
- * Process due reminders and send notifications.
- * Call this from a cron job or scheduled function.
- */
-export async function processReminders(): Promise<number> {
-  const now = new Date();
-  const dueReminders = await prisma.reminder.findMany({
-    where: {
-      remindAt: { lte: now },
-      sent: false,
-    },
-    include: {
-      service: { select: { providerName: true, category: true, userId: true } },
-    },
-    take: 100,
-  });
-
-  let sentCount = 0;
-
-  for (const reminder of dueReminders) {
-    if (!reminder.service) continue;
-
-    const success = await sendNotification({
-      userId: reminder.service.userId,
-      type: "EMAIL",
-      subject: `Reminder: ${reminder.service.providerName}`,
-      body: reminder.message || `Your ${reminder.service.category} service with ${reminder.service.providerName} needs attention.`,
-      dedupeKey: `reminder:${reminder.id}`,
-      metadata: { reminderId: reminder.id, serviceId: reminder.serviceId },
-    });
-
-    if (success) {
-      await prisma.reminder.update({
-        where: { id: reminder.id },
-        data: { sent: true, sentAt: new Date() },
-      });
-      sentCount++;
-    }
-  }
-
-  return sentCount;
-}
+// NOTE: `processReminders()` was removed here — it was dead code (no caller
+// anywhere) that emailed services' owners directly off the `Reminder` model
+// with NO notification-preference check, NO emailEnabled gate, and NO
+// soft-delete guard, so if it had ever been wired up it would have emailed
+// opted-out and deleted users. The live reminder pipeline is the cron set under
+// app/api/cron/* (bill/task/move/contract reminders), which all gate correctly.

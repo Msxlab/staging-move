@@ -99,7 +99,9 @@ async function handleCron(request: NextRequest) {
             });
             if (created) {
               mirrored++;
-              if (isPushTypeEnabled(userPreferences, ["CONTRACT_EXPIRY", "TASK_REMINDER"])) {
+              // Own type only — a cross-type fallback list let disabling "push
+              // task reminders" silently suppress contract-expiry push.
+              if (isPushTypeEnabled(userPreferences, "CONTRACT_EXPIRY")) {
                 const pushed = await sendNotification({
                   userId: service.user.id,
                   type: "PUSH",
