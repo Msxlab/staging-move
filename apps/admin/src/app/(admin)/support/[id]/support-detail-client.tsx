@@ -185,7 +185,7 @@ export default function AdminTicketDetailClient() {
     <div className="p-6 max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/support">
-          <button className="p-2 rounded-lg border border-border hover:bg-accent transition">
+          <button aria-label="Back to support" className="p-2 rounded-lg border border-border hover:bg-accent transition">
             <ArrowLeft className="h-4 w-4 text-muted-foreground" />
           </button>
         </Link>

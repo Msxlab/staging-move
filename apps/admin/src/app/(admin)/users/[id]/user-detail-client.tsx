@@ -727,11 +727,12 @@ export default function UserDetailClient() {
                   setShowProfileConfirm(true);
                 }}
                 disabled={saving}
+                aria-label="Save changes"
                 className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               </button>
-              <button onClick={() => setEditing(false)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-accent">
+              <button onClick={() => setEditing(false)} aria-label="Cancel editing" className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-accent">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -744,7 +745,7 @@ export default function UserDetailClient() {
                 </span>
               )}
               {!isDeleted && (
-                <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name">
+                <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name" aria-label="Edit name">
                   <Edit className="h-4 w-4" />
                 </button>
               )}
