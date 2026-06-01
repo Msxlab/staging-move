@@ -16,25 +16,21 @@ import { createHash, randomUUID } from "crypto";
 import {
   CircuitBreaker,
   createConnectorHttpClient,
-  createConnectorRegistry,
   createRedactingLogger,
   planNextDispatch,
   runConnectorAttempt,
-  uspsConnector,
   type AddressConnector,
   type CanonicalAddress,
   type CanonicalAddressChange,
   type ConnectorContext,
 } from "@locateflow/connectors";
+import { connectorRegistry } from "@/lib/connector-registry";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { refreshConsentAccessToken } from "@/lib/connector-oauth";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendConnectorActionNeededEmail } from "@/lib/email-service";
 import { isWebNotificationEnabled } from "@/lib/notification-preferences";
-
-/** The connectors LocateFlow ships. Adding one = add it here (+ its folder). */
-export const connectorRegistry = createConnectorRegistry([uspsConnector]);
 
 // Per-connector breakers live for the process lifetime so a failing partner
 // trips its bulkhead across dispatches, not just within one.
@@ -91,6 +87,8 @@ interface ConnectorControl {
   stage: string;
 }
 
+const LIVE_DISPATCH_STATUSES = ["QUEUED", "DISPATCHING", "SUBMITTED", "CONFIRMED"] as const;
+
 /** Deterministic 0..99 bucket for gradual rollout (stable per user+connector). */
 function rolloutBucket(userId: string, connectorKey: string): number {
   return createHash("sha256").update(`${userId}:${connectorKey}`).digest().readUInt16BE(0) % 100;
@@ -116,11 +114,13 @@ export async function enqueueAddressChange(input: {
   userId: string;
   toAddressId: string;
   fromAddressId?: string | null;
+  workspaceId?: string | null;
 }): Promise<{ changeRef: string; created: number }> {
+  const addressScope = input.workspaceId ? { workspaceId: input.workspaceId } : {};
   const [toAddress, fromAddress, user, consents, configs] = await Promise.all([
-    prisma.address.findFirst({ where: { id: input.toAddressId, userId: input.userId, deletedAt: null } }),
+    prisma.address.findFirst({ where: { id: input.toAddressId, userId: input.userId, deletedAt: null, ...addressScope } }),
     input.fromAddressId
-      ? prisma.address.findFirst({ where: { id: input.fromAddressId, userId: input.userId } })
+      ? prisma.address.findFirst({ where: { id: input.fromAddressId, userId: input.userId, deletedAt: null, ...addressScope } })
       : Promise.resolve(null),
     prisma.user.findUnique({ where: { id: input.userId }, select: { firstName: true, lastName: true } }),
     prisma.partnerConsent.findMany({ where: { userId: input.userId, status: "GRANTED" }, select: { id: true, connectorKey: true } }),
@@ -153,7 +153,20 @@ export async function enqueueAddressChange(input: {
     // Enforce the manifest's per-user-per-day cap (fraud control for COA-style
     // filings, e.g. USPS perUserPerDay:2) — declared but previously unenforced.
     // Count live/successful filings in the last 24h; skip a connector at its cap.
-    const perUserPerDay = connectorRegistry.get(consent.connectorKey)?.manifest.rateLimit?.perUserPerDay;
+    const rateLimit = connectorRegistry.get(consent.connectorKey)?.manifest.rateLimit;
+    const perConnectorPerMinute = rateLimit?.perConnectorPerMinute;
+    if (perConnectorPerMinute && perConnectorPerMinute > 0) {
+      const since = new Date(Date.now() - 60 * 1000);
+      const recent = await prisma.connectorDispatch.count({
+        where: {
+          connectorKey: consent.connectorKey,
+          createdAt: { gte: since },
+          status: { in: [...LIVE_DISPATCH_STATUSES] },
+        },
+      });
+      if (recent >= perConnectorPerMinute) continue;
+    }
+    const perUserPerDay = rateLimit?.perUserPerDay;
     if (perUserPerDay && perUserPerDay > 0) {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const recent = await prisma.connectorDispatch.count({
@@ -161,7 +174,7 @@ export async function enqueueAddressChange(input: {
           userId: input.userId,
           connectorKey: consent.connectorKey,
           createdAt: { gte: since },
-          status: { in: ["QUEUED", "DISPATCHING", "SUBMITTED", "CONFIRMED"] },
+          status: { in: [...LIVE_DISPATCH_STATUSES] },
         },
       });
       if (recent >= perUserPerDay) continue;

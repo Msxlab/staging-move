@@ -5,7 +5,10 @@ const SECRET = "whsec_test_connector";
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
-  prisma: { connectorDispatch: { findUnique: vi.fn(), update: vi.fn() } },
+  prisma: {
+    connectorConfig: { findUnique: vi.fn() },
+    connectorDispatch: { findUnique: vi.fn(), update: vi.fn() },
+  },
   encrypt: vi.fn((s: string) => `enc:${s}`),
   hasProcessedWebhookEvent: vi.fn(),
   markWebhookEventProcessed: vi.fn(),
@@ -51,6 +54,11 @@ describe("inbound connector webhook receiver", () => {
     });
     mocks.hasProcessedWebhookEvent.mockResolvedValue(false);
     mocks.markWebhookEventProcessed.mockResolvedValue("created");
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: true,
+      stage: "GA",
+      circuitState: "CLOSED",
+    });
     mocks.prisma.connectorDispatch.findUnique.mockResolvedValue({
       id: "disp_1",
       connectorKey: "usps",
@@ -94,6 +102,33 @@ describe("inbound connector webhook receiver", () => {
 
     expect(res.status).toBe(401);
     expect(mocks.prisma.connectorDispatch.findUnique).not.toHaveBeenCalled();
+    expect(mocks.prisma.connectorDispatch.update).not.toHaveBeenCalled();
+  });
+
+  it("honors the admin kill switch before mutating a dispatch", async () => {
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: false,
+      stage: "GA",
+      circuitState: "CLOSED",
+    });
+    const { POST } = await import("./route");
+    const res = await POST(signedRequest("usps", { ref: "idem-123", outcome: "CONFIRMED" }), params("usps"));
+
+    expect(res.status).toBe(503);
+    expect(mocks.prisma.connectorDispatch.findUnique).not.toHaveBeenCalled();
+    expect(mocks.prisma.connectorDispatch.update).not.toHaveBeenCalled();
+  });
+
+  it("freezes inbound writes when the connector circuit is open", async () => {
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: true,
+      stage: "ROLLOUT",
+      circuitState: "OPEN",
+    });
+    const { POST } = await import("./route");
+    const res = await POST(signedRequest("usps", { ref: "idem-123", outcome: "CONFIRMED" }), params("usps"));
+
+    expect(res.status).toBe(503);
     expect(mocks.prisma.connectorDispatch.update).not.toHaveBeenCalled();
   });
 

@@ -8,8 +8,8 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
  *
  * Content is intentionally limited to capabilities that are real and enforced
  * today (seat/address/service limits, workspace membership + roles + invites,
- * child accounts). Aspirational/flag-gated features (Partner Hub & automatic
- * connectors, cross-member "shared services" visibility, address labels,
+ * child accounts). Aspirational/flag-gated features (Partner Hub & API-backed
+ * partner updates, cross-member "shared services" visibility, address labels,
  * advanced export) are deliberately NOT advertised here — they are not
  * enforced yet and/or intersect the connector legal posture, so they wait for
  * the feature to ship + legal sign-off. Prices come from BILLING_PLAN_DEFINITIONS.

@@ -827,6 +827,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     validation: "boolean",
   },
   {
+    key: "FEATURE_API_CONNECTORS",
+    label: "API Connectors Enabled",
+    description:
+      "Master launch switch for partner address-update connectors. Keep disabled until partner/legal approval and connector rollout controls are ready.",
+    scope: "WEB",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    usedBy: ["web app", "admin app", "connector cron/worker"],
+    validation: "boolean",
+    note: "This only opens the connector surface; each user still needs active annual Pro, explicit partner consent, and an enabled connector config.",
+  },
+  {
     key: "RECOMMENDATION_SCORING_WEIGHTS",
     label: "Recommendation Scoring Weights",
     description:
@@ -1054,12 +1068,58 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   },
 ];
 
+const CONNECTOR_RUNTIME_CONFIG_KEY =
+  /^CONNECTOR_([A-Z0-9]+(?:_[A-Z0-9]+)*)_(OAUTH_CLIENT_ID|OAUTH_CLIENT_SECRET|OAUTH_AUTHORIZE_URL|OAUTH_TOKEN_URL|OAUTH_SCOPES|WEBHOOK_SECRET)$/;
+
+function connectorRuntimeConfigDefinition(key: string): RuntimeConfigDefinition | null {
+  const match = key.match(CONNECTOR_RUNTIME_CONFIG_KEY);
+  if (!match) return null;
+
+  const connectorKey = match[1].toLowerCase().replace(/_/g, "-");
+  const labels: Record<string, string> = {
+    OAUTH_CLIENT_ID: "OAuth Client ID",
+    OAUTH_CLIENT_SECRET: "OAuth Client Secret",
+    OAUTH_AUTHORIZE_URL: "OAuth Authorize URL",
+    OAUTH_TOKEN_URL: "OAuth Token URL",
+    OAUTH_SCOPES: "OAuth Scopes",
+    WEBHOOK_SECRET: "Webhook Secret",
+  };
+  const suffix = match[2] as keyof typeof labels;
+  const isSecret = suffix === "OAUTH_CLIENT_SECRET" || suffix === "WEBHOOK_SECRET";
+  const isUrl = suffix === "OAUTH_AUTHORIZE_URL" || suffix === "OAUTH_TOKEN_URL";
+
+  return {
+    key,
+    label: `Connector ${connectorKey} - ${labels[suffix]}`,
+    description: `Partner connector setting for ${connectorKey}. Use only credentials issued for this exact LocateFlow connector.`,
+    scope: "WEB",
+    category: "OAUTH",
+    isSecret,
+    requiredInProduction: false,
+    maskStrategy: isSecret ? "secret" : isUrl ? "url" : suffix === "OAUTH_CLIENT_ID" ? "id" : "plain",
+    runtimeEditable: true,
+    usedBy: ["web app", "connector cron/worker"],
+    validation: isUrl
+      ? "HTTPS URL"
+      : isSecret
+        ? "minimum 16 characters"
+        : suffix === "OAUTH_CLIENT_ID"
+          ? "OAuth client identifier"
+          : "space/comma-separated OAuth scopes",
+    note:
+      "Connector credentials are still constrained by the connector manifest host allowlist and the FEATURE_API_CONNECTORS launch switch.",
+  };
+}
+
 export function getRuntimeConfigDefinition(key: string): RuntimeConfigDefinition | null {
-  return RUNTIME_CONFIG_DEFINITIONS.find((definition) => definition.key === key) || null;
+  return (
+    RUNTIME_CONFIG_DEFINITIONS.find((definition) => definition.key === key) ||
+    connectorRuntimeConfigDefinition(key)
+  );
 }
 
 export function isManagedRuntimeConfigKey(key: string): boolean {
-  return RUNTIME_CONFIG_DEFINITIONS.some((definition) => definition.key === key);
+  return Boolean(getRuntimeConfigDefinition(key));
 }
 
 export function normalizeRuntimeConfigValue(value: string | null | undefined): string | null {
@@ -1324,6 +1384,30 @@ export function validateRuntimeConfigValueShape(
     return invalid("masked_value");
   }
 
+  const connectorKeyMatch = key.match(CONNECTOR_RUNTIME_CONFIG_KEY);
+  if (connectorKeyMatch) {
+    const suffix = connectorKeyMatch[2];
+    if (suffix === "OAUTH_AUTHORIZE_URL" || suffix === "OAUTH_TOKEN_URL") {
+      const reason = validateUrl(value, { requireHttps: true });
+      return reason ? invalid(reason) : valid();
+    }
+    if (suffix === "OAUTH_CLIENT_SECRET" || suffix === "WEBHOOK_SECRET") {
+      return validateSecretStrength(value, 16) || valid();
+    }
+    if (suffix === "OAUTH_CLIENT_ID") {
+      return validateSafeToken(value, {
+        minLength: 3,
+        pattern: /^[A-Za-z0-9._:-]+$/,
+        reason: "invalid_identifier",
+      }) || needsReview("present_but_not_fully_verified");
+    }
+    if (suffix === "OAUTH_SCOPES") {
+      return /^[A-Za-z0-9:._/\s,-]+$/.test(value)
+        ? valid()
+        : invalid("invalid_identifier");
+    }
+  }
+
   if (key === "NODE_ENV" && value !== "production") {
     return invalid("production_required");
   }
@@ -1420,6 +1504,7 @@ export function validateRuntimeConfigValueShape(
     "STRIPE_RUNTIME_CONFIG_OVERRIDE",
     "STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED",
     "FEATURE_FLAGS_ENABLED",
+    "FEATURE_API_CONNECTORS",
     "ALLOW_PRODUCTION_REPLACE_RESTORE",
     "PLACES_AUTOCOMPLETE_ENABLED",
     "NOTIFICATION_PUSH_ENABLED",

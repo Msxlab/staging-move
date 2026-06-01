@@ -5,6 +5,7 @@ import {
   getRuntimeConfigDefinition,
   getRuntimeConfigEnvValue,
   isManagedRuntimeConfigKey,
+  isRuntimeConfigDbBackedKeyAllowed,
   isRuntimeConfigDbOverrideEnabled,
   maskRuntimeConfigValue,
   RUNTIME_CONFIG_DEFINITIONS,
@@ -143,6 +144,7 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       "R2_PUBLIC_BASE_URL",
       "GOOGLE_MAPS_API_KEY",
       "PLACES_AUTOCOMPLETE_ENABLED",
+      "FEATURE_API_CONNECTORS",
       "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
       "STRIPE_PRICE_INDIVIDUAL_YEARLY",
       "STRIPE_ANNUAL_TRIAL_DAYS",
@@ -185,6 +187,18 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       expect(def, `definition missing for ${key}`).not.toBeNull();
       expect(def?.runtimeEditable, `${key} should be runtimeEditable=false`).toBe(false);
     }
+  });
+
+  it("recognizes dynamic partner connector credential keys as DB-backed managed config", () => {
+    const secret = getRuntimeConfigDefinition("CONNECTOR_USPS_OAUTH_CLIENT_SECRET");
+    const tokenUrl = getRuntimeConfigDefinition("CONNECTOR_UPS_OAUTH_TOKEN_URL");
+    const webhookSecret = getRuntimeConfigDefinition("CONNECTOR_FEDEX_WEBHOOK_SECRET");
+
+    expect(secret).toMatchObject({ isSecret: true, category: "OAUTH", runtimeEditable: true });
+    expect(tokenUrl).toMatchObject({ maskStrategy: "url", runtimeEditable: true });
+    expect(webhookSecret).toMatchObject({ isSecret: true, runtimeEditable: true });
+    expect(isManagedRuntimeConfigKey("CONNECTOR_USPS_OAUTH_CLIENT_SECRET")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("CONNECTOR_USPS_OAUTH_CLIENT_SECRET")).toBe(true);
   });
 });
 
@@ -244,6 +258,24 @@ describe("validateRuntimeConfigValueShape hardening", () => {
     ).toMatchObject({ ok: true });
   });
 
+  it("validates dynamic connector URLs and secrets", () => {
+    expect(
+      validateRuntimeConfigValueShape("CONNECTOR_USPS_OAUTH_TOKEN_URL", "https://apis.usps.com/oauth/token", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("CONNECTOR_USPS_OAUTH_TOKEN_URL", "http://apis.usps.com/oauth/token", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "requires_https" });
+    expect(
+      validateRuntimeConfigValueShape("CONNECTOR_USPS_WEBHOOK_SECRET", "short", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "secret_too_short" });
+  });
+
   it("rejects Stripe test publishable keys in production-like environments", () => {
     expect(
       validateRuntimeConfigValueShape("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_1234567890", {
@@ -276,6 +308,19 @@ describe("validateRuntimeConfigValueShape hardening", () => {
         productionLike: true,
       }),
     ).toMatchObject({ ok: true });
+  });
+
+  it("validates the API connector master switch as a strict boolean", () => {
+    expect(
+      validateRuntimeConfigValueShape("FEATURE_API_CONNECTORS", "true", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("FEATURE_API_CONNECTORS", "1", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "boolean_required" });
   });
 
   it("rejects invalid storage providers and unsafe storage endpoints", () => {

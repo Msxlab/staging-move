@@ -33,6 +33,8 @@ const SIGNATURE_HEADER = "x-connector-signature";
 // A confirm/fail for an already-settled dispatch is a no-op — never reopen a
 // terminal row from an inbound webhook (defends against replays + late dupes).
 const TERMINAL_STATUSES = new Set(["CONFIRMED", "FAILED"]);
+const WEBHOOK_DISABLED_STAGES = new Set(["SHADOW", "RETIRED"]);
+const WEBHOOK_DISABLED_CIRCUITS = new Set(["OPEN", "DISABLED"]);
 
 // Built-in connector adapters that can receive async-confirm webhooks. Resolved
 // from the package (not the app-side dispatch registry) so this route is
@@ -78,6 +80,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ key
   const connector = CONNECTORS[key];
   if (!connector?.parseWebhook) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Honor the same ops control plane as outbound dispatch. During an incident,
+  // disabling a connector or opening its circuit must freeze inbound writes too;
+  // otherwise a signed webhook could still mutate dispatch state after the kill
+  // switch was pulled.
+  const control = await prisma.connectorConfig.findUnique({
+    where: { connectorKey: key },
+    select: { enabled: true, stage: true, circuitState: true },
+  });
+  if (
+    !control?.enabled ||
+    WEBHOOK_DISABLED_STAGES.has(control.stage) ||
+    WEBHOOK_DISABLED_CIRCUITS.has(control.circuitState)
+  ) {
+    return NextResponse.json({ error: "Connector disabled" }, { status: 503 });
   }
 
   // No secret => we cannot authenticate the caller => refuse (never trust an

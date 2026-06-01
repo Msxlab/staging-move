@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
@@ -42,6 +43,8 @@ const BROADCAST_MAX_USERS = 100_000;
 // past timestamps must surface as a validation error so an operator
 // who typed "yesterday" doesn't silently get an immediate broadcast.
 const SEND_AT_TOLERANCE_MS = 5_000;
+const BROADCAST_DEDUPE_WINDOW_MS = 30_000;
+const BROADCAST_DEDUPE_SOURCE = "admin-notification";
 
 const notificationCreateSchema = z
   .object({
@@ -59,6 +62,44 @@ const notificationCreateSchema = z
       .optional(),
   })
   .strict();
+
+function isUniqueConstraintError(error: unknown) {
+  return Boolean(error && typeof error === "object" && (error as any).code === "P2002");
+}
+
+function broadcastDedupeClaimId(input: {
+  type: string;
+  title: string;
+  body: string;
+  channel: string;
+}) {
+  const bucket = Math.floor(Date.now() / BROADCAST_DEDUPE_WINDOW_MS);
+  const hash = createHash("sha256")
+    .update(JSON.stringify([input.type, input.title, input.body, input.channel]))
+    .digest("hex")
+    .slice(0, 40);
+  return `admin-broadcast:${bucket}:${hash}`;
+}
+
+async function claimBroadcastDedupe(input: {
+  type: string;
+  title: string;
+  body: string;
+  channel: string;
+}) {
+  try {
+    await prisma.processedWebhookEvent.create({
+      data: {
+        id: broadcastDedupeClaimId(input),
+        source: BROADCAST_DEDUPE_SOURCE,
+      },
+    });
+    return true;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return false;
+    throw error;
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -213,6 +254,18 @@ export async function POST(req: NextRequest) {
       if (recentDuplicateBroadcast) {
         return NextResponse.json(
           { error: "An identical broadcast was just sent — wait a moment before resending.", code: "DUPLICATE_BROADCAST" },
+          { status: 409 },
+        );
+      }
+      const claimed = await claimBroadcastDedupe({
+        type: resolvedType,
+        title,
+        body: msgBody,
+        channel,
+      });
+      if (!claimed) {
+        return NextResponse.json(
+          { error: "An identical broadcast is already being sent.", code: "DUPLICATE_BROADCAST" },
           { status: 409 },
         );
       }
