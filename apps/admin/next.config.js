@@ -13,7 +13,7 @@ const nextConfig = {
     };
     return config;
   },
-  transpilePackages: ["@locateflow/db", "@locateflow/shared"],
+  transpilePackages: ["@locateflow/connectors", "@locateflow/db", "@locateflow/shared"],
   skipProxyUrlNormalize: true,
   // SEC-007: Security headers for admin panel.
   // Note: Content-Security-Policy is emitted per-request from

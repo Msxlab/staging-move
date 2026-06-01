@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plug, Plus, ToggleLeft, ToggleRight, Edit2, ShieldAlert } from "lucide-react";
+import { Plug, Plus, ToggleLeft, ToggleRight, Edit2, ShieldAlert, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -53,6 +53,7 @@ export default function ConnectorsClient() {
   const [dispatchByConnector, setDispatchByConnector] = useState<Record<string, Record<string, number>>>({});
   const [consentsByConnector, setConsentsByConnector] = useState<Record<string, Record<string, number>>>({});
   const [lastFailureByConnector, setLastFailureByConnector] = useState<Record<string, ConnectorLastFailure>>({});
+  const [healthChecks, setHealthChecks] = useState<Record<string, { ok: boolean; reason?: string; detail?: string; running?: boolean }>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ConnectorConfig | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -173,6 +174,32 @@ export default function ConnectorsClient() {
     setEditing(c);
     setForm({ connectorKey: c.connectorKey, version: c.version, enabled: c.enabled, stage: c.stage, rolloutPercent: c.rolloutPercent, notes: c.notes || "" });
     setShowForm(true);
+  };
+
+  // Run the connector's tokenless drift canary (health check) on demand. Read-
+  // only — no step-up — so an operator can probe a partner before/after a
+  // rollout without friction.
+  const runHealthCheck = async (key: string) => {
+    setHealthChecks((p) => ({ ...p, [key]: { ...(p[key] ?? { ok: false }), running: true } }));
+    try {
+      const res = await fetch("/api/connectors/healthcheck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connectorKey: key }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Health check failed");
+        setHealthChecks((p) => ({ ...p, [key]: { ok: false, reason: data.error, running: false } }));
+        return;
+      }
+      setHealthChecks((p) => ({ ...p, [key]: { ok: Boolean(data.ok), reason: data.reason, detail: data.detail, running: false } }));
+      if (data.ok) toast.success(`${key}: healthy`);
+      else toast.error(`${key}: ${data.reason || "unhealthy"}${data.detail ? ` — ${data.detail}` : ""}`);
+    } catch {
+      toast.error("Health check failed");
+      setHealthChecks((p) => ({ ...p, [key]: { ok: false, reason: "ERROR", running: false } }));
+    }
   };
 
   // Per-connector ops readout: consent adoption, outbox breakdown, and the most
@@ -306,6 +333,14 @@ export default function ConnectorsClient() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${c.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{c.enabled ? "ON" : "OFF"}</span>
                     <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{c.stage}</span>
                     {c.circuitState !== "CLOSED" && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">{c.circuitState}</span>}
+                    {healthChecks[c.connectorKey] && !healthChecks[c.connectorKey].running && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${healthChecks[c.connectorKey].ok ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}
+                        title={healthChecks[c.connectorKey].detail || (healthChecks[c.connectorKey].ok ? "Health check passed" : "Health check failed")}
+                      >
+                        {healthChecks[c.connectorKey].ok ? "✓ healthy" : `✗ ${healthChecks[c.connectorKey].reason || "unhealthy"}`}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                     <span>v{c.version}</span>
@@ -316,6 +351,7 @@ export default function ConnectorsClient() {
                 </div>
               </div>
               <div className="flex gap-1">
+                <button onClick={() => runHealthCheck(c.connectorKey)} disabled={healthChecks[c.connectorKey]?.running} aria-label="Test connection (health check)" className="rounded p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-50" title="Test connection (health check)"><Activity className={`h-4 w-4 ${healthChecks[c.connectorKey]?.running ? "animate-pulse" : ""}`} /></button>
                 <button onClick={() => startEdit(c)} aria-label="Edit connector" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Edit2 className="h-4 w-4" /></button>
                 <button onClick={() => bulkRevoke(c)} aria-label="Revoke all consents (incident)" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
               </div>
