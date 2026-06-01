@@ -104,6 +104,22 @@ export async function POST(request: NextRequest) {
   const source = eventType === "email.bounced" ? "bounce" : "complaint";
   await processUnsubscribe({ userId: user.id, kind: "all", source });
 
+  // Record the bounce on the matching EmailLog row so the admin email-health
+  // "bounced" metric reflects reality — nothing else writes status BOUNCED, so
+  // it was permanently 0. Match by the Resend message id (stored as
+  // providerMessageId on send). Best-effort: never fail the webhook ack over a
+  // logging miss.
+  if (eventType === "email.bounced" && event.data?.email_id) {
+    try {
+      await prisma.emailLog.updateMany({
+        where: { providerMessageId: event.data.email_id },
+        data: { status: "BOUNCED" },
+      });
+    } catch {
+      /* best-effort */
+    }
+  }
+
   console.info("[RESEND] suppressed marketing for user", {
     userIdHint: user.id.slice(0, 6),
     eventType,

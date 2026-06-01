@@ -651,7 +651,7 @@ export async function POST(request: NextRequest) {
             sendSubscriptionActivatedEmail({
               userEmail: recipient.email,
               userName: recipient.firstName,
-              planLabel: plan || "subscription",
+              planLabel: plan ? formatPlanLabel(plan) : "subscription",
               amountFormatted: formatCurrency(session.amount_total, session.currency),
               locale: recipient.locale,
               dedupeKey: `stripe:checkout-completed:${event.id}`,
@@ -830,7 +830,7 @@ export async function POST(request: NextRequest) {
             sendSubscriptionCanceledEmail({
               userEmail: recipient.email,
               userName: recipient.firstName,
-              planLabel: plan || "subscription",
+              planLabel: plan ? formatPlanLabel(plan) : "subscription",
               accessEndsOn: formatDateInLocale(subscription.current_period_end, recipient.locale),
               locale: recipient.locale,
               dedupeKey: `stripe:subscription-deleted:${event.id}`,
