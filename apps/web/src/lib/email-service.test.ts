@@ -37,6 +37,9 @@ vi.mock("@/lib/email", async () => {
 });
 
 import {
+  sendBillOverdueEmail,
+  sendBillReminderEmail,
+  sendContractReminderEmail,
   sendEmailVerificationEmail,
   sendLoggedEmail,
   sendPasswordResetEmail,
@@ -297,5 +300,237 @@ describe("email-service logging", () => {
       serviceId: "svc_1",
       templateSlug: "password-reset",
     });
+  });
+
+  it("routes bill reminders through the Bill Reminder DB template when present", async () => {
+    mocks.emailTemplateFindUnique.mockImplementation(({ where }: any) =>
+      where.slug === "bill-reminder"
+        ? Promise.resolve({
+            id: "tpl_bill",
+            slug: "bill-reminder",
+            subject: "Bill reminder: {{serviceName}} - ${{amount}} due {{dueText}}",
+            body: "<p>BILL_TPL_MARKER Hi <strong>{{firstName}}</strong> bill due {{dueText}}</p>",
+            isActive: true,
+          })
+        : Promise.resolve(null),
+    );
+
+    const result = await sendBillReminderEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Netflix",
+      category: "Streaming",
+      amount: 12.34,
+      dueDate: "June 5, 2026",
+      daysUntilDue: 3,
+      dedupeKey: "bill:svc:3",
+    });
+
+    expect(result).toBe(true);
+    // Admin-editable template row is linked, and its rendered subject (with the
+    // {{amount}}/{{dueText}} placeholders filled) is what gets sent.
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: "tpl_bill",
+        to: "sam@example.com",
+        subject: "Bill reminder: Netflix - $12.34 due in 3 days",
+        status: "PENDING",
+      }),
+    });
+    // The DB template body — not the inline billReminderHtml builder — produced
+    // the email, so admin edits to the template take effect.
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("BILL_TPL_MARKER Hi <strong>Sam</strong> bill due in 3 days"),
+      }),
+    );
+  });
+
+  it("falls back to inline bill reminder content when the template is unavailable", async () => {
+    // beforeEach default already resolves the bill-reminder slug to null.
+    const result = await sendBillReminderEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Netflix",
+      category: "Streaming",
+      amount: 12.34,
+      dueDate: "June 5, 2026",
+      daysUntilDue: 1,
+      dedupeKey: "bill:svc:1",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        to: "sam@example.com",
+        // 1-day case stays grammatical ("due in 1 day", never "in 1 days").
+        subject: "Bill reminder: Netflix - $12.34 due in 1 day",
+        status: "PENDING",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        kind: "bill-reminder",
+        templateSlug: "bill-reminder",
+        templateUnavailable: true,
+      }),
+    );
+    // Inline builder still rendered a complete, sendable email.
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("Netflix"),
+      }),
+    );
+  });
+
+  it("routes contract reminders through the Contract Reminder DB template when present", async () => {
+    mocks.emailTemplateFindUnique.mockImplementation(({ where }: any) =>
+      where.slug === "contract-reminder"
+        ? Promise.resolve({
+            id: "tpl_contract",
+            slug: "contract-reminder",
+            subject: "{{serviceName}} contract ends in {{timeRemaining}}",
+            body: "<p>CONTRACT_TPL_MARKER Hi <strong>{{firstName}}</strong> ends in {{timeRemaining}}</p>",
+            isActive: true,
+          })
+        : Promise.resolve(null),
+    );
+
+    const result = await sendContractReminderEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Verizon",
+      contractEndDate: "July 1, 2026",
+      daysRemaining: 7,
+      serviceLink: "https://locateflow.com/services/svc_1",
+      dedupeKey: "contract:svc:7",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: "tpl_contract",
+        to: "sam@example.com",
+        subject: "Verizon contract ends in 7 days",
+        status: "PENDING",
+      }),
+    });
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("CONTRACT_TPL_MARKER Hi <strong>Sam</strong> ends in 7 days"),
+      }),
+    );
+  });
+
+  it("falls back to inline contract reminder content when the template is unavailable", async () => {
+    const result = await sendContractReminderEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Verizon",
+      contractEndDate: "July 1, 2026",
+      daysRemaining: 1,
+      serviceLink: "https://locateflow.com/services/svc_1",
+      dedupeKey: "contract:svc:1",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        to: "sam@example.com",
+        // 1-day case stays grammatical ("in 1 day", never "in 1 days").
+        subject: "Verizon contract ends in 1 day",
+        status: "PENDING",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        kind: "contract-reminder",
+        templateSlug: "contract-reminder",
+        templateUnavailable: true,
+      }),
+    );
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("Verizon"),
+      }),
+    );
+  });
+
+  it("routes overdue-bill notices through the Bill Overdue DB template when present", async () => {
+    mocks.emailTemplateFindUnique.mockImplementation(({ where }: any) =>
+      where.slug === "bill-overdue"
+        ? Promise.resolve({
+            id: "tpl_overdue",
+            slug: "bill-overdue",
+            subject: "Overdue bill: {{serviceName}}",
+            body: "<p>OVERDUE_TPL_MARKER {{serviceName}} is {{overdueText}}</p><a href=\"{{reviewLink}}\">Review</a>",
+            isActive: true,
+          })
+        : Promise.resolve(null),
+    );
+
+    const result = await sendBillOverdueEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Comcast",
+      category: "Internet",
+      amount: 59.99,
+      dueDate: "May 1, 2026",
+      daysOverdue: 5,
+      serviceId: "svc_42",
+      dedupeKey: "overdue:svc:5",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: "tpl_overdue",
+        to: "sam@example.com",
+        subject: "Overdue bill: Comcast",
+        status: "PENDING",
+      }),
+    });
+    // The DB template rendered, and the conditional CTA href resolved to the
+    // specific service (serviceId present).
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("OVERDUE_TPL_MARKER Comcast is 5 days overdue"),
+      }),
+    );
+    expect(mocks.sendEmailWithResult.mock.calls[0][0].html).toContain("https://locateflow.com/services/svc_42");
+  });
+
+  it("falls back to inline overdue-bill content when the template is unavailable", async () => {
+    const result = await sendBillOverdueEmail({
+      userEmail: "sam@example.com",
+      userName: "Sam",
+      serviceName: "Comcast",
+      category: "Internet",
+      amount: 59.99,
+      dueDate: "May 1, 2026",
+      daysOverdue: 1,
+      dedupeKey: "overdue:svc:1",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        to: "sam@example.com",
+        subject: "Overdue bill: Comcast",
+        status: "PENDING",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        kind: "bill-overdue",
+        templateSlug: "bill-overdue",
+        templateUnavailable: true,
+      }),
+    );
+    // Inline builder rendered the body (grammatical "1 day overdue").
+    expect(mocks.sendEmailWithResult.mock.calls[0][0].html).toContain("1 day overdue");
   });
 });

@@ -153,18 +153,24 @@ export const EMAIL_TEMPLATES_ALL = [
   {
     slug: "bill-reminder",
     name: "Bill Reminder",
-    subject: "Bill reminder: {{serviceName}} is due soon",
+    // {{dueText}} is supplied pre-formatted by the sender ("today" / "in 3
+    // days") so the copy stays grammatical for the 1-day and same-day cases —
+    // a static "{{daysLeft}} days" would render "in 1 days". Kept at parity
+    // with the inline billReminderHtml fallback so rerouting through this
+    // template never downgrades the email.
+    subject: "Bill reminder: {{serviceName}} - ${{amount}} due {{dueText}}",
     category: "NOTIFICATION",
-    variables: JSON.stringify(["firstName", "serviceName", "amount", "dueDate", "daysLeft", "appUrl"]),
+    variables: JSON.stringify(["firstName", "serviceName", "category", "amount", "dueDate", "dueText", "appUrl"]),
     isActive: true,
     isDefault: true,
     body: wrap(
       "Bill reminder",
-      "{{serviceName}} has an upcoming bill.",
+      "{{serviceName}} is due {{dueText}}.",
       p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your <strong>{{serviceName}}</strong> bill is due in <strong>{{daysLeft}} days</strong>.") +
+        p("Your <strong>{{serviceName}}</strong> bill is due {{dueText}}.") +
         rows([
           ["Service", "{{serviceName}}"],
+          ["Category", "{{category}}"],
           ["Amount", `<span style="color:${BRAND.primaryDark};">\${{amount}}</span>`],
           ["Due Date", "{{dueDate}}"],
         ]) +
@@ -209,17 +215,25 @@ export const EMAIL_TEMPLATES_ALL = [
   {
     slug: "contract-reminder",
     name: "Contract Reminder",
-    subject: "Contract reminder: {{serviceName}}",
+    // {{timeRemaining}} is supplied pre-formatted ("1 day" / "3 days") so the
+    // copy stays grammatical and the template stays at parity with the inline
+    // contractReminderHtml fallback (same subject, Service / Ends On / Time
+    // Remaining rows, and CTA) — rerouting through it never downgrades.
+    subject: "{{serviceName}} contract ends in {{timeRemaining}}",
     category: "NOTIFICATION",
-    variables: JSON.stringify(["firstName", "serviceName", "contractEndDate", "daysRemaining", "serviceLink"]),
+    variables: JSON.stringify(["firstName", "serviceName", "contractEndDate", "timeRemaining", "serviceLink"]),
     isActive: true,
     isDefault: true,
     body: wrap(
       "Contract reminder",
-      "{{serviceName}} contract timing needs review.",
+      "{{serviceName}} contract ends in {{timeRemaining}}.",
       p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your <strong>{{serviceName}}</strong> contract ends in <strong>{{daysRemaining}} days</strong>.") +
-        rows([["Ends On", "{{contractEndDate}}"]]) +
+        p("Your <strong>{{serviceName}}</strong> contract ends in <strong>{{timeRemaining}}</strong>.") +
+        rows([
+          ["Service", "{{serviceName}}"],
+          ["Ends On", "{{contractEndDate}}"],
+          ["Time Remaining", "{{timeRemaining}}"],
+        ]) +
         button("{{serviceLink}}", "Review Service"),
     ),
   },
@@ -379,22 +393,29 @@ export const EMAIL_TEMPLATES_ALL = [
   {
     slug: "bill-overdue",
     name: "Bill Overdue",
+    // {{overdueText}} is supplied pre-formatted ("1 day overdue" / "5 days
+    // overdue") and {{reviewLink}} resolves to the specific service when known.
+    // Kept at parity with the inline bill-overdue builder (same body lines,
+    // Service / Category / Amount / Due date rows, and CTA) so rerouting
+    // through this template never downgrades the email.
     subject: "Overdue bill: {{serviceName}}",
     category: "NOTIFICATION",
-    variables: JSON.stringify(["firstName", "serviceName", "amount", "dueDate", "appUrl"]),
+    variables: JSON.stringify(["firstName", "serviceName", "category", "amount", "dueDate", "overdueText", "reviewLink"]),
     isActive: true,
     isDefault: true,
     body: wrap(
       "Bill overdue",
-      "{{serviceName}} appears overdue.",
+      "{{serviceName}} appears to be {{overdueText}}.",
       p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your <strong>{{serviceName}}</strong> bill appears overdue.") +
+        p("Your <strong>{{serviceName}}</strong> bill appears to be {{overdueText}}.") +
+        p("If you already handled it, you can ignore this reminder or update the service details in LocateFlow.") +
         rows([
           ["Service", "{{serviceName}}"],
-          ["Amount", "{{amount}}"],
+          ["Category", "{{category}}"],
+          ["Amount", "${{amount}}"],
           ["Due date", "{{dueDate}}"],
         ]) +
-        button("{{appUrl}}/services", "Review Services"),
+        button("{{reviewLink}}", "Review Service"),
     ),
   },
   {
