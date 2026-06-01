@@ -58,30 +58,21 @@ async function handleCron(request: NextRequest) {
 
         const userPreferences = preferencesByUser.get(service.user.id) || [];
         const notificationSettings = buildWebNotificationSettings(userPreferences);
-        if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.contractExpiring) continue;
+        // Channels independent: `contractExpiring` is the EMAIL toggle; email-off
+        // must not also kill the in-app feed record + push. Skip only when both off.
+        const emailAllowed =
+          notificationSettings.config.emailEnabled && notificationSettings.prefs.contractExpiring;
+        const pushAllowed = isPushTypeEnabled(userPreferences, "CONTRACT_EXPIRY");
+        if (!emailAllowed && !pushAllowed) continue;
 
         const contractEndDateText = service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`;
-        const success = await sendContractReminderEmail({
-          userEmail: service.user.email,
-          userName: [service.user.firstName, service.user.lastName].filter(Boolean).join(" ") || "there",
-          serviceName: service.providerName,
-          contractEndDate: contractEndDateText,
-          daysRemaining: days,
-          serviceLink: `${appUrl}/services/${service.id}`,
-          userId: service.user.id,
-          dedupeKey,
-          metadata: {
-            userId: service.user.id,
-            serviceId: service.id,
-          },
-        });
+        const notificationTitle = `${service.providerName} contract ends soon`;
+        const notificationBody = `${service.providerName} ends in ${days} day${days === 1 ? "" : "s"} on ${contractEndDateText}.`;
 
-        if (success) {
-          sent++;
+        try {
+          // In-app feed entry — durable record, written when ≥1 channel is on.
           try {
-            const notificationTitle = `${service.providerName} contract ends soon`;
-            const notificationBody = `${service.providerName} ends in ${days} day${days === 1 ? "" : "s"} on ${contractEndDateText}.`;
             const created = await createInAppNotification({
               userId: service.user.id,
               type: "CONTRACT_EXPIRY",
@@ -90,36 +81,41 @@ async function handleCron(request: NextRequest) {
               href: `/services/${service.id}`,
               icon: "Clock",
               dedupeKey,
-              metadata: {
-                kind: "contract-reminder",
-                serviceId: service.id,
-                daysRemaining: days,
-                channelMirror: "EMAIL",
-              },
+              metadata: { kind: "contract-reminder", serviceId: service.id, daysRemaining: days },
             });
-            if (created) {
-              mirrored++;
-              // Own type only — a cross-type fallback list let disabling "push
-              // task reminders" silently suppress contract-expiry push.
-              if (isPushTypeEnabled(userPreferences, "CONTRACT_EXPIRY")) {
-                const pushed = await sendNotification({
-                  userId: service.user.id,
-                  type: "PUSH",
-                  subject: notificationTitle,
-                  body: notificationBody,
-                  dedupeKey: `${dedupeKey}:push`,
-                  metadata: {
-                    kind: "contract-reminder",
-                    serviceId: service.id,
-                    daysRemaining: days,
-                  },
-                });
-                if (pushed) pushSent++;
-              }
-            }
+            if (created) mirrored++;
           } catch (mirrorError) {
             errors.push(`In-app mirror failed for ${service.providerName}: ${mirrorError}`);
           }
+
+          if (emailAllowed) {
+            const success = await sendContractReminderEmail({
+              userEmail: service.user.email,
+              userName: [service.user.firstName, service.user.lastName].filter(Boolean).join(" ") || "there",
+              serviceName: service.providerName,
+              contractEndDate: contractEndDateText,
+              daysRemaining: days,
+              serviceLink: `${appUrl}/services/${service.id}`,
+              userId: service.user.id,
+              dedupeKey,
+              metadata: { userId: service.user.id, serviceId: service.id },
+            });
+            if (success) sent++;
+          }
+
+          if (pushAllowed) {
+            const pushed = await sendNotification({
+              userId: service.user.id,
+              type: "PUSH",
+              subject: notificationTitle,
+              body: notificationBody,
+              dedupeKey: `${dedupeKey}:push`,
+              metadata: { kind: "contract-reminder", serviceId: service.id, daysRemaining: days },
+            });
+            if (pushed) pushSent++;
+          }
+        } catch (err) {
+          errors.push(`Failed for ${service.providerName}: ${err}`);
         }
       }
     }

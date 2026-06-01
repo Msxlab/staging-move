@@ -83,7 +83,14 @@ export async function GET(req: Request) {
       if (!svc.user?.email) continue;
       const userPreferences = preferencesByUser.get(svc.user.id) || [];
       const notificationSettings = buildWebNotificationSettings(userPreferences);
-      if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.billReminder) continue;
+      // Channels are independent (matches task/move-reminders). `billReminder`
+      // is the EMAIL toggle; turning email off must not also kill the in-app
+      // feed record + push. Skip the user entirely only when BOTH email and
+      // push are off. Push checks its own type (own-type only).
+      const emailAllowed =
+        notificationSettings.config.emailEnabled && notificationSettings.prefs.billReminder;
+      const pushAllowed = isPushTypeEnabled(userPreferences, "BILL_REMINDER");
+      if (!emailAllowed && !pushAllowed) continue;
 
       const dueDate = getNextBillingDate(svc.billingDay || currentDay, now);
       const daysUntilDue = getDaysUntilDate(dueDate, now);
@@ -93,65 +100,54 @@ export async function GET(req: Request) {
       try {
         const dueDateText = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:bill-reminder:${svc.id}:${dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`;
-        const success = await sendBillReminderEmail({
-          userEmail: svc.user.email,
-          userName: [svc.user.firstName, svc.user.lastName].filter(Boolean).join(" ") || "User",
-          serviceName: svc.providerName,
-          category: (svc.category || "Service").replace(/_/g, " "),
-          amount: svc.monthlyCost || 0,
-          dueDate: dueDateText,
-          daysUntilDue,
-          userId: svc.user.id,
-          dedupeKey,
-          metadata: {
-            userId: svc.user.id,
-            serviceId: svc.id,
-          },
-        });
+        const notificationBody = `${svc.providerName} is due ${daysUntilDue === 0 ? "today" : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`} on ${dueDateText}.`;
 
-        if (success) {
-          sentCount++;
-          try {
-            const notificationBody = `${svc.providerName} is due ${daysUntilDue === 0 ? "today" : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`} on ${dueDateText}.`;
-            const mirrored = await createInAppNotification({
-              userId: svc.user.id,
-              type: "BILL_REMINDER",
-              title: `Bill reminder: ${svc.providerName}`,
-              body: notificationBody,
-              href: `/services/${svc.id}`,
-              icon: "Receipt",
-              dedupeKey,
-              metadata: {
-                kind: "bill-reminder",
-                serviceId: svc.id,
-                daysUntilDue,
-                channelMirror: "EMAIL",
-              },
-            });
-            if (mirrored) {
-              mirroredCount++;
-              // Check ONLY this reminder's own push type. Passing a fallback
-              // list (e.g. TASK_REMINDER) meant disabling mobile "push task
-              // reminders" silently suppressed bill push too.
-              if (isPushTypeEnabled(userPreferences, "BILL_REMINDER")) {
-                const pushed = await sendNotification({
-                  userId: svc.user.id,
-                  type: "PUSH",
-                  subject: `Bill reminder: ${svc.providerName}`,
-                  body: notificationBody,
-                  dedupeKey: `${dedupeKey}:push`,
-                  metadata: {
-                    kind: "bill-reminder",
-                    serviceId: svc.id,
-                    daysUntilDue,
-                  },
-                });
-                if (pushed) pushSentCount++;
-              }
-            }
-          } catch (mirrorError) {
-            errors.push(`In-app mirror failed for ${svc.providerName}: ${mirrorError}`);
-          }
+        // In-app feed entry — the durable record, written whenever at least one
+        // channel is on (deduped by dedupeKey on re-runs).
+        try {
+          const mirrored = await createInAppNotification({
+            userId: svc.user.id,
+            type: "BILL_REMINDER",
+            title: `Bill reminder: ${svc.providerName}`,
+            body: notificationBody,
+            href: `/services/${svc.id}`,
+            icon: "Receipt",
+            dedupeKey,
+            metadata: { kind: "bill-reminder", serviceId: svc.id, daysUntilDue },
+          });
+          if (mirrored) mirroredCount++;
+        } catch (mirrorError) {
+          errors.push(`In-app mirror failed for ${svc.providerName}: ${mirrorError}`);
+        }
+
+        // Email — only if the user allows email bill reminders.
+        if (emailAllowed) {
+          const success = await sendBillReminderEmail({
+            userEmail: svc.user.email,
+            userName: [svc.user.firstName, svc.user.lastName].filter(Boolean).join(" ") || "User",
+            serviceName: svc.providerName,
+            category: (svc.category || "Service").replace(/_/g, " "),
+            amount: svc.monthlyCost || 0,
+            dueDate: dueDateText,
+            daysUntilDue,
+            userId: svc.user.id,
+            dedupeKey,
+            metadata: { userId: svc.user.id, serviceId: svc.id },
+          });
+          if (success) sentCount++;
+        }
+
+        // Push — only if the user's push toggle allows it.
+        if (pushAllowed) {
+          const pushed = await sendNotification({
+            userId: svc.user.id,
+            type: "PUSH",
+            subject: `Bill reminder: ${svc.providerName}`,
+            body: notificationBody,
+            dedupeKey: `${dedupeKey}:push`,
+            metadata: { kind: "bill-reminder", serviceId: svc.id, daysUntilDue },
+          });
+          if (pushed) pushSentCount++;
         }
       } catch (err) {
         errors.push(`Failed for ${svc.providerName}: ${err}`);
