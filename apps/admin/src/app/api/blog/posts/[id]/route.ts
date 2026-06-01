@@ -284,6 +284,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (existing.status === "PUBLISHED") {
     const result = await revalidatePublicBlog({ slug: updated.slug, locale: updated.locale });
     revalidate = result.ok ? { ok: true } : { ok: false, reason: result.reason };
+    // If the slug changed, also purge the OLD URL — otherwise /blog/<old-slug>
+    // (and its cached list/feed/sitemap entries) keep referencing a path that
+    // no longer resolves to this post.
+    if (existing.slug && existing.slug !== updated.slug) {
+      await revalidatePublicBlog({ slug: existing.slug, locale: updated.locale }).catch(() => {});
+    }
   }
 
   return NextResponse.json({ post: updated, revalidate });
