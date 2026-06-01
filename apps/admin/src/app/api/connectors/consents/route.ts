@@ -94,6 +94,14 @@ export async function POST(req: NextRequest) {
       where: { connectorKey, status: "GRANTED" },
       data: { status: "REVOKED", revokedAt: new Date(), revocationReason, tokenEncrypted: null, refreshTokenEncrypted: null },
     });
+    // Kill in-flight work too: this is an incident kill-switch, but revoking the
+    // consents alone leaves QUEUED/DISPATCHING ConnectorDispatch rows that the
+    // worker would still claim (the per-connector config stays enabled). The
+    // user-side revokeConsent already cancels these — mirror it here connector-wide.
+    await prisma.connectorDispatch.updateMany({
+      where: { connectorKey, status: { in: ["QUEUED", "DISPATCHING"] } },
+      data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
+    });
     await prisma.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,

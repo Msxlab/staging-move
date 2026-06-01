@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { rawPrisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { isEncrypted, reEncrypt, validateKeyFormat } from "@/lib/shared-encryption";
@@ -56,9 +56,16 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
 
     while (hasMore) {
       if (tableName === "services") {
-        const records = await prisma.service.findMany({
+        // rawPrisma: soft-deleted Service rows are still restorable during the
+        // deletion grace window, so their ciphertext MUST be re-encrypted too —
+        // otherwise it becomes permanently undecryptable once the old key is
+        // retired. orderBy makes offset pagination stable (no skipped/repeated
+        // rows, which would otherwise re-feed an already-rotated row to reEncrypt
+        // and fail mid-rotation).
+        const records = await rawPrisma.service.findMany({
           skip,
           take: BATCH_SIZE,
+          orderBy: { id: "asc" },
           select: { id: true, accountNumber: true, username: true, phone: true, email: true, notes: true },
         });
         if (records.length < BATCH_SIZE) hasMore = false;
@@ -94,7 +101,7 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
 
           if (!dryRun) {
             try {
-              await prisma.service.update({
+              await rawPrisma.service.update({
                 where: { id: record.id },
                 data: {
                   ...(updates.accountNumber ? { accountNumber: updates.accountNumber } : {}),
@@ -112,9 +119,10 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
           stats.rotated++;
         }
       } else {
-        const records = await prisma.address.findMany({
+        const records = await rawPrisma.address.findMany({
           skip,
           take: BATCH_SIZE,
+          orderBy: { id: "asc" },
           select: { id: true, formattedAddress: true },
         });
         if (records.length < BATCH_SIZE) hasMore = false;
@@ -136,7 +144,7 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
 
           if (!dryRun) {
             try {
-              await prisma.address.update({
+              await rawPrisma.address.update({
                 where: { id: record.id },
                 data: { formattedAddress: rotated },
               });

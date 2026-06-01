@@ -19,8 +19,10 @@ vi.mock("@/lib/auth", () => ({
   requirePasswordConfirm: (...args: unknown[]) => mocks.requirePasswordConfirm(...args),
 }));
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  // Rotation scans + updates run on the RAW client (rawPrisma) so soft-deleted
+  // rows are rotated too; point both exports at the same mock fns.
+  const client = {
     service: {
       findMany: (...args: unknown[]) => mocks.serviceFindMany(...args),
       update: (...args: unknown[]) => mocks.serviceUpdate(...args),
@@ -29,8 +31,9 @@ vi.mock("@/lib/db", () => ({
       findMany: (...args: unknown[]) => mocks.addressFindMany(...args),
       update: (...args: unknown[]) => mocks.addressUpdate(...args),
     },
-  },
-}));
+  };
+  return { prisma: client, rawPrisma: client, prismaUnsafe: client };
+});
 
 vi.mock("@/lib/audit", () => ({
   getAuditRequestMeta: () => ({ ipAddress: "203.0.113.10", userAgent: "vitest" }),

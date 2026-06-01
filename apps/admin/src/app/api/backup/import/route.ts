@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-// `prisma` is the soft-delete-extended client, fine for read/audit/MERGE.
-// `prismaUnsafe` is the raw client — only used for REPLACE so `deleteMany`
-// actually removes rows instead of being rewritten to soft-delete (which
-// would then collide with the imported rows on `create`).
+// `prisma` is the soft-delete-extended client (reads/audit). `prismaUnsafe`
+// is the raw client, used wherever the import must see PHYSICAL rows so a
+// backup id that collides with a SOFT-DELETED target row is detected (and
+// skipped) rather than mis-created: REPLACE (so `deleteMany` truly removes
+// rows), and the MERGE + DRY_RUN existence checks (an extended findUnique
+// hides soft-deleted rows, so it would report "new" → create() → PK
+// collision → the whole MERGE rolls back).
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { parseBackupArchive } from "@/lib/backup-archive";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
@@ -36,7 +39,7 @@ import { getAuditRequestMeta } from "@/lib/audit";
 const IMPORT_MODEL_OPS = {
   users: {
     count: () => prisma.user.count(),
-    findUniqueById: (id: string) => prisma.user.findUnique({ where: { id } }),
+    findUniqueById: (id: string) => prismaUnsafe.user.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.user.create({ data }),
   },
   oauthAccounts: {
@@ -60,7 +63,7 @@ const IMPORT_MODEL_OPS = {
   providers: {
     count: () => prisma.serviceProvider.count(),
     findUniqueById: (id: string) =>
-      prisma.serviceProvider.findUnique({ where: { id } }),
+      prismaUnsafe.serviceProvider.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.serviceProvider.create({ data }),
   },
   providerLogoCandidates: {
@@ -78,36 +81,36 @@ const IMPORT_MODEL_OPS = {
   addresses: {
     count: () => prisma.address.count(),
     findUniqueById: (id: string) =>
-      prisma.address.findUnique({ where: { id } }),
+      prismaUnsafe.address.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.address.create({ data }),
   },
   movingPlans: {
     count: () => prisma.movingPlan.count(),
     findUniqueById: (id: string) =>
-      prisma.movingPlan.findUnique({ where: { id } }),
+      prismaUnsafe.movingPlan.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.movingPlan.create({ data }),
   },
   customProviders: {
     count: () => prisma.userCustomProvider.count(),
     findUniqueById: (id: string) =>
-      prisma.userCustomProvider.findUnique({ where: { id } }),
+      prismaUnsafe.userCustomProvider.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.userCustomProvider.create({ data }),
   },
   services: {
     count: () => prisma.service.count(),
     findUniqueById: (id: string) =>
-      prisma.service.findUnique({ where: { id } }),
+      prismaUnsafe.service.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.service.create({ data }),
   },
   moveTasks: {
     count: () => prisma.moveTask.count(),
     findUniqueById: (id: string) =>
-      prisma.moveTask.findUnique({ where: { id } }),
+      prismaUnsafe.moveTask.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.moveTask.create({ data }),
   },
   budgets: {
     count: () => prisma.budget.count(),
-    findUniqueById: (id: string) => prisma.budget.findUnique({ where: { id } }),
+    findUniqueById: (id: string) => prismaUnsafe.budget.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.budget.create({ data }),
   },
   subscriptions: {
@@ -191,7 +194,7 @@ const IMPORT_MODEL_OPS = {
   blogPosts: {
     count: () => prisma.blogPost.count(),
     findUniqueById: (id: string) =>
-      prisma.blogPost.findUnique({ where: { id } }),
+      prismaUnsafe.blogPost.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.blogPost.create({ data }),
   },
 } as const;
@@ -838,7 +841,11 @@ export async function POST(request: NextRequest) {
 
     if (mode === "MERGE") {
       try {
-        await prisma.$transaction(
+        // prismaUnsafe (raw): the existence check below must see PHYSICAL rows.
+        // The extended client's findUnique hides soft-deleted rows, so a backup
+        // id colliding with a soft-deleted target row would read as "new", then
+        // create() would hit a PK collision and roll back the entire MERGE.
+        await prismaUnsafe.$transaction(
           async (tx: any) => {
             for (const tableName of selectedTables) {
               const records = data[tableName];
