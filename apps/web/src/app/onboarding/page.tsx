@@ -789,18 +789,18 @@ export default function OnboardingPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>First Name *</label>
-                <input aria-required="true" className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
+                <label htmlFor="onb-firstName" className={labelCls}>First Name *</label>
+                <input id="onb-firstName" aria-required="true" className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
               </div>
               <div>
-                <label className={labelCls}>Last Name *</label>
-                <input aria-required="true" className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
+                <label htmlFor="onb-lastName" className={labelCls}>Last Name *</label>
+                <input id="onb-lastName" aria-required="true" className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Age Range</label>
-                <select className={selectCls} value={profile.ageRange} onChange={(e) => setProfile({ ...profile, ageRange: e.target.value })}>
+                <label htmlFor="onb-ageRange" className={labelCls}>Age Range</label>
+                <select id="onb-ageRange" className={selectCls} value={profile.ageRange} onChange={(e) => setProfile({ ...profile, ageRange: e.target.value })}>
                   <option value="">Select</option>
                   <option value="18-24">18-24</option>
                   <option value="25-34">25-34</option>
@@ -810,8 +810,8 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Family Status</label>
-                <select className={selectCls} value={profile.familyStatus} onChange={(e) => setProfile({ ...profile, familyStatus: e.target.value })}>
+                <label htmlFor="onb-familyStatus" className={labelCls}>Family Status</label>
+                <select id="onb-familyStatus" className={selectCls} value={profile.familyStatus} onChange={(e) => setProfile({ ...profile, familyStatus: e.target.value })}>
                   <option value="SINGLE">Single</option>
                   <option value="COUPLE">Couple</option>
                   <option value="FAMILY">Family</option>
@@ -896,19 +896,19 @@ export default function OnboardingPage() {
 
             {profile.hasChildren && (
               <div>
-                <label className={labelCls}>Number of Children</label>
-                <input className={inputCls} type="number" min="0" max="20" value={profile.childrenCount} onChange={(e) => setProfile({ ...profile, childrenCount: parseInt(e.target.value) || 0 })} />
+                <label htmlFor="onb-childrenCount" className={labelCls}>Number of Children</label>
+                <input id="onb-childrenCount" className={inputCls} type="number" min="0" max="20" value={profile.childrenCount} onChange={(e) => setProfile({ ...profile, childrenCount: parseInt(e.target.value) || 0 })} />
               </div>
             )}
             <div>
-              <label className={labelCls}>Number of Cars</label>
-              <input className={inputCls} type="number" min="0" max="10" value={profile.carCount} onChange={(e) => setProfile({ ...profile, carCount: parseInt(e.target.value) || 0 })} />
+              <label htmlFor="onb-carCount" className={labelCls}>Number of Cars</label>
+              <input id="onb-carCount" className={inputCls} type="number" min="0" max="10" value={profile.carCount} onChange={(e) => setProfile({ ...profile, carCount: parseInt(e.target.value) || 0 })} />
             </div>
 
             {/* Move Type */}
             <div>
-              <label className={labelCls}>Move Type</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <span id="onb-moveType-label" className={labelCls}>Move Type</span>
+              <div role="group" aria-labelledby="onb-moveType-label" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { value: "PERSONAL", label: "🏠 Personal" },
                   { value: "BUSINESS", label: "💼 Business" },
@@ -1001,8 +1001,8 @@ export default function OnboardingPage() {
           <p className="text-muted-foreground text-sm mb-5">Where do you currently live?</p>
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>Nickname</label>
-              <input className={inputCls} placeholder="e.g. Home, Apartment" value={address.nickname} onChange={(e) => updateAddressField("nickname", e.target.value)} />
+              <label htmlFor="onb-addr-nickname" className={labelCls}>Nickname</label>
+              <input id="onb-addr-nickname" className={inputCls} placeholder="e.g. Home, Apartment" value={address.nickname} onChange={(e) => updateAddressField("nickname", e.target.value)} />
             </div>
             <AddressAutocompleteInput
               label="Street Address *"
@@ -1014,22 +1014,22 @@ export default function OnboardingPage() {
             />
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className={labelCls}>City *</label>
-                <input aria-required="true" className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
+                <label htmlFor="onb-addr-city" className={labelCls}>City *</label>
+                <input id="onb-addr-city" aria-required="true" className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>State *</label>
-                <input aria-required="true" className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
+                <label htmlFor="onb-addr-state" className={labelCls}>State *</label>
+                <input id="onb-addr-state" aria-required="true" className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
               </div>
               <div>
-                <label className={labelCls}>ZIP *</label>
-                <input aria-required="true" className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
+                <label htmlFor="onb-addr-zip" className={labelCls}>ZIP *</label>
+                <input id="onb-addr-zip" aria-required="true" className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className={labelCls}>Type</label>
-                <select className={selectCls} value={address.type} onChange={(e) => updateAddressField("type", e.target.value)}>
+                <label htmlFor="onb-addr-type" className={labelCls}>Type</label>
+                <select id="onb-addr-type" className={selectCls} value={address.type} onChange={(e) => updateAddressField("type", e.target.value)}>
                   <option value="HOME">Home</option>
                   <option value="WORK">Work</option>
                   <option value="VACATION">Vacation</option>
@@ -1039,8 +1039,8 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Ownership</label>
-                <select className={selectCls} value={address.ownership} onChange={(e) => updateAddressField("ownership", e.target.value)}>
+                <label htmlFor="onb-addr-ownership" className={labelCls}>Ownership</label>
+                <select id="onb-addr-ownership" className={selectCls} value={address.ownership} onChange={(e) => updateAddressField("ownership", e.target.value)}>
                   <option value="OWNER">Owner</option>
                   <option value="RENTER">Renter</option>
                   <option value="FAMILY">Family</option>
@@ -1048,8 +1048,8 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Move-in Date</label>
-                <input className={inputCls} type="date" value={address.startDate} onChange={(e) => updateAddressField("startDate", e.target.value)} />
+                <label htmlFor="onb-addr-startDate" className={labelCls}>Move-in Date</label>
+                <input id="onb-addr-startDate" className={inputCls} type="date" value={address.startDate} onChange={(e) => updateAddressField("startDate", e.target.value)} />
               </div>
             </div>
           </div>
@@ -1365,23 +1365,23 @@ export default function OnboardingPage() {
               />
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
-                  <label className={labelCls}>City *</label>
-                  <input aria-required="true" className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
+                  <label htmlFor="onb-move-city" className={labelCls}>City *</label>
+                  <input id="onb-move-city" aria-required="true" className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
                 </div>
                 <div>
-                  <label className={labelCls}>State *</label>
-                  <input aria-required="true" className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
+                  <label htmlFor="onb-move-state" className={labelCls}>State *</label>
+                  <input id="onb-move-state" aria-required="true" className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
                 </div>
                 <div>
-                  <label className={labelCls}>ZIP *</label>
-                  <input aria-required="true" className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
+                  <label htmlFor="onb-move-zip" className={labelCls}>ZIP *</label>
+                  <input id="onb-move-zip" aria-required="true" className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Move Date *</label>
+                <label htmlFor="onb-move-date" className={labelCls}>Move Date *</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40 pointer-events-none" />
-                  <input aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
+                  <input id="onb-move-date" aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
