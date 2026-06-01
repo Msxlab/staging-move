@@ -82,6 +82,22 @@ export default function DeleteAccountScreen() {
     await unregisterPushNotifications().catch(() => {});
     await clearSession();
     await clearSensitiveLocalState(queryClient);
+
+    // When the backend runs with a deletion grace window it responds with
+    // status:"SCHEDULED" (HTTP 202): the account is closed and the session is
+    // killed now, but it stays RESTORABLE from an emailed link until
+    // scheduledPurgeAt. Previously this response was discarded and the user was
+    // signed out as if the deletion were immediate and permanent — surface the
+    // recoverable state instead. (Default grace is 0 → immediate, so this only
+    // fires when ACCOUNT_DELETION_GRACE_DAYS is set; the server supplies the copy.)
+    const data = res.data as { status?: string; message?: string } | null;
+    if (data?.status === "SCHEDULED") {
+      Alert.alert(
+        t("settings.deleteAccount"),
+        data.message ||
+          "Your account is now closed and you have been signed out. You can restore it from the link we emailed you before it is permanently deleted.",
+      );
+    }
     router.replace("/(auth)/sign-in");
   };
 

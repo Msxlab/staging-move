@@ -49,6 +49,12 @@ jobs:
 
       - name: Prisma validate
         run: pnpm --filter @locateflow/db exec prisma validate
+        env:
+          # prisma validate resolves env("DATABASE_URL") even though it never
+          # connects to the DB; with the var unset it fails P1012 and red-fails
+          # this job on every non-main push. A syntactically-valid placeholder
+          # is enough (no database contact happens).
+          DATABASE_URL: "mysql://placeholder:placeholder@localhost:3306/placeholder"
 
       - name: Prisma migrate (deploy)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
