@@ -14,11 +14,15 @@ describe("auth social button styling", () => {
 
     expect(combined).toContain("bg-white");
     expect(combined).toContain("text-slate-950");
-    expect(combined).toContain("bg-black");
+    expect(combined).toContain("border border-slate-300");
+    expect(combined).toContain("hover:border-slate-400");
+    expect(combined).toContain("disabled:bg-slate-100");
     expect(combined).toContain("dark:bg-white");
     expect(combined).toContain("disabled:opacity-100");
     expect(combined).toContain("googleUnavailable");
     expect(combined).toContain("appleUnavailable");
+    expect(combined).not.toContain("bg-black bg-gradient-to-b");
+    expect(combined).not.toContain("from-zinc-800");
     expect(combined).not.toContain("disabled:opacity-60");
   });
 });
