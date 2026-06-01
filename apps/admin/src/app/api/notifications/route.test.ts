@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
     },
     notificationQueue: {
       create: vi.fn(),
+      // Duplicate-broadcast guard probes this; undefined → no recent duplicate.
+      findFirst: vi.fn(),
     },
     user: {
       findMany: vi.fn(),
