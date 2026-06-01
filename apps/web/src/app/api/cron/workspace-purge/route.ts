@@ -17,9 +17,22 @@ async function handle(request: NextRequest): Promise<NextResponse> {
   // a bespoke bearer===secret check with no rate limit.
   const guard = await guardCronRequest(request, "workspace-purge");
   if (!guard.ok) return guard.response;
-  const result = await rawPrisma.workspace.deleteMany({
-    where: { deletedAt: { not: null }, deletionGraceUntil: { lt: new Date() } },
+  // Collect the workspaces whose grace has elapsed, then delete their MovingPlans
+  // BEFORE the workspace delete. Address.workspaceId / MovingPlan.workspaceId are
+  // ON DELETE CASCADE, but MovingPlan.fromAddress/toAddress are ON DELETE RESTRICT —
+  // so cascading a workspace's Addresses while its MovingPlans still reference them
+  // would abort the entire purge with an FK error. Deleting the plans first mirrors
+  // the account-deletion ordering. Inert until workspaceId stamping is enabled, but
+  // correct in advance.
+  const now = new Date();
+  const targets = await rawPrisma.workspace.findMany({
+    where: { deletedAt: { not: null }, deletionGraceUntil: { lt: now } },
+    select: { id: true },
   });
+  const ids = targets.map((w) => w.id);
+  if (ids.length === 0) return NextResponse.json({ purged: 0 });
+  await rawPrisma.movingPlan.deleteMany({ where: { workspaceId: { in: ids } } });
+  const result = await rawPrisma.workspace.deleteMany({ where: { id: { in: ids } } });
   return NextResponse.json({ purged: result.count });
 }
 

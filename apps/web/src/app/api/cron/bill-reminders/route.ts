@@ -54,6 +54,12 @@ export async function GET(req: Request) {
         ...billingDayFilter,
         monthlyCost: { gt: 0 },
         isActive: true,
+        // Skip services whose owner is in the deletion grace window (soft-deleted
+        // user). The soft-delete extension filters only the top-level model, not the
+        // included `user` relation — so without this guard a grace-deleted user still
+        // gets bill-reminder emails/push. Mirrors bill-overdue / task-reminders /
+        // move-reminders / contract-reminders, which all carry this guard.
+        user: { deletedAt: null },
       },
       include: {
         user: { select: { id: true, email: true, firstName: true, lastName: true } },

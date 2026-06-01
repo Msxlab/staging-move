@@ -22,8 +22,8 @@ export interface MoveTaskLifecycleState {
 export interface MoveTaskLifecyclePatch {
   status: MoveTaskStatus;
   acceptedAt?: Date;
-  completedAt?: Date;
-  dismissedAt?: Date;
+  completedAt?: Date | null;
+  dismissedAt?: Date | null;
   reopenedAt?: Date;
   lastStatusChangedAt: Date;
 }
@@ -76,7 +76,15 @@ export function buildMoveTaskLifecyclePatch(
   if (event === "ACCEPT") patch.acceptedAt = now;
   if (event === "COMPLETE") patch.completedAt = now;
   if (event === "DISMISS") patch.dismissedAt = now;
-  if (event === "REOPEN") patch.reopenedAt = now;
+  if (event === "REOPEN") {
+    patch.reopenedAt = now;
+    // Clear the prior terminal timestamps when a task is reopened. Otherwise a
+    // completed-then-reopened task keeps its stale completedAt — which the monthly
+    // report counts as "completed this period" and the GDPR export shows alongside
+    // the reopen, both contradictory. A later COMPLETE/DISMISS re-stamps them.
+    patch.completedAt = null;
+    patch.dismissedAt = null;
+  }
 
   return patch;
 }

@@ -69,10 +69,17 @@ export async function isFeatureEnabled(
       if (flag.targetType === "PLAN" && target.plans) {
         return context?.plan ? target.plans.includes(context.plan) : false;
       }
-    } catch {}
+    } catch {
+      // Unparseable targetValue → fall through to "no match" below.
+    }
   }
 
-  return flag.enabled;
+  // A targeted flag (targetType !== "ALL") that reaches here could not be evaluated
+  // for this context: missing/invalid targetValue, an unknown target type, an empty
+  // userIds/plans list, or a parse failure. Match NOBODY rather than letting an
+  // enabled-but-targeted flag silently behave as 100%-on. Operators who want a
+  // blanket rollout use targetType "ALL" (handled above).
+  return false;
 }
 
 export async function getAllFlags(): Promise<Record<string, boolean>> {
