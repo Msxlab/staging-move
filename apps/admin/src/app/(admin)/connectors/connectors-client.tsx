@@ -21,6 +21,22 @@ interface ConnectorConfig {
 
 const STAGES = ["SHADOW", "ROLLOUT", "GA", "RETIRED"];
 
+interface ConnectorLastFailure {
+  errorCode: string;
+  status: string;
+  at: string;
+}
+
+/** Compact "2h ago" style relative label for the last-failure readout. */
+function relativeTime(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
 interface StepUpRequest {
   title: string;
   description: string;
@@ -34,6 +50,9 @@ export default function ConnectorsClient() {
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [dispatchHealth, setDispatchHealth] = useState<Record<string, number>>({});
+  const [dispatchByConnector, setDispatchByConnector] = useState<Record<string, Record<string, number>>>({});
+  const [consentsByConnector, setConsentsByConnector] = useState<Record<string, Record<string, number>>>({});
+  const [lastFailureByConnector, setLastFailureByConnector] = useState<Record<string, ConnectorLastFailure>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ConnectorConfig | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -47,6 +66,9 @@ export default function ConnectorsClient() {
       .then((d) => {
         setConnectors(d.connectors || []);
         setDispatchHealth(d.dispatchHealth || {});
+        setDispatchByConnector(d.dispatchByConnector || {});
+        setConsentsByConnector(d.consentsByConnector || {});
+        setLastFailureByConnector(d.lastFailureByConnector || {});
       })
       .finally(() => setLoading(false));
   };
@@ -153,6 +175,49 @@ export default function ConnectorsClient() {
     setShowForm(true);
   };
 
+  // Per-connector ops readout: consent adoption, outbox breakdown, and the most
+  // recent failure — so an operator can tell a healthy connector from a stuck
+  // one without leaving the list.
+  const renderConnectorHealth = (key: string) => {
+    const consents = consentsByConnector[key] || {};
+    const totalConsents = Object.values(consents).reduce((a, b) => a + b, 0);
+    const granted = consents.GRANTED ?? 0;
+    const d = dispatchByConnector[key] || {};
+    const confirmed = d.CONFIRMED ?? 0;
+    const inflight = (d.QUEUED ?? 0) + (d.DISPATCHING ?? 0) + (d.SUBMITTED ?? 0);
+    const needsUser = d.NEEDS_USER ?? 0;
+    const failed = d.FAILED ?? 0;
+    const hasDispatch = confirmed + inflight + needsUser + failed > 0;
+    const fail = lastFailureByConnector[key];
+
+    return (
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span>
+          {totalConsents === 0
+            ? "no consents yet"
+            : `${granted} active / ${totalConsents} consent${totalConsents === 1 ? "" : "s"}`}
+        </span>
+        {hasDispatch && (
+          <span className="flex items-center gap-2">
+            <span className="text-muted-foreground/40">·</span>
+            <span title="confirmed dispatches">confirmed {confirmed}</span>
+            {inflight > 0 && <span title="queued / dispatching / submitted">in flight {inflight}</span>}
+            {needsUser > 0 && <span className="text-tone-honey-fg" title="fell back to guided update">needs user {needsUser}</span>}
+            {failed > 0 && <span className="text-destructive" title="terminal failures">failed {failed}</span>}
+          </span>
+        )}
+        {fail && (
+          <span className="flex items-center gap-2">
+            <span className="text-muted-foreground/40">·</span>
+            <span className="text-destructive" title={`Last error at ${new Date(fail.at).toLocaleString()}`}>
+              last error: {fail.errorCode} ({relativeTime(fail.at)})
+            </span>
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <PasswordConfirmModal
@@ -247,6 +312,7 @@ export default function ConnectorsClient() {
                     <span>·</span>
                     <span>rollout {c.rolloutPercent}%</span>
                   </div>
+                  {renderConnectorHealth(c.connectorKey)}
                 </div>
               </div>
               <div className="flex gap-1">
