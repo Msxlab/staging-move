@@ -69,7 +69,9 @@
     "sessions": "Sessions",
     "activity": "Activity",
     "health": "Health",
-    "twoFactor": "Two-Factor"
+    "twoFactor": "Two-Factor",
+    "newProvider": "New provider",
+    "newBlogPost": "New blog post"
   },
   "login": {
     "title": "Admin Sign In",

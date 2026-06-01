@@ -69,7 +69,9 @@
     "sessions": "Sesiones",
     "activity": "Actividad",
     "health": "Estado",
-    "twoFactor": "Doble factor"
+    "twoFactor": "Doble factor",
+    "newProvider": "Nuevo proveedor",
+    "newBlogPost": "Nueva entrada de blog"
   },
   "login": {
     "title": "Inicio de sesión de admin",
