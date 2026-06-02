@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createGzip } from "node:zlib";
 import { Readable } from "node:stream";
+import { prismaUnsafe } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { writeBackupAudit } from "@/lib/backup-audit";
 import { getAuditRequestMeta } from "@/lib/audit";
@@ -27,6 +28,7 @@ import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 const DEFAULT_DUMP_READY_TIMEOUT_MS = 45_000;
 const MYSQLDUMP_CONNECT_TIMEOUT_SECONDS = 10;
+const FALLBACK_DUMP_PAGE_SIZE = 500;
 
 class SqlDumpStartupError extends Error {
   status: number;
@@ -81,6 +83,89 @@ function isMysqlSslRequired(params: URLSearchParams): boolean {
   if (["required", "require", "verify_ca", "verify_identity"].includes(sslMode)) return true;
   if (["strict", "accept_invalid_certs", "accept_invalid_hostnames"].includes(sslAccept)) return true;
   return isTruthyParam(params.get("ssl")) || params.has("sslcert") || params.has("sslidentity");
+}
+
+function quoteIdentifier(value: string): string {
+  return `\`${value.replace(/`/g, "``")}\``;
+}
+
+function quoteSqlValue(value: unknown): string {
+  if (value === null || value === undefined) return "NULL";
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
+  if (typeof value === "boolean") return value ? "1" : "0";
+  if (value instanceof Date) return `'${value.toISOString().slice(0, 23).replace("T", " ")}'`;
+  if (Buffer.isBuffer(value)) return `X'${value.toString("hex")}'`;
+  if (typeof value === "object" && value && value.constructor?.name === "Decimal") {
+    return String(value);
+  }
+  const raw = typeof value === "string" ? value : JSON.stringify(value);
+  return `'${String(raw ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\0/g, "\\0")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\u001a/g, "\\Z")
+    .replace(/'/g, "\\'")}'`;
+}
+
+function tableNameFromInformationSchema(row: Record<string, unknown>): string | null {
+  const value = row.TABLE_NAME ?? row.table_name;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function createTableSqlFromRow(row: Record<string, unknown>): string | null {
+  const value = row["Create Table"] ?? row["Create View"] ?? row.create_table;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+async function* streamPrismaSqlDump(): AsyncGenerator<string> {
+  const tableRows = await prismaUnsafe.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME",
+  );
+  const tables = tableRows.map(tableNameFromInformationSchema).filter((name): name is string => Boolean(name));
+  const stamp = new Date().toISOString();
+
+  yield `-- LocateFlow SQL dump fallback\n-- Generated: ${stamp}\n-- mysqldump binary was unavailable; schema and data were streamed through the admin DB connection.\n\nSET FOREIGN_KEY_CHECKS=0;\n\n`;
+
+  for (const table of tables) {
+    const identifier = quoteIdentifier(table);
+    const createRows = await prismaUnsafe.$queryRawUnsafe<Array<Record<string, unknown>>>(`SHOW CREATE TABLE ${identifier}`);
+    const createSql = createTableSqlFromRow(createRows[0] ?? {});
+    if (!createSql) continue;
+
+    yield `--\n-- Table structure for ${identifier}\n--\n\nDROP TABLE IF EXISTS ${identifier};\n${createSql};\n\n`;
+
+    let offset = 0;
+    let wroteHeader = false;
+    for (;;) {
+      const rows = await prismaUnsafe.$queryRawUnsafe<Array<Record<string, unknown>>>(
+        `SELECT * FROM ${identifier} LIMIT ${FALLBACK_DUMP_PAGE_SIZE} OFFSET ${offset}`,
+      );
+      if (!rows.length) break;
+      if (!wroteHeader) {
+        yield `--\n-- Data for ${identifier}\n--\n\n`;
+        wroteHeader = true;
+      }
+      for (const row of rows) {
+        const columns = Object.keys(row);
+        if (!columns.length) continue;
+        yield `INSERT INTO ${identifier} (${columns.map(quoteIdentifier).join(", ")}) VALUES (${columns
+          .map((column) => quoteSqlValue(row[column]))
+          .join(", ")});\n`;
+      }
+      offset += rows.length;
+    }
+    yield "\n";
+  }
+
+  yield "SET FOREIGN_KEY_CHECKS=1;\n";
+}
+
+async function firstChunkFromIterator(iterator: AsyncGenerator<string>): Promise<string> {
+  const first = await iterator.next();
+  if (first.done) return "";
+  return first.value;
 }
 
 async function waitForFirstDumpChunk(
@@ -245,57 +330,90 @@ export async function POST(request: NextRequest) {
       dumpExit = { code, signal };
     });
 
-    let firstChunk: Buffer;
+    let firstChunk: Buffer | null = null;
+    let streamMethod: "mysqldump" | "prisma-fallback" = "mysqldump";
+    let fallbackIterator: AsyncGenerator<string> | null = null;
     try {
       firstChunk = await waitForFirstDumpChunk(child, () => stderr, getDumpReadyTimeoutMs());
     } catch (startupError: any) {
       if (startupError instanceof SqlDumpStartupError) {
-        await writeBackupAudit({
-          session,
-          action: "BACKUP_SQL_DUMP_FAILED",
-          entityId: "sql-dump",
-          request,
-          metadata: { database: conn.database, ...startupError.metadata },
-          error: startupError.message,
-        }).catch(() => {});
-        return NextResponse.json(
-          {
+        if (startupError.code === "MYSQLDUMP_NOT_AVAILABLE") {
+          try {
+            fallbackIterator = streamPrismaSqlDump();
+            firstChunk = Buffer.from(await firstChunkFromIterator(fallbackIterator));
+            streamMethod = "prisma-fallback";
+          } catch (fallbackError: any) {
+            await writeBackupAudit({
+              session,
+              action: "BACKUP_SQL_DUMP_FAILED",
+              entityId: "sql-dump",
+              request,
+              metadata: { database: conn.database, method: "prisma-fallback", reason: "fallback_start_failed" },
+              error: fallbackError,
+            }).catch(() => {});
+            return NextResponse.json(
+              {
+                error: "SQL dump fallback failed before streaming output.",
+                code: "SQL_DUMP_FALLBACK_FAILED",
+              },
+              { status: 500 },
+            );
+          }
+        } else {
+          await writeBackupAudit({
+            session,
+            action: "BACKUP_SQL_DUMP_FAILED",
+            entityId: "sql-dump",
+            request,
+            metadata: { database: conn.database, ...startupError.metadata },
             error: startupError.message,
-            code: startupError.code,
-          },
-          { status: startupError.status },
-        );
+          }).catch(() => {});
+          return NextResponse.json(
+            {
+              error: startupError.message,
+              code: startupError.code,
+            },
+            { status: startupError.status },
+          );
+        }
       }
-      throw startupError;
+      if (streamMethod === "mysqldump") throw startupError;
     }
+    if (!firstChunk) throw new Error("SQL dump stream did not produce a first chunk.");
 
     const gzip = createGzip();
-    const dumpStream = Readable.from((async function* streamMysqlDump() {
+    const dumpStream = Readable.from((async function* streamSqlDump() {
       yield firstChunk;
-      for await (const chunk of child.stdout) {
-        yield chunk;
+      if (fallbackIterator) {
+        for await (const chunk of fallbackIterator) yield chunk;
+      } else {
+        for await (const chunk of child.stdout) {
+          yield chunk;
+        }
       }
     })());
     dumpStream.on("error", (err) => gzip.destroy(err));
     dumpStream.pipe(gzip);
     // If mysqldump dies mid-stream, tear down the gzip stream so the client sees
     // a failed (not silently truncated-but-"successful") download.
-    child.on("error", (err) => gzip.destroy(err));
-    const handleDumpClose = (code: number | null) => {
-      if (code !== 0) {
-        gzip.destroy(new Error(`mysqldump exited with code ${code ?? "null"}: ${redactBackupSecretText(stderr).slice(0, 300)}`));
-      }
-    };
-    const exited = dumpExit as { code: number | null; signal: NodeJS.Signals | null } | null;
-    if (exited) handleDumpClose(exited.code);
-    else child.once("close", (code) => handleDumpClose(code));
+    if (streamMethod === "mysqldump") {
+      child.on("error", (err) => gzip.destroy(err));
+      const handleDumpClose = (code: number | null) => {
+        if (code !== 0) {
+          gzip.destroy(new Error(`mysqldump exited with code ${code ?? "null"}: ${redactBackupSecretText(stderr).slice(0, 300)}`));
+        }
+      };
+      const exited = dumpExit as { code: number | null; signal: NodeJS.Signals | null } | null;
+      if (exited) handleDumpClose(exited.code);
+      else child.once("close", (code) => handleDumpClose(code));
+    }
 
     await writeBackupAudit({
       session,
       action: "BACKUP_SQL_DUMP_STARTED",
       entityId: "sql-dump",
       request,
-      metadata: { database: conn.database, host: conn.host },
+      metadata: { database: conn.database, host: conn.host, method: streamMethod },
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");

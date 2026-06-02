@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
   requirePasswordConfirm: vi.fn(),
   writeBackupAudit: vi.fn(),
+  prismaUnsafe: {
+    $queryRawUnsafe: vi.fn(),
+  },
 }));
 
 vi.mock("node:child_process", () => ({
@@ -21,6 +24,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/backup-audit", () => ({
   writeBackupAudit: mocks.writeBackupAudit,
+}));
+
+vi.mock("@/lib/db", () => ({
+  prismaUnsafe: mocks.prismaUnsafe,
 }));
 
 vi.mock("@/lib/audit", () => ({
@@ -77,6 +84,7 @@ describe("/api/backup/sql-dump", () => {
     });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.writeBackupAudit.mockResolvedValue(undefined);
+    mocks.prismaUnsafe.$queryRawUnsafe.mockReset();
   });
 
   it("streams a gzipped mysqldump after the first output chunk is available", async () => {
@@ -168,8 +176,24 @@ describe("/api/backup/sql-dump", () => {
     expect(mocks.spawn).not.toHaveBeenCalled();
   });
 
-  it("returns a clear 503 when mysqldump is not installed", async () => {
+  it("streams a Prisma SQL fallback when mysqldump is not installed", async () => {
     const child = makeChild();
+    let selectCalls = 0;
+    mocks.prismaUnsafe.$queryRawUnsafe.mockImplementation(async (sql: string) => {
+      if (sql.startsWith("SELECT TABLE_NAME")) return [{ TABLE_NAME: "users" }];
+      if (sql.startsWith("SHOW CREATE TABLE")) {
+        return [
+          {
+            "Create Table": "CREATE TABLE `users` (`id` varchar(191) NOT NULL, `email` varchar(191) DEFAULT NULL, PRIMARY KEY (`id`))",
+          },
+        ];
+      }
+      if (sql.startsWith("SELECT * FROM")) {
+        selectCalls += 1;
+        return selectCalls === 1 ? [{ id: "user_1", email: "person@example.com" }] : [];
+      }
+      return [];
+    });
     mocks.spawn.mockImplementation(() => {
       setTimeout(() => {
         child.emit(
@@ -183,15 +207,16 @@ describe("/api/backup/sql-dump", () => {
     const { POST } = await import("./route");
     const response = await POST(request());
 
-    expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toMatchObject({
-      code: "MYSQLDUMP_NOT_AVAILABLE",
-    });
+    expect(response.status).toBe(200);
+    const sql = gunzipSync(Buffer.from(await response.arrayBuffer())).toString("utf8");
+    expect(sql).toContain("LocateFlow SQL dump fallback");
+    expect(sql).toContain("CREATE TABLE `users`");
+    expect(sql).toContain("INSERT INTO `users` (`id`, `email`) VALUES ('user_1', 'person@example.com');");
     expect(mocks.writeBackupAudit).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: "BACKUP_SQL_DUMP_FAILED",
+        action: "BACKUP_SQL_DUMP_STARTED",
         metadata: expect.objectContaining({
-          reason: "mysqldump_not_installed",
+          method: "prisma-fallback",
         }),
       }),
     );
