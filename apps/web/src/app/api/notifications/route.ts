@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   buildWebNotificationSettings,
   normalizeDigestDay,
@@ -19,6 +20,8 @@ export async function GET() {
 
     return NextResponse.json({ prefs: settings.prefs, config: settings.config });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch notification prefs:", error);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
@@ -127,6 +130,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ prefs: settings.prefs, config: settings.config, success: true });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to save notification prefs:", error);
     return NextResponse.json({ error: "Failed to save" }, { status: 500 });
   }

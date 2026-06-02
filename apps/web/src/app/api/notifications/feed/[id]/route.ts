@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 
 export async function PATCH(
   _request: NextRequest,
@@ -22,6 +23,8 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to mark notification read:", error);
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }

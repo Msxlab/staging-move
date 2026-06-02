@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendSupportTicketCreatedEmail } from "@/lib/email-service";
 import { z } from "zod";
@@ -49,6 +50,8 @@ export async function GET(request: NextRequest) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch tickets:", error);
     return NextResponse.json({ error: "Failed to fetch tickets" }, { status: 500 });
   }
@@ -123,6 +126,8 @@ export async function POST(request: NextRequest) {
     const { user: _ticketUser, ...ticketPayload } = ticket;
     return NextResponse.json({ ticket: ticketPayload }, { status: 201 });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

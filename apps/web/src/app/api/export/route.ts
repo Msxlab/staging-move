@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { decrypt } from "@/lib/shared-encryption";
 import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
@@ -641,6 +642,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Export failed:", error);
     return NextResponse.json({ error: "Export failed" }, { status: 500 });
   }

@@ -425,4 +425,16 @@ describe("export route", () => {
     expect(body.code).toBe("EXPORT_RATE_LIMITED");
     expect(mockVerifyUserStepUp).not.toHaveBeenCalled();
   });
+
+  it("returns the auth gate response instead of a generic 500 when unauthenticated", async () => {
+    mockRequireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await POST(makeRequest({ type: "full", format: "json" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(mockEnforceRateLimitPolicy).not.toHaveBeenCalled();
+    expect(mockVerifyUserStepUp).not.toHaveBeenCalled();
+  });
 });

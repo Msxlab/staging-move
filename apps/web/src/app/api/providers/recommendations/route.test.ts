@@ -103,4 +103,16 @@ describe("provider recommendations route", () => {
       expect.objectContaining({ limit: 120, windowSeconds: 60 }),
     );
   });
+
+  it("returns the auth gate response instead of a generic 500 when unauthenticated", async () => {
+    mockRequireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(rateLimitMock).not.toHaveBeenCalled();
+    expect(mockServiceProvider.findMany).not.toHaveBeenCalled();
+  });
 });

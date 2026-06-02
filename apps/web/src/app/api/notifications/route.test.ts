@@ -15,7 +15,7 @@ vi.mock("@/lib/auth", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
 const mockPref = (prisma as unknown as {
@@ -70,5 +70,16 @@ describe("notification prefs POST config normalization", () => {
     const stored = frequencyForType("WEEKLY_DIGEST_DAY");
     expect(stored).toBe("Monday");
     expect((stored ?? "").length).toBeLessThanOrEqual(20);
+  });
+
+  it("returns an auth gate response instead of a generic 500 when unauthenticated", async () => {
+    mockRequireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(mockPref.findMany).not.toHaveBeenCalled();
   });
 });

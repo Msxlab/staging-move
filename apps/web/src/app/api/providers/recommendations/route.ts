@@ -3,6 +3,7 @@ import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locate
 import { CANCELED_MOVING_PLAN_STATUSES, getCurrentRelocationPhase } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   scoreProviders,
   buildRecommendationClusters,
@@ -204,6 +205,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to generate recommendations:", error);
     return NextResponse.json({ error: "Failed to generate recommendations" }, { status: 500 });
   }
