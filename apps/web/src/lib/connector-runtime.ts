@@ -18,6 +18,7 @@ import {
   createConnectorHttpClient,
   createRedactingLogger,
   planNextDispatch,
+  resolveConnectorMode,
   runConnectorAttempt,
   type AddressConnector,
   type CanonicalAddress,
@@ -25,6 +26,7 @@ import {
   type ConnectorContext,
 } from "@locateflow/connectors";
 import { connectorRegistry } from "@/lib/connector-registry";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { refreshConsentAccessToken } from "@/lib/connector-oauth";
@@ -107,6 +109,37 @@ function isConnectorDispatchable(config: ConnectorControl, userId: string): bool
 }
 
 /**
+ * Defense-in-depth mode gate: only an API_SYNC connector — one with a signed
+ * PRODUCTION agreement AND configured credentials (resolveConnectorMode, the
+ * single source of truth) — ever gets a server-side dispatch. GUIDED_UPDATE /
+ * COMING_SOON connectors are never auto-pushed; the user handles those through
+ * the guided flow. The UI already only offers Connect for API_SYNC, so this
+ * guards against a stale/orphaned consent slipping a doomed push through.
+ * Exported for unit testing.
+ */
+export async function isApiSyncConnector(
+  connectorKey: string,
+  config: { enabled: boolean; stage: string },
+): Promise<boolean> {
+  const adapter = connectorRegistry.get(connectorKey);
+  if (!adapter) return false;
+  const k = connectorKey.toUpperCase().replace(/-/g, "_");
+  const rc = async (name: string) => (await getRuntimeConfigValue(name)) ?? process.env[name] ?? "";
+  const agreementRaw = await rc(`CONNECTOR_${k}_AGREEMENT_STATUS`);
+  const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
+  const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
+  return (
+    resolveConnectorMode({
+      addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
+      agreementStatus,
+      credentialsPresent,
+      enabled: config.enabled,
+      stage: config.stage,
+    }).mode === "API_SYNC"
+  );
+}
+
+/**
  * Fan one address change out to the user's connected + enabled connectors by
  * writing QUEUED outbox rows. Returns how many were enqueued.
  */
@@ -146,6 +179,10 @@ export async function enqueueAddressChange(input: {
     const config = configByKey.get(consent.connectorKey);
     if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
     if (!isConnectorDispatchable(config, input.userId)) continue;
+    // Mode gate (defense-in-depth): only auto-push when the connector is truly
+    // API_SYNC — signed agreement + credentials. Otherwise the honest path is
+    // the guided flow, not a server push that would fail or overreach.
+    if (!(await isApiSyncConnector(consent.connectorKey, { enabled: true, stage: config.stage }))) continue;
     // Skip a connector that needs an origin when we have none (e.g. a primary-
     // address EDIT auto-sync with no `from`) — don't file a doomed null-origin
     // COA the partner would reject. A real move (from+to) still dispatches.
