@@ -28,7 +28,8 @@ describe("admin high-blast step-up UI", () => {
 
   it("sends confirmPassword in protected mutation bodies", () => {
     expect(clients.notifications).toContain("sendPayload({ ...payload, confirmPassword })");
-    expect(clients.featureFlags).toContain("body: JSON.stringify({ ...payload, confirmPassword })");
+    expect(clients.featureFlags).toContain("body: JSON.stringify({ ...payload, ...stepUpValues })");
+    expect(clients.featureFlags).toContain("requiresMfa={true}");
     expect(clients.security).toContain("confirmPassword: values.confirmPassword");
     expect(clients.security).toContain("mfaCode: values.mfaCode");
     expect(clients.security).toContain("backupCode: values.backupCode");

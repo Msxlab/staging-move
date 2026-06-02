@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react";
 import { toast } from "sonner";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
 
 interface FeatureFlag { id: string; name: string; description: string | null; enabled: boolean; targetType: string; targetValue: string | null; createdAt: string }
 const TARGET_TYPES = ["ALL", "PERCENTAGE", "USER_LIST", "PLAN"];
-interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (confirmPassword: string) => Promise<boolean> }
+interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (values: StepUpValues) => Promise<boolean> }
 
 export default function FeatureFlagsClient() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -26,12 +26,12 @@ export default function FeatureFlagsClient() {
 
   const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); };
   const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); } };
-  const confirmStepUp = async (confirmPassword: string) => {
+  const confirmStepUp = async (_confirmPassword: string, values: StepUpValues) => {
     if (!stepUp) return;
     setStepUpBusy(true);
     setStepUpError(null);
     try {
-      const ok = await stepUp.run(confirmPassword);
+      const ok = await stepUp.run(values);
       if (ok) setStepUp(null);
     } finally {
       setStepUpBusy(false);
@@ -41,14 +41,14 @@ export default function FeatureFlagsClient() {
   const sendMutation = async (
     method: "POST" | "PUT" | "DELETE",
     payload: Record<string, unknown>,
-    confirmPassword: string,
+    stepUpValues: StepUpValues,
     successMessage: string,
     afterSuccess?: () => void,
   ) => {
     const res = await fetch("/api/feature-flags", {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, confirmPassword }),
+      body: JSON.stringify({ ...payload, ...stepUpValues }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -67,34 +67,53 @@ export default function FeatureFlagsClient() {
     if (!form.name && !editing) { toast.error("Name required"); return; }
     const method = editing ? "PUT" : "POST";
     let tv: any = undefined;
-    if (form.targetType === "PERCENTAGE" && form.targetValue) tv = { percentage: parseInt(form.targetValue) };
-    else if (form.targetType === "USER_LIST" && form.targetValue) tv = { userIds: form.targetValue.split(",").map(s => s.trim()) };
-    else if (form.targetType === "PLAN" && form.targetValue) tv = { plans: form.targetValue.split(",").map(s => s.trim()) };
+    if (form.targetType === "PERCENTAGE") {
+      const percentage = Number(form.targetValue);
+      if (!Number.isInteger(percentage) || percentage < 0 || percentage > 100) {
+        toast.error("Percentage must be an integer from 0 to 100");
+        return;
+      }
+      tv = { percentage };
+    } else if (form.targetType === "USER_LIST") {
+      const userIds = form.targetValue.split(",").map(s => s.trim()).filter(Boolean);
+      if (userIds.length === 0) {
+        toast.error("Enter at least one user ID");
+        return;
+      }
+      tv = { userIds };
+    } else if (form.targetType === "PLAN") {
+      const plans = form.targetValue.split(",").map(s => s.trim()).filter(Boolean);
+      if (plans.length === 0) {
+        toast.error("Enter at least one plan");
+        return;
+      }
+      tv = { plans };
+    }
 
     const payload = editing ? { id: editing.id, enabled: form.enabled, description: form.description, targetType: form.targetType, targetValue: tv } : { ...form, targetValue: tv };
     requestStepUp({
       title: editing ? "Confirm feature flag update" : "Confirm feature flag creation",
-      description: "Enter your admin password before changing feature flag behavior.",
+      description: "Enter your admin password and MFA code or backup code before changing feature flag behavior.",
       confirmLabel: editing ? "Update flag" : "Create flag",
-      run: (confirmPassword) => sendMutation(method, payload, confirmPassword, editing ? "Updated" : "Created", reset),
+      run: (values) => sendMutation(method, payload, values, editing ? "Updated" : "Created", reset),
     });
   };
 
   const toggle = async (flag: FeatureFlag) => {
     requestStepUp({
       title: `${!flag.enabled ? "Enable" : "Disable"} feature flag`,
-      description: "Enter your admin password before changing feature flag rollout.",
+      description: "Enter your admin password and MFA code or backup code before changing feature flag rollout.",
       confirmLabel: !flag.enabled ? "Enable flag" : "Disable flag",
-      run: (confirmPassword) => sendMutation("PUT", { id: flag.id, enabled: !flag.enabled }, confirmPassword, `${flag.name} ${!flag.enabled ? "enabled" : "disabled"}`),
+      run: (values) => sendMutation("PUT", { id: flag.id, enabled: !flag.enabled }, values, `${flag.name} ${!flag.enabled ? "enabled" : "disabled"}`),
     });
   };
 
   const remove = async (id: string) => {
     requestStepUp({
       title: "Confirm feature flag deletion",
-      description: "Enter your admin password before deleting this feature flag.",
+      description: "Enter your admin password and MFA code or backup code before deleting this feature flag.",
       confirmLabel: "Delete flag",
-      run: (confirmPassword) => sendMutation("DELETE", { id }, confirmPassword, "Deleted"),
+      run: (values) => sendMutation("DELETE", { id }, values, "Deleted"),
     });
   };
 
@@ -117,6 +136,7 @@ export default function FeatureFlagsClient() {
         confirmLabel={stepUp?.confirmLabel || "Confirm"}
         busy={stepUpBusy}
         error={stepUpError}
+        requiresMfa={true}
         onClose={closeStepUp}
         onConfirm={confirmStepUp}
       />

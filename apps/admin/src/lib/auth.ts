@@ -396,6 +396,11 @@ function stepUpCacheKey(session: AdminSession, operation: string): string {
   return `${session.adminId}:${sessionScope}:${operation}`;
 }
 
+function scopedStepUpCacheKey(session: AdminSession, operation: string, options: AdminStepUpOptions): string {
+  const assurance = options.requireMfa ? "mfa" : "password";
+  return `${stepUpCacheKey(session, operation)}:${assurance}`;
+}
+
 function stepUpGraceMs(operation: string, maxAgeMs?: number): number {
   if (typeof maxAgeMs === "number" && maxAgeMs >= 0) return maxAgeMs;
   if (operation.includes("key_rotation") || operation.includes("secret")) return SECRET_ROTATION_GRACE_MS;
@@ -452,7 +457,7 @@ export async function requirePasswordConfirm(
   options: AdminStepUpOptions = {},
 ): Promise<{ confirmed: boolean; error?: string; requiresMfa?: boolean; rateLimited?: boolean; retryAfterSec?: number }> {
   const operation = normalizeStepUpOperation(options.operation);
-  const cacheKey = stepUpCacheKey(session, operation);
+  const cacheKey = scopedStepUpCacheKey(session, operation, options);
   const failureKey = `${cacheKey}:failure`;
 
   const graceMs = stepUpGraceMs(operation, options.maxAgeMs);

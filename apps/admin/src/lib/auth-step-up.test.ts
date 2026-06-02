@@ -87,6 +87,28 @@ describe("admin scoped step-up", () => {
     expect(otherGroup.error).toContain("Password confirmation required");
   });
 
+  it("does not let a password-only step-up satisfy an MFA-required operation", async () => {
+    await expect(
+      requirePasswordConfirm(session, "Password-2026!", { operation: "feature_flag_write" }),
+    ).resolves.toEqual({ confirmed: true });
+
+    adminUserMock.findUnique.mockResolvedValueOnce({
+      password: "hash",
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: "encrypted-secret",
+      mfaBackupCodes: null,
+    });
+
+    const mfaRequired = await requirePasswordConfirm(session, undefined, {
+      operation: "feature_flag_write",
+      requireMfa: true,
+    });
+
+    expect(mfaRequired.confirmed).toBe(false);
+    expect(mfaRequired.error).toContain("Password confirmation required");
+  });
+
   it("expires cached step-up by operation grace window", async () => {
     await requirePasswordConfirm(session, "Password-2026!", { operation: "key_rotation" });
 
