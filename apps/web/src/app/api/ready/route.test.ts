@@ -39,8 +39,12 @@ const validEnv: Record<string, string> = {
   STRIPE_SECRET_KEY: "sk_live_abcdefghijklmnopqrstuvwxyz",
   STRIPE_WEBHOOK_SECRET: "whsec_abcdefghijklmnopqrstuvwxyz",
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_live_abcdefghijklmnopqrstuvwxyz",
-  STRIPE_PRICE_INDIVIDUAL_MONTHLY: "price_monthly123",
-  STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_yearly123",
+  STRIPE_PRICE_INDIVIDUAL_MONTHLY: "price_individualmonthly123",
+  STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_individualyearly123",
+  STRIPE_PRICE_FAMILY_MONTHLY: "price_familymonthly123",
+  STRIPE_PRICE_FAMILY_YEARLY: "price_familyyearly123",
+  STRIPE_PRICE_PRO_MONTHLY: "price_promonthly123",
+  STRIPE_PRICE_PRO_YEARLY: "price_proyearly123",
   GOOGLE_MAPS_API_KEY: "AIzaSyProductionMapsKey",
 };
 

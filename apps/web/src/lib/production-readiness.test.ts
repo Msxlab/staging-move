@@ -21,8 +21,12 @@ const validProdEnv = {
   STRIPE_SECRET_KEY: "sk_live_abcdefghijklmnopqrstuvwxyz",
   STRIPE_WEBHOOK_SECRET: "whsec_abcdefghijklmnopqrstuvwxyz",
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_live_abcdefghijklmnopqrstuvwxyz",
-  STRIPE_PRICE_INDIVIDUAL_MONTHLY: "price_monthly123",
-  STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_yearly123",
+  STRIPE_PRICE_INDIVIDUAL_MONTHLY: "price_individualmonthly123",
+  STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_individualyearly123",
+  STRIPE_PRICE_FAMILY_MONTHLY: "price_familymonthly123",
+  STRIPE_PRICE_FAMILY_YEARLY: "price_familyyearly123",
+  STRIPE_PRICE_PRO_MONTHLY: "price_promonthly123",
+  STRIPE_PRICE_PRO_YEARLY: "price_proyearly123",
   STRIPE_ANNUAL_TRIAL_DAYS: "90",
   GOOGLE_MAPS_API_KEY: "AIzaSyProductionMapsKey",
 } as unknown as NodeJS.ProcessEnv;
@@ -120,5 +124,17 @@ describe("buildReadinessReport", () => {
     const report = buildReadinessReport(env, true);
     expect(report.ready).toBe(false);
     expect(report.issues.find((i) => i.key === "APP_URL")?.severity).toBe("fail");
+  });
+
+  it("requires Family and Pro Stripe prices before production paid launch", () => {
+    const env = {
+      ...validProdEnv,
+      STRIPE_PRICE_FAMILY_MONTHLY: undefined,
+      STRIPE_PRICE_PRO_YEARLY: undefined,
+    };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(false);
+    expect(report.issues.find((i) => i.key === "STRIPE_PRICE_FAMILY_MONTHLY")?.severity).toBe("fail");
+    expect(report.issues.find((i) => i.key === "STRIPE_PRICE_PRO_YEARLY")?.severity).toBe("fail");
   });
 });
