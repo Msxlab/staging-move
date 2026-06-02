@@ -96,15 +96,26 @@ describe("provider bulk route", () => {
     mocks.requirePasswordConfirm.mockResolvedValue({
       confirmed: false,
       error: "Password confirmation required",
+      requiresMfa: true,
     });
 
     const response = await POST(
-      request({ action: "delete", ids: ["provider_1"], confirmPassword: "wrong" }),
+      request({ action: "delete", ids: ["provider_1"], confirmPassword: "wrong", mfaCode: "123456" }),
     );
     const body = await response.json();
 
     expect(response.status).toBe(403);
     expect(body.requiresPassword).toBe(true);
+    expect(body.requiresMfa).toBe(true);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "wrong",
+      expect.objectContaining({
+        operation: "provider_delete",
+        requireMfa: true,
+        mfaCode: "123456",
+      }),
+    );
     expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 });

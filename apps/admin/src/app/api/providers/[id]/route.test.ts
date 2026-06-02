@@ -39,7 +39,7 @@ function deleteRequest() {
   return new NextRequest("https://admin.locateflow.com/api/providers/provider_1", {
     method: "DELETE",
     headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
-    body: JSON.stringify({ confirmPassword: "Password-2026!" }),
+    body: JSON.stringify({ confirmPassword: "Password-2026!", mfaCode: "123456" }),
   });
 }
 
@@ -67,6 +67,15 @@ describe("provider detail route", () => {
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "Password-2026!",
+      expect.objectContaining({
+        operation: "provider_delete",
+        requireMfa: true,
+        mfaCode: "123456",
+      }),
+    );
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "provider_1" },
       data: expect.objectContaining({ deletedAt: expect.any(Date), isActive: false }),
@@ -79,6 +88,21 @@ describe("provider detail route", () => {
         }),
       }),
     );
+  });
+
+  it("returns MFA step-up requirements before deleting a provider", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValueOnce({
+      confirmed: false,
+      error: "MFA required",
+      requiresMfa: true,
+    });
+
+    const response = await DELETE(deleteRequest(), { params: Promise.resolve({ id: "provider_1" }) });
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({ requiresPassword: true, requiresMfa: true });
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 
   it("rejects out-of-range popularity scores before updating", async () => {

@@ -21,6 +21,7 @@ import {
   getCategoryLabel,
 } from "@/lib/recommendation-engine";
 import { InfoHint } from "@/components/info-hint";
+import { PasswordConfirmModal, StepUpValues } from "@/components/password-confirm-modal";
 
 interface Provider {
   id: string;
@@ -59,8 +60,9 @@ export default function ProviderDetailPage() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeletePrompt, setShowDeletePrompt] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteRequiresMfa, setDeleteRequiresMfa] = useState(true);
 
   useEffect(() => {
     fetch(`/api/providers/${id}`)
@@ -74,22 +76,25 @@ export default function ProviderDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  async function handleDelete() {
-    if (!provider || !confirmPassword) {
-      toast.error("Confirm your password to delete this provider.");
+  async function handleDelete(_confirmPassword: string, stepUp: StepUpValues) {
+    if (!provider) {
       return;
     }
 
     setDeleting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/providers/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword }),
+        body: JSON.stringify(stepUp),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Failed to delete provider");
+        const message = data.error || "Failed to delete provider";
+        setDeleteRequiresMfa(Boolean(data.requiresMfa || deleteRequiresMfa));
+        setDeleteError(message);
+        toast.error(message);
         return;
       }
       toast.success("Provider deleted");
@@ -387,53 +392,23 @@ export default function ProviderDetailPage() {
         </div>
       )}
 
-      {showDeletePrompt && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
-          onClick={() => {
+      <PasswordConfirmModal
+        open={showDeletePrompt}
+        title="Delete provider"
+        description={`This removes "${provider.name}" from the public catalog and affects matching. Enter your admin password and MFA code to continue.`}
+        confirmLabel="Delete Provider"
+        busy={deleting}
+        error={deleteError}
+        requiresMfa={deleteRequiresMfa}
+        onClose={() => {
+          if (!deleting) {
             setShowDeletePrompt(false);
-            setConfirmPassword("");
-          }}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-foreground">Delete Provider</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              This permanently removes {provider.name} and affects provider matching.
-              Confirm your password to continue.
-            </p>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none"
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeletePrompt(false);
-                  setConfirmPassword("");
-                }}
-                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleDelete()}
-                disabled={deleting}
-                className="rounded-lg bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : "Delete Provider"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            setDeleteError(null);
+            setDeleteRequiresMfa(true);
+          }
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

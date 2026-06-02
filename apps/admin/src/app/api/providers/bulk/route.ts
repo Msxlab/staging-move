@@ -20,6 +20,8 @@ const bulkSchema = z.object({
     .strict()
     .optional(),
   confirmPassword: z.string().optional(),
+  mfaCode: z.string().trim().max(16).optional(),
+  backupCode: z.string().trim().max(64).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid bulk request" }, { status: 400 });
     }
-    const { action, data, confirmPassword } = parsed.data;
+    const { action, data, confirmPassword, mfaCode, backupCode } = parsed.data;
     const ids = Array.from(new Set(parsed.data.ids));
 
     const session = action === "delete"
@@ -36,10 +38,17 @@ export async function POST(request: NextRequest) {
       : await requirePermission("providers", "canUpdate", { minimumRole: "ADMIN" });
 
     if (action === "delete") {
-      const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "provider_delete" });
+      const confirm = await requirePasswordConfirm(session, confirmPassword, {
+        operation: "provider_delete",
+        requireMfa: true,
+        mfaCode,
+        backupCode,
+        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        userAgent: request.headers.get("user-agent") || "unknown",
+      });
       if (!confirm.confirmed) {
         return NextResponse.json(
-          { error: confirm.error, requiresPassword: true },
+          { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
           { status: 403 },
         );
       }

@@ -293,16 +293,27 @@ export async function DELETE(
 
     // Step-up auth: provider deletion is destructive and affects user matches.
     let confirmPassword: string | undefined;
+    let mfaCode: string | undefined;
+    let backupCode: string | undefined;
     try {
       const body = await request.json();
       confirmPassword = body?.confirmPassword;
+      mfaCode = typeof body?.mfaCode === "string" ? body.mfaCode : undefined;
+      backupCode = typeof body?.backupCode === "string" ? body.backupCode : undefined;
     } catch {
       /* no body is fine — password will be required and the 403 response tells the client */
     }
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "provider_delete" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "provider_delete",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      userAgent: request.headers.get("user-agent") || "unknown",
+    });
     if (!confirm.confirmed) {
       return NextResponse.json(
-        { error: confirm.error, requiresPassword: true },
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
         { status: 403 },
       );
     }

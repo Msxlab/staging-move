@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCategoryIcon, getCategoryLabel, getCategoryOrder, PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, StepUpValues } from "@/components/password-confirm-modal";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { validateCsvFileMetadata } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -76,6 +76,7 @@ export default function ProvidersPage() {
   >(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteRequiresMfa, setDeleteRequiresMfa] = useState(true);
 
   const activeFilters = [filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax].filter(Boolean).length;
 
@@ -197,7 +198,7 @@ export default function ProvidersPage() {
     setPendingDelete({ type: "single", id, name });
   }
 
-  async function confirmProviderDelete(confirmPassword: string) {
+  async function confirmProviderDelete(_confirmPassword: string, stepUp: StepUpValues) {
     if (!pendingDelete) return;
     setDeleteBusy(true);
     setDeleteError(null);
@@ -207,7 +208,7 @@ export default function ProvidersPage() {
           ? await fetch(`/api/providers/${pendingDelete.id}`, {
               method: "DELETE",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ confirmPassword }),
+              body: JSON.stringify(stepUp),
             })
           : await fetch("/api/providers/bulk", {
               method: "POST",
@@ -215,12 +216,13 @@ export default function ProvidersPage() {
               body: JSON.stringify({
                 action: "delete",
                 ids: pendingDelete.ids,
-                confirmPassword,
+                ...stepUp,
               }),
             });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const message = data.error || "Delete failed";
+        setDeleteRequiresMfa(Boolean(data.requiresMfa || deleteRequiresMfa));
         setDeleteError(message);
         toast.error(message);
         return;
@@ -826,18 +828,20 @@ export default function ProvidersPage() {
         title={pendingDelete?.type === "bulk" ? "Delete providers" : "Delete provider"}
         description={
           pendingDelete?.type === "bulk"
-            ? `This deletes ${pendingDelete.ids.length} selected providers. Enter your admin password to continue.`
+            ? `This deletes ${pendingDelete.ids.length} selected providers. Enter your admin password and MFA code to continue.`
             : pendingDelete
-            ? `This deletes "${pendingDelete.name}". Enter your admin password to continue.`
+            ? `This deletes "${pendingDelete.name}". Enter your admin password and MFA code to continue.`
             : ""
         }
         confirmLabel="Delete"
         busy={deleteBusy}
         error={deleteError}
+        requiresMfa={deleteRequiresMfa}
         onClose={() => {
           if (!deleteBusy) {
             setPendingDelete(null);
             setDeleteError(null);
+            setDeleteRequiresMfa(true);
           }
         }}
         onConfirm={confirmProviderDelete}
