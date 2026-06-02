@@ -285,6 +285,7 @@ export default function ConnectorsClient() {
   };
 
   const apiSyncCount = availableConnectors.filter((connector) => connector.mode === "API_SYNC").length;
+  const firstRegisterableConnector = availableConnectors.find((connector) => !connector.registered);
 
   return (
     <div className="space-y-6">
@@ -305,8 +306,11 @@ export default function ConnectorsClient() {
         title="<em>Connectors</em>"
         subtitle="Enable, stage, and roll out partner connectors — and kill them fast."
         actions={
-          <button onClick={() => startRegister()} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Register
+          <button
+            onClick={() => startRegister(firstRegisterableConnector)}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> {firstRegisterableConnector ? `Register ${firstRegisterableConnector.displayName}` : "Register"}
           </button>
         }
       />
@@ -369,7 +373,11 @@ export default function ConnectorsClient() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {!available.registered ? (
-                      <button onClick={() => startRegister(available)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent">
+                      <button
+                        onClick={() => startRegister(available)}
+                        aria-label={`Register ${available.displayName}`}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                      >
                         <Plus className="h-4 w-4" /> Register
                       </button>
                     ) : (
