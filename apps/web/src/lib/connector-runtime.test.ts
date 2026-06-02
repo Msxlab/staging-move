@@ -1,6 +1,28 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+
+const rcMock = vi.hoisted(() => ({ getRuntimeConfigValue: vi.fn() }));
+const dbMocks = vi.hoisted(() => ({
+  prisma: {
+    connectorConfig: { findUnique: vi.fn() },
+    connectorDispatch: { update: vi.fn() },
+    partnerConsent: { findUnique: vi.fn() },
+    notificationPreference: { findMany: vi.fn() },
+    user: { findUnique: vi.fn() },
+  },
+}));
+vi.mock("@/lib/runtime-config", () => ({ getRuntimeConfigValue: rcMock.getRuntimeConfigValue }));
+vi.mock("@/lib/db", () => ({ prisma: dbMocks.prisma }));
+vi.mock("@/lib/shared-encryption", () => ({
+  decrypt: (value: string) => value,
+  encrypt: (value: string) => value,
+}));
+vi.mock("@/lib/connector-oauth", () => ({ refreshConsentAccessToken: vi.fn() }));
+vi.mock("@/lib/in-app-notifications", () => ({ createInAppNotification: vi.fn() }));
+vi.mock("@/lib/email-service", () => ({ sendConnectorActionNeededEmail: vi.fn() }));
+vi.mock("@/lib/notification-preferences", () => ({ isWebNotificationEnabled: vi.fn(() => false) }));
+
 import { connectorRegistry } from "./connector-registry";
-import { toCanonicalAddress } from "./connector-runtime";
+import { toCanonicalAddress, isApiSyncConnector, runDispatchRow } from "./connector-runtime";
 
 describe("toCanonicalAddress", () => {
   it("maps DB address fields and normalizes USA → US", () => {
@@ -20,5 +42,94 @@ describe("connectorRegistry", () => {
   it("registers the USPS connector", () => {
     expect(connectorRegistry.has("usps")).toBe(true);
     expect(connectorRegistry.get("usps")?.manifest.fallbackActionKey).toBeTruthy();
+  });
+});
+
+describe("isApiSyncConnector — server push only with a real agreement + credentials", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("false for usps with no production agreement (the default)", async () => {
+    rcMock.getRuntimeConfigValue.mockResolvedValue(null);
+    expect(await isApiSyncConnector("usps", { enabled: true, stage: "GA" })).toBe(false);
+  });
+
+  it("true for usps with a PRODUCTION agreement + credentials", async () => {
+    rcMock.getRuntimeConfigValue.mockImplementation((k: string) => {
+      if (k.endsWith("_AGREEMENT_STATUS")) return Promise.resolve("PRODUCTION");
+      if (k.endsWith("_OAUTH_CLIENT_ID") || k.endsWith("_OAUTH_CLIENT_SECRET")) return Promise.resolve("x");
+      if (k.endsWith("_OAUTH_AUTHORIZE_URL")) return Promise.resolve("https://apis.usps.com/oauth/authorize");
+      if (k.endsWith("_OAUTH_TOKEN_URL")) return Promise.resolve("https://apis.usps.com/oauth/token");
+      return Promise.resolve(null);
+    });
+    expect(await isApiSyncConnector("usps", { enabled: true, stage: "GA" })).toBe(true);
+  });
+
+  it("false with an agreement but missing full OAuth credentials", async () => {
+    rcMock.getRuntimeConfigValue.mockImplementation((k: string) =>
+      k.endsWith("_AGREEMENT_STATUS") ? Promise.resolve("PRODUCTION") :
+        k.endsWith("_OAUTH_CLIENT_ID") || k.endsWith("_OAUTH_CLIENT_SECRET") ? Promise.resolve("x") :
+          Promise.resolve(null),
+    );
+    expect(await isApiSyncConnector("usps", { enabled: true, stage: "GA" })).toBe(false);
+  });
+
+  it("false when OAuth URLs are outside the connector host allowlist", async () => {
+    rcMock.getRuntimeConfigValue.mockImplementation((k: string) => {
+      if (k.endsWith("_AGREEMENT_STATUS")) return Promise.resolve("PRODUCTION");
+      if (k.endsWith("_OAUTH_CLIENT_ID") || k.endsWith("_OAUTH_CLIENT_SECRET")) return Promise.resolve("x");
+      if (k.endsWith("_OAUTH_AUTHORIZE_URL")) return Promise.resolve("https://evil.example.com/oauth/authorize");
+      if (k.endsWith("_OAUTH_TOKEN_URL")) return Promise.resolve("https://apis.usps.com/oauth/token");
+      return Promise.resolve(null);
+    });
+    expect(await isApiSyncConnector("usps", { enabled: true, stage: "GA" })).toBe(false);
+  });
+
+  it("false for an unregistered connector", async () => {
+    rcMock.getRuntimeConfigValue.mockResolvedValue("PRODUCTION");
+    expect(await isApiSyncConnector("nope", { enabled: true, stage: "GA" })).toBe(false);
+  });
+});
+
+describe("runDispatchRow mode gate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    rcMock.getRuntimeConfigValue.mockResolvedValue(null);
+    dbMocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: true,
+      circuitState: "CLOSED",
+      stage: "GA",
+    });
+    dbMocks.prisma.connectorDispatch.update.mockResolvedValue({});
+    dbMocks.prisma.user.findUnique.mockResolvedValue({ email: null, firstName: null });
+    dbMocks.prisma.notificationPreference.findMany.mockResolvedValue([]);
+  });
+
+  it("does not push an already-queued row when the connector is no longer API_SYNC", async () => {
+    const status = await runDispatchRow({
+      id: "dispatch_1",
+      connectorKey: "usps",
+      userId: "user_1",
+      consentId: "consent_1",
+      idempotencyKey: "idem_1",
+      attemptCount: 0,
+      payloadEncrypted: JSON.stringify({
+        eventId: "event_1",
+        from: { street1: "1 Old St", city: "Austin", state: "TX", zip: "78701", country: "US" },
+        to: { street1: "2 New St", city: "Austin", state: "TX", zip: "78702", country: "US" },
+        fullName: "User One",
+        fields: {},
+      }),
+    });
+
+    expect(status).toBe("NEEDS_USER");
+    expect(dbMocks.prisma.partnerConsent.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.connectorDispatch.update).toHaveBeenCalledWith({
+      where: { id: "dispatch_1" },
+      data: expect.objectContaining({
+        status: "NEEDS_USER",
+        lastErrorCode: "NOT_SUPPORTED",
+        resultMetadataJson: JSON.stringify({ reason: "MODE_NOT_API_SYNC" }),
+      }),
+    });
   });
 });

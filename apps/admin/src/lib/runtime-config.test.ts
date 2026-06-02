@@ -45,6 +45,20 @@ describe("upsertRuntimeConfigEntry value validation", () => {
         value: "uspsclientabcdef123456",
       }),
     ).resolves.toBeUndefined();
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "CONNECTOR_USPS_AGREEMENT_STATUS",
+        value: "PRODUCTION",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GUIDED_PARTNERS",
+        value: JSON.stringify([{ key: "ups", name: "UPS" }]),
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("rejects an empty value", async () => {

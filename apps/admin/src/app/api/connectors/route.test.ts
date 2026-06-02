@@ -15,6 +15,21 @@ vi.mock("@/lib/auth", () => ({
   requirePermission: mocks.requirePermission,
   requirePasswordConfirm: mocks.requirePasswordConfirm,
 }));
+// Resolver logic is unit-tested in the connectors package; here we stub it to
+// assert the GET plumbs the per-connector mode through (and so the package
+// import resolves under the admin test runner).
+vi.mock("@locateflow/connectors", () => ({
+  uspsConnector: {
+    manifest: {
+      capabilities: { addressUpdatePush: true },
+      auth: { type: "OAUTH" },
+      allowedHosts: ["apis.usps.com"],
+    },
+  },
+  resolveConnectorMode: () => ({ mode: "GUIDED_UPDATE", reason: "test-guided", canApiSync: false }),
+}));
+// GET now reads runtime-config for the agreement/credential gate inputs.
+vi.mock("@/lib/runtime-config", () => ({ getAdminRuntimeConfigValue: vi.fn().mockResolvedValue(null) }));
 
 describe("admin connectors GET — per-connector ops health", () => {
   beforeEach(() => {
@@ -59,6 +74,8 @@ describe("admin connectors GET — per-connector ops health", () => {
     expect(body.lastFailureByConnector.usps).toMatchObject({ errorCode: "PARTNER_DOWN", status: "NEEDS_USER" });
     // Global summary strip preserved for backward-compat with the client.
     expect(body.dispatchHealth).toEqual({ CONFIRMED: 5, FAILED: 2 });
+    // Honest per-connector operating mode is plumbed through from the resolver.
+    expect(body.modeByConnector.usps).toEqual({ mode: "GUIDED_UPDATE", reason: "test-guided" });
 
     // Only the bounded recent-failure scan is used (no unbounded history query).
     expect(mocks.prisma.connectorDispatch.findMany).toHaveBeenCalledWith(

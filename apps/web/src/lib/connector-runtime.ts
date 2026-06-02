@@ -18,6 +18,7 @@ import {
   createConnectorHttpClient,
   createRedactingLogger,
   planNextDispatch,
+  resolveConnectorMode,
   runConnectorAttempt,
   type AddressConnector,
   type CanonicalAddress,
@@ -25,6 +26,7 @@ import {
   type ConnectorContext,
 } from "@locateflow/connectors";
 import { connectorRegistry } from "@/lib/connector-registry";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { refreshConsentAccessToken } from "@/lib/connector-oauth";
@@ -82,6 +84,7 @@ function buildContext(
 
 interface ConnectorControl {
   connectorKey: string;
+  enabled: boolean;
   rolloutPercent: number;
   circuitState: string;
   stage: string;
@@ -107,6 +110,57 @@ function isConnectorDispatchable(config: ConnectorControl, userId: string): bool
 }
 
 /**
+ * Defense-in-depth mode gate: only an API_SYNC connector — one with a signed
+ * PRODUCTION agreement AND configured credentials (resolveConnectorMode, the
+ * single source of truth) — ever gets a server-side dispatch. GUIDED_UPDATE /
+ * COMING_SOON connectors are never auto-pushed; the user handles those through
+ * the guided flow. The UI already only offers Connect for API_SYNC, so this
+ * guards against a stale/orphaned consent slipping a doomed push through.
+ * Exported for unit testing.
+ */
+export async function isApiSyncConnector(
+  connectorKey: string,
+  config: { enabled: boolean; stage: string },
+): Promise<boolean> {
+  const adapter = connectorRegistry.get(connectorKey);
+  if (!adapter) return false;
+  const k = connectorKey.toUpperCase().replace(/-/g, "_");
+  const rc = async (name: string) => (await getRuntimeConfigValue(name)) ?? process.env[name] ?? "";
+  const [agreementRaw, clientId, clientSecret, authorizeUrl, tokenUrl] = await Promise.all([
+    rc(`CONNECTOR_${k}_AGREEMENT_STATUS`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`),
+    rc(`CONNECTOR_${k}_OAUTH_AUTHORIZE_URL`),
+    rc(`CONNECTOR_${k}_OAUTH_TOKEN_URL`),
+  ]);
+  const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
+  const credentialsPresent = Boolean(
+    clientId &&
+      clientSecret &&
+      isAllowedConnectorUrl(authorizeUrl, adapter.manifest.allowedHosts) &&
+      isAllowedConnectorUrl(tokenUrl, adapter.manifest.allowedHosts),
+  );
+  return (
+    resolveConnectorMode({
+      addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
+      agreementStatus,
+      credentialsPresent,
+      enabled: config.enabled,
+      stage: config.stage,
+    }).mode === "API_SYNC"
+  );
+}
+
+function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === "https:" && allowedHosts.includes(url.host.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fan one address change out to the user's connected + enabled connectors by
  * writing QUEUED outbox rows. Returns how many were enqueued.
  */
@@ -126,7 +180,7 @@ export async function enqueueAddressChange(input: {
     prisma.partnerConsent.findMany({ where: { userId: input.userId, status: "GRANTED" }, select: { id: true, connectorKey: true } }),
     prisma.connectorConfig.findMany({
       where: { enabled: true },
-      select: { connectorKey: true, rolloutPercent: true, circuitState: true, stage: true },
+      select: { connectorKey: true, enabled: true, rolloutPercent: true, circuitState: true, stage: true },
     }),
   ]);
   if (!toAddress) throw new Error("ADDRESS_NOT_FOUND");
@@ -146,6 +200,10 @@ export async function enqueueAddressChange(input: {
     const config = configByKey.get(consent.connectorKey);
     if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
     if (!isConnectorDispatchable(config, input.userId)) continue;
+    // Mode gate (defense-in-depth): only auto-push when the connector is truly
+    // API_SYNC — signed agreement + credentials. Otherwise the honest path is
+    // the guided flow, not a server push that would fail or overreach.
+    if (!(await isApiSyncConnector(consent.connectorKey, { enabled: config.enabled, stage: config.stage }))) continue;
     // Skip a connector that needs an origin when we have none (e.g. a primary-
     // address EDIT auto-sync with no `from`) — don't file a doomed null-origin
     // COA the partner would reject. A real move (from+to) still dispatches.
@@ -263,7 +321,7 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
   // QUEUED) rather than pushing.
   const control = await prisma.connectorConfig.findUnique({
     where: { connectorKey: row.connectorKey },
-    select: { enabled: true, circuitState: true },
+    select: { enabled: true, circuitState: true, stage: true },
   });
   if (!control?.enabled || control.circuitState === "OPEN" || control.circuitState === "DISABLED") {
     await prisma.connectorDispatch.update({
@@ -271,6 +329,18 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       data: { status: "QUEUED", nextRetryAt: new Date(Date.now() + 5 * 60_000) },
     });
     return "QUEUED";
+  }
+  if (!(await isApiSyncConnector(row.connectorKey, { enabled: control.enabled, stage: control.stage }))) {
+    await prisma.connectorDispatch.update({
+      where: { id: row.id },
+      data: {
+        status: "NEEDS_USER",
+        lastErrorCode: "NOT_SUPPORTED",
+        resultMetadataJson: JSON.stringify({ reason: "MODE_NOT_API_SYNC" }),
+      },
+    });
+    await notifyNeedsUser(row.userId, row.connectorKey, row.id);
+    return "NEEDS_USER";
   }
 
   let accessToken: string | null = null;

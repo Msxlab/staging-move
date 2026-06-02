@@ -30,6 +30,12 @@ export { canTransition, isTerminal, statusForOutcome } from "./state";
 
 export { validateManifest, isValidManifest } from "./manifest";
 
+export type { ConnectorMode, AgreementStatus, ConnectorModeInput, ConnectorModeResult } from "./mode";
+export { resolveConnectorMode } from "./mode";
+
+export type { FieldType, FieldSpec, FieldValidationResult } from "./fields";
+export { validateFieldValues, sensitiveFieldKeys } from "./fields";
+
 export type { ConnectorRegistry } from "./registry";
 export { createConnectorRegistry } from "./registry";
 

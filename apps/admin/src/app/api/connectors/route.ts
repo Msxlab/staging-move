@@ -3,6 +3,47 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { resolveConnectorMode, uspsConnector, type AddressConnector } from "@locateflow/connectors";
+import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
+
+/**
+ * The two facts that gate API_SYNC, read from runtime-config (operator-set, no
+ * schema migration): the signed-agreement posture and whether real OAuth
+ * credentials are configured. Both default to the safe value, so a connector
+ * stays GUIDED until an operator records a PRODUCTION agreement AND credentials.
+ */
+async function connectorGateInputs(
+  adapter: AddressConnector | undefined,
+  key: string,
+): Promise<{ agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION"; credentialsPresent: boolean }> {
+  const k = key.toUpperCase().replace(/-/g, "_");
+  const rc = async (name: string) => (await getAdminRuntimeConfigValue(name)) ?? process.env[name] ?? "";
+  const [agreementRaw, clientId, clientSecret, authorizeUrl, tokenUrl] = await Promise.all([
+    rc(`CONNECTOR_${k}_AGREEMENT_STATUS`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`),
+    rc(`CONNECTOR_${k}_OAUTH_AUTHORIZE_URL`),
+    rc(`CONNECTOR_${k}_OAUTH_TOKEN_URL`),
+  ]);
+  const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
+  const credentialsPresent = Boolean(
+    adapter &&
+      clientId &&
+      clientSecret &&
+      isAllowedConnectorUrl(authorizeUrl, adapter.manifest.allowedHosts) &&
+      isAllowedConnectorUrl(tokenUrl, adapter.manifest.allowedHosts),
+  );
+  return { agreementStatus, credentialsPresent };
+}
+
+function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === "https:" && allowedHosts.includes(url.host.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 // Connector config changes are reversible by the same operator (flip enabled
 // back, re-PUT the rollout %), so — like feature flags — step-up is required
@@ -23,6 +64,14 @@ function clampPercent(value: unknown): number | undefined {
 // readout. Bounded so the query stays cheap — an operator wants the latest
 // error per connector, not a full history (that's what dispatch logs are for).
 const RECENT_FAILURE_SCAN = 200;
+
+// Built-in connector adapters (same set the web app dispatches through). Their
+// manifest carries the one fact code contributes to mode resolution: whether
+// the connector can push server-side at all. A control-plane row with no
+// adapter resolves to GUIDED_UPDATE/DISABLED — honest, never API_SYNC.
+const CONNECTOR_ADAPTERS: Record<string, AddressConnector> = {
+  usps: uspsConnector,
+};
 
 /** GET — list the connector control-plane rows + per-connector ops health. */
 export async function GET() {
@@ -68,12 +117,34 @@ export async function GET() {
       }
     }
 
+    // Honest, derived operating mode per connector — via the single source of
+    // truth (resolveConnectorMode) the user Connections screen + marketing copy
+    // will also read. agreementStatus + credentialsPresent get wired from the
+    // DB field + the OAuth config loader once the connector work lands; until a
+    // real partner agreement exists, NONE is the honest value, which forces
+    // GUIDED_UPDATE — so a connector can never show "automatic sync" without a
+    // signed deal.
+    const modeByConnector: Record<string, { mode: string; reason: string }> = {};
+    for (const c of connectors) {
+      const adapter = CONNECTOR_ADAPTERS[c.connectorKey];
+      const gate = await connectorGateInputs(adapter, c.connectorKey);
+      const resolved = resolveConnectorMode({
+        addressUpdatePush: adapter?.manifest.capabilities.addressUpdatePush ?? false,
+        agreementStatus: gate.agreementStatus,
+        credentialsPresent: gate.credentialsPresent,
+        enabled: c.enabled,
+        stage: c.stage,
+      });
+      modeByConnector[c.connectorKey] = { mode: resolved.mode, reason: resolved.reason };
+    }
+
     return NextResponse.json({
       connectors,
       dispatchHealth,
       dispatchByConnector,
       consentsByConnector,
       lastFailureByConnector,
+      modeByConnector,
     });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

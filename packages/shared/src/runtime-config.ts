@@ -12,6 +12,7 @@ export const RUNTIME_CONFIG_CATEGORY_VALUES = [
   "CRON",
   "AI",
   "APP",
+  "CONNECTORS",
   "OAUTH",
 ] as const;
 export type RuntimeConfigCategory = (typeof RUNTIME_CONFIG_CATEGORY_VALUES)[number];
@@ -841,6 +842,21 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "This only opens the connector surface; each user still needs active annual Pro, explicit partner consent, and an enabled connector config.",
   },
   {
+    key: "GUIDED_PARTNERS",
+    label: "Guided Partner Catalog",
+    description:
+      "Optional JSON array for no-code guided-update partners shown in Connections when no API connector exists yet.",
+    scope: "WEB",
+    category: "CONNECTORS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app", "admin app"],
+    validation: "JSON array of { key, name, comingSoon? }",
+    note: "These partners are guided/open-and-update only; they must not be represented as API sync connectors until an agreement and credentials are configured.",
+  },
+  {
     key: "RECOMMENDATION_SCORING_WEIGHTS",
     label: "Recommendation Scoring Weights",
     description:
@@ -1069,7 +1085,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
 ];
 
 const CONNECTOR_RUNTIME_CONFIG_KEY =
-  /^CONNECTOR_([A-Z0-9]+(?:_[A-Z0-9]+)*)_(OAUTH_CLIENT_ID|OAUTH_CLIENT_SECRET|OAUTH_AUTHORIZE_URL|OAUTH_TOKEN_URL|OAUTH_SCOPES|WEBHOOK_SECRET)$/;
+  /^CONNECTOR_([A-Z0-9]+(?:_[A-Z0-9]+)*)_(AGREEMENT_STATUS|OAUTH_CLIENT_ID|OAUTH_CLIENT_SECRET|OAUTH_AUTHORIZE_URL|OAUTH_TOKEN_URL|OAUTH_SCOPES|WEBHOOK_SECRET)$/;
 
 function connectorRuntimeConfigDefinition(key: string): RuntimeConfigDefinition | null {
   const match = key.match(CONNECTOR_RUNTIME_CONFIG_KEY);
@@ -1077,6 +1093,7 @@ function connectorRuntimeConfigDefinition(key: string): RuntimeConfigDefinition 
 
   const connectorKey = match[1].toLowerCase().replace(/_/g, "-");
   const labels: Record<string, string> = {
+    AGREEMENT_STATUS: "Agreement Status",
     OAUTH_CLIENT_ID: "OAuth Client ID",
     OAUTH_CLIENT_SECRET: "OAuth Client Secret",
     OAUTH_AUTHORIZE_URL: "OAuth Authorize URL",
@@ -1091,15 +1108,19 @@ function connectorRuntimeConfigDefinition(key: string): RuntimeConfigDefinition 
   return {
     key,
     label: `Connector ${connectorKey} - ${labels[suffix]}`,
-    description: `Partner connector setting for ${connectorKey}. Use only credentials issued for this exact LocateFlow connector.`,
+    description: suffix === "AGREEMENT_STATUS"
+      ? `Legal/commercial agreement posture for ${connectorKey}. API sync requires PRODUCTION.`
+      : `Partner connector setting for ${connectorKey}. Use only credentials issued for this exact LocateFlow connector.`,
     scope: "WEB",
-    category: "OAUTH",
+    category: suffix === "AGREEMENT_STATUS" ? "CONNECTORS" : "OAUTH",
     isSecret,
     requiredInProduction: false,
     maskStrategy: isSecret ? "secret" : isUrl ? "url" : suffix === "OAUTH_CLIENT_ID" ? "id" : "plain",
     runtimeEditable: true,
     usedBy: ["web app", "connector cron/worker"],
-    validation: isUrl
+    validation: suffix === "AGREEMENT_STATUS"
+      ? "NONE, SANDBOX, or PRODUCTION"
+      : isUrl
       ? "HTTPS URL"
       : isSecret
         ? "minimum 16 characters"
@@ -1107,7 +1128,9 @@ function connectorRuntimeConfigDefinition(key: string): RuntimeConfigDefinition 
           ? "OAuth client identifier"
           : "space/comma-separated OAuth scopes",
     note:
-      "Connector credentials are still constrained by the connector manifest host allowlist and the FEATURE_API_CONNECTORS launch switch.",
+      suffix === "AGREEMENT_STATUS"
+        ? "API_SYNC remains unavailable until this is PRODUCTION and valid connector credentials are configured."
+        : "Connector credentials are still constrained by the connector manifest host allowlist and the FEATURE_API_CONNECTORS launch switch.",
   };
 }
 
@@ -1370,6 +1393,34 @@ function validateScoringWeightsJson(value: string): RuntimeConfigValidationResul
   return hasUsableWeight ? valid() : invalid("scoring_weights_empty");
 }
 
+function validateGuidedPartnersJson(value: string): RuntimeConfigValidationResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return invalid("guided_partners_json");
+  }
+  if (!Array.isArray(parsed)) return invalid("guided_partners_array");
+
+  for (const item of parsed) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return invalid("guided_partners_item");
+    }
+    const partner = item as Record<string, unknown>;
+    if (typeof partner.key !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(partner.key)) {
+      return invalid("guided_partner_key");
+    }
+    if (typeof partner.name !== "string" || !partner.name.trim()) {
+      return invalid("guided_partner_name");
+    }
+    if (partner.comingSoon !== undefined && typeof partner.comingSoon !== "boolean") {
+      return invalid("guided_partner_coming_soon");
+    }
+  }
+
+  return valid();
+}
+
 export function validateRuntimeConfigValueShape(
   key: string,
   rawValue: string | null | undefined,
@@ -1387,6 +1438,11 @@ export function validateRuntimeConfigValueShape(
   const connectorKeyMatch = key.match(CONNECTOR_RUNTIME_CONFIG_KEY);
   if (connectorKeyMatch) {
     const suffix = connectorKeyMatch[2];
+    if (suffix === "AGREEMENT_STATUS") {
+      return ["NONE", "SANDBOX", "PRODUCTION"].includes(value)
+        ? valid()
+        : invalid("connector_agreement_status");
+    }
     if (suffix === "OAUTH_AUTHORIZE_URL" || suffix === "OAUTH_TOKEN_URL") {
       const reason = validateUrl(value, { requireHttps: true });
       return reason ? invalid(reason) : valid();
@@ -1615,6 +1671,9 @@ export function validateRuntimeConfigValueShape(
 
   if (key === "RECOMMENDATION_SCORING_WEIGHTS") {
     return validateScoringWeightsJson(value);
+  }
+  if (key === "GUIDED_PARTNERS") {
+    return validateGuidedPartnersJson(value);
   }
 
   if (definition?.isSecret) {
