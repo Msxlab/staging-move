@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 const SETTINGS_CANCELED_PATH = "/settings/subscription?canceled=true";
 
-function canceledRedirect(request: NextRequest) {
-  return NextResponse.redirect(new URL(SETTINGS_CANCELED_PATH, request.url));
+async function canceledRedirect(request: NextRequest) {
+  const configuredAppUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL");
+  const baseUrl = configuredAppUrl || request.nextUrl.origin;
+  return NextResponse.redirect(new URL(SETTINGS_CANCELED_PATH, baseUrl));
 }
 
 async function resetPendingCheckoutForUser(userId: string): Promise<boolean> {
@@ -74,7 +77,7 @@ export async function GET(request: NextRequest) {
     // local pending reset cannot run, for example after an expired session.
   }
 
-  return canceledRedirect(request);
+  return await canceledRedirect(request);
 }
 
 // Called by the subscription management page when it detects a stuck

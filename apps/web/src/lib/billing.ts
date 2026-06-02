@@ -212,6 +212,7 @@ const SUBSCRIPTION_ENTITLEMENT_SELECT = {
   lastSyncedAt: true,
   accessType: true,
   billingInterval: true,
+  pendingPlan: true,
   pendingBillingInterval: true,
   pendingBillingIntervalEffectiveAt: true,
   freeAccessEndsAt: true,

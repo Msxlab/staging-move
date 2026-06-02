@@ -148,6 +148,84 @@ describe("change-plan route", () => {
     expect(mocks.subsUpdate).not.toHaveBeenCalled();
   });
 
+  it("defers a Pro to Family downgrade to period end and stores the pending plan", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "PRO",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+
+    const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "YEAR" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      plan: "PRO",
+      pendingPlan: "FAMILY",
+      pendingBillingInterval: "YEAR",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).toHaveBeenCalledWith(
+      "sched_1",
+      expect.objectContaining({
+        proration_behavior: "none",
+        metadata: expect.objectContaining({
+          locateflow_pending_plan: "FAMILY",
+          locateflow_pending_billing_interval: "YEAR",
+        }),
+      }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
+    expect(mocks.subUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        pendingPlan: "FAMILY",
+        pendingBillingInterval: "YEAR",
+        stripeSubscriptionScheduleId: "sched_1",
+      }),
+    });
+  });
+
+  it("defers a Family to Individual downgrade to period end", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "FAMILY",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: "MONTH",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+
+    const res = await POST(req({ targetPlan: "INDIVIDUAL", targetInterval: "MONTH" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      plan: "FAMILY",
+      pendingPlan: "INDIVIDUAL",
+      pendingBillingInterval: "MONTH",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.subUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        pendingPlan: "INDIVIDUAL",
+        pendingBillingInterval: "MONTH",
+      }),
+    });
+  });
+
   it("returns 503 when the target plan price is not configured", async () => {
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);
     const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "MONTH" }));

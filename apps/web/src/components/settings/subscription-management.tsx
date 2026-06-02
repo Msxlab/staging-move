@@ -31,6 +31,7 @@ type SubscriptionRecord = {
   stripeSubscriptionId?: string | null;
   accessType?: string | null;
   billingInterval?: string | null;
+  pendingPlan?: string | null;
   pendingBillingInterval?: string | null;
   pendingBillingIntervalEffectiveAt?: string | null;
   trialEndsAt?: string | null;
@@ -340,6 +341,27 @@ export default function SubscriptionManagementPage() {
     subscription?.pendingBillingInterval === "MONTH";
   const pendingMonthlyEffectiveLabel = formatDateLabel(
     subscription?.pendingBillingIntervalEffectiveAt || subscription?.currentPeriodEndsAt,
+  );
+  const pendingPaidPlan =
+    isBillingPlan(subscription?.pendingPlan) && subscription.pendingPlan !== "FREE_TRIAL"
+      ? subscription.pendingPlan
+      : null;
+  const showGeneralPendingChangeNotice =
+    Boolean(pendingPaidPlan) &&
+    (pendingPaidPlan !== subscriptionPlan || subscriptionPlan !== "INDIVIDUAL");
+  const pendingPlanName = pendingPaidPlan
+    ? BILLING_PLAN_DEFINITIONS[pendingPaidPlan].displayName
+    : null;
+  const pendingIntervalName =
+    subscription?.pendingBillingInterval === "YEAR"
+      ? "Annual"
+      : subscription?.pendingBillingInterval === "MONTH"
+        ? "Monthly"
+        : null;
+  const pendingChangeEffectiveLabel = formatDateLabel(
+    subscription?.pendingBillingIntervalEffectiveAt ||
+      subscription?.currentPeriodEndsAt ||
+      subscription?.stripeCurrentPeriodEnd,
   );
   // Store-managed subscriptions (Apple / Google) cannot be cancelled or
   // modified through Stripe Customer Portal — store policy requires the
@@ -655,7 +677,39 @@ export default function SubscriptionManagementPage() {
             </div>
           </div>
 
-          {currentProvider === "STRIPE" &&
+          {showGeneralPendingChangeNotice && pendingPlanName ? (
+            <div className="rounded-2xl border border-border bg-foreground/5 p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl border border-tone-emerald-br bg-tone-emerald-bg p-2.5">
+                  <RefreshCw className="h-5 w-5 text-tone-emerald-fg" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-foreground">Plan change scheduled</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Your {planDisplayName(subscription)} access stays active until{" "}
+                    {pendingChangeEffectiveLabel || "the end of this billing period"}. Then{" "}
+                    {pendingIntervalName ? `${pendingIntervalName} ` : ""}
+                    {pendingPlanName} starts automatically, with no extra charge today.
+                  </p>
+                  {canManageStripeBilling ? (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => void openPortal()}
+                        disabled={Boolean(processing)}
+                        className="inline-flex items-center px-2 py-2 text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline disabled:opacity-60"
+                      >
+                        Manage in Stripe portal
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {subscriptionPlan === "INDIVIDUAL" &&
+          currentProvider === "STRIPE" &&
           subscription?.stripeSubscriptionId &&
           hasKnownStripeBillingInterval &&
           (currentState === "ACTIVE" || currentState === "CANCEL_AT_PERIOD_END") ? (

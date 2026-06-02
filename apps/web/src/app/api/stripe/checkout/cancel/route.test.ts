@@ -18,11 +18,17 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+vi.mock("@/lib/runtime-config", () => ({
+  getRuntimeConfigValue: vi.fn(),
+}));
+
 import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockGetRuntimeConfigValue = getRuntimeConfigValue as unknown as Mock;
 const mockSubscription = prisma.subscription as unknown as {
   findUnique: Mock;
   update: Mock;
@@ -37,6 +43,7 @@ describe("Stripe checkout cancel route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user_1");
+    mockGetRuntimeConfigValue.mockResolvedValue("https://locateflow.com");
     mockSubscription.update.mockResolvedValue({});
     mockAcquisitionRedemption.updateMany.mockResolvedValue({ count: 1 });
   });
@@ -86,6 +93,22 @@ describe("Stripe checkout cancel route", () => {
 
     expect(mockSubscription.update).not.toHaveBeenCalled();
     expect(mockAcquisitionRedemption.updateMany).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("https://locateflow.com/settings/subscription?canceled=true");
+  });
+
+  it("redirects to the configured public app URL instead of an internal platform host", async () => {
+    mockSubscription.findUnique.mockResolvedValue({
+      id: "sub_row_1",
+      status: "PENDING_CHECKOUT",
+      accessType: "FREE_ACCESS",
+      freeAccessEndsAt: new Date(Date.now() + 7 * 86_400_000),
+      stripeSubscriptionId: null,
+    });
+
+    const response = await GET(
+      new NextRequest("https://0.0.0.0:8080/api/stripe/checkout/cancel"),
+    );
+
     expect(response.headers.get("location")).toBe("https://locateflow.com/settings/subscription?canceled=true");
   });
 
