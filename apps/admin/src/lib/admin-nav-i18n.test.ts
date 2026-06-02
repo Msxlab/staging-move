@@ -15,4 +15,11 @@ describe("admin navigation i18n", () => {
       expect(es.nav, `es.nav.${key}`).toHaveProperty(key);
     }
   });
+
+  it("has command palette group labels", () => {
+    for (const key of ["actions", "navigation"]) {
+      expect(en.common, `en.common.${key}`).toHaveProperty(key);
+      expect(es.common, `es.common.${key}`).toHaveProperty(key);
+    }
+  });
 });

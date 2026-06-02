@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
-import { ChevronDown, Search, LogOut } from "lucide-react";
+import { ChevronDown, Search, LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
@@ -51,6 +51,12 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   const [search, setSearch] = useState("");
   const filteredGroups = filterNavGroups(ctx ?? null);
   const allItems = filteredGroups.flatMap((g) => g.items);
+  // Settings is pinned in the account footer (always reachable without
+  // scrolling the nav), so drop it from the scrolling group list to avoid a
+  // duplicate. It stays in search + the ⌘K palette via allItems.
+  const displayGroups = filteredGroups
+    .map((g) => ({ ...g, items: g.items.filter((it) => it.href !== "/settings") }))
+    .filter((g) => g.items.length > 0);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname, filteredGroups));
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
@@ -59,6 +65,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   const email = ctx?.email ?? "";
   const roleMeta = ctx ? ROLE_META[ctx.role] : null;
   const initial = (email.trim()[0] || "A").toUpperCase();
+  const settingsActive = pathname === "/settings" || pathname.startsWith("/settings");
 
   // Platform-correct command-palette hint (⌘K on Apple, Ctrl K elsewhere).
   // Defaults to the non-Apple form for SSR; corrected on mount — the <kbd>
@@ -206,13 +213,13 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                     href={item.href}
                     onClick={() => setSearch("")}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                       isActive
-                        ? "relative bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                        : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                     )}
                   >
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
                     {tNav(item.nameKey)}
                   </a>
                 );
@@ -224,7 +231,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
         ) : (
           // Grouped navigation
           <div className="space-y-1">
-            {filteredGroups.map((group) => {
+            {displayGroups.map((group) => {
               const isCollapsed = collapsed[group.label];
               const hasActive = group.items.some(
                 (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
@@ -257,13 +264,13 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                             key={item.name}
                             href={item.href}
                             className={cn(
-                              "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                              "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                               isActive
-                                ? "relative bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                                : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                             )}
                           >
-                            <item.icon className="h-4 w-4 flex-shrink-0" />
+                            <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
                             {tNav(item.nameKey)}
                           </a>
                         );
@@ -277,12 +284,14 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
         )}
       </nav>
 
-      {/* Operator identity + theme + language + logout */}
-      <div className="border-t border-border p-3 space-y-1">
+      {/* Pinned account bar — identity, Settings and Sign out are always
+          reachable here without scrolling the nav; theme + language are
+          compact icon buttons so the footer stays short. */}
+      <div className="border-t border-border bg-card/60 p-3">
         {/* Who is signed in + privilege level — display only; the server role
             gate remains authoritative. */}
         {ctx && (
-          <div className="mb-1.5 flex items-center gap-2.5 rounded-lg px-2 py-2">
+          <div className="mb-2 flex items-center gap-2.5 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20"
               aria-hidden="true"
@@ -298,7 +307,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
               {roleMeta && (
                 <span
                   className={cn(
-                    "mt-1 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+                    "mt-0.5 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
                     roleMeta.tone,
                   )}
                 >
@@ -308,11 +317,26 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
             </div>
           </div>
         )}
-        <ThemeToggle />
-        <LanguageSelector />
+        {/* Settings (pinned) + theme + language on one row. */}
+        <div className="flex items-center gap-1.5">
+          <a
+            href="/settings"
+            className={cn(
+              "relative flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+              settingsActive
+                ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+          >
+            <Settings className={cn("h-4 w-4 shrink-0", settingsActive ? "text-primary" : "text-muted-foreground/70")} />
+            {tNav("settings")}
+          </a>
+          <ThemeToggle compact />
+          <LanguageSelector compact />
+        </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          className="mt-1.5 flex w-full items-center justify-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="h-4 w-4" />
           {tCommon("signOut")}

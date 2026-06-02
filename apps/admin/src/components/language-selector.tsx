@@ -10,7 +10,7 @@ import { locales, localeNames, type Locale } from "@/i18n/config";
  * cookie-based locale that reloads the page on change. Admin has no
  * per-admin DB field; the cookie alone is the source of truth.
  */
-export function LanguageSelector() {
+export function LanguageSelector({ compact = false }: { compact?: boolean }) {
   const currentLocale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -36,10 +36,15 @@ export function LanguageSelector() {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         disabled={pending}
-        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
+        title={compact ? `Language: ${localeNames[currentLocale]}` : undefined}
+        className={
+          compact
+            ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
+            : "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
+        }
       >
         <Languages className="h-4 w-4" aria-hidden="true" />
-        <span className="uppercase">{currentLocale}</span>
+        {!compact && <span className="uppercase">{currentLocale}</span>}
       </button>
 
       {open && (

@@ -117,13 +117,38 @@ export async function GET() {
       }
     }
 
-    // Honest, derived operating mode per connector — via the single source of
-    // truth (resolveConnectorMode) the user Connections screen + marketing copy
-    // will also read. agreementStatus + credentialsPresent get wired from the
-    // DB field + the OAuth config loader once the connector work lands; until a
-    // real partner agreement exists, NONE is the honest value, which forces
-    // GUIDED_UPDATE — so a connector can never show "automatic sync" without a
-    // signed deal.
+    // Built-in adapters and registered rows share the same honest mode resolver,
+    // so the control plane shows what exists in code and what is actually live.
+    const connectorByKey = new Map(connectors.map((connector) => [connector.connectorKey, connector]));
+    const availableConnectors = await Promise.all(
+      Object.values(CONNECTOR_ADAPTERS).map(async (adapter) => {
+        const connectorKey = adapter.manifest.key;
+        const config = connectorByKey.get(connectorKey);
+        const gate = await connectorGateInputs(adapter, connectorKey);
+        const resolved = resolveConnectorMode({
+          addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
+          agreementStatus: gate.agreementStatus,
+          credentialsPresent: gate.credentialsPresent,
+          enabled: config?.enabled ?? false,
+          stage: config?.stage ?? "SHADOW",
+        });
+        return {
+          connectorKey,
+          displayName: adapter.manifest.displayName,
+          version: adapter.manifest.version,
+          registered: Boolean(config),
+          mode: config ? resolved.mode : "DISABLED",
+          reason: config ? resolved.reason : "Connector is supported in code but has no control-plane row yet.",
+          agreementStatus: gate.agreementStatus,
+          credentialsPresent: gate.credentialsPresent,
+          authType: adapter.manifest.auth.type,
+          allowedHosts: adapter.manifest.allowedHosts,
+          addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
+          fallbackActionKey: adapter.manifest.fallbackActionKey ?? null,
+        };
+      }),
+    );
+
     const modeByConnector: Record<string, { mode: string; reason: string }> = {};
     for (const c of connectors) {
       const adapter = CONNECTOR_ADAPTERS[c.connectorKey];
@@ -140,6 +165,7 @@ export async function GET() {
 
     return NextResponse.json({
       connectors,
+      availableConnectors,
       dispatchHealth,
       dispatchByConnector,
       consentsByConnector,
