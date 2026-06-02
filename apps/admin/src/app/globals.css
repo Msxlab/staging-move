@@ -35,10 +35,10 @@
   --orange-800: #3D7AB8;
   --orange-900: #1F5FA0;
 
-  --bg:        #0A0F18;
-  --surface:   #0E1521;
-  --surface-2: #131C2C;
-  --surface-3: #1A2438;
+  --bg:        #0C0E13;
+  --surface:   #10131A;
+  --surface-2: #161A22;
+  --surface-3: #1E2330;
 
   --line:        rgba(255, 255, 255, 0.06);
   --line-2:      rgba(255, 255, 255, 0.10);
@@ -57,9 +57,9 @@
   --tone-sky-bg: rgba(127, 182, 232, 0.10); --tone-sky-br: rgba(127, 182, 232, 0.22); --tone-sky-fg: #7FB6E8;
   --tone-cyan-bg: rgba(127, 182, 232, 0.10); --tone-cyan-br: rgba(127, 182, 232, 0.22); --tone-cyan-fg: #7FB6E8;
 
-  --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-foil: 0 0 30px rgba(180, 155, 255, 0.16);
+  --shadow-glow: 0 0 10px rgba(127, 182, 232, 0.12);
+  --shadow-rose: 0 0 10px rgba(127, 182, 232, 0.12);
+  --shadow-foil: 0 0 14px rgba(180, 155, 255, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
   --success:       #87DDC0;
@@ -154,30 +154,32 @@
     --border: 213 18% 82%;
     --input: 213 18% 82%;
     --ring: 209 63% 47%;
-    --radius: 0.625rem;
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Dark mode — Aurora navy canvas */
-    --background: 218 43% 6%;
-    --foreground: 214 36% 95%;
-    --card: 217 41% 9%;
-    --card-foreground: 214 36% 95%;
-    --popover: 217 41% 9%;
-    --popover-foreground: 214 36% 95%;
-    --primary: 207 67% 70%;
-    --primary-foreground: 218 43% 6%;
-    --secondary: 215 22% 72%;
-    --secondary-foreground: 218 43% 6%;
-    --muted: 217 38% 12%;
-    --muted-foreground: 215 18% 65%;
-    --accent: 217 38% 14%;
-    --accent-foreground: 214 36% 95%;
-    --destructive: 359 75% 75%;
-    --destructive-foreground: 218 43% 6%;
-    --border: 217 32% 18%;
-    --input: 217 32% 18%;
-    --ring: 207 67% 70%;
+    /* Dark mode — Linear-style graphite canvas: near-black neutral surfaces
+       (faint cool tint, not navy), hairline borders, one restrained blue
+       accent. Lower saturation + tighter contrast steps read calmer + sharper. */
+    --background: 222 16% 7%;
+    --foreground: 220 15% 96%;
+    --card: 222 14% 10%;
+    --card-foreground: 220 15% 96%;
+    --popover: 222 15% 11%;
+    --popover-foreground: 220 15% 96%;
+    --primary: 208 85% 64%;
+    --primary-foreground: 222 40% 8%;
+    --secondary: 220 8% 68%;
+    --secondary-foreground: 222 40% 8%;
+    --muted: 222 12% 13%;
+    --muted-foreground: 220 8% 61%;
+    --accent: 222 12% 15%;
+    --accent-foreground: 220 15% 96%;
+    --destructive: 359 68% 70%;
+    --destructive-foreground: 222 40% 8%;
+    --border: 222 11% 16%;
+    --input: 222 11% 16%;
+    --ring: 208 85% 64%;
   }
 }
 
