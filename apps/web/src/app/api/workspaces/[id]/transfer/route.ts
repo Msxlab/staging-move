@@ -6,6 +6,7 @@ import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { transferWorkspaceOwnership } from "@/lib/workspace-ownership";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceOwnershipEmail } from "@/lib/email-service";
+import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
 
 export const runtime = "nodejs";
 
@@ -35,8 +36,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const toUserId = typeof body?.toUserId === "string" ? body.toUserId : "";
   if (!toUserId) return NextResponse.json({ error: "toUserId is required" }, { status: 422 });
 
+  const stepUp = await requireWorkspaceStepUp({
+    request,
+    userId: session.userId,
+    workspaceId: id,
+    body,
+    operation: "workspace_transfer",
+  });
+  if (!stepUp.ok) return stepUp.response;
+
   const result = await transferWorkspaceOwnership(id, session.userId, toUserId);
   if (!result.ok) return NextResponse.json({ error: result.error || "Transfer failed." }, { status: 409 });
+
+  await auditWorkspaceSensitiveAction({
+    request,
+    userId: session.userId,
+    workspaceId: id,
+    action: "WORKSPACE_TRANSFER",
+    stepUpMethod: stepUp.method,
+    changes: { toUserId },
+  });
 
   // Notify both parties — previously this transfer was completely silent.
   // Best-effort: a notification/email failure must not fail the transfer.

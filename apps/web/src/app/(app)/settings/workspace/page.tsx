@@ -4,6 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, Users, Trash2, ArrowLeft } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Workspace {
   id: string;
@@ -75,6 +83,11 @@ export default function WorkspaceSettingsPage() {
   const [editingName, setEditingName] = useState(false);
   const [householdName, setHouseholdName] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [transferTarget, setTransferTarget] = useState<Member | null>(null);
+  const [transferPassword, setTransferPassword] = useState("");
+  const [transferMfaCode, setTransferMfaCode] = useState("");
+  const [transferBackupCode, setTransferBackupCode] = useState("");
+  const [transferring, setTransferring] = useState(false);
 
   const selected = workspaces.find((w) => w.id === selectedId) ?? null;
   const iAmManager = selected ? isManagerRole(selected.role) : false;
@@ -195,15 +208,35 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  const transferOwnership = async (member: Member) => {
-    if (!selectedId) return;
-    if (!window.confirm(`Make ${member.displayName || member.email} the owner? You'll become an admin.`)) return;
-    setBusyMember(member.id);
+  const openTransferOwnership = (member: Member) => {
+    setTransferTarget(member);
+    setTransferPassword("");
+    setTransferMfaCode("");
+    setTransferBackupCode("");
+  };
+
+  const closeTransferDialog = () => {
+    if (transferring) return;
+    setTransferTarget(null);
+    setTransferPassword("");
+    setTransferMfaCode("");
+    setTransferBackupCode("");
+  };
+
+  const transferOwnership = async () => {
+    if (!selectedId || !transferTarget) return;
+    setTransferring(true);
+    setBusyMember(transferTarget.id);
     try {
       const res = await fetch(`/api/workspaces/${selectedId}/transfer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toUserId: member.userId }),
+        body: JSON.stringify({
+          toUserId: transferTarget.userId,
+          ...(transferPassword.trim() ? { confirmPassword: transferPassword } : {}),
+          ...(transferMfaCode.trim() ? { mfaCode: transferMfaCode.trim() } : {}),
+          ...(transferBackupCode.trim() ? { backupCode: transferBackupCode.trim() } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -211,11 +244,13 @@ export default function WorkspaceSettingsPage() {
         return;
       }
       toast.success("Ownership transferred.");
+      setTransferTarget(null);
       window.location.reload();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyMember(null);
+      setTransferring(false);
     }
   };
 
@@ -556,7 +591,7 @@ export default function WorkspaceSettingsPage() {
                       )}
                       {iAmOwner && !isSelf && m.status === "ACTIVE" && (m.role === "ADMIN" || m.role === "MEMBER") && (
                         <button
-                          onClick={() => transferOwnership(m)}
+                          onClick={() => openTransferOwnership(m)}
                           disabled={busyMember === m.id}
                           className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground disabled:opacity-50"
                         >
@@ -649,6 +684,98 @@ export default function WorkspaceSettingsPage() {
           )}
         </>
       )}
+
+      <Dialog open={Boolean(transferTarget)} onOpenChange={(open) => {
+        if (!open) closeTransferDialog();
+      }}>
+        <DialogContent className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Transfer ownership</DialogTitle>
+            <DialogDescription>
+              Make {transferTarget?.displayName || transferTarget?.email || "this member"} the workspace owner.
+              You&apos;ll become an admin. Confirm with your password or MFA.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label htmlFor="workspace-transfer-password" className="text-xs font-medium text-muted-foreground">
+                Password
+              </label>
+              <PasswordInput
+                id="workspace-transfer-password"
+                autoComplete="current-password"
+                value={transferPassword}
+                onChange={(event) => setTransferPassword(event.target.value)}
+                disabled={transferring}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Current password"
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="workspace-transfer-mfa" className="text-xs font-medium text-muted-foreground">
+                  MFA code
+                </label>
+                <input
+                  id="workspace-transfer-mfa"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={transferMfaCode}
+                  onChange={(event) => setTransferMfaCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  disabled={transferring}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="123456"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="workspace-transfer-backup" className="text-xs font-medium text-muted-foreground">
+                  Backup code
+                </label>
+                <input
+                  id="workspace-transfer-backup"
+                  type="password"
+                  autoComplete="one-time-code"
+                  value={transferBackupCode}
+                  onChange={(event) => setTransferBackupCode(event.target.value)}
+                  disabled={transferring}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Recovery code"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={closeTransferDialog}
+              disabled={transferring}
+              className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={transferOwnership}
+              disabled={
+                transferring ||
+                (!transferPassword.trim() && !transferMfaCode.trim() && !transferBackupCode.trim())
+              }
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+            >
+              {transferring ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Transferring...
+                </>
+              ) : (
+                "Transfer ownership"
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

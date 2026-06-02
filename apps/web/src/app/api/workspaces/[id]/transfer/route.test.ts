@@ -15,11 +15,16 @@ vi.mock("@/lib/workspace-routes", () => ({ workspaceFeatureGate: vi.fn() }));
 vi.mock("@/lib/workspace-ownership", () => ({ transferWorkspaceOwnership: vi.fn() }));
 vi.mock("@/lib/in-app-notifications", () => ({ createInAppNotification: vi.fn(() => Promise.resolve()) }));
 vi.mock("@/lib/email-service", () => ({ sendWorkspaceOwnershipEmail: vi.fn(() => Promise.resolve()) }));
+vi.mock("@/lib/workspace-step-up", () => ({
+  requireWorkspaceStepUp: vi.fn(),
+  auditWorkspaceSensitiveAction: vi.fn(() => Promise.resolve()),
+}));
 
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { transferWorkspaceOwnership } from "@/lib/workspace-ownership";
+import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
 import { POST } from "./route";
 
 const memberFind = prisma.workspaceMember.findFirst as unknown as Mock;
@@ -28,6 +33,8 @@ const wsFind = prisma.workspace.findUnique as unknown as Mock;
 const sessionMock = getUserSession as unknown as Mock;
 const gateMock = workspaceFeatureGate as unknown as Mock;
 const transferMock = transferWorkspaceOwnership as unknown as Mock;
+const stepUpMock = requireWorkspaceStepUp as unknown as Mock;
+const auditMock = auditWorkspaceSensitiveAction as unknown as Mock;
 
 const CALLER = "owner-1";
 const params = { params: Promise.resolve({ id: "ws-1" }) };
@@ -46,6 +53,8 @@ beforeEach(() => {
   sessionMock.mockResolvedValue({ userId: CALLER });
   memberFind.mockResolvedValue({ id: "m-owner", userId: CALLER, role: "OWNER", status: "ACTIVE" });
   transferMock.mockResolvedValue({ ok: true });
+  stepUpMock.mockResolvedValue({ ok: true, method: "password" });
+  auditMock.mockResolvedValue(undefined);
   userFind.mockResolvedValue({ email: "new@example.com", firstName: "New", preferredLocale: "en" });
   wsFind.mockResolvedValue({ name: "Home" });
 });
@@ -89,11 +98,33 @@ describe("POST /api/workspaces/[id]/transfer", () => {
     expect(res.status).toBe(409);
   });
 
-  it("transfers when an active OWNER hands off to a member", async () => {
+  it("requires step-up before mutating ownership", async () => {
+    stepUpMock.mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ error: "Step-up required" }), { status: 403 }),
+    });
     const res = await POST(req({ toUserId: "u-2" }), params);
+    expect(res.status).toBe(403);
+    expect(transferMock).not.toHaveBeenCalled();
+    expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it("transfers when an active OWNER hands off to a member", async () => {
+    const res = await POST(req({ toUserId: "u-2", confirmPassword: "pw" }), params);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     expect(transferMock).toHaveBeenCalledWith("ws-1", CALLER, "u-2");
+    expect(stepUpMock).toHaveBeenCalledWith(expect.objectContaining({
+      userId: CALLER,
+      workspaceId: "ws-1",
+      operation: "workspace_transfer",
+      body: expect.objectContaining({ toUserId: "u-2", confirmPassword: "pw" }),
+    }));
+    expect(auditMock).toHaveBeenCalledWith(expect.objectContaining({
+      action: "WORKSPACE_TRANSFER",
+      stepUpMethod: "password",
+      changes: { toUserId: "u-2" },
+    }));
   });
 
   it("still succeeds (200) if the best-effort notifications throw", async () => {

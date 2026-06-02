@@ -17,6 +17,7 @@ export async function verifyUserStepUp(input: {
   confirmPassword?: string | null;
   mfaCode?: string | null;
   backupCode?: string | null;
+  operationLabel?: string | null;
   /**
    * Set true ONLY for the in-app account-deletion flow when the user has no
    * password set and no MFA configured (i.e. OAuth-only accounts). Apple and
@@ -27,6 +28,7 @@ export async function verifyUserStepUp(input: {
    */
   confirmAccountDeletion?: boolean | null;
 }): Promise<UserStepUpResult> {
+  const operationLabel = input.operationLabel?.trim() || "deleting your account";
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
     select: {
@@ -93,7 +95,7 @@ export async function verifyUserStepUp(input: {
     return {
       ok: false,
       code: "STEP_UP_REQUIRED",
-      message: "Enter your password or a valid MFA code before deleting your account.",
+      message: `Enter your password or a valid MFA code before ${operationLabel}.`,
     };
   }
 
@@ -101,7 +103,7 @@ export async function verifyUserStepUp(input: {
     return {
       ok: false,
       code: "STEP_UP_METHOD_UNAVAILABLE",
-      message: "Set a password or enable MFA before deleting your account.",
+      message: `Set a password or enable MFA before ${operationLabel}.`,
     };
   }
 

@@ -3,6 +3,7 @@ import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
+import { auditWorkspaceSensitiveAction, requireWorkspaceStepUp } from "@/lib/workspace-step-up";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
  * window. Uses a conditional updateMany so a soft-deleted row (hidden from the
  * extended client's reads) is still restorable without the raw client.
  */
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   const session = await getUserSession();
@@ -24,6 +25,16 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Only the owner can restore the workspace." }, { status: 403 });
   }
 
+  const body = await request.json().catch(() => ({}));
+  const stepUp = await requireWorkspaceStepUp({
+    request,
+    userId: session.userId,
+    workspaceId: id,
+    body,
+    operation: "workspace_restore",
+  });
+  if (!stepUp.ok) return stepUp.response;
+
   const res = await prisma.workspace.updateMany({
     where: { id, deletedAt: { not: null }, deletionGraceUntil: { gt: new Date() } },
     data: { deletedAt: null, deletionGraceUntil: null },
@@ -31,6 +42,14 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   if (res.count === 0) {
     return NextResponse.json({ error: "Restore window expired or workspace not deleted." }, { status: 410 });
   }
+
+  await auditWorkspaceSensitiveAction({
+    request,
+    userId: session.userId,
+    workspaceId: id,
+    action: "WORKSPACE_RESTORE",
+    stepUpMethod: stepUp.method,
+  });
 
   return NextResponse.json({ id, restored: true });
 }
