@@ -264,23 +264,31 @@ export async function mapProductIdToPlan(
   platform: IapPlatform,
   productId: string,
 ): Promise<MobilePlanResolution | null> {
-  const monthlyKey = platform === "ios"
-    ? "MOBILE_IOS_PRODUCT_INDIVIDUAL"
-    : "MOBILE_ANDROID_PRODUCT_INDIVIDUAL";
-  const yearlyKey = platform === "ios"
-    ? "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY"
-    : "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY";
+  const prefix = platform === "ios" ? "MOBILE_IOS_PRODUCT" : "MOBILE_ANDROID_PRODUCT";
+  const candidates: Array<{
+    plan: BillingPlan;
+    billingInterval: IapBillingInterval;
+    key: string;
+  }> = [
+    { plan: "INDIVIDUAL", billingInterval: "MONTH", key: `${prefix}_INDIVIDUAL` },
+    { plan: "INDIVIDUAL", billingInterval: "YEAR", key: `${prefix}_INDIVIDUAL_YEARLY` },
+    { plan: "FAMILY", billingInterval: "MONTH", key: `${prefix}_FAMILY` },
+    { plan: "FAMILY", billingInterval: "YEAR", key: `${prefix}_FAMILY_YEARLY` },
+    { plan: "PRO", billingInterval: "MONTH", key: `${prefix}_PRO` },
+    { plan: "PRO", billingInterval: "YEAR", key: `${prefix}_PRO_YEARLY` },
+  ];
 
-  const [monthlyId, yearlyId] = await Promise.all([
-    getRuntimeConfigValue(monthlyKey),
-    getRuntimeConfigValue(yearlyKey),
-  ]);
+  const productIds = await Promise.all(
+    candidates.map(async (candidate) => ({
+      ...candidate,
+      productId: await getRuntimeConfigValue(candidate.key),
+    })),
+  );
 
-  if (monthlyId && productId === monthlyId) {
-    return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
-  }
-  if (yearlyId && productId === yearlyId) {
-    return { plan: "INDIVIDUAL", billingInterval: "YEAR" };
+  for (const candidate of productIds) {
+    if (candidate.productId && productId === candidate.productId) {
+      return { plan: candidate.plan, billingInterval: candidate.billingInterval };
+    }
   }
   return null;
 }

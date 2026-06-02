@@ -89,6 +89,12 @@ type IapProductsResponse = {
       // Newer fields (additive — older mobile builds keep working).
       INDIVIDUAL_MONTHLY?: string | null;
       INDIVIDUAL_YEARLY?: string | null;
+      FAMILY?: string | null;
+      FAMILY_MONTHLY?: string | null;
+      FAMILY_YEARLY?: string | null;
+      PRO?: string | null;
+      PRO_MONTHLY?: string | null;
+      PRO_YEARLY?: string | null;
     };
   };
   android: {
@@ -97,11 +103,30 @@ type IapProductsResponse = {
       INDIVIDUAL: string | null;
       INDIVIDUAL_MONTHLY?: string | null;
       INDIVIDUAL_YEARLY?: string | null;
+      FAMILY?: string | null;
+      FAMILY_MONTHLY?: string | null;
+      FAMILY_YEARLY?: string | null;
+      PRO?: string | null;
+      PRO_MONTHLY?: string | null;
+      PRO_YEARLY?: string | null;
     };
   };
 };
 
 type Cycle = "monthly" | "yearly";
+type PaidNativePlanKey = "INDIVIDUAL" | "FAMILY" | "PRO";
+type NativeProductKey = `${PaidNativePlanKey}_${Cycle}`;
+
+const PAID_NATIVE_PLAN_KEYS: PaidNativePlanKey[] = ["INDIVIDUAL", "FAMILY", "PRO"];
+const NATIVE_CYCLES: Cycle[] = ["monthly", "yearly"];
+
+function isPaidNativePlanKey(value: string | null | undefined): value is PaidNativePlanKey {
+  return value === "INDIVIDUAL" || value === "FAMILY" || value === "PRO";
+}
+
+function nativeProductKey(planKey: PaidNativePlanKey, cycle: Cycle): NativeProductKey {
+  return `${planKey}_${cycle}`;
+}
 
 const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
   "ACTIVE",
@@ -114,15 +139,21 @@ const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
 
 function resolveSkuFromResponse(
   iapProducts: IapProductsResponse | null,
+  planKey: PaidNativePlanKey,
   cycle: Cycle,
 ): string | null {
   if (!iapProducts) return null;
   const platform = Platform.OS === "ios" ? iapProducts.ios : iapProducts.android;
   if (!platform) return null;
+  const plans = platform.plans;
   if (cycle === "yearly") {
-    return platform.plans.INDIVIDUAL_YEARLY ?? null;
+    if (planKey === "INDIVIDUAL") return plans.INDIVIDUAL_YEARLY ?? null;
+    if (planKey === "FAMILY") return plans.FAMILY_YEARLY ?? null;
+    return plans.PRO_YEARLY ?? null;
   }
-  return platform.plans.INDIVIDUAL_MONTHLY ?? platform.plans.INDIVIDUAL ?? null;
+  if (planKey === "INDIVIDUAL") return plans.INDIVIDUAL_MONTHLY ?? plans.INDIVIDUAL ?? null;
+  if (planKey === "FAMILY") return plans.FAMILY_MONTHLY ?? plans.FAMILY ?? null;
+  return plans.PRO_MONTHLY ?? plans.PRO ?? null;
 }
 
 function parseAmount(label: string | null | undefined): number | null {
@@ -216,14 +247,11 @@ function LegacySubscriptionScreen() {
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
-  const [localizedMonthlyPrice, setLocalizedMonthlyPrice] = useState<string | null>(null);
-  const [localizedYearlyPrice, setLocalizedYearlyPrice] = useState<string | null>(null);
-  const [monthlyOfferToken, setMonthlyOfferToken] = useState<string | null>(null);
-  const [yearlyOfferToken, setYearlyOfferToken] = useState<string | null>(null);
+  const [localizedStorePrices, setLocalizedStorePrices] = useState<Partial<Record<NativeProductKey, string>>>({});
+  const [androidOfferTokens, setAndroidOfferTokens] = useState<Partial<Record<NativeProductKey, string>>>({});
   const [storeProductsLoading, setStoreProductsLoading] = useState(false);
   const [storeProductsLoaded, setStoreProductsLoaded] = useState(false);
-  const [storeMonthlyProductAvailable, setStoreMonthlyProductAvailable] = useState(false);
-  const [storeYearlyProductAvailable, setStoreYearlyProductAvailable] = useState(false);
+  const [storeProductAvailability, setStoreProductAvailability] = useState<Partial<Record<NativeProductKey, boolean>>>({});
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
@@ -251,9 +279,19 @@ function LegacySubscriptionScreen() {
     }
   }, []);
 
-  const monthlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "monthly"), [iapProducts]);
-  const yearlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "yearly"), [iapProducts]);
-  const iapAvailable = Boolean(monthlySku || yearlySku);
+  const nativeSkus = useMemo(() => {
+    const entries: Partial<Record<NativeProductKey, string>> = {};
+    for (const planKey of PAID_NATIVE_PLAN_KEYS) {
+      for (const cycle of NATIVE_CYCLES) {
+        const sku = resolveSkuFromResponse(iapProducts, planKey, cycle);
+        if (sku) entries[nativeProductKey(planKey, cycle)] = sku;
+      }
+    }
+    return entries;
+  }, [iapProducts]);
+  const monthlySku = nativeSkus.INDIVIDUAL_monthly || null;
+  const yearlySku = nativeSkus.INDIVIDUAL_yearly || null;
+  const iapAvailable = Object.keys(nativeSkus).length > 0;
   const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
   const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
   const mobileStoreCommerceAdvertisable = mobileStoreCommerceAdvertisableForPlatform();
@@ -261,7 +299,7 @@ function LegacySubscriptionScreen() {
   const canUseNativePurchases =
     canFetchNativeStoreProducts &&
     storeProductsLoaded &&
-    (storeMonthlyProductAvailable || storeYearlyProductAvailable);
+    Object.values(storeProductAvailability).some(Boolean);
   const nativePurchaseUnavailableMessage = !mobileStorePurchasesEnabled
     ? t("settings.subscription_mobilePurchasesDisabledForBuild", {
         defaultValue: "Mobile purchases are not enabled in this build.",
@@ -279,22 +317,17 @@ function LegacySubscriptionScreen() {
               defaultValue: "App Store or Google Play products are not available on this device yet.",
             })
           : t("settings.subscription_mobilePurchasesUnavailable");
-  const canAdvertiseMobilePaidPlan =
-    !isNativeStorePlatform || (mobileStoreCommerceAdvertisable && canUseNativePurchases);
-
-  // Pull localized prices for both SKUs in a single fetchProducts call so
-  // StoreKit/Play return one batch instead of two round-trips.
+  // Pull localized prices for every configured SKU in a single fetchProducts
+  // call so StoreKit/Play return one batch instead of per-plan round-trips.
   useEffect(() => {
-    const skus = [monthlySku, yearlySku].filter((sku): sku is string => Boolean(sku));
+    const skuEntries = Object.entries(nativeSkus) as Array<[NativeProductKey, string]>;
+    const skus = [...new Set(skuEntries.map(([, sku]) => sku).filter(Boolean))];
     if (!canFetchNativeStoreProducts || skus.length === 0) {
-      setLocalizedMonthlyPrice(null);
-      setLocalizedYearlyPrice(null);
-      setMonthlyOfferToken(null);
-      setYearlyOfferToken(null);
+      setLocalizedStorePrices({});
+      setAndroidOfferTokens({});
       setStoreProductsLoading(false);
       setStoreProductsLoaded(false);
-      setStoreMonthlyProductAvailable(false);
-      setStoreYearlyProductAvailable(false);
+      setStoreProductAvailability({});
       return;
     }
     let cancelled = false;
@@ -303,25 +336,27 @@ function LegacySubscriptionScreen() {
     (async () => {
       const products = await fetchSubscriptionProducts(skus);
       if (cancelled) return;
-      const monthly = products.find((p) => p.id === monthlySku);
-      const yearly = products.find((p) => p.id === yearlySku);
-      const monthlyAndroidOffer = monthly ? selectAndroidSubscriptionOffer(monthly, "monthly") : null;
-      const yearlyAndroidOffer = yearly ? selectAndroidSubscriptionOffer(yearly, "yearly") : null;
-      const monthlyAvailable = Boolean(monthly && (Platform.OS !== "android" || monthlyAndroidOffer?.offerToken));
-      const yearlyAvailable = Boolean(yearly && (Platform.OS !== "android" || yearlyAndroidOffer?.offerToken));
-      setLocalizedMonthlyPrice(monthly?.displayPrice || null);
-      setLocalizedYearlyPrice(yearly?.displayPrice || null);
-      setMonthlyOfferToken(monthlyAndroidOffer?.offerToken || null);
-      setYearlyOfferToken(yearlyAndroidOffer?.offerToken || null);
-      setStoreMonthlyProductAvailable(monthlyAvailable);
-      setStoreYearlyProductAvailable(yearlyAvailable);
+      const nextPrices: Partial<Record<NativeProductKey, string>> = {};
+      const nextOfferTokens: Partial<Record<NativeProductKey, string>> = {};
+      const nextAvailability: Partial<Record<NativeProductKey, boolean>> = {};
+      for (const [key, sku] of skuEntries) {
+        const cycle = key.endsWith("_yearly") ? "yearly" : "monthly";
+        const product = products.find((p) => p.id === sku);
+        const androidOffer = product ? selectAndroidSubscriptionOffer(product, cycle) : null;
+        nextPrices[key] = product?.displayPrice || undefined;
+        nextOfferTokens[key] = androidOffer?.offerToken || undefined;
+        nextAvailability[key] = Boolean(product && (Platform.OS !== "android" || androidOffer?.offerToken));
+      }
+      setLocalizedStorePrices(nextPrices);
+      setAndroidOfferTokens(nextOfferTokens);
+      setStoreProductAvailability(nextAvailability);
       setStoreProductsLoaded(true);
       setStoreProductsLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [canFetchNativeStoreProducts, monthlySku, yearlySku]);
+  }, [canFetchNativeStoreProducts, nativeSkus]);
 
   useEffect(() => () => {
     // Release StoreKit connection on unmount.
@@ -359,11 +394,12 @@ function LegacySubscriptionScreen() {
   );
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
   const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
-  const isActiveIndividualPlan =
-    currentPlanKey === "INDIVIDUAL" &&
+  const currentPaidPlanKey = isPaidNativePlanKey(currentPlanKey) ? currentPlanKey : null;
+  const isActivePaidPlan =
+    Boolean(currentPaidPlanKey) &&
     MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus);
   const hasActiveStripeSubscription =
-    isActiveIndividualPlan &&
+    isActivePaidPlan &&
     (currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId));
   const isStripeManaged = hasActiveStripeSubscription;
   const currentPlatformStoreProvider =
@@ -372,26 +408,57 @@ function LegacySubscriptionScreen() {
     Boolean(currentPlatformStoreProvider) && currentProvider === currentPlatformStoreProvider;
   const isOtherPlatformStoreManaged = isStoreManaged && !isCurrentPlatformStoreManaged;
   const managedSubscriptionBlocksPurchase =
-    isActiveIndividualPlan &&
+    isActivePaidPlan &&
     (isStripeManaged || isOtherPlatformStoreManaged);
   const isUnmanagedNativeEligiblePlan =
-    isActiveIndividualPlan &&
+    isActivePaidPlan &&
     !isStoreManaged &&
     !isStripeManaged;
   const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
   const canManageBilling =
     (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
     (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
+  const getNativeSku = useCallback(
+    (planKey: PaidNativePlanKey, cycle: Cycle) => nativeSkus[nativeProductKey(planKey, cycle)] || null,
+    [nativeSkus],
+  );
+  const hasConfiguredNativeSku = useCallback(
+    (planKey: PaidNativePlanKey) => Boolean(getNativeSku(planKey, "monthly") || getNativeSku(planKey, "yearly")),
+    [getNativeSku],
+  );
+  const hasAvailableNativeSku = useCallback(
+    (planKey: PaidNativePlanKey, cycle?: Cycle) => {
+      if (cycle) return Boolean(storeProductAvailability[nativeProductKey(planKey, cycle)]);
+      return Boolean(
+        storeProductAvailability[nativeProductKey(planKey, "monthly")] ||
+        storeProductAvailability[nativeProductKey(planKey, "yearly")]
+      );
+    },
+    [storeProductAvailability],
+  );
+  const getStorePrice = useCallback(
+    (planKey: PaidNativePlanKey, cycle: Cycle) => localizedStorePrices[nativeProductKey(planKey, cycle)] || null,
+    [localizedStorePrices],
+  );
+  const getAndroidOfferToken = useCallback(
+    (planKey: PaidNativePlanKey, cycle: Cycle) => androidOfferTokens[nativeProductKey(planKey, cycle)] || null,
+    [androidOfferTokens],
+  );
+  const currentPlanStoreSku =
+    currentPaidPlanKey && currentBillingCycle
+      ? getNativeSku(currentPaidPlanKey, currentBillingCycle)
+      : null;
   const visiblePlans = useMemo(
     () =>
       PLANS.filter((plan) => {
         if (!isNativeStorePlatform) return true;
-        if (plan.key === "FAMILY" || plan.key === "PRO") {
-          return plan.key === currentPlanKey;
+        if (isPaidNativePlanKey(plan.key)) {
+          if (plan.key === "INDIVIDUAL") return true;
+          return plan.key === currentPlanKey || hasConfiguredNativeSku(plan.key);
         }
         return true;
       }),
-    [currentPlanKey, isNativeStorePlatform],
+    [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform],
   );
 
   const managedElsewhereMessage = isStripeManaged
@@ -423,21 +490,13 @@ function LegacySubscriptionScreen() {
     return message || t("toast.networkError");
   }, [t]);
 
-  const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL", requestedCycle?: Cycle) => {
-    // Resolve the effective cycle. When the caller doesn't specify, fall
-    // back to whatever campaign is live (annual trial wins over monthly
-    // paid). This keeps the legacy single-CTA call site working unchanged.
-    const fallbackCycle: Cycle = storeYearlyProductAvailable
-      ? "yearly"
-      : storeMonthlyProductAvailable
-        ? "monthly"
-        : annualOffer
-          ? "yearly"
-          : monthlyOffer
-            ? "monthly"
-            : "yearly";
+  const handleUpgrade = useCallback(async (planKey: PaidNativePlanKey, requestedCycle?: Cycle) => {
+    const plan = PLANS.find((item) => item.key === planKey);
+    const yearlyAvailable = hasAvailableNativeSku(planKey, "yearly");
+    const monthlyAvailable = hasAvailableNativeSku(planKey, "monthly");
+    const fallbackCycle: Cycle = yearlyAvailable ? "yearly" : monthlyAvailable ? "monthly" : "yearly";
     const cycle: Cycle = requestedCycle || fallbackCycle;
-    const processingKey = `${planKey}_${cycle}`;
+    const processingKey = nativeProductKey(planKey, cycle);
     setProcessingPlan(processingKey);
 
     if (!canStartNativePurchase) {
@@ -458,19 +517,34 @@ function LegacySubscriptionScreen() {
     // terms (length, first-charge date, cancel-by date) the admin
     // configured. Showing the campaign disclosure before native purchase
     // keeps mobile parity with web while the store purchase flag is enabled.
-    const targetCampaign = cycle === "yearly" ? annualOffer : monthlyOffer;
-    const localizedPrice = cycle === "yearly" ? localizedYearlyPrice : localizedMonthlyPrice;
+    const targetCampaign = planKey === "INDIVIDUAL"
+      ? cycle === "yearly" ? annualOffer : monthlyOffer
+      : null;
+    const localizedPrice = getStorePrice(planKey, cycle);
     const disclosureBody =
       targetCampaign?.checkoutDisclosureCopy ||
-      (cycle === "monthly"
-        ? t("settings.subscription_disclosureMonthly", {
-            price: localizedPrice || targetCampaign?.displayPriceLabel || "the displayed price",
-          })
-        : t("settings.subscription_disclosureAnnual"));
+      (planKey === "INDIVIDUAL"
+        ? cycle === "monthly"
+          ? t("settings.subscription_disclosureMonthly", {
+              price: localizedPrice || targetCampaign?.displayPriceLabel || "the displayed price",
+            })
+          : t("settings.subscription_disclosureAnnual")
+        : t("settings.subscription_disclosurePaidPlan", {
+            plan: plan?.name || planKey,
+            cycle: cycle === "yearly" ? "annual" : "monthly",
+            price: localizedPrice || "the displayed price",
+            defaultValue:
+              "{{plan}} {{cycle}} subscription at {{price}} renews automatically through your App Store or Google Play account until canceled.",
+          }));
     const headline = targetCampaign?.publicHeadline ||
-      (cycle === "monthly"
-        ? t("settings.subscription_subscribeMonthly")
-        : t("settings.subscription_subscribeAnnualTrial"));
+      (planKey === "INDIVIDUAL"
+        ? cycle === "monthly"
+          ? t("settings.subscription_subscribeMonthly")
+          : t("settings.subscription_subscribeAnnualTrial")
+        : t("settings.subscription_subscribePlan", {
+            plan: plan?.name || planKey,
+            defaultValue: "Subscribe to {{plan}}",
+          }));
 
     const userConfirmed = await new Promise<boolean>((resolve) => {
       Alert.alert(
@@ -492,18 +566,9 @@ function LegacySubscriptionScreen() {
     // Native IAP path - preferred on iOS/Android (required by store policy).
     // Buy exactly the cycle the user selected; don't silently downgrade annual
     // to monthly if the annual StoreKit/Play product is unavailable.
-    const targetSku =
-      cycle === "yearly"
-        ? storeYearlyProductAvailable
-          ? yearlySku
-          : null
-        : storeMonthlyProductAvailable
-          ? monthlySku
-          : null;
+    const targetSku = hasAvailableNativeSku(planKey, cycle) ? getNativeSku(planKey, cycle) : null;
     const targetOfferToken = Platform.OS === "android"
-      ? cycle === "yearly"
-        ? yearlyOfferToken
-        : monthlyOfferToken
+      ? getAndroidOfferToken(planKey, cycle) || undefined
       : undefined;
     if (targetSku) {
       const result = await purchaseSubscription({ productId: targetSku, offerToken: targetOfferToken });
@@ -528,18 +593,14 @@ function LegacySubscriptionScreen() {
     managedSubscriptionBlocksPurchase,
     managedElsewhereMessage,
     nativePurchaseUnavailableMessage,
-    monthlySku,
-    yearlySku,
-    monthlyOfferToken,
-    yearlyOfferToken,
-    storeMonthlyProductAvailable,
-    storeYearlyProductAvailable,
+    hasAvailableNativeSku,
+    getNativeSku,
+    getAndroidOfferToken,
+    getStorePrice,
     fetchSubscription,
     t,
     annualOffer,
     monthlyOffer,
-    localizedMonthlyPrice,
-    localizedYearlyPrice,
     getLocalizedIapError,
   ]);
 
@@ -550,7 +611,7 @@ function LegacySubscriptionScreen() {
     if (isCurrentPlatformStoreManaged && canUseNativePurchases) {
       setProcessingPlan(null);
       await openNativeSubscriptionSettings(
-        subscription?.billingProductId || monthlySku || yearlySku || undefined,
+        subscription?.billingProductId || currentPlanStoreSku || monthlySku || yearlySku || undefined,
       );
       return;
     }
@@ -570,6 +631,7 @@ function LegacySubscriptionScreen() {
     isStripeManaged,
     managedElsewhereMessage,
     subscription?.billingProductId,
+    currentPlanStoreSku,
     monthlySku,
     yearlySku,
     t,
@@ -710,16 +772,32 @@ function LegacySubscriptionScreen() {
 
         {visiblePlans.map((plan) => {
           const dynamicPeriod = plan.period;
-          const isIndividualPlan = plan.key === "INDIVIDUAL";
+          const paidPlanKey = isPaidNativePlanKey(plan.key) ? plan.key : null;
           const isCurrentPlan = plan.key === currentPlanKey;
-          const isCurrentIndividualPlan = isIndividualPlan && isCurrentPlan;
-          // The INDIVIDUAL card supports whichever cycles the native store
-          // currently returns. Backend SKU config alone is not enough here:
-          // StoreKit/Play may still be propagating or missing a base plan.
+          const isCurrentPaidPlan = Boolean(paidPlanKey) && isCurrentPlan;
+          const planHasConfiguredNativeSku = paidPlanKey ? hasConfiguredNativeSku(paidPlanKey) : false;
+          const planMonthlySkuAvailable = paidPlanKey ? hasAvailableNativeSku(paidPlanKey, "monthly") : false;
+          const planYearlySkuAvailable = paidPlanKey ? hasAvailableNativeSku(paidPlanKey, "yearly") : false;
+          const planHasAnyAvailableNativeSku = planMonthlySkuAvailable || planYearlySkuAvailable;
+          const planLocalizedMonthlyPrice = paidPlanKey ? getStorePrice(paidPlanKey, "monthly") : null;
+          const planLocalizedYearlyPrice = paidPlanKey ? getStorePrice(paidPlanKey, "yearly") : null;
+          const annualProcessingKey = paidPlanKey ? nativeProductKey(paidPlanKey, "yearly") : null;
+          const monthlyProcessingKey = paidPlanKey ? nativeProductKey(paidPlanKey, "monthly") : null;
+          const isProcessingNativePlan = Boolean(
+            (annualProcessingKey && processingPlan === annualProcessingKey) ||
+            (monthlyProcessingKey && processingPlan === monthlyProcessingKey),
+          );
+          const canAdvertiseThisMobilePlan =
+            !isNativeStorePlatform ||
+            !plan.isPaid ||
+            (mobileStoreCommerceAdvertisable && planHasAnyAvailableNativeSku);
+          // A native paid card supports whichever cycles the store returns.
+          // Backend SKU config alone is not enough here: StoreKit/Play may
+          // still be propagating or missing a base plan/offer.
           const showNativeCycleActions =
-            isIndividualPlan &&
+            Boolean(paidPlanKey) &&
             canStartNativePurchase &&
-            (storeYearlyProductAvailable || storeMonthlyProductAvailable) &&
+            planHasAnyAvailableNativeSku &&
             (
               !isCurrentPlan ||
               isUnmanagedNativeEligiblePlan ||
@@ -727,45 +805,45 @@ function LegacySubscriptionScreen() {
             );
           const showAnnualAction =
             showNativeCycleActions &&
-            storeYearlyProductAvailable &&
+            planYearlySkuAvailable &&
             !(isCurrentPlatformStoreManaged && currentBillingCycle === "yearly");
           const showMonthlyAction =
             showNativeCycleActions &&
-            storeMonthlyProductAvailable &&
+            planMonthlySkuAvailable &&
             !(isCurrentPlatformStoreManaged && currentBillingCycle === "monthly");
           const monthlyDisplayPrice =
-            localizedMonthlyPrice ||
-            monthlyOffer?.displayPriceLabel ||
+            planLocalizedMonthlyPrice ||
+            (plan.key === "INDIVIDUAL" ? monthlyOffer?.displayPriceLabel : null) ||
             plan.price + plan.period;
           const yearlyDisplayPrice =
-            localizedYearlyPrice ||
-            annualOffer?.displayPriceLabel ||
+            planLocalizedYearlyPrice ||
+            (plan.key === "INDIVIDUAL" ? annualOffer?.displayPriceLabel : null) ||
             plan.yearlyPrice ||
             "";
           const hideUnavailableMobileCommerce =
-            isIndividualPlan &&
+            plan.isPaid &&
             isNativeStorePlatform &&
-            !canAdvertiseMobilePaidPlan &&
+            !canAdvertiseThisMobilePlan &&
             !isCurrentPlan;
           const savingsText = showAnnualAction
             ? computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice)
             : null;
           const currentAnnualSavingsText = computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice);
           const currentAnnualMonthlyEquivalentText = computeAnnualMonthlyEquivalentText(yearlyDisplayPrice);
-          const isCurrentAnnualIndividual =
-            isCurrentIndividualPlan && currentBillingCycle === "yearly";
-          const planDisplayName = isCurrentAnnualIndividual
+          const isCurrentAnnualPaidPlan =
+            isCurrentPaidPlan && currentBillingCycle === "yearly";
+          const planDisplayName = isCurrentAnnualPaidPlan
             ? `${plan.name} Annual`
-            : isCurrentIndividualPlan && currentBillingCycle === "monthly"
+            : isCurrentPaidPlan && currentBillingCycle === "monthly"
               ? `${plan.name} Monthly`
               : plan.name;
-          const planPriceLabel = isCurrentAnnualIndividual && yearlyDisplayPrice
+          const planPriceLabel = isCurrentAnnualPaidPlan && yearlyDisplayPrice
             ? stripBillingPeriod(yearlyDisplayPrice)
-            : plan.key === "INDIVIDUAL" && localizedMonthlyPrice
-              ? stripBillingPeriod(localizedMonthlyPrice)
+            : paidPlanKey && planLocalizedMonthlyPrice
+              ? stripBillingPeriod(planLocalizedMonthlyPrice)
               : stripBillingPeriod(plan.price);
-          const planPeriodLabel = isCurrentAnnualIndividual ? "/year" : dynamicPeriod;
-          const currentAnnualValueText = isCurrentAnnualIndividual
+          const planPeriodLabel = isCurrentAnnualPaidPlan ? "/year" : dynamicPeriod;
+          const currentAnnualValueText = isCurrentAnnualPaidPlan
             ? [
                 currentAnnualMonthlyEquivalentText
                   ? `Equivalent to ${currentAnnualMonthlyEquivalentText}`
@@ -773,9 +851,9 @@ function LegacySubscriptionScreen() {
                 currentAnnualSavingsText,
               ].filter(Boolean).join(" · ")
             : null;
-          const trialBadge = !isCurrentIndividualPlan && annualOffer?.trialLabel
+          const trialBadge = plan.key === "INDIVIDUAL" && !isCurrentPaidPlan && annualOffer?.trialLabel
             ? `First ${annualOffer.trialLabel} free`
-            : !isCurrentIndividualPlan && annualOffer?.trialDays
+            : plan.key === "INDIVIDUAL" && !isCurrentPaidPlan && annualOffer?.trialDays
               ? `First ${annualOffer.trialDays} days free`
               : null;
           const annualButtonLabel =
@@ -830,15 +908,16 @@ function LegacySubscriptionScreen() {
                     <TouchableOpacity
                       style={styles.upgradeBtn}
                       activeOpacity={0.7}
-                      onPress={() => handleUpgrade("INDIVIDUAL", "yearly")}
-                      disabled={processingPlan === "INDIVIDUAL_yearly"}
+                      onPress={() => paidPlanKey && handleUpgrade(paidPlanKey, "yearly")}
+                      disabled={processingPlan === annualProcessingKey}
                       accessibilityRole="button"
-                      accessibilityLabel={t("settings.subscription_a11yUpgradeAnnual", {
-                        defaultValue: "Start annual plan with 3-month free trial",
+                      accessibilityLabel={t("settings.subscription_a11yUpgradeAnnualPlan", {
+                        plan: plan.name,
+                        defaultValue: "Start annual {{plan}} plan",
                       })}
-                      accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_yearly" }}
+                      accessibilityState={{ disabled: processingPlan === annualProcessingKey }}
                     >
-                      {processingPlan === "INDIVIDUAL_yearly" ? (
+                      {processingPlan === annualProcessingKey ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
                         <>
@@ -862,15 +941,16 @@ function LegacySubscriptionScreen() {
                   <TouchableOpacity
                     style={styles.secondaryBtn}
                     activeOpacity={0.7}
-                    onPress={() => handleUpgrade("INDIVIDUAL", "monthly")}
-                    disabled={processingPlan === "INDIVIDUAL_monthly"}
+                    onPress={() => paidPlanKey && handleUpgrade(paidPlanKey, "monthly")}
+                    disabled={processingPlan === monthlyProcessingKey}
                     accessibilityRole="button"
-                    accessibilityLabel={t("settings.subscription_a11yUpgradeMonthly", {
-                      defaultValue: "Start monthly plan",
+                    accessibilityLabel={t("settings.subscription_a11yUpgradeMonthlyPlan", {
+                      plan: plan.name,
+                      defaultValue: "Start monthly {{plan}} plan",
                     })}
-                    accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_monthly" }}
+                    accessibilityState={{ disabled: processingPlan === monthlyProcessingKey }}
                   >
-                    {processingPlan === "INDIVIDUAL_monthly" ? (
+                    {processingPlan === monthlyProcessingKey ? (
                       <ActivityIndicator color={theme.colors.primary} />
                     ) : (
                       <Text style={styles.secondaryBtnText}>{monthlyButtonLabel}</Text>
@@ -945,14 +1025,20 @@ function LegacySubscriptionScreen() {
                   {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
                 </Text>
               </TouchableOpacity>
-            ) : plan.key === "FAMILY" || plan.key === "PRO" ? (
+            ) : paidPlanKey && isNativeStorePlatform && !planHasConfiguredNativeSku ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>
-                  {t("settings.subscription_familyProNativeReadOnly", {
-                    defaultValue:
-                      "Family and Pro access appears here automatically when it is active on your account. Mobile purchases currently use the Individual plan through the app store.",
-                  })}
+                  {plan.key === "FAMILY" || plan.key === "PRO"
+                    ? t("settings.subscription_familyProNativeReadOnly", {
+                        defaultValue:
+                          "Family and Pro access appears here automatically when it is active on your account. Mobile purchases currently use the Individual plan through the app store.",
+                      })
+                    : nativePurchaseUnavailableMessage}
                 </Text>
+              </View>
+            ) : paidPlanKey && isNativeStorePlatform && !planHasAnyAvailableNativeSku ? (
+              <View style={styles.disabledPurchaseNotice}>
+                <Text style={styles.disabledPurchaseText}>{nativePurchaseUnavailableMessage}</Text>
               </View>
             ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
@@ -966,21 +1052,16 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity
                 style={styles.upgradeBtn}
                 activeOpacity={0.7}
-                onPress={() => handleUpgrade("INDIVIDUAL")}
-                disabled={
-                  processingPlan === "INDIVIDUAL_yearly" ||
-                  processingPlan === "INDIVIDUAL_monthly"
-                }
+                onPress={() => paidPlanKey && handleUpgrade(paidPlanKey)}
+                disabled={!paidPlanKey || isProcessingNativePlan}
                 accessibilityRole="button"
                 accessibilityLabel={t("settings.subscription_a11yUpgrade", { plan: plan.name })}
                 accessibilityHint={t("settings.subscription_a11yUpgradeHint")}
                 accessibilityState={{
-                  disabled:
-                    processingPlan === "INDIVIDUAL_yearly" ||
-                    processingPlan === "INDIVIDUAL_monthly",
+                  disabled: !paidPlanKey || isProcessingNativePlan,
                 }}
               >
-                {processingPlan === "INDIVIDUAL_yearly" || processingPlan === "INDIVIDUAL_monthly" ? (
+                {isProcessingNativePlan ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>

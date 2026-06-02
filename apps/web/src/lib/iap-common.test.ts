@@ -12,12 +12,22 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: vi.fn(async (key: string) => {
+    const productIds: Record<string, string> = {
+      MOBILE_IOS_PRODUCT_INDIVIDUAL: "individual.ios",
+      MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY: "individual.ios.yearly",
+      MOBILE_IOS_PRODUCT_FAMILY: "family.ios",
+      MOBILE_IOS_PRODUCT_FAMILY_YEARLY: "family.ios.yearly",
+      MOBILE_IOS_PRODUCT_PRO: "pro.ios",
+      MOBILE_IOS_PRODUCT_PRO_YEARLY: "pro.ios.yearly",
+      MOBILE_ANDROID_PRODUCT_INDIVIDUAL: "individual.android",
+      MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY: "individual.android.yearly",
+      MOBILE_ANDROID_PRODUCT_FAMILY: "family.android",
+      MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY: "family.android.yearly",
+      MOBILE_ANDROID_PRODUCT_PRO: "pro.android",
+      MOBILE_ANDROID_PRODUCT_PRO_YEARLY: "pro.android.yearly",
+    };
     if (key === "APPLE_BUNDLE_ID") return "com.locateflow";
-    if (key.includes("IOS") && key.includes("YEARLY")) return "individual.ios.yearly";
-    if (key.includes("IOS")) return "individual.ios";
-    if (key.includes("ANDROID") && key.includes("YEARLY")) return "individual.android.yearly";
-    if (key.includes("ANDROID")) return "individual.android";
-    return null;
+    return productIds[key] || null;
   }),
 }));
 
@@ -38,6 +48,7 @@ import {
   normalizeAppleResult,
   normalizeAppleTransactionPayload,
   normalizeGoogleResult,
+  mapProductIdToPlan,
   refreshGoogleSubscriptionFor,
   type NormalizedIapState,
 } from "./iap-common";
@@ -52,6 +63,21 @@ describe("IAP normalization", () => {
     process.env = { ...originalEnv };
     vi.clearAllMocks();
     vi.mocked(mapGoogleSubscriptionState).mockReturnValue("ACTIVE");
+  });
+
+  it("maps configured Family and Pro store product IDs to internal plans", async () => {
+    await expect(mapProductIdToPlan("ios", "family.ios.yearly")).resolves.toEqual({
+      plan: "FAMILY",
+      billingInterval: "YEAR",
+    });
+    await expect(mapProductIdToPlan("android", "pro.android")).resolves.toEqual({
+      plan: "PRO",
+      billingInterval: "MONTH",
+    });
+  });
+
+  it("rejects store product IDs that are not configured", async () => {
+    await expect(mapProductIdToPlan("ios", "family.ios.fake")).resolves.toBeNull();
   });
 
   it("rejects Google Play test purchases in production billing environments", async () => {

@@ -1003,6 +1003,46 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "id",
   },
   {
+    key: "MOBILE_IOS_PRODUCT_FAMILY",
+    label: "iOS Product ID — Family (monthly)",
+    description: "App Store product identifier for the Family monthly mobile subscription. Set only after the App Store subscription exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_IOS_PRODUCT_FAMILY_YEARLY",
+    label: "iOS Product ID — Family (annual)",
+    description: "App Store product identifier for the Family annual mobile subscription. Set only after the App Store subscription exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_IOS_PRODUCT_PRO",
+    label: "iOS Product ID — Pro (monthly)",
+    description: "App Store product identifier for the Pro monthly mobile subscription. Set only after the App Store subscription exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_IOS_PRODUCT_PRO_YEARLY",
+    label: "iOS Product ID — Pro (annual)",
+    description: "App Store product identifier for the Pro annual mobile subscription. Set only after the App Store subscription exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
     key: "GOOGLE_PLAY_PACKAGE_NAME",
     label: "Google Play Package Name",
     description: "Android app package name (e.g. com.locateflow.mobile) used to scope Google Play Developer API calls.",
@@ -1076,6 +1116,46 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     key: "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
     label: "Android Product ID — Individual (annual)",
     description: "Google Play product/subscription identifier for the Individual annual mobile plan. The 3-month free trial is a Play Console base-plan offer, not a flag set by this app.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_ANDROID_PRODUCT_FAMILY",
+    label: "Android Product ID — Family (monthly)",
+    description: "Google Play subscription identifier for the Family monthly mobile plan. Set only after the Play subscription/base plan exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY",
+    label: "Android Product ID — Family (annual)",
+    description: "Google Play subscription identifier for the Family annual mobile plan. Set only after the Play subscription/base plan exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_ANDROID_PRODUCT_PRO",
+    label: "Android Product ID — Pro (monthly)",
+    description: "Google Play subscription identifier for the Pro monthly mobile plan. Set only after the Play subscription/base plan exists and is ready to load.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_ANDROID_PRODUCT_PRO_YEARLY",
+    label: "Android Product ID — Pro (annual)",
+    description: "Google Play subscription identifier for the Pro annual mobile plan. Set only after the Play subscription/base plan exists and is ready to load.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,
@@ -1672,8 +1752,16 @@ export function validateRuntimeConfigValueShape(
     key === "APPLE_OAUTH_CLIENT_ID" ||
     key === "MOBILE_IOS_PRODUCT_INDIVIDUAL" ||
     key === "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY" ||
+    key === "MOBILE_IOS_PRODUCT_FAMILY" ||
+    key === "MOBILE_IOS_PRODUCT_FAMILY_YEARLY" ||
+    key === "MOBILE_IOS_PRODUCT_PRO" ||
+    key === "MOBILE_IOS_PRODUCT_PRO_YEARLY" ||
     key === "MOBILE_ANDROID_PRODUCT_INDIVIDUAL" ||
-    key === "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY"
+    key === "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY" ||
+    key === "MOBILE_ANDROID_PRODUCT_FAMILY" ||
+    key === "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY" ||
+    key === "MOBILE_ANDROID_PRODUCT_PRO" ||
+    key === "MOBILE_ANDROID_PRODUCT_PRO_YEARLY"
   ) {
     return validateProductId(value) || valid();
   }

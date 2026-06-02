@@ -4,23 +4,9 @@
  * Tells the mobile client which product IDs to load from StoreKit / Play Billing
  * for each paid plan + cycle, plus whether the IAP integration is wired up.
  *
- * Response shape (additive — `plans.INDIVIDUAL` is preserved for older clients):
- *
- *   {
- *     ios: {
- *       available: boolean,                 // monthly is available
- *       plans: {
- *         INDIVIDUAL: string|null,          // monthly SKU (legacy alias)
- *         INDIVIDUAL_MONTHLY: string|null,
- *         INDIVIDUAL_YEARLY:  string|null,
- *       },
- *     },
- *     android: { ... same shape ... },
- *   }
- *
- * No auth — product IDs are public (they're compiled into the app binary too).
- * The endpoint just centralizes the mapping so ops can rotate SKUs without a
- * mobile rebuild.
+ * Product IDs are public. The endpoint centralizes the mapping so ops can add
+ * Family/Pro store SKUs without a mobile rebuild. Legacy `plans.INDIVIDUAL`
+ * remains the Individual monthly alias for older builds.
  */
 
 import { NextResponse } from "next/server";
@@ -30,32 +16,65 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [iosMonthly, iosYearly, androidMonthly, androidYearly] = await Promise.all([
+  const [
+    iosMonthly,
+    iosYearly,
+    iosFamilyMonthly,
+    iosFamilyYearly,
+    iosProMonthly,
+    iosProYearly,
+    androidMonthly,
+    androidYearly,
+    androidFamilyMonthly,
+    androidFamilyYearly,
+    androidProMonthly,
+    androidProYearly,
+  ] = await Promise.all([
     getRuntimeConfigValue("MOBILE_IOS_PRODUCT_INDIVIDUAL"),
     getRuntimeConfigValue("MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY"),
+    getRuntimeConfigValue("MOBILE_IOS_PRODUCT_FAMILY"),
+    getRuntimeConfigValue("MOBILE_IOS_PRODUCT_FAMILY_YEARLY"),
+    getRuntimeConfigValue("MOBILE_IOS_PRODUCT_PRO"),
+    getRuntimeConfigValue("MOBILE_IOS_PRODUCT_PRO_YEARLY"),
     getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_INDIVIDUAL"),
     getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY"),
+    getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_FAMILY"),
+    getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY"),
+    getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_PRO"),
+    getRuntimeConfigValue("MOBILE_ANDROID_PRODUCT_PRO_YEARLY"),
   ]);
 
   return NextResponse.json({
     ios: {
-      // `available` mirrors the legacy contract: monthly must be configured
-      // for the platform to be considered usable. The yearly SKU is purely
-      // additive — older mobile builds that ignore INDIVIDUAL_YEARLY keep
-      // working unchanged.
-      available: Boolean(iosMonthly),
+      available: Boolean(
+        iosMonthly || iosYearly || iosFamilyMonthly || iosFamilyYearly || iosProMonthly || iosProYearly,
+      ),
       plans: {
         INDIVIDUAL: iosMonthly || null,
         INDIVIDUAL_MONTHLY: iosMonthly || null,
         INDIVIDUAL_YEARLY: iosYearly || null,
+        FAMILY: iosFamilyMonthly || null,
+        FAMILY_MONTHLY: iosFamilyMonthly || null,
+        FAMILY_YEARLY: iosFamilyYearly || null,
+        PRO: iosProMonthly || null,
+        PRO_MONTHLY: iosProMonthly || null,
+        PRO_YEARLY: iosProYearly || null,
       },
     },
     android: {
-      available: Boolean(androidMonthly),
+      available: Boolean(
+        androidMonthly || androidYearly || androidFamilyMonthly || androidFamilyYearly || androidProMonthly || androidProYearly,
+      ),
       plans: {
         INDIVIDUAL: androidMonthly || null,
         INDIVIDUAL_MONTHLY: androidMonthly || null,
         INDIVIDUAL_YEARLY: androidYearly || null,
+        FAMILY: androidFamilyMonthly || null,
+        FAMILY_MONTHLY: androidFamilyMonthly || null,
+        FAMILY_YEARLY: androidFamilyYearly || null,
+        PRO: androidProMonthly || null,
+        PRO_MONTHLY: androidProMonthly || null,
+        PRO_YEARLY: androidProYearly || null,
       },
     },
   });
