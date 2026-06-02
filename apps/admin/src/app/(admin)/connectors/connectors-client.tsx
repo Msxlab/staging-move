@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plug, Plus, ToggleLeft, ToggleRight, Edit2, ShieldAlert, Activity } from "lucide-react";
+import { Activity, CheckCircle2, Circle, Edit2, Plug, Plus, ShieldAlert, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -17,6 +17,21 @@ interface ConnectorConfig {
   stage: string;
   notes: string | null;
   updatedAt: string;
+}
+
+interface AvailableConnector {
+  connectorKey: string;
+  displayName: string;
+  version: string;
+  registered: boolean;
+  mode: string;
+  reason: string;
+  agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION";
+  credentialsPresent: boolean;
+  authType: string;
+  allowedHosts: string[];
+  addressUpdatePush: boolean;
+  fallbackActionKey: string | null;
 }
 
 const STAGES = ["SHADOW", "ROLLOUT", "GA", "RETIRED"];
@@ -58,6 +73,7 @@ const EMPTY_FORM = { connectorKey: "", version: "1.0.0", enabled: false, stage: 
 
 export default function ConnectorsClient() {
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
+  const [availableConnectors, setAvailableConnectors] = useState<AvailableConnector[]>([]);
   const [loading, setLoading] = useState(true);
   const [dispatchHealth, setDispatchHealth] = useState<Record<string, number>>({});
   const [dispatchByConnector, setDispatchByConnector] = useState<Record<string, Record<string, number>>>({});
@@ -77,6 +93,7 @@ export default function ConnectorsClient() {
       .then((r) => r.json())
       .then((d) => {
         setConnectors(d.connectors || []);
+        setAvailableConnectors(d.availableConnectors || []);
         setDispatchHealth(d.dispatchHealth || {});
         setDispatchByConnector(d.dispatchByConnector || {});
         setConsentsByConnector(d.consentsByConnector || {});
@@ -141,6 +158,16 @@ export default function ConnectorsClient() {
     setEditing(null);
     setShowForm(false);
     setForm({ ...EMPTY_FORM });
+  };
+
+  const startRegister = (available?: AvailableConnector) => {
+    setEditing(null);
+    setForm({
+      ...EMPTY_FORM,
+      connectorKey: available?.connectorKey ?? "",
+      version: available?.version ?? EMPTY_FORM.version,
+    });
+    setShowForm(true);
   };
 
   const save = () => {
@@ -257,6 +284,8 @@ export default function ConnectorsClient() {
     );
   };
 
+  const apiSyncCount = availableConnectors.filter((connector) => connector.mode === "API_SYNC").length;
+
   return (
     <div className="space-y-6">
       <PasswordConfirmModal
@@ -275,17 +304,83 @@ export default function ConnectorsClient() {
         title="<em>Connectors</em>"
         subtitle="Enable, stage, and roll out partner connectors — and kill them fast."
         actions={
-          <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => startRegister()} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Register
           </button>
         }
       />
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Connectors</p><p className="mt-1 text-2xl font-bold text-foreground">{connectors.length}</p></div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Supported</p><p className="mt-1 text-2xl font-bold text-foreground">{availableConnectors.length}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Registered</p><p className="mt-1 text-2xl font-bold text-foreground">{connectors.length}</p></div>
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{connectors.filter((c) => c.enabled).length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Circuit open</p><p className="mt-1 text-2xl font-bold text-destructive">{connectors.filter((c) => c.circuitState === "OPEN").length}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">API sync ready</p><p className="mt-1 text-2xl font-bold text-tone-sky-fg">{apiSyncCount}</p></div>
       </div>
+
+      {availableConnectors.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Supported connector setup</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Built-in adapters are visible here even before a control-plane row is registered.
+              </p>
+            </div>
+          </div>
+          <div className="divide-y divide-border">
+            {availableConnectors.map((available) => {
+              const mode = MODE_META[available.mode];
+              const setup = [
+                { label: "Control row", value: available.registered ? "registered" : "missing", ok: available.registered },
+                { label: "Agreement", value: available.agreementStatus, ok: available.agreementStatus === "PRODUCTION" },
+                { label: "Credentials", value: available.credentialsPresent ? "configured" : "missing", ok: available.credentialsPresent },
+              ];
+              return (
+                <div key={available.connectorKey} className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
+                      <Plug className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-foreground">{available.displayName}</p>
+                        <span className="font-mono text-xs text-muted-foreground">{available.connectorKey}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${mode?.cls ?? "bg-foreground/5 text-muted-foreground"}`} title={available.reason}>
+                          {mode?.label ?? available.mode}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${available.registered ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-foreground/5 text-muted-foreground"}`}>
+                          {available.registered ? "registered" : "not registered"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{available.reason}</p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {setup.map((item) => (
+                          <span key={item.label} className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2 py-1">
+                            {item.ok ? <CheckCircle2 className="h-3.5 w-3.5 text-tone-sage-fg" /> : <Circle className="h-3.5 w-3.5 text-muted-foreground" />}
+                            {item.label}: {item.value}
+                          </span>
+                        ))}
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2 py-1">
+                          Host: {available.allowedHosts.join(", ")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {!available.registered ? (
+                      <button onClick={() => startRegister(available)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent">
+                        <Plus className="h-4 w-4" /> Register
+                      </button>
+                    ) : (
+                      <span className="rounded-lg bg-background px-3 py-2 text-xs text-muted-foreground">Managed below</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {Object.keys(dispatchHealth).length > 0 && (
         <div className="rounded-xl border border-border bg-card p-5">
@@ -329,7 +424,7 @@ export default function ConnectorsClient() {
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
         ) : connectors.length === 0 ? (
           <div className="rounded-xl border border-border bg-card">
-            <EmptyState icon={Plug} title="No connectors registered yet" description="Register a connector to enable, stage, and roll it out." />
+            <EmptyState icon={Plug} title="No connector rows registered yet" description="Supported adapters are listed above; register one to create its control-plane row." />
           </div>
         ) : (
           connectors.map((c) => (

@@ -21,12 +21,18 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@locateflow/connectors", () => ({
   uspsConnector: {
     manifest: {
+      key: "usps",
+      version: "1.0.0",
+      displayName: "USPS Change of Address",
       capabilities: { addressUpdatePush: true },
       auth: { type: "OAUTH" },
       allowedHosts: ["apis.usps.com"],
     },
   },
-  resolveConnectorMode: () => ({ mode: "GUIDED_UPDATE", reason: "test-guided", canApiSync: false }),
+  resolveConnectorMode: (input: { enabled: boolean }) =>
+    input.enabled
+      ? { mode: "GUIDED_UPDATE", reason: "test-guided", canApiSync: false }
+      : { mode: "DISABLED", reason: "test-disabled", canApiSync: false },
 }));
 // GET now reads runtime-config for the agreement/credential gate inputs.
 vi.mock("@/lib/runtime-config", () => ({ getAdminRuntimeConfigValue: vi.fn().mockResolvedValue(null) }));
@@ -76,6 +82,17 @@ describe("admin connectors GET — per-connector ops health", () => {
     expect(body.dispatchHealth).toEqual({ CONFIRMED: 5, FAILED: 2 });
     // Honest per-connector operating mode is plumbed through from the resolver.
     expect(body.modeByConnector.usps).toEqual({ mode: "GUIDED_UPDATE", reason: "test-guided" });
+    expect(body.availableConnectors).toEqual([
+      expect.objectContaining({
+        connectorKey: "usps",
+        displayName: "USPS Change of Address",
+        registered: true,
+        mode: "GUIDED_UPDATE",
+        agreementStatus: "NONE",
+        credentialsPresent: false,
+        allowedHosts: ["apis.usps.com"],
+      }),
+    ]);
 
     // Only the bounded recent-failure scan is used (no unbounded history query).
     expect(mocks.prisma.connectorDispatch.findMany).toHaveBeenCalledWith(
@@ -99,6 +116,26 @@ describe("admin connectors GET — per-connector ops health", () => {
     expect(body.dispatchByConnector).toEqual({});
     expect(body.consentsByConnector).toEqual({});
     expect(body.lastFailureByConnector).toEqual({});
+  });
+
+  it("still surfaces supported adapters when no connector row is registered", async () => {
+    mocks.prisma.connectorConfig.findMany.mockResolvedValue([]);
+    mocks.prisma.connectorDispatch.groupBy.mockResolvedValue([]);
+    mocks.prisma.partnerConsent.groupBy.mockResolvedValue([]);
+    mocks.prisma.connectorDispatch.findMany.mockResolvedValue([]);
+
+    const { GET } = await import("./route");
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.connectors).toEqual([]);
+    expect(body.availableConnectors).toEqual([
+      expect.objectContaining({
+        connectorKey: "usps",
+        registered: false,
+        mode: "DISABLED",
+      }),
+    ]);
   });
 
   it("denies non-permitted callers (does not leak connector data)", async () => {
