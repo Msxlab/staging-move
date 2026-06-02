@@ -108,6 +108,7 @@ describe("userHasApiConnectorEntitlement - sync requires active annual Pro", () 
 
 describe("getConnectorOAuthConfig", () => {
   beforeEach(() => vi.clearAllMocks());
+  afterEach(() => vi.unstubAllEnvs());
 
   it("returns config only when OAuth URLs are HTTPS and inside the connector manifest allowlist", async () => {
     mockConfig({
@@ -145,6 +146,21 @@ describe("getConnectorOAuthConfig", () => {
     });
 
     await expect(getConnectorOAuthConfig("usps", "https://app.example.com/callback")).resolves.toBeNull();
+  });
+
+  it("falls back to process env OAuth settings when runtime config has no value", async () => {
+    mocks.getRuntimeConfigValue.mockResolvedValue(null);
+    vi.stubEnv("CONNECTOR_USPS_OAUTH_CLIENT_ID", "client-env");
+    vi.stubEnv("CONNECTOR_USPS_OAUTH_CLIENT_SECRET", "secret-env");
+    vi.stubEnv("CONNECTOR_USPS_OAUTH_AUTHORIZE_URL", "https://apis.usps.com/oauth/authorize");
+    vi.stubEnv("CONNECTOR_USPS_OAUTH_TOKEN_URL", "https://apis.usps.com/oauth/token");
+    vi.stubEnv("CONNECTOR_USPS_OAUTH_SCOPES", "addresses change-of-address");
+
+    await expect(getConnectorOAuthConfig("usps", "https://app.example.com/callback")).resolves.toMatchObject({
+      clientId: "client-env",
+      clientSecret: "secret-env",
+      scopes: ["addresses", "change-of-address"],
+    });
   });
 });
 

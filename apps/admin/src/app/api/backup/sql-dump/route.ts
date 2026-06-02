@@ -25,7 +25,7 @@ import { redactBackupSecretText } from "@/lib/backup-metadata";
  * rather than handing back a truncated archive.
  */
 
-const DEFAULT_DUMP_READY_TIMEOUT_MS = 20_000;
+const DEFAULT_DUMP_READY_TIMEOUT_MS = 45_000;
 const MYSQLDUMP_CONNECT_TIMEOUT_SECONDS = 10;
 
 class SqlDumpStartupError extends Error {
@@ -64,7 +64,23 @@ function parseMysqlConnection(databaseUrl: string) {
     user: decodeURIComponent(url.username || "root"),
     password: decodeURIComponent(url.password || ""),
     database,
+    sslRequired: isMysqlSslRequired(url.searchParams),
   };
+}
+
+function isTruthyParam(value: string | null): boolean {
+  if (!value) return false;
+  return ["1", "true", "yes", "required", "require"].includes(value.toLowerCase());
+}
+
+function isMysqlSslRequired(params: URLSearchParams): boolean {
+  const sslMode = (params.get("ssl-mode") || params.get("ssl_mode") || params.get("sslmode") || "").toLowerCase();
+  const sslAccept = (params.get("sslaccept") || "").toLowerCase();
+
+  if (["disable", "disabled", "false", "0"].includes(sslMode)) return false;
+  if (["required", "require", "verify_ca", "verify_identity"].includes(sslMode)) return true;
+  if (["strict", "accept_invalid_certs", "accept_invalid_hostnames"].includes(sslAccept)) return true;
+  return isTruthyParam(params.get("ssl")) || params.has("sslcert") || params.has("sslidentity");
 }
 
 async function waitForFirstDumpChunk(
@@ -185,9 +201,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const databaseUrl = process.env.DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_DATABASE_URL;
     if (!databaseUrl) {
-      return NextResponse.json({ error: "DATABASE_URL is not configured." }, { status: 500 });
+      return NextResponse.json({ error: "DATABASE_URL or MYSQL_DATABASE_URL is not configured." }, { status: 500 });
     }
     let conn: ReturnType<typeof parseMysqlConnection>;
     try {
@@ -209,6 +225,8 @@ export async function POST(request: NextRequest) {
       "--no-tablespaces",
       "--default-character-set=utf8mb4",
       `--connect-timeout=${MYSQLDUMP_CONNECT_TIMEOUT_SECONDS}`,
+      "--protocol=TCP",
+      ...(conn.sslRequired ? ["--ssl"] : []),
       "-h", conn.host,
       "-P", conn.port,
       "-u", conn.user,

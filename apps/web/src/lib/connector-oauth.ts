@@ -65,6 +65,11 @@ function envKey(connectorKey: string, suffix: string): string {
   return `CONNECTOR_${connectorKey.toUpperCase().replace(/-/g, "_")}_OAUTH_${suffix}`;
 }
 
+async function readConnectorOAuthSetting(connectorKey: string, suffix: string): Promise<string | null> {
+  const key = envKey(connectorKey, suffix);
+  return (await getRuntimeConfigValue(key)) ?? process.env[key] ?? null;
+}
+
 function connectorAllowedHosts(connectorKey: string): readonly string[] | null {
   return connectorRegistry.get(connectorKey)?.manifest.allowedHosts ?? null;
 }
@@ -114,11 +119,11 @@ export async function getConnectorOAuthConfig(
   const allowedHosts = connectorAllowedHosts(connectorKey);
   if (!allowedHosts) return null;
   const [clientId, clientSecret, authorizeUrl, tokenUrl, scopesRaw] = await Promise.all([
-    getRuntimeConfigValue(envKey(connectorKey, "CLIENT_ID")),
-    getRuntimeConfigValue(envKey(connectorKey, "CLIENT_SECRET")),
-    getRuntimeConfigValue(envKey(connectorKey, "AUTHORIZE_URL")),
-    getRuntimeConfigValue(envKey(connectorKey, "TOKEN_URL")),
-    getRuntimeConfigValue(envKey(connectorKey, "SCOPES")),
+    readConnectorOAuthSetting(connectorKey, "CLIENT_ID"),
+    readConnectorOAuthSetting(connectorKey, "CLIENT_SECRET"),
+    readConnectorOAuthSetting(connectorKey, "AUTHORIZE_URL"),
+    readConnectorOAuthSetting(connectorKey, "TOKEN_URL"),
+    readConnectorOAuthSetting(connectorKey, "SCOPES"),
   ]);
   if (!clientId || !clientSecret || !authorizeUrl || !tokenUrl) return null;
   if (!isAllowedConnectorUrl(authorizeUrl, allowedHosts)) return null;

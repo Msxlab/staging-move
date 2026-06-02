@@ -132,4 +132,47 @@ describe("runDispatchRow mode gate", () => {
       }),
     });
   });
+
+  it("does not push when the stored consent was revoked before dispatch", async () => {
+    rcMock.getRuntimeConfigValue.mockImplementation((k: string) => {
+      if (k.endsWith("_AGREEMENT_STATUS")) return Promise.resolve("PRODUCTION");
+      if (k.endsWith("_OAUTH_CLIENT_ID") || k.endsWith("_OAUTH_CLIENT_SECRET")) return Promise.resolve("x");
+      if (k.endsWith("_OAUTH_AUTHORIZE_URL")) return Promise.resolve("https://apis.usps.com/oauth/authorize");
+      if (k.endsWith("_OAUTH_TOKEN_URL")) return Promise.resolve("https://apis.usps.com/oauth/token");
+      return Promise.resolve(null);
+    });
+    dbMocks.prisma.partnerConsent.findUnique.mockResolvedValue({
+      status: "REVOKED",
+      tokenEncrypted: "access-token",
+      refreshTokenEncrypted: null,
+      tokenExpiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const status = await runDispatchRow({
+      id: "dispatch_revoked",
+      connectorKey: "usps",
+      userId: "user_1",
+      consentId: "consent_1",
+      idempotencyKey: "idem_1",
+      attemptCount: 0,
+      payloadEncrypted: JSON.stringify({
+        eventId: "event_1",
+        from: { street1: "1 Old St", city: "Austin", state: "TX", zip: "78701", country: "US" },
+        to: { street1: "2 New St", city: "Austin", state: "TX", zip: "78702", country: "US" },
+        fullName: "User One",
+        fields: {},
+      }),
+    });
+
+    expect(status).toBe("NEEDS_USER");
+    expect(dbMocks.prisma.connectorDispatch.update).toHaveBeenCalledWith({
+      where: { id: "dispatch_revoked" },
+      data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
+    });
+    expect(dbMocks.prisma.connectorDispatch.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "DISPATCHING" }),
+      }),
+    );
+  });
 });

@@ -111,6 +111,7 @@ describe("/api/backup/sql-dump", () => {
         "--quick",
         "--no-tablespaces",
         "--connect-timeout=10",
+        "--protocol=TCP",
         "-h",
         "db.example.com",
         "-P",
@@ -122,6 +123,49 @@ describe("/api/backup/sql-dump", () => {
     );
     expect(args).not.toContain("dump-secret");
     expect(options.env.MYSQL_PWD).toBe("dump-secret");
+  });
+
+  it("uses MYSQL_DATABASE_URL fallback and enables mysql SSL when the database URL requires it", async () => {
+    vi.stubEnv("DATABASE_URL", "");
+    vi.stubEnv(
+      "MYSQL_DATABASE_URL",
+      "mysql://dump_user:dump-secret@db.example.com:3307/locateflow?sslaccept=strict",
+    );
+    const child = makeChild();
+    mocks.spawn.mockImplementation(() => {
+      setTimeout(() => {
+        child.emit("spawn");
+        child.stdout.write(Buffer.from("-- dump header\n"));
+        child.stdout.end(Buffer.from("CREATE TABLE users (id int);\n"));
+        child.emit("close", 0, null);
+      }, 0);
+      return child;
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    const [, args] = mocks.spawn.mock.calls[0];
+    expect(args).toEqual(expect.arrayContaining(["--protocol=TCP", "--ssl"]));
+  });
+
+  it("requires password plus MFA step-up before spawning mysqldump", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "MFA verification required.",
+      requiresMfa: true,
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(request({ confirmPassword: "" }));
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    expect(mocks.spawn).not.toHaveBeenCalled();
   });
 
   it("returns a clear 503 when mysqldump is not installed", async () => {

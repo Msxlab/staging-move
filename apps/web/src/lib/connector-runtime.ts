@@ -344,11 +344,27 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
   }
 
   let accessToken: string | null = null;
+  if (!row.consentId && connector.manifest.auth.type !== "NONE") {
+    await prisma.connectorDispatch.update({
+      where: { id: row.id },
+      data: { status: "NEEDS_USER", lastErrorCode: "CONSENT_REQUIRED" },
+    });
+    await notifyNeedsUser(row.userId, row.connectorKey, row.id);
+    return "NEEDS_USER";
+  }
   if (row.consentId) {
     const consent = await prisma.partnerConsent.findUnique({
       where: { id: row.consentId },
       select: { status: true, tokenEncrypted: true, refreshTokenEncrypted: true, tokenExpiresAt: true },
     });
+    if (!consent || consent.status !== "GRANTED") {
+      await prisma.connectorDispatch.update({
+        where: { id: row.id },
+        data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
+      });
+      await notifyNeedsUser(row.userId, row.connectorKey, row.id);
+      return "NEEDS_USER";
+    }
     if (consent?.status === "GRANTED") {
       const expired = consent.tokenExpiresAt ? consent.tokenExpiresAt.getTime() <= Date.now() : false;
       if (expired && consent.refreshTokenEncrypted) {
