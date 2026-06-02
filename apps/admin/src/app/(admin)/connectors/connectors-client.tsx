@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Activity, CheckCircle2, Circle, Edit2, Plug, Plus, ShieldAlert, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
 
@@ -66,7 +66,7 @@ interface StepUpRequest {
   title: string;
   description: string;
   confirmLabel: string;
-  run: (confirmPassword: string) => Promise<boolean>;
+  run: (values: StepUpValues) => Promise<boolean>;
 }
 
 const EMPTY_FORM = { connectorKey: "", version: "1.0.0", enabled: false, stage: "SHADOW", rolloutPercent: 0, notes: "" };
@@ -116,12 +116,12 @@ export default function ConnectorsClient() {
       setStepUpError(null);
     }
   };
-  const confirmStepUp = async (confirmPassword: string) => {
+  const confirmStepUp = async (_confirmPassword: string, values: StepUpValues) => {
     if (!stepUp) return;
     setStepUpBusy(true);
     setStepUpError(null);
     try {
-      const ok = await stepUp.run(confirmPassword);
+      const ok = await stepUp.run(values);
       if (ok) setStepUp(null);
     } finally {
       setStepUpBusy(false);
@@ -132,14 +132,14 @@ export default function ConnectorsClient() {
     url: string,
     method: "POST" | "PUT",
     payload: Record<string, unknown>,
-    confirmPassword: string,
+    stepUpValues: StepUpValues,
     successMessage: string,
     afterSuccess?: () => void,
   ) => {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, confirmPassword }),
+      body: JSON.stringify({ ...payload, ...stepUpValues }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -181,9 +181,9 @@ export default function ConnectorsClient() {
       : { ...form };
     requestStepUp({
       title: editing ? "Confirm connector update" : "Register connector",
-      description: "Enter your admin password before changing connector behavior.",
+      description: "Enter your admin password and MFA code or backup code before changing connector behavior.",
       confirmLabel: editing ? "Update connector" : "Register",
-      run: (pw) => sendMutation("/api/connectors", method, payload, pw, editing ? "Updated" : "Registered", reset),
+      run: (values) => sendMutation("/api/connectors", method, payload, values, editing ? "Updated" : "Registered", reset),
     });
   };
 
@@ -194,18 +194,18 @@ export default function ConnectorsClient() {
         ? "Enabling lets this connector run for eligible users."
         : "Disabling is the kill switch — in-flight work falls back to manual.",
       confirmLabel: !c.enabled ? "Enable" : "Disable (kill switch)",
-      run: (pw) =>
-        sendMutation("/api/connectors", "PUT", { connectorKey: c.connectorKey, enabled: !c.enabled }, pw, `${c.connectorKey} ${!c.enabled ? "enabled" : "disabled"}`),
+      run: (values) =>
+        sendMutation("/api/connectors", "PUT", { connectorKey: c.connectorKey, enabled: !c.enabled }, values, `${c.connectorKey} ${!c.enabled ? "enabled" : "disabled"}`),
     });
   };
 
   const bulkRevoke = (c: ConnectorConfig) => {
     requestStepUp({
       title: `Revoke all ${c.connectorKey} consents`,
-      description: "Security-incident kill switch: revokes every user's grant and zeroes stored tokens. This cannot be undone.",
+      description: "Security-incident kill switch: revokes every user's grant and zeroes stored tokens. Enter MFA or a backup code; this cannot be undone.",
       confirmLabel: "Revoke all consents",
-      run: (pw) =>
-        sendMutation("/api/connectors/consents", "POST", { connectorKey: c.connectorKey, reason: "SECURITY_INCIDENT" }, pw, `Revoked ${c.connectorKey} consents`),
+      run: (values) =>
+        sendMutation("/api/connectors/consents", "POST", { connectorKey: c.connectorKey, reason: "SECURITY_INCIDENT" }, values, `Revoked ${c.connectorKey} consents`),
     });
   };
 
@@ -295,6 +295,7 @@ export default function ConnectorsClient() {
         confirmLabel={stepUp?.confirmLabel || "Confirm"}
         busy={stepUpBusy}
         error={stepUpError}
+        requiresMfa={true}
         onClose={closeStepUp}
         onConfirm={confirmStepUp}
       />

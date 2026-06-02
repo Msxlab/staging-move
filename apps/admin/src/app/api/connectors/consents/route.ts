@@ -78,16 +78,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("connectors", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { connectorKey, reason, confirmPassword } = await req.json();
+    const { connectorKey, reason, confirmPassword, mfaCode, backupCode } = await req.json();
 
     if (typeof connectorKey !== "string" || !KEY_RE.test(connectorKey)) {
       return NextResponse.json({ error: "connectorKey is required" }, { status: 400 });
     }
     const revocationReason = ADMIN_REVOKE_REASONS.includes(reason) ? reason : "ADMIN_REVOKED";
 
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "connector_consent_bulk_revoke", maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "connector_consent_bulk_revoke",
+      maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+    });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     const result = await prisma.partnerConsent.updateMany({

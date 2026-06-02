@@ -183,7 +183,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("connectors", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { connectorKey, version, enabled, stage, rolloutPercent, notes, confirmPassword } = await req.json();
+    const { connectorKey, version, enabled, stage, rolloutPercent, notes, confirmPassword, mfaCode, backupCode } = await req.json();
 
     if (typeof connectorKey !== "string" || !KEY_RE.test(connectorKey)) {
       return NextResponse.json({ error: "connectorKey must be lowercase kebab-case" }, { status: 400 });
@@ -192,9 +192,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "version is required" }, { status: 400 });
     }
 
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "connector_config_write", maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "connector_config_write",
+      maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+    });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     const existing = await prisma.connectorConfig.findUnique({ where: { connectorKey } });
@@ -232,14 +238,20 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const session = await requirePermission("connectors", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { connectorKey, enabled, rolloutPercent, stage, circuitState, notes, confirmPassword } = await req.json();
+    const { connectorKey, enabled, rolloutPercent, stage, circuitState, notes, confirmPassword, mfaCode, backupCode } = await req.json();
     if (typeof connectorKey !== "string" || !KEY_RE.test(connectorKey)) {
       return NextResponse.json({ error: "connectorKey is required" }, { status: 400 });
     }
 
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "connector_config_write", maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "connector_config_write",
+      maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+    });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     const existing = await prisma.connectorConfig.findUnique({ where: { connectorKey } });

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   prisma: {
-    connectorConfig: { findMany: vi.fn() },
+    connectorConfig: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
     connectorDispatch: { groupBy: vi.fn(), findMany: vi.fn() },
     partnerConsent: { groupBy: vi.fn() },
+    adminAuditLog: { create: vi.fn() },
   },
   requirePermission: vi.fn(),
   requirePasswordConfirm: vi.fn(),
@@ -41,6 +43,31 @@ describe("admin connectors GET — per-connector ops health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue(null);
+    mocks.prisma.connectorConfig.create.mockResolvedValue({
+      id: "c1",
+      connectorKey: "usps",
+      version: "1.0.0",
+      enabled: false,
+      rolloutPercent: 0,
+      circuitState: "CLOSED",
+      stage: "SHADOW",
+      notes: null,
+      updatedAt: new Date(),
+    });
+    mocks.prisma.connectorConfig.update.mockResolvedValue({
+      id: "c1",
+      connectorKey: "usps",
+      version: "1.0.0",
+      enabled: true,
+      rolloutPercent: 0,
+      circuitState: "CLOSED",
+      stage: "SHADOW",
+      notes: null,
+      updatedAt: new Date(),
+    });
+    mocks.prisma.adminAuditLog.create.mockResolvedValue({});
     mocks.prisma.connectorConfig.findMany.mockResolvedValue([
       { id: "c1", connectorKey: "usps", version: "1.0.0", enabled: true, rolloutPercent: 10, circuitState: "CLOSED", stage: "ROLLOUT", notes: null, updatedAt: new Date() },
     ]);
@@ -143,5 +170,116 @@ describe("admin connectors GET — per-connector ops health", () => {
     const { GET } = await import("./route");
     const res = await GET();
     expect(res.status).toBe(403);
+  });
+});
+
+describe("admin connectors writes — MFA step-up", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue(null);
+    mocks.prisma.connectorConfig.create.mockResolvedValue({
+      id: "c1",
+      connectorKey: "usps",
+      version: "1.0.0",
+      enabled: false,
+      rolloutPercent: 0,
+      circuitState: "CLOSED",
+      stage: "SHADOW",
+      notes: null,
+      updatedAt: new Date(),
+    });
+    mocks.prisma.connectorConfig.update.mockResolvedValue({
+      id: "c1",
+      connectorKey: "usps",
+      version: "1.0.0",
+      enabled: true,
+      rolloutPercent: 0,
+      circuitState: "CLOSED",
+      stage: "SHADOW",
+      notes: null,
+      updatedAt: new Date(),
+    });
+    mocks.prisma.adminAuditLog.create.mockResolvedValue({});
+  });
+
+  it("requires MFA when registering a connector", async () => {
+    const { POST } = await import("./route");
+
+    const res = await POST(
+      new NextRequest("https://admin.locateflow.com/api/connectors", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          connectorKey: "usps",
+          version: "1.0.0",
+          confirmPassword: "pw",
+          mfaCode: "123456",
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "pw",
+      expect.objectContaining({
+        operation: "connector_config_write",
+        requireMfa: true,
+        mfaCode: "123456",
+      }),
+    );
+  });
+
+  it("requires MFA when updating connector rollout or kill switch state", async () => {
+    mocks.prisma.connectorConfig.findUnique.mockResolvedValue({ id: "c1", connectorKey: "usps" });
+    const { PUT } = await import("./route");
+
+    const res = await PUT(
+      new NextRequest("https://admin.locateflow.com/api/connectors", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          connectorKey: "usps",
+          enabled: true,
+          confirmPassword: "pw",
+          backupCode: "backup-1",
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "pw",
+      expect.objectContaining({
+        operation: "connector_config_write",
+        requireMfa: true,
+        backupCode: "backup-1",
+      }),
+    );
+  });
+
+  it("returns requiresMfa when connector step-up fails for missing MFA", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: false, error: "MFA required", requiresMfa: true });
+    const { POST } = await import("./route");
+
+    const res = await POST(
+      new NextRequest("https://admin.locateflow.com/api/connectors", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          connectorKey: "usps",
+          version: "1.0.0",
+          confirmPassword: "pw",
+        }),
+      }),
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body).toMatchObject({ requiresPassword: true, requiresMfa: true });
+    expect(mocks.prisma.connectorConfig.create).not.toHaveBeenCalled();
   });
 });
