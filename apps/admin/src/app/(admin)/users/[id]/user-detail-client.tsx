@@ -776,6 +776,8 @@ export default function UserDetailClient() {
             >
               <option value="FREE_TRIAL">Free Trial</option>
               <option value="INDIVIDUAL">Individual</option>
+              <option value="FAMILY">Family</option>
+              <option value="PRO">Pro</option>
             </select>
           </div>
           {isDeleted ? (

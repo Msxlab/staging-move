@@ -45,6 +45,8 @@ function stripeDashboardUrl(stripeCustomerId: string | null) {
 const PLAN_COLORS: Record<string, string> = {
   FREE_TRIAL: "bg-tone-honey-bg text-tone-honey-fg",
   INDIVIDUAL: "bg-tone-sky-bg text-tone-sky-fg",
+  FAMILY: "bg-tone-foil-bg text-tone-foil-fg",
+  PRO: "bg-tone-rose-bg text-tone-rose-fg",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -219,6 +221,8 @@ export default function SubscriptionsClient() {
                 <option value="">All Plans</option>
                 <option value="FREE_TRIAL">Free Trial</option>
                 <option value="INDIVIDUAL">Individual</option>
+                <option value="FAMILY">Family</option>
+                <option value="PRO">Pro</option>
               </select>
             </div>
             <div>
