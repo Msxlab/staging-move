@@ -200,7 +200,11 @@ export default function ConnectionsPage() {
           <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
             <div className="px-5 pt-5 pb-3 text-sm font-semibold text-foreground">Available</div>
             <div className="px-5 pb-4 space-y-0.5">
-              {connectable.length === 0 ? (
+              {catalog.length === 0 ? (
+                <p className="text-[13px] text-foreground/40 py-2">
+                  No partner connections are available yet. Supported partners will appear here when the connector catalog is enabled.
+                </p>
+              ) : connectable.length === 0 ? (
                 <p className="text-[13px] text-foreground/40 py-2">All available partners are connected.</p>
               ) : (
                 connectable.map((c) => {
