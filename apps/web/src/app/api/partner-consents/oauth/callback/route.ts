@@ -5,8 +5,10 @@ import {
   exchangeConnectorCode,
   getConnectorOAuthConfig,
   isApiConnectorsEnabled,
+  isConnectorEnabled,
   isValidConnectorKey,
   upsertGrantedConsent,
+  userHasApiConnectorEntitlement,
 } from "@/lib/connector-oauth";
 
 export const runtime = "nodejs";
@@ -49,6 +51,12 @@ export async function GET(request: NextRequest) {
     return fail("/dashboard?connector_error=state-mismatch");
   }
   if (!isValidConnectorKey(connectorKey)) return fail("/dashboard?connector_error=invalid-connector");
+  if (!(await userHasApiConnectorEntitlement(session.userId))) {
+    return fail("/dashboard?connector_error=plan-not-entitled");
+  }
+  if (!(await isConnectorEnabled(connectorKey))) {
+    return fail("/dashboard?connector_error=connector-disabled");
+  }
 
   const redirectUri = await getOAuthRedirectUri(request, CALLBACK_PATH);
   const config = await getConnectorOAuthConfig(connectorKey, redirectUri);

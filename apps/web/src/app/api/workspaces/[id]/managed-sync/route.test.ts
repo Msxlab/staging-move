@@ -63,6 +63,13 @@ describe("/api/workspaces/[id]/managed-sync", () => {
     expect(await res.json()).toEqual({ enabled: true, explicit: true });
   });
 
+  it("PUT blocks members whose workspace access is read-only", async () => {
+    memberMock.mockResolvedValue({ id: "m1", role: "MEMBER", status: "OVERFLOW", managedSyncEnabled: null });
+    const res = await PUT(putReq({ enabled: true }), params);
+    expect(res.status).toBe(403);
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
   it("PUT 422s on a non-boolean enabled", async () => {
     memberMock.mockResolvedValue({ id: "m1", role: "MEMBER", managedSyncEnabled: null });
     const res = await PUT(putReq({ enabled: "yes" }), params);

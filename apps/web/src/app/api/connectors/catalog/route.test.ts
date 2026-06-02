@@ -4,11 +4,15 @@ const mocks = vi.hoisted(() => ({
   getUserSession: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   findMany: vi.fn(),
+  userHasApiConnectorEntitlement: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: { connectorConfig: { findMany: mocks.findMany } } }));
 vi.mock("@/lib/user-auth", () => ({ getUserSession: mocks.getUserSession }));
 vi.mock("@/lib/runtime-config", () => ({ getRuntimeConfigValue: mocks.getRuntimeConfigValue }));
+vi.mock("@/lib/connector-oauth", () => ({
+  userHasApiConnectorEntitlement: (...a: unknown[]) => mocks.userHasApiConnectorEntitlement(...a),
+}));
 vi.mock("@/lib/connector-registry", () => ({
   connectorRegistry: {
     list: () => [
@@ -31,6 +35,7 @@ describe("GET /api/connectors/catalog", () => {
     vi.clearAllMocks();
     mocks.getUserSession.mockResolvedValue({ userId: "user_1" });
     mocks.getRuntimeConfigValue.mockResolvedValue("true");
+    mocks.userHasApiConnectorEntitlement.mockResolvedValue(false);
     // Only usps is enabled in the control plane; ups has no config row.
     mocks.findMany.mockResolvedValue([{ connectorKey: "usps", enabled: true, stage: "GA" }]);
   });
@@ -48,15 +53,29 @@ describe("GET /api/connectors/catalog", () => {
     const res = await GET();
     const body = await res.json();
     expect(body.connectors).toEqual([]);
+    expect(body.entitlement).toEqual({ apiSync: false });
     expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.userHasApiConnectorEntitlement).not.toHaveBeenCalled();
   });
 
   it("lists connectors with their derived mode, omitting DISABLED (un-configured/kill-switched)", async () => {
+    mocks.userHasApiConnectorEntitlement.mockResolvedValue(true);
     const { GET } = await import("./route");
     const res = await GET();
     const body = await res.json();
     // ups has no config → enabled false → DISABLED → filtered out. usps kept.
     expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+    expect(body.entitlement).toEqual({ apiSync: true });
+  });
+
+  it("keeps the guided catalog visible when entitlement lookup fails", async () => {
+    mocks.userHasApiConnectorEntitlement.mockRejectedValue(new Error("subscription read failed"));
+    const { GET } = await import("./route");
+    const res = await GET();
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+    expect(body.entitlement).toEqual({ apiSync: false });
   });
 
   it("merges operator-defined no-code GUIDED partners from runtime-config", async () => {

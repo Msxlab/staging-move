@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { connectorRegistry } from "@/lib/connector-registry";
+import { userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import { resolveConnectorMode, type AddressConnector, type ConnectorMode } from "@locateflow/connectors";
 
 export const runtime = "nodejs";
@@ -10,6 +11,14 @@ export const runtime = "nodejs";
 async function isApiConnectorsEnabled(): Promise<boolean> {
   const value = (await getRuntimeConfigValue("FEATURE_API_CONNECTORS")) ?? process.env.FEATURE_API_CONNECTORS ?? "";
   return value === "true" || value === "1";
+}
+
+async function safeApiSyncEntitlement(userId: string): Promise<boolean> {
+  try {
+    return await userHasApiConnectorEntitlement(userId);
+  } catch {
+    return false;
+  }
 }
 
 // The facts that gate API_SYNC, read from runtime-config (operator-set). Default
@@ -97,10 +106,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  // Master flag off → the surface is inert; offer nothing.
+  // Master flag off -> the surface is inert; offer nothing.
   if (!(await isApiConnectorsEnabled())) {
-    return NextResponse.json({ connectors: [] }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ connectors: [], entitlement: { apiSync: false } }, { headers: { "Cache-Control": "no-store" } });
   }
+  const apiSyncEntitled = await safeApiSyncEntitlement(session.userId);
 
   const adapters = connectorRegistry.list();
   const configs = await prisma.connectorConfig.findMany({
@@ -132,5 +142,8 @@ export async function GET() {
     if (!present.has(g.connectorKey)) connectors.push(g);
   }
 
-  return NextResponse.json({ connectors }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(
+    { connectors, entitlement: { apiSync: apiSyncEntitled } },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
