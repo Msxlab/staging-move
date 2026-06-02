@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { connectorRegistry } from "@/lib/connector-registry";
-import { resolveConnectorMode, type ConnectorMode } from "@locateflow/connectors";
+import { resolveConnectorMode, type AddressConnector, type ConnectorMode } from "@locateflow/connectors";
 
 export const runtime = "nodejs";
 
@@ -16,14 +16,35 @@ async function isApiConnectorsEnabled(): Promise<boolean> {
 // to safe values so a connector stays GUIDED until a PRODUCTION agreement AND
 // credentials are recorded — the legal gate, enforced in code.
 async function connectorGateInputs(
+  adapter: AddressConnector,
   key: string,
 ): Promise<{ agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION"; credentialsPresent: boolean }> {
   const k = key.toUpperCase().replace(/-/g, "_");
   const rc = async (name: string) => (await getRuntimeConfigValue(name)) ?? process.env[name] ?? "";
-  const agreementRaw = await rc(`CONNECTOR_${k}_AGREEMENT_STATUS`);
+  const [agreementRaw, clientId, clientSecret, authorizeUrl, tokenUrl] = await Promise.all([
+    rc(`CONNECTOR_${k}_AGREEMENT_STATUS`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`),
+    rc(`CONNECTOR_${k}_OAUTH_AUTHORIZE_URL`),
+    rc(`CONNECTOR_${k}_OAUTH_TOKEN_URL`),
+  ]);
   const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
-  const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
+  const credentialsPresent = Boolean(
+    clientId &&
+      clientSecret &&
+      isAllowedConnectorUrl(authorizeUrl, adapter.manifest.allowedHosts) &&
+      isAllowedConnectorUrl(tokenUrl, adapter.manifest.allowedHosts),
+  );
   return { agreementStatus, credentialsPresent };
+}
+
+function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === "https:" && allowedHosts.includes(url.host.toLowerCase());
+  } catch {
+    return false;
+  }
 }
 
 interface GuidedPartnerEntry {
@@ -91,7 +112,7 @@ export async function GET() {
   const resolvedAll = await Promise.all(
     adapters.map(async (adapter) => {
       const cfg = configByKey.get(adapter.manifest.key);
-      const gate = await connectorGateInputs(adapter.manifest.key);
+      const gate = await connectorGateInputs(adapter, adapter.manifest.key);
       const r = resolveConnectorMode({
         addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
         agreementStatus: gate.agreementStatus,

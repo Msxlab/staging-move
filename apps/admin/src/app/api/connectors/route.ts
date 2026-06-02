@@ -13,14 +13,36 @@ import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
  * stays GUIDED until an operator records a PRODUCTION agreement AND credentials.
  */
 async function connectorGateInputs(
+  adapter: AddressConnector | undefined,
   key: string,
 ): Promise<{ agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION"; credentialsPresent: boolean }> {
   const k = key.toUpperCase().replace(/-/g, "_");
   const rc = async (name: string) => (await getAdminRuntimeConfigValue(name)) ?? process.env[name] ?? "";
-  const agreementRaw = await rc(`CONNECTOR_${k}_AGREEMENT_STATUS`);
+  const [agreementRaw, clientId, clientSecret, authorizeUrl, tokenUrl] = await Promise.all([
+    rc(`CONNECTOR_${k}_AGREEMENT_STATUS`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`),
+    rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`),
+    rc(`CONNECTOR_${k}_OAUTH_AUTHORIZE_URL`),
+    rc(`CONNECTOR_${k}_OAUTH_TOKEN_URL`),
+  ]);
   const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
-  const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
+  const credentialsPresent = Boolean(
+    adapter &&
+      clientId &&
+      clientSecret &&
+      isAllowedConnectorUrl(authorizeUrl, adapter.manifest.allowedHosts) &&
+      isAllowedConnectorUrl(tokenUrl, adapter.manifest.allowedHosts),
+  );
   return { agreementStatus, credentialsPresent };
+}
+
+function isAllowedConnectorUrl(rawUrl: string, allowedHosts: readonly string[]): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === "https:" && allowedHosts.includes(url.host.toLowerCase());
+  } catch {
+    return false;
+  }
 }
 
 // Connector config changes are reversible by the same operator (flip enabled
@@ -105,7 +127,7 @@ export async function GET() {
     const modeByConnector: Record<string, { mode: string; reason: string }> = {};
     for (const c of connectors) {
       const adapter = CONNECTOR_ADAPTERS[c.connectorKey];
-      const gate = await connectorGateInputs(c.connectorKey);
+      const gate = await connectorGateInputs(adapter, c.connectorKey);
       const resolved = resolveConnectorMode({
         addressUpdatePush: adapter?.manifest.capabilities.addressUpdatePush ?? false,
         agreementStatus: gate.agreementStatus,

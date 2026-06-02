@@ -190,15 +190,29 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
   });
 
   it("recognizes dynamic partner connector credential keys as DB-backed managed config", () => {
+    const agreement = getRuntimeConfigDefinition("CONNECTOR_USPS_AGREEMENT_STATUS");
     const secret = getRuntimeConfigDefinition("CONNECTOR_USPS_OAUTH_CLIENT_SECRET");
     const tokenUrl = getRuntimeConfigDefinition("CONNECTOR_UPS_OAUTH_TOKEN_URL");
     const webhookSecret = getRuntimeConfigDefinition("CONNECTOR_FEDEX_WEBHOOK_SECRET");
 
+    expect(agreement).toMatchObject({ category: "CONNECTORS", runtimeEditable: true });
     expect(secret).toMatchObject({ isSecret: true, category: "OAUTH", runtimeEditable: true });
     expect(tokenUrl).toMatchObject({ maskStrategy: "url", runtimeEditable: true });
     expect(webhookSecret).toMatchObject({ isSecret: true, runtimeEditable: true });
+    expect(isManagedRuntimeConfigKey("CONNECTOR_USPS_AGREEMENT_STATUS")).toBe(true);
     expect(isManagedRuntimeConfigKey("CONNECTOR_USPS_OAUTH_CLIENT_SECRET")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("CONNECTOR_USPS_AGREEMENT_STATUS")).toBe(true);
     expect(isRuntimeConfigDbBackedKeyAllowed("CONNECTOR_USPS_OAUTH_CLIENT_SECRET")).toBe(true);
+  });
+
+  it("recognizes guided partners as a DB-backed connector catalog", () => {
+    expect(getRuntimeConfigDefinition("GUIDED_PARTNERS")).toMatchObject({
+      category: "CONNECTORS",
+      runtimeEditable: true,
+      isSecret: false,
+    });
+    expect(isManagedRuntimeConfigKey("GUIDED_PARTNERS")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("GUIDED_PARTNERS")).toBe(true);
   });
 });
 
@@ -260,6 +274,16 @@ describe("validateRuntimeConfigValueShape hardening", () => {
 
   it("validates dynamic connector URLs and secrets", () => {
     expect(
+      validateRuntimeConfigValueShape("CONNECTOR_USPS_AGREEMENT_STATUS", "PRODUCTION", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("CONNECTOR_USPS_AGREEMENT_STATUS", "PENDING", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "connector_agreement_status" });
+    expect(
       validateRuntimeConfigValueShape("CONNECTOR_USPS_OAUTH_TOKEN_URL", "https://apis.usps.com/oauth/token", {
         productionLike: false,
       }),
@@ -274,6 +298,29 @@ describe("validateRuntimeConfigValueShape hardening", () => {
         productionLike: false,
       }),
     ).toMatchObject({ ok: false, reason: "secret_too_short" });
+  });
+
+  it("validates guided partner catalog JSON", () => {
+    expect(
+      validateRuntimeConfigValueShape(
+        "GUIDED_PARTNERS",
+        JSON.stringify([
+          { key: "ups", name: "UPS" },
+          { key: "fedex", name: "FedEx", comingSoon: true },
+        ]),
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("GUIDED_PARTNERS", "{\"key\":\"ups\"}", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "guided_partners_array" });
+    expect(
+      validateRuntimeConfigValueShape("GUIDED_PARTNERS", JSON.stringify([{ key: "UPS", name: "UPS" }]), {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "guided_partner_key" });
   });
 
   it("rejects Stripe test publishable keys in production-like environments", () => {

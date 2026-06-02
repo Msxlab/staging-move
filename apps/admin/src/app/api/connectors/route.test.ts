@@ -19,7 +19,13 @@ vi.mock("@/lib/auth", () => ({
 // assert the GET plumbs the per-connector mode through (and so the package
 // import resolves under the admin test runner).
 vi.mock("@locateflow/connectors", () => ({
-  uspsConnector: { manifest: { capabilities: { addressUpdatePush: true }, auth: { type: "OAUTH" } } },
+  uspsConnector: {
+    manifest: {
+      capabilities: { addressUpdatePush: true },
+      auth: { type: "OAUTH" },
+      allowedHosts: ["apis.usps.com"],
+    },
+  },
   resolveConnectorMode: () => ({ mode: "GUIDED_UPDATE", reason: "test-guided", canApiSync: false }),
 }));
 // GET now reads runtime-config for the agreement/credential gate inputs.
