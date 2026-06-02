@@ -140,4 +140,15 @@ describe("POST /api/invitations/[token]/accept", () => {
     expect(memberCreate).not.toHaveBeenCalled();
     expect(invUpdate).toHaveBeenCalled(); // still marks the invite accepted
   });
+
+  it("returns a clean conflict if a duplicate membership race reaches the unique index", async () => {
+    txMock.mockRejectedValue(Object.assign(new Error("duplicate member"), { code: "P2002" }));
+
+    const res = await POST(req, params);
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({
+      error: "You are already a member of this workspace.",
+    });
+  });
 });

@@ -70,6 +70,9 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     if ((e as { code?: string })?.code === "P2034") {
       return NextResponse.json({ error: "Please try again." }, { status: 409 });
     }
+    if ((e as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ error: "You are already a member of this workspace." }, { status: 409 });
+    }
     throw e;
   }
 
