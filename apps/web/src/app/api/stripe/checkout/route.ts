@@ -133,6 +133,20 @@ async function createWorkspacePlanCheckout(params: {
       { status: 409 },
     );
   }
+  if (
+    hasRealStripeSubscription &&
+    (existingSubscription?.status === "PAST_DUE" ||
+      existingSubscription?.status === "GRACE_PERIOD" ||
+      existingSubscription?.status === "PENDING_VALIDATION")
+  ) {
+    return NextResponse.json(
+      {
+        code: "BILLING_NEEDS_ATTENTION",
+        error: "You already have a Stripe subscription that needs billing attention. Manage it from billing settings.",
+      },
+      { status: 409 },
+    );
+  }
   const hasActiveStoreSubscription =
     (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
     existingSubscription?.accessType !== "FREE_ACCESS" &&
@@ -407,6 +421,20 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { code: "ALREADY_ACTIVE", error: "Your annual plan is active." },
+        { status: 409 },
+      );
+    }
+    if (
+      hasRealStripeSubscription &&
+      (existingSubscription?.status === "PAST_DUE" ||
+        existingSubscription?.status === "GRACE_PERIOD" ||
+        existingSubscription?.status === "PENDING_VALIDATION")
+    ) {
+      return NextResponse.json(
+        {
+          code: "BILLING_NEEDS_ATTENTION",
+          error: "You already have a Stripe subscription that needs billing attention. Manage it from billing settings.",
+        },
         { status: 409 },
       );
     }

@@ -664,6 +664,27 @@ describe("stripe checkout route", () => {
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
+  it("blocks checkout for a past-due real Stripe subscription", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_paid",
+      stripeSubscriptionId: "sub_past_due_123",
+      provider: "STRIPE",
+      accessType: "PAID",
+      status: "PAST_DUE",
+      platform: "web",
+    });
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "BILLING_NEEDS_ATTENTION" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
   it("blocks web Stripe checkout when the account already has an active app-store subscription", async () => {
     subscriptionMock.findUnique.mockResolvedValue({
       userId: "user_1",
@@ -819,6 +840,27 @@ describe("stripe checkout route", () => {
 
     expect(response.status).toBe(409);
     expect(body).toMatchObject({ code: "ALREADY_ACTIVE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("blocks Family checkout for a past-due real Stripe subscription", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_paid",
+      stripeSubscriptionId: "sub_past_due_123",
+      provider: "STRIPE",
+      accessType: "PAID",
+      status: "PAST_DUE",
+      platform: "web",
+    });
+
+    const response = await POST(
+      checkoutRequest({ plan: "FAMILY", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "BILLING_NEEDS_ATTENTION" });
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
