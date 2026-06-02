@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { connectorRegistry } from "@/lib/connector-registry";
-import { resolveConnectorMode } from "@locateflow/connectors";
+import { resolveConnectorMode, type ConnectorMode } from "@locateflow/connectors";
 
 export const runtime = "nodejs";
 
@@ -24,6 +24,38 @@ async function connectorGateInputs(
   const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
   const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
   return { agreementStatus, credentialsPresent };
+}
+
+interface GuidedPartnerEntry {
+  key: string;
+  name: string;
+  category?: string;
+  comingSoon?: boolean;
+}
+
+/**
+ * No-code GUIDED partners — operator-defined via the GUIDED_PARTNERS runtime-
+ * config JSON (an array of { key, name, comingSoon? }). No adapter code, no DB
+ * migration: a guided partner has no API, so it surfaces as "Guided update"
+ * (or "Coming soon"), letting the partner network grow without engineering per
+ * partner. Malformed JSON yields nothing rather than crashing the catalog.
+ */
+async function guidedPartners(): Promise<Array<{ connectorKey: string; displayName: string; mode: ConnectorMode }>> {
+  const raw = (await getRuntimeConfigValue("GUIDED_PARTNERS")) ?? process.env.GUIDED_PARTNERS ?? "";
+  if (!raw.trim()) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  const out: Array<{ connectorKey: string; displayName: string; mode: ConnectorMode }> = [];
+  for (const p of parsed as GuidedPartnerEntry[]) {
+    if (!p || typeof p.key !== "string" || !/^[a-z][a-z0-9-]*$/.test(p.key) || typeof p.name !== "string") continue;
+    out.push({ connectorKey: p.key, displayName: p.name, mode: p.comingSoon ? "COMING_SOON" : "GUIDED_UPDATE" });
+  }
+  return out;
 }
 
 /**
@@ -71,6 +103,13 @@ export async function GET() {
     }),
   );
   const connectors = resolvedAll.filter((c) => c.mode !== "DISABLED");
+
+  // Merge operator-defined no-code GUIDED partners. A guided entry never
+  // overrides a real registered connector that shares its key.
+  const present = new Set(connectors.map((c) => c.connectorKey));
+  for (const g of await guidedPartners()) {
+    if (!present.has(g.connectorKey)) connectors.push(g);
+  }
 
   return NextResponse.json({ connectors }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -58,4 +58,39 @@ describe("GET /api/connectors/catalog", () => {
     // ups has no config → enabled false → DISABLED → filtered out. usps kept.
     expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
   });
+
+  it("merges operator-defined no-code GUIDED partners from runtime-config", async () => {
+    mocks.getRuntimeConfigValue.mockImplementation((k: string) => {
+      if (k === "FEATURE_API_CONNECTORS") return Promise.resolve("true");
+      if (k === "GUIDED_PARTNERS")
+        return Promise.resolve(
+          JSON.stringify([
+            { key: "acme-utility", name: "Acme Utility" },
+            { key: "comingco", name: "Coming Co", comingSoon: true },
+          ]),
+        );
+      return Promise.resolve(null);
+    });
+    const { GET } = await import("./route");
+    const res = await GET();
+    const body = await res.json();
+    expect(body.connectors).toEqual(
+      expect.arrayContaining([
+        { connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" },
+        { connectorKey: "acme-utility", displayName: "Acme Utility", mode: "GUIDED_UPDATE" },
+        { connectorKey: "comingco", displayName: "Coming Co", mode: "COMING_SOON" },
+      ]),
+    );
+  });
+
+  it("ignores malformed GUIDED_PARTNERS json without crashing", async () => {
+    mocks.getRuntimeConfigValue.mockImplementation((k: string) =>
+      k === "FEATURE_API_CONNECTORS" ? Promise.resolve("true") : k === "GUIDED_PARTNERS" ? Promise.resolve("{not json") : Promise.resolve(null),
+    );
+    const { GET } = await import("./route");
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+  });
 });
