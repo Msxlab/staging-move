@@ -220,6 +220,27 @@ describe("billing helpers", () => {
     });
   });
 
+  it("does not select raw Google Play purchase tokens for client entitlement reads", async () => {
+    subscriptionFindUnique.mockResolvedValueOnce({
+      id: "sub-1",
+      userId: "user-1",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      purchaseTokenHash: "hashed-token",
+      billingInterval: "YEAR",
+    });
+
+    await expect(findSubscriptionForEntitlement("user-1")).resolves.toMatchObject({
+      id: "sub-1",
+      purchaseTokenHash: "hashed-token",
+    });
+
+    const select = subscriptionFindUnique.mock.calls[0][0].select;
+    expect(select.purchaseTokenHash).toBe(true);
+    expect(select.purchaseToken).toBeUndefined();
+  });
+
   it("defaults annual Stripe trials to 90 days when the env key is missing", async () => {
     mocks.getRuntimeConfigValue.mockResolvedValue(null);
 

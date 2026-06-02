@@ -28,13 +28,17 @@ vi.mock("@/lib/connector-registry", () => ({
     ],
   },
 }));
-// Stub the resolver (its logic is unit-tested in the connectors package): a
-// connector with an enabled config resolves to GUIDED_UPDATE, otherwise DISABLED.
+// Stub the resolver (its logic is unit-tested in the connectors package): an
+// enabled connector with production agreement + credentials resolves API_SYNC,
+// otherwise enabled connectors resolve GUIDED_UPDATE.
 vi.mock("@locateflow/connectors", () => ({
-  resolveConnectorMode: (input: { enabled: boolean }) =>
-    input.enabled
-      ? { mode: "GUIDED_UPDATE", reason: "x", canApiSync: false }
-      : { mode: "DISABLED", reason: "x", canApiSync: false },
+  resolveConnectorMode: (input: { enabled: boolean; agreementStatus?: string; credentialsPresent?: boolean }) => {
+    if (!input.enabled) return { mode: "DISABLED", reason: "x", canApiSync: false };
+    if (input.agreementStatus === "PRODUCTION" && input.credentialsPresent) {
+      return { mode: "API_SYNC", reason: "x", canApiSync: true };
+    }
+    return { mode: "GUIDED_UPDATE", reason: "x", canApiSync: false };
+  },
 }));
 
 describe("GET /api/connectors/catalog", () => {
@@ -54,14 +58,47 @@ describe("GET /api/connectors/catalog", () => {
     expect(res.status).toBe(401);
   });
 
-  it("is inert (empty catalog) when the master flag is off", async () => {
+  it("keeps guided partners visible when the API sync master flag is off", async () => {
     mocks.getRuntimeConfigValue.mockResolvedValue(null);
     const { GET } = await import("./route");
     const res = await GET();
     const body = await res.json();
-    expect(body.connectors).toEqual([]);
+    expect(body.connectors).toEqual([
+      {
+        connectorKey: "usps",
+        displayName: "USPS",
+        mode: "GUIDED_UPDATE",
+        guidedAction: {
+          key: "usps:MAIL_FORWARDING:DEEP_LINK",
+          label: "Open update",
+          url: "https://moversguide.usps.com/",
+          helperText: "Continue on USPS to submit and verify your mail-forwarding request.",
+        },
+      },
+    ]);
     expect(body.entitlement).toEqual({ apiSync: false });
-    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.findMany).toHaveBeenCalled();
+    expect(mocks.userHasApiConnectorEntitlement).not.toHaveBeenCalled();
+  });
+
+  it("downgrades an API-ready connector to guided when the API sync master flag is off", async () => {
+    mocks.getRuntimeConfigValue.mockImplementation((k: string) => {
+      if (k === "FEATURE_API_CONNECTORS") return Promise.resolve(null);
+      if (k === "CONNECTOR_USPS_AGREEMENT_STATUS") return Promise.resolve("PRODUCTION");
+      if (k === "CONNECTOR_USPS_OAUTH_AUTHORIZE_URL") return Promise.resolve("https://apis.usps.com/oauth/authorize");
+      if (k === "CONNECTOR_USPS_OAUTH_TOKEN_URL") return Promise.resolve("https://apis.usps.com/oauth/token");
+      if (k === "CONNECTOR_USPS_OAUTH_CLIENT_ID" || k === "CONNECTOR_USPS_OAUTH_CLIENT_SECRET") return Promise.resolve("configured");
+      return Promise.resolve(null);
+    });
+    const { GET } = await import("./route");
+    const res = await GET();
+    const body = await res.json();
+    expect(body.connectors[0]).toMatchObject({
+      connectorKey: "usps",
+      mode: "GUIDED_UPDATE",
+      guidedAction: { url: "https://moversguide.usps.com/" },
+    });
+    expect(body.entitlement).toEqual({ apiSync: false });
     expect(mocks.userHasApiConnectorEntitlement).not.toHaveBeenCalled();
   });
 

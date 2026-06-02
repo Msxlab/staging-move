@@ -204,7 +204,7 @@ const SUBSCRIPTION_ENTITLEMENT_SELECT = {
   billingProductId: true,
   originalTransactionId: true,
   latestTransactionId: true,
-  purchaseToken: true,
+  purchaseTokenHash: true,
   appStoreEnvironment: true,
   currentPeriodEndsAt: true,
   gracePeriodEndsAt: true,

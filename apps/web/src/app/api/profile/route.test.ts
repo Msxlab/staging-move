@@ -11,6 +11,7 @@ vi.mock("@/lib/db", () => ({
     },
     userEvent: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
       create: vi.fn(),
     },
     profile: {
@@ -21,6 +22,13 @@ vi.mock("@/lib/db", () => ({
     },
     address: {
       findFirst: vi.fn(),
+      count: vi.fn(),
+    },
+    service: {
+      count: vi.fn(),
+    },
+    movingPlan: {
+      count: vi.fn(),
     },
   },
 }));
@@ -41,13 +49,18 @@ vi.mock("@/lib/billing", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { GET, POST } from "./route";
 
-const mockUser = prisma.user as unknown as { update: Mock };
-const mockUserEvent = prisma.userEvent as unknown as { findFirst: Mock; create: Mock };
+const mockUser = prisma.user as unknown as { update: Mock; findUnique: Mock };
+const mockUserEvent = prisma.userEvent as unknown as { findFirst: Mock; findMany: Mock; create: Mock };
 const mockProfile = prisma.profile as unknown as { upsert: Mock };
 const mockDataConsent = prisma.dataConsent as unknown as { findFirst: Mock };
+const mockAddress = prisma.address as unknown as { count: Mock };
+const mockService = (prisma as any).service as { count: Mock };
+const mockMovingPlan = (prisma as any).movingPlan as { count: Mock };
 const requireDbUserIdMock = requireDbUserId as unknown as Mock;
+const findSubscriptionForEntitlementMock = findSubscriptionForEntitlement as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/profile", {
@@ -69,8 +82,20 @@ describe("profile route", () => {
     });
     mockUserEvent.create.mockResolvedValue({});
     mockUser.update.mockResolvedValue({});
+    mockUser.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "taylor@example.com",
+      firstName: "Taylor",
+      lastName: "Mover",
+      profile: null,
+    });
+    mockUserEvent.findMany.mockResolvedValue([]);
+    mockAddress.count.mockResolvedValue(0);
+    mockService.count.mockResolvedValue(0);
+    mockMovingPlan.count.mockResolvedValue(0);
     mockProfile.upsert.mockResolvedValue({ id: "profile-1", userId: "user-1" });
     mockDataConsent.findFirst.mockResolvedValue(null);
+    findSubscriptionForEntitlementMock.mockResolvedValue(null);
     requireDbUserIdMock.mockResolvedValue("user-1");
   });
 
@@ -92,6 +117,30 @@ describe("profile route", () => {
 
     expect(response.status).toBe(401);
     expect(body).toEqual({ error: "Unauthorized" });
+  });
+
+  it("strips raw billing purchase tokens from profile reads", async () => {
+    findSubscriptionForEntitlementMock.mockResolvedValue({
+      id: "sub-1",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      purchaseToken: "raw-play-token",
+      purchaseTokenHash: "hashed-play-token",
+    });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.subscription).toMatchObject({
+      id: "sub-1",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+    });
+    expect(body.subscription).not.toHaveProperty("purchaseToken");
+    expect(body.subscription).not.toHaveProperty("purchaseTokenHash");
   });
 
   it("accepts the real onboarding step-0 payload for a new user", async () => {

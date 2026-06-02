@@ -112,11 +112,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  // Master flag off -> the surface is inert; offer nothing.
-  if (!(await isApiConnectorsEnabled())) {
-    return NextResponse.json({ connectors: [], entitlement: { apiSync: false } }, { headers: { "Cache-Control": "no-store" } });
-  }
-  const apiSyncEntitled = await safeApiSyncEntitlement(session.userId);
+  // This flag gates automatic OAuth/API sync. Guided partner directions can
+  // still be shown for enabled live connectors because they do not use tokens.
+  const apiConnectorsEnabled = await isApiConnectorsEnabled();
+  const apiSyncEntitled = apiConnectorsEnabled ? await safeApiSyncEntitlement(session.userId) : false;
 
   const adapters = connectorRegistry.list();
   const configs = await prisma.connectorConfig.findMany({
@@ -136,11 +135,12 @@ export async function GET() {
         enabled: cfg?.enabled ?? false,
         stage: cfg?.stage ?? "SHADOW",
       });
+      const mode = !apiConnectorsEnabled && r.mode === "API_SYNC" ? "GUIDED_UPDATE" : r.mode;
       return {
         connectorKey: adapter.manifest.key,
         displayName: adapter.manifest.displayName,
-        mode: r.mode,
-        guidedAction: guidedActionFor(adapter, r.mode),
+        mode,
+        guidedAction: guidedActionFor(adapter, mode),
       };
     }),
   );

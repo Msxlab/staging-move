@@ -21,6 +21,14 @@ function parseStoredLegalConsents(metadata: string | null | undefined) {
   }
 }
 
+function sanitizeSubscriptionForClient<T extends Record<string, unknown> | null>(subscription: T): T {
+  if (!subscription) return subscription;
+  const safe = { ...subscription };
+  delete safe.purchaseToken;
+  delete safe.purchaseTokenHash;
+  return safe as T;
+}
+
 async function hasCurrentDataConsent(userId: string, category: string): Promise<boolean> {
   const consent = await prisma.dataConsent.findFirst({
     where: { userId, category },
@@ -81,6 +89,7 @@ export async function GET() {
       ...summarizeOnboardingEvents(onboardingEvents),
     });
     const entitlement = buildUnifiedEntitlementSnapshot(subscription);
+    const safeSubscription = sanitizeSubscriptionForClient(subscription);
 
     return NextResponse.json({
       user: {
@@ -90,7 +99,7 @@ export async function GET() {
         lastName: user.lastName,
       },
       profile: user.profile,
-      subscription,
+      subscription: safeSubscription,
       entitlement,
       legalConsents,
       onboardingCompleted: onboardingProgress.completed,
