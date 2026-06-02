@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { generateKeyPairSync } from "crypto";
 import { NextRequest } from "next/server";
 import {
+  exchangeAppleCode,
   getOAuthRedirectUri,
   getOAuthResponseUrl,
   isAppleEmailVerifiedClaim,
+  normalizeApplePrivateKeyPem,
   normalizeOAuthRedirectPath,
   resolveOAuthPostAuthRedirectPath,
 } from "./oauth";
@@ -82,5 +85,48 @@ describe("Apple OAuth email verification claim", () => {
     expect(isAppleEmailVerifiedClaim(false)).toBe(false);
     expect(isAppleEmailVerifiedClaim("false")).toBe(false);
     expect(isAppleEmailVerifiedClaim(undefined)).toBe(false);
+  });
+});
+
+describe("Apple OAuth private key handling", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function generatedPrivateKeyBody() {
+    const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+    const pem = privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+    return pem
+      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+      .replace(/-----END PRIVATE KEY-----/g, "")
+      .replace(/\s+/g, "");
+  }
+
+  it("wraps bare .p8 PEM body values before signing the Apple client secret", async () => {
+    const privateKeyBody = generatedPrivateKeyBody();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ id_token: "apple-id-token" }),
+      })),
+    );
+
+    await expect(
+      exchangeAppleCode({
+        code: "auth-code",
+        redirectUri: "https://locateflow.com/api/auth/oauth/apple/callback",
+        clientId: "com.locateflow.auth",
+        teamId: "ABCDE12345",
+        keyId: "ABCDE12345",
+        privateKeyPem: privateKeyBody,
+      }),
+    ).resolves.toEqual({ idToken: "apple-id-token" });
+
+    expect(normalizeApplePrivateKeyPem(privateKeyBody)).toContain("-----BEGIN PRIVATE KEY-----");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://appleid.apple.com/auth/token",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { generateKeyPairSync } from "crypto";
 import {
   ENV_FIRST_RUNTIME_CONFIG_KEYS,
   STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG,
@@ -394,6 +395,21 @@ describe("validateRuntimeConfigValueShape hardening", () => {
         productionLike: false,
       }),
     ).toMatchObject({ ok: false, reason: "private_key_pem_required" });
+  });
+
+  it("accepts Apple private key PEM bodies without header/footer", () => {
+    const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+    const pem = privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+    const body = pem
+      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+      .replace(/-----END PRIVATE KEY-----/g, "")
+      .replace(/\s+/g, "");
+
+    expect(
+      validateRuntimeConfigValueShape("APPLE_OAUTH_PRIVATE_KEY", body, {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
   });
 
   it("requires Google Play service account-like email addresses", () => {

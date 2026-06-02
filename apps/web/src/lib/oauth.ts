@@ -185,6 +185,15 @@ export async function getAppleOAuthCredentials() {
   return { clientId, teamId, keyId, privateKeyPem };
 }
 
+export function normalizeApplePrivateKeyPem(privateKeyPem: string): string {
+  const normalized = privateKeyPem.replace(/\\n/g, "\n").trim();
+  if (normalized.includes("-----BEGIN")) return normalized;
+
+  const body = normalized.replace(/\s+/g, "");
+  const chunks = body.match(/.{1,64}/g) || [body];
+  return `-----BEGIN PRIVATE KEY-----\n${chunks.join("\n")}\n-----END PRIVATE KEY-----`;
+}
+
 // ── Google ─────────────────────────────────────────────────────
 
 export interface GoogleIdTokenPayload {
@@ -285,7 +294,7 @@ async function buildAppleClientSecret(opts: {
 }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const privateKey = createPrivateKey({
-    key: opts.privateKeyPem.replace(/\\n/g, "\n"),
+    key: normalizeApplePrivateKeyPem(opts.privateKeyPem),
     format: "pem",
   });
 

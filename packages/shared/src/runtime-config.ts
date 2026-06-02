@@ -1327,6 +1327,21 @@ function looksLikePemPrivateKey(value: string): boolean {
   return /^-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----\n[\s\S]+\n-----END [A-Z0-9 ]*PRIVATE KEY-----$/.test(normalized);
 }
 
+function looksLikePemPrivateKeyBody(value: string): boolean {
+  const normalized = value.replace(/\\n/g, "\n").trim();
+  if (normalized.includes("-----BEGIN") || normalized.includes("-----END")) return false;
+  const body = normalized.replace(/\s+/g, "");
+  if (body.length < 120 || !/^[A-Za-z0-9+/]+={0,2}$/.test(body)) return false;
+  if (!body.startsWith("M")) return false;
+
+  try {
+    const der = Buffer.from(body, "base64");
+    return der.length >= 90 && der[0] === 0x30;
+  } catch {
+    return false;
+  }
+}
+
 function validateProductId(value: string): RuntimeConfigValidationResult | null {
   return validateSafeToken(value, {
     minLength: 3,
@@ -1636,7 +1651,9 @@ export function validateRuntimeConfigValueShape(
   ) {
     const secretProblem = validateSecretStrength(value, 48);
     if (secretProblem && secretProblem.reason !== "secret_too_short") return secretProblem;
-    if (!looksLikePemPrivateKey(value)) return invalid("private_key_pem_required");
+    if (!looksLikePemPrivateKey(value) && !looksLikePemPrivateKeyBody(value)) {
+      return invalid("private_key_pem_required");
+    }
     return secretProblem || valid();
   }
   if (key === "APPLE_OAUTH_TEAM_ID") {
