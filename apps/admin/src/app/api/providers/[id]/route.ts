@@ -12,7 +12,36 @@ import {
   getProviderQualityWarnings,
   normalizeProviderRecord,
   normalizeProviderUrlDomain,
+  PROVIDER_CATEGORY_VALUES,
 } from "@locateflow/shared";
+
+const PROVIDER_SCOPES = new Set(["FEDERAL", "STATE"]);
+
+function validateProviderPatch(patch: Record<string, unknown>): string | null {
+  if (patch.category !== undefined) {
+    const category = typeof patch.category === "string" ? patch.category.trim().toUpperCase() : "";
+    if (!category || !(PROVIDER_CATEGORY_VALUES as readonly string[]).includes(category)) {
+      return "Invalid provider category";
+    }
+  }
+  if (patch.scope !== undefined) {
+    const scope = typeof patch.scope === "string" ? patch.scope.trim().toUpperCase() : "";
+    if (!PROVIDER_SCOPES.has(scope)) return "Invalid provider scope";
+  }
+  if (patch.popularityScore !== undefined) {
+    const score = Number(patch.popularityScore);
+    if (!Number.isInteger(score) || score < 0 || score > 100) {
+      return "Popularity score must be an integer from 0 to 100";
+    }
+  }
+  if (patch.displayOrder !== undefined) {
+    const order = Number(patch.displayOrder);
+    if (!Number.isInteger(order) || order < 0 || order > 100_000) {
+      return "Display order must be an integer from 0 to 100000";
+    }
+  }
+  return null;
+}
 
 function getConflictMessage(conflictType: string, name: string, slug: string) {
   if (conflictType === "slug") {
@@ -132,7 +161,14 @@ export async function PATCH(
   try {
     const session = await requirePermission("providers", "canUpdate", { minimumRole: "MODERATOR" });
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid provider payload" }, { status: 400 });
+    }
+    const patchError = validateProviderPatch(body as Record<string, unknown>);
+    if (patchError) {
+      return NextResponse.json({ error: patchError }, { status: 400 });
+    }
 
     const existing = await prisma.serviceProvider.findFirst({ where: { id, deletedAt: null } });
     if (!existing) {

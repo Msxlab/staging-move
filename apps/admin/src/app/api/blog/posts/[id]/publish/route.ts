@@ -2,13 +2,13 @@
  * POST /api/blog/posts/[id]/publish
  *
  * Lifecycle transitions:
- *   - DRAFT     → PUBLISHED   (publishedAt = now)
- *   - SCHEDULED → PUBLISHED   (publishedAt = now, scheduledAt cleared)
- *   - DRAFT     → SCHEDULED   (when body.scheduledAt is in the future)
- *   - PUBLISHED → ARCHIVED    (unpublish)
+ *   - DRAFT / SCHEDULED / ARCHIVED -> PUBLISHED
+ *   - DRAFT / ARCHIVED             -> SCHEDULED
+ *   - SCHEDULED                    -> DRAFT
+ *   - PUBLISHED                    -> ARCHIVED
  *
  * Anything not in this matrix gets a 409. Publish requires a non-empty
- * title + non-empty content body — we don't ship hollow posts. The
+ * title + non-empty content body - we don't ship hollow posts. The
  * publish action revalidates `/blog`, `/blog/<slug>`, `/sitemap.xml`,
  * `/llms.txt`, and the homepage.
  */
@@ -72,8 +72,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   let next: { status: "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED"; publishedAt: Date | null; scheduledAt: Date | null };
 
   if (body.action === "publish") {
+    if (!["DRAFT", "SCHEDULED", "ARCHIVED"].includes(existing.status)) {
+      return NextResponse.json(
+        { error: "Only DRAFT, SCHEDULED, or ARCHIVED posts can be published" },
+        { status: 409 },
+      );
+    }
     next = { status: "PUBLISHED", publishedAt: new Date(), scheduledAt: null };
   } else if (body.action === "schedule") {
+    if (!["DRAFT", "ARCHIVED"].includes(existing.status)) {
+      return NextResponse.json(
+        { error: "Only DRAFT or ARCHIVED posts can be scheduled" },
+        { status: 409 },
+      );
+    }
     if (!body.scheduledAt) {
       return NextResponse.json({ error: "scheduledAt required for schedule" }, { status: 400 });
     }

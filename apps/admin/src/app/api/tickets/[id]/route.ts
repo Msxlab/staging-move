@@ -184,6 +184,13 @@ export async function POST(
     const body = await request.json();
     const validated = replySchema.parse(body);
 
+    if (!validated.isInternal && (ticket.status === "RESOLVED" || ticket.status === "CLOSED")) {
+      return NextResponse.json(
+        { error: "Closed or resolved tickets only accept internal notes" },
+        { status: 409 },
+      );
+    }
+
     const message = await prisma.ticketMessage.create({
       data: {
         ticketId: id,
@@ -267,7 +274,18 @@ export async function PATCH(
       if (validated.status === "CLOSED") updateData.closedAt = new Date();
     }
     if (validated.priority !== undefined) updateData.priority = validated.priority;
-    if (validated.assignedTo !== undefined) updateData.assignedTo = validated.assignedTo;
+    if (validated.assignedTo !== undefined) {
+      if (typeof validated.assignedTo === "string") {
+        const assignee = await prisma.adminUser.findFirst({
+          where: { id: validated.assignedTo, isActive: true },
+          select: { id: true },
+        });
+        if (!assignee) {
+          return NextResponse.json({ error: "Assigned admin not found" }, { status: 400 });
+        }
+      }
+      updateData.assignedTo = validated.assignedTo;
+    }
     if (validated.category !== undefined) updateData.category = validated.category;
 
     const updated = await prisma.supportTicket.update({

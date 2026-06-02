@@ -454,7 +454,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   <CalendarClock className="h-4 w-4" />
                   Cancel schedule
                 </button>
-              ) : (
+              ) : post?.status === "PUBLISHED" ? null : (
                 <button
                   type="button"
                   onClick={() => void runLifecycle("schedule")}

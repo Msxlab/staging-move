@@ -380,6 +380,20 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       }
     }
   }
+  if (row.consentId) {
+    const stillGranted = await prisma.partnerConsent.findUnique({
+      where: { id: row.consentId },
+      select: { status: true },
+    });
+    if (!stillGranted || stillGranted.status !== "GRANTED") {
+      await prisma.connectorDispatch.update({
+        where: { id: row.id },
+        data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
+      });
+      await notifyNeedsUser(row.userId, row.connectorKey, row.id);
+      return "NEEDS_USER";
+    }
+  }
 
   await prisma.connectorDispatch.update({
     where: { id: row.id },

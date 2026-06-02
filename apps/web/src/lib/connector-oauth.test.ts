@@ -29,6 +29,7 @@ vi.mock("@/lib/shared-encryption", () => ({ decrypt: (v: string) => v, encrypt: 
 import {
   exchangeConnectorCode,
   getConnectorOAuthConfig,
+  refreshConsentAccessToken,
   upsertGrantedConsent,
   userHasApiConnectorEntitlement,
 } from "./connector-oauth";
@@ -204,6 +205,58 @@ describe("exchangeConnectorCode", () => {
       accessToken: "at",
       refreshToken: "rt",
     });
+  });
+});
+
+describe("refreshConsentAccessToken", () => {
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("does not write refreshed tokens onto a consent revoked during refresh", async () => {
+    mockConfig({
+      CONNECTOR_USPS_OAUTH_CLIENT_ID: "client",
+      CONNECTOR_USPS_OAUTH_CLIENT_SECRET: "secret",
+      CONNECTOR_USPS_OAUTH_AUTHORIZE_URL: "https://apis.usps.com/oauth/authorize",
+      CONNECTOR_USPS_OAUTH_TOKEN_URL: "https://apis.usps.com/oauth/token",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ access_token: "fresh-access", expires_in: 3600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    mocks.consentUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(refreshConsentAccessToken("consent_1", "usps", "refresh-token")).resolves.toBeNull();
+
+    expect(mocks.consentUpdateMany).toHaveBeenCalledWith({
+      where: { id: "consent_1", status: "GRANTED" },
+      data: expect.objectContaining({ tokenEncrypted: "fresh-access" }),
+    });
+  });
+
+  it("returns the fresh access token only when the consent is still granted", async () => {
+    mockConfig({
+      CONNECTOR_USPS_OAUTH_CLIENT_ID: "client",
+      CONNECTOR_USPS_OAUTH_CLIENT_SECRET: "secret",
+      CONNECTOR_USPS_OAUTH_AUTHORIZE_URL: "https://apis.usps.com/oauth/authorize",
+      CONNECTOR_USPS_OAUTH_TOKEN_URL: "https://apis.usps.com/oauth/token",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ access_token: "fresh-access", expires_in: 3600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    mocks.consentUpdateMany.mockResolvedValue({ count: 1 });
+
+    await expect(refreshConsentAccessToken("consent_1", "usps", "refresh-token")).resolves.toBe("fresh-access");
   });
 });
 

@@ -192,14 +192,15 @@ export async function refreshConsentAccessToken(
   }
   const tokens = await refreshConnectorToken(config, refreshToken);
   if (!tokens?.accessToken) return null;
-  await prisma.partnerConsent.update({
-    where: { id: consentId },
+  const updated = await prisma.partnerConsent.updateMany({
+    where: { id: consentId, status: "GRANTED" },
     data: {
       tokenEncrypted: encrypt(tokens.accessToken),
       refreshTokenEncrypted: tokens.refreshToken ? encrypt(tokens.refreshToken) : undefined,
       tokenExpiresAt: tokenExpiryFrom(tokens.expiresInSeconds, Date.now()),
     },
   });
+  if (updated.count === 0) return null;
   return tokens.accessToken;
 }
 

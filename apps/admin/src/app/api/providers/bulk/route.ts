@@ -2,18 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { PROVIDER_CATEGORY_VALUES } from "@locateflow/shared";
+import { z } from "zod";
+
+const providerCategorySchema = z.enum(
+  [...PROVIDER_CATEGORY_VALUES] as [string, ...string[]],
+);
+
+const bulkSchema = z.object({
+  action: z.enum(["activate", "deactivate", "delete", "change_category", "set_score"]),
+  ids: z.array(z.string().trim().min(1).max(30)).min(1).max(200),
+  data: z
+    .object({
+      category: providerCategorySchema.optional(),
+      score: z.number().int().min(0).max(100).optional(),
+    })
+    .strict()
+    .optional(),
+  confirmPassword: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, ids, data, confirmPassword } = await request.json();
+    const parsed = bulkSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid bulk request" }, { status: 400 });
+    }
+    const { action, data, confirmPassword } = parsed.data;
+    const ids = Array.from(new Set(parsed.data.ids));
 
     const session = action === "delete"
       ? await requirePermission("providers", "canDelete", { minimumRole: "ADMIN" })
       : await requirePermission("providers", "canUpdate", { minimumRole: "ADMIN" });
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: "No items selected" }, { status: 400 });
-    }
 
     if (action === "delete") {
       const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "provider_delete" });
@@ -60,7 +80,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "set_score":
-        if (data?.score == null) {
+        if (data?.score === undefined) {
           return NextResponse.json({ error: "Score is required" }, { status: 400 });
         }
         result = await prisma.serviceProvider.updateMany({

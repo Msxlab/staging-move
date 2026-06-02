@@ -33,9 +33,9 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { DELETE } from "./route";
+import { DELETE, PATCH } from "./route";
 
-function request() {
+function deleteRequest() {
   return new NextRequest("https://admin.locateflow.com/api/providers/provider_1", {
     method: "DELETE",
     headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
@@ -43,7 +43,15 @@ function request() {
   });
 }
 
-describe("provider delete", () => {
+function patchRequest(body: Record<string, unknown>) {
+  return new NextRequest("https://admin.locateflow.com/api/providers/provider_1", {
+    method: "PATCH",
+    headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
+    body: JSON.stringify(body),
+  });
+}
+
+describe("provider detail route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", role: "ADMIN", email: "admin@example.com" });
@@ -54,7 +62,7 @@ describe("provider delete", () => {
   });
 
   it("soft deletes a provider instead of permanently deleting the row", async () => {
-    const response = await DELETE(request(), { params: Promise.resolve({ id: "provider_1" }) });
+    const response = await DELETE(deleteRequest(), { params: Promise.resolve({ id: "provider_1" }) });
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -71,5 +79,29 @@ describe("provider delete", () => {
         }),
       }),
     );
+  });
+
+  it("rejects out-of-range popularity scores before updating", async () => {
+    const response = await PATCH(patchRequest({ popularityScore: 999 }), {
+      params: Promise.resolve({ id: "provider_1" }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/Popularity score/);
+    expect(mocks.findFirst).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects provider categories outside the canonical taxonomy", async () => {
+    const response = await PATCH(patchRequest({ category: "NOT_A_CATEGORY" }), {
+      params: Promise.resolve({ id: "provider_1" }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid provider category");
+    expect(mocks.findFirst).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });
