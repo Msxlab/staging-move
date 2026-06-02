@@ -12,6 +12,20 @@ async function isApiConnectorsEnabled(): Promise<boolean> {
   return value === "true" || value === "1";
 }
 
+// The facts that gate API_SYNC, read from runtime-config (operator-set). Default
+// to safe values so a connector stays GUIDED until a PRODUCTION agreement AND
+// credentials are recorded — the legal gate, enforced in code.
+async function connectorGateInputs(
+  key: string,
+): Promise<{ agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION"; credentialsPresent: boolean }> {
+  const k = key.toUpperCase().replace(/-/g, "_");
+  const rc = async (name: string) => (await getRuntimeConfigValue(name)) ?? process.env[name] ?? "";
+  const agreementRaw = await rc(`CONNECTOR_${k}_AGREEMENT_STATUS`);
+  const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
+  const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
+  return { agreementStatus, credentialsPresent };
+}
+
 /**
  * GET /api/connectors/catalog
  *
@@ -42,19 +56,21 @@ export async function GET() {
   });
   const configByKey = new Map(configs.map((c) => [c.connectorKey, c]));
 
-  const connectors = adapters
-    .map((adapter) => {
+  const resolvedAll = await Promise.all(
+    adapters.map(async (adapter) => {
       const cfg = configByKey.get(adapter.manifest.key);
-      const resolved = resolveConnectorMode({
+      const gate = await connectorGateInputs(adapter.manifest.key);
+      const r = resolveConnectorMode({
         addressUpdatePush: adapter.manifest.capabilities.addressUpdatePush,
-        agreementStatus: "NONE",
-        credentialsPresent: false,
+        agreementStatus: gate.agreementStatus,
+        credentialsPresent: gate.credentialsPresent,
         enabled: cfg?.enabled ?? false,
         stage: cfg?.stage ?? "SHADOW",
       });
-      return { connectorKey: adapter.manifest.key, displayName: adapter.manifest.displayName, mode: resolved.mode };
-    })
-    .filter((c) => c.mode !== "DISABLED");
+      return { connectorKey: adapter.manifest.key, displayName: adapter.manifest.displayName, mode: r.mode };
+    }),
+  );
+  const connectors = resolvedAll.filter((c) => c.mode !== "DISABLED");
 
   return NextResponse.json({ connectors }, { headers: { "Cache-Control": "no-store" } });
 }

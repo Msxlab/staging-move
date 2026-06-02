@@ -4,6 +4,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { resolveConnectorMode, uspsConnector, type AddressConnector } from "@locateflow/connectors";
+import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
+
+/**
+ * The two facts that gate API_SYNC, read from runtime-config (operator-set, no
+ * schema migration): the signed-agreement posture and whether real OAuth
+ * credentials are configured. Both default to the safe value, so a connector
+ * stays GUIDED until an operator records a PRODUCTION agreement AND credentials.
+ */
+async function connectorGateInputs(
+  key: string,
+): Promise<{ agreementStatus: "NONE" | "SANDBOX" | "PRODUCTION"; credentialsPresent: boolean }> {
+  const k = key.toUpperCase().replace(/-/g, "_");
+  const rc = async (name: string) => (await getAdminRuntimeConfigValue(name)) ?? process.env[name] ?? "";
+  const agreementRaw = await rc(`CONNECTOR_${k}_AGREEMENT_STATUS`);
+  const agreementStatus = agreementRaw === "PRODUCTION" || agreementRaw === "SANDBOX" ? agreementRaw : "NONE";
+  const credentialsPresent = Boolean((await rc(`CONNECTOR_${k}_OAUTH_CLIENT_ID`)) && (await rc(`CONNECTOR_${k}_OAUTH_CLIENT_SECRET`)));
+  return { agreementStatus, credentialsPresent };
+}
 
 // Connector config changes are reversible by the same operator (flip enabled
 // back, re-PUT the rollout %), so — like feature flags — step-up is required
@@ -87,10 +105,11 @@ export async function GET() {
     const modeByConnector: Record<string, { mode: string; reason: string }> = {};
     for (const c of connectors) {
       const adapter = CONNECTOR_ADAPTERS[c.connectorKey];
+      const gate = await connectorGateInputs(c.connectorKey);
       const resolved = resolveConnectorMode({
         addressUpdatePush: adapter?.manifest.capabilities.addressUpdatePush ?? false,
-        agreementStatus: "NONE",
-        credentialsPresent: false,
+        agreementStatus: gate.agreementStatus,
+        credentialsPresent: gate.credentialsPresent,
         enabled: c.enabled,
         stage: c.stage,
       });

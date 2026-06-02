@@ -22,6 +22,8 @@ vi.mock("@locateflow/connectors", () => ({
   uspsConnector: { manifest: { capabilities: { addressUpdatePush: true }, auth: { type: "OAUTH" } } },
   resolveConnectorMode: () => ({ mode: "GUIDED_UPDATE", reason: "test-guided", canApiSync: false }),
 }));
+// GET now reads runtime-config for the agreement/credential gate inputs.
+vi.mock("@/lib/runtime-config", () => ({ getAdminRuntimeConfigValue: vi.fn().mockResolvedValue(null) }));
 
 describe("admin connectors GET — per-connector ops health", () => {
   beforeEach(() => {
