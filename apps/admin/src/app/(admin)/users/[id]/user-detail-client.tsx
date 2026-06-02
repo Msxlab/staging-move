@@ -69,6 +69,12 @@ const USER_DETAIL_TABS: { key: UserDetailTab; label: string; icon: React.Element
   { key: "privacy", label: "Privacy & GDPR", icon: Shield },
   { key: "data", label: "Data", icon: Monitor },
 ];
+type GrantPlan = "INDIVIDUAL" | "FAMILY" | "PRO";
+const GRANT_PLANS: Array<{ value: GrantPlan; label: string }> = [
+  { value: "INDIVIDUAL", label: "Individual" },
+  { value: "FAMILY", label: "Family" },
+  { value: "PRO", label: "Pro" },
+];
 
 export default function UserDetailClient() {
   const params = useParams();
@@ -113,6 +119,7 @@ export default function UserDetailClient() {
   const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
   const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
   const [grantPresetMonths, setGrantPresetMonths] = useState<number | "custom">(1);
+  const [grantPlan, setGrantPlan] = useState<GrantPlan>("INDIVIDUAL");
   const [grantCustomDate, setGrantCustomDate] = useState("");
   const [grantReason, setGrantReason] = useState("");
   const [pendingGrantAction, setPendingGrantAction] = useState<"grant" | "revoke" | null>(null);
@@ -176,6 +183,10 @@ export default function UserDetailClient() {
             cancelAtPeriodEnd: Boolean(data.user.subscription?.cancelAtPeriodEnd),
             autoRenew: Boolean(data.user.subscription?.autoRenew),
           });
+          const currentPlan = data.user.subscription?.plan;
+          if (GRANT_PLANS.some((plan) => plan.value === currentPlan)) {
+            setGrantPlan(currentPlan as GrantPlan);
+          }
         }
       } catch { toast.error("Failed to load user"); }
       finally { setLoading(false); }
@@ -416,7 +427,7 @@ export default function UserDetailClient() {
         // ADMIN (route.ts:243-245), so we send accessType=null.
         payload = {
           ...payload,
-          plan: "INDIVIDUAL",
+          plan: grantPlan,
           subscriptionStatus: "ACTIVE",
           accessType: null,
           premiumUntil: untilIso,
@@ -1276,7 +1287,21 @@ export default function UserDetailClient() {
                   </span>
                 </div>
               )}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_2fr]">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Plan</label>
+                  <select
+                    value={grantPlan}
+                    onChange={(e) => setGrantPlan(e.target.value as GrantPlan)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    {GRANT_PLANS.map((plan) => (
+                      <option key={plan.value} value={plan.value}>
+                        {plan.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Duration</label>
                   <select
@@ -2094,7 +2119,7 @@ export default function UserDetailClient() {
         description={
           pendingGrantAction === "revoke"
             ? `Revoke the admin premium grant for ${maskEmail(user.email)} and drop the user back to default free access. Enter your admin password and MFA code or backup code to continue.`
-            : `Grant manual premium access to ${maskEmail(user.email)}${grantReason ? ` — "${grantReason}"` : ""}. Enter your admin password and MFA code or backup code to continue.`
+            : `Grant manual ${getBillingPlanDefinition(grantPlan).displayName} access to ${maskEmail(user.email)}${grantReason ? ` — "${grantReason}"` : ""}. Enter your admin password and MFA code or backup code to continue.`
         }
         confirmLabel={pendingGrantAction === "revoke" ? "Revoke Premium" : "Grant Premium"}
         busy={grantActionBusy}

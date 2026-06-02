@@ -640,7 +640,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
   });
 
-  it.each(["FAMILY", "PRO"])("accepts %s as a grantable plan (doc 62 cascade)", async (plan) => {
+  it.each(["FAMILY", "PRO"])("accepts %s as a timed admin premium grant (doc 62 cascade)", async (plan) => {
     mocks.subscriptionUpdate.mockResolvedValue({});
 
     const response = await PATCH(
@@ -650,7 +650,9 @@ describe("admin user detail billing updates", () => {
         body: JSON.stringify({
           plan,
           subscriptionStatus: "ACTIVE",
+          premiumUntil: "2026-12-01",
           confirmPassword: "admin-password",
+          mfaCode: "123456",
         }),
       }),
       { params: Promise.resolve({ id: "user_1" }) },
@@ -659,7 +661,13 @@ describe("admin user detail billing updates", () => {
     expect(response.status).toBe(200);
     expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
-      data: expect.objectContaining({ plan, status: "ACTIVE" }),
+      data: expect.objectContaining({
+        plan,
+        status: "ACTIVE",
+        provider: "ADMIN",
+        premiumUntil: expect.any(Date),
+        premiumGrantedBy: "admin_1",
+      }),
     });
   });
 
