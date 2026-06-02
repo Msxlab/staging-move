@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, getEffectiveEntitlement, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import {
-  countUsedSeats,
   generateInvitationToken,
   invitationExpiry,
   seatLimitForPlan,
@@ -98,29 +98,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (seatLimitForPlan(plan) <= 1) {
     return NextResponse.json({ error: "Upgrade to Family or Pro to invite members." }, { status: 403 });
   }
-  if ((await countUsedSeats(id)) >= seatLimitForPlan(plan)) {
-    return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
-  }
-
-  // Already a member?
-  const existingUser = await prisma.user.findUnique({ where: { email: invitedEmail }, select: { id: true, preferredLocale: true } });
-  if (existingUser) {
-    const alreadyMember = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: existingUser.id } });
-    if (alreadyMember) return NextResponse.json({ error: "Already a member." }, { status: 409 });
-  }
-  // Existing pending invite?
-  const pending = await prisma.workspaceInvitation.findFirst({ where: { workspaceId: id, invitedEmail, status: "PENDING" } });
-  if (pending) return NextResponse.json({ error: "An invitation is already pending for this email." }, { status: 409 });
-
   const { token, tokenHash, tokenLast4 } = generateInvitationToken();
   const expiresAt = invitationExpiry();
   let invitation;
+  let inviteeLocale: string | null | undefined;
   try {
-    invitation = await prisma.workspaceInvitation.create({
-      data: { workspaceId: id, invitedEmail, role, invitedByUserId: session.userId, tokenHash, tokenLast4, status: "PENDING", expiresAt },
-      select: { id: true, invitedEmail: true, role: true, expiresAt: true, tokenLast4: true },
-    });
+    invitation = await prisma.$transaction(async (tx) => {
+      const existingUser = await tx.user.findUnique({ where: { email: invitedEmail }, select: { id: true, preferredLocale: true } });
+      inviteeLocale = existingUser?.preferredLocale ?? null;
+      if (existingUser) {
+        const alreadyMember = await tx.workspaceMember.findFirst({ where: { workspaceId: id, userId: existingUser.id } });
+        if (alreadyMember) throw new Error("ALREADY_MEMBER");
+      }
+
+      const pending = await tx.workspaceInvitation.findFirst({ where: { workspaceId: id, invitedEmail, status: "PENDING" } });
+      if (pending) throw new Error("PENDING_INVITE");
+
+      const [memberCount, pendingCount] = await Promise.all([
+        tx.workspaceMember.count({ where: { workspaceId: id, status: { not: "SUSPENDED" } } }),
+        tx.workspaceInvitation.count({ where: { workspaceId: id, status: "PENDING" } }),
+      ]);
+      if (memberCount + pendingCount >= seatLimitForPlan(plan)) throw new Error("SEAT_FULL");
+
+      return tx.workspaceInvitation.create({
+        data: { workspaceId: id, invitedEmail, role, invitedByUserId: session.userId, tokenHash, tokenLast4, status: "PENDING", expiresAt },
+        select: { id: true, invitedEmail: true, role: true, expiresAt: true, tokenLast4: true },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
+    if (error instanceof Error && error.message === "ALREADY_MEMBER") {
+      return NextResponse.json({ error: "Already a member." }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === "PENDING_INVITE") {
+      return NextResponse.json({ error: "An invitation is already pending for this email." }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === "SEAT_FULL") {
+      return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
+    }
+    if ((error as { code?: string })?.code === "P2034") {
+      return NextResponse.json({ error: "Please try again." }, { status: 409 });
+    }
     // The unique index can collide on a near-simultaneous re-invite — translate
     // it to a clean 409 instead of an unhandled 500.
     if ((error as { code?: string })?.code === "P2002") {
@@ -147,7 +164,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Prefer the RECIPIENT's own language when they already have an account;
     // fall back to the inviter's locale as a household signal for brand-new
     // invitees (whose language we can't know yet).
-    locale: existingUser?.preferredLocale ?? inviter?.preferredLocale,
+    locale: inviteeLocale ?? inviter?.preferredLocale,
     dedupeKey: `ws-invite:${invitation.id}`,
     metadata: { workspaceId: id },
   }).catch(() => false);
