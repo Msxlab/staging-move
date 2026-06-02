@@ -70,7 +70,11 @@ type IntentState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "ready"; clientSecret: string }
-  | { status: "error"; message: string };
+  // `recovery: "billing"` means the failure is an existing-subscription /
+  // past-due conflict the user can resolve in the Stripe customer portal, so
+  // the error surface renders a one-tap "Open billing settings" button instead
+  // of a dead-end message.
+  | { status: "error"; message: string; recovery?: "billing" };
 
 export function EmbeddedCheckoutCard({
   plan,
@@ -83,6 +87,34 @@ export function EmbeddedCheckoutCard({
   termsAccepted,
 }: EmbeddedCheckoutCardProps) {
   const [intent, setIntent] = useState<IntentState>({ status: "idle" });
+  const [billingBusy, setBillingBusy] = useState(false);
+
+  // Recovery path for an existing/past-due subscription: open the Stripe
+  // customer portal so the user can fix billing instead of being stuck on the
+  // checkout error. The portal route works for past-due subscriptions.
+  const openBillingPortal = useCallback(async () => {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setIntent({
+        status: "error",
+        message: data.error || "Could not open billing settings. Please try again.",
+      });
+    } catch {
+      setIntent({
+        status: "error",
+        message: "Could not open billing settings. Please try again.",
+      });
+    } finally {
+      setBillingBusy(false);
+    }
+  }, [billingBusy]);
 
   const launch = useCallback(async () => {
     if (disabled || intent.status === "loading") return;
@@ -119,9 +151,21 @@ export function EmbeddedCheckoutCard({
       const data = (await response.json()) as {
         clientSecret?: string;
         error?: string;
+        code?: string;
       };
       if (!response.ok || !data.clientSecret) {
-        throw new Error(data.error || "Failed to start checkout.");
+        // The server hands back a machine-readable code for conflicts the user
+        // can resolve in billing settings; surface a recovery CTA for those
+        // instead of a plain error.
+        const recoverable =
+          data.code === "BILLING_NEEDS_ATTENTION" || data.code === "ALREADY_ACTIVE";
+        setIntent({
+          status: "error",
+          message: data.error || "Failed to start checkout.",
+          ...(recoverable ? { recovery: "billing" as const } : {}),
+        });
+        onPendingChange?.(false);
+        return;
       }
       setIntent({ status: "ready", clientSecret: data.clientSecret });
     } catch (error: any) {
@@ -159,7 +203,19 @@ export function EmbeddedCheckoutCard({
         {intent.status === "loading" ? "Opening secure checkout..." : triggerLabel}
       </button>
       {intent.status === "error" ? (
-        <p className="text-xs text-destructive">{intent.message}</p>
+        <div className="space-y-2">
+          <p className="text-xs text-destructive">{intent.message}</p>
+          {intent.recovery === "billing" ? (
+            <button
+              type="button"
+              onClick={() => void openBillingPortal()}
+              disabled={billingBusy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {billingBusy ? "Opening billing settings..." : "Open billing settings"}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

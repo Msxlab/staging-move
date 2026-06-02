@@ -493,6 +493,7 @@ export async function requirePasswordConfirm(
     select: {
       password: true,
       isActive: true,
+      role: true,
       mfaEnabled: true,
       mfaSecret: true,
       mfaBackupCodes: true,
@@ -519,6 +520,30 @@ export async function requirePasswordConfirm(
       error: lock.locked ? "Too many confirmation attempts. Please wait and try again." : "Incorrect password.",
       rateLimited: lock.locked,
       retryAfterSec: lock.retryAfterSec || undefined,
+    };
+  }
+
+  // Defense in depth: when an operation demands MFA and the account belongs to
+  // a role that is *required* to enroll MFA, never silently downgrade to
+  // password-only because the secret happens to be missing — refuse with an
+  // actionable error so the operator enrolls instead. This branch is
+  // unreachable for those roles today (the middleware/`requireRole` MFA gate
+  // already forces enrollment before they can reach a sensitive route), so it
+  // changes no current flow; it is a backstop against future regressions.
+  //
+  // Lower-privilege roles that are NOT required to enroll MFA deliberately keep
+  // the password-only path below, so self-service actions (e.g. a MODERATOR
+  // changing their own password) are never locked behind an enrollment they
+  // were never asked to complete.
+  if (options.requireMfa && !admin.mfaEnabled && adminRoleRequiresMfa(admin.role)) {
+    await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, {
+      reason: "mfa_not_enrolled",
+      requiresMfa: true,
+    });
+    return {
+      confirmed: false,
+      error: "Enable MFA on your admin account before performing this action.",
+      requiresMfa: true,
     };
   }
 

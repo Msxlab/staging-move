@@ -109,6 +109,54 @@ describe("admin scoped step-up", () => {
     expect(mfaRequired.error).toContain("Password confirmation required");
   });
 
+  it("lets a role that is not required to enroll MFA complete a requireMfa step-up with password only", async () => {
+    // A MODERATOR is never forced to enroll MFA, so a self-service action that
+    // happens to pass requireMfa must NOT be locked behind enrollment — the
+    // password-only path stays open. This is the anti-lockout guarantee.
+    // mockReset drains any unconsumed `…Once` value queued by an earlier test
+    // before installing a persistent value, so this case is order-independent.
+    adminUserMock.findUnique.mockReset();
+    adminUserMock.findUnique.mockResolvedValue({
+      password: "hash",
+      isActive: true,
+      role: "MODERATOR",
+      mfaEnabled: false,
+      mfaSecret: null,
+      mfaBackupCodes: null,
+    });
+
+    const result = await requirePasswordConfirm(session, "Password-2026!", {
+      operation: "self_password_change",
+      requireMfa: true,
+    });
+
+    expect(result.confirmed).toBe(true);
+  });
+
+  it("refuses a requireMfa step-up for an MFA-required role that has not enrolled instead of silently downgrading", async () => {
+    // An ADMIN is required to enroll MFA. If the secret is somehow missing we
+    // must refuse with an actionable error rather than quietly accepting a
+    // password-only confirm for an operation that demanded MFA.
+    adminUserMock.findUnique.mockReset();
+    adminUserMock.findUnique.mockResolvedValue({
+      password: "hash",
+      isActive: true,
+      role: "ADMIN",
+      mfaEnabled: false,
+      mfaSecret: null,
+      mfaBackupCodes: null,
+    });
+
+    const result = await requirePasswordConfirm(session, "Password-2026!", {
+      operation: "feature_flag_write",
+      requireMfa: true,
+    });
+
+    expect(result.confirmed).toBe(false);
+    expect(result.requiresMfa).toBe(true);
+    expect(result.error).toContain("Enable MFA");
+  });
+
   it("expires cached step-up by operation grace window", async () => {
     await requirePasswordConfirm(session, "Password-2026!", { operation: "key_rotation" });
 

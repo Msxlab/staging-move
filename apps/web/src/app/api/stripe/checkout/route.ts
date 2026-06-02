@@ -55,6 +55,31 @@ const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
   "PENDING_VALIDATION",
 ]);
 
+// A real Stripe subscription that is unpaid / under review can't start a fresh
+// checkout — Stripe would just create a duplicate. Route the user to billing
+// settings (the customer portal) to fix their payment method instead. The
+// machine-readable `code` lets the client surface a one-tap recovery CTA
+// rather than a dead-end error message. Returns null when nothing is wrong.
+function billingNeedsAttentionResponse(
+  hasRealStripeSubscription: boolean,
+  status: string | null | undefined,
+): NextResponse | null {
+  if (
+    hasRealStripeSubscription &&
+    (status === "PAST_DUE" || status === "GRACE_PERIOD" || status === "PENDING_VALIDATION")
+  ) {
+    return NextResponse.json(
+      {
+        code: "BILLING_NEEDS_ATTENTION",
+        error:
+          "You already have a Stripe subscription that needs billing attention. Manage it from billing settings.",
+      },
+      { status: 409 },
+    );
+  }
+  return null;
+}
+
 function isMissingStripeCustomerError(error: unknown) {
   // Called only inside the customers.retrieve(id) catch — the only thing
   // that can be missing is the customer. Stripe returns param: 'id' for
@@ -133,20 +158,11 @@ async function createWorkspacePlanCheckout(params: {
       { status: 409 },
     );
   }
-  if (
-    hasRealStripeSubscription &&
-    (existingSubscription?.status === "PAST_DUE" ||
-      existingSubscription?.status === "GRACE_PERIOD" ||
-      existingSubscription?.status === "PENDING_VALIDATION")
-  ) {
-    return NextResponse.json(
-      {
-        code: "BILLING_NEEDS_ATTENTION",
-        error: "You already have a Stripe subscription that needs billing attention. Manage it from billing settings.",
-      },
-      { status: 409 },
-    );
-  }
+  const workspaceBillingAttention = billingNeedsAttentionResponse(
+    hasRealStripeSubscription,
+    existingSubscription?.status,
+  );
+  if (workspaceBillingAttention) return workspaceBillingAttention;
   const hasActiveStoreSubscription =
     (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
     existingSubscription?.accessType !== "FREE_ACCESS" &&
@@ -424,20 +440,11 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
-    if (
-      hasRealStripeSubscription &&
-      (existingSubscription?.status === "PAST_DUE" ||
-        existingSubscription?.status === "GRACE_PERIOD" ||
-        existingSubscription?.status === "PENDING_VALIDATION")
-    ) {
-      return NextResponse.json(
-        {
-          code: "BILLING_NEEDS_ATTENTION",
-          error: "You already have a Stripe subscription that needs billing attention. Manage it from billing settings.",
-        },
-        { status: 409 },
-      );
-    }
+    const billingAttention = billingNeedsAttentionResponse(
+      hasRealStripeSubscription,
+      existingSubscription?.status,
+    );
+    if (billingAttention) return billingAttention;
     const hasActiveStoreSubscription =
       (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
       existingSubscription?.accessType !== "FREE_ACCESS" &&
