@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveManagedSyncEnabled, type WorkspaceRole } from "@locateflow/shared";
+import { resolveManagedSyncEnabled, statusAllowsMutation, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -38,6 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const member = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!statusAllowsMutation(member.status as WorkspaceMemberStatus)) {
+    return NextResponse.json({ error: "Your workspace access is read-only right now." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({}));
   if (typeof body?.enabled !== "boolean") {

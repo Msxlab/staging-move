@@ -54,6 +54,7 @@ const PLAN_COLORS: Record<string, string> = {
   FREE_TRIAL: "bg-tone-honey-bg text-tone-honey-fg",
   INDIVIDUAL: "bg-tone-sky-bg text-tone-sky-fg",
   FAMILY: "bg-tone-foil-bg text-tone-foil-fg",
+  PRO: "bg-tone-rose-bg text-tone-rose-fg",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -312,6 +313,7 @@ export default function UsersPage() {
                       const bar =
                         plan === "INDIVIDUAL" ? "bg-tone-sky-fg"
                         : plan === "FAMILY" ? "bg-tone-foil-fg"
+                        : plan === "PRO" ? "bg-tone-rose-fg"
                         : "bg-tone-honey-fg";
                       return <div key={plan} className={bar} style={{ width: `${pct}%` }} title={`${plan}: ${count}`} />;
                     })}
@@ -322,6 +324,7 @@ export default function UsersPage() {
                         <span className={`inline-block h-1.5 w-1.5 rounded-full ${
                           plan === "INDIVIDUAL" ? "bg-tone-sky-fg"
                           : plan === "FAMILY" ? "bg-tone-foil-fg"
+                          : plan === "PRO" ? "bg-tone-rose-fg"
                           : "bg-tone-honey-fg"
                         }`} />
                         {plan}: <span className="font-medium text-foreground">{count}</span>
@@ -381,6 +384,7 @@ export default function UsersPage() {
                 <option value="FREE_TRIAL">Free Trial</option>
                 <option value="INDIVIDUAL">Individual</option>
                 <option value="FAMILY">Family</option>
+                <option value="PRO">Pro</option>
               </select>
             </div>
             <div>

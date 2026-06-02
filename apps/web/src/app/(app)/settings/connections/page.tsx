@@ -19,6 +19,11 @@ interface CatalogEntry {
   mode: string;
 }
 
+interface CatalogResponse {
+  connectors?: CatalogEntry[];
+  entitlement?: { apiSync?: boolean };
+}
+
 // Mode → user-facing badge. The server derives the mode (resolveConnectorMode),
 // so a partner is never shown as "API sync" without a signed agreement.
 const MODE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -48,14 +53,21 @@ export default function ConnectionsPage() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(false);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
+  const [apiSyncEntitled, setApiSyncEntitled] = useState(false);
 
   const load = useCallback(() => {
     setError(false);
     // Honest partner catalog with derived modes (independent of consents).
     fetch("/api/connectors/catalog")
       .then((r) => (r.ok ? r.json() : { connectors: [] }))
-      .then((d) => setCatalog(d.connectors || []))
-      .catch(() => setCatalog([]));
+      .then((d: CatalogResponse) => {
+        setCatalog(d.connectors || []);
+        setApiSyncEntitled(Boolean(d.entitlement?.apiSync));
+      })
+      .catch(() => {
+        setCatalog([]);
+        setApiSyncEntitled(false);
+      });
     fetch("/api/partner-consents")
       .then((r) => {
         if (r.status === 404 || r.status === 503) {
@@ -224,9 +236,9 @@ export default function ConnectionsPage() {
                         )}
                       </div>
                       {/* OAuth connect only when the partner is truly API-sync (signed
-                          agreement + credentials). Otherwise the honest path is guided —
-                          surfaced as a label until the guided flow ships. */}
-                      {c.mode === "API_SYNC" ? (
+                          agreement + credentials) and the caller's plan is entitled.
+                          Otherwise the honest path is guided/upgrade, not a doomed 403. */}
+                      {c.mode === "API_SYNC" && apiSyncEntitled ? (
                         <button
                           type="button"
                           onClick={() => connect(c.connectorKey)}
@@ -237,7 +249,11 @@ export default function ConnectionsPage() {
                         </button>
                       ) : (
                         <span className="text-[11px] text-foreground/40">
-                          {c.mode === "COMING_SOON" ? "Coming soon" : "Guided — soon"}
+                          {c.mode === "COMING_SOON"
+                            ? "Coming soon"
+                            : c.mode === "API_SYNC"
+                              ? "Pro annual"
+                              : "Guided — soon"}
                         </span>
                       )}
                     </div>
