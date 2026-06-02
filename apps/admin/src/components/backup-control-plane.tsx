@@ -405,6 +405,17 @@ export function buildStepUpPayload(
   };
 }
 
+export function isStepUpSubmitDisabled(input: {
+  password: string;
+  mfaCode?: string;
+  backupCode?: string;
+  requireMfa: boolean;
+}): boolean {
+  if (!input.password.trim()) return true;
+  if (!input.requireMfa) return false;
+  return !input.mfaCode?.trim() && !input.backupCode?.trim();
+}
+
 function downloadFile(
   content: BlobPart | Blob,
   fileName: string,
@@ -2491,7 +2502,12 @@ export function BackupControlPlane() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!stepUpPasswordValue.trim()}
+                  disabled={isStepUpSubmitDisabled({
+                    password: stepUpPasswordValue,
+                    mfaCode: stepUpMfaValue,
+                    backupCode: stepUpBackupCodeValue,
+                    requireMfa: stepUpPrompt.requireMfa,
+                  })}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   {stepUpPrompt.actionLabel}

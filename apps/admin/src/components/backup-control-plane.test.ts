@@ -4,6 +4,7 @@ import {
   buildDryRunImportPayload,
   buildRestoreImportPayload,
   buildStepUpPayload,
+  isStepUpSubmitDisabled,
 } from "./backup-control-plane";
 
 describe("backup restore UI payload", () => {
@@ -76,5 +77,40 @@ describe("backup restore UI payload", () => {
 
   it("keeps browser import reads under the synchronous upload limit", () => {
     expect(MAX_BACKUP_UI_UPLOAD_BYTES).toBeLessThanOrEqual(25 * 1024 * 1024);
+  });
+
+  it("matches the server step-up rule by requiring MFA or a backup code when requested", () => {
+    expect(
+      isStepUpSubmitDisabled({
+        password: "",
+        requireMfa: true,
+      }),
+    ).toBe(true);
+    expect(
+      isStepUpSubmitDisabled({
+        password: "correct horse",
+        requireMfa: true,
+      }),
+    ).toBe(true);
+    expect(
+      isStepUpSubmitDisabled({
+        password: "correct horse",
+        mfaCode: "123456",
+        requireMfa: true,
+      }),
+    ).toBe(false);
+    expect(
+      isStepUpSubmitDisabled({
+        password: "correct horse",
+        backupCode: "backup-code-1",
+        requireMfa: true,
+      }),
+    ).toBe(false);
+    expect(
+      isStepUpSubmitDisabled({
+        password: "correct horse",
+        requireMfa: false,
+      }),
+    ).toBe(false);
   });
 });
