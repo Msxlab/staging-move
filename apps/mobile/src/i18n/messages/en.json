@@ -700,6 +700,7 @@
     "subscription_openWebBillingFailed": "Could not open the browser. Please visit your account on the web.",
     "subscription_billingIntervalAnnual": "Annual",
     "subscription_billingIntervalMonthly": "Monthly",
+    "subscription_familyProNativeReadOnly": "Family and Pro access appears here automatically when it is active on your account. Mobile purchases currently use the Individual plan through the app store.",
     "termsOfUse": "Terms of Use",
     "termsOfUse_description": "Open LocateFlow's terms of use.",
     "privacyPolicy": "Privacy Policy",

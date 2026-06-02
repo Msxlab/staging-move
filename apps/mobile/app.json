@@ -60,9 +60,7 @@
         ]
       },
       "associatedDomains": [
-        "applinks:locateflow.com",
-        "applinks:locateflow.app",
-        "applinks:app.locateflow.com"
+        "applinks:locateflow.com"
       ]
     },
     "android": {
@@ -94,47 +92,7 @@
             },
             {
               "scheme": "https",
-              "host": "locateflow.app",
-              "pathPrefix": "/blog"
-            },
-            {
-              "scheme": "https",
-              "host": "locateflow.app",
-              "pathPrefix": "/mobile/oauth"
-            },
-            {
-              "scheme": "https",
-              "host": "locateflow.app",
-              "pathPrefix": "/reset-password"
-            },
-            {
-              "scheme": "https",
-              "host": "app.locateflow.com",
-              "pathPrefix": "/blog"
-            },
-            {
-              "scheme": "https",
-              "host": "app.locateflow.com",
-              "pathPrefix": "/mobile/oauth"
-            },
-            {
-              "scheme": "https",
-              "host": "app.locateflow.com",
-              "pathPrefix": "/reset-password"
-            },
-            {
-              "scheme": "https",
               "host": "locateflow.com",
-              "pathPrefix": "/invitations"
-            },
-            {
-              "scheme": "https",
-              "host": "locateflow.app",
-              "pathPrefix": "/invitations"
-            },
-            {
-              "scheme": "https",
-              "host": "app.locateflow.com",
               "pathPrefix": "/invitations"
             }
           ],

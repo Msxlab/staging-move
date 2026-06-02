@@ -382,6 +382,17 @@ function LegacySubscriptionScreen() {
   const canManageBilling =
     (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
     (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
+  const visiblePlans = useMemo(
+    () =>
+      PLANS.filter((plan) => {
+        if (!isNativeStorePlatform) return true;
+        if (plan.key === "FAMILY" || plan.key === "PRO") {
+          return plan.key === currentPlanKey;
+        }
+        return true;
+      }),
+    [currentPlanKey, isNativeStorePlatform],
+  );
 
   const managedElsewhereMessage = isStripeManaged
     ? t("settings.subscription_webManagedReadOnly")
@@ -697,7 +708,7 @@ function LegacySubscriptionScreen() {
           </Text>
         </View>
 
-        {PLANS.map((plan) => {
+        {visiblePlans.map((plan) => {
           const dynamicPeriod = plan.period;
           const isIndividualPlan = plan.key === "INDIVIDUAL";
           const isCurrentPlan = plan.key === currentPlanKey;
@@ -918,10 +929,7 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
-            ) : plan.key === "FAMILY" || plan.key === "PRO" ? (
-              // Family/Pro are web-only purchases (Apple/Play policy). Never run
-              // a native store purchase for them — open the web pricing page so
-              // the upgrade happens where billing is managed.
+            ) : (plan.key === "FAMILY" || plan.key === "PRO") && !isNativeStorePlatform ? (
               <TouchableOpacity
                 style={styles.upgradeBtn}
                 activeOpacity={0.7}
@@ -937,6 +945,15 @@ function LegacySubscriptionScreen() {
                   {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
                 </Text>
               </TouchableOpacity>
+            ) : plan.key === "FAMILY" || plan.key === "PRO" ? (
+              <View style={styles.disabledPurchaseNotice}>
+                <Text style={styles.disabledPurchaseText}>
+                  {t("settings.subscription_familyProNativeReadOnly", {
+                    defaultValue:
+                      "Family and Pro access appears here automatically when it is active on your account. Mobile purchases currently use the Individual plan through the app store.",
+                  })}
+                </Text>
+              </View>
             ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>
