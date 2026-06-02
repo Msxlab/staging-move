@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
@@ -265,6 +266,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to analyze migration:", error);
     return NextResponse.json({ error: "Failed to analyze migration" }, { status: 500 });
   }

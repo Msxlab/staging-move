@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { getConfiguredAppUrl } from "@/lib/app-url";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
@@ -76,6 +77,8 @@ export async function POST(request: NextRequest) {
       throw sessionError;
     }
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "BILLING_CONFIG_ERROR" || error?.name === "APP_URL_CONFIG_ERROR") {
       const reason = error?.message || "Stripe not configured";
       console.error("[PORTAL] Stripe config rejected:", reason);

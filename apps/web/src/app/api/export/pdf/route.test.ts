@@ -53,6 +53,7 @@ vi.mock("@/lib/pdf/full-account", () => ({
 }));
 
 import { prisma } from "@/lib/db";
+import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { verifyUserStepUp } from "@/lib/user-step-up";
@@ -61,6 +62,7 @@ import { GET, POST } from "./route";
 const verifyUserStepUpMock = verifyUserStepUp as unknown as Mock;
 const rateLimitMock = enforceRateLimitPolicy as unknown as Mock;
 const auditMock = createAuditLog as unknown as Mock;
+const requireDbUserIdMock = requireDbUserId as unknown as Mock;
 const userMock = prisma.user as unknown as { findUniqueOrThrow: Mock };
 const subscriptionMock = prisma.subscription as unknown as { findUnique: Mock };
 const addressMock = prisma.address as unknown as { findMany: Mock };
@@ -140,5 +142,18 @@ describe("PDF export route", () => {
         changes: expect.objectContaining({ type: "full", stepUpMethod: "password" }),
       }),
     );
+  });
+
+  it("returns the auth gate response before rate-limit or PDF work when unauthenticated", async () => {
+    requireDbUserIdMock.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const res = await POST(request({ type: "full", confirmPassword: "Password-2026!" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(rateLimitMock).not.toHaveBeenCalled();
+    expect(verifyUserStepUpMock).not.toHaveBeenCalled();
+    expect(auditMock).not.toHaveBeenCalled();
   });
 });

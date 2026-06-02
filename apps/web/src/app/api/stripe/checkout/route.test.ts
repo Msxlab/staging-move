@@ -215,6 +215,21 @@ describe("stripe checkout route", () => {
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
   });
 
+  it("returns the auth gate response before checkout work when unauthenticated", async () => {
+    mocks.requireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.stripeConstructor).not.toHaveBeenCalled();
+    expect(subscriptionMock.findUnique).not.toHaveBeenCalled();
+  });
+
   it("returns a clean config error instead of downgrading yearly checkout", async () => {
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);
 

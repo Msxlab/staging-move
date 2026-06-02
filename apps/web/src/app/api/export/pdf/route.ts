@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { generateAddressReportPdf } from "@/lib/pdf/address-report";
 import { generateFullAccountPdf } from "@/lib/pdf/full-account";
@@ -137,6 +138,8 @@ export async function POST(request: NextRequest) {
 
     return noStoreJson({ error: "Unsupported export type. Use 'address' or 'full'." }, 400);
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("[EXPORT/PDF] Failed:", error);
     return noStoreJson({ error: "Failed to generate PDF" }, 500);
   }

@@ -112,6 +112,19 @@ describe("stripe portal route", () => {
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
   });
 
+  it("returns the auth gate response before portal work when unauthenticated", async () => {
+    mocks.requireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await POST(portalRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.stripeConstructor).not.toHaveBeenCalled();
+    expect(subscriptionMock.findUnique).not.toHaveBeenCalled();
+  });
+
   it("clears a stale Stripe customer ID and returns 404 when Stripe says the customer is missing", async () => {
     mocks.portalSessionsCreate.mockRejectedValueOnce({
       code: "resource_missing",
@@ -133,4 +146,3 @@ describe("stripe portal route", () => {
     );
   });
 });
-

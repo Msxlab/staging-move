@@ -207,6 +207,19 @@ describe("account deletion route", () => {
     expect(mocks.processAccountDeletionRequest).not.toHaveBeenCalled();
   });
 
+  it("returns the auth gate response before deletion work when unauthenticated", async () => {
+    mocks.requireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
+
+    const response = await POST(request({ confirmPassword: "correct-password" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+    expect(rateLimitPolicyMock).not.toHaveBeenCalled();
+    expect(mocks.verifyUserStepUp).not.toHaveBeenCalled();
+    expect(mocks.createAccountDeletionRequest).not.toHaveBeenCalled();
+  });
+
   it("limits backup-code step-up attempts for account deletion", async () => {
     rateLimitPolicyMock
       .mockResolvedValueOnce({
