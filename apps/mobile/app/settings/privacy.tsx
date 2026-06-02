@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Shield,
   Download,
+  FileText,
   Trash2,
   Eye,
   Lock,
@@ -32,6 +33,7 @@ import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
 
 const PRIVACY_POLICY_URL = `${APP_WEB_URL}/privacy`;
+const TERMS_OF_USE_URL = `${APP_WEB_URL}/terms`;
 
 interface AccountSecurityState {
   account: {
@@ -214,6 +216,15 @@ export default function PrivacySettingsScreen() {
   const handleOpenPrivacyPolicy = async () => {
     try {
       await Linking.openURL(PRIVACY_POLICY_URL);
+    } catch {
+      hapticError();
+      Alert.alert(t("settings.privacy"), t("providers.linkUnavailable"));
+    }
+  };
+
+  const handleOpenTermsOfUse = async () => {
+    try {
+      await Linking.openURL(TERMS_OF_USE_URL);
     } catch {
       hapticError();
       Alert.alert(t("settings.privacy"), t("providers.linkUnavailable"));
@@ -444,6 +455,20 @@ export default function PrivacySettingsScreen() {
 
         {/* Actions */}
         <Text style={styles.sectionTitle}>{t("common.more")}</Text>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={handleOpenTermsOfUse} activeOpacity={0.6}>
+          <FileText size={18} color={theme.colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actionLabel}>
+              {t("settings.termsOfUse", { defaultValue: "Terms of Use" })}
+            </Text>
+            <Text style={styles.actionDesc}>
+              {t("settings.termsOfUse_description", {
+                defaultValue: "Open LocateFlow's terms of use.",
+              })}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleOpenPrivacyPolicy} activeOpacity={0.6}>
           <ExternalLink size={18} color={theme.colors.primary} />

@@ -23,16 +23,11 @@ const ROLE_META: Record<AdminRoleString, { label: string; tone: string }> = {
   VIEWER: { label: "Viewer", tone: "bg-tone-slate-bg text-muted-foreground" },
 };
 
-function getInitialCollapsed(pathname: string, groups: NavGroup[]): Record<string, boolean> {
+function getInitialCollapsed(groups: NavGroup[]): Record<string, boolean> {
   const collapsed: Record<string, boolean> = {};
   groups.forEach((group) => {
-    const hasActive = group.items.some(
-      (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
-    );
-    collapsed[group.label] = !hasActive;
+    collapsed[group.label] = false;
   });
-  // Core always open
-  collapsed["Core"] = false;
   return collapsed;
 }
 
@@ -57,7 +52,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   const displayGroups = filteredGroups
     .map((g) => ({ ...g, items: g.items.filter((it) => it.href !== "/settings") }))
     .filter((g) => g.items.length > 0);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname, filteredGroups));
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(filteredGroups));
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
 
@@ -240,6 +235,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                 <div key={group.label}>
                   <button
                     onClick={() => toggleGroup(group.label)}
+                    aria-expanded={!isCollapsed}
                     className={cn(
                       "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
                       hasActive

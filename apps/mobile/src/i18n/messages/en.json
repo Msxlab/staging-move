@@ -699,7 +699,11 @@
     "subscription_openWebBillingHint": "Opens your web account in the browser to cancel or manage this subscription.",
     "subscription_openWebBillingFailed": "Could not open the browser. Please visit your account on the web.",
     "subscription_billingIntervalAnnual": "Annual",
-    "subscription_billingIntervalMonthly": "Monthly"
+    "subscription_billingIntervalMonthly": "Monthly",
+    "termsOfUse": "Terms of Use",
+    "termsOfUse_description": "Open LocateFlow's terms of use.",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicy_description": "Open LocateFlow's privacy policy."
   },
   "onboarding": {
     "step1_title": "Let's set up your profile",

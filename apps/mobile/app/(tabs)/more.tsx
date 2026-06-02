@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   User,
+  CreditCard,
   DollarSign,
   Search,
   HelpCircle,
@@ -84,6 +85,7 @@ export default function MoreScreen() {
       items: [
         { icon: User, label: t("settings.profile"), route: "/settings/profile" },
         { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
+        { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
         { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
         { icon: Settings, label: t("settings.title"), route: "/settings" },
       ],

@@ -44,13 +44,14 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | In-App Purchase subscription group + products created | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
 | Subscription products attached to first submission | HUMAN VERIFICATION REQUIRED | App Store Connect → My Apps → In-App Purchases |
 | Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set in App Information |
+| Terms of Use / EULA URL: `https://locateflow.com/terms` | TODO | Add to App Description if using Apple's standard EULA, or set in the custom EULA field |
 | Support URL | TODO | Set (typically `https://locateflow.com/support` or `mailto:support@locateflow.com`) |
 | Marketing URL (optional) | NOT APPLICABLE | |
 | App category: Lifestyle / Productivity | TODO | Pick category |
 | Age rating questionnaire | TODO | No objectionable / gambling / UGC moderation needed |
 | iPhone screenshots: 6.7" (mandatory) + 6.5" + 5.5" | TODO | |
 | iPad screenshots | NOT APPLICABLE | `supportsTablet: false` |
-| App Review notes + demo credentials | TODO | Provide a sandbox account that has completed onboarding so reviewer can reach tabs |
+| App Review notes + demo credentials | TODO | Provide a sandbox account that has completed onboarding. Include IAP path: More → Subscription, or More → Settings → Subscription |
 | Encryption export compliance: `ITSAppUsesNonExemptEncryption=false` | DONE | `app.json` |
 | App Tracking Transparency declaration: "No tracking" | DONE | App does not use IDFA, ad SDKs, or cross-site tracking |
 | App Privacy form filled from `MOBILE_DATA_INVENTORY.md` | TODO | |

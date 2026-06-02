@@ -995,6 +995,31 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         )}
 
+        <View style={styles.legalLinksRow}>
+          <TouchableOpacity
+            style={styles.legalLinkBtn}
+            activeOpacity={0.7}
+            onPress={() => openWebUrl(`${APP_WEB_URL}/terms`)}
+            accessibilityRole="link"
+          >
+            <ExternalLink size={13} color={theme.colors.primary} />
+            <Text style={styles.legalLinkText}>
+              {t("settings.termsOfUse", { defaultValue: "Terms of Use" })}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.legalLinkBtn}
+            activeOpacity={0.7}
+            onPress={() => openWebUrl(`${APP_WEB_URL}/privacy`)}
+            accessibilityRole="link"
+          >
+            <ExternalLink size={13} color={theme.colors.primary} />
+            <Text style={styles.legalLinkText}>
+              {t("settings.privacyPolicy", { defaultValue: "Privacy Policy" })}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.footer}>
           {isNativeStorePlatform && isUnmanagedNativeEligiblePlan
             ? t("settings.subscription_restoreStoreOnly", {
@@ -1172,6 +1197,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 16,
   },
   restoreBtnText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
+  legalLinksRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 18,
+  },
+  legalLinkBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  legalLinkText: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
   footer: {
     textAlign: "center", fontSize: 12, color: theme.colors.textMuted, marginTop: 24,
   },
