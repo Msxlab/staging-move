@@ -800,6 +800,46 @@ describe("stripe checkout route", () => {
     );
   });
 
+  it.each([
+    ["FAMILY", "MONTH", "price_monthly"],
+    ["FAMILY", "YEAR", "price_yearly"],
+    ["PRO", "MONTH", "price_monthly"],
+    ["PRO", "YEAR", "price_yearly"],
+  ] as const)("creates a %s %s checkout without campaign or trial", async (plan, billingInterval, priceId) => {
+    const response = await POST(
+      checkoutRequest({ plan, billingInterval, acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getStripePriceIdForPlanAndInterval).toHaveBeenCalledWith(plan, billingInterval);
+    expect(mocks.findActivePublicIndividualAnnualTrialCampaign).not.toHaveBeenCalled();
+    expect(mocks.findActivePublicIndividualMonthlyPaidOffer).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: expect.stringContaining(`plan=${plan}`),
+        cancel_url: "https://locateflow.com/api/stripe/checkout/cancel",
+        subscription_data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            plan,
+            billingInterval,
+            cycle: billingInterval === "YEAR" ? "yearly" : "monthly",
+            provider: "STRIPE",
+            platform: "web",
+          }),
+        }),
+        metadata: expect.objectContaining({
+          plan,
+          billingInterval,
+          cycle: billingInterval === "YEAR" ? "yearly" : "monthly",
+        }),
+      }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+    );
+    expect(mocks.sessionsCreate.mock.calls[0][0].subscription_data).not.toHaveProperty("trial_period_days");
+  });
+
   it("returns 503 PLAN_NOT_AVAILABLE for Family when the price is not configured", async () => {
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);
 

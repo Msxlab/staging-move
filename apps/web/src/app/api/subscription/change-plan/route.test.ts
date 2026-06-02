@@ -52,6 +52,32 @@ vi.mock("stripe", () => ({ default: mocks.stripeCtor }));
 import { POST } from "./route";
 
 const FUTURE_UNIX = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
+const PLAN_RANK: Record<string, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
+const PAID_PLANS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
+const INTERVALS = ["MONTH", "YEAR"] as const;
+
+const PLAN_CHANGE_MATRIX = PAID_PLANS.flatMap((currentPlan) =>
+  INTERVALS.flatMap((currentInterval) =>
+    PAID_PLANS.flatMap((targetPlan) =>
+      INTERVALS
+        .filter((targetInterval) => targetPlan !== currentPlan || targetInterval !== currentInterval)
+        .map((targetInterval) => {
+          const isReduction =
+            PLAN_RANK[targetPlan] < PLAN_RANK[currentPlan] ||
+            (PLAN_RANK[targetPlan] === PLAN_RANK[currentPlan] &&
+              currentInterval === "YEAR" &&
+              targetInterval === "MONTH");
+          return {
+            currentPlan,
+            currentInterval,
+            targetPlan,
+            targetInterval,
+            expectedApplied: isReduction ? "scheduled" : "immediate",
+          };
+        }),
+    ),
+  ),
+);
 
 function req(body: unknown, headers?: Record<string, string>) {
   return new NextRequest("https://locateflow.com/api/subscription/change-plan", {
@@ -225,6 +251,52 @@ describe("change-plan route", () => {
       }),
     });
   });
+
+  it.each(PLAN_CHANGE_MATRIX)(
+    "$currentPlan $currentInterval -> $targetPlan $targetInterval is $expectedApplied",
+    async ({ currentPlan, currentInterval, targetPlan, targetInterval, expectedApplied }) => {
+      mocks.subFindUnique.mockResolvedValue({
+        userId: "user_1",
+        plan: currentPlan,
+        provider: "STRIPE",
+        status: "ACTIVE",
+        billingInterval: currentInterval,
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_current",
+        currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+        version: 1,
+      });
+
+      const res = await POST(req({ targetPlan, targetInterval }));
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toMatchObject({ applied: expectedApplied });
+      if (expectedApplied === "scheduled") {
+        expect(body).toMatchObject({
+          plan: currentPlan,
+          pendingPlan: targetPlan,
+          pendingBillingInterval: targetInterval,
+        });
+        expect(mocks.subsUpdate).not.toHaveBeenCalled();
+        expect(mocks.schedUpdate).toHaveBeenCalled();
+      } else {
+        expect(body).toMatchObject({
+          plan: targetPlan,
+          billingInterval: targetInterval,
+        });
+        expect(mocks.subsUpdate).toHaveBeenCalledWith(
+          "sub_123",
+          expect.objectContaining({
+            items: [{ id: "si_1", price: "price_target" }],
+            proration_behavior: "create_prorations",
+          }),
+          expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+        );
+        expect(mocks.schedUpdate).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it("returns 503 when the target plan price is not configured", async () => {
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);

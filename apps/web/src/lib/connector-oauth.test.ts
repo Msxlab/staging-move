@@ -69,6 +69,26 @@ describe("userHasApiConnectorEntitlement - sync requires active annual Pro", () 
     await expect(userHasApiConnectorEntitlement("u1")).resolves.toBe(false);
   });
 
+  it.each([
+    ["INDIVIDUAL", "MONTH", false],
+    ["INDIVIDUAL", "YEAR", false],
+    ["FAMILY", "MONTH", false],
+    ["FAMILY", "YEAR", false],
+    ["PRO", "MONTH", false],
+    ["PRO", "YEAR", true],
+  ] as const)("sync entitlement for %s %s is %s", async (plan, billingInterval, expected) => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan,
+      status: "ACTIVE",
+      accessType: "PAID",
+      provider: "STRIPE",
+      billingInterval,
+      currentPeriodEndsAt: FUTURE,
+    });
+
+    await expect(userHasApiConnectorEntitlement("u1")).resolves.toBe(expected);
+  });
+
   it("blocks Family (tier without API connectors) even on annual", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FAMILY",
