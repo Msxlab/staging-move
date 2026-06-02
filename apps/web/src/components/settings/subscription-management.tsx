@@ -9,6 +9,8 @@ import {
   buildCheckoutDisclosureText,
   buildTrialConsentLabel,
   deriveUserSubscriptionState,
+  isBillingPlan,
+  type BillingPlan,
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
 import { RevealModal } from "@/components/premium/reveal-modal";
@@ -79,6 +81,32 @@ function formatDateLabel(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+function parseDateValue(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function paidPlanFromValue(plan?: string | null): Exclude<BillingPlan, "FREE_TRIAL"> {
+  if (!isBillingPlan(plan) || plan === "FREE_TRIAL") return "INDIVIDUAL";
+  return plan;
+}
+
+function planDisplayName(subscription?: SubscriptionRecord | null) {
+  const plan = paidPlanFromValue(subscription?.plan);
+  return BILLING_PLAN_DEFINITIONS[plan].displayName;
+}
+
+function yearlyPriceLabel(plan: Exclude<BillingPlan, "FREE_TRIAL">) {
+  const definition = BILLING_PLAN_DEFINITIONS[plan];
+  return definition.yearlyPriceLabel || `$${definition.yearlyPriceUsd ?? ""}/year`;
+}
+
+function monthlyPriceLabel(plan: Exclude<BillingPlan, "FREE_TRIAL">) {
+  const definition = BILLING_PLAN_DEFINITIONS[plan];
+  return `${definition.priceLabel}${definition.periodLabel}`;
+}
+
 function intervalLabel(subscription: SubscriptionRecord | null | undefined) {
   if (subscription?.billingInterval === "YEAR") return "Annual";
   if (subscription?.billingInterval === "MONTH") return "Monthly";
@@ -87,19 +115,20 @@ function intervalLabel(subscription: SubscriptionRecord | null | undefined) {
 
 function stateTitle(state: string, subscription?: SubscriptionRecord | null) {
   const interval = intervalLabel(subscription);
+  const planName = planDisplayName(subscription);
   switch (state) {
     case "FREE_ACCESS":
       return "Free Access";
     case "FREE_ACCESS_EXPIRED":
       return "Free Access ended";
     case "TRIALING":
-      return "Individual Annual Trial";
+      return `${planName} Annual Trial`;
     case "TRIAL_CANCELED":
       return "Trial canceled";
     case "ACTIVE":
-      return interval ? `Individual ${interval}` : "Individual";
+      return interval ? `${planName} ${interval}` : planName;
     case "CANCEL_AT_PERIOD_END":
-      return interval ? `Individual ${interval}` : "Individual";
+      return interval ? `${planName} ${interval}` : planName;
     case "PAST_DUE":
     case "GRACE_PERIOD":
       return "Payment needs attention";
@@ -283,21 +312,24 @@ export default function SubscriptionManagementPage() {
       subscription?.stripeCurrentPeriodEnd ||
       subscription?.premiumUntil,
   );
-  const firstChargeDate = subscription?.firstChargeAt
-    ? new Date(subscription.firstChargeAt)
-    : addDays(new Date(), publicCampaign?.trialDays || 90);
+  const subscriptionPlan = paidPlanFromValue(subscription?.plan);
+  const subscriptionFirstChargeDate = parseDateValue(subscription?.firstChargeAt);
+  const offerFirstChargeDate = addDays(new Date(), publicCampaign?.trialDays ?? 90);
+  const firstChargeDate = subscriptionFirstChargeDate || offerFirstChargeDate;
   const firstChargeLabel = formatDateLabel(firstChargeDate.toISOString());
   const subscriptionPriceLabel = subscription?.firstChargeAmount
     ? `$${subscription.firstChargeAmount}/${subscription?.billingInterval === "MONTH" ? "month" : "year"}`
-    : BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel ||
-      `$${BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 39.99}/year`;
+    : subscription?.billingInterval === "MONTH"
+      ? monthlyPriceLabel(subscriptionPlan)
+      : yearlyPriceLabel(subscriptionPlan);
   const offerPriceLabel = publicCampaign?.displayPriceLabel || subscriptionPriceLabel;
+  const offerFirstChargeLabel = formatDateLabel(offerFirstChargeDate.toISOString());
   const monthlyDisclosure = monthlyOffer?.checkoutDisclosureCopy ||
     (monthlyOffer
       ? `Today: ${monthlyOffer.displayPriceLabel}. Your Individual Monthly subscription starts today and renews monthly until you cancel.`
       : null);
   const checkoutDisclosure = buildCheckoutDisclosureText({
-    firstChargeAt: firstChargeDate,
+    firstChargeAt: offerFirstChargeDate,
     firstChargeAmount: offerPriceLabel,
   });
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
@@ -479,7 +511,7 @@ export default function SubscriptionManagementPage() {
 
   const primaryDetail = (() => {
     if (currentState === "FREE_ACCESS") return `Access ends on ${freeAccessEndLabel || "the scheduled end date"}.`;
-    if (currentState === "FREE_ACCESS_EXPIRED") return "Choose an Individual plan to continue full access.";
+    if (currentState === "FREE_ACCESS_EXPIRED") return "Choose a plan to continue full access.";
     if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${subscriptionPriceLabel} on ${firstChargeLabel}.`;
     if (currentState === "TRIAL_CANCELED") return `Your trial remains active until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
     if (currentState === "ACTIVE" && pendingMonthly) {
@@ -519,7 +551,7 @@ export default function SubscriptionManagementPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Subscription</h1>
-          <p className="text-sm text-muted-foreground">Manage Individual access and billing</p>
+          <p className="text-sm text-muted-foreground">Manage access, plans, and billing</p>
         </div>
       </div>
 
@@ -766,7 +798,7 @@ export default function SubscriptionManagementPage() {
                     ) : null}
                     <div className="rounded-xl border border-border bg-background/40 p-3">
                       <p className="text-[11px] uppercase text-muted-foreground">Annual plan starts</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{firstChargeLabel}</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{offerFirstChargeLabel}</p>
                     </div>
                   </div>
 
@@ -784,7 +816,7 @@ export default function SubscriptionManagementPage() {
                       checked={acceptedAnnualTerms}
                       onChange={(event) => setAcceptedAnnualTerms(event.target.checked)}
                     />
-                    <span>{buildTrialConsentLabel(firstChargeDate)}</span>
+                    <span>{buildTrialConsentLabel(offerFirstChargeDate)}</span>
                   </label>
 
                   <button

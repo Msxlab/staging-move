@@ -29,6 +29,12 @@ describe("subscription acquisition copy", () => {
     expect(source).toContain("monthlyOffer");
     expect(source).toContain("startMonthlyPlan");
     expect(source).toContain("buildTrialConsentLabel");
+    expect(source).toContain("const offerFirstChargeDate");
+    expect(source).toContain("firstChargeAt: offerFirstChargeDate");
+    expect(source).toContain("buildTrialConsentLabel(offerFirstChargeDate)");
+    expect(source).toContain("Manage access, plans, and billing");
+    expect(source).toContain("Choose a plan to continue full access.");
+    expect(source).not.toContain("Manage Individual access and billing");
     expect(source.toLowerCase()).not.toContain("refund");
   });
 
@@ -36,7 +42,8 @@ describe("subscription acquisition copy", () => {
     const source = readRepoFile("src/components/settings/subscription-management.tsx");
 
     expect(source).toContain('case "TRIALING":');
-    expect(source).toContain("Individual Annual Trial");
+    expect(source).toContain("planDisplayName(subscription)");
+    expect(source).toContain("`${planName} Annual Trial`");
     expect(source).toContain("isStripeCheckoutActivated");
     expect(source).toContain('subscription.provider !== "STRIPE"');
     expect(source).toContain('subscription.accessType === "FREE_ACCESS"');
