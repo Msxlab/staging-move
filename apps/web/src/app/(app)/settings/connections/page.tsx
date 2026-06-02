@@ -17,6 +17,11 @@ interface CatalogEntry {
   displayName: string;
   /** Server-derived mode: API_SYNC | GUIDED_UPDATE | COMING_SOON. */
   mode: string;
+  guidedAction?: {
+    label: string;
+    url: string;
+    helperText: string;
+  } | null;
 }
 
 interface CatalogResponse {
@@ -24,7 +29,7 @@ interface CatalogResponse {
   entitlement?: { apiSync?: boolean };
 }
 
-// Mode → user-facing badge. The server derives the mode (resolveConnectorMode),
+// Mode -> user-facing badge. The server derives the mode (resolveConnectorMode),
 // so a partner is never shown as "API sync" without a signed agreement.
 const MODE_BADGE: Record<string, { label: string; cls: string }> = {
   API_SYNC: { label: "API sync", cls: "bg-tone-emerald-bg text-tone-emerald-fg" },
@@ -37,7 +42,7 @@ function statusLabel(status: string): string {
     case "GRANTED":
       return "Connected";
     case "EXPIRED":
-      return "Expired — reconnect";
+      return "Expired - reconnect";
     case "REVOKED":
       return "Disconnected";
     default:
@@ -126,7 +131,7 @@ export default function ConnectionsPage() {
         toast.error(data.error || "Couldn't start a sync.");
         return;
       }
-      toast.success(data.created > 0 ? `Syncing your address to ${data.created} partner(s)…` : "Nothing to sync yet.");
+      toast.success(data.created > 0 ? `Syncing your address to ${data.created} partner(s)...` : "Nothing to sync yet.");
     } finally {
       setSyncing(false);
     }
@@ -152,7 +157,7 @@ export default function ConnectionsPage() {
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading…
+          Loading...
         </div>
       ) : disabled ? (
         <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-sm text-muted-foreground">
@@ -247,13 +252,24 @@ export default function ConnectionsPage() {
                           <ExternalLink className="h-3.5 w-3.5" />
                           Connect
                         </button>
+                      ) : c.mode === "GUIDED_UPDATE" && c.guidedAction ? (
+                        <a
+                          href={c.guidedAction.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-medium text-foreground hover:bg-foreground/5 transition"
+                          title={c.guidedAction.helperText}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          {c.guidedAction.label}
+                        </a>
                       ) : (
                         <span className="text-[11px] text-foreground/40">
                           {c.mode === "COMING_SOON"
                             ? "Coming soon"
                             : c.mode === "API_SYNC"
                               ? "Pro annual"
-                              : "Guided — soon"}
+                              : "Guided update"}
                         </span>
                       )}
                     </div>

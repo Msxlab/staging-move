@@ -4,6 +4,7 @@ import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { connectorRegistry } from "@/lib/connector-registry";
 import { userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
+import { getGuidedConnectorAction, type GuidedConnectorAction } from "@/lib/guided-connector-actions";
 import { resolveConnectorMode, type AddressConnector, type ConnectorMode } from "@locateflow/connectors";
 
 export const runtime = "nodejs";
@@ -70,7 +71,7 @@ interface GuidedPartnerEntry {
  * (or "Coming soon"), letting the partner network grow without engineering per
  * partner. Malformed JSON yields nothing rather than crashing the catalog.
  */
-async function guidedPartners(): Promise<Array<{ connectorKey: string; displayName: string; mode: ConnectorMode }>> {
+async function guidedPartners(): Promise<Array<{ connectorKey: string; displayName: string; mode: ConnectorMode; guidedAction: null }>> {
   const raw = (await getRuntimeConfigValue("GUIDED_PARTNERS")) ?? process.env.GUIDED_PARTNERS ?? "";
   if (!raw.trim()) return [];
   let parsed: unknown;
@@ -80,12 +81,17 @@ async function guidedPartners(): Promise<Array<{ connectorKey: string; displayNa
     return [];
   }
   if (!Array.isArray(parsed)) return [];
-  const out: Array<{ connectorKey: string; displayName: string; mode: ConnectorMode }> = [];
+  const out: Array<{ connectorKey: string; displayName: string; mode: ConnectorMode; guidedAction: null }> = [];
   for (const p of parsed as GuidedPartnerEntry[]) {
     if (!p || typeof p.key !== "string" || !/^[a-z][a-z0-9-]*$/.test(p.key) || typeof p.name !== "string") continue;
-    out.push({ connectorKey: p.key, displayName: p.name, mode: p.comingSoon ? "COMING_SOON" : "GUIDED_UPDATE" });
+    out.push({ connectorKey: p.key, displayName: p.name, mode: p.comingSoon ? "COMING_SOON" : "GUIDED_UPDATE", guidedAction: null });
   }
   return out;
+}
+
+function guidedActionFor(adapter: AddressConnector, mode: ConnectorMode): GuidedConnectorAction | null {
+  if (mode !== "GUIDED_UPDATE") return null;
+  return getGuidedConnectorAction(adapter.manifest.fallbackActionKey);
 }
 
 /**
@@ -130,7 +136,12 @@ export async function GET() {
         enabled: cfg?.enabled ?? false,
         stage: cfg?.stage ?? "SHADOW",
       });
-      return { connectorKey: adapter.manifest.key, displayName: adapter.manifest.displayName, mode: r.mode };
+      return {
+        connectorKey: adapter.manifest.key,
+        displayName: adapter.manifest.displayName,
+        mode: r.mode,
+        guidedAction: guidedActionFor(adapter, r.mode),
+      };
     }),
   );
   const connectors = resolvedAll.filter((c) => c.mode !== "DISABLED");

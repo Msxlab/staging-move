@@ -16,7 +16,14 @@ vi.mock("@/lib/connector-oauth", () => ({
 vi.mock("@/lib/connector-registry", () => ({
   connectorRegistry: {
     list: () => [
-      { manifest: { key: "usps", displayName: "USPS", capabilities: { addressUpdatePush: true } } },
+      {
+        manifest: {
+          key: "usps",
+          displayName: "USPS",
+          capabilities: { addressUpdatePush: true },
+          fallbackActionKey: "usps:MAIL_FORWARDING:DEEP_LINK",
+        },
+      },
       { manifest: { key: "ups", displayName: "UPS", capabilities: { addressUpdatePush: true } } },
     ],
   },
@@ -64,7 +71,19 @@ describe("GET /api/connectors/catalog", () => {
     const res = await GET();
     const body = await res.json();
     // ups has no config → enabled false → DISABLED → filtered out. usps kept.
-    expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+    expect(body.connectors).toEqual([
+      {
+        connectorKey: "usps",
+        displayName: "USPS",
+        mode: "GUIDED_UPDATE",
+        guidedAction: {
+          key: "usps:MAIL_FORWARDING:DEEP_LINK",
+          label: "Open update",
+          url: "https://moversguide.usps.com/",
+          helperText: "Continue on USPS to submit and verify your mail-forwarding request.",
+        },
+      },
+    ]);
     expect(body.entitlement).toEqual({ apiSync: true });
   });
 
@@ -74,7 +93,12 @@ describe("GET /api/connectors/catalog", () => {
     const res = await GET();
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+    expect(body.connectors[0]).toMatchObject({
+      connectorKey: "usps",
+      displayName: "USPS",
+      mode: "GUIDED_UPDATE",
+      guidedAction: { url: "https://moversguide.usps.com/" },
+    });
     expect(body.entitlement).toEqual({ apiSync: false });
   });
 
@@ -95,9 +119,14 @@ describe("GET /api/connectors/catalog", () => {
     const body = await res.json();
     expect(body.connectors).toEqual(
       expect.arrayContaining([
-        { connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" },
-        { connectorKey: "acme-utility", displayName: "Acme Utility", mode: "GUIDED_UPDATE" },
-        { connectorKey: "comingco", displayName: "Coming Co", mode: "COMING_SOON" },
+        expect.objectContaining({
+          connectorKey: "usps",
+          displayName: "USPS",
+          mode: "GUIDED_UPDATE",
+          guidedAction: expect.objectContaining({ url: "https://moversguide.usps.com/" }),
+        }),
+        { connectorKey: "acme-utility", displayName: "Acme Utility", mode: "GUIDED_UPDATE", guidedAction: null },
+        { connectorKey: "comingco", displayName: "Coming Co", mode: "COMING_SOON", guidedAction: null },
       ]),
     );
   });
@@ -110,6 +139,6 @@ describe("GET /api/connectors/catalog", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.connectors).toEqual([{ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" }]);
+    expect(body.connectors[0]).toMatchObject({ connectorKey: "usps", displayName: "USPS", mode: "GUIDED_UPDATE" });
   });
 });
