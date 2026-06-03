@@ -12,7 +12,7 @@ import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
-import { isAllowlistedQaEmail } from "@/lib/qa-account";
+import { isAllowlistedQaEmail, resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 
 export const runtime = "nodejs";
 
@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const autoVerifyQaAccount = isAllowlistedQaEmail(email);
+
   // Is email taken?
   //
   // Use rawPrisma here: the soft-delete client extension hides
@@ -105,9 +107,22 @@ export async function POST(request: NextRequest) {
   });
 
   if (existing) {
-    // Deliberately reject both active and soft-deleted rows. Public signup
-    // must never attach a password to, or revive, an existing account.
-    return NextResponse.json({ error: "Account already exists." }, { status: 409 });
+    if (!autoVerifyQaAccount) {
+      // Deliberately reject both active and soft-deleted rows. Public signup
+      // must never attach a password to, or revive, an existing account.
+      return NextResponse.json({ error: "Account already exists." }, { status: 409 });
+    }
+
+    const resetResult = await resetAllowlistedQaAccountForSignup({ email });
+    if (!resetResult.reset) {
+      return NextResponse.json(
+        {
+          error: "Account already exists.",
+          code: "QA_ACCOUNT_RESET_BLOCKED",
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const locale = resolveLocale(
@@ -116,7 +131,6 @@ export async function POST(request: NextRequest) {
   );
 
   const passwordHash = await hashPassword(password);
-  const autoVerifyQaAccount = isAllowlistedQaEmail(email);
   const user = await prisma.user.create({
     data: {
       email,

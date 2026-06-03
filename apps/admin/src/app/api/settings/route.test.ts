@@ -65,7 +65,7 @@ vi.mock("stripe", () => ({
   }),
 }));
 
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 function request(body: Record<string, unknown>) {
   return new NextRequest("https://admin.locateflow.com/api/settings", {
@@ -74,6 +74,33 @@ function request(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
 }
+
+function getRequest() {
+  return new NextRequest("https://admin.locateflow.com/api/settings", {
+    method: "GET",
+    headers: { "x-forwarded-for": "203.0.113.10" },
+  });
+}
+
+function catalogItem(key: string, configured = true) {
+  return {
+    key,
+    configured,
+    source: configured ? "ENV" : "Missing",
+    requiredInProduction: false,
+  };
+}
+
+const googlePlayBaseKeys = [
+  "GOOGLE_PLAY_PACKAGE_NAME",
+  "GOOGLE_PLAY_RTDN_AUDIENCE",
+  "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
+  "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
+  "MOBILE_ANDROID_PRODUCT_FAMILY",
+  "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY",
+  "MOBILE_ANDROID_PRODUCT_PRO",
+  "MOBILE_ANDROID_PRODUCT_PRO_YEARLY",
+];
 
 describe("admin settings billing actions", () => {
   beforeEach(() => {
@@ -310,5 +337,77 @@ describe("admin settings billing actions", () => {
     expect(mocks.auditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ action: "BILLING_FIELD_UPDATE_FAILED", entityType: "RuntimeConfig" }),
     });
+  });
+});
+
+describe("admin settings readiness integrations", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", email: "admin@example.com", role: "SUPER_ADMIN" });
+  });
+
+  it("treats Google Play Billing as configured when service-account private-key auth is present", async () => {
+    mocks.listRuntimeConfigCatalog.mockResolvedValue([
+      ...googlePlayBaseKeys.map((key) => catalogItem(key)),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL"),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY"),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_ID", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_SECRET", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_REFRESH_TOKEN", false),
+    ]);
+
+    const response = await GET(getRequest());
+    const body = await response.json();
+    const mobilePlay = body.integrations.find((item: any) => item.id === "mobile_play");
+
+    expect(response.status).toBe(200);
+    expect(mobilePlay).toMatchObject({
+      configured: true,
+      missingKeys: [],
+    });
+  });
+
+  it("treats Google Play Billing as configured when OAuth refresh-token auth is present", async () => {
+    mocks.listRuntimeConfigCatalog.mockResolvedValue([
+      ...googlePlayBaseKeys.map((key) => catalogItem(key)),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL"),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_ID"),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_SECRET", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_REFRESH_TOKEN"),
+    ]);
+
+    const response = await GET(getRequest());
+    const body = await response.json();
+    const mobilePlay = body.integrations.find((item: any) => item.id === "mobile_play");
+
+    expect(response.status).toBe(200);
+    expect(mobilePlay).toMatchObject({
+      configured: true,
+      missingKeys: [],
+    });
+  });
+
+  it("reports both Google Play auth alternatives when neither is complete", async () => {
+    mocks.listRuntimeConfigCatalog.mockResolvedValue([
+      ...googlePlayBaseKeys.map((key) => catalogItem(key)),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL"),
+      catalogItem("GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_ID", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_CLIENT_SECRET", false),
+      catalogItem("GOOGLE_PLAY_OAUTH_REFRESH_TOKEN", false),
+    ]);
+
+    const response = await GET(getRequest());
+    const body = await response.json();
+    const mobilePlay = body.integrations.find((item: any) => item.id === "mobile_play");
+
+    expect(response.status).toBe(200);
+    expect(mobilePlay.configured).toBe(false);
+    expect(mobilePlay.missingKeys).toEqual([
+      "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+      "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+      "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
+    ]);
   });
 });

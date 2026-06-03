@@ -53,6 +53,12 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Loaded live `Free Access` / `FREE_ACCESS` account state.
   - Showed the mobile purchases disabled notice.
   - Showed Individual, Family, and Pro plan cards.
+  - Pro card shows guided partner update / partner queue copy.
+- Live exact QA account lifecycle:
+  - Signup auto-verifies only `mobile.qa@locateflow.com`.
+  - Mobile API login succeeds after signup.
+  - Logout hard-resets the QA account and owned QA data.
+  - Post-logout login returns 401, and a new signup starts clean at onboarding.
 - Google Cloud/Play readiness:
   - Android Publisher API enabled.
   - Pub/Sub API enabled.
@@ -78,21 +84,28 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Focused mobile tests after the Android QA/proxy fix: 10 files / 25 tests.
 - Mobile typecheck after the Android QA/proxy fix.
 - Focused register/mobile signup tests after the QA auto-login patch.
+- DigitalOcean deployment for commit `0f70be4`: ACTIVE.
+- DigitalOcean deployment for commit `da3f291`: ACTIVE.
+- DigitalOcean app-spec update deployment `e6aa96d0-19c0-42d8-81a5-fa7329a2c28c`: ACTIVE.
+- Live smoke after deployment:
+  - `/api/ready`: HTTP 200.
+  - `/api/mobile/iap/products`: HTTP 200.
+  - `/api/auth/register`: returns `emailVerified` and `requiresEmailVerification` response fields.
+  - Play RTDN fake bearer returns HTTP 401 invalid-token class, not missing expected identity.
 
 ## Remaining Blockers
 
-- Android paid IAP is not production-ready until Google Play backend credentials are added to DigitalOcean:
-  - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
-  - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
-  - `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`
+- Android paid IAP is not production-ready until the remaining Google Play backend auth gap is closed:
+  - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` are now present in DigitalOcean; values intentionally not recorded.
+  - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` is still absent, or the code needs a keyless Android Publisher auth path.
 - Google service-account JSON key creation is currently blocked by organization policy `iam.disableServiceAccountKeyCreation`; no key was downloaded and no private key was added to DigitalOcean.
 - Code fails closed correctly while those are missing:
   - Android purchase verification returns `IAP_NOT_CONFIGURED`.
-  - `GOOGLE_PLAY_RTDN_AUDIENCE` and `GOOGLE_PLAY_PACKAGE_NAME` are present, but Play RTDN rejects production-like pushes until expected OIDC identity is configured.
+  - `GOOGLE_PLAY_RTDN_AUDIENCE`, `GOOGLE_PLAY_PACKAGE_NAME`, and expected RTDN service-account email are present; real RTDN delivery still requires a Pub/Sub push subscription that sends a matching OIDC token.
 - Play RTDN is not complete:
   - Play Console RTDN topic value was not saved because Chrome automation could not reliably fill the custom console input.
   - No Pub/Sub push subscription has been created for the live webhook endpoint.
-  - Expected RTDN identity env values should be added to DigitalOcean only after the final push identity is known.
+  - Expected RTDN email is staged in DigitalOcean using the existing Play service account; verify or adjust it when creating the final push subscription.
 - Active paid Stripe-managed Pro/Family state on mobile was not granted in production because admin plan changes required password plus MFA/backup code, and direct DigitalOcean DB access is network/firewall blocked.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:

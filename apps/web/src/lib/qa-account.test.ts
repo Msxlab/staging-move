@@ -62,6 +62,7 @@ vi.mock("@/lib/db", () => ({
 import {
   getQaResettableAccountEmail,
   isAllowlistedQaEmail,
+  resetAllowlistedQaAccountForSignup,
   resetAllowlistedQaAccountOnLogout,
 } from "./qa-account";
 
@@ -126,6 +127,16 @@ describe("QA resettable account guard", () => {
     expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
+  it("does not reset on signup when the email is not the exact QA account", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+
+    await expect(
+      resetAllowlistedQaAccountForSignup({ email: "user@example.com" }),
+    ).resolves.toEqual({ reset: false, reason: "email_not_allowlisted" });
+    expect(mocks.userFindUnique).not.toHaveBeenCalled();
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
   it("does not reset when the database user email does not match the allowlisted account", async () => {
     process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
     mocks.userFindUnique.mockResolvedValue({ id: "qa-user", email: "other@example.com" });
@@ -177,6 +188,29 @@ describe("QA resettable account guard", () => {
       where: {
         ownerUserId: "qa-user",
         id: { in: ["ws-1"] },
+      },
+    });
+    expect(mocks.txUserDelete).toHaveBeenCalledWith({ where: { id: "qa-user" } });
+  });
+
+  it("hard-resets an existing exact QA account during signup", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+    mocks.txWorkspaceFindMany.mockResolvedValue([{ id: "ws-1" }]);
+
+    await expect(
+      resetAllowlistedQaAccountForSignup({ email: "QA@Example.com" }),
+    ).resolves.toEqual({ reset: true });
+
+    expect(mocks.userFindUnique).toHaveBeenCalledWith({
+      where: { email: "qa@example.com" },
+      select: { id: true, email: true },
+    });
+    expect(mocks.txMovingPlanDeleteMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { userId: "qa-user" },
+          { workspaceId: { in: ["ws-1"] } },
+        ],
       },
     });
     expect(mocks.txUserDelete).toHaveBeenCalledWith({ where: { id: "qa-user" } });

@@ -169,6 +169,43 @@ function buildIntegrationStatus(
   };
 }
 
+function buildGooglePlayBillingStatus(catalogMap: Map<string, RuntimeConfigCatalogItem>) {
+  const baseKeys = [
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_RTDN_AUDIENCE",
+    "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
+    "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
+    "MOBILE_ANDROID_PRODUCT_FAMILY",
+    "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY",
+    "MOBILE_ANDROID_PRODUCT_PRO",
+    "MOBILE_ANDROID_PRODUCT_PRO_YEARLY",
+  ];
+  const serviceAccountKeys = [
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+  ];
+  const oauthKeys = [
+    "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+    "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
+  ];
+
+  const missingBaseKeys = baseKeys.filter((key) => !catalogMap.get(key)?.configured);
+  const missingServiceAccountKeys = serviceAccountKeys.filter((key) => !catalogMap.get(key)?.configured);
+  const missingOAuthKeys = oauthKeys.filter((key) => !catalogMap.get(key)?.configured);
+  const hasApiAuth = missingServiceAccountKeys.length === 0 || missingOAuthKeys.length === 0;
+  const missingKeys = [
+    ...missingBaseKeys,
+    ...(hasApiAuth ? [] : [...missingServiceAccountKeys, ...missingOAuthKeys]),
+  ];
+
+  return {
+    id: "mobile_play",
+    label: "Google Play Billing",
+    configured: missingKeys.length === 0,
+    missingKeys,
+  };
+}
+
 const CURRENT_PRODUCT_READINESS_MODES = [
   {
     id: "provider_trust_labels_enabled",
@@ -320,18 +357,7 @@ export async function GET(request: NextRequest) {
         "MOBILE_IOS_PRODUCT_PRO",
         "MOBILE_IOS_PRODUCT_PRO_YEARLY",
       ]),
-      buildIntegrationStatus(runtimeConfigMap, "mobile_play", "Google Play Billing", [
-        "GOOGLE_PLAY_PACKAGE_NAME",
-        "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
-        "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
-        "GOOGLE_PLAY_RTDN_AUDIENCE",
-        "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
-        "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
-        "MOBILE_ANDROID_PRODUCT_FAMILY",
-        "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY",
-        "MOBILE_ANDROID_PRODUCT_PRO",
-        "MOBILE_ANDROID_PRODUCT_PRO_YEARLY",
-      ]),
+      buildGooglePlayBillingStatus(runtimeConfigMap),
       buildIntegrationStatus(runtimeConfigMap, "backup_storage", "Encrypted Backup Storage", [
         "BACKUP_STORAGE_PROVIDER",
         "BACKUP_STORAGE_BUCKET",

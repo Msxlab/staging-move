@@ -42,6 +42,14 @@ vi.mock("@/lib/billing", () => ({
   ensureSubscriptionDefaults: vi.fn(() => Promise.resolve({ id: "sub-1" })),
 }));
 
+vi.mock("@/lib/qa-account", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/qa-account")>();
+  return {
+    ...actual,
+    resetAllowlistedQaAccountForSignup: vi.fn(() => Promise.resolve({ reset: true })),
+  };
+});
+
 vi.mock("@/lib/legal-acceptance", () => ({
   normalizeAcceptedLegalConsents: vi.fn((consents) =>
     consents?.termsAccepted && consents?.disclaimerAccepted
@@ -61,6 +69,7 @@ import { prisma, rawPrisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { recordLegalAcceptance } from "@/lib/legal-acceptance";
+import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -75,6 +84,7 @@ const tokenMock = prisma.emailVerificationToken as unknown as { create: Mock };
 const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as Mock;
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
+const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -101,6 +111,7 @@ describe("register route", () => {
     rawUserMock.findUnique.mockResolvedValue(null);
     userMock.create.mockResolvedValue({ id: "user-new", email: "new@example.com" });
     tokenMock.create.mockResolvedValue({});
+    resetAllowlistedQaAccountForSignupMock.mockResolvedValue({ reset: true });
     delete process.env.COPPA_AGE_GATE_ENABLED;
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
   });
@@ -122,6 +133,7 @@ describe("register route", () => {
     expect(body.error).toBe("Account already exists.");
     expect(userMock.create).not.toHaveBeenCalled();
     expect(userMock.update).not.toHaveBeenCalled();
+    expect(resetAllowlistedQaAccountForSignupMock).not.toHaveBeenCalled();
   });
 
   it("returns 409 for an existing OAuth-only account and does not attach a password", async () => {
@@ -132,6 +144,50 @@ describe("register route", () => {
     expect(response.status).toBe(409);
     expect(userMock.create).not.toHaveBeenCalled();
     expect(userMock.update).not.toHaveBeenCalled();
+  });
+
+  it("resets an existing exact QA account before creating a clean signup", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+    rawUserMock.findUnique.mockResolvedValue({ id: "qa-old", deletedAt: null });
+    userMock.create.mockResolvedValue({ id: "qa-new", email: "qa@example.com" });
+
+    const response = await POST(makeRequest({ ...validBody, email: "QA@Example.com" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.userId).toBe("qa-new");
+    expect(body.emailVerified).toBe(true);
+    expect(body.requiresEmailVerification).toBe(false);
+    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenCalledWith({ email: "qa@example.com" });
+    expect(userMock.create).toHaveBeenCalledWith({
+      data: {
+        email: "qa@example.com",
+        passwordHash: "hashed-password",
+        firstName: "New",
+        lastName: "User",
+        preferredLocale: "en",
+        emailVerifiedAt: expect.any(Date),
+      },
+    });
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks exact QA re-signup when the safe reset guard refuses to delete data", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+    rawUserMock.findUnique.mockResolvedValue({ id: "qa-old", deletedAt: null });
+    resetAllowlistedQaAccountForSignupMock.mockResolvedValue({
+      reset: false,
+      reason: "owned_workspace_has_other_members",
+    });
+
+    const response = await POST(makeRequest({ ...validBody, email: "qa@example.com" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("QA_ACCOUNT_RESET_BLOCKED");
+    expect(userMock.create).not.toHaveBeenCalled();
+    expect(tokenMock.create).not.toHaveBeenCalled();
   });
 
   it("creates a new account for a new email without recording legal consent", async () => {

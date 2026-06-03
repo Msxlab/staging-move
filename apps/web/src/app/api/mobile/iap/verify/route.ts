@@ -161,6 +161,15 @@ export async function POST(request: NextRequest) {
     if (error?.message === "APPLE_API_CREDS_MISSING" || error?.message === "GOOGLE_API_CREDS_MISSING") {
       return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
     }
+    if (typeof error?.message === "string" && error.message.startsWith("GOOGLE_OAUTH_")) {
+      return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
+    }
+    if (
+      error?.message === "GOOGLE_API_TIMEOUT" ||
+      (typeof error?.message === "string" && error.message.startsWith("GOOGLE_API_"))
+    ) {
+      return NextResponse.json({ error: "IAP_PROVIDER_UNAVAILABLE" }, { status: 503 });
+    }
     if (error?.message === "APPLE_JWS_BUNDLE_MISMATCH") {
       return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
     }
