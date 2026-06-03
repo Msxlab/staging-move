@@ -2,46 +2,111 @@
  * Google Play Developer API v3 client.
  *
  * Auth flow:
- *   1) Build a JWT assertion signed with the service account's RS256 key,
- *      audience = token endpoint, scope = androidpublisher.
- *   2) POST it to https://oauth2.googleapis.com/token to get an access token.
- *   3) Call androidpublisher.googleapis.com with that token.
+ *   1) Prefer service-account private-key auth when configured.
+ *   2) Fall back to a Google OAuth refresh token when org policy blocks
+ *      service-account key creation.
+ *   3) Call androidpublisher.googleapis.com with the resulting access token.
  *
  * Tokens are cached in memory until 60s before expiry to avoid minting one
  * per verification request.
  */
 
+import { createHash } from "node:crypto";
 import { SignJWT, importPKCS8, createRemoteJWKSet, jwtVerify } from "jose";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
-interface GoogleCreds {
+interface GoogleServiceAccountCreds {
+  authType: "service_account";
   clientEmail: string;
   privateKeyPem: string;
   packageName: string;
 }
 
+interface GoogleOAuthCreds {
+  authType: "oauth_refresh_token";
+  clientId: string;
+  clientSecret: string | null;
+  refreshToken: string;
+  packageName: string;
+}
+
+type GoogleCreds = GoogleServiceAccountCreds | GoogleOAuthCreds;
+
+const GOOGLE_API_TIMEOUT_MS = 10_000;
+
+async function fetchWithGoogleTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutError: string,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GOOGLE_API_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if ((error as { name?: string })?.name === "AbortError") {
+      throw new Error(timeoutError);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function loadGoogleCreds(): Promise<GoogleCreds | null> {
-  const [clientEmail, privateKeyPem, packageName] = await Promise.all([
+  const [
+    clientEmail,
+    privateKeyPem,
+    packageName,
+    oauthClientId,
+    oauthClientSecret,
+    oauthRefreshToken,
+  ] = await Promise.all([
     getRuntimeConfigValue("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL"),
     getRuntimeConfigValue("GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY"),
     getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME"),
+    getRuntimeConfigValue("GOOGLE_PLAY_OAUTH_CLIENT_ID"),
+    getRuntimeConfigValue("GOOGLE_PLAY_OAUTH_CLIENT_SECRET"),
+    getRuntimeConfigValue("GOOGLE_PLAY_OAUTH_REFRESH_TOKEN"),
   ]);
-  if (!clientEmail || !privateKeyPem || !packageName) return null;
-  return { clientEmail, privateKeyPem, packageName };
+  if (!packageName) return null;
+  if (clientEmail && privateKeyPem) {
+    return { authType: "service_account", clientEmail, privateKeyPem, packageName };
+  }
+  if (oauthClientId && oauthRefreshToken) {
+    return {
+      authType: "oauth_refresh_token",
+      clientId: oauthClientId,
+      clientSecret: oauthClientSecret || null,
+      refreshToken: oauthRefreshToken,
+      packageName,
+    };
+  }
+  return null;
 }
 
 interface CachedToken {
   value: string;
   expiresAt: number;
+  cacheKey: string;
 }
 let tokenCache: CachedToken | null = null;
 
-async function getGoogleAccessToken(creds: GoogleCreds): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  if (tokenCache && tokenCache.expiresAt > now + 60) {
-    return tokenCache.value;
-  }
+function tokenCacheKey(creds: GoogleCreds): string {
+  const source = creds.authType === "service_account"
+    ? `${creds.authType}:${creds.clientEmail}:${creds.privateKeyPem}`
+    : `${creds.authType}:${creds.clientId}:${creds.refreshToken}`;
+  return createHash("sha256").update(source).digest("hex");
+}
 
+async function getServiceAccountAccessToken(creds: GoogleServiceAccountCreds, now: number): Promise<{
+  value: string;
+  expiresIn: number;
+}> {
   const pemNormalized = creds.privateKeyPem.includes("-----BEGIN")
     ? creds.privateKeyPem.replace(/\\n/g, "\n")
     : `-----BEGIN PRIVATE KEY-----\n${creds.privateKeyPem}\n-----END PRIVATE KEY-----`;
@@ -64,23 +129,72 @@ async function getGoogleAccessToken(creds: GoogleCreds): Promise<string> {
     assertion,
   });
 
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const res = await fetchWithGoogleTimeout(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    },
+    "GOOGLE_OAUTH_TIMEOUT",
+  );
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`GOOGLE_OAUTH_${res.status}:${txt.slice(0, 200)}`);
+    throw new Error(`GOOGLE_OAUTH_${res.status}`);
   }
   const json = await res.json();
   const expiresIn = typeof json?.expires_in === "number" ? json.expires_in : 3600;
+  return { value: String(json.access_token), expiresIn };
+}
+
+async function getOAuthRefreshTokenAccessToken(creds: GoogleOAuthCreds): Promise<{
+  value: string;
+  expiresIn: number;
+}> {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: creds.clientId,
+    refresh_token: creds.refreshToken,
+  });
+  if (creds.clientSecret) body.set("client_secret", creds.clientSecret);
+
+  const res = await fetchWithGoogleTimeout(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    },
+    "GOOGLE_OAUTH_TIMEOUT",
+  );
+  if (!res.ok) {
+    throw new Error(`GOOGLE_OAUTH_${res.status}`);
+  }
+  const json = await res.json();
+  const expiresIn = typeof json?.expires_in === "number" ? json.expires_in : 3600;
+  return { value: String(json.access_token), expiresIn };
+}
+
+async function getGoogleAccessToken(creds: GoogleCreds): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const cacheKey = tokenCacheKey(creds);
+  if (tokenCache && tokenCache.cacheKey === cacheKey && tokenCache.expiresAt > now + 60) {
+    return tokenCache.value;
+  }
+
+  const token = creds.authType === "service_account"
+    ? await getServiceAccountAccessToken(creds, now)
+    : await getOAuthRefreshTokenAccessToken(creds);
 
   tokenCache = {
-    value: String(json.access_token),
-    expiresAt: now + expiresIn,
+    value: token.value,
+    expiresAt: now + token.expiresIn,
+    cacheKey,
   };
   return tokenCache.value;
+}
+
+export function resetGoogleIapTokenCacheForTests() {
+  tokenCache = null;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -128,10 +242,14 @@ export async function getGoogleSubscription(
   const access = await getGoogleAccessToken(creds);
   const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(creds.packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`;
 
-  const res = await fetch(url, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${access}` },
-  });
+  const res = await fetchWithGoogleTimeout(
+    url,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${access}` },
+    },
+    "GOOGLE_API_TIMEOUT",
+  );
 
   if (res.status === 404 || res.status === 410) return null;
   if (!res.ok) {
@@ -159,14 +277,18 @@ export async function acknowledgeGoogleSubscription(opts: {
   const access = await getGoogleAccessToken(creds);
   const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(creds.packageName)}/purchases/subscriptions/${encodeURIComponent(opts.productId)}/tokens/${encodeURIComponent(opts.purchaseToken)}:acknowledge`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${access}`,
-      "Content-Type": "application/json",
+  const res = await fetchWithGoogleTimeout(
+    url,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
     },
-    body: "{}",
-  });
+    "GOOGLE_API_TIMEOUT",
+  );
 
   if (res.ok || res.status === 400 /* already acknowledged */) return;
   const txt = await res.text().catch(() => "");

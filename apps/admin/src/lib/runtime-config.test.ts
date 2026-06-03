@@ -181,6 +181,40 @@ describe("upsertRuntimeConfigEntry value validation", () => {
     ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:private_key_pem_required/);
   });
 
+  it("accepts Google Play OAuth refresh-token config as an Android Publisher auth alternative", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+        value: "123456789012-abcDEF_123.apps.googleusercontent.com",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GOOGLE_PLAY_OAUTH_CLIENT_SECRET",
+        value: "GOCSPX-client-secret-123456",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
+        value: "1//0gRefreshTokenPayloadForAndroidPublisherAccess",
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("rejects malformed Google Play OAuth client IDs", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+        value: "not-a-google-client-id",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:google_oauth_client_id_pattern/);
+  });
+
   it("accepts a well-formed Stripe webhook secret", async () => {
     // The mock prisma.runtimeConfigEntry.upsert returns undefined; the
     // call should succeed past validation without throwing

@@ -113,6 +113,10 @@ MOBILE_IOS_PRODUCT_INDIVIDUAL=com.locateflow.individual.monthly
 GOOGLE_PLAY_PACKAGE_NAME=com.locateflow.mobile
 GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL=<Play API service account>
 GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY=<Play API private key>
+# Fallback if service-account key creation is blocked:
+GOOGLE_PLAY_OAUTH_CLIENT_ID=<OAuth client ID with androidpublisher consent>
+GOOGLE_PLAY_OAUTH_CLIENT_SECRET=<optional OAuth client secret, if required>
+GOOGLE_PLAY_OAUTH_REFRESH_TOKEN=<OAuth refresh token with androidpublisher scope>
 GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore
 MOBILE_ANDROID_PRODUCT_INDIVIDUAL=locateflow_individual_monthly
 ```

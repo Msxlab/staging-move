@@ -72,7 +72,7 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Release keystore SHA-256 (App Signing key + upload key) added to `ANDROID_APP_FINGERPRINTS` env | DONE | Play signed universal APK fingerprint added to DigitalOcean: `A1:14:99:D3:29:69:50:CF:DC:40:74:4E:0C:94:79:9A:9D:B3:D7:AD:71:BC:BE:A6:04:8B:3C:3B:C2:31:01:74`. |
 | Closed testing track set up | HUMAN VERIFICATION REQUIRED | Mandatory for new personal developer accounts (14-day, 12-tester test) |
 | Subscription products + Base Plans + Offers configured | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
-| Google Play Developer API service account env configured | TODO | Add `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`; Android IAP verification returns `IAP_NOT_CONFIGURED` without them. |
+| Google Play Developer API auth env configured | TODO | Configure either `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, or OAuth fallback `GOOGLE_PLAY_OAUTH_CLIENT_ID` + `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN` with optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`. Android IAP verification returns `IAP_NOT_CONFIGURED` only when no auth path is complete. |
 | Data Safety form filled | TODO | See `MOBILE_DATA_INVENTORY.md` |
 | Privacy Policy URL: `https://locateflow.com/privacy` | TODO | |
 | Account deletion URL: `https://locateflow.com/account/delete` | DONE | Page exists, OAuth-only users supported |

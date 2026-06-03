@@ -113,7 +113,10 @@ Place secrets in:
 | `MOBILE_ANDROID_PRODUCT_INDIVIDUAL` | Optional for product endpoint | Optional | No | Required for live IAP | No | Product ID | Product endpoint may return no Android product. |
 | `GOOGLE_PLAY_PACKAGE_NAME` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | No | Server-only ID | Play validation unavailable. |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | No | Server-only ID | Play validation unavailable. |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | Yes | Server-only | Play validation unavailable. |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` | Preferred Google Play API auth with service account email | Admin readiness context | No | Required unless OAuth fallback is configured | Yes | Server-only | Play validation unavailable unless OAuth fallback is complete. |
+| `GOOGLE_PLAY_OAUTH_CLIENT_ID` | Fallback Google Play API auth when service-account keys are blocked | Admin readiness context | No | Required if private key is unavailable | No | Server-only ID | Play validation unavailable unless paired with refresh token. |
+| `GOOGLE_PLAY_OAUTH_CLIENT_SECRET` | Optional OAuth fallback client secret | Admin readiness context | No | Required only if selected OAuth client requires it | Yes | Server-only | OAuth fallback token refresh may fail if Google requires a secret. |
+| `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN` | Fallback Google Play API auth token with androidpublisher scope | Admin readiness context | No | Required if private key is unavailable | Yes | Server-only | Play validation unavailable unless paired with client ID. |
 | `GOOGLE_PLAY_RTDN_AUDIENCE` | Required for production-like Play webhook tests | Admin readiness context | No | Required for live Android RTDN | No | URL | Production webhook rejects without it. |
 | `RESEND_API_KEY` | Required for email tests | Required for alert email delivery | No | Required | Yes | Server-only | Password reset/email verification cannot be fully tested. |
 | `EMAIL_FROM` | Required for email tests | Required if admin sends email | No | Required | No | Server-only config | Email sends may fail or use fallback. |

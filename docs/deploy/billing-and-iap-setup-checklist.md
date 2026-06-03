@@ -110,8 +110,9 @@ App Store Connect setup (mirror in sandbox first, then production):
 Google Play:
 
 - `GOOGLE_PLAY_PACKAGE_NAME=com.locateflow.mobile`
-- `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
-- `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
+- Android Publisher API auth, one complete path:
+  - service account: `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
+  - OAuth fallback: `GOOGLE_PLAY_OAUTH_CLIENT_ID` + `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`; add `GOOGLE_PLAY_OAUTH_CLIENT_SECRET` if the OAuth client requires it.
 - `GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore`
 - `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` — Pub/Sub push auth service account email
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL` — monthly Play product/base plan

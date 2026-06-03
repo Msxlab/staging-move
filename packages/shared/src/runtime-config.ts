@@ -1087,6 +1087,39 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+    label: "Google Play OAuth Client ID",
+    description: "OAuth 2.0 web-client ID used with GOOGLE_PLAY_OAUTH_REFRESH_TOKEN when service-account key creation is blocked by policy.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+    usedBy: ["web app", "mobile IAP verification"],
+  },
+  {
+    key: "GOOGLE_PLAY_OAUTH_CLIENT_SECRET",
+    label: "Google Play OAuth Client Secret",
+    description: "Optional OAuth 2.0 client secret used to refresh Android Publisher API access tokens when the selected Google client requires one. Store only in deployment env or encrypted Runtime Config.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    usedBy: ["web app", "mobile IAP verification"],
+  },
+  {
+    key: "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
+    label: "Google Play OAuth Refresh Token",
+    description: "Offline OAuth refresh token for a Google account with Play Console access to this app and androidpublisher scope. Used only when service-account private-key auth is unavailable.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    usedBy: ["web app", "mobile IAP verification"],
+  },
+  {
     key: "GOOGLE_PLAY_RTDN_AUDIENCE",
     label: "Google Play RTDN OIDC Audience",
     description: "Expected `aud` claim in the OIDC token Pub/Sub sends with push notifications (typically the webhook URL itself, e.g. https://app.example.com/api/webhooks/playstore). Production Play Store webhooks reject when this is missing.",
@@ -1787,6 +1820,21 @@ export function validateRuntimeConfigValueShape(
     return /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,}$/.test(value)
       ? valid()
       : invalid("android_package_pattern");
+  }
+  if (key === "GOOGLE_PLAY_OAUTH_CLIENT_ID") {
+    return /^\d{6,}-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(value)
+      ? valid()
+      : invalid("google_oauth_client_id_pattern");
+  }
+  if (key === "GOOGLE_PLAY_OAUTH_CLIENT_SECRET") {
+    return validateSafeToken(value, {
+      minLength: 16,
+      pattern: /^[A-Za-z0-9._:-]+$/,
+      reason: "google_oauth_client_secret_pattern",
+    }) || valid();
+  }
+  if (key === "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN") {
+    return validateSecretStrength(value, 24) || valid();
   }
   if (key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL" || key === "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL") {
     return validateServiceAccountEmail(value) || valid();
