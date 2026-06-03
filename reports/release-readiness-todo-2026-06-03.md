@@ -219,12 +219,13 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - [x] Verify sign-in screen or signed-in state.
   - Sign-in renders, Google button active, Apple unavailable on Android, email/password controls present.
   - Backend mobile login API returned HTTP 200 for the test user; token not recorded in this report.
-- [BLOCKED] Verify subscription screen loads current backend plan.
-  - Android emulator can launch the embedded `debugOptimized` build and sign in through the local QA proxy.
-  - The fake QA account is currently unverified; backend correctly blocks address/services onboarding writes behind the email-verification gate, so the app cannot reach `(tabs)/settings/subscription` without a verified test account.
-  - The verification token is stored only as a hash and EmailLog does not store the mail body, so there is no safe raw token to recover from code/DB logs.
+- [x] Verify subscription screen loads current backend plan.
+  - Live QA reset flow verifies the exact `QA_RESETTABLE_ACCOUNT_EMAIL` account on signup and hard-resets it on logout; malformed/multi-email values are inert.
+  - Android emulator signed in through the local QA proxy, completed onboarding via live mobile APIs, reached Home, then opened `More -> Subscription`.
+  - Mobile subscription UI showed the live backend account state as `Free Access` / `FREE_ACCESS` with the store-disabled notice.
 - [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
-  - Requires an authenticated, verified, onboarding-complete mobile session; not completed because the available fake QA account is intentionally email-gated.
+  - Authenticated, verified, onboarding-complete mobile session is working.
+  - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -232,6 +233,10 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - No billing/subscription crash observed during launch/sign-in/sign-up UI checks.
 - [x] Verify production EAS profile has Play IAP flags enabled.
   - `eas.json` production and `play-internal` set mobile store purchases true; preview/development stay false.
+- [x] Verify Family/Pro plan cards are visible in local Android QA when mobile purchases are disabled.
+  - Found and fixed a mobile UI visibility gap where native store-disabled builds hid Family/Pro because those tiers are not app-store-purchasable in that build.
+  - Added a small shared visibility helper and focused tests so store-disabled builds still show Individual/Family/Pro while keeping purchase actions read-only/disabled.
+  - Rebuilt and reinstalled `debugOptimized`; emulator screenshots verified Individual, Family, and Pro cards plus the correct read-only copy.
 - [x] Fix local Android emulator QA path without weakening production transport.
   - Added debug-only Android network security config for `10.0.2.2`/`localhost`.
   - Added a production-build guard exception that permits `http://10.0.2.2:<port>/api` only when `EXPO_PUBLIC_ENV=development`; production EAS remains HTTPS-only.
@@ -261,6 +266,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - DigitalOcean app spec shows Android product IDs, `GOOGLE_PLAY_PACKAGE_NAME`, and `GOOGLE_PLAY_RTDN_AUDIENCE` present.
   - DigitalOcean app spec does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
   - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the service account is configured; Play RTDN rejects unauthenticated requests and will reject real OIDC pushes until expected identity is configured.
+  - Local `gcloud` is not installed/authenticated; completing this requires creating or selecting the Google Play service-account credential in Google Cloud/Play Console, then adding those missing DigitalOcean env values without deleting existing envs.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
@@ -306,3 +312,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Live `/api/ready` returned ready; live `/api/mobile/iap/products` returned all iOS/Android plan-cycle IDs; Play RTDN smoke with fake bearer returned a 503 class failure consistent with missing expected identity/backend readiness.
 - 2026-06-03: Final pre-commit verification passed again: `git diff --check`, `pnpm verify:typecheck`, and `pnpm verify:tests` (web 191 files / 1416 tests, admin 89 files / 480 tests, mobile 10 files / 25 tests, connectors 13 files / 87 tests).
 - 2026-06-03: Added deployment-only `QA_RESETTABLE_ACCOUNT_EMAIL` guard: exact QA account auto-verifies on signup and hard-resets itself on logout; malformed/multi-email values are inert. Verification passed: `pnpm verify:typecheck` and `pnpm verify:tests` (web 192 files / 1430 tests, admin 89 files / 481 tests, mobile 10 files / 25 tests, connectors 13 files / 87 tests).
+- 2026-06-03: Android emulator app launch instability was traced to low-memory killer pressure on the 2GB AVD; relaunching the same AVD with 4GB memory stabilized local QA.
+- 2026-06-03: Live QA account lifecycle verified through mobile APIs: reset-on-logout, re-register, auto-verify, login, legal/profile/address/onboarding completion; bearer token intentionally not recorded.
+- 2026-06-03: Android QA used a local `10.0.2.2` proxy because the emulator trust store rejects the live TLS chain; production transport remains HTTPS-only.
+- 2026-06-03: Android emulator reached Home and opened `More -> Subscription`; the screen loaded live `Free Access` / `FREE_ACCESS` backend state and the mobile purchases disabled notice.
+- 2026-06-03: Fixed mobile subscription plan visibility so native store-disabled builds still show Individual/Family/Pro cards while keeping Family/Pro read-only; focused mobile tests and mobile lint passed.
+- 2026-06-03: Rebuilt and reinstalled Android `debugOptimized` after stopping a stale Gradle daemon/file lock; emulator verified Individual, Family, and Pro cards plus read-only Family/Pro copy.
+- 2026-06-03: Active Pro Annual mobile state was attempted but remains blocked by real external controls: admin plan grant requires admin password plus MFA/backup code, and direct local DB access to the DigitalOcean database is blocked by network/firewall.
+- 2026-06-03: Final verification after the mobile Family/Pro visibility fix passed: `git diff --check`, focused mobile tests 2 files / 7 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests` (web 192 files / 1432 tests, admin 89 files / 481 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests), and root `pnpm lint`.

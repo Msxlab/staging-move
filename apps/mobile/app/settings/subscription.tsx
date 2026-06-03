@@ -42,6 +42,7 @@ import {
   restorePurchases,
 } from "@/lib/iap";
 import { selectAndroidSubscriptionOffer } from "@/lib/iap-offers";
+import { shouldShowMobileSubscriptionPlan } from "@/lib/subscription-visible-plans";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -450,15 +451,16 @@ function LegacySubscriptionScreen() {
       : null;
   const visiblePlans = useMemo(
     () =>
-      PLANS.filter((plan) => {
-        if (!isNativeStorePlatform) return true;
-        if (isPaidNativePlanKey(plan.key)) {
-          if (plan.key === "INDIVIDUAL") return true;
-          return plan.key === currentPlanKey || hasConfiguredNativeSku(plan.key);
-        }
-        return true;
-      }),
-    [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform],
+      PLANS.filter((plan) =>
+        shouldShowMobileSubscriptionPlan({
+          planKey: plan.key,
+          currentPlanKey,
+          isNativeStorePlatform,
+          mobileStorePurchasesEnabled,
+          hasConfiguredNativeSku: isPaidNativePlanKey(plan.key) ? hasConfiguredNativeSku(plan.key) : false,
+        }),
+      ),
+    [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
   );
 
   const managedElsewhereMessage = isStripeManaged
