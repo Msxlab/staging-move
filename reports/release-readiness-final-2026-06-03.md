@@ -27,6 +27,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - OAuth-only users still get a secure `Set password` email-link action from mobile Privacy settings.
   - Password-login users now get a dedicated `Change password` email-reset action from the same screen.
   - OAuth-only account deletion remains supported by typed confirmation plus the signed-in bearer session, without forcing password creation first.
+  - The mobile delete-account button now normalizes the typed confirmation phrase, matching the backend's case-insensitive `DELETE` / localized confirmation behavior.
 - Fixed mobile subscription plan visibility so store-disabled Android QA builds still show Individual, Family, and Pro cards while keeping purchase actions read-only.
 - Cleaned public legal/contact fallbacks in code:
   - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
@@ -92,6 +93,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - OAuth-only users can request a secure set-password link from `Settings -> Privacy`.
   - Password-login users can request a secure reset/change-password link from the same screen.
   - OAuth-only delete-account already works through typed `DELETE` plus the authenticated session; password users still confirm with their current password.
+  - The destructive delete button no longer gets stuck on lowercase typed confirmation text.
 - Live exact QA account lifecycle:
   - Signup auto-verifies only `mobile.qa@locateflow.com`.
   - Mobile API login succeeds after signup.
@@ -176,8 +178,8 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - A fresh iOS build / TestFlight or App Review pass is still required to prove the rejection is fully cleared.
   - App Review also explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; shared code currently says `$199/year`, so product/store pricing still needs human confirmation.
 - Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
-  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`.
-  - Visible Family monthly/yearly, Pro monthly/yearly, and Individual monthly sandbox products are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
+  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`, visible as `$79.00 USD / year`.
+  - Visible Family monthly/yearly, Pro monthly/yearly, Individual monthly, and a current-pricing Individual annual sandbox product are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
   - App Review notes and demo credentials.
@@ -214,7 +216,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
 - Live Stripe sandbox smoke added one more concrete blocker:
-  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual`.
+  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual` at `$79.00 USD / year`.
   - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
 - Latest Apple rejection evidence was inspected from Downloads plus App Store Connect:
   - `Screenshot-0603-132041.png` matched the forced post-Apple-sign-in password setup screen.

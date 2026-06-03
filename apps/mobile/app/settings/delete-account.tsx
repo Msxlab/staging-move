@@ -20,6 +20,7 @@ import { hapticWarning, hapticSuccess, hapticError } from "@/lib/haptics";
 import { Input } from "@/components/ui/Input";
 import { unregisterPushNotifications } from "@/lib/push";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
+import { isDeleteConfirmationValid } from "@/lib/account-deletion-confirmation";
 
 export default function DeleteAccountScreen() {
 
@@ -161,7 +162,7 @@ export default function DeleteAccountScreen() {
 
         {(() => {
           const oauthOnly = hasPasswordLogin === false;
-          const phraseOk = confirmPhrases.includes(confirmText);
+          const phraseOk = isDeleteConfirmationValid(confirmText, confirmPhrases);
           const blocked = !phraseOk || deleting || (!oauthOnly && !confirmPassword);
           return (
             <TouchableOpacity
