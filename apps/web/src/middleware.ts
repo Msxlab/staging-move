@@ -188,6 +188,13 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
 
   const secFetchSite = req.headers.get("sec-fetch-site");
   const requestedWith = req.headers.get("x-requested-with");
+  const isMobileBearerLogout =
+    isLogout &&
+    req.headers.get("x-client-type")?.trim().toLowerCase() === "mobile" &&
+    /^Bearer\s+\S+/i.test(req.headers.get("authorization") || "");
+  if (isMobileBearerLogout) {
+    return null;
+  }
   if (isLogout && secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
     return NextResponse.json(
       {

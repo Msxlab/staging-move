@@ -12,6 +12,7 @@ import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
+import { isAllowlistedQaEmail } from "@/lib/qa-account";
 
 export const runtime = "nodejs";
 
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
   );
 
   const passwordHash = await hashPassword(password);
+  const autoVerifyQaAccount = isAllowlistedQaEmail(email);
   const user = await prisma.user.create({
     data: {
       email,
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
       firstName: firstName ?? null,
       lastName: lastName ?? null,
       preferredLocale: locale,
+      ...(autoVerifyQaAccount ? { emailVerifiedAt: new Date() } : {}),
     },
   });
   await ensureSubscriptionDefaults(user.id);
@@ -137,24 +140,34 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Email verification token (24h).
-  const { token, hash } = generateOpaqueToken();
-  await prisma.emailVerificationToken.create({
-    data: {
+  if (!autoVerifyQaAccount) {
+    // Email verification token (24h).
+    const { token, hash } = generateOpaqueToken();
+    await prisma.emailVerificationToken.create({
+      data: {
+        userId: user.id,
+        email,
+        tokenHash: hash,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await sendEmailVerificationEmail({
+      userEmail: email,
+      userName: firstName || "there",
+      verifyToken: token,
+      locale,
+      dedupeKey: `verify:${user.id}:${hash}`,
+    }).catch((err) => console.error("[EMAIL] verification send failed:", err));
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
       userId: user.id,
-      email,
-      tokenHash: hash,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      emailVerified: autoVerifyQaAccount,
+      requiresEmailVerification: !autoVerifyQaAccount,
     },
-  });
-
-  await sendEmailVerificationEmail({
-    userEmail: email,
-    userName: firstName || "there",
-    verifyToken: token,
-    locale,
-    dedupeKey: `verify:${user.id}:${hash}`,
-  }).catch((err) => console.error("[EMAIL] verification send failed:", err));
-
-  return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
+    { status: 201 },
+  );
 }

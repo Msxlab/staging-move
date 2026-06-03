@@ -92,6 +92,9 @@ function makeRequest(body: unknown) {
 }
 
 describe("register route", () => {
+  const OLD_QA_RESETTABLE_EMAIL = process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+  const OLD_AGE_GATE = process.env.COPPA_AGE_GATE_ENABLED;
+
   beforeEach(() => {
     vi.clearAllMocks();
     userMock.findUnique.mockResolvedValue(null);
@@ -99,12 +102,14 @@ describe("register route", () => {
     userMock.create.mockResolvedValue({ id: "user-new", email: "new@example.com" });
     tokenMock.create.mockResolvedValue({});
     delete process.env.COPPA_AGE_GATE_ENABLED;
+    delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
   });
 
-  const OLD_AGE_GATE = process.env.COPPA_AGE_GATE_ENABLED;
   afterEach(() => {
     if (OLD_AGE_GATE === undefined) delete process.env.COPPA_AGE_GATE_ENABLED;
     else process.env.COPPA_AGE_GATE_ENABLED = OLD_AGE_GATE;
+    if (OLD_QA_RESETTABLE_EMAIL === undefined) delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    else process.env.QA_RESETTABLE_ACCOUNT_EMAIL = OLD_QA_RESETTABLE_EMAIL;
   });
 
   it("returns 409 for an existing password account", async () => {
@@ -135,6 +140,8 @@ describe("register route", () => {
 
     expect(response.status).toBe(201);
     expect(body.userId).toBe("user-new");
+    expect(body.emailVerified).toBe(false);
+    expect(body.requiresEmailVerification).toBe(true);
     expect(userMock.create).toHaveBeenCalledWith({
       data: {
         email: "new@example.com",
@@ -155,6 +162,70 @@ describe("register route", () => {
     });
     expect(recordLegalAcceptanceMock).not.toHaveBeenCalled();
     expect(userMock.update).not.toHaveBeenCalled();
+  });
+
+  it("auto-verifies only the single allowlisted QA account without sending a verification email", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+    userMock.create.mockResolvedValue({ id: "qa-user", email: "qa@example.com" });
+
+    const response = await POST(makeRequest({ ...validBody, email: "QA@Example.com" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.userId).toBe("qa-user");
+    expect(body.emailVerified).toBe(true);
+    expect(body.requiresEmailVerification).toBe(false);
+    expect(userMock.create).toHaveBeenCalledWith({
+      data: {
+        email: "qa@example.com",
+        passwordHash: "hashed-password",
+        firstName: "New",
+        lastName: "User",
+        preferredLocale: "en",
+        emailVerifiedAt: expect.any(Date),
+      },
+    });
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("qa-user");
+  });
+
+  it("does not auto-verify normal users while the QA account env is configured", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "qa@example.com";
+
+    const response = await POST(makeRequest(validBody));
+
+    expect(response.status).toBe(201);
+    expect(userMock.create).toHaveBeenCalledWith({
+      data: {
+        email: "new@example.com",
+        passwordHash: "hashed-password",
+        firstName: "New",
+        lastName: "User",
+        preferredLocale: "en",
+      },
+    });
+    expect(tokenMock.create).toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).toHaveBeenCalled();
+  });
+
+  it("treats a comma-separated QA email config as disabled", async () => {
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "new@example.com,other@example.com";
+
+    const response = await POST(makeRequest(validBody));
+
+    expect(response.status).toBe(201);
+    expect(userMock.create).toHaveBeenCalledWith({
+      data: {
+        email: "new@example.com",
+        passwordHash: "hashed-password",
+        firstName: "New",
+        lastName: "User",
+        preferredLocale: "en",
+      },
+    });
+    expect(tokenMock.create).toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).toHaveBeenCalled();
   });
 
   it("persists mobile legal consent during registration", async () => {

@@ -24,6 +24,7 @@ import {
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
 import { getPostAuthMobileRoute } from "@/lib/post-auth-route";
+import { registerForPushNotifications } from "@/lib/push";
 import {
   canAttemptAppleOAuth,
   canAttemptGoogleOAuth,
@@ -111,8 +112,14 @@ export default function SignUpScreen() {
     }
     setLoading(true);
     setError("");
-    const res = await api.post<{ success?: boolean; error?: string }>("/api/auth/register", {
-      email: email.trim(),
+    const emailValue = email.trim();
+    const res = await api.post<{
+      success?: boolean;
+      error?: string;
+      emailVerified?: boolean;
+      requiresEmailVerification?: boolean;
+    }>("/api/auth/register", {
+      email: emailValue,
       password,
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
@@ -122,6 +129,27 @@ export default function SignUpScreen() {
     if (res.error || !res.data?.success) {
       setError(res.error || t("auth.invalid"));
       hapticError();
+      setLoading(false);
+      return;
+    }
+
+    if (res.data.emailVerified === true || res.data.requiresEmailVerification === false) {
+      const loginRes = await api.post<{ token?: string; user?: any; error?: string }>(
+        "/api/mobile/auth/login",
+        { email: emailValue, password },
+      );
+
+      if (loginRes.error || !loginRes.data?.token || !loginRes.data.user) {
+        setError(loginRes.error || t("auth.invalid"));
+        hapticError();
+        setLoading(false);
+        return;
+      }
+
+      await setSession(loginRes.data.token, loginRes.data.user);
+      hapticSuccess();
+      void registerForPushNotifications().catch(() => null);
+      router.replace(getPostAuthMobileRoute(loginRes.data.user));
       setLoading(false);
       return;
     }
