@@ -55,7 +55,11 @@ function resolveApiUrl() {
 }
 
 function enforceProductionApiUrl(url: string) {
-  if (!__DEV__ && !/^https:\/\//i.test(url)) {
+  const allowLocalDebugProxy =
+    process.env.EXPO_PUBLIC_ENV === "development" &&
+    /^http:\/\/(?:10\.0\.2\.2|localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i.test(url);
+
+  if (!__DEV__ && !/^https:\/\//i.test(url) && !allowLocalDebugProxy) {
     return "https://locateflow.com/api";
   }
   return url;

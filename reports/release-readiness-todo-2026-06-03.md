@@ -179,6 +179,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - [x] After effective Individual downgrade, Family-only write paths are hidden or blocked.
   - Seat reconciliation demotes overflow members to `OVERFLOW`; permission matrix makes suspended/overflow members read-only.
 - [ ] Mobile displays active Family plan as current account state.
+  - Current live mobile emulator session is blocked before subscription UI by email verification/onboarding for the fake QA account. No raw verification token is stored in DB or EmailLog, which is correct; completing this needs a verified test inbox/OAuth account or explicit approval for a controlled production QA-user verification mutation.
 
 ## 7. Pro Sync/Connector Matrix
 
@@ -219,10 +220,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Sign-in renders, Google button active, Apple unavailable on Android, email/password controls present.
   - Backend mobile login API returned HTTP 200 for the test user; token not recorded in this report.
 - [BLOCKED] Verify subscription screen loads current backend plan.
-  - UI sign-in automation with adb text/focus was unreliable; direct mobile login API was verified.
-  - Completing post-auth mobile subscription navigation is pending either manual phone test or a controllable authenticated emulator session.
+  - Android emulator can launch the embedded `debugOptimized` build and sign in through the local QA proxy.
+  - The fake QA account is currently unverified; backend correctly blocks address/services onboarding writes behind the email-verification gate, so the app cannot reach `(tabs)/settings/subscription` without a verified test account.
+  - The verification token is stored only as a hash and EmailLog does not store the mail body, so there is no safe raw token to recover from code/DB logs.
 - [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
-  - Requires authenticated mobile session; not completed due adb input/focus limitation above.
+  - Requires an authenticated, verified, onboarding-complete mobile session; not completed because the available fake QA account is intentionally email-gated.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -230,6 +232,12 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - No billing/subscription crash observed during launch/sign-in/sign-up UI checks.
 - [x] Verify production EAS profile has Play IAP flags enabled.
   - `eas.json` production and `play-internal` set mobile store purchases true; preview/development stay false.
+- [x] Fix local Android emulator QA path without weakening production transport.
+  - Added debug-only Android network security config for `10.0.2.2`/`localhost`.
+  - Added a production-build guard exception that permits `http://10.0.2.2:<port>/api` only when `EXPO_PUBLIC_ENV=development`; production EAS remains HTTPS-only.
+  - Added mobile API tests for production HTTPS fallback and local emulator proxy allowance.
+- [x] Fix `debugOptimized` embedded bundle QA build.
+  - Added `debuggableVariants = ["debug"]` so React Native embeds the JS bundle for `debugOptimized`; this removed the local RedBox caused by missing `assets/index.android.bundle`.
 - [x] Build Android Play internal AAB through EAS.
   - Started EAS build `9d3c92a9-5e58-4eac-ba12-79bd63065081` with profile `play-internal`; this is a store-distribution AAB build, not a Play rollout/submission.
   - EAS used remote Android credentials and incremented remote versionCode from 14 to 15.
@@ -248,11 +256,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Live `/api/mobile/iap/products` returns Individual/Family/Pro monthly/yearly for both platforms.
   - DigitalOcean app spec uses the code-defined monthly keys (`MOBILE_IOS_PRODUCT_INDIVIDUAL`, `MOBILE_ANDROID_PRODUCT_PRO`, etc.) plus yearly keys; all six iOS and all six Android product IDs are present.
 - [x] Verify Apple App Store Server API config presence; missing credential is a blocker.
-  - DigitalOcean app spec/admin Runtime Config show Apple bundle/App Store issuer/key/private key/environment present from ENV; values intentionally not recorded.
+  - DigitalOcean app spec/admin Runtime Config show `APPLE_BUNDLE_ID`, Apple App Store issuer/key/private key/environment present from ENV; values intentionally not recorded.
 - [BLOCKED] Verify Google Play Developer API config presence; missing credential is a blocker.
-  - DigitalOcean app spec shows Android product IDs and `GOOGLE_PLAY_PACKAGE_NAME` present.
-  - DigitalOcean app spec/admin Runtime Config do not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `GOOGLE_PLAY_RTDN_AUDIENCE`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
-  - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED`, and Play RTDN rejects production-like requests without audience/identity/package config.
+  - DigitalOcean app spec shows Android product IDs, `GOOGLE_PLAY_PACKAGE_NAME`, and `GOOGLE_PLAY_RTDN_AUDIENCE` present.
+  - DigitalOcean app spec does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
+  - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the service account is configured; Play RTDN rejects unauthenticated requests and will reject real OIDC pushes until expected identity is configured.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
@@ -292,3 +300,8 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: EAS Play internal Android AAB build started: `9d3c92a9-5e58-4eac-ba12-79bd63065081`, versionCode 15, remote credentials, no Play rollout.
 - 2026-06-03: EAS Play internal Android AAB build finished successfully; artifact exists, no Play rollout/submission was performed.
 - 2026-06-03: Post-fix verification passed: `pnpm verify:typecheck`, `pnpm verify:tests`, and `pnpm lint`.
+- 2026-06-03: Local Android emulator QA was unblocked with a debug-only `10.0.2.2` proxy path and `debugOptimized` embedded bundle fix; focused mobile tests passed: 10 files / 25 tests, mobile typecheck passed.
+- 2026-06-03: Mobile onboarding still blocks the fake QA account at email verification before subscription UI; token recovery is intentionally impossible because tokens are hashed and EmailLog stores no body.
+- 2026-06-03: DigitalOcean app spec rechecked: Apple Store Server keys and all mobile product IDs are present; Google Play service account email/private key and RTDN expected identity are still absent.
+- 2026-06-03: Live `/api/ready` returned ready; live `/api/mobile/iap/products` returned all iOS/Android plan-cycle IDs; Play RTDN smoke with fake bearer returned a 503 class failure consistent with missing expected identity/backend readiness.
+- 2026-06-03: Final pre-commit verification passed again: `git diff --check`, `pnpm verify:typecheck`, and `pnpm verify:tests` (web 191 files / 1416 tests, admin 89 files / 480 tests, mobile 10 files / 25 tests, connectors 13 files / 87 tests).

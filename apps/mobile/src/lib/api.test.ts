@@ -39,6 +39,7 @@ describe("mobile api client", () => {
     captured.clearSession.mockResolvedValue(undefined);
     vi.stubGlobal("__DEV__", false);
     process.env.EXPO_PUBLIC_API_URL = "https://locateflow.com/api";
+    process.env.EXPO_PUBLIC_ENV = "production";
   });
 
   it("uses mobile bearer auth settings and clears the session on 401", async () => {
@@ -50,5 +51,23 @@ describe("mobile api client", () => {
 
     await captured.config.onUnauthorized();
     expect(captured.clearSession).toHaveBeenCalled();
+  });
+
+  it("keeps non-dev production-like builds on HTTPS", async () => {
+    process.env.EXPO_PUBLIC_API_URL = "http://example.test/api";
+    process.env.EXPO_PUBLIC_ENV = "production";
+
+    const mod = await import("./api");
+
+    expect(mod.API_URL).toBe("https://locateflow.com/api");
+  });
+
+  it("allows the local Android emulator proxy only for development builds", async () => {
+    process.env.EXPO_PUBLIC_API_URL = "http://10.0.2.2:4300/api";
+    process.env.EXPO_PUBLIC_ENV = "development";
+
+    const mod = await import("./api");
+
+    expect(mod.API_URL).toBe("http://10.0.2.2:4300/api");
   });
 });
