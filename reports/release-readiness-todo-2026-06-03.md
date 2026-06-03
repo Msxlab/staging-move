@@ -335,10 +335,14 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Native crash capture through `@sentry/react-native` is still not integrated; this is acceptable for v1 only if lightweight JS-level reporting is the intended launch posture.
 - [BLOCKED] Verify the latest Apple rejection is cleared by a fresh iOS build and resubmission.
   - Code fixes landed for the forced Sign in with Apple password gate and the annual billed-amount hierarchy.
-  - Final App Review confirmation still requires a fresh iOS build / TestFlight or App Review pass.
+  - EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished for app version `1.0.0`, build number `13`, commit `575e7cf`.
+  - EAS iOS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload build `13` to App Store Connect.
+  - Final App Review confirmation still requires selecting/processing the new build and resubmitting to App Review after the product-price answer is confirmed.
 - [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
   - Shared code currently advertises Pro yearly as `$199/year`.
   - Apple explicitly asked whether `$199.99` in App Store Connect is intended.
+  - App Store Connect pricing was verified read-only: `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` for the United States.
+  - Mobile production purchase UI reads StoreKit localized prices, so iOS should show the App Store billed amount; public shared/web copy still uses `$199/year`.
   - Requires product/operator confirmation and, if needed, an App Store Connect price change or aligned code/pricing update.
 
 ## 10. Execution Log
@@ -428,3 +432,8 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Fixed mobile post-auth routing so OAuth/Apple sign-in no longer forces `/setup-password`; password setup remains optional from Settings > Privacy. Fixed the annual mobile subscription CTA/copy hierarchy so the billed amount is primary and the annual disclosure includes the actual price. Verification passed: focused mobile tests 3 files / 8 tests, full mobile test suite 12 files / 33 tests, mobile lint, and root `pnpm verify:typecheck`.
 - 2026-06-03: Rebuilt and reinstalled Android `debugOptimized` after the Apple-review mobile patch. Emulator retest still reached `More -> Subscription` and showed the live `Free Access` state, the store-disabled notice, and the Family/Pro read-only cards without regression.
 - 2026-06-03: Mobile password/account-management follow-up was tightened after the Apple fix: Privacy settings now show `Set password` for OAuth-only users and `Change password` for password-login users, both via secure email-link flows. OAuth-only delete-account behavior remains supported by typed `DELETE` plus the authenticated session, and the mobile button now uses the same normalized confirmation logic as the backend. Verification passed: focused mobile tests 6 files / 14 tests and mobile lint.
+- 2026-06-03: DigitalOcean deployment for commit `575e7cf` became ACTIVE; live smoke passed for `/api/ready` and `/api/mobile/iap/products`.
+- 2026-06-03: App Store Connect metadata support URL was changed from the signed-in `/support` redirect to public `https://locateflow.com/help`; reload confirmed the value persisted.
+- 2026-06-03: App Store Connect Pro Annual pricing was inspected read-only: United States price is `$199.99 USD`; no price change or App Review reply was submitted.
+- 2026-06-03: EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished successfully for app version `1.0.0`, build number `13`, commit `575e7cf`.
+- 2026-06-03: EAS iOS submit was scheduled for build `13` as submission `5dca94e0-683f-455e-acf4-459123ebce57`; Expo dashboard shows it queued and waiting for the submission process to start. This uploads the binary to App Store Connect and is not an App Review resubmission or production rollout.

@@ -89,6 +89,8 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Forced password creation after Sign in with Apple mapped to the former mobile `needsPasswordSetup` gate.
   - Subscription billed-amount prominence issue mapped to the annual CTA/card hierarchy on the mobile subscription screen.
   - App Review also asked whether `Pro Annual` at `$199.99` is intentional; shared code currently defines Pro yearly as `$199/year`.
+  - App Store Connect subscription pricing confirms `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` in the United States.
+  - Mobile production IAP UI reads StoreKit localized prices, while public shared/web pricing copy still says `$199/year`.
 - Mobile account-management paths remain coherent after the Apple fix:
   - OAuth-only users can request a secure set-password link from `Settings -> Privacy`.
   - Password-login users can request a secure reset/change-password link from the same screen.
@@ -156,6 +158,20 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `pnpm lint`
   - `pnpm build`
   - `pnpm verify:ci`
+- Follow-up validation after the mobile delete-confirmation fix passed:
+  - Focused mobile confirmation/password tests: 2 files / 4 tests.
+  - Full mobile test suite: 14 files / 37 tests.
+  - `pnpm --filter @locateflow/mobile lint`.
+  - `git diff --check`.
+  - `pnpm verify:typecheck`.
+- DigitalOcean deployment for commit `575e7cf` became ACTIVE:
+  - `/api/ready`: HTTP 200.
+  - `/api/mobile/iap/products`: HTTP 200 with all Individual/Family/Pro monthly/yearly iOS and Android keys.
+- EAS iOS production build after the Apple-review fixes finished:
+  - Build ID: `3474e1a9-8458-493a-9b56-150be860a963`
+  - App version/build: `1.0.0 (13)`
+  - Commit: `575e7cf`
+  - Follow-up EAS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload the binary to App Store Connect. Expo dashboard shows it queued and waiting for the submission process to start. This was not App Review resubmission and not production rollout.
 
 ## Remaining Blockers
 
@@ -175,8 +191,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
 - Apple re-review still needs one more honest pass:
   - The forced Sign in with Apple password gate and annual billed-amount hierarchy issues were fixed in code.
-  - A fresh iOS build / TestFlight or App Review pass is still required to prove the rejection is fully cleared.
-  - App Review also explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; shared code currently says `$199/year`, so product/store pricing still needs human confirmation.
+  - A fresh iOS build `1.0.0 (13)` has been built and EAS submit has been scheduled to upload it to App Store Connect.
+  - App Review resubmission has not been performed.
+  - App Review explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; App Store Connect confirms that store price, while shared/web copy currently says `$199/year`, so product/store pricing still needs human confirmation before replying.
 - Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
   - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`, visible as `$79.00 USD / year`.
   - Visible Family monthly/yearly, Pro monthly/yearly, Individual monthly, and a current-pricing Individual annual sandbox product are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
@@ -222,6 +239,10 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `Screenshot-0603-132041.png` matched the forced post-Apple-sign-in password setup screen.
   - `Screenshot-0603-132317.png` matched the annual subscription card hierarchy complaint.
   - Code fixes were applied for both issues, and the follow-up mobile password management path now exposes set/reset-password email links from Privacy settings instead of forcing setup immediately after auth.
+- App Store metadata follow-up:
+  - App Review Notes already include the subscription path (`Sign in -> More -> Subscription`) and Terms/Privacy links.
+  - The app version Description includes Terms of Use and Privacy Policy links.
+  - Support URL was changed to the public help page `https://locateflow.com/help` and verified after reload.
 - Android `debugOptimized` was rebuilt and reinstalled after the Apple/mobile account-management patch:
   - Emulator retest still opened `More -> Subscription`.
   - Live `Free Access` state, the store-disabled notice, and the read-only Family/Pro cards remained intact.
