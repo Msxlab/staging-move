@@ -70,6 +70,11 @@ Status legend:
 - [x] Verify admin UI can observe plan/status/provider/interval/pending plan.
   - Focused admin tests passed for subscription/user actions/settings/runtime-config.
   - Live admin connectors page shows deployed expanded sidebar plus connector metrics/catalog state.
+- [x] Verify live Google Places autocomplete/details runtime path for an authenticated QA user.
+  - Exact QA signup/login path produced a live bearer token.
+  - `GET /api/address-autocomplete?input=123%20Main&sessionToken=qa_session_20260603` returned `enabled: true` with 5 predictions.
+  - `GET /api/address-autocomplete/details` using the first returned `placeId` returned `enabled: true` with a resolved result.
+  - The QA bearer logout path succeeded with `x-client-type: mobile`, and the next QA login returned HTTP 401, confirming the hard-reset cleanup still works.
 
 ## 3. Automated Test Matrix
 
@@ -364,3 +369,6 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Live RTDN invalid-path tests passed: missing bearer returned HTTP 401 `Missing OIDC token`; fake bearer returned HTTP 401 `Invalid OIDC token`.
 - 2026-06-03: Live RTDN valid push path passed by publishing an RTDN-format test payload through Google Cloud Pub/Sub; DigitalOcean run logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
 - 2026-06-03: Play Console direct test notification remains human-gated by Play Console Terms of Service acceptance; no Terms acceptance, Play rollout, production release, or live payment was performed.
+- 2026-06-03: Live Google Places smoke passed with the exact QA account: register auto-verified, mobile login returned a bearer token, `/api/address-autocomplete` returned `enabled=true` with 5 predictions, `/api/address-autocomplete/details` returned `enabled=true` with a resolved result, and logout hard-reset the QA account so the next login returned HTTP 401.
+- 2026-06-03: DigitalOcean app spec rechecked after the Places/QA smoke: `FEATURE_API_CONNECTORS` is still absent, which matches the live admin/client connector UI state.
+- 2026-06-03: Full validation rerun after the Places/report updates passed: `git diff --check`, `pnpm verify:typecheck`, `pnpm verify:tests` (web 194 / 1445, admin 89 / 486, mobile 11 / 29, connectors 13 / 87), `pnpm lint`, `pnpm build`, and `pnpm verify:ci`. Local Node engine warning remains: repo expects Node 22.x, machine is Node v24.12.0.

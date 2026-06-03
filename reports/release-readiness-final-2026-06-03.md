@@ -34,6 +34,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 
 - Public pricing shows Individual, Family, and Pro on Monthly and Annual tabs.
 - Client subscription page shows plan cards, Pro annual sync copy, and terms gating.
+- Live Google Places server-side autocomplete works for authenticated users:
+  - QA bearer request to `/api/address-autocomplete` returned `enabled: true` with 5 predictions.
+  - Using the first returned `placeId`, `/api/address-autocomplete/details` returned `enabled: true` with a resolved address result.
 - Admin connector page and client connections page match the live state:
   - USPS adapter supported in code/catalog.
   - No registered/enabled control-plane connector row yet.
@@ -106,10 +109,19 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `/api/ready`: HTTP 200.
   - `/api/mobile/iap/products`: HTTP 200.
   - `/api/auth/register`: returns `emailVerified` and `requiresEmailVerification` response fields.
+  - `/api/address-autocomplete`: authenticated QA request returns `enabled: true` with live predictions.
+  - `/api/address-autocomplete/details`: authenticated QA request returns `enabled: true` with a resolved result.
   - Play RTDN fake bearer returns HTTP 401 invalid-token class, not missing expected identity.
   - Play RTDN missing bearer returns HTTP 401 `Missing OIDC token`.
   - Pub/Sub-published RTDN test notification reaches the live webhook and logs `[PLAYSTORE WEBHOOK] received TEST notification`.
   - Fake Android IAP verify returns JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, no `IAP_NOT_CONFIGURED`, and no secret-like response content.
+- Final validation rerun after the Places/report updates passed:
+  - `git diff --check`
+  - `pnpm verify:typecheck`
+  - `pnpm verify:tests`
+  - `pnpm lint`
+  - `pnpm build`
+  - `pnpm verify:ci`
 
 ## Remaining Blockers
 
