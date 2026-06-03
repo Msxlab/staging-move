@@ -40,6 +40,11 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 
 - Public pricing shows Individual, Family, and Pro on Monthly and Annual tabs.
 - Client subscription page shows plan cards, Pro annual sync copy, and terms gating.
+- Public legal/store-support pages now render the exact production company identity:
+  - `https://locateflow.com/terms`
+  - `https://locateflow.com/privacy`
+  - `https://locateflow.com/contact`
+  - All three show `AXTRA SOLUTIONS LLC` and the Woodland Park mailing address after the DigitalOcean app-level env update.
 - Live Google Places server-side autocomplete works for authenticated users:
   - QA bearer request to `/api/address-autocomplete` returned `enabled: true` with 5 predictions.
   - Using the first returned `placeId`, `/api/address-autocomplete/details` returned `enabled: true` with a resolved address result.
@@ -93,6 +98,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Push OIDC service account matches the expected DigitalOcean identity; values intentionally not recorded.
   - Android Publisher OAuth fallback configured in DigitalOcean without recording secret values.
   - Live fake Android purchase verification fails closed as JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`; this confirms the missing private key is no longer the backend-auth blocker.
+  - Play Console internal testing is active with release `1.0.0-internal-1`, and the tester list currently shows 4 configured testers.
 - EAS Android `play-internal` store build finished successfully:
   - Build ID: `9d3c92a9-5e58-4eac-ba12-79bd63065081`
   - Version code: `15`
@@ -149,7 +155,10 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Invalid bearer paths fail closed with HTTP 401.
   - A valid RTDN-format Pub/Sub publish reached the live webhook and was logged as a test notification.
   - Play Console's own "Send test notification" button still requires human Terms of Service acceptance; Codex did not accept legal terms.
-- Active paid Stripe-managed Pro/Family state on mobile was not granted in production because admin plan changes required password plus MFA/backup code, and direct DigitalOcean DB access is network/firewall blocked.
+- Active paid Stripe-managed Pro/Family state on mobile was not granted in production because the live admin mutation flow requires step-up secrets:
+  - The admin UI now reaches the QA user's detail page successfully.
+  - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
+  - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
   - App Review notes and demo credentials.
@@ -157,22 +166,18 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Google Data Safety form.
   - Closed-test/release submission.
   - Production rollout.
-- Public legal/contact launch metadata is still incomplete:
-  - DigitalOcean is missing `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
-  - Live public pages now fall back cleanly without raw placeholder strings, but they still show the generic `LocateFlow` legal label because the exact public legal entity/address env values are not set.
-  - DigitalOcean is also missing the optional public `NEXT_PUBLIC_*` contact env overrides, so public pages currently fall back to role mailboxes such as `support@locateflow.com`.
 - Native crash reporting is lightweight for v1:
   - `EXPO_PUBLIC_SENTRY_DSN` is present.
   - `@sentry/react-native` native crash capture is not integrated yet.
 - `FEATURE_API_CONNECTORS` is absent in DigitalOcean, so Pro annual API sync remains hidden/disabled in live client UI until the connector launch is intentionally enabled and a connector is registered.
-- Live admin deep-mutation QA still requires a fresh privileged session:
-  - The existing admin list page was reachable, but opening user detail redirected to admin login and requires admin password plus MFA/backup code.
-  - That means live Family/Pro manual grant testing from admin remains human-gated until the privileged session is re-established.
 
 ## Additional Live QA Since The Prior Report
 
 - Public legal pages were rechecked in live Chrome after deployment:
   - `/terms`, `/privacy`, and `/contact` no longer show raw placeholder legal/entity strings.
+- Public legal pages were then rechecked again after the DigitalOcean env update deployment completed:
+  - `/terms`, `/privacy`, and `/contact` now show the exact public legal entity `AXTRA SOLUTIONS LLC`.
+  - The mailing address now renders as `188 Overmount Ave APT A, Woodland Park, NJ 07424-3255, United States`.
 - Live client subscription QA found and then cleared a production hydration issue:
   - Before the patch, `/settings/subscription` emitted production React hydration errors in Chrome dev logs.
   - Fix shipped in commit `529aad9` by making the annual-offer date calculation use a server-stable `initialNowIso` prop instead of a raw render-time `new Date()` inside the client component.
@@ -183,9 +188,15 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - The old QA credentials were then rejected with HTTP 401 until the exact QA email was re-registered.
   - Re-registering `mobile.qa@locateflow.com` succeeded again, confirming the server-side hard reset.
   - A rapid immediate re-login sequence on the local debug proxy surfaced the expected auth lockout banner (`Retry after ... seconds`) rather than silently reusing stale local state.
+- Play Console live smoke added two more confirmations:
+  - Internal testing is Active with release `1.0.0-internal-1`.
+  - The Internal testing tester list currently contains 4 configured testers.
+- Live admin smoke improved from the prior checkpoint:
+  - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
+  - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
 
 ## Release Recommendation
 
 READY FOR INTERNAL TESTING ONLY
 
-Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, store-submission copy docs, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation, the public legal entity/address placeholders are replaced, and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
+Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, DigitalOcean public legal env updates, store-submission copy docs, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.

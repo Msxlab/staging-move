@@ -299,9 +299,10 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Final console form submission/confirmation still requires store-console review.
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
-- [!] Verify public legal/contact pages are launch-ready for store submission.
+- [x] Verify public legal/contact pages are launch-ready for store submission.
   - Live `privacy`, `terms`, `contact`, `help`, `billing-policy`, and `refund` pages are reachable.
-  - `privacy`, `terms`, and `contact` still show placeholder legal entity / mailing address text because DigitalOcean is missing `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
+  - DigitalOcean app-level env now includes `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
+  - Live `https://locateflow.com/terms`, `https://locateflow.com/privacy`, and `https://locateflow.com/contact` now render `AXTRA SOLUTIONS LLC` and the Woodland Park mailing address.
   - `https://locateflow.com/contact` is the correct support URL for store consoles.
 - [x] Verify Sentry/native crash reporting decision for v1.
   - DigitalOcean app spec includes `NEXT_PUBLIC_SENTRY_DSN` and now has a populated `EXPO_PUBLIC_SENTRY_DSN`.
@@ -387,3 +388,6 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Fixed the subscription hydration mismatch by passing a server-stable `initialNowIso` from `src/app/(app)/settings/subscription/page.tsx` into the client subscription component before computing annual-offer dates. Verification passed: focused `subscription-copy-regression` tests and `pnpm verify:typecheck`.
 - 2026-06-03: DigitalOcean deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` for commit `529aad9` became ACTIVE; live Chrome retest of `/settings/subscription` in a fresh tab showed no console errors, Monthly/Annual tabs visible, and the Individual / Family / Pro annual cards rendered with the Pro annual connector copy.
 - 2026-06-03: Android emulator re-verified the real logout/reset UX: `More -> Sign Out` opened the destructive confirmation dialog and returned to the Sign In screen, the old QA credentials then failed with HTTP 401, re-register succeeded for the exact QA email, and an immediate rapid re-login attempt surfaced the expected local auth rate-limit banner instead of silently reusing stale local session/onboarding state.
+- 2026-06-03: DigitalOcean app-level public legal env was updated live with `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`; after the deployment finished, live `terms`, `privacy`, and `contact` rendered `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address.
+- 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
+- 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
