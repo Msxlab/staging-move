@@ -29,13 +29,24 @@ describe("subscription acquisition copy", () => {
     expect(source).toContain("monthlyOffer");
     expect(source).toContain("startMonthlyPlan");
     expect(source).toContain("buildTrialConsentLabel");
+    expect(source).toContain("initialNowIso");
+    expect(source).toContain("const stableNow = useMemo");
     expect(source).toContain("const offerFirstChargeDate");
     expect(source).toContain("firstChargeAt: offerFirstChargeDate");
     expect(source).toContain("buildTrialConsentLabel(offerFirstChargeDate)");
+    expect(source).toContain("addDays(stableNow");
+    expect(source).not.toContain("addDays(new Date()");
     expect(source).toContain("Manage access, plans, and billing");
     expect(source).toContain("Choose a plan to continue full access.");
     expect(source).not.toContain("Manage Individual access and billing");
     expect(source.toLowerCase()).not.toContain("refund");
+  });
+
+  it("subscription route passes a server-stable now value into the client screen", () => {
+    const source = readRepoFile("src/app/(app)/settings/subscription/page.tsx");
+
+    expect(source).toContain("SubscriptionManagementPage");
+    expect(source).toContain('initialNowIso={new Date().toISOString()}');
   });
 
   it("settings renders the confirmed annual trial state from webhook-updated fields", () => {

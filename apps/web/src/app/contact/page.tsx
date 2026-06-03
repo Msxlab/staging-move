@@ -15,8 +15,9 @@ import { PublicPageShell, PublicSection } from "@/components/marketing/public-pa
 import { createPublicPageMetadata } from "@/lib/seo";
 import {
   CONTACT_CONFIGURATION_NOTE,
+  displayCompanyAddress,
+  displayLegalEntityName,
   LEGAL_CONTACTS,
-  LEGAL_INFO,
   mailto,
   policyLastUpdatedLabel,
 } from "@/lib/legal-info";
@@ -81,6 +82,8 @@ const policyLinks = [
   { label: "DPA", href: "/dpa" },
 ] as const;
 
+const publicCompanyAddress = displayCompanyAddress();
+
 export default function ContactPage() {
   return (
     <PublicPageShell
@@ -113,8 +116,12 @@ export default function ContactPage() {
         <div className="flex items-start gap-3">
           <MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" />
           <div>
-            <p className="font-medium text-foreground">{LEGAL_INFO.legalEntityName}</p>
-            <p>{LEGAL_INFO.companyAddress}</p>
+            <p className="font-medium text-foreground">{displayLegalEntityName()}</p>
+            {publicCompanyAddress ? (
+              <p>{publicCompanyAddress}</p>
+            ) : (
+              <p>Formal legal, billing, and privacy correspondence can use the contact paths above until the public mailing address is finalized.</p>
+            )}
             <p className="text-xs">{CONTACT_CONFIGURATION_NOTE}</p>
           </div>
         </div>

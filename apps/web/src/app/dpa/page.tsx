@@ -1,6 +1,11 @@
 import { Database, FileSignature, Globe2, ShieldCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
-import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import {
+  displayLegalEntityName,
+  LEGAL_CONTACTS,
+  mailto,
+  policyLastUpdatedLabel,
+} from "@/lib/legal-info";
 import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
@@ -41,7 +46,7 @@ export default function DpaPage() {
     >
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
-        <p>Legal entity: {LEGAL_INFO.legalEntityName}</p>
+        <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           DPA contact:{" "}
           <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow DPA inquiry")} className="underline">

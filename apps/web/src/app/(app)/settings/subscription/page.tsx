@@ -1,1 +1,5 @@
-export { default } from "@/components/settings/subscription-management";
+import SubscriptionManagementPage from "@/components/settings/subscription-management";
+
+export default function SettingsSubscriptionPage() {
+  return <SubscriptionManagementPage initialNowIso={new Date().toISOString()} />;
+}

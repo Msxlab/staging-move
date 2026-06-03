@@ -2,7 +2,13 @@ import Link from "next/link";
 import { FileCheck2, Scale, ShieldAlert, ShieldCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_TERMS_DOCUMENT } from "@/lib/legal";
-import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import {
+  displayCompanyAddress,
+  displayLegalEntityName,
+  LEGAL_CONTACTS,
+  mailto,
+  policyLastUpdatedLabel,
+} from "@/lib/legal-info";
 import { createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
@@ -34,6 +40,8 @@ const highlights = [
   },
 ] as const;
 
+const publicCompanyAddress = displayCompanyAddress();
+
 export default function TermsPage() {
   return (
     <PublicPageShell
@@ -43,14 +51,14 @@ export default function TermsPage() {
     >
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
-        <p>Legal entity: {LEGAL_INFO.legalEntityName}</p>
+        <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
           <a href={mailto(LEGAL_CONTACTS.legal, "LocateFlow legal notice")} className="underline">
             {LEGAL_CONTACTS.legal}
           </a>
         </p>
-        <p>Mailing address: {LEGAL_INFO.companyAddress}</p>
+        {publicCompanyAddress ? <p>Mailing address: {publicCompanyAddress}</p> : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

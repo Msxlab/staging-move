@@ -91,6 +91,13 @@ Optional but required for full release QA:
 ```bash
 GOOGLE_OAUTH_CLIENT_ID=<web OAuth client id>
 GOOGLE_OAUTH_CLIENT_SECRET=<web OAuth client secret>
+NEXT_PUBLIC_LEGAL_ENTITY_NAME=<public legal entity name shown on legal/contact pages>
+NEXT_PUBLIC_COMPANY_ADDRESS=<public mailing address shown on legal/contact pages>
+NEXT_PUBLIC_SUPPORT_EMAIL=<optional public override; otherwise support@locateflow.com fallback>
+NEXT_PUBLIC_PRIVACY_EMAIL=<optional public override; otherwise privacy@locateflow.com fallback>
+NEXT_PUBLIC_BILLING_EMAIL=<optional public override; otherwise billing@locateflow.com fallback>
+NEXT_PUBLIC_LEGAL_NOTICE_EMAIL=<optional public override; otherwise legal@locateflow.com fallback>
+NEXT_PUBLIC_SECURITY_EMAIL=<optional public override; otherwise security@locateflow.com fallback>
 APPLE_OAUTH_CLIENT_ID=<services id>
 APPLE_OAUTH_TEAM_ID=<team id>
 APPLE_OAUTH_KEY_ID=<key id>

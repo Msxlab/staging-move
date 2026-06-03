@@ -65,7 +65,7 @@ describe("mobile IAP verify route", () => {
     }));
     const body = await response.json();
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(424);
     expect(body).toEqual({ error: "IAP_PROVIDER_UNAVAILABLE" });
     expect(JSON.stringify(body)).not.toContain("secret-token-value");
     expect(mocks.captureException).not.toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe("mobile IAP verify route", () => {
     }));
     const body = await response.json();
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(424);
     expect(body).toEqual({ error: "IAP_NOT_CONFIGURED" });
     expect(JSON.stringify(body)).not.toContain("do-not-leak");
     expect(mocks.captureException).not.toHaveBeenCalled();

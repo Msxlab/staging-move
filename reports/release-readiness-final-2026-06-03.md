@@ -24,11 +24,37 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Mobile sign-up creates a session immediately only when the backend reports no email-verification requirement.
   - Normal users still go through email verification.
 - Fixed mobile subscription plan visibility so store-disabled Android QA builds still show Individual, Family, and Pro cards while keeping purchase actions read-only.
+- Cleaned public legal/contact fallbacks in code:
+  - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
+  - Public legal/contact pages no longer need to print the raw mailing-address placeholder when the address env is absent.
+- Refreshed deployment checklists to match the current billing matrix:
+  - `docs/deploy/billing-and-iap-setup-checklist.md` now covers Family/Pro Stripe prices, the current in-app mutation routes, and the six-SKU mobile store catalog.
+  - `docs/deploy/mobile-store-submission-copy.md` now provides operator-ready App Review / Play Console copy without committing secrets.
+- Added minimal Google Play Android Publisher OAuth refresh-token fallback:
+  - Existing service-account private-key auth path remains unchanged.
+  - OAuth fallback uses `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`.
+  - Runtime/admin readiness treats Google Play as configured when either service-account private-key auth or OAuth refresh-token auth is complete.
+  - Google OAuth/Publisher failures fail closed with static errors and no secret-like response values.
 
 ## Verified
 
 - Public pricing shows Individual, Family, and Pro on Monthly and Annual tabs.
 - Client subscription page shows plan cards, Pro annual sync copy, and terms gating.
+- Public legal/store-support pages now render the exact production company identity:
+  - `https://locateflow.com/terms`
+  - `https://locateflow.com/privacy`
+  - `https://locateflow.com/contact`
+  - All three show `AXTRA SOLUTIONS LLC` and the Woodland Park mailing address after the DigitalOcean app-level env update.
+- Live Google Places server-side autocomplete works for authenticated users:
+  - QA bearer request to `/api/address-autocomplete` returned `enabled: true` with 5 predictions.
+  - Using the first returned `placeId`, `/api/address-autocomplete/details` returned `enabled: true` with a resolved address result.
+- Live public store/legal/support URLs are reachable:
+  - `https://locateflow.com/privacy`
+  - `https://locateflow.com/terms`
+  - `https://locateflow.com/contact`
+  - `https://locateflow.com/help`
+  - `https://locateflow.com/billing-policy`
+  - `https://locateflow.com/refund`
 - Admin connector page and client connections page match the live state:
   - USPS adapter supported in code/catalog.
   - No registered/enabled control-plane connector row yet.
@@ -57,6 +83,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Live exact QA account lifecycle:
   - Signup auto-verifies only `mobile.qa@locateflow.com`.
   - Mobile API login succeeds after signup.
+  - Android `More -> Sign Out` with confirmation returns the app to the Sign In screen.
   - Logout hard-resets the QA account and owned QA data.
   - Post-logout login returns 401, and a new signup starts clean at onboarding.
 - Google Cloud/Play readiness:
@@ -65,6 +92,13 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Topic `play-rtdn` created.
   - Google Play notification publisher principal granted Publisher on the topic.
   - Service account `locateflow-play-api` created and granted active app-scoped Play access.
+  - Play Console RTDN topic value saved to `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`.
+  - Pub/Sub push subscription `play-rtdn-locateflow-webhook` created and active.
+  - RTDN push endpoint and OIDC audience are `https://locateflow.com/api/webhooks/playstore`.
+  - Push OIDC service account matches the expected DigitalOcean identity; values intentionally not recorded.
+  - Android Publisher OAuth fallback configured in DigitalOcean without recording secret values.
+  - Live fake Android purchase verification fails closed as JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`; this confirms the missing private key is no longer the backend-auth blocker.
+  - Play Console internal testing is active with release `1.0.0-internal-1`, and the tester list currently shows 4 configured testers.
 - EAS Android `play-internal` store build finished successfully:
   - Build ID: `9d3c92a9-5e58-4eac-ba12-79bd63065081`
   - Version code: `15`
@@ -87,26 +121,47 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - DigitalOcean deployment for commit `0f70be4`: ACTIVE.
 - DigitalOcean deployment for commit `da3f291`: ACTIVE.
 - DigitalOcean app-spec update deployment `e6aa96d0-19c0-42d8-81a5-fa7329a2c28c`: ACTIVE.
+- DigitalOcean deployments for Google Play OAuth fallback commits became ACTIVE:
+  - `809d75e`
+  - `478c00f`
+  - `b2212a4`
 - Live smoke after deployment:
   - `/api/ready`: HTTP 200.
   - `/api/mobile/iap/products`: HTTP 200.
   - `/api/auth/register`: returns `emailVerified` and `requiresEmailVerification` response fields.
+  - `/api/address-autocomplete`: authenticated QA request returns `enabled: true` with live predictions.
+  - `/api/address-autocomplete/details`: authenticated QA request returns `enabled: true` with a resolved result.
   - Play RTDN fake bearer returns HTTP 401 invalid-token class, not missing expected identity.
+  - Play RTDN missing bearer returns HTTP 401 `Missing OIDC token`.
+  - Pub/Sub-published RTDN test notification reaches the live webhook and logs `[PLAYSTORE WEBHOOK] received TEST notification`.
+  - Fake Android IAP verify returns JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, no `IAP_NOT_CONFIGURED`, and no secret-like response content.
+- Final validation rerun after the Places/report updates passed:
+  - `git diff --check`
+  - `pnpm verify:typecheck`
+  - `pnpm verify:tests`
+  - `pnpm lint`
+  - `pnpm build`
+  - `pnpm verify:ci`
 
 ## Remaining Blockers
 
-- Android paid IAP is not production-ready until the remaining Google Play backend auth gap is closed:
-  - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` are now present in DigitalOcean; values intentionally not recorded.
-  - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` is still absent, or the code needs a keyless Android Publisher auth path.
-- Google service-account JSON key creation is currently blocked by organization policy `iam.disableServiceAccountKeyCreation`; no key was downloaded and no private key was added to DigitalOcean.
-- Code fails closed correctly while those are missing:
-  - Android purchase verification returns `IAP_NOT_CONFIGURED`.
-  - `GOOGLE_PLAY_RTDN_AUDIENCE`, `GOOGLE_PLAY_PACKAGE_NAME`, and expected RTDN service-account email are present; real RTDN delivery still requires a Pub/Sub push subscription that sends a matching OIDC token.
-- Play RTDN is not complete:
-  - Play Console RTDN topic value was not saved because Chrome automation could not reliably fill the custom console input.
-  - No Pub/Sub push subscription has been created for the live webhook endpoint.
-  - Expected RTDN email is staged in DigitalOcean using the existing Play service account; verify or adjust it when creating the final push subscription.
-- Active paid Stripe-managed Pro/Family state on mobile was not granted in production because admin plan changes required password plus MFA/backup code, and direct DigitalOcean DB access is network/firewall blocked.
+- Android paid IAP is not production-ready until a real internal-test Play purchase verifies entitlement activation:
+  - Service-account JSON key creation is still blocked by organization policy `iam.disableServiceAccountKeyCreation`.
+  - The new OAuth refresh-token fallback is deployed and configured, so the missing private key is no longer the Android Publisher auth blocker.
+  - Fake-token verification now reaches the provider dependency path and fails closed as `IAP_PROVIDER_UNAVAILABLE`.
+- Play RTDN Pub/Sub push delivery is complete from Google Cloud:
+  - Subscription `play-rtdn-locateflow-webhook` is active.
+  - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
+  - Invalid bearer paths fail closed with HTTP 401.
+  - A valid RTDN-format Pub/Sub publish reached the live webhook and was logged as a test notification.
+  - Play Console's own "Send test notification" button still requires human Terms of Service acceptance; Codex did not accept legal terms.
+- Active paid Stripe-managed Pro/Family state on mobile was not granted in production because the live admin mutation flow requires step-up secrets:
+  - The admin UI now reaches the QA user's detail page successfully.
+  - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
+  - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
+- Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
+  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`.
+  - Visible Family monthly/yearly, Pro monthly/yearly, and Individual monthly sandbox products are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
   - App Review notes and demo credentials.
@@ -119,8 +174,35 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `@sentry/react-native` native crash capture is not integrated yet.
 - `FEATURE_API_CONNECTORS` is absent in DigitalOcean, so Pro annual API sync remains hidden/disabled in live client UI until the connector launch is intentionally enabled and a connector is registered.
 
+## Additional Live QA Since The Prior Report
+
+- Public legal pages were rechecked in live Chrome after deployment:
+  - `/terms`, `/privacy`, and `/contact` no longer show raw placeholder legal/entity strings.
+- Public legal pages were then rechecked again after the DigitalOcean env update deployment completed:
+  - `/terms`, `/privacy`, and `/contact` now show the exact public legal entity `AXTRA SOLUTIONS LLC`.
+  - The mailing address now renders as `188 Overmount Ave APT A, Woodland Park, NJ 07424-3255, United States`.
+- Live client subscription QA found and then cleared a production hydration issue:
+  - Before the patch, `/settings/subscription` emitted production React hydration errors in Chrome dev logs.
+  - Fix shipped in commit `529aad9` by making the annual-offer date calculation use a server-stable `initialNowIso` prop instead of a raw render-time `new Date()` inside the client component.
+  - Deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` became ACTIVE.
+  - Fresh live retest after that deployment showed no console errors and confirmed Monthly / Annual tabs plus Individual / Family / Pro annual cards, including the Pro annual connector copy.
+- Android emulator QA re-verified the resettable QA flow from the real UI:
+  - `More -> Sign Out` opened the destructive confirmation dialog and returned to the Sign In screen after confirmation.
+  - The old QA credentials were then rejected with HTTP 401 until the exact QA email was re-registered.
+  - Re-registering `mobile.qa@locateflow.com` succeeded again, confirming the server-side hard reset.
+  - A rapid immediate re-login sequence on the local debug proxy surfaced the expected auth lockout banner (`Retry after ... seconds`) rather than silently reusing stale local state.
+- Play Console live smoke added two more confirmations:
+  - Internal testing is Active with release `1.0.0-internal-1`.
+  - The Internal testing tester list currently contains 4 configured testers.
+- Live admin smoke improved from the prior checkpoint:
+  - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
+  - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
+- Live Stripe sandbox smoke added one more concrete blocker:
+  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual`.
+  - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
+
 ## Release Recommendation
 
 READY FOR INTERNAL TESTING ONLY
 
-Safe to merge the code hardening, Android QA fixes, and reporting updates after review. Not safe to market-launch Android paid subscriptions until the Google credential policy/keyless-auth decision and RTDN push delivery are completed and verified. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
+Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, DigitalOcean public legal env updates, store-submission copy docs, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
