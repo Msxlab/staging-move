@@ -276,11 +276,16 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Implemented and deployed minimal OAuth refresh-token fallback for Android Publisher auth; existing service-account private-key path remains unchanged.
   - DigitalOcean now includes `GOOGLE_PLAY_OAUTH_CLIENT_ID`, `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`; values intentionally not recorded.
   - Live fake-token Android purchase verification returns JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`, and no secret-like values in the response.
-  - Play RTDN fake-bearer smoke now returns 401 invalid-token class instead of the previous missing-identity 503; real RTDN delivery still requires a Pub/Sub push subscription with matching OIDC identity.
+  - Play RTDN fake-bearer smoke now returns 401 invalid-token class instead of the previous missing-identity 503.
   - Pub/Sub API is enabled, topic `play-rtdn` exists, and Google Play's notification service account has Publisher on the topic.
   - Play Console RTDN topic value is now saved to `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`.
-  - Pub/Sub push subscription creation is blocked because the signed-in Google Cloud account lacks `pubsub.subscriptions.create` and `serviceusage.services.list`.
-  - Required next action: grant `roles/pubsub.editor` or `roles/pubsub.admin`, then create a push subscription to `https://locateflow.com/api/webhooks/playstore` with the same OIDC audience and the expected service account.
+  - Pub/Sub push subscription `play-rtdn-locateflow-webhook` is active on topic `play-rtdn`.
+  - Push endpoint is `https://locateflow.com/api/webhooks/playstore`.
+  - Push OIDC service account and audience match DigitalOcean `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_PLAY_RTDN_AUDIENCE`; values intentionally not recorded.
+  - No redeploy/restart was needed because DigitalOcean env already matched the final RTDN identity.
+  - Invalid RTDN tests fail closed: missing bearer returns HTTP 401 `Missing OIDC token`; fake bearer returns HTTP 401 `Invalid OIDC token`.
+  - Valid RTDN-format payload published through Google Cloud Pub/Sub delivered to the live webhook with OIDC; DigitalOcean logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
+  - Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page; Codex did not accept legal terms on the user's behalf.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
@@ -339,8 +344,8 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Final verification after the mobile Family/Pro visibility fix passed: `git diff --check`, focused mobile tests 2 files / 7 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests` (web 192 files / 1432 tests, admin 89 files / 481 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests), and root `pnpm lint`.
 - 2026-06-03: Play Console subscriptions were verified against live `/api/mobile/iap/products`: all six Android product IDs exist and each has one active base plan; no Play rollout/submission was performed.
 - 2026-06-03: Google Cloud Android Publisher API and Pub/Sub API were enabled; service account `locateflow-play-api` was created, granted app-scoped Play access, and Pub/Sub topic `play-rtdn` was created with Google Play Publisher access.
-- 2026-06-03: Google service-account key creation is blocked by organization policy `iam.disableServiceAccountKeyCreation`; no JSON key was downloaded, so Android paid IAP verification remains blocked until keyless auth or policy-approved credential provisioning is completed.
-- 2026-06-03: Play RTDN topic value was not saved in Play Console and no push subscription was created because Chrome input automation could not reliably write the custom console field; this remains a manual/handoff item.
+- 2026-06-03: Google service-account key creation was blocked by organization policy `iam.disableServiceAccountKeyCreation`; no JSON key was downloaded, so Android paid IAP verification needed keyless auth or policy-approved credential provisioning.
+- 2026-06-03: Play RTDN topic value was initially not saved in Play Console and no push subscription was created because Chrome input automation could not reliably write the custom console field; later steps completed the topic save and push subscription.
 - 2026-06-03: Added register response fields for auto-verified QA accounts and updated mobile sign-up to immediately create a mobile session when the backend reports no verification requirement; normal users still go through email verification.
 - 2026-06-03: Final validation for this patch passed: `git diff --check`, focused register route test 14/14, mobile tests 11 files / 29 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests`, root `pnpm lint`, root `pnpm build`, `pnpm verify:ci`, and `expo-doctor` 18/18 with Node system CA enabled.
 - 2026-06-03: DigitalOcean deployment `a6292036-a3ba-4544-ad0b-b176bdbc128d` for commit `0f70be4` became ACTIVE. Live smoke passed: `/api/ready` HTTP 200, `/api/mobile/iap/products` HTTP 200, and `/api/auth/register` now returns `emailVerified` plus `requiresEmailVerification` fields for a normal smoke signup.
@@ -352,5 +357,10 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: DigitalOcean OAuth env update completed without printing secrets; temporary local OAuth/spec files were removed after deployment.
 - 2026-06-03: Deployments for commits `809d75e`, `478c00f`, and `b2212a4` became ACTIVE.
 - 2026-06-03: Live post-deploy smoke passed: `/api/ready` HTTP 200 ready=true, `/api/mobile/iap/products` HTTP 200 with six unique iOS and Android products, fake Android purchase verify HTTP 424 JSON `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`.
-- 2026-06-03: Play Console RTDN topic value was saved; Google Cloud Pub/Sub push subscription creation is blocked by missing `pubsub.subscriptions.create` / `serviceusage.services.list` permission for the signed-in account.
+- 2026-06-03: Play Console RTDN topic value was saved; Google Cloud Pub/Sub push subscription creation was then blocked by missing `pubsub.subscriptions.create` / `serviceusage.services.list` permission for the signed-in account until the user added the required IAM roles.
 - 2026-06-03: Post-report validation passed: `pnpm verify:typecheck`, `pnpm verify:tests` (web 194 files / 1445 tests, admin 89 files / 486 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests), and `pnpm lint`.
+- 2026-06-03: Google Cloud Pub/Sub push subscription `play-rtdn-locateflow-webhook` was created for topic `play-rtdn` with endpoint/audience `https://locateflow.com/api/webhooks/playstore` and the expected Play API service account.
+- 2026-06-03: DigitalOcean RTDN env matched the final Google Cloud OIDC identity, so no redeploy/restart was needed.
+- 2026-06-03: Live RTDN invalid-path tests passed: missing bearer returned HTTP 401 `Missing OIDC token`; fake bearer returned HTTP 401 `Invalid OIDC token`.
+- 2026-06-03: Live RTDN valid push path passed by publishing an RTDN-format test payload through Google Cloud Pub/Sub; DigitalOcean run logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
+- 2026-06-03: Play Console direct test notification remains human-gated by Play Console Terms of Service acceptance; no Terms acceptance, Play rollout, production release, or live payment was performed.

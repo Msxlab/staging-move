@@ -71,6 +71,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Google Play notification publisher principal granted Publisher on the topic.
   - Service account `locateflow-play-api` created and granted active app-scoped Play access.
   - Play Console RTDN topic value saved to `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`.
+  - Pub/Sub push subscription `play-rtdn-locateflow-webhook` created and active.
+  - RTDN push endpoint and OIDC audience are `https://locateflow.com/api/webhooks/playstore`.
+  - Push OIDC service account matches the expected DigitalOcean identity; values intentionally not recorded.
   - Android Publisher OAuth fallback configured in DigitalOcean without recording secret values.
   - Live fake Android purchase verification fails closed as JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`; this confirms the missing private key is no longer the backend-auth blocker.
 - EAS Android `play-internal` store build finished successfully:
@@ -104,6 +107,8 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `/api/mobile/iap/products`: HTTP 200.
   - `/api/auth/register`: returns `emailVerified` and `requiresEmailVerification` response fields.
   - Play RTDN fake bearer returns HTTP 401 invalid-token class, not missing expected identity.
+  - Play RTDN missing bearer returns HTTP 401 `Missing OIDC token`.
+  - Pub/Sub-published RTDN test notification reaches the live webhook and logs `[PLAYSTORE WEBHOOK] received TEST notification`.
   - Fake Android IAP verify returns JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, no `IAP_NOT_CONFIGURED`, and no secret-like response content.
 
 ## Remaining Blockers
@@ -112,11 +117,12 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Service-account JSON key creation is still blocked by organization policy `iam.disableServiceAccountKeyCreation`.
   - The new OAuth refresh-token fallback is deployed and configured, so the missing private key is no longer the Android Publisher auth blocker.
   - Fake-token verification now reaches the provider dependency path and fails closed as `IAP_PROVIDER_UNAVAILABLE`.
-- Play RTDN is not complete:
-  - Play Console RTDN topic value is now saved.
-  - No Pub/Sub push subscription has been created for the live webhook endpoint.
-  - Google Cloud Console blocks creation for the current signed-in account with missing `pubsub.subscriptions.create` and `serviceusage.services.list`.
-  - Required next action: grant `roles/pubsub.editor` or `roles/pubsub.admin` on project `project-20494d44-c9e3-4fc2-9f4`, then create the push subscription with endpoint/audience `https://locateflow.com/api/webhooks/playstore`.
+- Play RTDN Pub/Sub push delivery is complete from Google Cloud:
+  - Subscription `play-rtdn-locateflow-webhook` is active.
+  - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
+  - Invalid bearer paths fail closed with HTTP 401.
+  - A valid RTDN-format Pub/Sub publish reached the live webhook and was logged as a test notification.
+  - Play Console's own "Send test notification" button still requires human Terms of Service acceptance; Codex did not accept legal terms.
 - Active paid Stripe-managed Pro/Family state on mobile was not granted in production because admin plan changes required password plus MFA/backup code, and direct DigitalOcean DB access is network/firewall blocked.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
@@ -134,4 +140,4 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 
 READY FOR INTERNAL TESTING ONLY
 
-Safe to merge the code hardening, Android QA fixes, and reporting updates after review. Not safe to market-launch Android paid subscriptions until the Google credential policy/keyless-auth decision and RTDN push delivery are completed and verified. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
+Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.

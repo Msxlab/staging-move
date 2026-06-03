@@ -28,19 +28,22 @@ Verified Google Play subscription catalog, Google Cloud API readiness, service-a
 - Live `/api/mobile/iap/products` returns all six iOS and Android product IDs.
 - Live fake Android purchase verification fails closed with JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`, and no secret-like values in the response.
 - Play Console RTDN topic value was saved as `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`; Save changes became disabled after saving.
+- Pub/Sub push subscription `play-rtdn-locateflow-webhook` is active on topic `play-rtdn`.
+- Push endpoint is `https://locateflow.com/api/webhooks/playstore`.
+- Push OIDC audience is `https://locateflow.com/api/webhooks/playstore`.
+- Push OIDC service account matches the expected DigitalOcean identity; values intentionally not recorded.
+- DigitalOcean RTDN env values match the final endpoint/audience/service account, so no redeploy or restart was needed.
+- Invalid RTDN delivery fails closed:
+  - Missing bearer: HTTP 401 `Missing OIDC token`.
+  - Fake bearer: HTTP 401 `Invalid OIDC token`.
+- Valid RTDN-format delivery through Google Cloud Pub/Sub reached the live webhook; DigitalOcean run logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
 
 ## Blocked
 
 - Service-account JSON key creation remains blocked by Google organization policy `iam.disableServiceAccountKeyCreation`; this is now handled by the OAuth fallback rather than a launch blocker for Android Publisher auth.
 - Fake-token Android verification reaches the Google Publisher dependency path and fails closed as provider unavailable. A real internal-test Play purchase token is still needed to prove successful paid entitlement activation end to end.
-- Pub/Sub push subscription was not created because the signed-in Google Cloud account is missing `pubsub.subscriptions.create` and `serviceusage.services.list`.
-- Required next permission/action: grant the current Google Cloud account `roles/pubsub.editor` or `roles/pubsub.admin` on project `project-20494d44-c9e3-4fc2-9f4`, then create the push subscription.
-- RTDN subscription target remains:
-  - Topic: `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`
-  - Push endpoint: `https://locateflow.com/api/webhooks/playstore`
-  - OIDC audience: `https://locateflow.com/api/webhooks/playstore`
-  - OIDC service account: the existing expected Play API service account in DigitalOcean.
+- Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page. Codex did not accept legal terms on the user's behalf.
 
 ## Launch Impact
 
-Android products and backend auth are ready for internal paid-IAP testing, but Android paid IAP is not production-ready until RTDN push delivery is completed and a real internal-test purchase verifies entitlement activation.
+Android products, backend auth, and RTDN Pub/Sub push delivery are ready for internal paid-IAP testing, but Android paid IAP is not production-ready until a real internal-test purchase verifies entitlement activation.
