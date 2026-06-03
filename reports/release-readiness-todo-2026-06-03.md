@@ -178,8 +178,9 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Change-plan matrix schedules Family -> Individual reductions at Stripe period end rather than demoting immediately.
 - [x] After effective Individual downgrade, Family-only write paths are hidden or blocked.
   - Seat reconciliation demotes overflow members to `OVERFLOW`; permission matrix makes suspended/overflow members read-only.
-- [ ] Mobile displays active Family plan as current account state.
-  - Current live mobile emulator session is blocked before subscription UI by email verification/onboarding for the fake QA account. No raw verification token is stored in DB or EmailLog, which is correct; completing this needs a verified test inbox/OAuth account or explicit approval for a controlled production QA-user verification mutation.
+- [BLOCKED] Mobile displays active Family plan as current account state.
+  - Mobile QA auth/onboarding is no longer blocked: exact QA signup auto-verifies, dashboard loads, and `More -> Subscription` opens on Android.
+  - Granting a live Family/Pro paid entitlement for the QA account still requires admin step-up/production subscription mutation; this was not bypassed.
 
 ## 7. Pro Sync/Connector Matrix
 
@@ -223,6 +224,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Live QA reset flow verifies the exact `QA_RESETTABLE_ACCOUNT_EMAIL` account on signup and hard-resets it on logout; malformed/multi-email values are inert.
   - Android emulator signed in through the local QA proxy, completed onboarding via live mobile APIs, reached Home, then opened `More -> Subscription`.
   - Mobile subscription UI showed the live backend account state as `Free Access` / `FREE_ACCESS` with the store-disabled notice.
+  - Exact QA lifecycle was verified live: signup 201/auto-verified, login 200, profile/address/service/onboarding writes 200/201, logout 200, old login 401, re-signup 201, clean onboarding step `profile`.
 - [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
   - Authenticated, verified, onboarding-complete mobile session is working.
   - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
@@ -269,10 +271,12 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Android Publisher API is enabled in Google Cloud.
   - Google Play service account was created and granted active LocateFlow app access in Play Console.
   - Service-account JSON key creation is blocked by Google organization policy `iam.disableServiceAccountKeyCreation`; no private key was downloaded or added to DigitalOcean.
-  - DigitalOcean app spec still does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
-  - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the service account is configured; Play RTDN rejects unauthenticated requests and will reject real OIDC pushes until expected identity is configured.
+  - DigitalOcean app spec now includes `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`; values intentionally not recorded.
+  - DigitalOcean app spec still does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
+  - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the private key or a keyless auth implementation is configured.
+  - Play RTDN fake-bearer smoke now returns 401 invalid-token class instead of the previous missing-identity 503; real RTDN delivery still requires a Pub/Sub push subscription with matching OIDC identity.
   - Pub/Sub API is enabled, topic `play-rtdn` exists, and Google Play's notification service account has Publisher on the topic.
-  - Play Console RTDN topic value was not saved, and no push subscription was created; completing this requires manual console input or a working console automation path, then adding the expected DigitalOcean RTDN identity values without deleting existing envs.
+  - Play Console RTDN topic value was not saved, and no push subscription was created; completing this requires manual console input or a working console automation path, then confirming the final DigitalOcean RTDN identity values without deleting existing envs.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
@@ -280,7 +284,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
 - [x] Verify Sentry/native crash reporting decision for v1.
-  - DigitalOcean app spec includes `EXPO_PUBLIC_SENTRY_DSN`.
+  - DigitalOcean app spec includes `NEXT_PUBLIC_SENTRY_DSN` and now has a populated `EXPO_PUBLIC_SENTRY_DSN`.
   - Mobile code uses the lightweight Sentry envelope path for captured app errors.
   - Native crash capture through `@sentry/react-native` is still not integrated; this is acceptable for v1 only if lightweight JS-level reporting is the intended launch posture.
 
@@ -336,3 +340,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Added register response fields for auto-verified QA accounts and updated mobile sign-up to immediately create a mobile session when the backend reports no verification requirement; normal users still go through email verification.
 - 2026-06-03: Final validation for this patch passed: `git diff --check`, focused register route test 14/14, mobile tests 11 files / 29 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests`, root `pnpm lint`, root `pnpm build`, `pnpm verify:ci`, and `expo-doctor` 18/18 with Node system CA enabled.
 - 2026-06-03: DigitalOcean deployment `a6292036-a3ba-4544-ad0b-b176bdbc128d` for commit `0f70be4` became ACTIVE. Live smoke passed: `/api/ready` HTTP 200, `/api/mobile/iap/products` HTTP 200, and `/api/auth/register` now returns `emailVerified` plus `requiresEmailVerification` fields for a normal smoke signup.
+- 2026-06-03: DigitalOcean deployment `e5551dea-9d04-426d-afdd-5c22a545ea3f` for commit `da3f291` became ACTIVE; exact QA signup self-reset is live.
+- 2026-06-03: DigitalOcean app-spec update deployment `e6aa96d0-19c0-42d8-81a5-fa7329a2c28c` became ACTIVE; `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` are present with values, while `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` remains absent due Google org policy.
+- 2026-06-03: Post-env live smoke passed: `/api/ready` HTTP 200, `/api/mobile/iap/products` HTTP 200, and Play RTDN fake bearer returned HTTP 401 invalid-token class rather than missing expected identity.
+- 2026-06-03: Live QA cleanup completed after Android testing: exact QA signup 201, login 200, mobile-style logout 200, and post-logout login 401; Android app data was cleared.
