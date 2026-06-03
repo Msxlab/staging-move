@@ -38,6 +38,7 @@ async function fetchWithGoogleTimeout(
   input: string,
   init: RequestInit,
   timeoutError: string,
+  networkError: string,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GOOGLE_API_TIMEOUT_MS);
@@ -51,7 +52,7 @@ async function fetchWithGoogleTimeout(
     if ((error as { name?: string })?.name === "AbortError") {
       throw new Error(timeoutError);
     }
-    throw error;
+    throw new Error(networkError);
   } finally {
     clearTimeout(timeout);
   }
@@ -137,6 +138,7 @@ async function getServiceAccountAccessToken(creds: GoogleServiceAccountCreds, no
       body,
     },
     "GOOGLE_OAUTH_TIMEOUT",
+    "GOOGLE_OAUTH_NETWORK",
   );
   if (!res.ok) {
     throw new Error(`GOOGLE_OAUTH_${res.status}`);
@@ -165,6 +167,7 @@ async function getOAuthRefreshTokenAccessToken(creds: GoogleOAuthCreds): Promise
       body,
     },
     "GOOGLE_OAUTH_TIMEOUT",
+    "GOOGLE_OAUTH_NETWORK",
   );
   if (!res.ok) {
     throw new Error(`GOOGLE_OAUTH_${res.status}`);
@@ -249,6 +252,7 @@ export async function getGoogleSubscription(
       headers: { Authorization: `Bearer ${access}` },
     },
     "GOOGLE_API_TIMEOUT",
+    "GOOGLE_API_NETWORK",
   );
 
   if (res.status === 404 || res.status === 410) return null;
@@ -288,6 +292,7 @@ export async function acknowledgeGoogleSubscription(opts: {
       body: "{}",
     },
     "GOOGLE_API_TIMEOUT",
+    "GOOGLE_API_NETWORK",
   );
 
   if (res.ok || res.status === 400 /* already acknowledged */) return;

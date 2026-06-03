@@ -157,6 +157,24 @@ describe("Google Play Developer API auth", () => {
     await expect(getGoogleSubscription("purchase-token-1")).rejects.not.toThrow("1//refresh-token");
   });
 
+  it("does not include OAuth secrets in token network errors", async () => {
+    mockRuntimeConfig({
+      GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
+      GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL: null,
+      GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY: null,
+      GOOGLE_PLAY_OAUTH_CLIENT_ID: "123456789012-abcdef.apps.googleusercontent.com",
+      GOOGLE_PLAY_OAUTH_CLIENT_SECRET: "GOCSPX-client-secret-123",
+      GOOGLE_PLAY_OAUTH_REFRESH_TOKEN: "1//refresh-token",
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new TypeError("fetch failed GOCSPX-client-secret-123 1//refresh-token");
+    }));
+
+    await expect(getGoogleSubscription("purchase-token-1")).rejects.toThrow("GOOGLE_OAUTH_NETWORK");
+    await expect(getGoogleSubscription("purchase-token-1")).rejects.not.toThrow("GOCSPX-client-secret-123");
+    await expect(getGoogleSubscription("purchase-token-1")).rejects.not.toThrow("1//refresh-token");
+  });
+
   it("uses the cached OAuth access token for acknowledgement calls", async () => {
     mockRuntimeConfig({
       GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
