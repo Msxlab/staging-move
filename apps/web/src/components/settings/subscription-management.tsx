@@ -163,7 +163,11 @@ function isStripeCheckoutActivated(subscription: SubscriptionRecord | null | und
   return subscription.status === "TRIALING" || subscription.status === "ACTIVE";
 }
 
-export default function SubscriptionManagementPage() {
+export default function SubscriptionManagementPage({
+  initialNowIso,
+}: {
+  initialNowIso: string;
+}) {
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [entitlement, setEntitlement] = useState<UnifiedEntitlementSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -301,6 +305,10 @@ export default function SubscriptionManagementPage() {
     router.replace("/settings/subscription", { scroll: false });
   }, [justUpgradedTier, router, waitingForActivation, subscription]);
 
+  const stableNow = useMemo(
+    () => parseDateValue(initialNowIso) ?? new Date("1970-01-01T00:00:00.000Z"),
+    [initialNowIso],
+  );
   const currentState = useMemo(
     () => deriveUserSubscriptionState(subscription || null),
     [subscription],
@@ -316,7 +324,7 @@ export default function SubscriptionManagementPage() {
   );
   const subscriptionPlan = paidPlanFromValue(subscription?.plan);
   const subscriptionFirstChargeDate = parseDateValue(subscription?.firstChargeAt);
-  const offerFirstChargeDate = addDays(new Date(), publicCampaign?.trialDays ?? 90);
+  const offerFirstChargeDate = addDays(stableNow, publicCampaign?.trialDays ?? 90);
   const firstChargeDate = subscriptionFirstChargeDate || offerFirstChargeDate;
   const firstChargeLabel = formatDateLabel(firstChargeDate.toISOString());
   const subscriptionPriceLabel = subscription?.firstChargeAmount
