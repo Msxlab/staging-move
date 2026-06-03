@@ -140,6 +140,8 @@ describe("register route", () => {
 
     expect(response.status).toBe(201);
     expect(body.userId).toBe("user-new");
+    expect(body.emailVerified).toBe(false);
+    expect(body.requiresEmailVerification).toBe(true);
     expect(userMock.create).toHaveBeenCalledWith({
       data: {
         email: "new@example.com",
@@ -171,6 +173,8 @@ describe("register route", () => {
 
     expect(response.status).toBe(201);
     expect(body.userId).toBe("qa-user");
+    expect(body.emailVerified).toBe(true);
+    expect(body.requiresEmailVerification).toBe(false);
     expect(userMock.create).toHaveBeenCalledWith({
       data: {
         email: "qa@example.com",

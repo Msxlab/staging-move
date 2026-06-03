@@ -250,9 +250,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
-- [BLOCKED] Verify Play Console subscription product IDs against `/api/mobile/iap/products` only if already authenticated and no re-auth is required.
-  - API/runtime config verified; direct console mutation/upload/rollout not performed.
+- [x] Verify Play Console subscription product IDs against `/api/mobile/iap/products` only if already authenticated and no re-auth is required.
+  - Play Console subscriptions page shows all six Android product IDs: Individual/Family/Pro monthly/yearly.
+  - Each subscription shows one active base plan.
   - Live product endpoint returns the full Individual/Family/Pro monthly/yearly map for both stores.
+  - No Play rollout/submission was performed.
 - [BLOCKED] Do not perform production Play Store rollout.
 
 ## 9. Store Submission Readiness
@@ -264,17 +266,23 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - DigitalOcean app spec/admin Runtime Config show `APPLE_BUNDLE_ID`, Apple App Store issuer/key/private key/environment present from ENV; values intentionally not recorded.
 - [BLOCKED] Verify Google Play Developer API config presence; missing credential is a blocker.
   - DigitalOcean app spec shows Android product IDs, `GOOGLE_PLAY_PACKAGE_NAME`, and `GOOGLE_PLAY_RTDN_AUDIENCE` present.
-  - DigitalOcean app spec does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
+  - Android Publisher API is enabled in Google Cloud.
+  - Google Play service account was created and granted active LocateFlow app access in Play Console.
+  - Service-account JSON key creation is blocked by Google organization policy `iam.disableServiceAccountKeyCreation`; no private key was downloaded or added to DigitalOcean.
+  - DigitalOcean app spec still does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`, or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
   - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the service account is configured; Play RTDN rejects unauthenticated requests and will reject real OIDC pushes until expected identity is configured.
-  - Local `gcloud` is not installed/authenticated; completing this requires creating or selecting the Google Play service-account credential in Google Cloud/Play Console, then adding those missing DigitalOcean env values without deleting existing envs.
+  - Pub/Sub API is enabled, topic `play-rtdn` exists, and Google Play's notification service account has Publisher on the topic.
+  - Play Console RTDN topic value was not saved, and no push subscription was created; completing this requires manual console input or a working console automation path, then adding the expected DigitalOcean RTDN identity values without deleting existing envs.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
   - Source inventory exists, but final console form submission/confirmation requires store-console review.
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
-- [!] Verify Sentry/native crash reporting decision for v1.
-  - Store checklist still marks production native crash reporter DSN as TODO or an explicit v1 no-native-crash-reporting decision.
+- [x] Verify Sentry/native crash reporting decision for v1.
+  - DigitalOcean app spec includes `EXPO_PUBLIC_SENTRY_DSN`.
+  - Mobile code uses the lightweight Sentry envelope path for captured app errors.
+  - Native crash capture through `@sentry/react-native` is still not integrated; this is acceptable for v1 only if lightweight JS-level reporting is the intended launch posture.
 
 ## 10. Execution Log
 
@@ -320,3 +328,9 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Rebuilt and reinstalled Android `debugOptimized` after stopping a stale Gradle daemon/file lock; emulator verified Individual, Family, and Pro cards plus read-only Family/Pro copy.
 - 2026-06-03: Active Pro Annual mobile state was attempted but remains blocked by real external controls: admin plan grant requires admin password plus MFA/backup code, and direct local DB access to the DigitalOcean database is blocked by network/firewall.
 - 2026-06-03: Final verification after the mobile Family/Pro visibility fix passed: `git diff --check`, focused mobile tests 2 files / 7 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests` (web 192 files / 1432 tests, admin 89 files / 481 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests), and root `pnpm lint`.
+- 2026-06-03: Play Console subscriptions were verified against live `/api/mobile/iap/products`: all six Android product IDs exist and each has one active base plan; no Play rollout/submission was performed.
+- 2026-06-03: Google Cloud Android Publisher API and Pub/Sub API were enabled; service account `locateflow-play-api` was created, granted app-scoped Play access, and Pub/Sub topic `play-rtdn` was created with Google Play Publisher access.
+- 2026-06-03: Google service-account key creation is blocked by organization policy `iam.disableServiceAccountKeyCreation`; no JSON key was downloaded, so Android paid IAP verification remains blocked until keyless auth or policy-approved credential provisioning is completed.
+- 2026-06-03: Play RTDN topic value was not saved in Play Console and no push subscription was created because Chrome input automation could not reliably write the custom console field; this remains a manual/handoff item.
+- 2026-06-03: Added register response fields for auto-verified QA accounts and updated mobile sign-up to immediately create a mobile session when the backend reports no verification requirement; normal users still go through email verification.
+- 2026-06-03: Final validation for this patch passed: `git diff --check`, focused register route test 14/14, mobile tests 11 files / 29 tests, mobile lint, `pnpm verify:typecheck`, `pnpm verify:tests`, root `pnpm lint`, root `pnpm build`, `pnpm verify:ci`, and `expo-doctor` 18/18 with Node system CA enabled.

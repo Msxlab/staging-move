@@ -161,5 +161,13 @@ export async function POST(request: NextRequest) {
     }).catch((err) => console.error("[EMAIL] verification send failed:", err));
   }
 
-  return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
+  return NextResponse.json(
+    {
+      success: true,
+      userId: user.id,
+      emailVerified: autoVerifyQaAccount,
+      requiresEmailVerification: !autoVerifyQaAccount,
+    },
+    { status: 201 },
+  );
 }
