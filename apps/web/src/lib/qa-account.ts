@@ -5,6 +5,7 @@ export const QA_RESETTABLE_ACCOUNT_EMAIL_KEY = "QA_RESETTABLE_ACCOUNT_EMAIL";
 
 type QaAccountResetSkipReason =
   | "config_disabled"
+  | "email_not_allowlisted"
   | "session_not_allowlisted"
   | "user_not_allowlisted"
   | "owned_workspace_has_other_members";
@@ -35,22 +36,12 @@ export function isAllowlistedQaEmail(
   return Boolean(allowlistedEmail && normalizeEmail(email) === allowlistedEmail);
 }
 
-export async function resetAllowlistedQaAccountOnLogout(input: {
-  userId: string | null | undefined;
-  sessionEmail: string | null | undefined;
+async function resetExactAllowlistedQaUser(input: {
+  user: { id: string; email: string | null };
+  allowlistedEmail: string;
 }): Promise<QaAccountResetResult> {
-  const allowlistedEmail = getQaResettableAccountEmail();
-  if (!allowlistedEmail) return { reset: false, reason: "config_disabled" };
-
-  if (!input.userId || normalizeEmail(input.sessionEmail) !== allowlistedEmail) {
-    return { reset: false, reason: "session_not_allowlisted" };
-  }
-
-  const user = await rawPrisma.user.findUnique({
-    where: { id: input.userId },
-    select: { id: true, email: true },
-  });
-  if (!user || normalizeEmail(user.email) !== allowlistedEmail) {
+  const { user, allowlistedEmail } = input;
+  if (normalizeEmail(user.email) !== allowlistedEmail) {
     return { reset: false, reason: "user_not_allowlisted" };
   }
 
@@ -116,4 +107,45 @@ export async function resetAllowlistedQaAccountOnLogout(input: {
 
   if (blockedReason) return { reset: false, reason: blockedReason };
   return { reset: true };
+}
+
+export async function resetAllowlistedQaAccountForSignup(input: {
+  email: string | null | undefined;
+}): Promise<QaAccountResetResult> {
+  const allowlistedEmail = getQaResettableAccountEmail();
+  if (!allowlistedEmail) return { reset: false, reason: "config_disabled" };
+
+  if (normalizeEmail(input.email) !== allowlistedEmail) {
+    return { reset: false, reason: "email_not_allowlisted" };
+  }
+
+  const user = await rawPrisma.user.findUnique({
+    where: { email: allowlistedEmail },
+    select: { id: true, email: true },
+  });
+  if (!user) return { reset: true };
+
+  return resetExactAllowlistedQaUser({ user, allowlistedEmail });
+}
+
+export async function resetAllowlistedQaAccountOnLogout(input: {
+  userId: string | null | undefined;
+  sessionEmail: string | null | undefined;
+}): Promise<QaAccountResetResult> {
+  const allowlistedEmail = getQaResettableAccountEmail();
+  if (!allowlistedEmail) return { reset: false, reason: "config_disabled" };
+
+  if (!input.userId || normalizeEmail(input.sessionEmail) !== allowlistedEmail) {
+    return { reset: false, reason: "session_not_allowlisted" };
+  }
+
+  const user = await rawPrisma.user.findUnique({
+    where: { id: input.userId },
+    select: { id: true, email: true },
+  });
+  if (!user || normalizeEmail(user.email) !== allowlistedEmail) {
+    return { reset: false, reason: "user_not_allowlisted" };
+  }
+
+  return resetExactAllowlistedQaUser({ user, allowlistedEmail });
 }
