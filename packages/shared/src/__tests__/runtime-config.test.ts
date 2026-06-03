@@ -215,6 +215,17 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
     expect(isManagedRuntimeConfigKey("GUIDED_PARTNERS")).toBe(true);
     expect(isRuntimeConfigDbBackedKeyAllowed("GUIDED_PARTNERS")).toBe(true);
   });
+
+  it("registers the resettable QA account as deployment-only email config", () => {
+    expect(getRuntimeConfigDefinition("QA_RESETTABLE_ACCOUNT_EMAIL")).toMatchObject({
+      category: "SECURITY",
+      maskStrategy: "email",
+      runtimeEditable: false,
+      requiredInProduction: false,
+    });
+    expect(isManagedRuntimeConfigKey("QA_RESETTABLE_ACCOUNT_EMAIL")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("QA_RESETTABLE_ACCOUNT_EMAIL")).toBe(false);
+  });
 });
 
 describe("validateRuntimeConfigValueShape hardening", () => {
@@ -369,6 +380,24 @@ describe("validateRuntimeConfigValueShape hardening", () => {
         productionLike: false,
       }),
     ).toMatchObject({ ok: false, reason: "boolean_required" });
+  });
+
+  it("validates the resettable QA account as exactly one email address", () => {
+    expect(
+      validateRuntimeConfigValueShape("QA_RESETTABLE_ACCOUNT_EMAIL", "qa@example.com", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("QA_RESETTABLE_ACCOUNT_EMAIL", "qa@example.com,other@example.com", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "email_required" });
+    expect(
+      validateRuntimeConfigValueShape("QA_RESETTABLE_ACCOUNT_EMAIL", "QA <qa@example.com>", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "email_required" });
   });
 
   it("rejects invalid storage providers and unsafe storage endpoints", () => {

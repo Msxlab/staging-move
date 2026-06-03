@@ -223,6 +223,16 @@ describe("upsertRuntimeConfigEntry value validation", () => {
       }),
     ).rejects.toThrow(/RUNTIME_CONFIG_NOT_EDITABLE/);
   });
+
+  it("rejects upsert for QA_RESETTABLE_ACCOUNT_EMAIL (deployment-only)", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "QA_RESETTABLE_ACCOUNT_EMAIL",
+        value: "qa@example.com",
+      }),
+    ).rejects.toThrow(/RUNTIME_CONFIG_NOT_EDITABLE/);
+  });
 });
 
 describe("listRuntimeConfigCatalog status surfacing", () => {

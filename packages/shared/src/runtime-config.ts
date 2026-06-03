@@ -203,6 +203,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     validation: "minimum 32 characters",
   },
   {
+    key: "QA_RESETTABLE_ACCOUNT_EMAIL",
+    label: "QA Resettable Account Email",
+    description: "Single exact QA email that may auto-verify on signup and hard-reset itself on logout. Leave unset outside controlled QA.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: false,
+    usedBy: ["web app auth", "mobile QA"],
+    validation: "single email address only",
+    note: "Deployment env only. This key must never contain a comma-separated allowlist.",
+  },
+  {
     key: "STRIPE_SECRET_KEY",
     label: "Stripe Secret Key",
     description: "Server-side Stripe key for checkout, portal, and recurring billing operations.",
@@ -1682,6 +1696,10 @@ export function validateRuntimeConfigValueShape(
     return /^(0|[1-9]\d*)$/.test(value)
       ? valid()
       : invalid("non_negative_integer_required");
+  }
+
+  if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") {
+    return validEmailAddress(value) ? valid() : invalid("email_required");
   }
 
   const EMAIL_KEYS = new Set([

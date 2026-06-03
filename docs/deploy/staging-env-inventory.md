@@ -82,6 +82,7 @@ Place secrets in:
 |---|---|---|---|---|---|---|---|
 | `DATABASE_URL` | Required | Required | No | Required | Yes | Server-only | App cannot access DB; launch blocked. |
 | `USER_JWT_SECRET` | Required | Required if admin impersonation/internal user session verification is used | No | Required | Yes | Server-only | User auth/session verification fails. |
+| `QA_RESETTABLE_ACCOUNT_EMAIL` | Optional controlled QA only | No | No | Optional controlled QA only | No | Server-only | When set to one exact email, that QA account auto-verifies on signup and hard-resets itself on logout; leave unset for normal operation and never use comma-separated values. |
 | `ADMIN_JWT_SECRET` | Required if admin handoff validates admin JWT | Required | No | Required | Yes | Server-only | Admin auth fails. |
 | `FIELD_ENCRYPTION_KEY` | Required | Required | No | Required | Yes | Server-only | Production encryption/backup safety blocked. |
 | `NEXT_PUBLIC_APP_URL` | Required | Required for links/impersonation return URLs | No | Required | No | Public/client-safe | OAuth/email/portal links may point to wrong host. |
