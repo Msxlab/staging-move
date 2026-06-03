@@ -27,6 +27,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Cleaned public legal/contact fallbacks in code:
   - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
   - Public legal/contact pages no longer need to print the raw mailing-address placeholder when the address env is absent.
+- Refreshed deployment checklists to match the current billing matrix:
+  - `docs/deploy/billing-and-iap-setup-checklist.md` now covers Family/Pro Stripe prices, the current in-app mutation routes, and the six-SKU mobile store catalog.
+  - `docs/deploy/mobile-store-submission-copy.md` now provides operator-ready App Review / Play Console copy without committing secrets.
 - Added minimal Google Play Android Publisher OAuth refresh-token fallback:
   - Existing service-account private-key auth path remains unchanged.
   - OAuth fallback uses `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`.
