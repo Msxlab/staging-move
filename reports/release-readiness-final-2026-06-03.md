@@ -78,6 +78,11 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Focused mobile tests after the Android QA/proxy fix: 10 files / 25 tests.
 - Mobile typecheck after the Android QA/proxy fix.
 - Focused register/mobile signup tests after the QA auto-login patch.
+- DigitalOcean deployment for commit `0f70be4`: ACTIVE.
+- Live smoke after deployment:
+  - `/api/ready`: HTTP 200.
+  - `/api/mobile/iap/products`: HTTP 200.
+  - `/api/auth/register`: returns `emailVerified` and `requiresEmailVerification` response fields.
 
 ## Remaining Blockers
 
