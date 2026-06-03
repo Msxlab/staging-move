@@ -117,6 +117,8 @@ Current live environment is production. Completing any checkout would create pro
 - [ ] Duplicate checkout for an active paid subscription is blocked or routes to billing recovery.
 - [ ] Store-managed active subscription blocks web Stripe checkout.
 - [BLOCKED] Historical report says Stripe test-mode catalog is incomplete/incorrect; re-verify before test-card completion.
+  - Live Stripe browser dashboard sandbox currently shows only one active product: `LocateFlow Individual Annual`.
+  - Family monthly/yearly, Pro monthly/yearly, and Individual monthly are not present in the visible sandbox catalog, so the Stripe test matrix is not yet runnable end to end.
 - [SKIP] Live Stripe checkout completion skipped by safety rule: production payment risk.
 
 ## 5. Stripe Plan Change And Downgrade Matrix
@@ -391,3 +393,4 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: DigitalOcean app-level public legal env was updated live with `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`; after the deployment finished, live `terms`, `privacy`, and `contact` rendered `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address.
 - 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
 - 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
+- 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode.

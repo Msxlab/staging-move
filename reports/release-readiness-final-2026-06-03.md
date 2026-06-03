@@ -159,6 +159,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - The admin UI now reaches the QA user's detail page successfully.
   - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
+- Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
+  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`.
+  - Visible Family monthly/yearly, Pro monthly/yearly, and Individual monthly sandbox products are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
   - App Review notes and demo credentials.
@@ -194,6 +197,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Live admin smoke improved from the prior checkpoint:
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
+- Live Stripe sandbox smoke added one more concrete blocker:
+  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual`.
+  - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
 
 ## Release Recommendation
 
