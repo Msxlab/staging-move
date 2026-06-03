@@ -75,6 +75,27 @@ Status legend:
   - `GET /api/address-autocomplete?input=123%20Main&sessionToken=qa_session_20260603` returned `enabled: true` with 5 predictions.
   - `GET /api/address-autocomplete/details` using the first returned `placeId` returned `enabled: true` with a resolved result.
   - The QA bearer logout path succeeded with `x-client-type: mobile`, and the next QA login returned HTTP 401, confirming the hard-reset cleanup still works.
+- [x] Inspect the latest App Store Connect rejection artifacts and map them to real code.
+  - Reviewed downloaded screenshots `C:\Users\Kutay\Downloads\Screenshot-0603-132041.png` and `C:\Users\Kutay\Downloads\Screenshot-0603-132317.png`.
+  - Live App Store Connect review notes cite:
+    - `4.0.0 Design`: Sign in with Apple was followed by forced password creation.
+    - `3.1.2(c) Business - Payments - Subscriptions`: the subscription screen emphasized monthly/comparison copy more strongly than the billed annual amount.
+    - Product question: Apple asked whether `Pro Annual` priced at `$199.99` is intentional.
+  - Concrete code paths matched the rejection:
+    - forced password gate: `apps/mobile/app/_layout.tsx`, `apps/mobile/src/lib/post-auth-route.ts`
+    - annual price hierarchy: `apps/mobile/app/settings/subscription.tsx`
+    - shared code currently defines Pro yearly as `$199/year`: `packages/shared/src/billing.ts`
+- [x] Fix the mobile Sign in with Apple flow so password setup is optional, not required post-auth.
+  - Mobile post-auth routing now always continues to onboarding/tabs.
+  - Password setup remains available later from Settings > Privacy & Security.
+- [x] Fix the mobile annual subscription hierarchy so the billed amount is primary.
+  - The annual CTA now includes the billed yearly amount directly.
+  - Trial copy is subordinate.
+  - Annual disclosure copy now includes the actual billed price.
+- [x] Verify password management and account deletion still make sense after removing the post-auth password gate.
+  - OAuth-only mobile users can still request a secure set-password link from `Settings -> Privacy & Security`.
+  - Password-login users now get a first-class `Change password` email-reset action from the same mobile settings screen.
+  - OAuth-only delete-account remains allowed through typed `DELETE` plus the authenticated bearer session; password users still confirm with their current password.
 
 ## 3. Automated Test Matrix
 
@@ -96,6 +117,7 @@ Status legend:
   - `apps/web/src/app/api/mobile/iap/verify/route.test.ts` if present
 - [x] Run focused workspace/family invite/sync tests.
 - [x] Run focused mobile IAP tests.
+- [x] Run focused mobile Apple review regression tests.
 - [x] Run admin billing/runtime-config tests.
 - [x] Run root typecheck.
 - [x] Run root test suite.
@@ -310,6 +332,13 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - DigitalOcean app spec includes `NEXT_PUBLIC_SENTRY_DSN` and now has a populated `EXPO_PUBLIC_SENTRY_DSN`.
   - Mobile code uses the lightweight Sentry envelope path for captured app errors.
   - Native crash capture through `@sentry/react-native` is still not integrated; this is acceptable for v1 only if lightweight JS-level reporting is the intended launch posture.
+- [BLOCKED] Verify the latest Apple rejection is cleared by a fresh iOS build and resubmission.
+  - Code fixes landed for the forced Sign in with Apple password gate and the annual billed-amount hierarchy.
+  - Final App Review confirmation still requires a fresh iOS build / TestFlight or App Review pass.
+- [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
+  - Shared code currently advertises Pro yearly as `$199/year`.
+  - Apple explicitly asked whether `$199.99` in App Store Connect is intended.
+  - Requires product/operator confirmation and, if needed, an App Store Connect price change or aligned code/pricing update.
 
 ## 10. Execution Log
 
@@ -394,3 +423,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
 - 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
 - 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode.
+- 2026-06-03: Latest Apple rejection evidence was reviewed from Downloads plus live App Store Connect. The review cited a forced Sign in with Apple password-creation step, annual subscription billed-amount prominence issues, and asked whether `Pro Annual` at `$199.99` is intentional.
+- 2026-06-03: Fixed mobile post-auth routing so OAuth/Apple sign-in no longer forces `/setup-password`; password setup remains optional from Settings > Privacy. Fixed the annual mobile subscription CTA/copy hierarchy so the billed amount is primary and the annual disclosure includes the actual price. Verification passed: focused mobile tests 3 files / 8 tests, full mobile test suite 12 files / 33 tests, mobile lint, and root `pnpm verify:typecheck`.
+- 2026-06-03: Rebuilt and reinstalled Android `debugOptimized` after the Apple-review mobile patch. Emulator retest still reached `More -> Subscription` and showed the live `Free Access` state, the store-disabled notice, and the Family/Pro read-only cards without regression.
+- 2026-06-03: Mobile password/account-management follow-up was tightened after the Apple fix: Privacy settings now show `Set password` for OAuth-only users and `Change password` for password-login users, both via secure email-link flows. OAuth-only delete-account behavior remains supported by typed `DELETE` plus the authenticated session. Verification passed: focused mobile tests 4 files / 10 tests and mobile lint.

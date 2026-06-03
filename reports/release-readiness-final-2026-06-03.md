@@ -23,6 +23,10 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Register API now returns whether the new account is already verified.
   - Mobile sign-up creates a session immediately only when the backend reports no email-verification requirement.
   - Normal users still go through email verification.
+- Fixed the mobile password/account-management follow-through after removing the post-auth password gate:
+  - OAuth-only users still get a secure `Set password` email-link action from mobile Privacy settings.
+  - Password-login users now get a dedicated `Change password` email-reset action from the same screen.
+  - OAuth-only account deletion remains supported by typed confirmation plus the signed-in bearer session, without forcing password creation first.
 - Fixed mobile subscription plan visibility so store-disabled Android QA builds still show Individual, Family, and Pro cards while keeping purchase actions read-only.
 - Cleaned public legal/contact fallbacks in code:
   - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
@@ -80,6 +84,14 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Showed the mobile purchases disabled notice.
   - Showed Individual, Family, and Pro plan cards.
   - Pro card shows guided partner update / partner queue copy.
+- Latest Apple rejection artifacts were inspected from Downloads and live App Store Connect:
+  - Forced password creation after Sign in with Apple mapped to the former mobile `needsPasswordSetup` gate.
+  - Subscription billed-amount prominence issue mapped to the annual CTA/card hierarchy on the mobile subscription screen.
+  - App Review also asked whether `Pro Annual` at `$199.99` is intentional; shared code currently defines Pro yearly as `$199/year`.
+- Mobile account-management paths remain coherent after the Apple fix:
+  - OAuth-only users can request a secure set-password link from `Settings -> Privacy`.
+  - Password-login users can request a secure reset/change-password link from the same screen.
+  - OAuth-only delete-account already works through typed `DELETE` plus the authenticated session; password users still confirm with their current password.
 - Live exact QA account lifecycle:
   - Signup auto-verifies only `mobile.qa@locateflow.com`.
   - Mobile API login succeeds after signup.
@@ -159,6 +171,10 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - The admin UI now reaches the QA user's detail page successfully.
   - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
+- Apple re-review still needs one more honest pass:
+  - The forced Sign in with Apple password gate and annual billed-amount hierarchy issues were fixed in code.
+  - A fresh iOS build / TestFlight or App Review pass is still required to prove the rejection is fully cleared.
+  - App Review also explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; shared code currently says `$199/year`, so product/store pricing still needs human confirmation.
 - Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
   - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`.
   - Visible Family monthly/yearly, Pro monthly/yearly, and Individual monthly sandbox products are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
@@ -200,6 +216,13 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Live Stripe sandbox smoke added one more concrete blocker:
   - The visible test-mode catalog currently contains only `LocateFlow Individual Annual`.
   - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
+- Latest Apple rejection evidence was inspected from Downloads plus App Store Connect:
+  - `Screenshot-0603-132041.png` matched the forced post-Apple-sign-in password setup screen.
+  - `Screenshot-0603-132317.png` matched the annual subscription card hierarchy complaint.
+  - Code fixes were applied for both issues, and the follow-up mobile password management path now exposes set/reset-password email links from Privacy settings instead of forcing setup immediately after auth.
+- Android `debugOptimized` was rebuilt and reinstalled after the Apple/mobile account-management patch:
+  - Emulator retest still opened `More -> Subscription`.
+  - Live `Free Access` state, the store-disabled notice, and the read-only Family/Pro cards remained intact.
 
 ## Release Recommendation
 

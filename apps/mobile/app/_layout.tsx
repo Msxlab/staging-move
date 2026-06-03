@@ -193,7 +193,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const currentSegment = String(segments[0] || "");
     const inAuthGroup = currentSegment === "(auth)";
     const inOnboarding = currentSegment === "onboarding";
-    const inPasswordSetup = currentSegment === "setup-password";
     const inOAuthCallback = currentSegment === "oauth";
     const inPasswordReset = currentSegment === "reset-password";
     const inPublicBlog = currentSegment === "blog";
@@ -210,17 +209,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     // this from `hasPasswordLogin === false` — that would force legacy
     // magic-link-only users (no OAuth, no password) into setup too, which
     // is a different remediation path.
-    const needsPasswordSetup = user.needsPasswordSetup === true;
-    if (needsPasswordSetup) {
-      if (!inPasswordSetup) {
-        router.replace("/setup-password");
-      }
-      return;
-    }
-    if (inPasswordSetup) {
-      router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
-      return;
-    }
+    // Do not force OAuth-only users through setup-password on mobile.
+    // Sign in with Apple must complete without requiring account creation
+    // credentials outside the Apple-authenticated session. Users can still
+    // add a password later from Settings > Privacy & Security.
 
     if (token && inAuthGroup) {
       router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");

@@ -1,9 +1,10 @@
 import type { AuthUser } from "@/lib/auth-store";
 
-export type PostAuthMobileRoute = "/setup-password" | "/onboarding";
+export type PostAuthMobileRoute = "/onboarding";
 
 export function getPostAuthMobileRoute(
   user: Pick<AuthUser, "needsPasswordSetup"> | null | undefined,
 ): PostAuthMobileRoute {
-  return user?.needsPasswordSetup === true ? "/setup-password" : "/onboarding";
+  void user;
+  return "/onboarding";
 }

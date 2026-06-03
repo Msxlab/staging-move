@@ -31,12 +31,14 @@ import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
+import { getPasswordLinkAction } from "@/lib/password-management";
 
 const PRIVACY_POLICY_URL = `${APP_WEB_URL}/privacy`;
 const TERMS_OF_USE_URL = `${APP_WEB_URL}/terms`;
 
 interface AccountSecurityState {
   account: {
+    email: string;
     hasPasswordLogin: boolean;
     emailVerified: boolean;
     mfaEnabled: boolean;
@@ -163,21 +165,29 @@ export default function PrivacySettingsScreen() {
     );
   };
 
-  const requestSetPasswordEmail = async () => {
-    setPasswordSetupBusy(true);
-    const res = await api.post<AccountSecurityState & { success: boolean }>(
-      "/api/auth/security",
-      { action: "request_set_password" },
-    );
-    setPasswordSetupBusy(false);
-    if (res.error) {
+  const requestPasswordLink = async () => {
+    if (!security?.account?.email) {
       Alert.alert(t("settings.passwordSetupTitle"), t("settings.privacyLoadFailed"));
       return;
     }
-    if (res.data) {
-      setSecurity(res.data);
-      Alert.alert(t("settings.passwordSetupTitle"), t("settings.passwordSetupSent"));
+    const passwordLinkAction = getPasswordLinkAction({
+      hasPasswordLogin: security.account.hasPasswordLogin,
+      email: security.account.email,
+    });
+    setPasswordSetupBusy(true);
+    const res = await api.post<AccountSecurityState & { success: boolean }>(
+      passwordLinkAction.endpoint,
+      passwordLinkAction.body,
+    );
+    setPasswordSetupBusy(false);
+    if (res.error) {
+      Alert.alert(t(passwordLinkAction.titleKey), t("settings.privacyLoadFailed"));
+      return;
     }
+    if (res.data && passwordLinkAction.endpoint === "/api/auth/security") {
+      setSecurity(res.data);
+    }
+    Alert.alert(t(passwordLinkAction.titleKey), t(passwordLinkAction.successMessageKey));
   };
 
   const revokeOtherSessions = async () => {
@@ -350,20 +360,26 @@ export default function PrivacySettingsScreen() {
                 </View>
               </View>
 
-              {!security.account.hasPasswordLogin && (
-                <View style={styles.passwordBox}>
-                  <Text style={styles.subheading}>{t("settings.setPassword")}</Text>
-                  <Text style={styles.mutedText}>
-                    {t("settings.setPasswordDescription")}
-                  </Text>
-                  <Button
-                    title={t("settings.emailSetupLink")}
-                    onPress={requestSetPasswordEmail}
-                    loading={passwordSetupBusy}
-                    fullWidth
-                  />
-                </View>
-              )}
+              <View style={styles.passwordBox}>
+                <Text style={styles.subheading}>
+                  {security.account.hasPasswordLogin
+                    ? t("settings.changePassword")
+                    : t("settings.setPassword")}
+                </Text>
+                <Text style={styles.mutedText}>
+                  {security.account.hasPasswordLogin
+                    ? t("settings.changePasswordDescription")
+                    : t("settings.setPasswordDescription")}
+                </Text>
+                <Button
+                  title={security.account.hasPasswordLogin
+                    ? t("settings.emailResetLink")
+                    : t("settings.emailSetupLink")}
+                  onPress={requestPasswordLink}
+                  loading={passwordSetupBusy}
+                  fullWidth
+                />
+              </View>
 
               <View>
                 <View style={styles.sessionHeader}>
