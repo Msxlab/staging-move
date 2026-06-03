@@ -78,6 +78,7 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Live exact QA account lifecycle:
   - Signup auto-verifies only `mobile.qa@locateflow.com`.
   - Mobile API login succeeds after signup.
+  - Android `More -> Sign Out` with confirmation returns the app to the Sign In screen.
   - Logout hard-resets the QA account and owned QA data.
   - Post-logout login returns 401, and a new signup starts clean at onboarding.
 - Google Cloud/Play readiness:
@@ -177,6 +178,11 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Fix shipped in commit `529aad9` by making the annual-offer date calculation use a server-stable `initialNowIso` prop instead of a raw render-time `new Date()` inside the client component.
   - Deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` became ACTIVE.
   - Fresh live retest after that deployment showed no console errors and confirmed Monthly / Annual tabs plus Individual / Family / Pro annual cards, including the Pro annual connector copy.
+- Android emulator QA re-verified the resettable QA flow from the real UI:
+  - `More -> Sign Out` opened the destructive confirmation dialog and returned to the Sign In screen after confirmation.
+  - The old QA credentials were then rejected with HTTP 401 until the exact QA email was re-registered.
+  - Re-registering `mobile.qa@locateflow.com` succeeded again, confirming the server-side hard reset.
+  - A rapid immediate re-login sequence on the local debug proxy surfaced the expected auth lockout banner (`Retry after ... seconds`) rather than silently reusing stale local state.
 
 ## Release Recommendation
 
