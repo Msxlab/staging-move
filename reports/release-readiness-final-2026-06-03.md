@@ -158,12 +158,25 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Production rollout.
 - Public legal/contact launch metadata is still incomplete:
   - DigitalOcean is missing `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
-  - Live deployment still shows placeholder legal-entity / mailing-address text until the new fallback cleanup is deployed and the real env values are set.
+  - Live public pages now fall back cleanly without raw placeholder strings, but they still show the generic `LocateFlow` legal label because the exact public legal entity/address env values are not set.
   - DigitalOcean is also missing the optional public `NEXT_PUBLIC_*` contact env overrides, so public pages currently fall back to role mailboxes such as `support@locateflow.com`.
 - Native crash reporting is lightweight for v1:
   - `EXPO_PUBLIC_SENTRY_DSN` is present.
   - `@sentry/react-native` native crash capture is not integrated yet.
 - `FEATURE_API_CONNECTORS` is absent in DigitalOcean, so Pro annual API sync remains hidden/disabled in live client UI until the connector launch is intentionally enabled and a connector is registered.
+- Live admin deep-mutation QA still requires a fresh privileged session:
+  - The existing admin list page was reachable, but opening user detail redirected to admin login and requires admin password plus MFA/backup code.
+  - That means live Family/Pro manual grant testing from admin remains human-gated until the privileged session is re-established.
+
+## Additional Live QA Since The Prior Report
+
+- Public legal pages were rechecked in live Chrome after deployment:
+  - `/terms`, `/privacy`, and `/contact` no longer show raw placeholder legal/entity strings.
+- Live client subscription QA found and then cleared a production hydration issue:
+  - Before the patch, `/settings/subscription` emitted production React hydration errors in Chrome dev logs.
+  - Fix shipped in commit `529aad9` by making the annual-offer date calculation use a server-stable `initialNowIso` prop instead of a raw render-time `new Date()` inside the client component.
+  - Deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` became ACTIVE.
+  - Fresh live retest after that deployment showed no console errors and confirmed Monthly / Annual tabs plus Individual / Family / Pro annual cards, including the Pro annual connector copy.
 
 ## Release Recommendation
 
