@@ -75,7 +75,7 @@ export function PlanChangeSection() {
         const res = await fetch("/api/subscription/change-plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetPlan: tier, targetInterval: interval }),
+          body: JSON.stringify({ targetPlan: tier, targetInterval: interval, acceptedSubscriptionTerms: true }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

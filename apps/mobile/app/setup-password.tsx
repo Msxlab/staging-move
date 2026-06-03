@@ -18,18 +18,7 @@ import { api, API_URL } from "@/lib/api";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useAuthStore } from "@/lib/auth-store";
 import { useAppTheme, type Theme } from "@/lib/theme";
-
-// Mirrors validatePasswordPolicy in apps/web/src/lib/user-auth.ts. The server
-// is still the authority — this is purely for live, pre-submit feedback so a
-// user is not surprised by a 400 after typing a full password.
-type PasswordRule = { key: string; labelKey: string; test: (pw: string) => boolean };
-const PASSWORD_RULES: PasswordRule[] = [
-  { key: "length", labelKey: "auth.passwordRuleLength", test: (pw) => pw.length >= 12 },
-  { key: "uppercase", labelKey: "auth.passwordRuleUppercase", test: (pw) => /[A-Z]/.test(pw) },
-  { key: "lowercase", labelKey: "auth.passwordRuleLowercase", test: (pw) => /[a-z]/.test(pw) },
-  { key: "digit", labelKey: "auth.passwordRuleDigit", test: (pw) => /[0-9]/.test(pw) },
-  { key: "special", labelKey: "auth.passwordRuleSpecial", test: (pw) => /[^A-Za-z0-9]/.test(pw) },
-];
+import { getPasswordRuleResults } from "@/lib/password-policy";
 
 export default function SetupPasswordScreen() {
   const router = useRouter();
@@ -44,7 +33,7 @@ export default function SetupPasswordScreen() {
   const [error, setError] = useState("");
 
   const ruleResults = useMemo(
-    () => PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(password) })),
+    () => getPasswordRuleResults(password),
     [password],
   );
   const policyMet = ruleResults.every((rule) => rule.passed);

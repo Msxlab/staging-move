@@ -105,6 +105,7 @@
       "permissions": [
         "INTERNET",
         "VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],

@@ -24,7 +24,7 @@ import {
 } from "@/lib/db-schema-compat";
 
 // POST /api/subscription/switch-cycle
-// Body: { targetInterval: "MONTH" | "YEAR" }
+// Body: { targetInterval: "MONTH" | "YEAR", acceptedSubscriptionTerms: true }
 //
 // Switches the user's existing Stripe subscription between monthly and
 // yearly billing. Monthly -> yearly is an immediate upgrade with Stripe
@@ -179,6 +179,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
+    if (body?.acceptedSubscriptionTerms !== true) {
+      return NextResponse.json(
+        { code: "TERMS_NOT_ACCEPTED", error: "Please accept the subscription terms before changing your billing cycle." },
+        { status: 400 },
+      );
+    }
+
     const targetInterval = body?.targetInterval as StripeBillingInterval | undefined;
     if (targetInterval !== "MONTH" && targetInterval !== "YEAR") {
       return NextResponse.json({ error: "targetInterval must be MONTH or YEAR." }, { status: 400 });

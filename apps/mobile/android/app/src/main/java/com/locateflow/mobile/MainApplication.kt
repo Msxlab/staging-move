@@ -11,10 +11,10 @@ import com.facebook.react.ReactPackage
 import com.facebook.react.ReactHost
 import com.facebook.react.common.ReleaseLevel
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
-import com.facebook.react.defaults.DefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 
 import expo.modules.ApplicationLifecycleDispatcher
+import expo.modules.ExpoReactHostFactory
 
 class MainApplication : Application(), ReactApplication {
 
@@ -34,7 +34,12 @@ class MainApplication : Application(), ReactApplication {
       }
 
   override val reactHost: ReactHost
-    get() = DefaultReactHost.getDefaultReactHost(applicationContext, reactNativeHost)
+    get() = ExpoReactHostFactory.getDefaultReactHost(
+      context = applicationContext,
+      packageList = PackageList(this).packages,
+      jsMainModulePath = ".expo/.virtual-metro-entry",
+      useDevSupport = BuildConfig.DEBUG
+    )
 
   override fun onCreate() {
     super.onCreate()
