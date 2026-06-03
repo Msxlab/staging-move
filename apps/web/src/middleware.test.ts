@@ -78,6 +78,38 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("lets mobile bearer logout reach the route without browser-origin headers", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-client-type": "mobile",
+          authorization: "Bearer opaque-mobile-session-token",
+        },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("keeps logout origin-gated when mobile client type is sent without a bearer token", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-client-type": "mobile",
+        },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
   it("lets mobile OAuth exchange reach the route before a bearer token exists", async () => {
     const response = await middleware(
       request("https://locateflow.com/api/mobile/auth/exchange", {
