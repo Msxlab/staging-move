@@ -266,17 +266,21 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - DigitalOcean app spec uses the code-defined monthly keys (`MOBILE_IOS_PRODUCT_INDIVIDUAL`, `MOBILE_ANDROID_PRODUCT_PRO`, etc.) plus yearly keys; all six iOS and all six Android product IDs are present.
 - [x] Verify Apple App Store Server API config presence; missing credential is a blocker.
   - DigitalOcean app spec/admin Runtime Config show `APPLE_BUNDLE_ID`, Apple App Store issuer/key/private key/environment present from ENV; values intentionally not recorded.
-- [BLOCKED] Verify Google Play Developer API config presence; missing credential is a blocker.
+- [x] Verify Google Play Developer API config presence; missing credential is a blocker.
   - DigitalOcean app spec shows Android product IDs, `GOOGLE_PLAY_PACKAGE_NAME`, and `GOOGLE_PLAY_RTDN_AUDIENCE` present.
   - Android Publisher API is enabled in Google Cloud.
   - Google Play service account was created and granted active LocateFlow app access in Play Console.
   - Service-account JSON key creation is blocked by Google organization policy `iam.disableServiceAccountKeyCreation`; no private key was downloaded or added to DigitalOcean.
   - DigitalOcean app spec now includes `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL`; values intentionally not recorded.
   - DigitalOcean app spec still does not show `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` or `EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT`.
-  - Code correctly fails closed: Android purchase verification returns `IAP_NOT_CONFIGURED` until the private key or a keyless auth implementation is configured.
+  - Implemented and deployed minimal OAuth refresh-token fallback for Android Publisher auth; existing service-account private-key path remains unchanged.
+  - DigitalOcean now includes `GOOGLE_PLAY_OAUTH_CLIENT_ID`, `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`; values intentionally not recorded.
+  - Live fake-token Android purchase verification returns JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`, and no secret-like values in the response.
   - Play RTDN fake-bearer smoke now returns 401 invalid-token class instead of the previous missing-identity 503; real RTDN delivery still requires a Pub/Sub push subscription with matching OIDC identity.
   - Pub/Sub API is enabled, topic `play-rtdn` exists, and Google Play's notification service account has Publisher on the topic.
-  - Play Console RTDN topic value was not saved, and no push subscription was created; completing this requires manual console input or a working console automation path, then confirming the final DigitalOcean RTDN identity values without deleting existing envs.
+  - Play Console RTDN topic value is now saved to `projects/project-20494d44-c9e3-4fc2-9f4/topics/play-rtdn`.
+  - Pub/Sub push subscription creation is blocked because the signed-in Google Cloud account lacks `pubsub.subscriptions.create` and `serviceusage.services.list`.
+  - Required next action: grant `roles/pubsub.editor` or `roles/pubsub.admin`, then create a push subscription to `https://locateflow.com/api/webhooks/playstore` with the same OIDC audience and the expected service account.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
   - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
@@ -344,3 +348,9 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: DigitalOcean app-spec update deployment `e6aa96d0-19c0-42d8-81a5-fa7329a2c28c` became ACTIVE; `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, and `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` are present with values, while `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` remains absent due Google org policy.
 - 2026-06-03: Post-env live smoke passed: `/api/ready` HTTP 200, `/api/mobile/iap/products` HTTP 200, and Play RTDN fake bearer returned HTTP 401 invalid-token class rather than missing expected identity.
 - 2026-06-03: Live QA cleanup completed after Android testing: exact QA signup 201, login 200, mobile-style logout 200, and post-logout login 401; Android app data was cleared.
+- 2026-06-03: Added and deployed minimal Google Play OAuth refresh-token fallback while keeping service-account private-key auth unchanged; focused web/admin tests passed.
+- 2026-06-03: DigitalOcean OAuth env update completed without printing secrets; temporary local OAuth/spec files were removed after deployment.
+- 2026-06-03: Deployments for commits `809d75e`, `478c00f`, and `b2212a4` became ACTIVE.
+- 2026-06-03: Live post-deploy smoke passed: `/api/ready` HTTP 200 ready=true, `/api/mobile/iap/products` HTTP 200 with six unique iOS and Android products, fake Android purchase verify HTTP 424 JSON `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`.
+- 2026-06-03: Play Console RTDN topic value was saved; Google Cloud Pub/Sub push subscription creation is blocked by missing `pubsub.subscriptions.create` / `serviceusage.services.list` permission for the signed-in account.
+- 2026-06-03: Post-report validation passed: `pnpm verify:typecheck`, `pnpm verify:tests` (web 194 files / 1445 tests, admin 89 files / 486 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests), and `pnpm lint`.
