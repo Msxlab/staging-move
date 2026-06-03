@@ -4,7 +4,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Mail, Lock, User, CheckCircle2 } from "lucide-react-native";
+import { Mail, Lock, User, Check, CheckCircle2, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +31,7 @@ import {
   shouldShowOAuthReadinessNote,
   type OAuthProviderStatusMap,
 } from "@/lib/oauth-provider-status";
+import { getPasswordRuleResults } from "@/lib/password-policy";
 
 export default function SignUpScreen() {
 
@@ -94,10 +95,17 @@ export default function SignUpScreen() {
   const googleUnavailable = isOAuthProviderExplicitlyUnavailable(oauthProviders, "google");
   const legalAccepted = hasRequiredLegalConsents(legalConsents);
   const showOAuthReadinessNote = shouldShowOAuthReadinessNote(oauthProviders);
+  const passwordRuleResults = useMemo(() => getPasswordRuleResults(password), [password]);
+  const passwordPolicyMet = passwordRuleResults.every((rule) => rule.passed);
 
   const handleSubmit = async () => {
     if (!legalAccepted) {
       setError(t("auth.acceptLegalBeforeAccount"));
+      hapticError();
+      return;
+    }
+    if (!passwordPolicyMet) {
+      setError(t("auth.setupPasswordHelper"));
       hapticError();
       return;
     }
@@ -265,6 +273,23 @@ export default function SignUpScreen() {
           isPassword autoComplete="password-new"
           leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
         />
+        {password.length > 0 ? (
+          <View style={styles.rulesBox}>
+            {passwordRuleResults.map((rule) => {
+              const color = rule.passed ? theme.colors.success : theme.colors.textMuted;
+              return (
+                <View key={rule.key} style={styles.ruleRow}>
+                  {rule.passed ? (
+                    <Check size={14} color={theme.colors.success} />
+                  ) : (
+                    <X size={14} color={theme.colors.textMuted} />
+                  )}
+                  <Text style={[styles.ruleText, { color }]}>{t(rule.labelKey)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
 
         <LegalConsentPanel
           consents={legalConsents}
@@ -277,7 +302,7 @@ export default function SignUpScreen() {
         <Button
           title={loading ? t("common.loading") : t("auth.signUp")}
           onPress={handleSubmit}
-          disabled={loading || !email || !password || !legalAccepted}
+          disabled={loading || !email || !password || !passwordPolicyMet || !legalAccepted}
           style={{ marginTop: 12 }}
         />
 
@@ -343,6 +368,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   dividerText: { color: theme.colors.textMuted, fontSize: 10, letterSpacing: 1.5 },
   row: { flexDirection: "row", gap: 8 },
   hint: { fontSize: 11, color: theme.colors.textMuted, marginTop: -4 },
+  rulesBox: {
+    gap: 7,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  ruleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ruleText: { fontSize: 12, lineHeight: 16 },
   linkText: { color: theme.colors.textMuted, fontSize: 13 },
   linkEmphasis: { color: theme.colors.primary, fontWeight: "600" },
 });

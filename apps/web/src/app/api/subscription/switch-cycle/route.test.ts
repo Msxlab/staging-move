@@ -52,11 +52,11 @@ const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
 };
 
-function switchRequest(targetInterval: "MONTH" | "YEAR") {
+function switchRequest(targetInterval: "MONTH" | "YEAR", body: Record<string, unknown> = {}) {
   return new NextRequest("https://locateflow.com/api/subscription/switch-cycle", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ targetInterval }),
+    body: JSON.stringify({ targetInterval, acceptedSubscriptionTerms: true, ...body }),
   });
 }
 
@@ -154,6 +154,16 @@ describe("subscription switch-cycle route", () => {
         stripePriceId: "price_yearly",
       }),
     });
+  });
+
+  it("rejects billing cycle switches without accepted subscription terms", async () => {
+    const response = await POST(switchRequest("YEAR", { acceptedSubscriptionTerms: false }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toMatchObject({ code: "TERMS_NOT_ACCEPTED" });
+    expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSchedulesUpdate).not.toHaveBeenCalled();
   });
 
   it("schedules annual to monthly for the paid period end without changing the current price", async () => {

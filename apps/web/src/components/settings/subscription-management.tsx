@@ -170,6 +170,7 @@ export default function SubscriptionManagementPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [acceptedAnnualTerms, setAcceptedAnnualTerms] = useState(false);
   const [acceptedMonthlyTerms, setAcceptedMonthlyTerms] = useState(false);
+  const [acceptedCycleSwitchTerms, setAcceptedCycleSwitchTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waitingForActivation, setWaitingForActivation] = useState(false);
   const [publicCampaign, setPublicCampaign] = useState<PublicTrialCampaign | null>(null);
@@ -493,11 +494,16 @@ export default function SubscriptionManagementPage() {
   async function switchBillingCycle(targetInterval: "MONTH" | "YEAR") {
     setProcessing(`SWITCH_${targetInterval}`);
     setError(null);
+    if (!acceptedCycleSwitchTerms) {
+      setError("Please review and accept the billing cycle terms to continue.");
+      setProcessing(null);
+      return;
+    }
     try {
       const response = await fetch("/api/subscription/switch-cycle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetInterval }),
+        body: JSON.stringify({ targetInterval, acceptedSubscriptionTerms: true }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Failed to switch billing cycle.");
@@ -782,11 +788,23 @@ export default function SubscriptionManagementPage() {
                           Move to ${monthlyUsd.toFixed(2)}/month billing. Stripe credits the unused portion of your annual plan toward future monthly invoices.
                         </p>
                       )}
+                      <label className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={acceptedCycleSwitchTerms}
+                          onChange={(event) => setAcceptedCycleSwitchTerms(event.target.checked)}
+                        />
+                        <span>
+                          I understand the price, renewal timing, and that billing cycle changes may create prorations
+                          or schedule the change at period end.
+                        </span>
+                      </label>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => void switchBillingCycle(targetInterval)}
-                          disabled={Boolean(processing)}
+                          disabled={Boolean(processing) || !acceptedCycleSwitchTerms}
                           className="inline-flex items-center gap-2 rounded-xl bg-tone-emerald-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Check className="h-4 w-4" />

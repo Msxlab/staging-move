@@ -26,7 +26,11 @@ import {
 } from "@/lib/db-schema-compat";
 
 // POST /api/subscription/change-plan
-// Body: { targetPlan: "INDIVIDUAL" | "FAMILY" | "PRO", targetInterval?: "MONTH" | "YEAR" }
+// Body: {
+//   targetPlan: "INDIVIDUAL" | "FAMILY" | "PRO",
+//   targetInterval?: "MONTH" | "YEAR",
+//   acceptedSubscriptionTerms: true
+// }
 //
 // Changes the tier of an existing Stripe subscription. UPGRADES (a higher tier,
 // or month->year) apply immediately with Stripe proration and restore any
@@ -176,6 +180,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
+    if (body?.acceptedSubscriptionTerms !== true) {
+      return NextResponse.json(
+        { code: "TERMS_NOT_ACCEPTED", error: "Please accept the subscription terms before changing your plan." },
+        { status: 400 },
+      );
+    }
+
     const targetPlan = typeof body?.targetPlan === "string" ? body.targetPlan : "";
     if (!isPaidBillingPlan(targetPlan)) {
       return NextResponse.json({ error: "targetPlan must be INDIVIDUAL, FAMILY, or PRO." }, { status: 400 });

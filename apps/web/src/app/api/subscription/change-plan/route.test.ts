@@ -83,7 +83,7 @@ function req(body: unknown, headers?: Record<string, string>) {
   return new NextRequest("https://locateflow.com/api/subscription/change-plan", {
     method: "POST",
     headers: { "content-type": "application/json", ...(headers || {}) },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ acceptedSubscriptionTerms: true, ...(body as Record<string, unknown>) }),
   });
 }
 
@@ -319,6 +319,16 @@ describe("change-plan route", () => {
   it("rejects a no-op change to the same plan and interval", async () => {
     const res = await POST(req({ targetPlan: "INDIVIDUAL", targetInterval: "MONTH" }));
     expect(res.status).toBe(400);
+  });
+
+  it("rejects plan changes without accepted subscription terms", async () => {
+    const res = await POST(req({ targetPlan: "PRO", targetInterval: "MONTH", acceptedSubscriptionTerms: false }));
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body).toMatchObject({ code: "TERMS_NOT_ACCEPTED" });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).not.toHaveBeenCalled();
   });
 
   it("blocks mobile app clients (external billing)", async () => {
