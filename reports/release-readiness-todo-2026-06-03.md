@@ -75,6 +75,28 @@ Status legend:
   - `GET /api/address-autocomplete?input=123%20Main&sessionToken=qa_session_20260603` returned `enabled: true` with 5 predictions.
   - `GET /api/address-autocomplete/details` using the first returned `placeId` returned `enabled: true` with a resolved result.
   - The QA bearer logout path succeeded with `x-client-type: mobile`, and the next QA login returned HTTP 401, confirming the hard-reset cleanup still works.
+- [x] Inspect the latest App Store Connect rejection artifacts and map them to real code.
+  - Reviewed downloaded screenshots `C:\Users\Kutay\Downloads\Screenshot-0603-132041.png` and `C:\Users\Kutay\Downloads\Screenshot-0603-132317.png`.
+  - Live App Store Connect review notes cite:
+    - `4.0.0 Design`: Sign in with Apple was followed by forced password creation.
+    - `3.1.2(c) Business - Payments - Subscriptions`: the subscription screen emphasized monthly/comparison copy more strongly than the billed annual amount.
+    - Product question: Apple asked whether `Pro Annual` priced at `$199.99` is intentional.
+  - Concrete code paths matched the rejection:
+    - forced password gate: `apps/mobile/app/_layout.tsx`, `apps/mobile/src/lib/post-auth-route.ts`
+    - annual price hierarchy: `apps/mobile/app/settings/subscription.tsx`
+    - shared code currently defines Pro yearly as `$199/year`: `packages/shared/src/billing.ts`
+- [x] Fix the mobile Sign in with Apple flow so password setup is optional, not required post-auth.
+  - Mobile post-auth routing now always continues to onboarding/tabs.
+  - Password setup remains available later from Settings > Privacy & Security.
+- [x] Fix the mobile annual subscription hierarchy so the billed amount is primary.
+  - The annual CTA now includes the billed yearly amount directly.
+  - Trial copy is subordinate.
+  - Annual disclosure copy now includes the actual billed price.
+- [x] Verify password management and account deletion still make sense after removing the post-auth password gate.
+  - OAuth-only mobile users can still request a secure set-password link from `Settings -> Privacy & Security`.
+  - Password-login users now get a first-class `Change password` email-reset action from the same mobile settings screen.
+  - OAuth-only delete-account remains allowed through typed `DELETE` plus the authenticated bearer session; password users still confirm with their current password.
+  - Mobile delete-account confirmation now normalizes the typed phrase, so `delete`, `DELETE`, or the localized equivalent enable the destructive action consistently with the backend check.
 
 ## 3. Automated Test Matrix
 
@@ -96,6 +118,7 @@ Status legend:
   - `apps/web/src/app/api/mobile/iap/verify/route.test.ts` if present
 - [x] Run focused workspace/family invite/sync tests.
 - [x] Run focused mobile IAP tests.
+- [x] Run focused mobile Apple review regression tests.
 - [x] Run admin billing/runtime-config tests.
 - [x] Run root typecheck.
 - [x] Run root test suite.
@@ -310,6 +333,17 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - DigitalOcean app spec includes `NEXT_PUBLIC_SENTRY_DSN` and now has a populated `EXPO_PUBLIC_SENTRY_DSN`.
   - Mobile code uses the lightweight Sentry envelope path for captured app errors.
   - Native crash capture through `@sentry/react-native` is still not integrated; this is acceptable for v1 only if lightweight JS-level reporting is the intended launch posture.
+- [BLOCKED] Verify the latest Apple rejection is cleared by a fresh iOS build and resubmission.
+  - Code fixes landed for the forced Sign in with Apple password gate and the annual billed-amount hierarchy.
+  - EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished for app version `1.0.0`, build number `13`, commit `575e7cf`.
+  - EAS iOS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload build `13` to App Store Connect.
+  - Final App Review confirmation still requires selecting/processing the new build and resubmitting to App Review after the product-price answer is confirmed.
+- [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
+  - Shared code currently advertises Pro yearly as `$199/year`.
+  - Apple explicitly asked whether `$199.99` in App Store Connect is intended.
+  - App Store Connect pricing was verified read-only: `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` for the United States.
+  - Mobile production purchase UI reads StoreKit localized prices, so iOS should show the App Store billed amount; public shared/web copy still uses `$199/year`.
+  - Requires product/operator confirmation and, if needed, an App Store Connect price change or aligned code/pricing update.
 
 ## 10. Execution Log
 
@@ -393,4 +427,13 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: DigitalOcean app-level public legal env was updated live with `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`; after the deployment finished, live `terms`, `privacy`, and `contact` rendered `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address.
 - 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
 - 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
-- 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode.
+- 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual` at `$79.00 USD / year`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode or trusted against current shared pricing.
+- 2026-06-03: Latest Apple rejection evidence was reviewed from Downloads plus live App Store Connect. The review cited a forced Sign in with Apple password-creation step, annual subscription billed-amount prominence issues, and asked whether `Pro Annual` at `$199.99` is intentional.
+- 2026-06-03: Fixed mobile post-auth routing so OAuth/Apple sign-in no longer forces `/setup-password`; password setup remains optional from Settings > Privacy. Fixed the annual mobile subscription CTA/copy hierarchy so the billed amount is primary and the annual disclosure includes the actual price. Verification passed: focused mobile tests 3 files / 8 tests, full mobile test suite 12 files / 33 tests, mobile lint, and root `pnpm verify:typecheck`.
+- 2026-06-03: Rebuilt and reinstalled Android `debugOptimized` after the Apple-review mobile patch. Emulator retest still reached `More -> Subscription` and showed the live `Free Access` state, the store-disabled notice, and the Family/Pro read-only cards without regression.
+- 2026-06-03: Mobile password/account-management follow-up was tightened after the Apple fix: Privacy settings now show `Set password` for OAuth-only users and `Change password` for password-login users, both via secure email-link flows. OAuth-only delete-account behavior remains supported by typed `DELETE` plus the authenticated session, and the mobile button now uses the same normalized confirmation logic as the backend. Verification passed: focused mobile tests 6 files / 14 tests and mobile lint.
+- 2026-06-03: DigitalOcean deployment for commit `575e7cf` became ACTIVE; live smoke passed for `/api/ready` and `/api/mobile/iap/products`.
+- 2026-06-03: App Store Connect metadata support URL was changed from the signed-in `/support` redirect to public `https://locateflow.com/help`; reload confirmed the value persisted.
+- 2026-06-03: App Store Connect Pro Annual pricing was inspected read-only: United States price is `$199.99 USD`; no price change or App Review reply was submitted.
+- 2026-06-03: EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished successfully for app version `1.0.0`, build number `13`, commit `575e7cf`.
+- 2026-06-03: EAS iOS submit was scheduled for build `13` as submission `5dca94e0-683f-455e-acf4-459123ebce57`; Expo dashboard shows it queued and waiting for the submission process to start. This uploads the binary to App Store Connect and is not an App Review resubmission or production rollout.

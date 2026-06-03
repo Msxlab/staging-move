@@ -42,6 +42,10 @@ import {
   restorePurchases,
 } from "@/lib/iap";
 import { selectAndroidSubscriptionOffer } from "@/lib/iap-offers";
+import {
+  getAnnualActionLabels,
+  shouldEmphasizeAnnualBilledPrice,
+} from "@/lib/subscription-app-review";
 import { shouldShowMobileSubscriptionPlan } from "@/lib/subscription-visible-plans";
 import {
   BILLING_PLAN_DEFINITIONS,
@@ -530,7 +534,9 @@ function LegacySubscriptionScreen() {
           ? t("settings.subscription_disclosureMonthly", {
               price: localizedPrice || targetCampaign?.displayPriceLabel || "the displayed price",
             })
-          : t("settings.subscription_disclosureAnnual")
+          : t("settings.subscription_disclosureAnnual", {
+              price: localizedPrice || targetCampaign?.displayPriceLabel || "the displayed price",
+            })
         : t("settings.subscription_disclosurePaidPlan", {
             plan: plan?.name || planKey,
             cycle: cycle === "yearly" ? "annual" : "monthly",
@@ -538,11 +544,24 @@ function LegacySubscriptionScreen() {
             defaultValue:
               "{{plan}} {{cycle}} subscription at {{price}} renews automatically through your App Store or Google Play account until canceled.",
           }));
+    const annualHeadlinePrice = localizedPrice || targetCampaign?.displayPriceLabel || null;
+    const annualHeadline = annualHeadlinePrice
+      ? getAnnualActionLabels({
+          yearlyDisplayPrice: annualHeadlinePrice,
+          isSwitching: false,
+          trialBadge: annualOffer?.trialLabel
+            ? `First ${annualOffer.trialLabel} free`
+            : annualOffer?.trialDays
+              ? `First ${annualOffer.trialDays} days free`
+              : null,
+          startLabel: t("settings.subscription_startAnnual", { defaultValue: "Start annual" }),
+        }).buttonLabel
+      : t("settings.subscription_subscribeAnnualTrial");
     const headline = targetCampaign?.publicHeadline ||
       (planKey === "INDIVIDUAL"
         ? cycle === "monthly"
           ? t("settings.subscription_subscribeMonthly")
-          : t("settings.subscription_subscribeAnnualTrial")
+          : annualHeadline
         : t("settings.subscription_subscribePlan", {
             plan: plan?.name || planKey,
             defaultValue: "Subscribe to {{plan}}",
@@ -858,16 +877,29 @@ function LegacySubscriptionScreen() {
             : plan.key === "INDIVIDUAL" && !isCurrentPaidPlan && annualOffer?.trialDays
               ? `First ${annualOffer.trialDays} days free`
               : null;
-          const annualButtonLabel =
-            isCurrentPlatformStoreManaged && currentBillingCycle === "monthly"
-              ? `Switch to annual · ${yearlyDisplayPrice}`
-              : trialBadge
-                ? t("settings.subscription_subscribeAnnualTrial")
-                : `Start annual · ${yearlyDisplayPrice}`;
+          const emphasizeAnnualBilledPrice = shouldEmphasizeAnnualBilledPrice({
+            showAnnualAction,
+            yearlyDisplayPrice,
+            trialBadge,
+            savingsText,
+          });
+          const annualActionLabels = getAnnualActionLabels({
+            yearlyDisplayPrice,
+            isSwitching: isCurrentPlatformStoreManaged && currentBillingCycle === "monthly",
+            trialBadge,
+            startLabel: t("settings.subscription_startAnnual", { defaultValue: "Start annual" }),
+            switchLabel: t("settings.subscription_switchAnnual", { defaultValue: "Switch to annual" }),
+          });
+          const annualButtonLabel = annualActionLabels.buttonLabel;
+          const annualMetaText = annualActionLabels.metaText;
           const monthlyButtonLabel =
             isCurrentPlatformStoreManaged && currentBillingCycle === "yearly"
               ? `Switch to monthly · ${monthlyDisplayPrice}`
               : `${t("settings.subscription_subscribeMonthly")} · ${monthlyDisplayPrice}`;
+          const displayedPlanPriceLabel = emphasizeAnnualBilledPrice && yearlyDisplayPrice
+            ? stripBillingPeriod(yearlyDisplayPrice)
+            : planPriceLabel;
+          const displayedPlanPeriodLabel = emphasizeAnnualBilledPrice ? "/year" : planPeriodLabel;
           return (
           <Card
             key={plan.key}
@@ -883,8 +915,8 @@ function LegacySubscriptionScreen() {
                 {!hideUnavailableMobileCommerce ? (
                   <>
                     <Text style={styles.planPrice}>
-                      {planPriceLabel}
-                      <Text style={styles.planPeriod}> {planPeriodLabel}</Text>
+                      {displayedPlanPriceLabel}
+                      <Text style={styles.planPeriod}> {displayedPlanPeriodLabel}</Text>
                     </Text>
                     {currentAnnualValueText ? (
                       <Text style={styles.currentAnnualValueText}>{currentAnnualValueText}</Text>
@@ -929,10 +961,9 @@ function LegacySubscriptionScreen() {
                       )}
                     </TouchableOpacity>
                     <View style={styles.annualMetaRow}>
-                      <Text style={styles.annualMetaText}>
-                        {yearlyDisplayPrice}
-                        {trialBadge ? ` · ${trialBadge}` : ""}
-                      </Text>
+                      {annualMetaText ? (
+                        <Text style={styles.annualMetaText}>{annualMetaText}</Text>
+                      ) : null}
                       {savingsText ? (
                         <Text style={styles.savingsText}>{savingsText}</Text>
                       ) : null}

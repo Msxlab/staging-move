@@ -23,6 +23,11 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Register API now returns whether the new account is already verified.
   - Mobile sign-up creates a session immediately only when the backend reports no email-verification requirement.
   - Normal users still go through email verification.
+- Fixed the mobile password/account-management follow-through after removing the post-auth password gate:
+  - OAuth-only users still get a secure `Set password` email-link action from mobile Privacy settings.
+  - Password-login users now get a dedicated `Change password` email-reset action from the same screen.
+  - OAuth-only account deletion remains supported by typed confirmation plus the signed-in bearer session, without forcing password creation first.
+  - The mobile delete-account button now normalizes the typed confirmation phrase, matching the backend's case-insensitive `DELETE` / localized confirmation behavior.
 - Fixed mobile subscription plan visibility so store-disabled Android QA builds still show Individual, Family, and Pro cards while keeping purchase actions read-only.
 - Cleaned public legal/contact fallbacks in code:
   - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
@@ -80,6 +85,17 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Showed the mobile purchases disabled notice.
   - Showed Individual, Family, and Pro plan cards.
   - Pro card shows guided partner update / partner queue copy.
+- Latest Apple rejection artifacts were inspected from Downloads and live App Store Connect:
+  - Forced password creation after Sign in with Apple mapped to the former mobile `needsPasswordSetup` gate.
+  - Subscription billed-amount prominence issue mapped to the annual CTA/card hierarchy on the mobile subscription screen.
+  - App Review also asked whether `Pro Annual` at `$199.99` is intentional; shared code currently defines Pro yearly as `$199/year`.
+  - App Store Connect subscription pricing confirms `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` in the United States.
+  - Mobile production IAP UI reads StoreKit localized prices, while public shared/web pricing copy still says `$199/year`.
+- Mobile account-management paths remain coherent after the Apple fix:
+  - OAuth-only users can request a secure set-password link from `Settings -> Privacy`.
+  - Password-login users can request a secure reset/change-password link from the same screen.
+  - OAuth-only delete-account already works through typed `DELETE` plus the authenticated session; password users still confirm with their current password.
+  - The destructive delete button no longer gets stuck on lowercase typed confirmation text.
 - Live exact QA account lifecycle:
   - Signup auto-verifies only `mobile.qa@locateflow.com`.
   - Mobile API login succeeds after signup.
@@ -142,6 +158,20 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - `pnpm lint`
   - `pnpm build`
   - `pnpm verify:ci`
+- Follow-up validation after the mobile delete-confirmation fix passed:
+  - Focused mobile confirmation/password tests: 2 files / 4 tests.
+  - Full mobile test suite: 14 files / 37 tests.
+  - `pnpm --filter @locateflow/mobile lint`.
+  - `git diff --check`.
+  - `pnpm verify:typecheck`.
+- DigitalOcean deployment for commit `575e7cf` became ACTIVE:
+  - `/api/ready`: HTTP 200.
+  - `/api/mobile/iap/products`: HTTP 200 with all Individual/Family/Pro monthly/yearly iOS and Android keys.
+- EAS iOS production build after the Apple-review fixes finished:
+  - Build ID: `3474e1a9-8458-493a-9b56-150be860a963`
+  - App version/build: `1.0.0 (13)`
+  - Commit: `575e7cf`
+  - Follow-up EAS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload the binary to App Store Connect. Expo dashboard shows it queued and waiting for the submission process to start. This was not App Review resubmission and not production rollout.
 
 ## Remaining Blockers
 
@@ -159,9 +189,14 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - The admin UI now reaches the QA user's detail page successfully.
   - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
+- Apple re-review still needs one more honest pass:
+  - The forced Sign in with Apple password gate and annual billed-amount hierarchy issues were fixed in code.
+  - A fresh iOS build `1.0.0 (13)` has been built and EAS submit has been scheduled to upload it to App Store Connect.
+  - App Review resubmission has not been performed.
+  - App Review explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; App Store Connect confirms that store price, while shared/web copy currently says `$199/year`, so product/store pricing still needs human confirmation before replying.
 - Stripe staging/test-mode still is not ready for full E2E plan-matrix QA:
-  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`.
-  - Visible Family monthly/yearly, Pro monthly/yearly, and Individual monthly sandbox products are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
+  - The live Stripe sandbox catalog currently shows only `LocateFlow Individual Annual`, visible as `$79.00 USD / year`.
+  - Visible Family monthly/yearly, Pro monthly/yearly, Individual monthly, and a current-pricing Individual annual sandbox product are still missing, so staging upgrade/downgrade and checkout-completion coverage cannot yet be run honestly.
 - Full paid Stripe upgrade/downgrade completion was not run against live production payments to avoid production payment risk. A staging/test-mode Stripe catalog/customer is still required for card-completion E2E.
 - Store-console submission items remain manual/human-gated:
   - App Review notes and demo credentials.
@@ -198,8 +233,19 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
 - Live Stripe sandbox smoke added one more concrete blocker:
-  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual`.
+  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual` at `$79.00 USD / year`.
   - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
+- Latest Apple rejection evidence was inspected from Downloads plus App Store Connect:
+  - `Screenshot-0603-132041.png` matched the forced post-Apple-sign-in password setup screen.
+  - `Screenshot-0603-132317.png` matched the annual subscription card hierarchy complaint.
+  - Code fixes were applied for both issues, and the follow-up mobile password management path now exposes set/reset-password email links from Privacy settings instead of forcing setup immediately after auth.
+- App Store metadata follow-up:
+  - App Review Notes already include the subscription path (`Sign in -> More -> Subscription`) and Terms/Privacy links.
+  - The app version Description includes Terms of Use and Privacy Policy links.
+  - Support URL was changed to the public help page `https://locateflow.com/help` and verified after reload.
+- Android `debugOptimized` was rebuilt and reinstalled after the Apple/mobile account-management patch:
+  - Emulator retest still opened `More -> Subscription`.
+  - Live `Free Access` state, the store-disabled notice, and the read-only Family/Pro cards remained intact.
 
 ## Release Recommendation
 
