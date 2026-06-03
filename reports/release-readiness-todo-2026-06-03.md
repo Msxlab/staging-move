@@ -292,11 +292,17 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Valid RTDN-format payload published through Google Cloud Pub/Sub delivered to the live webhook with OIDC; DigitalOcean logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
   - Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page; Codex did not accept legal terms on the user's behalf.
 - [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
-  - Checklist requires a reviewer sandbox/demo account and IAP path (`More -> Subscription` or `More -> Settings -> Subscription`); console submission/re-auth was not performed.
+  - Added `docs/deploy/mobile-store-submission-copy.md` with reviewer-note draft and the current subscription path `More -> Subscription`.
+  - Console submission/re-auth was not performed, and the reviewer password is intentionally not committed.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
-  - Source inventory exists, but final console form submission/confirmation requires store-console review.
+  - Source inventory exists and `docs/deploy/mobile-store-submission-copy.md` now summarizes the operator-facing answers.
+  - Final console form submission/confirmation still requires store-console review.
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
+- [!] Verify public legal/contact pages are launch-ready for store submission.
+  - Live `privacy`, `terms`, `contact`, `help`, `billing-policy`, and `refund` pages are reachable.
+  - `privacy`, `terms`, and `contact` still show placeholder legal entity / mailing address text because DigitalOcean is missing `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
+  - `https://locateflow.com/contact` is the correct support URL for store consoles.
 - [x] Verify Sentry/native crash reporting decision for v1.
   - DigitalOcean app spec includes `NEXT_PUBLIC_SENTRY_DSN` and now has a populated `EXPO_PUBLIC_SENTRY_DSN`.
   - Mobile code uses the lightweight Sentry envelope path for captured app errors.
@@ -338,6 +344,9 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: Live `/api/ready` returned ready; live `/api/mobile/iap/products` returned all iOS/Android plan-cycle IDs; Play RTDN smoke with fake bearer returned a 503 class failure consistent with missing expected identity/backend readiness.
 - 2026-06-03: Final pre-commit verification passed again: `git diff --check`, `pnpm verify:typecheck`, and `pnpm verify:tests` (web 191 files / 1416 tests, admin 89 files / 480 tests, mobile 10 files / 25 tests, connectors 13 files / 87 tests).
 - 2026-06-03: Added deployment-only `QA_RESETTABLE_ACCOUNT_EMAIL` guard: exact QA account auto-verifies on signup and hard-resets itself on logout; malformed/multi-email values are inert. Verification passed: `pnpm verify:typecheck` and `pnpm verify:tests` (web 192 files / 1430 tests, admin 89 files / 481 tests, mobile 10 files / 25 tests, connectors 13 files / 87 tests).
+- 2026-06-03: Live public `privacy`, `terms`, `contact`, `help`, `billing-policy`, and `refund` pages were checked; store-submission copy doc added at `docs/deploy/mobile-store-submission-copy.md`.
+- 2026-06-03: DigitalOcean app spec check showed `NEXT_PUBLIC_LEGAL_ENTITY_NAME`, `NEXT_PUBLIC_COMPANY_ADDRESS`, and optional public `NEXT_PUBLIC_*` contact overrides are absent, which leaves placeholder legal/mailing text on live public policy pages.
+- 2026-06-03: Public legal/contact fallback cleanup added in code so raw placeholder strings no longer need to render on `terms`, `contact`, and `dpa` when those env values are missing; targeted legal-content tests and root typecheck passed.
 - 2026-06-03: Added exact-QA signup self-reset fallback so a stale `mobile.qa@locateflow.com` account can be cleaned and recreated even when no active session exists to trigger logout reset; normal existing accounts still return 409. Verification passed: focused auth/QA tests (3 files / 29 tests), `git diff --check`, `pnpm verify:typecheck`, and `pnpm verify:tests` (web 192 files / 1436 tests, admin 89 files / 481 tests, mobile 11 files / 29 tests, connectors 13 files / 87 tests).
 - 2026-06-03: Android emulator app launch instability was traced to low-memory killer pressure on the 2GB AVD; relaunching the same AVD with 4GB memory stabilized local QA.
 - 2026-06-03: Live QA account lifecycle verified through mobile APIs: reset-on-logout, re-register, auto-verify, login, legal/profile/address/onboarding completion; bearer token intentionally not recorded.

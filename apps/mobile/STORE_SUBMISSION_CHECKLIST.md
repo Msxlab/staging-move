@@ -1,6 +1,6 @@
 # LocateFlow Mobile — Store Submission Checklist
 
-Last updated: 2026-06-02. Maintain alongside every release.
+Last updated: 2026-06-03. Maintain alongside every release.
 
 Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICABLE`.
 
@@ -28,8 +28,8 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Public account-deletion web URL | DONE | `apps/web/src/app/account/delete/page.tsx` → `https://locateflow.com/account/delete` |
 | AASA file served at `/.well-known/apple-app-site-association` | DONE | Live response uses `APPLE_TEAM_ID=LDWFU7FTBV` for `com.locateflow.mobile`. |
 | assetlinks.json served at `/.well-known/assetlinks.json` | DONE | `ANDROID_APP_FINGERPRINTS` set in DigitalOcean. Route is runtime-dynamic so env changes are reflected after deploy. |
-| Privacy Policy URL reachable + parity with mobile data inventory | HUMAN VERIFICATION REQUIRED | `https://locateflow.com/privacy` — verify content matches `MOBILE_DATA_INVENTORY.md` before submission |
-| Crash reporter (Sentry/GlitchTip) DSN configured for production | TODO | Add `EXPO_PUBLIC_SENTRY_DSN` to `eas.json` production env, OR explicitly document v1 with no native crash reporting |
+| Privacy Policy URL reachable + parity with mobile data inventory | HUMAN VERIFICATION REQUIRED | Live `https://locateflow.com/privacy` is reachable and broadly matches `MOBILE_DATA_INVENTORY.md`, but `privacy`, `terms`, and `contact` still show placeholder legal entity / mailing address until `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS` are set in DigitalOcean. |
+| Crash reporter (Sentry/GlitchTip) DSN configured for production | DONE | `EXPO_PUBLIC_SENTRY_DSN` is present. Mobile currently uses the lightweight Sentry-compatible JS/error envelope path, not `@sentry/react-native` native crash capture. |
 
 ---
 
@@ -43,19 +43,19 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Universal Links / Associated Domains entitlement matches AASA hosts | DONE | Release config uses `locateflow.com` only. Re-add `locateflow.app` / `app.locateflow.com` only after DNS + well-known files exist. |
 | In-App Purchase subscription group + products created | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
 | Subscription products attached to first submission | HUMAN VERIFICATION REQUIRED | App Store Connect → My Apps → In-App Purchases |
-| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set in App Information |
-| Terms of Use / EULA URL: `https://locateflow.com/terms` | TODO | Add to App Description if using Apple's standard EULA, or set in the custom EULA field |
-| Support URL | TODO | Set (typically `https://locateflow.com/support` or `mailto:support@locateflow.com`) |
+| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set in App Information after public legal entity / mailing address placeholders are finalized |
+| Terms of Use / EULA URL: `https://locateflow.com/terms` | TODO | Set after public legal entity / mailing address placeholders are finalized |
+| Support URL | TODO | Use `https://locateflow.com/contact` (live) |
 | Marketing URL (optional) | NOT APPLICABLE | |
 | App category: Lifestyle / Productivity | TODO | Pick category |
 | Age rating questionnaire | TODO | No objectionable / gambling / UGC moderation needed |
 | iPhone screenshots: 6.7" (mandatory) + 6.5" + 5.5" | TODO | |
 | iPad screenshots | NOT APPLICABLE | `supportsTablet: false` |
-| App Review notes + demo credentials | TODO | Provide a sandbox account that has completed onboarding. Include IAP path: More -> Subscription, or More -> Settings -> Subscription. Apple rejected build 12 because IAP was not locatable. |
+| App Review notes + demo credentials | HUMAN VERIFICATION REQUIRED | Use `docs/deploy/mobile-store-submission-copy.md`. Demo password must be supplied out-of-band; do not commit it. Include IAP path: `More -> Subscription`. Apple previously rejected build 12 because IAP was not locatable. |
 | Encryption export compliance: `ITSAppUsesNonExemptEncryption=false` | DONE | `app.json` |
 | App Tracking Transparency declaration: "No tracking" | DONE | App does not use IDFA, ad SDKs, or cross-site tracking |
-| App Privacy form filled from `MOBILE_DATA_INVENTORY.md` | TODO | |
-| No external CTAs for digital subscription purchases | DONE | Native mobile shows Individual StoreKit/Play purchase only. Family/Pro access is read-only unless already active on the account. |
+| App Privacy form filled from `MOBILE_DATA_INVENTORY.md` | HUMAN VERIFICATION REQUIRED | Use `apps/mobile/MOBILE_DATA_INVENTORY.md` plus `docs/deploy/mobile-store-submission-copy.md` for console copy. |
+| No external CTAs for digital subscription purchases | DONE | Store-enabled native builds render native App Store / Play purchase actions for configured SKUs. Web billing links appear only for Stripe-managed accounts, management flows, or non-store/test builds where native commerce is unavailable. |
 
 ### Apple App Privacy answers (paste into App Store Connect)
 
@@ -72,9 +72,9 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Release keystore SHA-256 (App Signing key + upload key) added to `ANDROID_APP_FINGERPRINTS` env | DONE | Play signed universal APK fingerprint added to DigitalOcean: `A1:14:99:D3:29:69:50:CF:DC:40:74:4E:0C:94:79:9A:9D:B3:D7:AD:71:BC:BE:A6:04:8B:3C:3B:C2:31:01:74`. |
 | Closed testing track set up | HUMAN VERIFICATION REQUIRED | Mandatory for new personal developer accounts (14-day, 12-tester test) |
 | Subscription products + Base Plans + Offers configured | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
-| Google Play Developer API auth env configured | TODO | Configure either `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, or OAuth fallback `GOOGLE_PLAY_OAUTH_CLIENT_ID` + `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN` with optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`. Android IAP verification returns `IAP_NOT_CONFIGURED` only when no auth path is complete. |
-| Data Safety form filled | TODO | See `MOBILE_DATA_INVENTORY.md` |
-| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | |
+| Google Play Developer API auth env configured | DONE | OAuth fallback is configured in DigitalOcean with `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional secret, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`. Service-account private-key auth remains supported by code, but org policy blocks key creation. Live fake-token verify now fails closed as `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`. |
+| Data Safety form filled | HUMAN VERIFICATION REQUIRED | Use `apps/mobile/MOBILE_DATA_INVENTORY.md` plus `docs/deploy/mobile-store-submission-copy.md`. |
+| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set after public legal entity / mailing address placeholders are finalized |
 | Account deletion URL: `https://locateflow.com/account/delete` | DONE | Page exists, OAuth-only users supported |
 | App access instructions / demo credentials | TODO | Provide reviewer sandbox account |
 | Content rating questionnaire (IARC) | TODO | |
@@ -84,6 +84,18 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Target SDK >= 35 (Aug 2025 requirement) | DONE | Inherited from Expo SDK 55 (compileSdk/targetSdk 36) |
 | Release notes (initial release) | TODO | |
 | Production rollout strategy | TODO | Plan staged rollout (10% → 50% → 100%) |
+
+---
+
+## 3.1 Store submission copy
+
+Use `docs/deploy/mobile-store-submission-copy.md` for:
+
+- App Store review notes draft
+- Play Console app-access instructions draft
+- Suggested support / privacy / terms URLs
+- Data Safety / App Privacy operator notes
+- The current public-launch blockers that still need real operator values
 
 ---
 

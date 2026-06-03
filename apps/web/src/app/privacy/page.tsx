@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Database, Lock, Shield, UserCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { createPublicPageMetadata } from "@/lib/seo";
-import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import {
+  displayLegalEntityName,
+  LEGAL_CONTACTS,
+  mailto,
+  policyLastUpdatedLabel,
+} from "@/lib/legal-info";
 
 export const metadata = createPublicPageMetadata({
   title: "Privacy Policy",
@@ -33,11 +38,6 @@ const highlights = [
   },
 ] as const;
 
-const privacyLegalEntityName =
-  LEGAL_INFO.legalEntityName === "[Legal entity name to be finalized]"
-    ? "LocateFlow"
-    : LEGAL_INFO.legalEntityName;
-
 export default function PrivacyPage() {
   return (
     <PublicPageShell
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
     >
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
-        <p>Legal entity: {privacyLegalEntityName}</p>
+        <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Privacy contact:{" "}
           <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="underline">

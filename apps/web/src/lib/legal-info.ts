@@ -1,11 +1,15 @@
+export const LEGAL_ENTITY_PLACEHOLDER = "[Legal entity name to be finalized]";
+export const COMPANY_ADDRESS_PLACEHOLDER =
+  "[Mailing address to be finalized before production launch]";
+
 export const LEGAL_INFO = {
   productName: "LocateFlow",
   legalEntityName:
     process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME?.trim() ||
-    "[Legal entity name to be finalized]",
+    LEGAL_ENTITY_PLACEHOLDER,
   companyAddress:
     process.env.NEXT_PUBLIC_COMPANY_ADDRESS?.trim() ||
-    "[Mailing address to be finalized before production launch]",
+    COMPANY_ADDRESS_PLACEHOLDER,
   lastUpdated: "May 1, 2026",
   lastUpdatedIso: "2026-05-01",
 } as const;
@@ -46,6 +50,18 @@ export const POLICY_ROUTES = [
 export function mailto(email: string, subject?: string) {
   const suffix = subject ? `?subject=${encodeURIComponent(subject)}` : "";
   return `mailto:${email}${suffix}`;
+}
+
+export function displayLegalEntityName() {
+  return LEGAL_INFO.legalEntityName === LEGAL_ENTITY_PLACEHOLDER
+    ? LEGAL_INFO.productName
+    : LEGAL_INFO.legalEntityName;
+}
+
+export function displayCompanyAddress() {
+  return LEGAL_INFO.companyAddress === COMPANY_ADDRESS_PLACEHOLDER
+    ? null
+    : LEGAL_INFO.companyAddress;
 }
 
 export function policyLastUpdatedLabel() {

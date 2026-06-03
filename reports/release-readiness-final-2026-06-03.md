@@ -24,6 +24,9 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Mobile sign-up creates a session immediately only when the backend reports no email-verification requirement.
   - Normal users still go through email verification.
 - Fixed mobile subscription plan visibility so store-disabled Android QA builds still show Individual, Family, and Pro cards while keeping purchase actions read-only.
+- Cleaned public legal/contact fallbacks in code:
+  - `terms`, `contact`, and `dpa` now use the product name fallback instead of exposing the raw legal-entity placeholder.
+  - Public legal/contact pages no longer need to print the raw mailing-address placeholder when the address env is absent.
 - Added minimal Google Play Android Publisher OAuth refresh-token fallback:
   - Existing service-account private-key auth path remains unchanged.
   - OAuth fallback uses `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`.
@@ -37,6 +40,13 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 - Live Google Places server-side autocomplete works for authenticated users:
   - QA bearer request to `/api/address-autocomplete` returned `enabled: true` with 5 predictions.
   - Using the first returned `placeId`, `/api/address-autocomplete/details` returned `enabled: true` with a resolved address result.
+- Live public store/legal/support URLs are reachable:
+  - `https://locateflow.com/privacy`
+  - `https://locateflow.com/terms`
+  - `https://locateflow.com/contact`
+  - `https://locateflow.com/help`
+  - `https://locateflow.com/billing-policy`
+  - `https://locateflow.com/refund`
 - Admin connector page and client connections page match the live state:
   - USPS adapter supported in code/catalog.
   - No registered/enabled control-plane connector row yet.
@@ -143,6 +153,10 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
   - Google Data Safety form.
   - Closed-test/release submission.
   - Production rollout.
+- Public legal/contact launch metadata is still incomplete:
+  - DigitalOcean is missing `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`.
+  - Live deployment still shows placeholder legal-entity / mailing-address text until the new fallback cleanup is deployed and the real env values are set.
+  - DigitalOcean is also missing the optional public `NEXT_PUBLIC_*` contact env overrides, so public pages currently fall back to role mailboxes such as `support@locateflow.com`.
 - Native crash reporting is lightweight for v1:
   - `EXPO_PUBLIC_SENTRY_DSN` is present.
   - `@sentry/react-native` native crash capture is not integrated yet.
@@ -152,4 +166,4 @@ No live card charge, production subscription mutation, Play/App Store rollout, s
 
 READY FOR INTERNAL TESTING ONLY
 
-Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
+Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, store-submission copy docs, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation, the public legal entity/address placeholders are replaced, and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
