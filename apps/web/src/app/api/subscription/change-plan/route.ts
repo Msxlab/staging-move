@@ -11,6 +11,7 @@ import {
 import {
   billingIntervalToCycle,
   getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval,
   type StripeBillingInterval,
 } from "@/lib/billing";
 import { isPaidBillingPlan, type PaidBillingPlan } from "@/lib/shared-billing";
@@ -218,8 +219,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const currentPlan = String(subscription.plan || "INDIVIDUAL");
-    const currentInterval: StripeBillingInterval = subscription.billingInterval === "YEAR" ? "YEAR" : "MONTH";
+    const mappedCurrentPrice = await mapStripePriceIdToPlanAndInterval(subscription.stripePriceId);
+    const currentPlan = isPaidBillingPlan(subscription.plan)
+      ? subscription.plan
+      : mappedCurrentPrice?.plan || "INDIVIDUAL";
+    const currentInterval: StripeBillingInterval =
+      subscription.billingInterval === "YEAR" || subscription.billingInterval === "MONTH"
+        ? subscription.billingInterval
+        : mappedCurrentPrice?.billingInterval || "MONTH";
     const targetInterval = explicitInterval || currentInterval;
 
     if (targetPlan === currentPlan && targetInterval === currentInterval) {

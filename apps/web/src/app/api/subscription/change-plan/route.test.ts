@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   getStripePriceIdForPlanAndInterval: vi.fn(),
+  mapStripePriceIdToPlanAndInterval: vi.fn(),
   reconcileSeatsForOwner: vi.fn(),
   subFindUnique: vi.fn(),
   subUpdate: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock("@/lib/billing-config", () => ({
 }));
 vi.mock("@/lib/billing", () => ({
   getStripePriceIdForPlanAndInterval: mocks.getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval: mocks.mapStripePriceIdToPlanAndInterval,
   billingIntervalToCycle: (i: string) => (i === "YEAR" ? "yearly" : "monthly"),
 }));
 vi.mock("@/lib/shared-billing", () => ({
@@ -95,6 +97,7 @@ describe("change-plan route", () => {
     mocks.rateLimit.mockResolvedValue({ success: true });
     mocks.getRuntimeConfigValue.mockResolvedValue("sk_test_123");
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_target");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue(null);
     mocks.reconcileSeatsForOwner.mockResolvedValue(undefined);
     mocks.subUpdate.mockResolvedValue({});
     mocks.subsRetrieve.mockResolvedValue({
@@ -257,6 +260,43 @@ describe("change-plan route", () => {
       }),
       expect.anything(),
     );
+  });
+
+  it("uses the current Stripe price mapping when the stored billing interval is missing", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "PRO",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: null,
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "PRO",
+      billingInterval: "YEAR",
+    });
+    mocks.subsRetrieve.mockResolvedValue({
+      id: "sub_123",
+      items: { data: [{ id: "si_1", price: { id: "price_current" }, quantity: 1 }] },
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "YEAR" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      plan: "PRO",
+      pendingPlan: "FAMILY",
+      pendingBillingInterval: "YEAR",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).toHaveBeenCalled();
   });
 
   it("defers a Family to Individual downgrade to period end", async () => {

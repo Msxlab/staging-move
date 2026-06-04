@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
   rateLimit: vi.fn(),
   getStripePriceIdForPlanAndInterval: vi.fn(),
+  mapStripePriceIdToPlanAndInterval: vi.fn(),
   subscriptionUpdate: vi.fn(),
   stripeConstructor: vi.fn(),
   stripeSubscriptionsRetrieve: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/billing", () => ({
   billingIntervalToCycle: (interval: string) => (interval === "YEAR" ? "yearly" : "monthly"),
   getStripePriceIdForPlanAndInterval: mocks.getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval: mocks.mapStripePriceIdToPlanAndInterval,
 }));
 vi.mock("@/lib/billing-config", () => ({
   requireStripeSecretKeyForMutation: vi.fn((key: string) => key),
@@ -88,6 +90,7 @@ describe("subscription switch-cycle route", () => {
     mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (_plan: string, interval: string) =>
       interval === "YEAR" ? "price_yearly" : "price_monthly",
     );
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue(null);
     mocks.stripeSubscriptionsUpdate.mockResolvedValue({
       id: "sub_123",
       current_period_end: 1_900_000_000,
@@ -280,6 +283,42 @@ describe("subscription switch-cycle route", () => {
       }),
       expect.anything(),
     );
+  });
+
+  it("uses the current Stripe price mapping when the stored billing interval is missing", async () => {
+    const futureUnix = Math.floor((Date.now() + 365 * 86_400_000) / 1000);
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: null,
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: new Date(futureUnix * 1000),
+    });
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue({
+      ...stripeSubscription("price_yearly", "year"),
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      billingInterval: "YEAR",
+      pendingBillingInterval: "MONTH",
+      scheduled: true,
+    });
+    expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalled();
   });
 
   it("releases the Stripe schedule when the pending-interval DB write fails on missing columns", async () => {

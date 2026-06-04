@@ -11,6 +11,7 @@ import {
 import {
   billingIntervalToCycle,
   getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval,
   type StripeBillingInterval,
 } from "@/lib/billing";
 import { captureMessage } from "@/lib/sentry";
@@ -223,7 +224,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (subscription.billingInterval === targetInterval) {
+    const mappedCurrentPrice = await mapStripePriceIdToPlanAndInterval(subscription.stripePriceId);
+    const currentInterval: StripeBillingInterval =
+      subscription.billingInterval === "YEAR" || subscription.billingInterval === "MONTH"
+        ? subscription.billingInterval
+        : mappedCurrentPrice?.billingInterval || "MONTH";
+
+    if (currentInterval === targetInterval) {
       if (subscription.pendingBillingInterval === targetInterval) {
         return NextResponse.json(
           { error: "This billing cycle change is already scheduled." },
@@ -268,7 +275,7 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
-    if (subscription.billingInterval === "YEAR" && targetInterval === "MONTH") {
+    if (currentInterval === "YEAR" && targetInterval === "MONTH") {
       const periodEndUnix =
         getStripeSubscriptionCurrentPeriodEndUnix(stripeSub) ||
         dateToUnixSeconds(subscription.currentPeriodEndsAt);
