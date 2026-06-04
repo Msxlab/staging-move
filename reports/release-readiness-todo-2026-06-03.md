@@ -125,24 +125,25 @@ Status legend:
 
 ## 4. Stripe Checkout Completion Matrix
 
-Safety rule: use only test-mode/staging Stripe customer and test cards. Do not complete a live charge.
+Safety rule: use only test-mode/staging Stripe customer and test cards. Do not complete a live production charge.
 
-Current live environment is production. Completing any checkout would create production payment risk, so all charge-completion rows remain blocked until a Stripe test-mode/staging customer/catalog is available.
+Completed against the DigitalOcean QA/staging service `https://locateflow-staging-owew7.ondigitalocean.app` configured with Stripe test-mode prices. No live Stripe charge was performed.
 
-- [ ] Individual monthly checkout creates Stripe Checkout and activates Individual Monthly after webhook.
-- [ ] Individual yearly checkout creates Stripe Checkout/trial and activates Individual Annual after webhook.
-- [ ] Family monthly checkout creates Stripe Checkout and activates Family Monthly after webhook.
-- [ ] Family yearly checkout creates Stripe Checkout and activates Family Annual after webhook.
-- [ ] Pro monthly checkout creates Stripe Checkout and activates Pro Monthly; API sync remains unavailable.
-- [ ] Pro yearly checkout creates Stripe Checkout and activates Pro Annual; API sync becomes available when connector feature/catalog is enabled.
-- [ ] Checkout cancel restores usable subscription/free state and does not leave stuck pending checkout.
-- [ ] Declined card/failure does not activate premium and surfaces recoverable billing state.
-- [ ] Duplicate checkout for an active paid subscription is blocked or routes to billing recovery.
-- [ ] Store-managed active subscription blocks web Stripe checkout.
-- [BLOCKED] Historical report says Stripe test-mode catalog is incomplete/incorrect; re-verify before test-card completion.
-  - Live Stripe browser dashboard sandbox currently shows only one active product: `LocateFlow Individual Annual`.
-  - Family monthly/yearly, Pro monthly/yearly, and Individual monthly are not present in the visible sandbox catalog, so the Stripe test matrix is not yet runnable end to end.
-- [SKIP] Live Stripe checkout completion skipped by safety rule: production payment risk.
+- [x] Individual monthly checkout creates Stripe Checkout and activates Individual Monthly after webhook.
+- [x] Individual yearly checkout/trial creates Stripe Checkout and activates Individual Annual after webhook.
+- [x] Family monthly checkout creates Stripe Checkout and activates Family Monthly after webhook.
+- [x] Family yearly checkout creates Stripe Checkout and activates Family Annual after webhook.
+- [x] Pro monthly checkout creates Stripe Checkout and activates Pro Monthly; API sync remains unavailable unless annual Pro and connector runtime are enabled.
+- [x] Pro yearly checkout creates Stripe Checkout and activates Pro Annual; entitlement is Pro annual while connector catalog/control-plane remains separately gated.
+- [x] Checkout cancel restores usable subscription/free state and does not leave stuck pending checkout.
+- [x] Declined card/failure does not activate premium and surfaces recoverable billing state.
+  - Fixed regression where a failed initial invoice could leave a grace entitlement. Declined initial checkout now persists `UNPAID` with inactive entitlement.
+- [x] Duplicate checkout for an active paid subscription is blocked or routes to billing recovery.
+  - Live/API result: `ALREADY_ACTIVE`.
+- [x] Store-managed active subscription blocks web Stripe checkout.
+- [x] Stripe test-mode catalog blocker resolved for QA.
+  - The QA/staging runtime now has the six Individual/Family/Pro monthly/yearly Stripe test prices needed for checkout and plan matrix coverage.
+- [SKIP] Live production Stripe checkout completion skipped by safety rule: production payment risk.
 
 ## 5. Stripe Plan Change And Downgrade Matrix
 
@@ -151,42 +152,45 @@ Expected behavior from code:
 - Downgrades and same-tier Year -> Month are scheduled at period end.
 - No data loss; seat reconciliation is best-effort after owner entitlement changes.
 
-Code/test verification completed for immediate vs scheduled behavior. Full end-to-end Stripe subscription mutation against live Billing was not executed because it would touch production customer/subscription state.
+Code/test verification and live QA/staging Stripe test-mode verification completed for immediate vs scheduled behavior. Full matrix result: 36 transitions / 36 passed, summary `C:\Users\Kutay\AppData\Local\Temp\locateflow-plan-matrix-v6-20260603-231015.json`.
 
-- [ ] Individual Monthly -> Individual Annual: immediate.
-- [ ] Individual Annual -> Individual Monthly: scheduled.
-- [ ] Individual Monthly -> Family Monthly: immediate.
-- [ ] Individual Monthly -> Family Annual: immediate.
-- [ ] Individual Annual -> Family Monthly: immediate.
-- [ ] Individual Annual -> Family Annual: immediate.
-- [ ] Individual Monthly -> Pro Monthly: immediate; sync unavailable.
-- [ ] Individual Monthly -> Pro Annual: immediate; sync available.
-- [ ] Individual Annual -> Pro Monthly: immediate; sync unavailable.
-- [ ] Individual Annual -> Pro Annual: immediate; sync available.
-- [ ] Family Monthly -> Family Annual: immediate.
-- [ ] Family Annual -> Family Monthly: scheduled.
-- [ ] Family Monthly -> Individual Monthly: scheduled.
-- [ ] Family Monthly -> Individual Annual: scheduled.
-- [ ] Family Annual -> Individual Monthly: scheduled.
-- [ ] Family Annual -> Individual Annual: scheduled.
-- [ ] Family Monthly -> Pro Monthly: immediate.
-- [ ] Family Monthly -> Pro Annual: immediate; sync available.
-- [ ] Family Annual -> Pro Monthly: immediate.
-- [ ] Family Annual -> Pro Annual: immediate; sync available.
-- [ ] Pro Monthly -> Pro Annual: immediate; sync becomes available.
-- [ ] Pro Annual -> Pro Monthly: scheduled; sync remains until period end, then removed.
-- [ ] Pro Monthly -> Family Monthly: scheduled.
-- [ ] Pro Monthly -> Family Annual: scheduled.
-- [ ] Pro Annual -> Family Monthly: scheduled.
-- [ ] Pro Annual -> Family Annual: scheduled.
-- [ ] Pro Monthly -> Individual Monthly: scheduled.
-- [ ] Pro Monthly -> Individual Annual: scheduled.
-- [ ] Pro Annual -> Individual Monthly: scheduled.
-- [ ] Pro Annual -> Individual Annual: scheduled.
-- [ ] Same plan + same interval is rejected as no-op.
-- [ ] Pending downgrade banner appears on web subscription UI.
-- [ ] Pending downgrade state appears in admin UI.
-- [SKIP] Live plan mutation/downgrade execution skipped by safety rule: production payment risk.
+- [x] Individual Monthly -> Individual Annual: immediate.
+- [x] Individual Annual -> Individual Monthly: scheduled.
+- [x] Individual Monthly -> Family Monthly: immediate.
+- [x] Individual Monthly -> Family Annual: immediate.
+- [x] Individual Annual -> Family Monthly: immediate.
+- [x] Individual Annual -> Family Annual: immediate.
+- [x] Individual Monthly -> Pro Monthly: immediate; sync unavailable without annual Pro connector enablement.
+- [x] Individual Monthly -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Individual Annual -> Pro Monthly: immediate; sync unavailable without annual Pro.
+- [x] Individual Annual -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Family Monthly -> Family Annual: immediate.
+- [x] Family Annual -> Family Monthly: scheduled.
+- [x] Family Monthly -> Individual Monthly: scheduled.
+- [x] Family Monthly -> Individual Annual: scheduled.
+- [x] Family Annual -> Individual Monthly: scheduled.
+- [x] Family Annual -> Individual Annual: scheduled.
+- [x] Family Monthly -> Pro Monthly: immediate.
+- [x] Family Monthly -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Family Annual -> Pro Monthly: immediate.
+- [x] Family Annual -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Pro Monthly -> Pro Annual: immediate; entitlement becomes annual Pro.
+- [x] Pro Annual -> Pro Monthly: scheduled; annual Pro remains until period end, then monthly Pro.
+- [x] Pro Monthly -> Family Monthly: scheduled.
+- [x] Pro Monthly -> Family Annual: scheduled.
+- [x] Pro Annual -> Family Monthly: scheduled.
+- [x] Pro Annual -> Family Annual: scheduled.
+- [x] Pro Monthly -> Individual Monthly: scheduled.
+- [x] Pro Monthly -> Individual Annual: scheduled.
+- [x] Pro Annual -> Individual Monthly: scheduled.
+- [x] Pro Annual -> Individual Annual: scheduled.
+- [x] Same plan + same interval is rejected as no-op.
+- [BLOCKED] Pending downgrade banner appears on web subscription UI.
+  - Backend/API pending-downgrade state is verified in the live matrix.
+  - Browser UI verification is currently blocked by the Codex Chrome Extension native pipe closing even though Chrome, the extension, and the native host check as installed/enabled/correct. It requires opening/refreshing a Chrome extension-controlled window or manual inspection.
+- [BLOCKED] Pending downgrade state appears in admin UI.
+  - Backend/API pending state is verified; Chrome-controlled admin UI verification is blocked by the same Chrome extension pipe issue.
+- [SKIP] Live production plan mutation/downgrade execution skipped by safety rule: production payment risk.
 
 ## 6. Family Plan Functional Matrix
 
@@ -279,6 +283,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Started EAS build `9d3c92a9-5e58-4eac-ba12-79bd63065081` with profile `play-internal`; this is a store-distribution AAB build, not a Play rollout/submission.
   - EAS used remote Android credentials and incremented remote versionCode from 14 to 15.
   - Final status: `FINISHED`; artifact exists. Build page: `https://expo.dev/accounts/axtra-solutions-llc/projects/locateflow/builds/9d3c92a9-5e58-4eac-ba12-79bd63065081`.
+- [BLOCKED] Submit Android build 15 to Play internal track.
+  - `eas submit -p android --profile play-internal --id 9d3c92a9-5e58-4eac-ba12-79bd63065081 --non-interactive --wait` stopped before upload because EAS requires a Google service-account key setup for submit in non-interactive mode.
+  - Direct keyless Android Publisher upload was attempted with the DigitalOcean OAuth env names, but DigitalOcean returns secret placeholders for `SECRET` values; the OAuth token request failed before any Play edit/upload/track commit was created.
+  - `gcloud` is not installed locally, so no alternate signed-in Google user token path is available from the shell.
+  - Play internal release update remains Chrome/Play Console or credential-provisioning gated; no production rollout was performed.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
@@ -337,6 +346,8 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Code fixes landed for the forced Sign in with Apple password gate and the annual billed-amount hierarchy.
   - EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished for app version `1.0.0`, build number `13`, commit `575e7cf`.
   - EAS iOS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload build `13` to App Store Connect.
+  - EAS build list rechecked on 2026-06-03 with `NODE_OPTIONS=--use-system-ca`: build `13` is still `FINISHED`.
+  - Chrome-controlled App Store Connect verification is blocked by the Codex Chrome Extension native pipe issue; App Review selection/resubmission still needs App Store Connect access.
   - Final App Review confirmation still requires selecting/processing the new build and resubmitting to App Review after the product-price answer is confirmed.
 - [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
   - Shared code currently advertises Pro yearly as `$199/year`.
@@ -437,3 +448,9 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: App Store Connect Pro Annual pricing was inspected read-only: United States price is `$199.99 USD`; no price change or App Review reply was submitted.
 - 2026-06-03: EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished successfully for app version `1.0.0`, build number `13`, commit `575e7cf`.
 - 2026-06-03: EAS iOS submit was scheduled for build `13` as submission `5dca94e0-683f-455e-acf4-459123ebce57`; Expo dashboard shows it queued and waiting for the submission process to start. This uploads the binary to App Store Connect and is not an App Review resubmission or production rollout.
+- 2026-06-03: Fixed live Stripe scheduled-downgrade failure for flexible-billing subscriptions by sending `Stripe-Version: 2025-04-30.preview` only on subscription schedule create/retrieve/update/release calls. Verification passed: focused change-plan/switch-cycle tests 48/48, web typecheck, `git diff --check`, commit `9876a7e`, DigitalOcean deployment `df8bcdc5-76e8-4cd2-9b99-8a8a1b1a2905` ACTIVE, QA `/api/health` and `/api/ready` HTTP 200.
+- 2026-06-03: Live Stripe QA/staging plan-change matrix completed against `https://locateflow-staging-owew7.ondigitalocean.app` with Stripe test-mode prices: 36 transitions / 36 passed, including all immediate upgrades, period-end downgrades, same-plan cycle switches, and no-op rejections. Summary saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-plan-matrix-v6-20260603-231015.json`.
+- 2026-06-03: Matrix cleanup marked the 36 test-mode subscriptions cancel-at-period-end. The exact QA account then read back as active Stripe-managed `PRO` annual with `CANCEL_AT_PERIOD_END` and entitlement active until `2027-06-04T03:17:44.000Z`.
+- 2026-06-03: Chrome automation check failed after the matrix: Chrome is running, the Codex Chrome Extension is installed/enabled in the selected profile, and the native host manifest is correct, but the extension native pipe closes before responding. Live Chrome UI verification for pending downgrade/admin state remains blocked until a Chrome extension-controlled window is refreshed/opened or inspected manually.
+- 2026-06-03: EAS build list rechecked with system CAs: iOS production build `3474e1a9-8458-493a-9b56-150be860a963` remains `FINISHED` for `1.0.0 (13)`; Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
+- 2026-06-03: Android Play internal submit attempt for build `15` did not upload or rollout: EAS non-interactive submit requires a Google service-account key; direct Android Publisher OAuth upload could not get a token from DigitalOcean because secret values are not retrievable from app spec; `gcloud` is absent locally. No Play edit/track commit or production rollout was performed.

@@ -7,25 +7,26 @@ Last updated: 2026-06-03
 
 ## Current public blockers before submission
 
-These are not code bugs, but they should be fixed before store review:
+These are not code bugs, but they still need operator/store-console action:
 
-- `https://locateflow.com/privacy` is live, but the page still shows
-  `[Legal entity name to be finalized]`.
-- `https://locateflow.com/terms` is live, but the page still shows
-  `[Legal entity name to be finalized]` and
-  `[Mailing address to be finalized before production launch]`.
-- `https://locateflow.com/contact` is live, but it also shows the same public
-  legal-entity and mailing-address placeholders.
-- DigitalOcean app spec currently does not contain:
-  - `NEXT_PUBLIC_LEGAL_ENTITY_NAME`
-  - `NEXT_PUBLIC_COMPANY_ADDRESS`
-- Role-based public contact envs are also absent in DigitalOcean, so the site
-  is currently falling back to:
-  - `support@locateflow.com`
-  - `billing@locateflow.com`
-  - `privacy@locateflow.com`
-  - `legal@locateflow.com`
-  - `security@locateflow.com`
+- Apple App Review asked whether `Pro Annual` at `$199.99` is intentional.
+  Confirm the intended price before replying or changing App Store Connect.
+- App Store Connect must select/process build `1.0.0 (13)` and resubmit after
+  the price answer is ready.
+- Play Console Data Safety and Apple App Privacy forms still need final console
+  confirmation against `apps/mobile/MOBILE_DATA_INVENTORY.md`.
+- Android internal paid IAP still needs a real internal-test purchase/restore/
+  cancel pass to prove entitlement activation end to end.
+- Play internal track upload for Android build `15` is credential/console gated:
+  EAS non-interactive submit requires a Google service-account key, while the
+  current Google organization policy blocks service-account key creation.
+
+Resolved public URL blocker:
+
+- Live `https://locateflow.com/terms`, `https://locateflow.com/privacy`, and
+  `https://locateflow.com/contact` now render `AXTRA SOLUTIONS LLC` plus the
+  Woodland Park mailing address. The support URL in App Store Connect was moved
+  to public `https://locateflow.com/help`.
 
 ## Public URLs to use in store consoles
 

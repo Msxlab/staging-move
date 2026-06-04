@@ -20,6 +20,7 @@ const FORCE_RESET = ["1", "true", "yes"].includes(
 );
 
 const DEFAULT_SOURCES = [
+  { plan: "INDIVIDUAL", interval: "MONTH" },
   { plan: "INDIVIDUAL", interval: "YEAR" },
   { plan: "FAMILY", interval: "MONTH" },
   { plan: "FAMILY", interval: "YEAR" },
@@ -114,6 +115,13 @@ function changeAppliedKind(source, target, response) {
 
 function changeError(response) {
   return response.body?.error || null;
+}
+
+function pendingPlanMatches(source, target, subscription) {
+  if (shouldUseSwitchCycle(source, target)) {
+    return !subscription.pendingPlan || subscription.pendingPlan === target.plan;
+  }
+  return subscription.pendingPlan === target.plan;
 }
 
 function makeClient() {
@@ -389,7 +397,7 @@ async function main() {
               return (
                 subscription.plan === source.plan &&
                 subscription.billingInterval === source.interval &&
-                subscription.pendingPlan === target.plan &&
+                pendingPlanMatches(source, target, subscription) &&
                 subscription.pendingBillingInterval === target.interval &&
                 Boolean(subscription.currentPeriodEndsAt)
               );
@@ -412,7 +420,7 @@ async function main() {
           (reduction
             ? summary.plan === source.plan &&
               summary.billingInterval === source.interval &&
-              summary.pendingPlan === target.plan &&
+              pendingPlanMatches(source, target, summary) &&
               summary.pendingBillingInterval === target.interval &&
               Boolean(summary.currentPeriodEndsAt)
             : summary.plan === target.plan &&
