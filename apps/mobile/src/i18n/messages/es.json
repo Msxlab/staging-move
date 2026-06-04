@@ -657,6 +657,7 @@
     "subscription_choosePlan": "Elegir un plan",
     "subscription_noActivePlan": "Sin plan activo",
     "subscription_renews": "Renueva {{date}}",
+    "subscription_ends": "Termina {{date}}",
     "language_title": "Idioma",
     "language_description": "Elige tu idioma. La app lo usará en todas partes.",
     "appearance": "Apariencia",

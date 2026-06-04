@@ -46,7 +46,10 @@ import {
   getAnnualActionLabels,
   shouldEmphasizeAnnualBilledPrice,
 } from "@/lib/subscription-app-review";
-import { shouldShowMobileSubscriptionPlan } from "@/lib/subscription-visible-plans";
+import {
+  shouldRenderMobileSubscriptionPlanCard,
+  shouldShowMobileSubscriptionPlan,
+} from "@/lib/subscription-visible-plans";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -462,6 +465,10 @@ function LegacySubscriptionScreen() {
           isNativeStorePlatform,
           mobileStorePurchasesEnabled,
           hasConfiguredNativeSku: isPaidNativePlanKey(plan.key) ? hasConfiguredNativeSku(plan.key) : false,
+        }) &&
+        shouldRenderMobileSubscriptionPlanCard({
+          planKey: plan.key,
+          currentPlanKey,
         }),
       ),
     [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
@@ -476,6 +483,20 @@ function LegacySubscriptionScreen() {
       : currentProvider === "PLAY_STORE"
         ? t("settings.subscription_playStoreManagedReadOnly", {
             defaultValue: "Your subscription is managed in Google Play. You can continue using your account here.",
+          })
+        : nativePurchaseUnavailableMessage;
+
+  const managedElsewherePlanCardMessage = isStripeManaged
+    ? t("settings.subscription_webManagedPlanCardReadOnly", {
+        defaultValue: "Managed on web. Use web billing to change plans.",
+      })
+    : currentProvider === "APP_STORE"
+      ? t("settings.subscription_appStoreManagedPlanCardReadOnly", {
+          defaultValue: "Managed in the App Store. Use that store to change plans.",
+        })
+      : currentProvider === "PLAY_STORE"
+        ? t("settings.subscription_playStoreManagedPlanCardReadOnly", {
+            defaultValue: "Managed in Google Play. Use that store to change plans.",
           })
         : nativePurchaseUnavailableMessage;
 
@@ -744,7 +765,12 @@ function LegacySubscriptionScreen() {
                   : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
               </Text>
               <Text style={styles.currentPlanMeta}>
-                {periodEndLabel
+                {periodEndLabel && currentStatus === "CANCEL_AT_PERIOD_END"
+                  ? t("settings.subscription_ends", {
+                      date: periodEndLabel,
+                      defaultValue: "Ends {{date}}",
+                    })
+                  : periodEndLabel
                   ? t("settings.subscription_renews", { date: periodEndLabel })
                   : trialEndLabel
                     ? t("settings.subscription_renews", { date: trialEndLabel })
@@ -1058,6 +1084,10 @@ function LegacySubscriptionScreen() {
                   {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
                 </Text>
               </TouchableOpacity>
+            ) : paidPlanKey && isNativeStorePlatform && managedSubscriptionBlocksPurchase ? (
+              <View style={styles.disabledPurchaseNotice}>
+                <Text style={styles.disabledPurchaseText}>{managedElsewherePlanCardMessage}</Text>
+              </View>
             ) : paidPlanKey && isNativeStorePlatform && !planHasConfiguredNativeSku ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>
@@ -1075,11 +1105,7 @@ function LegacySubscriptionScreen() {
               </View>
             ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
-                <Text style={styles.disabledPurchaseText}>
-                  {managedSubscriptionBlocksPurchase
-                    ? managedElsewhereMessage
-                    : nativePurchaseUnavailableMessage}
-                </Text>
+                <Text style={styles.disabledPurchaseText}>{nativePurchaseUnavailableMessage}</Text>
               </View>
             ) : (
               <TouchableOpacity

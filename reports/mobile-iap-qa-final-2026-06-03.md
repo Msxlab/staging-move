@@ -2,7 +2,7 @@
 
 ## Scope
 
-Verified Android mobile subscription readiness from real code, live APIs, EAS store builds, local emulator evidence, and safe store-disabled QA behavior. No live payment, production subscription mutation, store rollout, or secret exposure was performed.
+Verified Android mobile subscription readiness from real code, live APIs, EAS store builds, local emulator evidence, safe store-disabled QA behavior, and Google Play internal-test Billing. No live payment, production subscription mutation, store rollout, or secret exposure was performed.
 
 ## Verified
 
@@ -18,6 +18,13 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 - Android EAS `play-internal` store AAB build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
 - DigitalOcean production/staging health smokes pass after the latest report push deployment, and the production product endpoint still returns six unique iOS and six unique Android SKU values.
 - The previous local/debug emulator package was removed so future evidence can distinguish a Play-installed internal build from a local QA build.
+- On 2026-06-04, Play internal build `15 (1.0.0)` was installed from Google Play on `emulator-5554`; package manager reports `installerPackageName=com.android.vending`.
+- A Google-authenticated account with an active web/Stripe-managed `Individual Monthly` subscription showed the expected mobile read-only/manage-on-web state instead of offering a duplicate native purchase.
+- A clean QA account completed onboarding through live mobile APIs, opened `More -> Subscription` from the Play-installed build, and launched the Google Play Billing sheet for `Individual Annual` at `$39.99/year`.
+- Play Console License testing was corrected by selecting tester list `LOCATEFLOW`; the Billing sheet then showed `Test card, always approves` and the no-charge Google Play test subscription notice.
+- Android build `15` completed the Individual Annual purchase through the Play test-card/no-charge flow and the app showed `Individual Annual` as the current plan.
+- Google Play subscription management cancellation completed; the app read back `CANCEL_AT_PERIOD_END` for Individual Annual while access remains active until the period end.
+- `Restore purchases` returned the expected `Restored` / `Your active subscription was restored.` alert.
 
 ## Fixes Applied
 
@@ -25,19 +32,23 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 - Added focused mobile tests for store-disabled visibility.
 - Added register response fields so exact `QA_RESETTABLE_ACCOUNT_EMAIL` signups tell mobile whether the backend auto-verified the account.
 - Updated mobile sign-up to immediately create a mobile session when the backend reports no email-verification requirement.
+- Fixed Google Play test-purchase handling for safe QA: Google-verified Play `testPurchase` responses remain blocked for non-allowlisted production users, but are accepted for `QA_RESETTABLE_ACCOUNT_EMAIL` / optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`.
+- Added local mobile copy polish so `CANCEL_AT_PERIOD_END` summary says `Ends {{date}}` instead of `Renews {{date}}`; this is pending the next mobile build/update and is not in Play build `15`.
 
 ## Evidence
 
 - Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-mobile-subscription-family-pro-20260603.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-subscription-qa-before-purchase.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-google-play-real-payment-sheet.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-google-play-test-payment-sheet-20260604.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-individual-annual-current-after-play-test-20260604.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-restore-success-20260604.png`
+- Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-cancel-at-period-end-after-restore-20260604.png`
 - Android package: `com.locateflow.mobile`
+- Play-installed version: `versionCode=15`, `versionName=1.0.0`, `installerPackageName=com.android.vending`
 - Emulator: `emulator-5554`
 
 ## Remaining Blockers
 
-- Backend Stripe-managed paid state exists in QA/staging after the matrix, ending as active `PRO` annual with `CANCEL_AT_PERIOD_END`; mobile visual verification of that state still needs Chrome/test credentials or a store/internal build path.
-- Android build `15 (1.0.0)` is now published to Play internal testing and marked `Available to internal testers`; no production rollout was performed.
-- Play internal tester list is `LOCATEFLOW` with 4 users; opt-in link is `https://play.google.com/apps/internaltest/4701495695078511383`.
-- Full Android paid IAP purchase/restore/cancel verification remains blocked until an internal tester account is signed into Google Play on the emulator or a real Android device and installs build `15` from Play.
-- The previous local/debug emulator install was removed; direct Play Store open reaches a Google Play `Sign in` screen, and the emulator Chrome TLS interstitial for the opt-in web URL was not bypassed.
-- Rechecked on 2026-06-04: `emulator-5554` still has no `com.locateflow.mobile` package installed, and Play Store still shows the Google Play `Sign in` screen. Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
-- Redacted account audit on 2026-06-04 showed `Accounts: 0` on `emulator-5554`, so there is no signed-in Google Play tester account available for Play install or Billing QA.
+- Play-installed build `15` still carries the older `Renews {{date}}` summary copy for `CANCEL_AT_PERIOD_END`; local code now changes that to `Ends {{date}}`, but a new mobile build/update is needed before this polish is visible in the Play-installed app.
+- Android `play-internal` build candidate `97ece373-6c37-4394-8e43-7781cd51781b`, versionCode `16`, later finished successfully for commit `3cfd03f`; it was not uploaded to Play and no production rollout was performed.

@@ -13,9 +13,10 @@ These are not code bugs, but they still need operator/store-console action:
   confirmation against `apps/mobile/MOBILE_DATA_INVENTORY.md`.
 - Android build `15 (1.0.0)` is published to Play internal testing and marked
   `Available to internal testers`; the tester list is `LOCATEFLOW` with 4 users.
-- Android internal paid IAP still needs a real internal-test install from Google
-  Play plus purchase/restore/cancel pass to prove entitlement activation end to
-  end. The current blocker is tester-device Google Play sign-in, not upload.
+- Android internal paid IAP now installs from Google Play and purchase/restore/cancel
+  has passed on build `15` using Google Play License testing with the no-charge
+  test card flow. Keep License testing selected for `LOCATEFLOW` before any
+  future paid Billing QA; if the sheet shows a real card, stop before `Subscribe`.
 
 Resolved public URL blocker:
 
@@ -223,10 +224,12 @@ Google Play Console:
 - App category: productivity/tools-style app. Use the category already selected
   in the console unless the store listing owner intentionally changes it.
 - Account deletion: use `https://locateflow.com/account/delete`.
-- Internal testing: build `15 (1.0.0)` is available to internal testers. Before
-  paid Billing QA, sign into Google Play on a tester device, open the opt-in
-  link, install from Play, then run the subscription purchase/restore/cancel
-  checks.
+- Internal testing: build `15 (1.0.0)` is available to internal testers, has
+  been installed from Play on the emulator, and completed the purchase/restore/cancel
+  Billing QA flow with a Google Play no-charge test card. Before any future paid
+  Billing QA, verify the active Google account is covered by Play Console
+  `Settings -> License testing`; if the sheet shows a real card, stop before
+  `Subscribe` and update License testing first.
 
 App Store Connect:
 

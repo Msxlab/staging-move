@@ -44,6 +44,11 @@ No live card charge, production subscription mutation, Play production rollout, 
   - OAuth fallback uses `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional `GOOGLE_PLAY_OAUTH_CLIENT_SECRET`, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`.
   - Runtime/admin readiness treats Google Play as configured when either service-account private-key auth or OAuth refresh-token auth is complete.
   - Google OAuth/Publisher failures fail closed with static errors and no secret-like response values.
+- Fixed Google Play test-purchase handling for safe internal QA:
+  - Google-verified Play `testPurchase` responses remain blocked for non-allowlisted production users.
+  - The configured QA account is allowed through `QA_RESETTABLE_ACCOUNT_EMAIL` and optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`.
+  - Commit `1d3058a` was deployed through DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8`.
+- Added local mobile copy polish so `CANCEL_AT_PERIOD_END` summary uses `Ends {{date}}` instead of `Renews {{date}}`; this needs the next mobile build/update before it appears in the Play-installed app.
 
 ## Verified
 
@@ -82,6 +87,14 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Full live QA/staging plan-change matrix passed: 36 transitions / 36 passed across all Individual/Family/Pro monthly/yearly source and target states.
   - Evidence summary: `C:\Users\Kutay\AppData\Local\Temp\locateflow-plan-matrix-v6-20260603-231015.json`.
 - Play Console subscription catalog matches the Android product IDs returned by the live mobile product endpoint; all six products exist and each has one active base plan.
+- Android Play internal Billing is verified on build `15 (1.0.0)`:
+  - Build `15` is installed from Google Play on `emulator-5554` with `installerPackageName=com.android.vending`.
+  - License testing was corrected by selecting tester list `LOCATEFLOW`.
+  - The purchase sheet showed `Test card, always approves` and the no-charge Google Play test subscription notice.
+  - Individual Annual purchase completed through Google Play test Billing and the app showed `Individual Annual` as current plan.
+  - `Restore purchases` returned the expected `Restored` alert.
+  - Cancellation through Google Play completed and the app reflected `CANCEL_AT_PERIOD_END` while access remains active until the period end.
+  - No live payment was charged and no Play production rollout was performed.
 - DigitalOcean app spec contains:
   - Stripe Individual/Family/Pro monthly/yearly price IDs.
   - Mobile iOS and Android product IDs.
@@ -193,24 +206,18 @@ No live card charge, production subscription mutation, Play production rollout, 
 
 ## Remaining Blockers
 
-- Android paid IAP is not production-ready until a real internal-test Play purchase verifies entitlement activation:
-  - Service-account JSON key creation is still blocked by organization policy `iam.disableServiceAccountKeyCreation`.
-  - The new OAuth refresh-token fallback is deployed and configured, so the missing private key is no longer the Android Publisher auth blocker.
-  - Fake-token verification now reaches the provider dependency path and fails closed as `IAP_PROVIDER_UNAVAILABLE`.
-  - EAS Android internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup.
-  - A direct Android Publisher OAuth upload attempt could not obtain a token from DigitalOcean app spec values because `SECRET` env values are not retrievable as plaintext through the app spec; no Play edit, upload, track commit, or rollout was created.
-  - `gcloud` is not installed locally, so there is no alternate signed-in user token path from the shell.
-  - Build `15 (1.0.0)` was uploaded through Play Console and published to internal testing on 2026-06-04; no production rollout was performed.
-  - Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
-  - Real Play Billing QA is now blocked by test-device Google Play sign-in: the emulator Play Store requires account sign-in, and Codex did not automate Google login/2FA.
-  - Rechecked on 2026-06-04: `market://details?id=com.locateflow.mobile` still opens Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package is installed on `emulator-5554`. Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
+- Android paid IAP internal-test Billing is complete, but Android market launch remains gated by store-console/operator actions:
+  - No Play production rollout was performed.
+  - Service-account JSON key creation is still blocked by organization policy `iam.disableServiceAccountKeyCreation`; the deployed OAuth refresh-token fallback covers runtime verification, but EAS non-interactive Android submit still needs service-account-key setup or another approved submit path.
+  - Play-installed build `15` still carries older `Renews {{date}}` copy for `CANCEL_AT_PERIOD_END`; local code now changes that to `Ends {{date}}`, but a new mobile build/update is needed before this polish is visible in the Play-installed app.
+  - Android `play-internal` build candidate `97ece373-6c37-4394-8e43-7781cd51781b`, versionCode `16`, later finished successfully for commit `3cfd03f`; it was not uploaded to Play and no production rollout was performed.
 - Play RTDN Pub/Sub push delivery is complete from Google Cloud:
   - Subscription `play-rtdn-locateflow-webhook` is active.
   - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
   - Invalid bearer paths fail closed with HTTP 401.
   - A valid RTDN-format Pub/Sub publish reached the live webhook and was logged as a test notification.
   - Play Console's own "Send test notification" button still requires human Terms of Service acceptance; Codex did not accept legal terms.
-- Active paid Stripe-managed Pro/Family state on mobile was not granted in production because the live admin mutation flow requires step-up secrets:
+- Production Pro/Family paid grants on mobile were not created because the live admin mutation flow requires step-up secrets:
   - The admin UI now reaches the QA user's detail page successfully.
   - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
@@ -278,6 +285,21 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Internal testing is Active with release `15 (1.0.0)`.
   - The Internal testing tester list currently contains 4 configured testers.
   - The opt-in link is `https://play.google.com/apps/internaltest/4701495695078511383`.
+- Android Play Billing internal-test QA was completed on build `15`:
+  - License testing was saved for tester list `LOCATEFLOW`.
+  - Individual Annual purchase completed through Google Play test card/no-charge flow.
+  - The app showed the active Individual Annual state after backend verification.
+  - Restore purchases returned the expected success alert.
+  - Google Play cancellation completed and the app reflected `CANCEL_AT_PERIOD_END`.
+  - Server fix commit `1d3058a` and DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8` were required so production QA test purchases remain allowlisted rather than globally accepted.
+- Post-Play-Billing validation passed:
+  - Focused mobile subscription visibility test: 1 file / 6 tests.
+  - Mobile lint/typecheck.
+  - Focused web IAP tests: 2 files / 20 tests.
+  - Root `pnpm verify:typecheck`.
+  - `git diff --check`.
+  - Production `/api/ready` returned ready=true.
+  - Production `/api/mobile/iap/products` returned 6 unique Android plus 6 unique iOS product values.
 - Live admin smoke improved from the prior checkpoint:
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
@@ -317,4 +339,4 @@ No live card charge, production subscription mutation, Play production rollout, 
 
 READY FOR INTERNAL TESTING ONLY
 
-Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, RTDN setup, DigitalOcean public legal env updates, store-submission copy docs, and reporting updates after review. Not safe to market-launch Android paid subscriptions until a real internal-test Play purchase verifies entitlement activation and the remaining store-console human checks are complete. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.
+Safe to merge the code hardening, Android QA fixes, Google Play OAuth fallback, Play Billing QA allowlist, RTDN setup, DigitalOcean public legal env updates, store-submission copy docs, and reporting updates after review. Android paid subscription purchase/restore/cancel is verified through Play internal-test Billing with no live charge, but market launch still requires the remaining store-console human checks and an explicit production rollout decision. Not safe to advertise live partner auto-sync until connector runtime config/control-plane registration is enabled and partner agreements are complete.

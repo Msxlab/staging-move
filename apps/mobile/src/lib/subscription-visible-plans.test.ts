@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { shouldShowMobileSubscriptionPlan } from "./subscription-visible-plans";
+import {
+  shouldRenderMobileSubscriptionPlanCard,
+  shouldShowMobileSubscriptionPlan,
+} from "./subscription-visible-plans";
 
 describe("shouldShowMobileSubscriptionPlan", () => {
   it("shows every plan in non-native environments", () => {
@@ -55,6 +58,26 @@ describe("shouldShowMobileSubscriptionPlan", () => {
       isNativeStorePlatform: true,
       mobileStorePurchasesEnabled: true,
       hasConfiguredNativeSku: true,
+    })).toBe(true);
+  });
+});
+
+describe("shouldRenderMobileSubscriptionPlanCard", () => {
+  it("hides the duplicate Free Access card when the account summary already shows it", () => {
+    expect(shouldRenderMobileSubscriptionPlanCard({
+      planKey: "FREE_TRIAL",
+      currentPlanKey: "FREE_TRIAL",
+    })).toBe(false);
+  });
+
+  it("keeps paid and non-current free cards available", () => {
+    expect(shouldRenderMobileSubscriptionPlanCard({
+      planKey: "INDIVIDUAL",
+      currentPlanKey: "FREE_TRIAL",
+    })).toBe(true);
+    expect(shouldRenderMobileSubscriptionPlanCard({
+      planKey: "FREE_TRIAL",
+      currentPlanKey: "INDIVIDUAL",
     })).toBe(true);
   });
 });

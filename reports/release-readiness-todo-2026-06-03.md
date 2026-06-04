@@ -186,10 +186,11 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - [x] Pro Annual -> Individual Annual: scheduled.
 - [x] Same plan + same interval is rejected as no-op.
 - [BLOCKED] Pending downgrade banner appears on web subscription UI.
-  - Backend/API pending-downgrade state is verified in the live matrix.
-  - Browser UI verification is currently blocked by the Codex Chrome Extension native pipe closing even though Chrome, the extension, and the native host check as installed/enabled/correct. It requires opening/refreshing a Chrome extension-controlled window or manual inspection.
+  - Backend/API pending-downgrade state is verified in the live matrix and copy-level UI coverage is now regression-tested (`apps/web/src/lib/subscription-copy-regression.test.ts`).
+  - Browser UI verification is still blocked by the Codex Chrome Extension native pipe closing even though Chrome, the extension, and the native host check as installed/enabled/correct. It requires opening/refreshing a Chrome extension-controlled window or manual inspection.
 - [BLOCKED] Pending downgrade state appears in admin UI.
-  - Backend/API pending state is verified; Chrome-controlled admin UI verification is blocked by the same Chrome extension pipe issue.
+  - Backend/API pending state is verified.
+  - Chrome-controlled admin UI verification remains blocked by the same Chrome extension pipe issue.
 - [SKIP] Live production plan mutation/downgrade execution skipped by safety rule: production payment risk.
 
 ## 6. Family Plan Functional Matrix
@@ -259,11 +260,11 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Android emulator signed in through the local QA proxy, completed onboarding via live mobile APIs, reached Home, then opened `More -> Subscription`.
   - Mobile subscription UI showed the live backend account state as `Free Access` / `FREE_ACCESS` with the store-disabled notice.
   - Exact QA lifecycle was verified live: signup 201/auto-verified, login 200, profile/address/service/onboarding writes 200/201, logout 200, old login 401, re-signup 201, clean onboarding step `profile`.
-- [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
-  - Authenticated, verified, onboarding-complete mobile session is working.
-  - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
-  - The Stripe QA/staging matrix now leaves the exact QA account in backend-proven active Stripe-managed `PRO` annual `CANCEL_AT_PERIOD_END` state, but visual mobile verification still needs a valid live/internal mobile login path.
-  - The previous local/debug Android package on `emulator-5554` was removed; real store-managed billing UI evidence now requires installing build `15` from Play internal testing after Google Play tester sign-in.
+- [x] Verify mobile shows read-only Stripe-managed state for web subscriptions.
+  - Play-installed Android internal build `15 (1.0.0)` launched from `com.android.vending` on `emulator-5554`.
+  - A Google-authenticated account with an active web/Stripe-managed `Individual Monthly` subscription showed the expected mobile read-only/manage-on-web state.
+  - Native purchase actions were blocked for that account, which prevents duplicate billing when the subscription is managed through web Stripe.
+  - Applying a live admin Pro/Family grant still requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -297,14 +298,21 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Live Play Console internal testing now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
   - Tester list confirmed: `LOCATEFLOW`, 4 users.
   - Opt-in link copied/verified: `https://play.google.com/apps/internaltest/4701495695078511383`.
-- [BLOCKED] Install Android build 15 from Play internal testing on emulator or real Android device.
-  - Removed the local/debug emulator install (`versionCode=1`, `installerPackageName=null`) to avoid mistaking it for Play-installed evidence.
-  - Opening the opt-in URL in emulator Chrome hit `NET::ERR_CERT_AUTHORITY_INVALID`; the security interstitial was not bypassed.
-  - Opening `market://details?id=com.locateflow.mobile` in the emulator Play Store reached the Play Store app, but Play Store requires Google sign-in.
-  - Rechecked on 2026-06-04: Play Store still shows the `Sign in` screen and no `com.locateflow.mobile` package is installed on `emulator-5554`.
-  - Screenshot evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
-  - Google account sign-in/2FA/manual approval is user-gated; Codex did not automate login.
-  - Real Play Billing QA remains pending until an internal tester account is signed into Play Store on the emulator or a real Android device installs build `15` from Play internal testing.
+- [x] Install Android build 15 from Play internal testing on emulator or real Android device.
+  - Removed the old local/debug emulator install (`versionCode=1`, `installerPackageName=null`) before retesting.
+  - After the user made an existing Google account available on the emulator, build `15 (1.0.0)` installed from Play internal testing.
+  - Package manager verification: `com.locateflow.mobile`, `versionCode=15`, `versionName=1.0.0`, `installerPackageName=com.android.vending`.
+  - No production rollout was performed.
+- [x] Complete Android Play Billing purchase/restore/cancel on build 15.
+  - Play Console License testing was corrected by selecting tester list `LOCATEFLOW`; the Billing sheet then showed `Test card, always approves` plus the Google Play no-charge test subscription notice.
+  - First test-purchase attempt exposed a backend QA blocker: `/api/mobile/iap/verify` returned `TEST_PURCHASE_NOT_ALLOWED` for Google-verified `testPurchase` responses in the production billing environment.
+  - Fixed and deployed allowlisted QA handling in `apps/web/src/lib/iap-common.ts`: Google-verified Play test purchases remain blocked for non-allowlisted production users, but are accepted for `QA_RESETTABLE_ACCOUNT_EMAIL` / optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`.
+  - Commit `1d3058a`; DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8` became ACTIVE; live `/api/ready` and `/api/mobile/iap/products` returned HTTP 200.
+  - Retest completed the Individual Annual purchase with the Play test card/no-charge flow; the app showed `Individual Annual` as the current plan. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-individual-annual-current-after-play-test-20260604.png`.
+  - Google Play subscription management cancellation completed; the app read back `CANCEL_AT_PERIOD_END` for Individual Annual while access remains active until the period end. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-cancel-at-period-end-after-restore-20260604.png`.
+  - `Restore purchases` returned the expected `Restored` / `Your active subscription was restored.` alert. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-restore-success-20260604.png`.
+  - No live payment was charged and no Play production rollout was performed.
+  - Follow-up polish: installed build 15 still says `Renews June 4, 2026` beside `CANCEL_AT_PERIOD_END`; local mobile code now changes that summary to `Ends {{date}}`, pending the next mobile build/update.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
@@ -494,6 +502,22 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-04: Android build `15` AAB was downloaded locally and a Play Console internal testing draft release was opened. After switching to coordinate-triggered file chooser handling, the build `15` AAB uploaded successfully.
 - 2026-06-04: Play Console internal testing release was published for build `15 (1.0.0)` with release notes `Internal testing update for billing QA.` Live Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`; no production rollout was performed.
 - 2026-06-04: Play internal tester list was confirmed as `LOCATEFLOW` with 4 users, and the opt-in link was copied as `https://play.google.com/apps/internaltest/4701495695078511383`.
-- 2026-06-04: Android emulator install-from-Play is blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen. Real Play Billing QA remains pending until an internal tester account is signed into Play Store on emulator or device.
-- 2026-06-04: Rechecked Android Play install path on `emulator-5554`: `market://details?id=com.locateflow.mobile` still opens Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package is installed. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
-- 2026-06-04: Android account audit on `emulator-5554` showed `Accounts: 0`, confirming there is no signed-in Google Play tester account on the emulator. Store-console human-gated guidance was expanded in `docs/deploy/mobile-store-submission-copy.md` for Data Safety, App Privacy, App Access/App Review notes, EU/trader/legal declarations, content rating, ads declaration, and account deletion URL.
+- 2026-06-04: Android emulator install-from-Play was initially blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen.
+- 2026-06-04: Rechecked Android Play install path on `emulator-5554` before user sign-in: `market://details?id=com.locateflow.mobile` still opened Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package was installed. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
+- 2026-06-04: Android account audit before user sign-in showed `Accounts: 0`, confirming there was no signed-in Google Play tester account on the emulator. Store-console human-gated guidance was expanded in `docs/deploy/mobile-store-submission-copy.md` for Data Safety, App Privacy, App Access/App Review notes, EU/trader/legal declarations, content rating, ads declaration, and account deletion URL.
+- 2026-06-04: After the user made an existing Google account available on the emulator, Play internal build `15 (1.0.0)` installed from Google Play. Package verification showed `com.locateflow.mobile`, `versionCode=15`, `versionName=1.0.0`, and `installerPackageName=com.android.vending`.
+- 2026-06-04: The Play-installed app showed a web/Stripe-managed `Individual Monthly` subscription as read-only/manage-on-web, so duplicate native purchase was correctly blocked for that account.
+- 2026-06-04: A clean QA app account completed onboarding through live mobile APIs, opened `More -> Subscription`, and launched the Google Play Billing sheet for `Individual Annual` at `$39.99/year`. Codex stopped before `Subscribe` at this checkpoint because Google Play showed a real saved payment method, not a test instrument. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-google-play-real-payment-sheet.png`. This was resolved later by saving Play Console License testing for `LOCATEFLOW`.
+- 2026-06-04: Play Console License testing verification/addition became the Android paid Billing QA blocker at this checkpoint: available Chrome profiles hit Google re-auth/2FA or signup gates, so Codex did not bypass account verification and no live payment was attempted. This was resolved later after Chrome/console access allowed saving tester list `LOCATEFLOW`.
+- 2026-06-04: Mobile subscription UI polish was added locally: duplicate current `Free Access` plan card is hidden when the summary already shows Free Access, and web/app-store/play-store managed plans now show concise per-card read-only copy. Focused mobile tests and mobile lint/typecheck passed.
+- 2026-06-04: New Android `play-internal` build candidate `97ece373-6c37-4394-8e43-7781cd51781b` was created for versionCode `16`; EAS later reported it as `FINISHED` for commit `3cfd03f`. This is a store-distribution AAB build candidate only, not a Play production rollout.
+- 2026-06-04: Play Console License testing was corrected by selecting and saving tester list `LOCATEFLOW`; the Android purchase sheet changed to the Google Play test card/no-charge subscription flow.
+- 2026-06-04: Android Play Billing test purchase initially succeeded in Google Play but backend verification rejected it with `TEST_PURCHASE_NOT_ALLOWED`; root cause was production-like rejection of Google-verified `testPurchase` responses.
+- 2026-06-04: Fixed Google Play test-purchase handling with production QA allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` and optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`), committed `1d3058a`, pushed it, and DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8` became ACTIVE.
+- 2026-06-04: Post-deploy live smoke passed for production `/api/ready` and `/api/mobile/iap/products`.
+- 2026-06-04: Android build `15` completed Individual Annual purchase through Google Play test card/no-charge flow; the app showed `Individual Annual` as current plan.
+- 2026-06-04: Android build `15` restore purchases returned the expected `Restored` alert.
+- 2026-06-04: Android build `15` cancellation through Google Play completed and the app reflected `CANCEL_AT_PERIOD_END`; no live payment, Play production rollout, or production release action was performed.
+- 2026-06-04: Local mobile copy fix added so `CANCEL_AT_PERIOD_END` summary says `Ends {{date}}` instead of `Renews {{date}}`; focused mobile test, mobile lint, and mobile typecheck passed. This copy fix is local and not yet in Play build `15`.
+- 2026-06-04: EAS build `97ece373-6c37-4394-8e43-7781cd51781b` rechecked as `FINISHED`, Android `versionCode=16`, distribution `STORE`, profile `play-internal`, build page `https://expo.dev/accounts/axtra-solutions-llc/projects/locateflow/builds/97ece373-6c37-4394-8e43-7781cd51781b`; it was not uploaded to Play and no production rollout was performed.
+- 2026-06-04: Final post-Play-Billing validation passed: focused mobile subscription visibility test 1 file / 6 tests, mobile lint/typecheck, focused web IAP tests 2 files / 20 tests, root `pnpm verify:typecheck`, `git diff --check`, production `/api/ready` HTTP 200 ready=true, and production `/api/mobile/iap/products` returned 6 unique Android plus 6 unique iOS product values.
