@@ -22,6 +22,7 @@ import {
   sendSubscriptionCanceledEmail,
   sendSubscriptionResumedEmail,
 } from "@/lib/email-service";
+import { getStripeSubscriptionCurrentPeriodEndDate } from "@/lib/stripe-subscription-period";
 
 type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
 
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
           ]),
         },
       );
-      const periodEnd = updated.current_period_end ? new Date(updated.current_period_end * 1000) : subscription.currentPeriodEndsAt;
+      const periodEnd = getStripeSubscriptionCurrentPeriodEndDate(updated) || subscription.currentPeriodEndsAt;
       const nextStatus = isTrial && subscription.trialEndsAt && subscription.trialEndsAt > now ? "TRIALING" : "ACTIVE";
       await prisma.subscription.update({
         where: { userId },
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
         ]),
       },
     );
-    const periodEnd = updated.current_period_end ? new Date(updated.current_period_end * 1000) : subscription.currentPeriodEndsAt;
+    const periodEnd = getStripeSubscriptionCurrentPeriodEndDate(updated) || subscription.currentPeriodEndsAt;
     const nextStatus = action === "cancel_trial" || isTrial ? "TRIAL_CANCELED" : "CANCEL_AT_PERIOD_END";
 
     // The survey modal posts cancelReason + cancelReasonComment alongside

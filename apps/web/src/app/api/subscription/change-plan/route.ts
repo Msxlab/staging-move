@@ -24,6 +24,11 @@ import {
   isMissingDbColumnError,
   warnSchemaCompatibilityFallback,
 } from "@/lib/db-schema-compat";
+import {
+  getStripeSubscriptionCurrentPeriodEndDate,
+  getStripeSubscriptionCurrentPeriodEndUnix,
+  getStripeSubscriptionCurrentPeriodStartUnix,
+} from "@/lib/stripe-subscription-period";
 
 // POST /api/subscription/change-plan
 // Body: {
@@ -106,9 +111,7 @@ async function applyImmediatePlanChange(input: {
     },
   );
 
-  const periodEnd = updated.current_period_end
-    ? new Date(updated.current_period_end * 1000)
-    : subscription.currentPeriodEndsAt;
+  const periodEnd = getStripeSubscriptionCurrentPeriodEndDate(updated) || subscription.currentPeriodEndsAt;
 
   const data = {
     plan: targetPlan,
@@ -248,7 +251,7 @@ export async function POST(request: NextRequest) {
       (targetRank === currentRank && currentInterval === "YEAR" && targetInterval === "MONTH");
 
     if (isReduction) {
-      const periodEndUnix = stripeSub.current_period_end;
+      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
       const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : subscription.currentPeriodEndsAt;
       // No period left → nothing to defer; apply now so the customer actually
       // moves to the lower plan instead of silently auto-renewing the old one.
@@ -262,7 +265,9 @@ export async function POST(request: NextRequest) {
 
       const schedule = await retrieveOrCreateSchedule(stripe, stripeSub, subscription.stripeSubscriptionScheduleId);
       const currentPhaseStart =
-        schedule.current_phase?.start_date || stripeSub.current_period_start || Math.floor(now.getTime() / 1000);
+        schedule.current_phase?.start_date ||
+        getStripeSubscriptionCurrentPeriodStartUnix(stripeSub) ||
+        Math.floor(now.getTime() / 1000);
       const quantity = primaryItem.quantity || 1;
 
       await stripe.subscriptionSchedules.update(
