@@ -2,7 +2,7 @@
 
 ## Scope
 
-Verified Android mobile subscription readiness from real code, live APIs, local emulator execution, and safe store-disabled QA behavior. No live payment, production subscription mutation, store rollout, or secret exposure was performed.
+Verified Android mobile subscription readiness from real code, live APIs, EAS store builds, local emulator evidence, and safe store-disabled QA behavior. No live payment, production subscription mutation, store rollout, or secret exposure was performed.
 
 ## Verified
 
@@ -14,6 +14,10 @@ Verified Android mobile subscription readiness from real code, live APIs, local 
 - Individual, Family, and Pro plan cards are visible in the store-disabled Android build, while purchase actions remain disabled/read-only.
 - Android logcat check showed no fatal billing/subscription crash during the verified flow.
 - Live `/api/mobile/iap/products` returns all six iOS and all six Android plan/cycle product IDs.
+- Production EAS iOS store build `3474e1a9-8458-493a-9b56-150be860a963` remains `FINISHED` for app version `1.0.0`, build `13`.
+- Android EAS `play-internal` store AAB build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
+- DigitalOcean production/staging health smokes pass after the latest report push deployment, and the production product endpoint still returns six unique iOS and six unique Android SKU values.
+- The currently installed emulator package is not a Play-installed build (`installerPackageName=null`, `versionCode=1`), so it is not valid evidence for real Play Billing purchase/restore/cancel.
 
 ## Fixes Applied
 
@@ -30,5 +34,6 @@ Verified Android mobile subscription readiness from real code, live APIs, local 
 
 ## Remaining Blockers
 
-- Active paid mobile state for Stripe-managed Pro/Family was not granted in production because admin plan changes required password plus MFA/backup code, and direct DigitalOcean database access is network/firewall blocked.
-- Full Android paid IAP purchase verification remains blocked until Google Play service-account credentials are available in DigitalOcean.
+- Backend Stripe-managed paid state exists in QA/staging after the matrix, ending as active `PRO` annual with `CANCEL_AT_PERIOD_END`; mobile visual verification of that state still needs Chrome/test credentials or a store/internal build path.
+- Full Android paid IAP purchase/restore/cancel verification remains blocked until build `15` is available through Play internal testing and an internal tester can complete a real test purchase.
+- Play internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup; no Play edit, upload, track commit, rollout, or live payment occurred.

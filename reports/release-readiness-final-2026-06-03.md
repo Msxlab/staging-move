@@ -267,9 +267,10 @@ No live card charge, production subscription mutation, Play production rollout, 
 - Live admin smoke improved from the prior checkpoint:
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
-- Live Stripe sandbox smoke added one more concrete blocker:
-  - The visible test-mode catalog currently contains only `LocateFlow Individual Annual` at `$79.00 USD / year`.
-  - That means the staged Stripe matrix is still missing the rest of the Individual/Family/Pro catalog needed for honest test-card E2E coverage.
+- Stripe QA/staging test-mode coverage is now complete:
+  - The earlier incomplete-catalog blocker was resolved by using the dedicated DigitalOcean QA/staging service with all six Individual/Family/Pro monthly/yearly Stripe test prices.
+  - Full plan-change coverage passed: 36 transitions / 36 passed, including immediate upgrades, period-end downgrades, same-plan cycle switches, and no-op rejections.
+  - No production Stripe charge or production subscription mutation was performed.
 - Latest Apple rejection evidence was inspected from Downloads plus App Store Connect:
   - `Screenshot-0603-132041.png` matched the forced post-Apple-sign-in password setup screen.
   - `Screenshot-0603-132317.png` matched the annual subscription card hierarchy complaint.
@@ -281,6 +282,22 @@ No live card charge, production subscription mutation, Play production rollout, 
 - Android `debugOptimized` was rebuilt and reinstalled after the Apple/mobile account-management patch:
   - Emulator retest still opened `More -> Subscription`.
   - Live `Free Access` state, the store-disabled notice, and the read-only Family/Pro cards remained intact.
+- Follow-up deployment/report push became ACTIVE:
+  - DigitalOcean deployment `22742904-4886-4c4b-822d-b32781786dc4` became ACTIVE after the Stripe matrix report updates.
+  - Live smoke after activation passed for staging `/api/health`, staging `/api/ready`, production `/api/ready`, and production `/api/mobile/iap/products`.
+  - Production IAP products currently return six unique iOS SKU values and six unique Android SKU values.
+- EAS metadata lint was checked:
+  - `eas metadata:lint` exits successfully but reports no `apps/mobile/store.config.json`.
+  - Store metadata is therefore still console-managed, not managed through EAS metadata-as-code in this repo.
+- Final validation after the report/checklist refresh passed:
+  - `git diff --check`
+  - `pnpm verify:typecheck`
+  - `pnpm verify:tests` (web 195 files / 1456 tests, admin 89 files / 486 tests, mobile 14 files / 37 tests, connectors 13 files / 87 tests)
+  - `pnpm lint`
+  - `pnpm build`
+  - `pnpm verify:ci`
+  - `pnpm dlx expo-doctor@latest` (18/18)
+  - Known local warning remains: the repo expects Node 22.x, while this machine is running Node v24.12.0.
 
 ## Release Recommendation
 

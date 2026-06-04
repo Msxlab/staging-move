@@ -262,6 +262,8 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
   - Authenticated, verified, onboarding-complete mobile session is working.
   - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
+  - The Stripe QA/staging matrix now leaves the exact QA account in backend-proven active Stripe-managed `PRO` annual `CANCEL_AT_PERIOD_END` state, but visual mobile verification still needs a valid live/internal mobile login path.
+  - The currently installed Android package on `emulator-5554` is not a Play-installed internal build (`installerPackageName=null`, `versionCode=1`), so it is not valid evidence for real store-managed billing UI.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -288,9 +290,11 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Direct keyless Android Publisher upload was attempted with the DigitalOcean OAuth env names, but DigitalOcean returns secret placeholders for `SECRET` values; the OAuth token request failed before any Play edit/upload/track commit was created.
   - `gcloud` is not installed locally, so no alternate signed-in Google user token path is available from the shell.
   - Play internal release update remains Chrome/Play Console or credential-provisioning gated; no production rollout was performed.
+  - Rechecked with `eas build:view`: Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED`, versionCode `15`, distribution `STORE`.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
+  - Rechecked live on 2026-06-03: production endpoint returns six unique iOS SKU values and six unique Android SKU values.
 - [x] Verify Play Console subscription product IDs against `/api/mobile/iap/products` only if already authenticated and no re-auth is required.
   - Play Console subscriptions page shows all six Android product IDs: Individual/Family/Pro monthly/yearly.
   - Each subscription shows one active base plan.
@@ -454,3 +458,10 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-03: Chrome automation check failed after the matrix: Chrome is running, the Codex Chrome Extension is installed/enabled in the selected profile, and the native host manifest is correct, but the extension native pipe closes before responding. Live Chrome UI verification for pending downgrade/admin state remains blocked until a Chrome extension-controlled window is refreshed/opened or inspected manually.
 - 2026-06-03: EAS build list rechecked with system CAs: iOS production build `3474e1a9-8458-493a-9b56-150be860a963` remains `FINISHED` for `1.0.0 (13)`; Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
 - 2026-06-03: Android Play internal submit attempt for build `15` did not upload or rollout: EAS non-interactive submit requires a Google service-account key; direct Android Publisher OAuth upload could not get a token from DigitalOcean because secret values are not retrievable from app spec; `gcloud` is absent locally. No Play edit/track commit or production rollout was performed.
+- 2026-06-03: Report/helper push triggered DigitalOcean deployment `22742904-4886-4c4b-822d-b32781786dc4`, which became ACTIVE. Post-activation smoke passed for staging `/api/health`, staging `/api/ready`, production `/api/ready`, and production `/api/mobile/iap/products`.
+- 2026-06-03: Live production `/api/mobile/iap/products` returned six unique iOS SKU values and six unique Android SKU values after the latest deployment.
+- 2026-06-03: Android device `emulator-5554` currently has `com.locateflow.mobile` installed with `installerPackageName=null` and `versionCode=1`, so it is a local/debug install rather than the Play internal build; real Play Billing purchase/restore/cancel remains unavailable from that device until build `15` is installed through Play internal testing.
+- 2026-06-03: EAS `build:view` rechecked iOS build `3474e1a9-8458-493a-9b56-150be860a963` as `FINISHED` for `1.0.0 (13)` and Android build `9d3c92a9-5e58-4eac-ba12-79bd63065081` as `FINISHED` for versionCode `15`.
+- 2026-06-03: `eas metadata:lint` ran successfully but reported no `apps/mobile/store.config.json`, so App Store/Play metadata is currently console-managed rather than EAS metadata-as-code managed.
+- 2026-06-03: Created `reports/payment-matrix-final-2026-06-03.md` and `reports/stripe-staging-qa-final-2026-06-03.md`; updated UI/mobile IAP/store-submission reports so they match the completed Stripe matrix and current store blockers.
+- 2026-06-03: Final validation rerun after report/checklist updates passed: `git diff --check`, `pnpm verify:typecheck`, `pnpm verify:tests` (web 195 files / 1456 tests, admin 89 files / 486 tests, mobile 14 files / 37 tests, connectors 13 files / 87 tests), `pnpm lint`, `pnpm build`, `pnpm verify:ci`, and `pnpm dlx expo-doctor@latest` (18/18). Known local warning remains: repo expects Node 22.x, machine is Node v24.12.0.

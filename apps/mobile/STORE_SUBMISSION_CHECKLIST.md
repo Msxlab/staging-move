@@ -28,7 +28,7 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Public account-deletion web URL | DONE | `apps/web/src/app/account/delete/page.tsx` → `https://locateflow.com/account/delete` |
 | AASA file served at `/.well-known/apple-app-site-association` | DONE | Live response uses `APPLE_TEAM_ID=LDWFU7FTBV` for `com.locateflow.mobile`. |
 | assetlinks.json served at `/.well-known/assetlinks.json` | DONE | `ANDROID_APP_FINGERPRINTS` set in DigitalOcean. Route is runtime-dynamic so env changes are reflected after deploy. |
-| Privacy Policy URL reachable + parity with mobile data inventory | HUMAN VERIFICATION REQUIRED | Live `https://locateflow.com/privacy` is reachable and broadly matches `MOBILE_DATA_INVENTORY.md`, but `privacy`, `terms`, and `contact` still show placeholder legal entity / mailing address until `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS` are set in DigitalOcean. |
+| Privacy Policy URL reachable + parity with mobile data inventory | DONE | Live `https://locateflow.com/privacy` is reachable. `terms`, `privacy`, and `contact` render `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address from DigitalOcean public legal env. Final console privacy answers still require operator review before submission. |
 | Crash reporter (Sentry/GlitchTip) DSN configured for production | DONE | `EXPO_PUBLIC_SENTRY_DSN` is present. Mobile currently uses the lightweight Sentry-compatible JS/error envelope path, not `@sentry/react-native` native crash capture. |
 
 ---
@@ -43,9 +43,9 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Universal Links / Associated Domains entitlement matches AASA hosts | DONE | Release config uses `locateflow.com` only. Re-add `locateflow.app` / `app.locateflow.com` only after DNS + well-known files exist. |
 | In-App Purchase subscription group + products created | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
 | Subscription products attached to first submission | HUMAN VERIFICATION REQUIRED | App Store Connect → My Apps → In-App Purchases |
-| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set in App Information after public legal entity / mailing address placeholders are finalized |
-| Terms of Use / EULA URL: `https://locateflow.com/terms` | TODO | Set after public legal entity / mailing address placeholders are finalized |
-| Support URL | TODO | Use `https://locateflow.com/contact` (live) |
+| Privacy Policy URL: `https://locateflow.com/privacy` | DONE | Public page is live and renders the real legal entity/address. |
+| Terms of Use / EULA URL: `https://locateflow.com/terms` | DONE | Public page is live and renders the real legal entity/address. |
+| Support URL | DONE | App Store Connect metadata was updated to public `https://locateflow.com/help`; `https://locateflow.com/contact` is also live. |
 | Marketing URL (optional) | NOT APPLICABLE | |
 | App category: Lifestyle / Productivity | TODO | Pick category |
 | Age rating questionnaire | TODO | No objectionable / gambling / UGC moderation needed |
@@ -72,17 +72,17 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Release keystore SHA-256 (App Signing key + upload key) added to `ANDROID_APP_FINGERPRINTS` env | DONE | Play signed universal APK fingerprint added to DigitalOcean: `A1:14:99:D3:29:69:50:CF:DC:40:74:4E:0C:94:79:9A:9D:B3:D7:AD:71:BC:BE:A6:04:8B:3C:3B:C2:31:01:74`. |
 | Closed testing track set up | HUMAN VERIFICATION REQUIRED | Mandatory for new personal developer accounts (14-day, 12-tester test) |
 | Subscription products + Base Plans + Offers configured | HUMAN VERIFICATION REQUIRED | Product IDs must match `/api/mobile/iap/products` response |
-| Google Play Developer API auth env configured | DONE | OAuth fallback is configured in DigitalOcean with `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional secret, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`. Service-account private-key auth remains supported by code, but org policy blocks key creation. Live fake-token verify now fails closed as `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`. |
+| Google Play Developer API auth env configured | DONE | OAuth fallback is configured in DigitalOcean with `GOOGLE_PLAY_OAUTH_CLIENT_ID`, optional secret, and `GOOGLE_PLAY_OAUTH_REFRESH_TOKEN`. Service-account private-key auth remains supported by code, but org policy blocks key creation. Authenticated fake-token verify reached the provider dependency path and failed closed as `IAP_PROVIDER_UNAVAILABLE`; unauthenticated verify fails closed as 401. |
 | Data Safety form filled | HUMAN VERIFICATION REQUIRED | Use `apps/mobile/MOBILE_DATA_INVENTORY.md` plus `docs/deploy/mobile-store-submission-copy.md`. |
-| Privacy Policy URL: `https://locateflow.com/privacy` | TODO | Set after public legal entity / mailing address placeholders are finalized |
+| Privacy Policy URL: `https://locateflow.com/privacy` | DONE | Public page is live and renders the real legal entity/address. |
 | Account deletion URL: `https://locateflow.com/account/delete` | DONE | Page exists, OAuth-only users supported |
-| App access instructions / demo credentials | TODO | Provide reviewer sandbox account |
+| App access instructions / demo credentials | HUMAN VERIFICATION REQUIRED | Draft copy exists in `docs/deploy/mobile-store-submission-copy.md`; demo password must be supplied out-of-band and not committed. |
 | Content rating questionnaire (IARC) | TODO | |
 | Target audience: 18+ (recommended) | TODO | |
 | Ads declaration: "No ads" | TODO | |
 | Billing permission justification | DONE | Reason: in-app subscription via Play Billing |
 | Target SDK >= 35 (Aug 2025 requirement) | DONE | Inherited from Expo SDK 55 (compileSdk/targetSdk 36) |
-| Release notes (initial release) | TODO | |
+| Release notes (initial release) | HUMAN VERIFICATION REQUIRED | Draft release/reviewer copy exists in `docs/deploy/mobile-store-submission-copy.md`; final console entry still needs store-console review. |
 | Production rollout strategy | TODO | Plan staged rollout (10% → 50% → 100%) |
 
 ---
