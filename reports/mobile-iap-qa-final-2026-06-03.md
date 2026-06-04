@@ -17,7 +17,7 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 - Production EAS iOS store build `3474e1a9-8458-493a-9b56-150be860a963` remains `FINISHED` for app version `1.0.0`, build `13`.
 - Android EAS `play-internal` store AAB build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
 - DigitalOcean production/staging health smokes pass after the latest report push deployment, and the production product endpoint still returns six unique iOS and six unique Android SKU values.
-- The currently installed emulator package is not a Play-installed build (`installerPackageName=null`, `versionCode=1`), so it is not valid evidence for real Play Billing purchase/restore/cancel.
+- The previous local/debug emulator package was removed so future evidence can distinguish a Play-installed internal build from a local QA build.
 
 ## Fixes Applied
 
@@ -35,7 +35,7 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 ## Remaining Blockers
 
 - Backend Stripe-managed paid state exists in QA/staging after the matrix, ending as active `PRO` annual with `CANCEL_AT_PERIOD_END`; mobile visual verification of that state still needs Chrome/test credentials or a store/internal build path.
-- Full Android paid IAP purchase/restore/cancel verification remains blocked until build `15` is available through Play internal testing and an internal tester can complete a real test purchase.
-- Play internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup; no Play edit, upload, track commit, rollout, or live payment occurred.
-- Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`, so build `15` has not reached internal testers.
-- Build `15` AAB is downloaded locally and ready for Play Console upload, but automated Play Console file upload is blocked by Chrome file chooser timeouts in this session; Windows Computer Use is unavailable, and EAS submit still needs a usable Play submit credential.
+- Android build `15 (1.0.0)` is now published to Play internal testing and marked `Available to internal testers`; no production rollout was performed.
+- Play internal tester list is `LOCATEFLOW` with 4 users; opt-in link is `https://play.google.com/apps/internaltest/4701495695078511383`.
+- Full Android paid IAP purchase/restore/cancel verification remains blocked until an internal tester account is signed into Google Play on the emulator or a real Android device and installs build `15` from Play.
+- The previous local/debug emulator install was removed; direct Play Store open reaches a Google Play `Sign in` screen, and the emulator Chrome TLS interstitial for the opt-in web URL was not bypassed.

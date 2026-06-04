@@ -263,7 +263,7 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Authenticated, verified, onboarding-complete mobile session is working.
   - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
   - The Stripe QA/staging matrix now leaves the exact QA account in backend-proven active Stripe-managed `PRO` annual `CANCEL_AT_PERIOD_END` state, but visual mobile verification still needs a valid live/internal mobile login path.
-  - The currently installed Android package on `emulator-5554` is not a Play-installed internal build (`installerPackageName=null`, `versionCode=1`), so it is not valid evidence for real store-managed billing UI.
+  - The previous local/debug Android package on `emulator-5554` was removed; real store-managed billing UI evidence now requires installing build `15` from Play internal testing after Google Play tester sign-in.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -285,17 +285,24 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Started EAS build `9d3c92a9-5e58-4eac-ba12-79bd63065081` with profile `play-internal`; this is a store-distribution AAB build, not a Play rollout/submission.
   - EAS used remote Android credentials and incremented remote versionCode from 14 to 15.
   - Final status: `FINISHED`; artifact exists. Build page: `https://expo.dev/accounts/axtra-solutions-llc/projects/locateflow/builds/9d3c92a9-5e58-4eac-ba12-79bd63065081`.
-- [BLOCKED] Submit Android build 15 to Play internal track.
+- [x] Submit Android build 15 to Play internal track.
   - `eas submit -p android --profile play-internal --id 9d3c92a9-5e58-4eac-ba12-79bd63065081 --non-interactive --wait` stopped before upload because EAS requires a Google service-account key setup for submit in non-interactive mode.
   - Direct keyless Android Publisher upload was attempted with the DigitalOcean OAuth env names, but DigitalOcean returns secret placeholders for `SECRET` values; the OAuth token request failed before any Play edit/upload/track commit was created.
   - `gcloud` is not installed locally, so no alternate signed-in Google user token path is available from the shell.
-  - Play internal release update remains Chrome/Play Console or credential-provisioning gated; no production rollout was performed.
   - Rechecked with `eas build:view`: Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED`, versionCode `15`, distribution `STORE`.
-  - Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`; build `15` is not on the internal track.
   - Downloaded the build `15` AAB locally for console upload; artifact is ready.
-  - Opened a new Play Console internal testing draft release, but Chrome file-upload automation repeatedly timed out before attaching the AAB.
-  - A non-interactive EAS submit remains blocked by missing service-account key setup; an interactive EAS submit attempt did not complete and was terminated without creating a Play edit/upload/track commit.
-  - Windows Computer Use fallback is unavailable in this session (`native pipe path unavailable`), so the remaining upload action needs either manual Play Console file upload or a usable Play submit credential.
+  - Opened a new Play Console internal testing draft release through Chrome and uploaded the build `15` AAB.
+  - Added release notes: `Internal testing update for billing QA.`
+  - Confirmed the Play publish modal for internal testing only. No production rollout was performed.
+  - Live Play Console internal testing now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
+  - Tester list confirmed: `LOCATEFLOW`, 4 users.
+  - Opt-in link copied/verified: `https://play.google.com/apps/internaltest/4701495695078511383`.
+- [BLOCKED] Install Android build 15 from Play internal testing on emulator or real Android device.
+  - Removed the local/debug emulator install (`versionCode=1`, `installerPackageName=null`) to avoid mistaking it for Play-installed evidence.
+  - Opening the opt-in URL in emulator Chrome hit `NET::ERR_CERT_AUTHORITY_INVALID`; the security interstitial was not bypassed.
+  - Opening `market://details?id=com.locateflow.mobile` in the emulator Play Store reached the Play Store app, but Play Store requires Google sign-in.
+  - Google account sign-in/2FA/manual approval is user-gated; Codex did not automate login.
+  - Real Play Billing QA remains pending until an internal tester account is signed into Play Store on the emulator or a real Android device installs build `15` from Play internal testing.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
@@ -450,7 +457,7 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-03: DigitalOcean deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` for commit `529aad9` became ACTIVE; live Chrome retest of `/settings/subscription` in a fresh tab showed no console errors, Monthly/Annual tabs visible, and the Individual / Family / Pro annual cards rendered with the Pro annual connector copy.
 - 2026-06-03: Android emulator re-verified the real logout/reset UX: `More -> Sign Out` opened the destructive confirmation dialog and returned to the Sign In screen, the old QA credentials then failed with HTTP 401, re-register succeeded for the exact QA email, and an immediate rapid re-login attempt surfaced the expected local auth rate-limit banner instead of silently reusing stale local session/onboarding state.
 - 2026-06-03: DigitalOcean app-level public legal env was updated live with `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`; after the deployment finished, live `terms`, `privacy`, and `contact` rendered `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address.
-- 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
+- 2026-06-03: Play Console internal testing was active with release `1.0.0-internal-1`; the tester list showed 4 configured testers, and the subscriptions catalog showed all six Android subscription products with one active base plan each.
 - 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
 - 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual` at `$79.00 USD / year`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode or trusted against current shared pricing.
 - 2026-06-03: Latest Apple rejection evidence was reviewed from Downloads plus live App Store Connect. The review cited a forced Sign in with Apple password-creation step, annual subscription billed-amount prominence issues, and asked whether `Pro Annual` at `$199.99` is intentional.
@@ -470,7 +477,7 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-03: Android Play internal submit attempt for build `15` did not upload or rollout: EAS non-interactive submit requires a Google service-account key; direct Android Publisher OAuth upload could not get a token from DigitalOcean because secret values are not retrievable from app spec; `gcloud` is absent locally. No Play edit/track commit or production rollout was performed.
 - 2026-06-03: Report/helper push triggered DigitalOcean deployment `22742904-4886-4c4b-822d-b32781786dc4`, which became ACTIVE. Post-activation smoke passed for staging `/api/health`, staging `/api/ready`, production `/api/ready`, and production `/api/mobile/iap/products`.
 - 2026-06-03: Live production `/api/mobile/iap/products` returned six unique iOS SKU values and six unique Android SKU values after the latest deployment.
-- 2026-06-03: Android device `emulator-5554` currently has `com.locateflow.mobile` installed with `installerPackageName=null` and `versionCode=1`, so it is a local/debug install rather than the Play internal build; real Play Billing purchase/restore/cancel remains unavailable from that device until build `15` is installed through Play internal testing.
+- 2026-06-03: Android device `emulator-5554` had `com.locateflow.mobile` installed with `installerPackageName=null` and `versionCode=1`, so it was a local/debug install rather than the Play internal build; real Play Billing purchase/restore/cancel remained unavailable from that device until build `15` was installed through Play internal testing.
 - 2026-06-03: EAS `build:view` rechecked iOS build `3474e1a9-8458-493a-9b56-150be860a963` as `FINISHED` for `1.0.0 (13)` and Android build `9d3c92a9-5e58-4eac-ba12-79bd63065081` as `FINISHED` for versionCode `15`.
 - 2026-06-03: `eas metadata:lint` ran successfully but reported no `apps/mobile/store.config.json`, so App Store/Play metadata is currently console-managed rather than EAS metadata-as-code managed.
 - 2026-06-03: Created `reports/payment-matrix-final-2026-06-03.md` and `reports/stripe-staging-qa-final-2026-06-03.md`; updated UI/mobile IAP/store-submission reports so they match the completed Stripe matrix and current store blockers.
@@ -480,5 +487,8 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-04: App Store version release was changed from automatic to `Manually release this version`, so an App Review approval will not automatically release the app to the App Store.
 - 2026-06-04: Old rejected build `1.0.0 (12)` was removed from the submitted iOS version, build `1.0.0 (13)` was selected, and App Store Connect updated the item to `Ready for Review`.
 - 2026-06-04: App Store Connect `Resubmit to App Review` was completed; live status now shows iOS app version `1.0.0 (13)` as `Waiting for Review` with submission timestamp `Jun 4, 2026 at 9:46 AM`.
-- 2026-06-04: Android Play internal status was rechecked: active internal release remains `1.0.0-internal-1`, so EAS build `15` is still not installed through Play internal testing.
-- 2026-06-04: Android build `15` AAB was downloaded locally and a Play Console internal testing draft release was opened, but automated AAB upload is blocked by Chrome file chooser timeouts; Computer Use is unavailable and EAS submit still lacks a usable Play submit credential. No Play upload, internal release update, production rollout, or live payment occurred.
+- 2026-06-04: Android Play internal status was rechecked: active internal release was still `1.0.0-internal-1` before the update.
+- 2026-06-04: Android build `15` AAB was downloaded locally and a Play Console internal testing draft release was opened. After switching to coordinate-triggered file chooser handling, the build `15` AAB uploaded successfully.
+- 2026-06-04: Play Console internal testing release was published for build `15 (1.0.0)` with release notes `Internal testing update for billing QA.` Live Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`; no production rollout was performed.
+- 2026-06-04: Play internal tester list was confirmed as `LOCATEFLOW` with 4 users, and the opt-in link was copied as `https://play.google.com/apps/internaltest/4701495695078511383`.
+- 2026-06-04: Android emulator install-from-Play is blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen. Real Play Billing QA remains pending until an internal tester account is signed into Play Store on emulator or device.

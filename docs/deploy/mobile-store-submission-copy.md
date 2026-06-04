@@ -11,11 +11,11 @@ These are not code bugs, but they still need operator/store-console action:
 
 - Play Console Data Safety and Apple App Privacy forms still need final console
   confirmation against `apps/mobile/MOBILE_DATA_INVENTORY.md`.
-- Android internal paid IAP still needs a real internal-test purchase/restore/
-  cancel pass to prove entitlement activation end to end.
-- Play internal track upload for Android build `15` is credential/console gated:
-  EAS non-interactive submit requires a Google service-account key, while the
-  current Google organization policy blocks service-account key creation.
+- Android build `15 (1.0.0)` is published to Play internal testing and marked
+  `Available to internal testers`; the tester list is `LOCATEFLOW` with 4 users.
+- Android internal paid IAP still needs a real internal-test install from Google
+  Play plus purchase/restore/cancel pass to prove entitlement activation end to
+  end. The current blocker is tester-device Google Play sign-in, not upload.
 
 Resolved public URL blocker:
 

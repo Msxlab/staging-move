@@ -125,7 +125,7 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Push OIDC service account matches the expected DigitalOcean identity; values intentionally not recorded.
   - Android Publisher OAuth fallback configured in DigitalOcean without recording secret values.
   - Live fake Android purchase verification fails closed as JSON HTTP 424 `IAP_PROVIDER_UNAVAILABLE`, not `IAP_NOT_CONFIGURED`; this confirms the missing private key is no longer the backend-auth blocker.
-  - Play Console internal testing is active with release `1.0.0-internal-1`, and the tester list currently shows 4 configured testers.
+- Play Console internal testing is active with release `15 (1.0.0)`, and the tester list currently shows 4 configured testers.
 - EAS Android `play-internal` store build finished successfully:
   - Build ID: `9d3c92a9-5e58-4eac-ba12-79bd63065081`
   - Version code: `15`
@@ -200,8 +200,9 @@ No live card charge, production subscription mutation, Play production rollout, 
   - EAS Android internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup.
   - A direct Android Publisher OAuth upload attempt could not obtain a token from DigitalOcean app spec values because `SECRET` env values are not retrievable as plaintext through the app spec; no Play edit, upload, track commit, or rollout was created.
   - `gcloud` is not installed locally, so there is no alternate signed-in user token path from the shell.
-  - Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`, not build `15`.
-  - Build `15` AAB is downloaded locally and ready for upload, and a Play Console internal testing draft release was opened. Automated AAB attachment is currently blocked by Chrome file chooser timeouts; Windows Computer Use is unavailable in this session, and EAS submit still needs a usable Play submit credential.
+  - Build `15 (1.0.0)` was uploaded through Play Console and published to internal testing on 2026-06-04; no production rollout was performed.
+  - Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
+  - Real Play Billing QA is now blocked by test-device Google Play sign-in: the emulator Play Store requires account sign-in, and Codex did not automate Google login/2FA.
 - Play RTDN Pub/Sub push delivery is complete from Google Cloud:
   - Subscription `play-rtdn-locateflow-webhook` is active.
   - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
@@ -220,7 +221,7 @@ No live card charge, production subscription mutation, Play production rollout, 
 - Chrome-controlled console/UI verification recovered after PC restart for App Store Connect:
   - The App Review reply, build change, manual-release setting, and resubmission were verified through Chrome.
   - Pending downgrade backend/API state is verified, but pending downgrade banner/admin UI visibility still needs a separate Chrome UI pass.
-  - Play Console page access works, but AAB file upload automation still timed out before attaching Android build `15`.
+  - Play Console page access works. Android build `15` was uploaded by using coordinate-triggered file chooser handling after direct locator upload attempts timed out.
 - Full paid Stripe production mutation was not run against live production payments to avoid production payment risk. The required E2E coverage was run against the dedicated QA/staging service with Stripe test-mode prices instead.
 - Store-console submission items remain manual/human-gated:
   - Apple review outcome.
@@ -253,8 +254,8 @@ No live card charge, production subscription mutation, Play production rollout, 
 - Android internal track submit was attempted and stopped safely:
   - EAS non-interactive submit requires Google service-account key setup.
   - Direct Android Publisher OAuth upload could not use DigitalOcean app spec `SECRET` placeholders as OAuth secrets.
-  - No Play edit, upload, track commit, internal release update, production rollout, or live payment occurred.
-  - A 2026-06-04 Play Console UI attempt opened an internal testing draft release and prepared the build `15` AAB, but Chrome file upload automation timed out before the AAB was attached.
+  - The alternate Play Console UI path succeeded on 2026-06-04: build `15 (1.0.0)` was uploaded and published to internal testing only.
+  - No production rollout or live payment occurred.
 - Public legal pages were rechecked in live Chrome after deployment:
   - `/terms`, `/privacy`, and `/contact` no longer show raw placeholder legal/entity strings.
 - Public legal pages were then rechecked again after the DigitalOcean env update deployment completed:
@@ -270,9 +271,10 @@ No live card charge, production subscription mutation, Play production rollout, 
   - The old QA credentials were then rejected with HTTP 401 until the exact QA email was re-registered.
   - Re-registering `mobile.qa@locateflow.com` succeeded again, confirming the server-side hard reset.
   - A rapid immediate re-login sequence on the local debug proxy surfaced the expected auth lockout banner (`Retry after ... seconds`) rather than silently reusing stale local state.
-- Play Console live smoke added two more confirmations:
-  - Internal testing is Active with release `1.0.0-internal-1`.
+- Play Console live smoke added confirmations:
+  - Internal testing is Active with release `15 (1.0.0)`.
   - The Internal testing tester list currently contains 4 configured testers.
+  - The opt-in link is `https://play.google.com/apps/internaltest/4701495695078511383`.
 - Live admin smoke improved from the prior checkpoint:
   - User detail for `mobile.qa@locateflow.com` now opens normally in admin.
   - The remaining blocker is only the deliberate step-up secret challenge for manual paid-plan mutation.
