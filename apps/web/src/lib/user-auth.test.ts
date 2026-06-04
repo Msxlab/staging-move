@@ -75,16 +75,16 @@ describe("hashSessionToken", () => {
 });
 
 describe("generateFingerprint", () => {
-  it("is deterministic for the same ip+userAgent", async () => {
+  it("is deterministic for the same userAgent", async () => {
     const a = await generateFingerprint("1.2.3.4", "UA/1.0");
     const b = await generateFingerprint("1.2.3.4", "UA/1.0");
     expect(a).toBe(b);
   });
 
-  it("changes when ip changes", async () => {
+  it("does not change when ip changes", async () => {
     const a = await generateFingerprint("1.2.3.4", "UA/1.0");
     const b = await generateFingerprint("5.6.7.8", "UA/1.0");
-    expect(a).not.toBe(b);
+    expect(a).toBe(b);
   });
 
   it("changes when userAgent changes", async () => {

@@ -76,13 +76,16 @@ async function sha256Hex(raw: string): Promise<string> {
     .join("");
 }
 
-// Web tokens carry an IP+UA fingerprint. Validation is strict so a stolen
-// cookie cannot replay from a new network just because the browser UA matches.
+// Web tokens are UA-bound, not IP-bound. Residential IPs, VPNs, and laptop
+// hotspot switches can change mid-session; IP binding caused legitimate web
+// users to be silently logged out. Sensitive operations still use their own
+// step-up gates, so the session fingerprint stays focused on browser/device
+// continuity.
 export async function generateFingerprint(
-  ip: string,
+  _ip: string,
   userAgent: string,
 ): Promise<string> {
-  return sha256Hex(`${ip}|${userAgent || "unknown"}`);
+  return sha256Hex(`web|${userAgent || "unknown"}`);
 }
 
 // Mobile: UA only. Mobile IP changes frequently (Wi-Fi ↔ LTE, carrier NAT),
@@ -92,6 +95,21 @@ export async function generateMobileFingerprint(
   userAgent: string,
 ): Promise<string> {
   return sha256Hex(`mobile|${userAgent || "unknown"}`);
+}
+
+async function generateLegacyWebIpFingerprint(
+  ip: string,
+  userAgent: string,
+): Promise<string> {
+  return sha256Hex(`${ip}|${userAgent || "unknown"}`);
+}
+
+function sessionUserAgentMatches(
+  storedUserAgent: string | null | undefined,
+  currentUserAgent: string,
+): boolean {
+  const stored = storedUserAgent?.trim();
+  return Boolean(stored && stored !== "unknown" && stored === currentUserAgent);
 }
 
 export async function hashSessionToken(token: string): Promise<string> {
@@ -463,6 +481,7 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           userId: true,
           expiresAt: true,
           userAgent: true,
+          ipAddress: true,
         },
       })
       .catch((error: unknown) => {
@@ -521,18 +540,30 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
         fpMode === "mobile"
           ? await generateMobileFingerprint(userAgent).catch(() => null)
           : await generateFingerprint(
-              // Must use the SAME precedence as session creation
-              // (resolveClientIP → resolveClientIpFromHeaders) or the
-              // fingerprint won't match and the session is spuriously killed.
+              // The IP argument is kept for call-site compatibility; web
+              // fingerprints are intentionally UA-bound.
               resolveClientIpFromHeaders(hdrs),
               userAgent,
             ).catch(() => null);
       if (!currentFp || currentFp !== payload.fp) {
-        if (diagnostics) diagnostics.fingerprintMatched = false;
-        markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
-        await invalidateSession();
-        shouldClearCookie = shouldClearCookie || cameFromCookie;
-        continue;
+        const legacyWebFp =
+          fpMode === "web" && record.ipAddress && record.userAgent
+            ? await generateLegacyWebIpFingerprint(record.ipAddress, record.userAgent).catch(() => null)
+            : null;
+        const acceptsLegacyWebIpFingerprint =
+          fpMode === "web" &&
+          Boolean(legacyWebFp) &&
+          legacyWebFp === payload.fp &&
+          sessionUserAgentMatches(record.userAgent, userAgent);
+        if (acceptsLegacyWebIpFingerprint) {
+          if (diagnostics) diagnostics.fingerprintMatched = true;
+        } else {
+          if (diagnostics) diagnostics.fingerprintMatched = false;
+          markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
+          await invalidateSession();
+          shouldClearCookie = shouldClearCookie || cameFromCookie;
+          continue;
+        }
       }
     }
 
