@@ -37,3 +37,5 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 - Backend Stripe-managed paid state exists in QA/staging after the matrix, ending as active `PRO` annual with `CANCEL_AT_PERIOD_END`; mobile visual verification of that state still needs Chrome/test credentials or a store/internal build path.
 - Full Android paid IAP purchase/restore/cancel verification remains blocked until build `15` is available through Play internal testing and an internal tester can complete a real test purchase.
 - Play internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup; no Play edit, upload, track commit, rollout, or live payment occurred.
+- Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`, so build `15` has not reached internal testers.
+- Build `15` AAB is downloaded locally and ready for Play Console upload, but automated Play Console file upload is blocked by Chrome file chooser timeouts in this session; Windows Computer Use is unavailable, and EAS submit still needs a usable Play submit credential.

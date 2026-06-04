@@ -200,6 +200,8 @@ No live card charge, production subscription mutation, Play production rollout, 
   - EAS Android internal submit for build `15` stopped before upload because EAS non-interactive submit requires Google service-account key setup.
   - A direct Android Publisher OAuth upload attempt could not obtain a token from DigitalOcean app spec values because `SECRET` env values are not retrievable as plaintext through the app spec; no Play edit, upload, track commit, or rollout was created.
   - `gcloud` is not installed locally, so there is no alternate signed-in user token path from the shell.
+  - Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`, not build `15`.
+  - Build `15` AAB is downloaded locally and ready for upload, and a Play Console internal testing draft release was opened. Automated AAB attachment is currently blocked by Chrome file chooser timeouts; Windows Computer Use is unavailable in this session, and EAS submit still needs a usable Play submit credential.
 - Play RTDN Pub/Sub push delivery is complete from Google Cloud:
   - Subscription `play-rtdn-locateflow-webhook` is active.
   - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
@@ -218,6 +220,7 @@ No live card charge, production subscription mutation, Play production rollout, 
 - Chrome-controlled console/UI verification recovered after PC restart for App Store Connect:
   - The App Review reply, build change, manual-release setting, and resubmission were verified through Chrome.
   - Pending downgrade backend/API state is verified, but pending downgrade banner/admin UI visibility still needs a separate Chrome UI pass.
+  - Play Console page access works, but AAB file upload automation still timed out before attaching Android build `15`.
 - Full paid Stripe production mutation was not run against live production payments to avoid production payment risk. The required E2E coverage was run against the dedicated QA/staging service with Stripe test-mode prices instead.
 - Store-console submission items remain manual/human-gated:
   - Apple review outcome.
@@ -251,6 +254,7 @@ No live card charge, production subscription mutation, Play production rollout, 
   - EAS non-interactive submit requires Google service-account key setup.
   - Direct Android Publisher OAuth upload could not use DigitalOcean app spec `SECRET` placeholders as OAuth secrets.
   - No Play edit, upload, track commit, internal release update, production rollout, or live payment occurred.
+  - A 2026-06-04 Play Console UI attempt opened an internal testing draft release and prepared the build `15` AAB, but Chrome file upload automation timed out before the AAB was attached.
 - Public legal pages were rechecked in live Chrome after deployment:
   - `/terms`, `/privacy`, and `/contact` no longer show raw placeholder legal/entity strings.
 - Public legal pages were then rechecked again after the DigitalOcean env update deployment completed:

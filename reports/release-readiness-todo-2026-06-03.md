@@ -291,6 +291,11 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - `gcloud` is not installed locally, so no alternate signed-in Google user token path is available from the shell.
   - Play internal release update remains Chrome/Play Console or credential-provisioning gated; no production rollout was performed.
   - Rechecked with `eas build:view`: Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED`, versionCode `15`, distribution `STORE`.
+  - Rechecked on 2026-06-04: Play Console internal testing still shows active release `1.0.0-internal-1`; build `15` is not on the internal track.
+  - Downloaded the build `15` AAB locally for console upload; artifact is ready.
+  - Opened a new Play Console internal testing draft release, but Chrome file-upload automation repeatedly timed out before attaching the AAB.
+  - A non-interactive EAS submit remains blocked by missing service-account key setup; an interactive EAS submit attempt did not complete and was terminated without creating a Play edit/upload/track commit.
+  - Windows Computer Use fallback is unavailable in this session (`native pipe path unavailable`), so the remaining upload action needs either manual Play Console file upload or a usable Play submit credential.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
@@ -475,3 +480,5 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-04: App Store version release was changed from automatic to `Manually release this version`, so an App Review approval will not automatically release the app to the App Store.
 - 2026-06-04: Old rejected build `1.0.0 (12)` was removed from the submitted iOS version, build `1.0.0 (13)` was selected, and App Store Connect updated the item to `Ready for Review`.
 - 2026-06-04: App Store Connect `Resubmit to App Review` was completed; live status now shows iOS app version `1.0.0 (13)` as `Waiting for Review` with submission timestamp `Jun 4, 2026 at 9:46 AM`.
+- 2026-06-04: Android Play internal status was rechecked: active internal release remains `1.0.0-internal-1`, so EAS build `15` is still not installed through Play internal testing.
+- 2026-06-04: Android build `15` AAB was downloaded locally and a Play Console internal testing draft release was opened, but automated AAB upload is blocked by Chrome file chooser timeouts; Computer Use is unavailable and EAS submit still lacks a usable Play submit credential. No Play upload, internal release update, production rollout, or live payment occurred.
