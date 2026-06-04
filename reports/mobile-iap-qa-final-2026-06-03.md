@@ -39,3 +39,4 @@ Verified Android mobile subscription readiness from real code, live APIs, EAS st
 - Play internal tester list is `LOCATEFLOW` with 4 users; opt-in link is `https://play.google.com/apps/internaltest/4701495695078511383`.
 - Full Android paid IAP purchase/restore/cancel verification remains blocked until an internal tester account is signed into Google Play on the emulator or a real Android device and installs build `15` from Play.
 - The previous local/debug emulator install was removed; direct Play Store open reaches a Google Play `Sign in` screen, and the emulator Chrome TLS interstitial for the opt-in web URL was not bypassed.
+- Rechecked on 2026-06-04: `emulator-5554` still has no `com.locateflow.mobile` package installed, and Play Store still shows the Google Play `Sign in` screen. Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.

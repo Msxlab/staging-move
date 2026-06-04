@@ -301,6 +301,8 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Removed the local/debug emulator install (`versionCode=1`, `installerPackageName=null`) to avoid mistaking it for Play-installed evidence.
   - Opening the opt-in URL in emulator Chrome hit `NET::ERR_CERT_AUTHORITY_INVALID`; the security interstitial was not bypassed.
   - Opening `market://details?id=com.locateflow.mobile` in the emulator Play Store reached the Play Store app, but Play Store requires Google sign-in.
+  - Rechecked on 2026-06-04: Play Store still shows the `Sign in` screen and no `com.locateflow.mobile` package is installed on `emulator-5554`.
+  - Screenshot evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
   - Google account sign-in/2FA/manual approval is user-gated; Codex did not automate login.
   - Real Play Billing QA remains pending until an internal tester account is signed into Play Store on the emulator or a real Android device installs build `15` from Play internal testing.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
@@ -492,3 +494,4 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-04: Play Console internal testing release was published for build `15 (1.0.0)` with release notes `Internal testing update for billing QA.` Live Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`; no production rollout was performed.
 - 2026-06-04: Play internal tester list was confirmed as `LOCATEFLOW` with 4 users, and the opt-in link was copied as `https://play.google.com/apps/internaltest/4701495695078511383`.
 - 2026-06-04: Android emulator install-from-Play is blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen. Real Play Billing QA remains pending until an internal tester account is signed into Play Store on emulator or device.
+- 2026-06-04: Rechecked Android Play install path on `emulator-5554`: `market://details?id=com.locateflow.mobile` still opens Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package is installed. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.

@@ -203,6 +203,7 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Build `15 (1.0.0)` was uploaded through Play Console and published to internal testing on 2026-06-04; no production rollout was performed.
   - Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
   - Real Play Billing QA is now blocked by test-device Google Play sign-in: the emulator Play Store requires account sign-in, and Codex did not automate Google login/2FA.
+  - Rechecked on 2026-06-04: `market://details?id=com.locateflow.mobile` still opens Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package is installed on `emulator-5554`. Screenshot: `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
 - Play RTDN Pub/Sub push delivery is complete from Google Cloud:
   - Subscription `play-rtdn-locateflow-webhook` is active.
   - DigitalOcean RTDN identity env matches the final endpoint/audience/service account, so no redeploy/restart was needed.
