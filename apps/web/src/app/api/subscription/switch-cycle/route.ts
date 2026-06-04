@@ -22,6 +22,11 @@ import {
   isMissingDbColumnError,
   warnSchemaCompatibilityFallback,
 } from "@/lib/db-schema-compat";
+import {
+  getStripeSubscriptionCurrentPeriodEndDate,
+  getStripeSubscriptionCurrentPeriodEndUnix,
+  getStripeSubscriptionCurrentPeriodStartUnix,
+} from "@/lib/stripe-subscription-period";
 
 // POST /api/subscription/switch-cycle
 // Body: { targetInterval: "MONTH" | "YEAR", acceptedSubscriptionTerms: true }
@@ -105,9 +110,7 @@ async function applyImmediateCycleSwap(input: {
     },
   );
 
-  const periodEnd = updated.current_period_end
-    ? new Date(updated.current_period_end * 1000)
-    : subscription.currentPeriodEndsAt;
+  const periodEnd = getStripeSubscriptionCurrentPeriodEndDate(updated) || subscription.currentPeriodEndsAt;
   const newCycle = billingIntervalToCycle(targetInterval);
 
   try {
@@ -260,7 +263,7 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (subscription.billingInterval === "YEAR" && targetInterval === "MONTH") {
-      const periodEndUnix = stripeSub.current_period_end;
+      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
       const periodEnd = periodEndUnix
         ? new Date(periodEndUnix * 1000)
         : subscription.currentPeriodEndsAt;
@@ -295,7 +298,7 @@ export async function POST(request: NextRequest) {
       );
       const currentPhaseStart =
         schedule.current_phase?.start_date ||
-        stripeSub.current_period_start ||
+        getStripeSubscriptionCurrentPeriodStartUnix(stripeSub) ||
         Math.floor(now.getTime() / 1000);
       const quantity = primaryItem.quantity || 1;
 

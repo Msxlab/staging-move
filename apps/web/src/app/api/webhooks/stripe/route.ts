@@ -11,6 +11,10 @@ import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webho
 import { isMissingDbColumnError, warnSchemaCompatibilityFallback } from "@/lib/db-schema-compat";
 import { formatPlanLabel, fireAndLogEmail as fireAndLogBillingEmail } from "@/lib/billing-email-utils";
 import {
+  getStripeSubscriptionCurrentPeriodEndDate,
+  getStripeSubscriptionCurrentPeriodEndUnix,
+} from "@/lib/stripe-subscription-period";
+import {
   sendPaymentFailedEmail,
   sendSubscriptionActivatedEmail,
   sendSubscriptionCanceledEmail,
@@ -307,7 +311,7 @@ async function syncLocalSubscriptionFromStripe(input: {
   const newStatus = mapStripeStatusWithRenewal(input.stripeSubscription);
   const priceId = input.stripeSubscription.items?.data?.[0]?.price?.id || null;
   const trialEnd = stripeDate(input.stripeSubscription.trial_end);
-  const currentPeriodEnd = stripeDate(input.stripeSubscription.current_period_end);
+  const currentPeriodEnd = getStripeSubscriptionCurrentPeriodEndDate(input.stripeSubscription);
   // Prefer the actual Stripe price interval over the metadata.cycle hint.
   // metadata.cycle is set at checkout creation, but the customer portal can
   // switch the user between monthly and annual without updating it — relying
@@ -695,9 +699,10 @@ export async function POST(request: NextRequest) {
           if (recipient) {
             const oldStatus = sync.local.status || null;
             const newStatus = sync.newStatus;
-            const currentPeriodEndText = formatDateInLocale(subscription.current_period_end, recipient.locale);
-            const periodKey = subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000).toISOString().slice(0, 10)
+            const currentPeriodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(subscription);
+            const currentPeriodEndText = formatDateInLocale(currentPeriodEndUnix, recipient.locale);
+            const periodKey = currentPeriodEndUnix
+              ? new Date(currentPeriodEndUnix * 1000).toISOString().slice(0, 10)
               : "unknown";
             const wasRenewalCanceled = oldStatus === "CANCEL_AT_PERIOD_END" || oldStatus === "TRIAL_CANCELED";
             const isRenewalCanceled = newStatus === "CANCEL_AT_PERIOD_END" || newStatus === "TRIAL_CANCELED";
@@ -776,7 +781,7 @@ export async function POST(request: NextRequest) {
           mappedPrice?.plan,
           typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null,
         );
-        const periodEnd = stripeDate(subscription.current_period_end);
+        const periodEnd = getStripeSubscriptionCurrentPeriodEndDate(subscription);
         const trialEnd = stripeDate(subscription.trial_end);
 
         // Scope by stripeSubscriptionId so a customer with multiple
@@ -831,7 +836,7 @@ export async function POST(request: NextRequest) {
               userEmail: recipient.email,
               userName: recipient.firstName,
               planLabel: plan ? formatPlanLabel(plan) : "subscription",
-              accessEndsOn: formatDateInLocale(subscription.current_period_end, recipient.locale),
+              accessEndsOn: formatDateInLocale(getStripeSubscriptionCurrentPeriodEndUnix(subscription), recipient.locale),
               locale: recipient.locale,
               dedupeKey: `stripe:subscription-deleted:${event.id}`,
             }),
