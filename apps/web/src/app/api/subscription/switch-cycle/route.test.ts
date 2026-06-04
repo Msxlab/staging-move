@@ -242,6 +242,46 @@ describe("subscription switch-cycle route", () => {
     });
   });
 
+  it("schedules annual to monthly using the local period end when Stripe omits period fields", async () => {
+    const futureUnix = Math.floor((Date.now() + 365 * 86_400_000) / 1000);
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: new Date(futureUnix * 1000),
+    });
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue({
+      ...stripeSubscription("price_yearly", "year"),
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      billingInterval: "YEAR",
+      pendingBillingInterval: "MONTH",
+      scheduled: true,
+    });
+    expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith(
+      "sched_123",
+      expect.objectContaining({
+        phases: expect.arrayContaining([
+          expect.objectContaining({ end_date: futureUnix }),
+        ]),
+      }),
+      expect.anything(),
+    );
+  });
+
   it("releases the Stripe schedule when the pending-interval DB write fails on missing columns", async () => {
     // Regression: the previous fallback silently wrote a reduced payload
     // and returned `scheduled: true` to the client, leaving an orphan

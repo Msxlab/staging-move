@@ -48,6 +48,12 @@ import {
 
 const TIER_RANK: Record<string, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
 
+function dateToUnixSeconds(date: Date | string | null | undefined): number | null {
+  if (!date) return null;
+  const time = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  return Number.isFinite(time) && time > 0 ? Math.floor(time / 1000) : null;
+}
+
 function scheduleIdFromStripeSub(stripeSub: Stripe.Subscription): string | null {
   const schedule = stripeSub.schedule;
   if (!schedule) return null;
@@ -251,7 +257,9 @@ export async function POST(request: NextRequest) {
       (targetRank === currentRank && currentInterval === "YEAR" && targetInterval === "MONTH");
 
     if (isReduction) {
-      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
+      const periodEndUnix =
+        getStripeSubscriptionCurrentPeriodEndUnix(stripeSub) ||
+        dateToUnixSeconds(subscription.currentPeriodEndsAt);
       const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : subscription.currentPeriodEndsAt;
       // No period left → nothing to defer; apply now so the customer actually
       // moves to the lower plan instead of silently auto-renewing the old one.

@@ -15,6 +15,9 @@ const LOG_PATH =
 const SUMMARY_PATH =
   process.env.STRIPE_MATRIX_SUMMARY ||
   path.join(os.tmpdir(), `locateflow-plan-matrix-v2-${Date.now()}.json`);
+const FORCE_RESET = ["1", "true", "yes"].includes(
+  String(process.env.STRIPE_MATRIX_FORCE_RESET || "").toLowerCase(),
+);
 
 const DEFAULT_SOURCES = [
   { plan: "INDIVIDUAL", interval: "YEAR" },
@@ -96,6 +99,23 @@ function summarizeSubscription(body) {
   };
 }
 
+function shouldUseSwitchCycle(source, target) {
+  return source.plan === "INDIVIDUAL" && source.plan === target.plan;
+}
+
+function changeAppliedKind(source, target, response) {
+  if (shouldUseSwitchCycle(source, target)) {
+    if (response.body?.scheduled === true) return "scheduled";
+    if (response.status === 200) return "immediate";
+    return null;
+  }
+  return response.body?.applied || null;
+}
+
+function changeError(response) {
+  return response.body?.error || null;
+}
+
 function makeClient() {
   const jar = new Map();
   function storeCookies(res) {
@@ -168,6 +188,28 @@ async function stripePost(auth, route, data) {
   return body;
 }
 
+async function registerQaAccount(client) {
+  const registerResponse = await reqRetry(client, "register", "/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      email: EMAIL,
+      password: PASSWORD,
+      firstName: "Mobile",
+      lastName: "QA",
+      legalConsents: {
+        termsAccepted: true,
+        disclaimerAccepted: true,
+        termsVersion: "qa-2026-06-03",
+        disclaimerVersion: "qa-2026-06-03",
+        acceptedAt: new Date().toISOString(),
+      },
+    }),
+  });
+  if (registerResponse.status !== 201) {
+    throw new Error(`register failed ${registerResponse.status}`);
+  }
+}
+
 async function ensureSession(client) {
   async function login() {
     return reqRetry(client, "login", "/api/auth/login", {
@@ -176,27 +218,15 @@ async function ensureSession(client) {
     });
   }
 
+  if (FORCE_RESET) {
+    log({ event: "force_reset_start" });
+    await registerQaAccount(client);
+    log({ event: "force_reset_complete" });
+  }
+
   let loginResponse = await login();
   if (loginResponse.status === 401) {
-    const registerResponse = await reqRetry(client, "register", "/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        email: EMAIL,
-        password: PASSWORD,
-        firstName: "Mobile",
-        lastName: "QA",
-        legalConsents: {
-          termsAccepted: true,
-          disclaimerAccepted: true,
-          termsVersion: "qa-2026-06-03",
-          disclaimerVersion: "qa-2026-06-03",
-          acceptedAt: new Date().toISOString(),
-        },
-      }),
-    });
-    if (registerResponse.status !== 201) {
-      throw new Error(`register failed ${registerResponse.status}`);
-    }
+    await registerQaAccount(client);
     loginResponse = await login();
   }
   if (loginResponse.status !== 200) {
@@ -290,31 +320,65 @@ async function main() {
         120000,
       );
       const sourceOk = sourceProfile.status === 200 && Boolean(sourceProfile.body?.subscription?.currentPeriodEndsAt);
+      await delay(2500);
+      const stableSourceProfile = await pollProfile(
+        client,
+        `stable-source-${label}`,
+        (body) => {
+          const subscription = body.subscription || {};
+          return (
+            subscription.provider === "STRIPE" &&
+            subscription.plan === source.plan &&
+            subscription.billingInterval === source.interval &&
+            subscription.status === "ACTIVE" &&
+            Boolean(subscription.currentPeriodEndsAt)
+          );
+        },
+        30000,
+      );
+      const stableSourceOk =
+        stableSourceProfile.status === 200 &&
+        stableSourceProfile.body?.subscription?.plan === source.plan &&
+        stableSourceProfile.body?.subscription?.billingInterval === source.interval &&
+        stableSourceProfile.body?.subscription?.status === "ACTIVE";
       let change;
-      let profile = sourceProfile;
+      let profile = stableSourceProfile;
       let kind = "noop";
       let passed = false;
 
       if (source.plan === target.plan && source.interval === target.interval) {
-        change = await reqRetry(client, `noop-${label}`, "/api/subscription/change-plan", {
+        const route = shouldUseSwitchCycle(source, target)
+          ? "/api/subscription/switch-cycle"
+          : "/api/subscription/change-plan";
+        const body = shouldUseSwitchCycle(source, target)
+          ? { targetInterval: target.interval, acceptedSubscriptionTerms: true }
+          : {
+              targetPlan: target.plan,
+              targetInterval: target.interval,
+              acceptedSubscriptionTerms: true,
+            };
+        change = await reqRetry(client, `noop-${label}`, route, {
           method: "POST",
-          body: JSON.stringify({
-            targetPlan: target.plan,
-            targetInterval: target.interval,
-            acceptedSubscriptionTerms: true,
-          }),
+          body: JSON.stringify(body),
         });
-        passed = sourceOk && change.status === 400;
+        profile = await reqRetry(client, `final-noop-${label}`, "/api/profile", { method: "GET" });
+        passed = sourceOk && stableSourceOk && change.status === 400;
       } else {
         const reduction = isReduction(source, target);
         kind = reduction ? "scheduled" : "immediate";
-        change = await reqRetry(client, `change-${label}`, "/api/subscription/change-plan", {
+        const route = shouldUseSwitchCycle(source, target)
+          ? "/api/subscription/switch-cycle"
+          : "/api/subscription/change-plan";
+        const body = shouldUseSwitchCycle(source, target)
+          ? { targetInterval: target.interval, acceptedSubscriptionTerms: true }
+          : {
+              targetPlan: target.plan,
+              targetInterval: target.interval,
+              acceptedSubscriptionTerms: true,
+            };
+        change = await reqRetry(client, `change-${label}`, route, {
           method: "POST",
-          body: JSON.stringify({
-            targetPlan: target.plan,
-            targetInterval: target.interval,
-            acceptedSubscriptionTerms: true,
-          }),
+          body: JSON.stringify(body),
         });
         profile = await pollProfile(
           client,
@@ -342,8 +406,9 @@ async function main() {
         const summary = summarizeSubscription(profile.body);
         passed =
           sourceOk &&
+          stableSourceOk &&
           change.status === 200 &&
-          change.body?.applied === kind &&
+          changeAppliedKind(source, target, change) === kind &&
           (reduction
             ? summary.plan === source.plan &&
               summary.billingInterval === source.interval &&
@@ -363,9 +428,10 @@ async function main() {
         kind,
         passed,
         changeStatus: change.status,
-        changeApplied: change.body?.applied || null,
-        changeError: change.body?.error || null,
+        changeApplied: changeAppliedKind(source, target, change),
+        changeError: changeError(change),
         sourceProfile: summarizeSubscription(sourceProfile.body),
+        stableSourceProfile: summarizeSubscription(stableSourceProfile.body),
         finalProfile: summarizeSubscription(profile.body),
       };
       results.push(result);

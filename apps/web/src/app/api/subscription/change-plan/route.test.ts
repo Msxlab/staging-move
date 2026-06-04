@@ -219,6 +219,46 @@ describe("change-plan route", () => {
     });
   });
 
+  it("defers a downgrade using the local period end when Stripe retrieve omits period fields", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "PRO",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+    mocks.subsRetrieve.mockResolvedValue({
+      id: "sub_123",
+      items: { data: [{ id: "si_1", price: { id: "price_current" }, quantity: 1 }] },
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "YEAR" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      pendingPlan: "FAMILY",
+      pendingBillingInterval: "YEAR",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).toHaveBeenCalledWith(
+      "sched_1",
+      expect.objectContaining({
+        phases: expect.arrayContaining([
+          expect.objectContaining({ end_date: FUTURE_UNIX }),
+        ]),
+      }),
+      expect.anything(),
+    );
+  });
+
   it("defers a Family to Individual downgrade to period end", async () => {
     mocks.subFindUnique.mockResolvedValue({
       userId: "user_1",

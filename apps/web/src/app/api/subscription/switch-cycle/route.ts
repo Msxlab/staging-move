@@ -35,6 +35,12 @@ import {
 // yearly billing. Monthly -> yearly is an immediate upgrade with Stripe
 // proration. Yearly -> monthly is a deferred downgrade: keep the already
 // paid annual access until current_period_end, then start monthly billing.
+function dateToUnixSeconds(date: Date | string | null | undefined): number | null {
+  if (!date) return null;
+  const time = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  return Number.isFinite(time) && time > 0 ? Math.floor(time / 1000) : null;
+}
+
 function scheduleIdFromStripeSub(stripeSub: Stripe.Subscription) {
   const schedule = stripeSub.schedule;
   if (!schedule) return null;
@@ -263,7 +269,9 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (subscription.billingInterval === "YEAR" && targetInterval === "MONTH") {
-      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
+      const periodEndUnix =
+        getStripeSubscriptionCurrentPeriodEndUnix(stripeSub) ||
+        dateToUnixSeconds(subscription.currentPeriodEndsAt);
       const periodEnd = periodEndUnix
         ? new Date(periodEndUnix * 1000)
         : subscription.currentPeriodEndsAt;
