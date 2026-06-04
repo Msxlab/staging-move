@@ -161,29 +161,6 @@ export interface Document {
   createdAt: string;
 }
 
-// ==================== REVIEW ====================
-
-export interface Review {
-  id: string;
-  userId: string;
-  providerName: string;
-  category: string;
-  zipCode: string;
-  city: string;
-  state: string;
-  rating: number;
-  title?: string | null;
-  content: string;
-  speedRating?: number | null;
-  reliabilityRating?: number | null;
-  customerServiceRating?: number | null;
-  valueRating?: number | null;
-  helpful: number;
-  status: string;
-  createdAt: string;
-  user?: { firstName?: string | null; lastName?: string | null };
-}
-
 // ==================== PROVIDER ====================
 
 export interface ServiceProvider {

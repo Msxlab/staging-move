@@ -152,9 +152,6 @@
     "budgets": "No budgets yet",
     "budgetsDescription": "Track a monthly budget per address.",
     "addBudget": "Add Budget",
-    "reviews": "No reviews yet",
-    "reviewsDescription": "Share your experience with a provider to help other movers.",
-    "writeReview": "Write a Review",
     "notifications": "No notifications",
     "notificationsDescription": "You're up to date. New activity will show up here.",
     "providers": "No providers match",
@@ -168,7 +165,6 @@
     "moving": "Moving",
     "budget": "Budget",
     "tasks": "Tasks",
-    "reviews": "Reviews",
     "documents": "Documents",
     "notifications": "Notifications",
     "notificationSettings": "Notification Settings",
@@ -807,12 +803,8 @@
     "title": "Providers",
     "subtitle": "Provider directory near you, with confidence notes.",
     "searchPlaceholder": "Search providers",
-    "rating": "Rating",
-    "reviews": "{count, plural, =0 {No reviews} one {# review} other {# reviews}}",
     "visitWebsite": "Visit website",
-    "selectProvider": "Select this provider",
-    "writeReview": "Write a review",
-    "readReviews": "Read reviews"
+    "selectProvider": "Select this provider"
   },
   "moving": {
     "title": "Moving Plans",
@@ -906,23 +898,6 @@
     "markComplete": "Mark as complete",
     "markIncomplete": "Mark as incomplete",
     "description": "Description"
-  },
-  "reviews": {
-    "title": "Reviews",
-    "newReviewTitle": "Write a review",
-    "rating": "Overall rating",
-    "ratingHint": "1 = poor, 5 = excellent",
-    "reviewTitle": "Title",
-    "reviewTitlePlaceholder": "Sum up your experience",
-    "content": "Review",
-    "contentPlaceholder": "What should other movers know about this provider?",
-    "providerRating_price": "Price",
-    "providerRating_reliability": "Reliability",
-    "providerRating_service": "Customer service",
-    "providerRating_speed": "Setup speed",
-    "submitReview": "Submit review",
-    "thankYou": "Thanks for your review",
-    "thankYouDescription": "Your experience helps other movers make better choices."
   },
   "notifications": {
     "title": "Notifications",

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const plan = searchParams.get("plan") || "";
     const subStatus = searchParams.get("subStatus") || "";
-    const hasReviews = searchParams.get("hasReviews");
+    const hasServiceNotes = searchParams.get("hasServiceNotes") ?? searchParams.get("hasReviews");
     const hasMoving = searchParams.get("hasMoving");
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     if (subStatus) {
       where.subscription = { ...where.subscription, status: subStatus };
     }
-    if (hasReviews === "true") {
+    if (hasServiceNotes === "true") {
       where.services = { some: { personalReview: { not: null } } };
     }
     if (hasMoving === "true") where.movingPlans = { some: {} };
@@ -116,8 +116,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     const canSeeRawEmail = session.role === "SUPER_ADMIN" || session.role === "ADMIN";
-    const usersWithReviewCounts = users.map((user: any) => {
-      const reviewCount = user.services.filter((service: any) =>
+    const usersWithServiceNoteCounts = users.map((user: any) => {
+      const serviceNoteCount = user.services.filter((service: any) =>
         Boolean(service.personalReview),
       ).length;
       const { services, loginSessions, ...rest } = user;
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
         lastActivityAt,
         _count: {
           ...rest._count,
-          providerReviews: reviewCount,
+          serviceNotes: serviceNoteCount,
         },
       };
     });
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      users: usersWithReviewCounts, total, page, perPage,
+      users: usersWithServiceNoteCounts, total, page, perPage,
       stats: { totalAll, newThisWeek, weeklyTrend, activeSubCount, planMap },
     });
   } catch (error: any) {

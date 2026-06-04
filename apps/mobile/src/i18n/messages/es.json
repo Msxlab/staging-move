@@ -273,7 +273,6 @@
   "providers": {
     "title": "Proveedores",
     "searchPlaceholder": "Buscar proveedores",
-    "rating": "Calificación",
     "select": "Seleccionar este proveedor",
     "visitWebsite": "Visitar sitio",
     "forYourMove": "Para tu mudanza",

@@ -273,7 +273,6 @@
   "providers": {
     "title": "Providers",
     "searchPlaceholder": "Search providers",
-    "rating": "Rating",
     "select": "Select this provider",
     "visitWebsite": "Visit website",
     "forYourMove": "For your move",

@@ -6,7 +6,6 @@ import {
   movingPlanSchema,
   taskSchema,
   budgetSchema,
-  reviewSchema,
   documentUploadSchema,
 } from "../validators";
 
@@ -217,43 +216,6 @@ describe("budgetSchema", () => {
 
   it("should reject year > 2100", () => {
     const result = budgetSchema.safeParse({ month: "Jan", year: 2101 });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe("reviewSchema", () => {
-  const validReview = {
-    providerName: "Test Provider",
-    category: "UTILITY_ELECTRIC",
-    zipCode: "78701",
-    city: "Austin",
-    state: "TX",
-    rating: 4,
-    content: "Great service, very reliable and fast.",
-  };
-
-  it("should accept valid review", () => {
-    const result = reviewSchema.safeParse(validReview);
-    expect(result.success).toBe(true);
-  });
-
-  it("should reject rating > 5", () => {
-    const result = reviewSchema.safeParse({ ...validReview, rating: 6 });
-    expect(result.success).toBe(false);
-  });
-
-  it("should reject rating < 1", () => {
-    const result = reviewSchema.safeParse({ ...validReview, rating: 0 });
-    expect(result.success).toBe(false);
-  });
-
-  it("should reject content shorter than 10 chars", () => {
-    const result = reviewSchema.safeParse({ ...validReview, content: "Short" });
-    expect(result.success).toBe(false);
-  });
-
-  it("should reject invalid ZIP code", () => {
-    const result = reviewSchema.safeParse({ ...validReview, zipCode: "ABCDE" });
     expect(result.success).toBe(false);
   });
 });

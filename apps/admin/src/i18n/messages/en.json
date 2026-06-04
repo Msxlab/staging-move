@@ -126,8 +126,6 @@
     "col_name": "Name",
     "col_category": "Category",
     "col_scope": "Scope",
-    "col_rating": "Rating",
-    "col_reviews": "Reviews",
     "col_status": "Status",
     "editTitle": "Edit provider",
     "newTitle": "New provider",

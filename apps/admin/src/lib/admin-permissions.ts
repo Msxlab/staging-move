@@ -26,7 +26,6 @@
 export const ADMIN_RESOURCES = [
   "users",
   "subscriptions",
-  "reviews",
   "providers",
   "state_rules",
   "badges",
@@ -112,8 +111,8 @@ const READ_ONLY: PermissionFlags = {
  *     SUPER_ADMIN still revokes access even if rows remain.
  *   - ADMIN: full CRUD on everything EXCEPT managing other admins.
  *     (Only SUPER_ADMIN can create/delete admin_users.)
- *   - MODERATOR: read everywhere; write only on content moderation
- *     surfaces (reviews).
+ *   - MODERATOR: read everywhere; write only on editorial moderation
+ *     surfaces (blog).
  *   - VIEWER: read-only across the board. No writes, no deletes.
  *   - Unknown role: read-only as a safe default.
  */
@@ -130,10 +129,7 @@ export function getDefaultPermissionsForRole(
   }
 
   if (role === "MODERATOR") {
-    // Moderators write only where moderation lives.
-    if (resource === "reviews") {
-      return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
-    }
+    // Moderators write only where editorial moderation lives.
     if (resource === "blog") {
       // Editorial moderators draft + edit + publish, but not delete.
       // Hard-delete stays with ADMIN/SUPER_ADMIN to avoid an editor

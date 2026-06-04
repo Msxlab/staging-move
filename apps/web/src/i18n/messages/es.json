@@ -152,9 +152,6 @@
     "budgets": "Aún no hay presupuestos",
     "budgetsDescription": "Rastrea un presupuesto mensual por dirección.",
     "addBudget": "Agregar presupuesto",
-    "reviews": "Aún no hay reseñas",
-    "reviewsDescription": "Comparte tu experiencia con un proveedor para ayudar a otros.",
-    "writeReview": "Escribir reseña",
     "notifications": "No hay notificaciones",
     "notificationsDescription": "Estás al día. La nueva actividad aparecerá aquí.",
     "providers": "No hay proveedores",
@@ -168,7 +165,6 @@
     "moving": "Mudanza",
     "budget": "Presupuesto",
     "tasks": "Tareas",
-    "reviews": "Reseñas",
     "documents": "Documentos",
     "notifications": "Notificaciones",
     "notificationSettings": "Ajustes de notificaciones",
@@ -807,12 +803,8 @@
     "title": "Proveedores",
     "subtitle": "Directorio de proveedores cerca de ti, con notas de confianza.",
     "searchPlaceholder": "Buscar proveedores",
-    "rating": "Calificación",
-    "reviews": "{count, plural, =0 {Sin reseñas} one {# reseña} other {# reseñas}}",
     "visitWebsite": "Visitar sitio",
-    "selectProvider": "Seleccionar este proveedor",
-    "writeReview": "Escribir reseña",
-    "readReviews": "Leer reseñas"
+    "selectProvider": "Seleccionar este proveedor"
   },
   "moving": {
     "title": "Planes de mudanza",
@@ -906,23 +898,6 @@
     "markComplete": "Marcar como completa",
     "markIncomplete": "Marcar como incompleta",
     "description": "Descripción"
-  },
-  "reviews": {
-    "title": "Reseñas",
-    "newReviewTitle": "Escribir reseña",
-    "rating": "Calificación general",
-    "ratingHint": "1 = malo, 5 = excelente",
-    "reviewTitle": "Título",
-    "reviewTitlePlaceholder": "Resume tu experiencia",
-    "content": "Reseña",
-    "contentPlaceholder": "¿Qué deben saber otros usuarios sobre este proveedor?",
-    "providerRating_price": "Precio",
-    "providerRating_reliability": "Confiabilidad",
-    "providerRating_service": "Atención al cliente",
-    "providerRating_speed": "Velocidad de configuración",
-    "submitReview": "Enviar reseña",
-    "thankYou": "Gracias por tu reseña",
-    "thankYouDescription": "Tu experiencia ayuda a que otros tomen mejores decisiones."
   },
   "notifications": {
     "title": "Notificaciones",

@@ -170,25 +170,6 @@ export const budgetSchema = z.strictObject({
 
 export type BudgetFormData = z.infer<typeof budgetSchema>;
 
-// ==================== REVIEW ====================
-
-export const reviewSchema = z.object({
-  providerName: z.string().min(1, "Provider name is required"),
-  category: z.string().min(1, "Category is required"),
-  zipCode: z.string().regex(/^\d{5}$/, "Invalid ZIP code"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().length(2, "Use 2-letter state code"),
-  rating: z.number().min(1).max(5),
-  title: z.string().max(100).optional(),
-  content: z.string().min(10, "Review must be at least 10 characters").max(2000),
-  speedRating: z.number().min(1).max(5).optional(),
-  reliabilityRating: z.number().min(1).max(5).optional(),
-  customerServiceRating: z.number().min(1).max(5).optional(),
-  valueRating: z.number().min(1).max(5).optional(),
-});
-
-export type ReviewFormData = z.infer<typeof reviewSchema>;
-
 // ==================== DOCUMENT ====================
 
 export const documentUploadSchema = z.object({
