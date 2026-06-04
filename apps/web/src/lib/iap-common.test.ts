@@ -7,6 +7,9 @@ vi.mock("@/lib/db", () => ({
       findFirst: vi.fn(),
       upsert: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -27,6 +30,8 @@ vi.mock("@/lib/runtime-config", () => ({
       MOBILE_ANDROID_PRODUCT_PRO_YEARLY: "pro.android.yearly",
     };
     if (key === "APPLE_BUNDLE_ID") return "com.locateflow";
+    if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") return process.env.QA_RESETTABLE_ACCOUNT_EMAIL || null;
+    if (key === "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS") return process.env.GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS || null;
     return productIds[key] || null;
   }),
 }));
@@ -80,21 +85,25 @@ describe("IAP normalization", () => {
     await expect(mapProductIdToPlan("ios", "family.ios.fake")).resolves.toBeNull();
   });
 
-  it("rejects Google Play test purchases in production billing environments", async () => {
+  it("preserves Google Play test purchases as sandbox state after store verification", async () => {
     process.env.APP_ENV = "production";
 
-    await expect(
-      normalizeGoogleResult({
-        packageName: "com.locateflow",
-        purchaseToken: "purchase-token",
-        response: {
-          testPurchase: {},
-          latestOrderId: "GPA.123",
-          subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
-          lineItems: [{ productId: "individual.android" }],
-        },
-      }),
-    ).rejects.toThrow("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+    const normalized = await normalizeGoogleResult({
+      packageName: "com.locateflow",
+      purchaseToken: "purchase-token",
+      response: {
+        testPurchase: {},
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        lineItems: [{ productId: "individual.android" }],
+      },
+    });
+
+    expect(normalized).toMatchObject({
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      environment: "Sandbox",
+    });
   });
 
   it("maps Apple free-trial offers to TRIALING while preserving the store period end", async () => {
@@ -371,6 +380,78 @@ describe("IAP normalization", () => {
     expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
       update: expect.objectContaining({
         purchaseTokenHash: hashPurchaseToken("purchase-token"),
+      }),
+    }));
+  });
+
+  it("rejects Google Play test purchases for non-allowlisted users in production billing environments", async () => {
+    process.env.APP_ENV = "production";
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "mobile.qa@locateflow.com";
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: "customer@example.com" } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "YEAR",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: { testPurchase: {} },
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+    expect(prisma.subscription.upsert).not.toHaveBeenCalled();
+  });
+
+  it("allows Google Play test purchases for the configured QA account in production billing environments", async () => {
+    process.env.APP_ENV = "production";
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "mobile.qa@locateflow.com";
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: "mobile.qa@locateflow.com" } as any);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-test",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "YEAR",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: { testPurchase: {} },
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state })).resolves.toMatchObject({
+      userId: "user-1",
+    });
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({
+        appStoreEnvironment: "Sandbox",
+        provider: "PLAY_STORE",
       }),
     }));
   });
