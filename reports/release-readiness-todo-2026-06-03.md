@@ -348,6 +348,7 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Live App Store Connect App Review Information includes the subscription path and demo account access details; reviewer password remains intentionally not recorded in this report.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
   - Source inventory exists and `docs/deploy/mobile-store-submission-copy.md` now summarizes the operator-facing answers.
+  - `docs/deploy/mobile-store-submission-copy.md` now also includes exact operator guidance for Google Data Safety, Apple App Privacy, App Review/App Access demo notes, EU/trader/legal declarations, content rating, ads declaration, account deletion URL, and internal-test install prerequisites.
   - Final console form submission/confirmation still requires store-console review.
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
@@ -495,3 +496,4 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-04: Play internal tester list was confirmed as `LOCATEFLOW` with 4 users, and the opt-in link was copied as `https://play.google.com/apps/internaltest/4701495695078511383`.
 - 2026-06-04: Android emulator install-from-Play is blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen. Real Play Billing QA remains pending until an internal tester account is signed into Play Store on emulator or device.
 - 2026-06-04: Rechecked Android Play install path on `emulator-5554`: `market://details?id=com.locateflow.mobile` still opens Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package is installed. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
+- 2026-06-04: Android account audit on `emulator-5554` showed `Accounts: 0`, confirming there is no signed-in Google Play tester account on the emulator. Store-console human-gated guidance was expanded in `docs/deploy/mobile-store-submission-copy.md` for Data Safety, App Privacy, App Access/App Review notes, EU/trader/legal declarations, content rating, ads declaration, and account deletion URL.

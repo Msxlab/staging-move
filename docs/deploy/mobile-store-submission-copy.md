@@ -150,6 +150,22 @@ Data categories currently represented in the inventory:
 - App info and performance: crash logs and diagnostics
 - Device or other IDs: push token / device-linked identifiers needed for app functionality
 
+Console steps to verify before submitting:
+
+- Data collection and security: answer that the app collects user data, encrypts
+  data in transit, and provides account deletion.
+- Data sharing: answer `No` unless the console treats Apple/Google purchase
+  verification, Expo push relay, or crash processing as sharing under the
+  latest form wording; if it does, mirror the processor/purpose rows from the
+  inventory instead of inventing new categories.
+- Financial info / purchase history: include subscription purchase state and
+  receipt/token verification for paid users.
+- Location: only approximate/user-entered address or ZIP context; do not claim
+  device GPS collection unless location SDK usage is added later.
+- Ads ID: answer that advertising ID is not used.
+- Independent security review: do not claim one for v1 unless a real review
+  certificate/report exists.
+
 ## Apple App Privacy operator notes
 
 Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`
@@ -170,6 +186,60 @@ Main categories currently represented:
 - Purchases: purchase history
 - Usage Data: product interaction, consent-gated
 - Diagnostics: crash/performance data
+
+Console steps to verify before submitting:
+
+- Tracking: answer `No`.
+- IDFA: answer that the app does not use IDFA.
+- Data linked to user: answer `Yes` for account/server-backed data categories
+  shown in the inventory.
+- Location: use coarse location only for user-entered address/ZIP context; do
+  not select precise location or device GPS.
+- Purchases: include purchase history for subscription entitlement.
+- Diagnostics: include crash/performance diagnostics if the Sentry-compatible
+  DSN is configured for the submitted build.
+
+## Store declaration checklist
+
+These entries require operator/legal confirmation in the consoles. Codex should
+prepare text and evidence, but should not accept declarations on behalf of the
+company.
+
+Google Play Console:
+
+- App access: use the Play Console App Access draft above and provide the demo
+  password out-of-band.
+- Data Safety: use the Play Data Safety operator notes above.
+- Target audience/content: use an adult/general productivity posture; do not
+  mark the app as primarily directed to children unless the product policy
+  changes. The current inventory says Play Families Policy is not applicable
+  and the intended audience is 18+.
+- Content rating: answer as a productivity/account/subscription app with no
+  user-generated public social feed, no gambling, no violence, no sexual
+  content, no controlled-substance sales, and no location sharing feature. If
+  any future content or marketplace features are added, rerun the questionnaire.
+- Ads declaration: answer `No ads` unless an ad SDK or paid ad placement is
+  added later.
+- App category: productivity/tools-style app. Use the category already selected
+  in the console unless the store listing owner intentionally changes it.
+- Account deletion: use `https://locateflow.com/account/delete`.
+- Internal testing: build `15 (1.0.0)` is available to internal testers. Before
+  paid Billing QA, sign into Google Play on a tester device, open the opt-in
+  link, install from Play, then run the subscription purchase/restore/cancel
+  checks.
+
+App Store Connect:
+
+- App Privacy: use the Apple App Privacy operator notes above.
+- App Review Information: use the App Store Review Notes draft above and supply
+  the reviewer password out-of-band.
+- Sign-in information: keep the demo account active and able to reach
+  `More -> Subscription`.
+- Version release: current release setting is manual; keep manual release if
+  approval should not automatically publish the app.
+- Content rights/age rating/trader/compliance declarations: answer from company
+  policy and legal status. Do not let Codex accept legal status declarations or
+  trader/contact attestations without an operator decision.
 
 ## Operational reminder
 

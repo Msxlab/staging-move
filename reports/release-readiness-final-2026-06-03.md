@@ -230,6 +230,8 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Google Data Safety form.
   - Closed-test/release submission.
   - Production rollout.
+  - EU/trader/legal declarations, content rating, and ads declaration.
+  - Operator-facing guidance for these items is in `docs/deploy/mobile-store-submission-copy.md`; legal/company declarations still require the operator to choose and submit in the consoles.
 - Native crash reporting is lightweight for v1:
   - `EXPO_PUBLIC_SENTRY_DSN` is present.
   - `@sentry/react-native` native crash capture is not integrated yet.
