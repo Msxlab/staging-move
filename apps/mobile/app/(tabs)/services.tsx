@@ -8,7 +8,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
-  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,6 +40,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import {
   SERVICE_CATEGORIES,
   generateChecklist,
@@ -111,7 +111,6 @@ export default function ServicesScreen() {
   const [costValue, setCostValue] = useState("");
   const [savingCost, setSavingCost] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, boolean>>({});
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
 
@@ -455,24 +454,15 @@ export default function ServicesScreen() {
         })() : (
           <View style={styles.list}>
             {filtered.map((service: any) => {
-              const logoUrl = service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;
-              const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
               return (
               <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
                 <View style={styles.serviceTop}>
-                  <View style={[styles.catDot, { backgroundColor: getServiceCategoryColor(service.category) + "30", borderColor: getServiceCategoryColor(service.category) + "50" }]}>
-                    {showLogo ? (
-                      <Image
-                        source={{ uri: logoUrl }}
-                        style={styles.serviceLogo}
-                        resizeMode="contain"
-                        accessibilityLabel={t("services.providerLogoA11y", { provider: service.provider?.name || service.providerName })}
-                        onError={() => setFailedLogoUrls((prev) => ({ ...prev, [logoUrl]: true }))}
-                      />
-                    ) : (
-                      <Text style={styles.catIcon}>{getServiceCategoryIcon(service.category)}</Text>
-                    )}
-                  </View>
+                  <ServiceLogoMark
+                    service={service}
+                    fallbackIcon={getServiceCategoryIcon(service.category)}
+                    backgroundColor={getServiceCategoryColor(service.category) + "30"}
+                    borderColor={getServiceCategoryColor(service.category) + "50"}
+                  />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.serviceName} numberOfLines={1}>{service.providerName}</Text>
                     <Text style={styles.serviceCategory} numberOfLines={1}>
@@ -633,9 +623,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingBottom: 140, paddingTop: 8 },
   list: { gap: 12 },
   serviceTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  catDot: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  serviceLogo: { width: 32, height: 32, borderRadius: 8 },
-  catIcon: { fontSize: 16 },
   serviceName: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
   serviceCategory: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
   cost: { fontSize: 16, fontWeight: "800", color: theme.colors.emerald.text },

@@ -30,11 +30,17 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 
 const typeIcons: Record<string, any> = {
   HOME: Home, WORK: Briefcase, VACATION: Palmtree, STORAGE: Package, TEMPORARY: Clock,
 };
+
+function getServiceFallbackIcon(category: string): string {
+  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "•";
+}
 
 export default function AddressDetailScreen() {
 
@@ -225,7 +231,16 @@ export default function AddressDetailScreen() {
                 onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
               >
                 <View style={styles.serviceRow}>
-                  <Zap size={16} color={theme.colors.cyan.text} />
+                  <ServiceLogoMark
+                    service={s}
+                    fallbackIcon={getServiceFallbackIcon(s.category)}
+                    size={34}
+                    logoSize={26}
+                    borderRadius={11}
+                    backgroundColor={theme.colors.primaryFaded}
+                    borderColor={theme.colors.border}
+                    fallbackFontSize={15}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.serviceName}>{s.providerName || s.provider?.name || t("services.newTitle")}</Text>
                     <Text style={styles.serviceCat}>{s.category}</Text>
