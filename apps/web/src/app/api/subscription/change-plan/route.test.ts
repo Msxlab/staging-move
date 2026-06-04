@@ -57,6 +57,7 @@ const FUTURE_UNIX = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
 const PLAN_RANK: Record<string, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
 const PAID_PLANS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
 const INTERVALS = ["MONTH", "YEAR"] as const;
+const FLEXIBLE_BILLING_API_VERSION = "2025-04-30.preview";
 
 const PLAN_CHANGE_MATRIX = PAID_PLANS.flatMap((currentPlan) =>
   INTERVALS.flatMap((currentInterval) =>
@@ -210,7 +211,10 @@ describe("change-plan route", () => {
           locateflow_pending_billing_interval: "YEAR",
         }),
       }),
-      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+      expect.objectContaining({
+        apiVersion: FLEXIBLE_BILLING_API_VERSION,
+        idempotencyKey: expect.stringMatching(/^locateflow:/),
+      }),
     );
     expect(mocks.subUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
@@ -258,7 +262,7 @@ describe("change-plan route", () => {
           expect.objectContaining({ end_date: FUTURE_UNIX }),
         ]),
       }),
-      expect.anything(),
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
     );
   });
 

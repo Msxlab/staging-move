@@ -54,6 +54,8 @@ const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
 };
 
+const FLEXIBLE_BILLING_API_VERSION = "2025-04-30.preview";
+
 function switchRequest(targetInterval: "MONTH" | "YEAR", body: Record<string, unknown> = {}) {
   return new NextRequest("https://locateflow.com/api/subscription/switch-cycle", {
     method: "POST",
@@ -196,9 +198,10 @@ describe("subscription switch-cycle route", () => {
       scheduled: true,
     });
     expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
-    expect(mocks.stripeSchedulesCreate).toHaveBeenCalledWith({
-      from_subscription: "sub_123",
-    });
+    expect(mocks.stripeSchedulesCreate).toHaveBeenCalledWith(
+      { from_subscription: "sub_123" },
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
     expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith(
       "sched_123",
       {
@@ -231,7 +234,10 @@ describe("subscription switch-cycle route", () => {
           },
         ],
       },
-      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+      expect.objectContaining({
+        apiVersion: FLEXIBLE_BILLING_API_VERSION,
+        idempotencyKey: expect.stringMatching(/^locateflow:/),
+      }),
     );
     const updateArgs = mocks.subscriptionUpdate.mock.calls[0][0];
     expect(updateArgs.data.billingInterval).toBeUndefined();
@@ -281,7 +287,7 @@ describe("subscription switch-cycle route", () => {
           expect.objectContaining({ end_date: futureUnix }),
         ]),
       }),
-      expect.anything(),
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
     );
   });
 
@@ -350,7 +356,10 @@ describe("subscription switch-cycle route", () => {
 
     expect(response.status).toBe(503);
     expect(body).toMatchObject({ code: "PENDING_INTERVAL_PERSIST_FAILED" });
-    expect(mocks.stripeSchedulesRelease).toHaveBeenCalledWith("sched_123");
+    expect(mocks.stripeSchedulesRelease).toHaveBeenCalledWith(
+      "sched_123",
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
   });
 
   it("falls through to immediate swap when the annual period has already ended", async () => {

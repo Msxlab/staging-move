@@ -30,6 +30,10 @@ import {
   getStripeSubscriptionCurrentPeriodEndUnix,
   getStripeSubscriptionCurrentPeriodStartUnix,
 } from "@/lib/stripe-subscription-period";
+import {
+  STRIPE_API_VERSION,
+  withFlexibleBillingApiVersion,
+} from "@/lib/stripe-api-version";
 
 // POST /api/subscription/change-plan
 // Body: {
@@ -68,7 +72,10 @@ async function releaseAttachedSchedule(
 ): Promise<void> {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
   if (!scheduleId) return;
-  await stripe.subscriptionSchedules.release(scheduleId);
+  await stripe.subscriptionSchedules.release(
+    scheduleId,
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 async function retrieveOrCreateSchedule(
@@ -77,8 +84,16 @@ async function retrieveOrCreateSchedule(
   existingScheduleId?: string | null,
 ): Promise<Stripe.SubscriptionSchedule> {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
-  if (scheduleId) return stripe.subscriptionSchedules.retrieve(scheduleId);
-  return stripe.subscriptionSchedules.create({ from_subscription: stripeSub.id });
+  if (scheduleId) {
+    return stripe.subscriptionSchedules.retrieve(
+      scheduleId,
+      withFlexibleBillingApiVersion(),
+    );
+  }
+  return stripe.subscriptionSchedules.create(
+    { from_subscription: stripeSub.id },
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 interface LocalSub {
@@ -244,7 +259,7 @@ export async function POST(request: NextRequest) {
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: STRIPE_API_VERSION });
 
     const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
     const primaryItem = subscription.stripePriceId
@@ -311,14 +326,14 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
-        {
+        withFlexibleBillingApiVersion({
           idempotencyKey: buildStripeIdempotencyKey([
             "subscription-change-plan-schedule",
             schedule.id,
             `${currentPlan}-${currentInterval}->${targetPlan}-${targetInterval}`,
             String(periodEndUnix),
           ]),
-        },
+        }),
       );
 
       // Track the scheduled change locally. The plan stays current until the
@@ -347,7 +362,10 @@ export async function POST(request: NextRequest) {
         if (!isMissingDbColumnError(error)) throw error;
         warnSchemaCompatibilityFallback("subscription:change-plan-schedule-write", error);
         try {
-          await stripe.subscriptionSchedules.release(schedule.id);
+          await stripe.subscriptionSchedules.release(
+            schedule.id,
+            withFlexibleBillingApiVersion(),
+          );
         } catch (rollbackError) {
           captureMessage(
             `[CHANGE_PLAN] Failed to release orphaned schedule ${schedule.id}: ${
