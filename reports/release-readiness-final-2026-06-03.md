@@ -101,6 +101,7 @@ No live card charge, production subscription mutation, Play production rollout, 
   - App Review also asked whether `Pro Annual` at `$199.99` is intentional; shared code currently defines Pro yearly as `$199/year`.
   - App Store Connect subscription pricing confirms `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` in the United States.
   - Mobile production IAP UI reads StoreKit localized prices, while public shared/web pricing copy still says `$199/year`.
+  - Product/operator confirmed on 2026-06-04 that the App Store `Pro Annual` `$199.99 USD` price is intentional.
 - Mobile account-management paths remain coherent after the Apple fix:
   - OAuth-only users can request a secure set-password link from `Settings -> Privacy`.
   - Password-login users can request a secure reset/change-password link from the same screen.
@@ -184,6 +185,11 @@ No live card charge, production subscription mutation, Play production rollout, 
   - Commit: `575e7cf`
   - Follow-up EAS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload the binary to App Store Connect. Expo dashboard shows it queued and waiting for the submission process to start. This was not App Review resubmission and not production rollout.
   - Rechecked through EAS CLI on 2026-06-03 with system CAs; status remains `FINISHED`.
+- App Store Connect resubmission was completed on 2026-06-04:
+  - App Review reply was sent with the Sign in with Apple/password fix, annual billed-amount hierarchy fix, and intentional Pro Annual price confirmation.
+  - The submitted version was changed from build `1.0.0 (12)` to build `1.0.0 (13)`.
+  - App Store version release was set to `Manually release this version`.
+  - Live App Store Connect status is `Waiting for Review`, submitted `Jun 4, 2026 at 9:46 AM`.
 
 ## Remaining Blockers
 
@@ -204,18 +210,17 @@ No live card charge, production subscription mutation, Play production rollout, 
   - The admin UI now reaches the QA user's detail page successfully.
   - Attempting a manual Family/Pro grant opens the expected step-up modal requiring the admin password plus MFA code or backup code.
   - Codex did not bypass or guess those factors, and direct DigitalOcean DB access is network/firewall blocked.
-- Apple re-review still needs one more honest pass:
+- Apple re-review outcome is now external:
   - The forced Sign in with Apple password gate and annual billed-amount hierarchy issues were fixed in code.
-  - A fresh iOS build `1.0.0 (13)` has been built and EAS submit has been scheduled to upload it to App Store Connect.
-  - App Review resubmission has not been performed.
-  - App Review explicitly asked whether `Pro Annual` priced at `$199.99` is intentional; App Store Connect confirms that store price, while shared/web copy currently says `$199/year`, so product/store pricing still needs human confirmation before replying.
-- Chrome-controlled console/UI verification is currently blocked:
-  - Chrome is running, the Codex Chrome Extension is installed/enabled, and the native host manifest is correct.
-  - The extension native pipe closes before responding, so Codex cannot currently claim the already-open Chrome tabs for App Store Connect, Play Console, Stripe dashboard, web subscription UI, or admin UI inspection.
-  - Pending downgrade backend/API state is verified, but pending downgrade banner/admin UI visibility still needs Chrome reconnection or manual inspection.
+  - Product/operator confirmed the App Store `Pro Annual` `$199.99 USD` price is intentional.
+  - App Review reply was sent, build `1.0.0 (13)` was attached, and the submission was resubmitted.
+  - Live status is `Waiting for Review`; final clearance depends on Apple accepting the resubmission.
+- Chrome-controlled console/UI verification recovered after PC restart for App Store Connect:
+  - The App Review reply, build change, manual-release setting, and resubmission were verified through Chrome.
+  - Pending downgrade backend/API state is verified, but pending downgrade banner/admin UI visibility still needs a separate Chrome UI pass.
 - Full paid Stripe production mutation was not run against live production payments to avoid production payment risk. The required E2E coverage was run against the dedicated QA/staging service with Stripe test-mode prices instead.
 - Store-console submission items remain manual/human-gated:
-  - App Review notes and demo credentials.
+  - Apple review outcome.
   - Apple Privacy form.
   - Google Data Safety form.
   - Closed-test/release submission.

@@ -3,16 +3,12 @@
 Use this file to paste consistent reviewer-facing text into App Store Connect and
 Play Console. Do not store real reviewer passwords or secrets in git.
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 ## Current public blockers before submission
 
 These are not code bugs, but they still need operator/store-console action:
 
-- Apple App Review asked whether `Pro Annual` at `$199.99` is intentional.
-  Confirm the intended price before replying or changing App Store Connect.
-- App Store Connect must select/process build `1.0.0 (13)` and resubmit after
-  the price answer is ready.
 - Play Console Data Safety and Apple App Privacy forms still need final console
   confirmation against `apps/mobile/MOBILE_DATA_INVENTORY.md`.
 - Android internal paid IAP still needs a real internal-test purchase/restore/
@@ -27,6 +23,24 @@ Resolved public URL blocker:
   `https://locateflow.com/contact` now render `AXTRA SOLUTIONS LLC` plus the
   Woodland Park mailing address. The support URL in App Store Connect was moved
   to public `https://locateflow.com/help`.
+
+Resolved App Review pricing question:
+
+- Operator confirmed on 2026-06-04 that App Store Connect `Pro Annual` at
+  `$199.99 USD` is intentional for `com.locateflow.mobile.pro.annual`.
+- Do not change the shared/web `$199/year` copy unless the business also wants
+  the web Stripe Pro annual price changed. iOS production/TestFlight purchase UI
+  reads StoreKit localized pricing, so the App Store billed amount is shown from
+  Apple's product catalog.
+
+Resolved App Review resubmission step:
+
+- On 2026-06-04, the App Review reply was sent in App Store Connect.
+- The rejected build `1.0.0 (12)` was removed from the submitted version, build
+  `1.0.0 (13)` was attached, and the submission was resubmitted.
+- App Store Connect now shows `Waiting for Review` for build `1.0.0 (13)`.
+- App Store version release is set to `Manually release this version`, so App
+  Review approval will not automatically release the app to the App Store.
 
 ## Public URLs to use in store consoles
 
@@ -64,6 +78,34 @@ Notes:
 - Account deletion is available in-app and at https://locateflow.com/account/delete
 - Privacy Policy: https://locateflow.com/privacy
 - Terms: https://locateflow.com/terms
+```
+
+## App Review Response draft
+
+Paste this into the App Review reply for build `1.0.0 (13)`:
+
+```text
+Hello App Review Team,
+
+Thank you for the review notes. We addressed the reported issues in build 1.0.0 (13).
+
+1. Sign in with Apple / password setup
+After Sign in with Apple, the app no longer requires the user to create a password before continuing. Users now continue into onboarding/the app normally. Password setup remains optional later from Settings > Privacy & Security for users who want email/password login or password management. Account deletion remains available in-app for OAuth-only users without requiring password creation.
+
+2. Subscription billed amount
+We updated the subscription screen so the annual billed amount is prominent in the primary action and disclosure text. Trial or savings text is now secondary to the actual annual billed price.
+
+3. Pro Annual price
+Yes, the Pro Annual price of $199.99 USD is intentional for the App Store product com.locateflow.mobile.pro.annual.
+
+The subscription path for review is:
+Sign in -> More -> Subscription
+
+Privacy Policy: https://locateflow.com/privacy
+Terms: https://locateflow.com/terms
+Support: https://locateflow.com/help
+
+Thank you.
 ```
 
 ## Play Console App Access draft

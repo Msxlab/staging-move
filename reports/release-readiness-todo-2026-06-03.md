@@ -329,9 +329,9 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - Invalid RTDN tests fail closed: missing bearer returns HTTP 401 `Missing OIDC token`; fake bearer returns HTTP 401 `Invalid OIDC token`.
   - Valid RTDN-format payload published through Google Cloud Pub/Sub delivered to the live webhook with OIDC; DigitalOcean logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
   - Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page; Codex did not accept legal terms on the user's behalf.
-- [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
+- [x] Verify App Review notes include IAP navigation path and demo account.
   - Added `docs/deploy/mobile-store-submission-copy.md` with reviewer-note draft and the current subscription path `More -> Subscription`.
-  - Console submission/re-auth was not performed, and the reviewer password is intentionally not committed.
+  - Live App Store Connect App Review Information includes the subscription path and demo account access details; reviewer password remains intentionally not recorded in this report.
 - [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
   - Source inventory exists and `docs/deploy/mobile-store-submission-copy.md` now summarizes the operator-facing answers.
   - Final console form submission/confirmation still requires store-console review.
@@ -351,14 +351,19 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
   - EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished for app version `1.0.0`, build number `13`, commit `575e7cf`.
   - EAS iOS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload build `13` to App Store Connect.
   - EAS build list rechecked on 2026-06-03 with `NODE_OPTIONS=--use-system-ca`: build `13` is still `FINISHED`.
-  - Chrome-controlled App Store Connect verification is blocked by the Codex Chrome Extension native pipe issue; App Review selection/resubmission still needs App Store Connect access.
-  - Final App Review confirmation still requires selecting/processing the new build and resubmitting to App Review after the product-price answer is confirmed.
-- [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
+  - Chrome-controlled App Store Connect access recovered after PC restart on 2026-06-04.
+  - App Review reply was sent, confirming the Sign in with Apple/password fix, annual billed-amount hierarchy fix, and intentional Pro Annual price.
+  - App Store version release was changed to `Manually release this version`, so approval will not automatically release the app.
+  - Rejected build `1.0.0 (12)` was removed from the submitted version, build `1.0.0 (13)` was attached, and the submission was resubmitted.
+  - Live App Store Connect now shows build `1.0.0 (13)` as `Waiting for Review`.
+  - Final clearance still depends on Apple completing review and accepting the resubmission.
+- [x] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
   - Shared code currently advertises Pro yearly as `$199/year`.
   - Apple explicitly asked whether `$199.99` in App Store Connect is intended.
   - App Store Connect pricing was verified read-only: `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` for the United States.
   - Mobile production purchase UI reads StoreKit localized prices, so iOS should show the App Store billed amount; public shared/web copy still uses `$199/year`.
-  - Requires product/operator confirmation and, if needed, an App Store Connect price change or aligned code/pricing update.
+  - Product/operator confirmed on 2026-06-04 that `$199.99 USD` is intentional for the App Store Pro Annual product.
+  - No App Store Connect price change was made. Do not change shared/web `$199/year` copy unless the business also wants the web Stripe Pro annual price changed.
 
 ## 10. Execution Log
 
@@ -465,3 +470,8 @@ Code/test verification and live QA/staging Stripe test-mode verification complet
 - 2026-06-03: `eas metadata:lint` ran successfully but reported no `apps/mobile/store.config.json`, so App Store/Play metadata is currently console-managed rather than EAS metadata-as-code managed.
 - 2026-06-03: Created `reports/payment-matrix-final-2026-06-03.md` and `reports/stripe-staging-qa-final-2026-06-03.md`; updated UI/mobile IAP/store-submission reports so they match the completed Stripe matrix and current store blockers.
 - 2026-06-03: Final validation rerun after report/checklist updates passed: `git diff --check`, `pnpm verify:typecheck`, `pnpm verify:tests` (web 195 files / 1456 tests, admin 89 files / 486 tests, mobile 14 files / 37 tests, connectors 13 files / 87 tests), `pnpm lint`, `pnpm build`, `pnpm verify:ci`, and `pnpm dlx expo-doctor@latest` (18/18). Known local warning remains: repo expects Node 22.x, machine is Node v24.12.0.
+- 2026-06-04: Chrome automation recovered after PC restart; App Store Connect session was accessible with the existing authenticated browser profile.
+- 2026-06-04: App Review reply was sent in App Store Connect for submission `2f96fa58-276f-4e5c-83b4-8d253b84c1aa`, confirming the Sign in with Apple/password fix, annual billed-amount hierarchy fix, and intentional `Pro Annual` `$199.99 USD` price.
+- 2026-06-04: App Store version release was changed from automatic to `Manually release this version`, so an App Review approval will not automatically release the app to the App Store.
+- 2026-06-04: Old rejected build `1.0.0 (12)` was removed from the submitted iOS version, build `1.0.0 (13)` was selected, and App Store Connect updated the item to `Ready for Review`.
+- 2026-06-04: App Store Connect `Resubmit to App Review` was completed; live status now shows iOS app version `1.0.0 (13)` as `Waiting for Review` with submission timestamp `Jun 4, 2026 at 9:46 AM`.
