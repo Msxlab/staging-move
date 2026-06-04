@@ -358,6 +358,48 @@ describe("Stripe webhook idempotency and livemode", () => {
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
   });
 
+  it("does not grant a grace-period entitlement for an initial failed checkout invoice", async () => {
+    const event = invoiceEvent("invoice.payment_failed");
+    (event.data.object as any).billing_reason = "subscription_create";
+    mocks.constructEvent.mockReturnValue(event);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith({
+      where: {
+        stripeCustomerId: "cus_1",
+        stripeSubscriptionId: "sub_active_1",
+        provider: { not: "ADMIN" },
+        OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+      },
+      data: expect.objectContaining({
+        status: "UNPAID",
+        gracePeriodEndsAt: null,
+      }),
+    });
+  });
+
+  it("keeps renewal payment failures in past-due grace", async () => {
+    mocks.constructEvent.mockReturnValue(invoiceEvent("invoice.payment_failed"));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith({
+      where: {
+        stripeCustomerId: "cus_1",
+        stripeSubscriptionId: "sub_active_1",
+        provider: { not: "ADMIN" },
+        OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+      },
+      data: expect.objectContaining({
+        status: "PAST_DUE",
+        gracePeriodEndsAt: expect.any(Date),
+      }),
+    });
+  });
+
   it("updates local state to TRIALING for completed subscription checkout", async () => {
     mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
     mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());

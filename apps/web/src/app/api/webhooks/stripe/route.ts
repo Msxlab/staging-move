@@ -947,15 +947,16 @@ export async function POST(request: NextRequest) {
         const stripePrice = invoicePrice(invoice);
         const stripePriceId = stripePrice?.id || null;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
-        const gracePeriodEndsAt = new Date();
-        gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
+        const isInitialSubscriptionFailure = invoice.billing_reason === "subscription_create";
+        const gracePeriodEndsAt = isInitialSubscriptionFailure ? null : new Date();
+        if (gracePeriodEndsAt) gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
 
         if (!stripeCustomerId) {
           break;
         }
 
         const updateData: any = {
-          status: "PAST_DUE",
+          status: isInitialSubscriptionFailure ? "UNPAID" : "PAST_DUE",
           provider: "STRIPE",
           platform: "web",
           stripeCustomerId,
