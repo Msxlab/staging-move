@@ -345,7 +345,14 @@ async function syncLocalSubscriptionFromStripe(input: {
   if (trialEnd) {
     updateData.firstChargeAt = trialEnd;
   }
-  if (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval) {
+  const stripeSubscriptionChanged =
+    Boolean(local.stripeSubscriptionId) &&
+    Boolean(input.stripeSubscriptionId) &&
+    local.stripeSubscriptionId !== input.stripeSubscriptionId;
+  if (
+    stripeSubscriptionChanged ||
+    (local.pendingBillingInterval && derivedBillingInterval === local.pendingBillingInterval)
+  ) {
     updateData.pendingBillingInterval = null;
     updateData.pendingPlan = null;
     updateData.pendingBillingIntervalEffectiveAt = null;

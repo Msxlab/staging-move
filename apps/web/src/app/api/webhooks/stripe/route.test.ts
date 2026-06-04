@@ -284,6 +284,36 @@ describe("Stripe webhook idempotency and livemode", () => {
     expect(processedMock.create).toHaveBeenCalledTimes(1);
   });
 
+  it("clears stale pending schedule fields when Stripe sync switches to a new subscription", async () => {
+    mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(
+      localSubscription({
+        stripeSubscriptionId: "sub_old",
+        stripeSubscriptionScheduleId: "sched_old",
+        pendingPlan: "INDIVIDUAL",
+        pendingBillingInterval: "MONTH",
+        pendingBillingIntervalEffectiveAt: new Date(Date.now() + 30 * 86_400_000),
+      }),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: expect.any(Date) } }],
+      },
+      data: expect.objectContaining({
+        stripeSubscriptionId: "sub_1",
+        pendingPlan: null,
+        pendingBillingInterval: null,
+        pendingBillingIntervalEffectiveAt: null,
+        stripeSubscriptionScheduleId: null,
+      }),
+    });
+  });
+
   it("marks pending checkout trial redemption as redeemed after completed Checkout", async () => {
     mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
     mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
