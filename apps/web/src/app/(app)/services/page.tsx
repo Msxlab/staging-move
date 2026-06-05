@@ -13,7 +13,7 @@ export default async function ServicesPage() {
       where: activeTrackedServiceWhere(userId),
       include: {
         address: { select: { nickname: true, city: true, state: true } },
-        provider: { select: { id: true, name: true, logoUrl: true } },
+        provider: { select: { id: true, name: true, logoUrl: true, affiliateActive: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -37,6 +37,7 @@ export default async function ServicesPage() {
       id: s.provider.id,
       name: s.provider.name,
       logoUrl: s.provider.logoUrl,
+      affiliateActive: s.provider.affiliateActive === true,
     } : null,
     providerLogoUrl: s.provider?.logoUrl ?? null,
     logoUrl: s.provider?.logoUrl ?? null,

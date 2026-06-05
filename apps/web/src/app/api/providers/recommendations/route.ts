@@ -136,6 +136,7 @@ export async function GET(request: NextRequest) {
       popularityScore: p.popularityScore || 0,
       displayOrder: p.displayOrder || 0,
       userCount: p.userCount || 0,
+      affiliateActive: Boolean((p as { affiliateActive?: boolean }).affiliateActive),
       coverageModel: p.coverageModel || "state",
       coverageMatchLevel: getProviderMatchLevelFromDb(p, {
         state: fallbackState,

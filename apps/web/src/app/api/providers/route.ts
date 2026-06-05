@@ -201,6 +201,7 @@ export async function GET(request: NextRequest) {
         tags,
         popularityScore: p.popularityScore,
         displayOrder: p.displayOrder,
+        affiliateActive: Boolean((p as { affiliateActive?: boolean }).affiliateActive),
         coverageModel,
         coverageMatchLevel,
         coverageNote,

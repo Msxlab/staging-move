@@ -62,6 +62,8 @@ export interface Provider {
   popularityScore: number;
   displayOrder?: number;
   userCount?: number;
+  /** Whether this provider has an active affiliate offer (boolean only — the URL never leaves the click endpoint). */
+  affiliateActive?: boolean;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
   coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address";
   coverageNote?: string | null;
