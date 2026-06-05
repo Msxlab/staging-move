@@ -32,6 +32,11 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { getCategoryLabel, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+
+function getServiceCategoryLabel(category: string): string {
+  return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
+}
 
 export default function ServiceDetailScreen() {
 
@@ -191,7 +196,9 @@ export default function ServiceDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroName}>{service.providerName}</Text>
-              <Text style={styles.heroCat}>{t(`categories.${service.category}`, { defaultValue: service.category })}</Text>
+              <Text style={styles.heroCat}>
+                {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
+              </Text>
             </View>
           </View>
           <View style={styles.heroBadges}>

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         services: {
           where: activeTrackedServiceWhere(userId),
           include: {
-            provider: { select: { id: true, name: true, logoUrl: true } },
+            provider: { select: { id: true, name: true, logoUrl: true, website: true } },
             customProvider: { select: { id: true, name: true, category: true, website: true, phone: true, email: true, providerType: true, trustStatus: true } },
           },
           orderBy: { createdAt: "desc" },

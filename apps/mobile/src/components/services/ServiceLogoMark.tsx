@@ -3,7 +3,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   resolveMobileServiceLogoAltName,
-  resolveMobileServiceLogoUrl,
+  resolveMobileServiceLogoUrls,
   type MobileServiceLogoSource,
 } from "@/lib/service-logo";
 
@@ -29,9 +29,10 @@ export function ServiceLogoMark({
   fallbackFontSize = 16,
 }: ServiceLogoMarkProps) {
   const { t } = useTranslation();
-  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const logoUrl = resolveMobileServiceLogoUrl(service);
-  const showLogo = Boolean(logoUrl && logoUrl !== failedLogoUrl);
+  const [failedLogoUrls, setFailedLogoUrls] = useState<Set<string>>(() => new Set());
+  const logoUrls = resolveMobileServiceLogoUrls(service);
+  const logoUrl = logoUrls.find((url) => !failedLogoUrls.has(url)) || null;
+  const showLogo = Boolean(logoUrl);
   const providerName = resolveMobileServiceLogoAltName(service);
 
   return (
@@ -53,7 +54,9 @@ export function ServiceLogoMark({
           style={{ width: logoSize, height: logoSize, borderRadius: Math.max(0, borderRadius - 4) }}
           resizeMode="contain"
           accessibilityLabel={t("services.providerLogoA11y", { provider: providerName })}
-          onError={() => setFailedLogoUrl(logoUrl)}
+          onError={() => {
+            if (logoUrl) setFailedLogoUrls((current) => new Set(current).add(logoUrl));
+          }}
         />
       ) : (
         <Text style={[styles.fallbackIcon, { fontSize: fallbackFontSize }]}>{fallbackIcon}</Text>

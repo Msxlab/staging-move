@@ -32,7 +32,12 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
-import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
+import {
+  getCategoryIcon,
+  getCategoryLabel,
+  getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryLabel,
+} from "@/lib/recommendation-engine";
 
 const typeIcons: Record<string, any> = {
   HOME: Home, WORK: Briefcase, VACATION: Palmtree, STORAGE: Package, TEMPORARY: Clock,
@@ -40,6 +45,10 @@ const typeIcons: Record<string, any> = {
 
 function getServiceFallbackIcon(category: string): string {
   return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "•";
+}
+
+function getServiceCategoryLabel(category: string): string {
+  return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
 }
 
 export default function AddressDetailScreen() {
@@ -243,7 +252,9 @@ export default function AddressDetailScreen() {
                   />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.serviceName}>{s.providerName || s.provider?.name || t("services.newTitle")}</Text>
-                    <Text style={styles.serviceCat}>{s.category}</Text>
+                    <Text style={styles.serviceCat}>
+                      {t(`categories.${s.category}`, { defaultValue: getServiceCategoryLabel(s.category) })}
+                    </Text>
                   </View>
                   {s.monthlyCost > 0 && (
                     <Text style={styles.serviceCost}>${s.monthlyCost}/mo</Text>

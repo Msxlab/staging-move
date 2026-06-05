@@ -95,6 +95,7 @@ describe("address detail route", () => {
             id: "provider-1",
             name: "USPS",
             logoUrl: "https://assets.locateflow.com/providers/usps.png",
+            website: "https://www.usps.com",
           },
         },
       ],
@@ -118,7 +119,7 @@ describe("address detail route", () => {
             deactivatedAt: null,
           }),
           include: expect.objectContaining({
-            provider: { select: { id: true, name: true, logoUrl: true } },
+            provider: { select: { id: true, name: true, logoUrl: true, website: true } },
           }),
         }),
       }),
@@ -130,6 +131,7 @@ describe("address detail route", () => {
       provider: {
         name: "USPS",
         logoUrl: "https://assets.locateflow.com/providers/usps.png",
+        website: "https://www.usps.com",
       },
     });
   });
