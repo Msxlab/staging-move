@@ -57,6 +57,8 @@
     "reports": "Reportes",
     "featureFlags": "Banderas de funciones",
     "connectors": "Conectores",
+    "connectorMetrics": "Métricas de Conectores",
+    "connectorFallbacks": "Alternativas de Conectores",
     "security": "Seguridad",
     "runtimeConfig": "Configuración de ejecución",
     "settings": "Configuración",

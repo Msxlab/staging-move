@@ -57,6 +57,8 @@
     "reports": "Reports",
     "featureFlags": "Feature Flags",
     "connectors": "Connectors",
+    "connectorMetrics": "Connector Metrics",
+    "connectorFallbacks": "Connector Fallbacks",
     "security": "Security",
     "runtimeConfig": "Runtime Config",
     "settings": "Settings",
