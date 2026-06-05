@@ -752,6 +752,41 @@ export async function POST(request: NextRequest) {
         return v;
       };
 
+      // The tax report needs the per-property roll-ups + grand total an
+      // accountant wants, which the single-array flattener can't express. Emit a
+      // multi-section CSV: property summary, grand total, then detailed line items.
+      if (type === "tax") {
+        const esc = (value: unknown): string => {
+          const s = safeCsvValue(String(value ?? ""));
+          return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const row = (values: unknown[]): string => values.map(esc).join(",") + "\n";
+        const dateOnly = (d: unknown): string => (d ? new Date(d as string).toISOString().split("T")[0] : "");
+        const byProperty = (data.taxByProperty as any[]) || [];
+        const lineItems = (data.tax as any[]) || [];
+        const totals = (data.taxTotals as any) || {};
+
+        let csv = "PROPERTY SUMMARY\n";
+        csv += row(["property", "propertyType", "ownership", "isPrimary", "occupancyStart", "occupancyEnd", "serviceCount", "totalMonthlyEquivalent", "totalAnnualizedCost"]);
+        for (const p of byProperty) {
+          csv += row([p.property, p.propertyType, p.ownership, p.isPrimary, dateOnly(p.occupancyStart), dateOnly(p.occupancyEnd), p.serviceCount, p.totalMonthlyEquivalent, p.totalAnnualizedCost]);
+        }
+        csv += row(["GRAND TOTAL", "", "", "", "", "", totals.serviceCount ?? "", totals.totalMonthlyEquivalent ?? "", totals.totalAnnualizedCost ?? ""]);
+
+        csv += "\nLINE ITEMS\n";
+        csv += row(["property", "propertyType", "ownership", "serviceProvider", "serviceCategory", "billingCycle", "oneTime", "active", "cycleAmount", "monthlyEquivalent", "annualizedCost"]);
+        for (const it of lineItems) {
+          csv += row([it.property, it.propertyType, it.ownership, it.serviceProvider, it.serviceCategory, it.billingCycle, it.oneTime, it.active, it.cycleAmount, it.monthlyEquivalent, it.annualizedCost]);
+        }
+
+        return new NextResponse(csv, {
+          headers: {
+            "Content-Type": "text/csv",
+            "Content-Disposition": `attachment; filename="locateflow-tax-export.csv"`,
+          },
+        });
+      }
+
       if (listItems.length > 0) {
         const flatItems = listItems.map((item: any) => {
           const flat: Record<string, string> = {};

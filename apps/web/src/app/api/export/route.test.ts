@@ -561,6 +561,10 @@ describe("export route", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toContain("text/csv");
+    // Multi-section CSV: property summary + grand total + line items.
+    expect(csv).toContain("PROPERTY SUMMARY");
+    expect(csv).toContain("GRAND TOTAL");
+    expect(csv).toContain("LINE ITEMS");
     expect(csv).toContain("annualizedCost");
     expect(csv).toContain("1200");
     expect(csv).toContain("PSEG");

@@ -129,12 +129,12 @@ export default async function AffiliatePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-4">Provider</th>
-                  <th className="py-2 pr-4">Category</th>
-                  <th className="py-2 pr-4">Network</th>
-                  <th className="py-2 pr-4 text-right">Clicks (30d)</th>
-                  <th className="py-2 pr-4 text-right">Clicks (all)</th>
-                  <th className="py-2 pr-4">Manage</th>
+                  <th scope="col" className="py-2 pr-4">Provider</th>
+                  <th scope="col" className="py-2 pr-4">Category</th>
+                  <th scope="col" className="py-2 pr-4">Network</th>
+                  <th scope="col" className="py-2 pr-4 text-right">Clicks (30d)</th>
+                  <th scope="col" className="py-2 pr-4 text-right">Clicks (all)</th>
+                  <th scope="col" className="py-2 pr-4">Manage</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,10 +175,10 @@ export default async function AffiliatePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-4">Provider</th>
-                  <th className="py-2 pr-4">Source</th>
-                  <th className="py-2 pr-4">Network</th>
-                  <th className="py-2 pr-4">Date</th>
+                  <th scope="col" className="py-2 pr-4">Provider</th>
+                  <th scope="col" className="py-2 pr-4">Source</th>
+                  <th scope="col" className="py-2 pr-4">Network</th>
+                  <th scope="col" className="py-2 pr-4">Date</th>
                 </tr>
               </thead>
               <tbody>
