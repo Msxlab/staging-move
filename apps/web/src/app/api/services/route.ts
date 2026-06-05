@@ -17,6 +17,7 @@ import {
 } from "@/lib/service-duplicate-guard";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 const SERVICE_CREATE_RATE_LIMIT = { limit: 120, windowSeconds: 300 } as const;
@@ -83,7 +84,9 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Decrypt sensitive fields for response
-    const decryptedServices = services.map((s: any) => decryptServiceSensitiveFields(s));
+    const decryptedServices = await enrichServicesWithProviderCatalog(
+      services.map((s: any) => decryptServiceSensitiveFields(s)),
+    );
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {

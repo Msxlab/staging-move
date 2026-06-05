@@ -8,7 +8,7 @@ vi.mock("@/lib/db", () => ({
       create: vi.fn(),
     },
     address: { findUnique: vi.fn() },
-    serviceProvider: { findUnique: vi.fn(), update: vi.fn() },
+    serviceProvider: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     userCustomProvider: { findFirst: vi.fn() },
     subscription: { findUnique: vi.fn() },
   },
@@ -91,7 +91,7 @@ const mockService = prisma.service as unknown as {
   create: Mock;
 };
 const mockAddress = prisma.address as unknown as { findUnique: Mock };
-const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: Mock; update: Mock };
+const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: Mock; findMany: Mock; update: Mock };
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
 const mockSubscription = prisma.subscription as unknown as { findUnique: Mock };
 const mockCanCreateService = canCreateService as unknown as Mock;
@@ -119,6 +119,7 @@ describe("services route", () => {
       id: "provider-1",
       deletedAt: null,
     });
+    mockServiceProvider.findMany.mockResolvedValue([]);
     mockCustomProvider.findFirst.mockResolvedValue(null);
     mockCanCreateService.mockResolvedValue({ allowed: true });
     mockSubscription.findUnique.mockResolvedValue(null);

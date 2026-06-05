@@ -8,7 +8,7 @@ vi.mock("@/lib/db", () => ({
       update: vi.fn(),
     },
     address: { findUnique: vi.fn() },
-    serviceProvider: { findUnique: vi.fn(), update: vi.fn() },
+    serviceProvider: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     userCustomProvider: { findFirst: vi.fn() },
   },
 }));
@@ -71,6 +71,7 @@ const mockService = prisma.service as unknown as {
 };
 const mockServiceProvider = prisma.serviceProvider as unknown as {
   findUnique: Mock;
+  findMany: Mock;
   update: Mock;
 };
 
@@ -102,6 +103,7 @@ describe("service detail route", () => {
       notes: "",
     });
     mockServiceProvider.findUnique.mockResolvedValue({ id: "provider-1", deletedAt: null });
+    mockServiceProvider.findMany.mockResolvedValue([]);
   });
 
   it("allows editable private fields to be cleared with empty strings", async () => {

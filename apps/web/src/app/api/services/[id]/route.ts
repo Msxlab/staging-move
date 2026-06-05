@@ -18,6 +18,7 @@ import {
   duplicateServiceError,
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
+import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 
@@ -106,7 +107,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Decrypt sensitive fields
-    const decrypted = decryptServiceSensitiveFields(service as any);
+    const [decrypted] = await enrichServicesWithProviderCatalog([
+      decryptServiceSensitiveFields(service as any),
+    ]);
 
     return NextResponse.json({ service: decrypted });
   } catch (error) {

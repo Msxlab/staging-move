@@ -8,6 +8,7 @@ import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
+import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 
@@ -35,10 +36,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
+    const services = await enrichServicesWithProviderCatalog(
+      address.services.map((service: any) => decryptServiceSensitiveFields(service)),
+    );
+
     return NextResponse.json({
       address: {
         ...address,
-        services: address.services.map((service: any) => decryptServiceSensitiveFields(service)),
+        services,
         formattedAddress: address.formattedAddress ? decrypt(address.formattedAddress) : address.formattedAddress,
       },
     });

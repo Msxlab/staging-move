@@ -11,6 +11,9 @@ vi.mock("@/lib/db", () => ({
     service: {
       updateMany: vi.fn(),
     },
+    serviceProvider: {
+      findMany: vi.fn(),
+    },
     budget: {
       updateMany: vi.fn(),
     },
@@ -68,6 +71,7 @@ const mockAddress = prisma.address as unknown as {
   update: Mock;
 };
 const mockService = (prisma as unknown as { service: { updateMany: Mock } }).service;
+const mockServiceProvider = (prisma as unknown as { serviceProvider: { findMany: Mock } }).serviceProvider;
 const mockBudget = (prisma as unknown as { budget: { updateMany: Mock } }).budget;
 const mockTransaction = (prisma as unknown as { $transaction: Mock }).$transaction;
 
@@ -101,6 +105,7 @@ describe("address detail route", () => {
       ],
       budgets: [],
     });
+    mockServiceProvider.findMany.mockResolvedValue([]);
   });
 
   it("queries only active tracked services and includes provider logo data", async () => {
@@ -132,6 +137,61 @@ describe("address detail route", () => {
         name: "USPS",
         logoUrl: "https://assets.locateflow.com/providers/usps.png",
         website: "https://www.usps.com",
+      },
+    });
+  });
+
+  it("enriches service provider logos from the catalog when the service relation is missing", async () => {
+    mockAddress.findUnique.mockResolvedValueOnce({
+      id: "address-1",
+      userId: "user-1",
+      deletedAt: null,
+      formattedAddress: "enc:123 Main St",
+      services: [
+        {
+          id: "service-1",
+          userId: "user-1",
+          providerName: "USPS",
+          category: "GOVERNMENT_POSTAL",
+          phone: "enc:555-0100",
+          provider: null,
+        },
+      ],
+      budgets: [],
+    });
+    mockServiceProvider.findMany.mockResolvedValueOnce([
+      {
+        id: "provider-usps",
+        name: "USPS",
+        slug: "usps",
+        category: "GOVERNMENT_POSTAL",
+        website: "https://www.usps.com",
+        phone: "1-800-275-8777",
+        logoUrl: "https://assets.locateflow.com/providers/usps.png",
+        scope: "FEDERAL",
+      },
+    ]);
+
+    const response = await GET(new Request("http://localhost/api/addresses/address-1") as any, addressParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mockServiceProvider.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { name: { in: ["USPS"] } },
+            { slug: { in: ["usps"] } },
+          ]),
+        }),
+      }),
+    );
+    expect(body.address.services[0]).toMatchObject({
+      providerLogoUrl: "https://assets.locateflow.com/providers/usps.png",
+      logoUrl: "https://assets.locateflow.com/providers/usps.png",
+      provider: {
+        name: "USPS",
+        logoUrl: "https://assets.locateflow.com/providers/usps.png",
       },
     });
   });
