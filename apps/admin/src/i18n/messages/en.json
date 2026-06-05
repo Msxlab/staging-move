@@ -59,6 +59,7 @@
     "connectors": "Connectors",
     "connectorMetrics": "Connector Metrics",
     "connectorFallbacks": "Connector Fallbacks",
+    "affiliate": "Affiliate",
     "security": "Security",
     "runtimeConfig": "Runtime Config",
     "settings": "Settings",

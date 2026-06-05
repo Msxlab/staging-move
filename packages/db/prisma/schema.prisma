@@ -69,6 +69,7 @@ model User {
   partnerConsents         PartnerConsent[]
   connectorDispatches     ConnectorDispatch[]
   addressChangeEvents     AddressChangeEvent[]
+  affiliateClicks         AffiliateClick[]
   ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
@@ -693,6 +694,13 @@ model ServiceProvider {
   phone   String? @db.VarChar(20)
   logoUrl String? @db.VarChar(500)
 
+  // Affiliate revenue (Layer 1). Inert until affiliateActive=true AND a valid
+  // https affiliateUrl is set. affiliateNetwork is a free-form tag (e.g.
+  // "impact", "cj", "direct") for reporting/payout reconciliation.
+  affiliateUrl     String?  @db.VarChar(500)
+  affiliateNetwork String?  @db.VarChar(40)
+  affiliateActive  Boolean  @default(false)
+
   scope    String @default("FEDERAL") @db.VarChar(20)
   states   String @default("[]") @db.VarChar(2000)
   zipCodes String @default("[]") @db.VarChar(2000)
@@ -713,6 +721,7 @@ model ServiceProvider {
   destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
   governanceIssues      ProviderGovernanceIssue[]
   logoCandidates        ProviderLogoCandidate[]
+  affiliateClicks       AffiliateClick[]
 
   deletedAt DateTime?
 
@@ -727,6 +736,26 @@ model ServiceProvider {
   @@index([scope])
   @@index([slug])
   @@index([deletedAt])
+}
+
+// Affiliate click attribution (Layer 1 revenue). One row per outbound click to a
+// provider's affiliate link, recorded server-side by the click endpoint so the
+// app — not the browser — owns the redirect target. Conversions (payouts) are a
+// later additive model that references these rows.
+model AffiliateClick {
+  id         String          @id @default(cuid()) @db.VarChar(30)
+  userId     String          @db.VarChar(30)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String          @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  addressId  String?         @db.VarChar(30) // loose ref; context only, never restricts address deletion
+  source     String          @db.VarChar(40) // where the click originated: provider_detail, services, recommendation
+  network    String?         @db.VarChar(40) // snapshot of affiliateNetwork at click time
+  createdAt  DateTime        @default(now())
+
+  @@index([providerId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model ProviderLogoCandidate {

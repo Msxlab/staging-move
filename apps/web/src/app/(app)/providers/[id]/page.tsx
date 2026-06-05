@@ -25,6 +25,7 @@ type ProviderRow = {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
   coverages?: Array<{
     state: string | null;
     zipPrefix: string | null;
@@ -106,6 +107,7 @@ function shape(p: ProviderRow, address: CoverageAddress): ProviderDetail {
     popularityScore: p.popularityScore || 0,
     displayOrder: p.displayOrder || 0,
     userCount: p.userCount || 0,
+    affiliateActive: p.affiliateActive === true,
     coverageModel,
     coverageMatchLevel,
     coverageNote,

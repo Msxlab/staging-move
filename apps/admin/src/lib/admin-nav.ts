@@ -73,6 +73,7 @@ export const navGroups: NavGroup[] = [
     labelKey: "content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },
     ],

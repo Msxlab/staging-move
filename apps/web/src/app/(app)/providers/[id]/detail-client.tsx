@@ -12,6 +12,7 @@ import {
   MapPin,
   Flag,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import {
   getMergedDisplayCategoryIcon,
@@ -41,6 +42,7 @@ export interface ProviderDetail {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string;
   coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string;
   coverageNote?: string | null;
@@ -180,6 +182,32 @@ export function ProviderDetailClient({
           >
             Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>
+          {provider.affiliateActive && (
+            <button
+              type="button"
+              onClick={async () => {
+                // The redirect target is resolved server-side (the click
+                // endpoint returns the stored https URL), so the client never
+                // holds or trusts the affiliate link directly.
+                try {
+                  const res = await fetch("/api/affiliate/click", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ providerId: provider.id, source: "provider_detail" }),
+                  });
+                  const data = await res.json().catch(() => null);
+                  if (res.ok && data?.url) {
+                    window.open(data.url, "_blank", "noopener,noreferrer");
+                  }
+                } catch {
+                  // Non-critical CTA — never block the page on a tracking failure.
+                }
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary/40 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15 transition"
+            >
+              <Sparkles className="h-4 w-4" /> Get started
+            </button>
+          )}
           {provider.website && (
             <a
               href={provider.website}
