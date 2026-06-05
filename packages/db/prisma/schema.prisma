@@ -1733,6 +1733,7 @@ model PartnerConsent {
   tokenEncrypted        String?   @db.Text // ACCESS token, encrypted with FIELD_ENCRYPTION_KEY
   refreshTokenEncrypted String?   @db.Text // refresh token, encrypted; mints new access tokens
   tokenExpiresAt        DateTime? // expiry of the ACCESS token above
+  tokenVersion          Int       @default(0) // optimistic-lock counter; bumped on each refresh write so concurrent refreshes can't clobber a rotated token
 
   consentSnapshotJson String @db.Text // immutable terms + scope shown at grant time
 

@@ -184,6 +184,16 @@ export async function refreshConsentAccessToken(
 ): Promise<string | null> {
   const config = await getConnectorOAuthConfig(connectorKey, "");
   if (!config) return null;
+
+  // Snapshot the version we are refreshing against — the write below is an
+  // optimistic compare-and-swap on it, so two workers refreshing the same consent
+  // concurrently can't clobber each other's (potentially rotated) token.
+  const current = await prisma.partnerConsent.findUnique({
+    where: { id: consentId },
+    select: { status: true, tokenVersion: true },
+  });
+  if (!current || current.status !== "GRANTED") return null;
+
   let refreshToken: string;
   try {
     refreshToken = decrypt(refreshTokenEncrypted);
@@ -191,17 +201,48 @@ export async function refreshConsentAccessToken(
     return null;
   }
   const tokens = await refreshConnectorToken(config, refreshToken);
-  if (!tokens?.accessToken) return null;
+  if (!tokens?.accessToken) {
+    // Our refresh failed (commonly: a concurrent worker already rotated the
+    // refresh token). Hand back whatever fresh token that worker stored so this
+    // dispatch still proceeds instead of degrading to NEEDS_USER.
+    return reloadGrantedAccessToken(consentId, current.tokenVersion);
+  }
+
   const updated = await prisma.partnerConsent.updateMany({
-    where: { id: consentId, status: "GRANTED" },
+    // CAS: only the writer holding the expected version wins; a concurrent refresh
+    // bumps the version, so a stale write matches 0 rows and never clobbers.
+    where: { id: consentId, status: "GRANTED", tokenVersion: current.tokenVersion },
     data: {
       tokenEncrypted: encrypt(tokens.accessToken),
       refreshTokenEncrypted: tokens.refreshToken ? encrypt(tokens.refreshToken) : undefined,
       tokenExpiresAt: tokenExpiryFrom(tokens.expiresInSeconds, Date.now()),
+      tokenVersion: { increment: 1 },
     },
   });
-  if (updated.count === 0) return null;
-  return tokens.accessToken;
+  if (updated.count === 1) return tokens.accessToken;
+
+  // Lost the race (revoked, or another worker refreshed first). Prefer the token
+  // now stored over the one we minted, which the partner may have invalidated.
+  return reloadGrantedAccessToken(consentId, current.tokenVersion);
+}
+
+/**
+ * After a lost compare-and-swap, return the access token a concurrent worker
+ * stored — but only when the consent is still GRANTED and the version actually
+ * advanced past what we tried to write (otherwise nothing newer landed).
+ */
+async function reloadGrantedAccessToken(consentId: string, sinceVersion: number): Promise<string | null> {
+  const row = await prisma.partnerConsent.findUnique({
+    where: { id: consentId },
+    select: { status: true, tokenEncrypted: true, tokenVersion: true },
+  });
+  if (!row || row.status !== "GRANTED" || !row.tokenEncrypted) return null;
+  if (row.tokenVersion <= sinceVersion) return null;
+  try {
+    return decrypt(row.tokenEncrypted);
+  } catch {
+    return null;
+  }
 }
 
 /**
