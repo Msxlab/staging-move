@@ -92,12 +92,28 @@ export default async function AffiliatePage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Revenue</p>
-        <h1 className="text-2xl font-semibold text-foreground">Affiliate</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Outbound affiliate performance. Configure an offer on each provider&rsquo;s edit page (Affiliate section).
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Revenue</p>
+          <h1 className="text-2xl font-semibold text-foreground">Affiliate</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Outbound affiliate performance. Configure an offer on each provider&rsquo;s edit page (Affiliate section).
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <a
+            href="/api/affiliate/export?type=clicks"
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Export clicks
+          </a>
+          <a
+            href="/api/affiliate/export?type=conversions"
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Export conversions
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
