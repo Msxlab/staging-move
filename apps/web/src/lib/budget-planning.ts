@@ -108,6 +108,22 @@ export function isDateInMonth(date: Date | string | null | undefined, month: Dat
   );
 }
 
+/**
+ * Convert a raw per-cycle amount (the `monthlyCost` field actually stores the
+ * amount as typed for the chosen cycle — the name is historical) into its true
+ * monthly-committed value. ONE_TIME has no recurring monthly cost → 0. This is
+ * the single source of truth for cycle math, shared by budget planning and the
+ * tax export so the two can never drift.
+ */
+export function monthlyAmountForCycle(amount: number, billingCycle: string | null | undefined): number {
+  const cycle = (billingCycle || "MONTHLY").trim().toUpperCase();
+  if (cycle === "ONE_TIME") return 0;
+  if (cycle === "YEARLY" || cycle === "ANNUAL") return amount / 12;
+  if (cycle === "WEEKLY") return (amount * 52) / 12;
+  if (cycle === "QUARTERLY") return amount / 3;
+  return amount;
+}
+
 export function normalizeServiceCost(service: ServiceCostInput, month: Date): NormalizedServiceCost {
   const amount = Number(service.monthlyCost || 0);
   const hasCost = Number.isFinite(amount) && amount > 0;
@@ -130,14 +146,7 @@ export function normalizeServiceCost(service: ServiceCostInput, month: Date): No
     };
   }
 
-  const monthlyCommitted =
-    billingCycle === "YEARLY" || billingCycle === "ANNUAL"
-      ? amount / 12
-      : billingCycle === "WEEKLY"
-        ? (amount * 52) / 12
-        : billingCycle === "QUARTERLY"
-          ? amount / 3
-          : amount;
+  const monthlyCommitted = monthlyAmountForCycle(amount, billingCycle);
 
   return { amount, monthlyCommitted, oneTimeThisMonth: 0, billingCycle, hasCost: true, isOneTime: false };
 }

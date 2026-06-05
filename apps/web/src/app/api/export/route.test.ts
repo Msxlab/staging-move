@@ -499,6 +499,54 @@ describe("export route", () => {
     expect(data.taxTotals).toMatchObject({ propertyCount: 1, serviceCount: 2, totalAnnualizedCost: 720 });
   });
 
+  it("annualizes per billing cycle — YEARLY/QUARTERLY are not multiplied by 12, ONE_TIME counts once", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      { id: "addr-1", nickname: "Home", type: "HOME", street: "1 Main", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "OWN", isPrimary: true, startDate: null, endDate: null },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "Yearly Policy", category: "INSURANCE", monthlyCost: 1200, billingCycle: "YEARLY", isActive: true },
+      { addressId: "addr-1", providerName: "Quarterly Svc", category: "OTHER", monthlyCost: 300, billingCycle: "QUARTERLY", isActive: true },
+      { addressId: "addr-1", providerName: "Setup Fee", category: "OTHER", monthlyCost: 500, billingCycle: "ONE_TIME", isActive: true },
+      { addressId: "addr-1", providerName: "Monthly Svc", category: "OTHER", monthlyCost: 100, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+
+    const data = JSON.parse(await (await POST(makeRequest({ type: "tax", format: "json" }))).text());
+
+    const byProvider = (name: string) => data.tax.find((li: any) => li.serviceProvider === name);
+    // YEARLY 1200/yr → 1200 annual (NOT 14,400), 100 monthly-equivalent.
+    expect(byProvider("Yearly Policy")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100, oneTime: false });
+    // QUARTERLY 300/qtr → 1200 annual, 100 monthly-equivalent.
+    expect(byProvider("Quarterly Svc")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100 });
+    // ONE_TIME 500 → counted once, no monthly recurring.
+    expect(byProvider("Setup Fee")).toMatchObject({ annualizedCost: 500, monthlyEquivalent: 0, oneTime: true });
+    // MONTHLY 100 → 1200 annual.
+    expect(byProvider("Monthly Svc")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100 });
+    // Totals: 1200 + 1200 + 500 + 1200 = 4100 annualized; monthly-equiv 100*3 = 300.
+    expect(data.taxTotals).toMatchObject({ totalAnnualizedCost: 4100, totalMonthlyEquivalent: 300 });
+  });
+
+  it("groups by address id so two properties with the same nickname don't double-count", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      { id: "addr-1", nickname: "Rental", type: "RENTAL", street: "1 A St", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "OWN", isPrimary: true, startDate: null, endDate: null },
+      { id: "addr-2", nickname: "Rental", type: "RENTAL", street: "2 B St", street2: null, city: "Dallas", state: "TX", zip: "75201", ownership: "OWN", isPrimary: false, startDate: null, endDate: null },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "Elec A", category: "UTILITY_ELECTRIC", monthlyCost: 100, billingCycle: "MONTHLY", isActive: true },
+      { addressId: "addr-2", providerName: "Elec B", category: "UTILITY_ELECTRIC", monthlyCost: 50, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+
+    const data = JSON.parse(await (await POST(makeRequest({ type: "tax", format: "json" }))).text());
+
+    expect(data.taxByProperty).toHaveLength(2);
+    // Each same-named "Rental" property holds exactly its own service.
+    for (const prop of data.taxByProperty) {
+      expect(prop.serviceCount).toBe(1);
+    }
+    expect(data.taxByProperty.map((p: any) => p.totalAnnualizedCost).sort((a: number, b: number) => a - b)).toEqual([600, 1200]);
+  });
+
   it("emits the tax line items as CSV with an annualizedCost column", async () => {
     mockPrisma.address.findMany.mockResolvedValue([
       { id: "addr-1", nickname: "Home", type: "HOME", street: "1 Main", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "RENT", isPrimary: true, startDate: null, endDate: null },
