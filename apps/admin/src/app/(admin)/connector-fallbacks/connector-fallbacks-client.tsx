@@ -36,6 +36,21 @@ type FormState = typeof EMPTY_FORM;
 const inputCls =
   "rounded border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground disabled:opacity-60";
 
+/** Mirror the server's URL-safety rule so the form warns before submit. */
+function isUsableUrl(value: string, type: string): boolean {
+  const v = value.trim();
+  if (!v) return true; // empty allowed (label-only guided action)
+  if ((type === "DEEP_LINK" || type === "PDF") && v.startsWith("/") && !v.startsWith("//")) return true;
+  try {
+    const u = new URL(v);
+    if (type === "MAILTO") return u.protocol === "mailto:";
+    if (type === "PHONE") return u.protocol === "tel:";
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export default function ConnectorFallbacksClient() {
   const [actions, setActions] = useState<FallbackAction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,6 +137,14 @@ export default function ConnectorFallbacksClient() {
     (acc[a.connectorKey] ??= []).push(a);
     return acc;
   }, {});
+
+  const urlInvalid = !isUsableUrl(form.urlTemplate, form.type);
+  const canSave =
+    form.actionKey.trim() !== "" &&
+    form.connectorKey.trim() !== "" &&
+    form.label.trim() !== "" &&
+    form.helperText.trim() !== "" &&
+    !urlInvalid;
 
   return (
     <div>
@@ -211,6 +234,11 @@ export default function ConnectorFallbacksClient() {
                 placeholder="https://moversguide.usps.com/  ·  mailto:support@acme.com  ·  /help/..."
                 className={inputCls}
               />
+              {urlInvalid ? (
+                <span className="text-tone-rose-fg">
+                  URL doesn&apos;t match the {form.type} type (unsafe protocols are rejected server-side too).
+                </span>
+              ) : null}
             </label>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
@@ -221,10 +249,21 @@ export default function ConnectorFallbacksClient() {
               enabled
             </label>
           </div>
+          {form.label || form.urlTemplate ? (
+            <div className="mt-4 rounded border border-foreground/10 bg-background/50 p-3">
+              <p className="mb-1.5 text-[11px] font-mono uppercase tracking-wide text-foreground/40">Preview</p>
+              <span className="inline-flex items-center rounded-md border border-foreground/15 px-2.5 py-1 text-sm text-foreground">
+                {form.label || "Open update"}
+              </span>
+              {form.helperText ? <p className="mt-1.5 text-xs text-muted-foreground">{form.helperText}</p> : null}
+              {form.urlTemplate ? <p className="mt-1 truncate text-[11px] text-foreground/40">{form.urlTemplate}</p> : null}
+            </div>
+          ) : null}
+
           <div className="mt-4 flex items-center gap-2">
             <button
               onClick={save}
-              disabled={busy}
+              disabled={busy || !canSave}
               className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
             >
               {editingKey ? "Save changes" : "Create"}
