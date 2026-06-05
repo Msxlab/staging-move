@@ -59,6 +59,7 @@ export default function ExportScreen() {
     { type: "support", title: t("settings.support"), desc: "", icon: Ticket, formats: ["JSON"] },
     { type: "notifications", title: t("notifications.title"), desc: "", icon: Bell, formats: ["JSON"] },
     { type: "subscription", title: t("settings.subscription"), desc: "", icon: Crown, formats: ["JSON"] },
+    { type: "tax", title: t("settings.exportTaxTitle", { defaultValue: "Tax & Property (Pro)" }), desc: "", icon: FileText, formats: ["CSV", "JSON"] },
     { type: "full", title: t("settings.export"), desc: "", icon: Database, formats: ["JSON"] },
   ];
 
@@ -72,7 +73,20 @@ export default function ExportScreen() {
       });
       if (res.error) {
         hapticError();
-        Alert.alert(t("common.retry"), t("toast.networkError"));
+        if (res.code === "UPGRADE_REQUIRED") {
+          // Pro-gated export (tax & property) for a non-Pro account — surface the
+          // server's reason and offer a path to upgrade rather than a generic error.
+          Alert.alert(
+            t("settings.exportProTitle", { defaultValue: "Pro feature" }),
+            res.error,
+            [
+              { text: t("common.cancel"), style: "cancel" },
+              { text: t("settings.upgradeToPro", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            ],
+          );
+        } else {
+          Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
+        }
       } else {
         hapticSuccess();
         const dataStr = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
