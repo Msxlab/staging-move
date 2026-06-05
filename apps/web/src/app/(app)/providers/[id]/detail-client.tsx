@@ -12,8 +12,8 @@ import {
   MapPin,
   Flag,
   AlertTriangle,
-  Sparkles,
 } from "lucide-react";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
@@ -183,30 +183,13 @@ export function ProviderDetailClient({
             Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>
           {provider.affiliateActive && (
-            <button
-              type="button"
-              onClick={async () => {
-                // The redirect target is resolved server-side (the click
-                // endpoint returns the stored https URL), so the client never
-                // holds or trusts the affiliate link directly.
-                try {
-                  const res = await fetch("/api/affiliate/click", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ providerId: provider.id, source: "provider_detail" }),
-                  });
-                  const data = await res.json().catch(() => null);
-                  if (res.ok && data?.url) {
-                    window.open(data.url, "_blank", "noopener,noreferrer");
-                  }
-                } catch {
-                  // Non-critical CTA — never block the page on a tracking failure.
-                }
-              }}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary/40 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15 transition"
-            >
-              <Sparkles className="h-4 w-4" /> Get started
-            </button>
+            <AffiliateCtaButton
+              providerId={provider.id}
+              source="provider_detail"
+              addressId={primaryAddress?.id ?? null}
+              iconClassName="h-4 w-4"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary/40 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15 transition disabled:opacity-60"
+            />
           )}
           {provider.website && (
             <a

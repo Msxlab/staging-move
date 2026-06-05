@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import { useTranslations } from "next-intl";
 import {
   generateChecklist,
@@ -71,7 +72,7 @@ export interface ServicesItem {
   monthlyCost: number; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
-  provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null } | null;
+  provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null; affiliateActive?: boolean } | null;
   customProvider?: { id?: string; name?: string | null; website?: string | null } | null;
   providerLogoUrl?: string | null;
   logoUrl?: string | null;
@@ -431,6 +432,16 @@ export function ServicesClient({
                                   <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}/mo</span>
                                 )}
                               </div>
+                              {service.provider?.affiliateActive && service.provider.id && (
+                                <div className="mt-2.5">
+                                  <AffiliateCtaButton
+                                    providerId={service.provider.id}
+                                    source="services"
+                                    addressId={service.addressId}
+                                    stopPropagation
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

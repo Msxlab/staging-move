@@ -6,7 +6,7 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 // Where the click came from — constrained so the column stays a small, known
 // set for reporting. Anything else is recorded as "unknown" rather than rejected.
-const ALLOWED_SOURCES = new Set(["provider_detail", "services", "recommendation", "moving"]);
+const ALLOWED_SOURCES = new Set(["provider_detail", "services", "recommendation", "providers", "moving"]);
 
 function isHttpsUrl(value: string | null | undefined): value is string {
   if (!value) return false;

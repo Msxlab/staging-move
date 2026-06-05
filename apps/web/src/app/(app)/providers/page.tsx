@@ -38,6 +38,7 @@ type ProviderRow = {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
 };
 
 function parseJsonArray(value: string): string[] {
@@ -86,6 +87,7 @@ export default async function ProvidersPage() {
     popularityScore: p.popularityScore || 0,
     displayOrder: p.displayOrder || 0,
     userCount: p.userCount || 0,
+    affiliateActive: p.affiliateActive === true,
   }));
 
   const primaryAddress = addressOptions.find((a) => a.isPrimary) || addressOptions[0] || null;
