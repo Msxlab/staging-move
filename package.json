@@ -53,7 +53,8 @@
     "campaigns:sync-billing": "pnpm exec tsx scripts/sync-acquisition-campaigns.ts",
     "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts",
     "rate-limit:check": "pnpm exec tsx scripts/check-rate-limiter-health.ts",
-    "email:diagnose": "pnpm exec tsx scripts/diagnose-email-pipeline.ts"
+    "email:diagnose": "pnpm exec tsx scripts/diagnose-email-pipeline.ts",
+    "connector:new": "node scripts/new-connector.mjs"
   },
   "devDependencies": {
     "turbo": "^2.9.14"

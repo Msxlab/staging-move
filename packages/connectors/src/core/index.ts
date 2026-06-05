@@ -30,6 +30,9 @@ export { canTransition, isTerminal, statusForOutcome } from "./state";
 
 export { validateManifest, isValidManifest } from "./manifest";
 
+export type { ContractCheckOptions } from "./contract-test-kit";
+export { checkConnectorContract, assertConnectorContract } from "./contract-test-kit";
+
 export type { ConnectorMode, AgreementStatus, ConnectorModeInput, ConnectorModeResult } from "./mode";
 export { resolveConnectorMode } from "./mode";
 
