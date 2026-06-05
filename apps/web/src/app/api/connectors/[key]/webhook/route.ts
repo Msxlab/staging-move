@@ -26,7 +26,7 @@ import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { encrypt } from "@/lib/shared-encryption";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
-import { uspsConnector, type AddressConnector } from "@locateflow/connectors";
+import { connectorRegistry } from "@/lib/connector-registry";
 
 const KEY_RE = /^[a-z][a-z0-9-]*$/;
 const SIGNATURE_HEADER = "x-connector-signature";
@@ -36,14 +36,10 @@ const TERMINAL_STATUSES = new Set(["CONFIRMED", "FAILED"]);
 const WEBHOOK_DISABLED_STAGES = new Set(["SHADOW", "RETIRED"]);
 const WEBHOOK_DISABLED_CIRCUITS = new Set(["OPEN", "DISABLED"]);
 
-// Built-in connector adapters that can receive async-confirm webhooks. Resolved
-// from the package (not the app-side dispatch registry) so this route is
-// self-contained; mirror this set as async connectors are added. A connector
-// without parseWebhook (e.g. USPS, which confirms synchronously) is simply not
-// addressable here and returns 404.
-const CONNECTORS: Record<string, AddressConnector> = {
-  usps: uspsConnector,
-};
+// Webhook addressability resolves from the SINGLE app connector registry (the
+// same one outbound dispatch uses) — no second list to keep in sync. A connector
+// without parseWebhook (e.g. USPS, which confirms synchronously via read-back) is
+// simply not addressable here and returns 404.
 
 async function isApiConnectorsEnabled(): Promise<boolean> {
   const value = (await getRuntimeConfigValue("FEATURE_API_CONNECTORS")) ?? process.env.FEATURE_API_CONNECTORS ?? "";
@@ -77,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ key
 
   // Only a registered connector that actually does async confirmation has a
   // receiver; everything else looks like it doesn't exist.
-  const connector = CONNECTORS[key];
+  const connector = connectorRegistry.get(key);
   if (!connector?.parseWebhook) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
