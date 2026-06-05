@@ -121,4 +121,37 @@ describe("runConnectorAttempt", () => {
     expect(result.errorCode).toBe("UNKNOWN");
     expect(result.retryable).toBe(false);
   });
+
+  it("dry-run skips the side-effecting push and marks the result shadow", async () => {
+    let pushed = false;
+    const connector = makeConnector({
+      push: async (): Promise<ConnectorResult> => {
+        pushed = true;
+        return { outcome: "CONFIRMED" };
+      },
+    });
+    const result = await runConnectorAttempt(connector, input, { ...ctx, dryRun: true });
+    expect(pushed).toBe(false); // never hits the partner
+    expect(result.outcome).toBe("SUBMITTED");
+    expect((result.metadata as { shadow?: boolean }).shadow).toBe(true);
+  });
+
+  it("dry-run reports a build-mapping failure without pushing", async () => {
+    let pushed = false;
+    const connector: AddressConnector = {
+      ...makeConnector({}),
+      buildRequest: () => {
+        throw new Error("bad mapping");
+      },
+      push: async (): Promise<ConnectorResult> => {
+        pushed = true;
+        return { outcome: "CONFIRMED" };
+      },
+    };
+    const result = await runConnectorAttempt(connector, input, { ...ctx, dryRun: true });
+    expect(pushed).toBe(false);
+    expect(result.outcome).toBe("FAILED");
+    expect(result.errorCode).toBe("VALIDATION_REJECTED");
+    expect((result.metadata as { reason?: string }).reason).toBe("DRY_RUN_BUILD_FAILED");
+  });
 });

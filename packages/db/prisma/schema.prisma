@@ -68,6 +68,7 @@ model User {
   acquisitionRedemptions  AcquisitionRedemption[]
   partnerConsents         PartnerConsent[]
   connectorDispatches     ConnectorDispatch[]
+  addressChangeEvents     AddressChangeEvent[]
   ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
@@ -1777,14 +1778,21 @@ model ConnectorDispatch {
   consentId String?         @db.VarChar(30)
   consent   PartnerConsent? @relation(fields: [consentId], references: [id], onDelete: SetNull)
 
-  // Loose refs to the future AddressChangeEvent / Service — no FK yet (those
-  // models don't exist); tighten when they land.
-  eventId   String? @db.VarChar(30)
+  // Legacy loose change ref (the changeRef UUID), kept for backward-compat with
+  // the smoke script and any pre-existing rows. The real link is the nullable FK
+  // addressChangeEventId below; serviceId stays a loose ref until Service lands.
+  eventId   String? @db.VarChar(40)
   serviceId String? @db.VarChar(30)
+
+  // The canonical AddressChangeEvent this dispatch fanned out from. Nullable FK
+  // so the additive migration carries zero orphan risk on existing rows.
+  addressChangeEventId String?             @db.VarChar(30)
+  addressChangeEvent   AddressChangeEvent? @relation(fields: [addressChangeEventId], references: [id], onDelete: SetNull)
 
   idempotencyKey String @unique @db.VarChar(120)
 
   status        String  @default("QUEUED") @db.VarChar(20) // QUEUED|DISPATCHING|SUBMITTED|CONFIRMED|NEEDS_USER|FAILED
+  isShadow      Boolean @default(false) // internal dry-run rows; excluded from live/user-facing counts
   attemptCount  Int     @default(0)
   lastErrorCode String? @db.VarChar(30) // normalized ConnectorErrorCode
 
@@ -1806,6 +1814,68 @@ model ConnectorDispatch {
   @@index([userId])
   @@index([status, nextRetryAt])
   @@index([consentId])
+  @@index([addressChangeEventId])
+  @@index([isShadow, status])
+}
+
+// The canonical "the user moved" event — one row per address change a user
+// initiates. It fans out to 0..N ConnectorDispatch rows (one per consented +
+// enabled connector); the address is chosen ONCE here and the same value flows
+// to every connector. Loose VarChar refs (fromAddressId/toAddressId/workspaceId)
+// keep it decoupled like the connector tables above; only User is a hard FK.
+model AddressChangeEvent {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stable public ref (the changeRef UUID), also written to ConnectorDispatch.eventId
+  // for backward-compat; unique so an enqueue is idempotent at the event level.
+  changeRef String @unique @db.VarChar(40)
+
+  // Loose refs (no FK): addresses soft-delete and the canonical values already
+  // travel encrypted on each dispatch, so the event only needs the ids.
+  fromAddressId String? @db.VarChar(30)
+  toAddressId   String  @db.VarChar(30)
+  workspaceId   String? @db.VarChar(30)
+
+  fullName      String    @db.VarChar(200)
+  effectiveDate DateTime?
+
+  // PENDING (created) | DISPATCHED (>=1 connector queued) | NO_TARGETS (0 connectors)
+  status        String @default("PENDING") @db.VarChar(20)
+  dispatchCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dispatches ConnectorDispatch[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Admin-editable fallback (guided) action for a connector that can't auto-push
+// or is disabled — the deep-link / mailto / PDF the user completes manually.
+// DB-backed so adding a partner's guided flow is a data change, not a deploy.
+// Resolution layers a row here OVER the in-code default, so an empty table keeps
+// the shipped defaults. Global config (no per-user rows), like ConnectorConfig.
+model ConnectorFallbackAction {
+  id           String @id @default(cuid()) @db.VarChar(30)
+  actionKey    String @unique @db.VarChar(80) // e.g. "usps:MAIL_FORWARDING:DEEP_LINK"
+  connectorKey String @db.VarChar(40) //         for admin grouping/filtering
+
+  type        String  @default("DEEP_LINK") @db.VarChar(20) // DEEP_LINK | MAILTO | PDF | PHONE
+  label       String  @db.VarChar(120)
+  helperText  String  @db.Text
+  urlTemplate String? @db.Text //                {{to.street1}}-style placeholders, rendered per move
+  locale      String  @default("en") @db.VarChar(10)
+  enabled     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([connectorKey])
+  @@index([enabled])
 }
 
 // ==================== WORKSPACES (Family/Pro, flag-gated) ====================

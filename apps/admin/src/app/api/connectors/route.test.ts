@@ -121,10 +121,17 @@ describe("admin connectors GET — per-connector ops health", () => {
       }),
     ]);
 
+    expect(mocks.prisma.connectorDispatch.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ by: ["status"], where: { isShadow: false } }),
+    );
+    expect(mocks.prisma.connectorDispatch.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ by: ["connectorKey", "status"], where: { isShadow: false } }),
+    );
+
     // Only the bounded recent-failure scan is used (no unbounded history query).
     expect(mocks.prisma.connectorDispatch.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { lastErrorCode: { not: null } },
+        where: { lastErrorCode: { not: null }, isShadow: false },
         orderBy: { updatedAt: "desc" },
         take: 200,
       }),

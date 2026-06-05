@@ -133,6 +133,42 @@ describe("runDispatchRow mode gate", () => {
     });
   });
 
+  it("keeps a shadow-created row in dry-run even if the connector is later promoted", async () => {
+    dbMocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: true,
+      circuitState: "CLOSED",
+      stage: "GA",
+    });
+
+    const status = await runDispatchRow({
+      id: "dispatch_shadow",
+      connectorKey: "usps",
+      userId: "user_1",
+      consentId: "consent_1",
+      idempotencyKey: "idem_shadow",
+      attemptCount: 0,
+      isShadow: true,
+      payloadEncrypted: JSON.stringify({
+        eventId: "event_1",
+        from: { street1: "1 Old St", city: "Austin", state: "TX", zip: "78701", country: "US" },
+        to: { street1: "2 New St", city: "Austin", state: "TX", zip: "78702", country: "US" },
+        fullName: "User One",
+        fields: {},
+      }),
+    });
+
+    expect(status).toBe("CONFIRMED");
+    expect(dbMocks.prisma.partnerConsent.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.connectorDispatch.update).toHaveBeenCalledWith({
+      where: { id: "dispatch_shadow" },
+      data: expect.objectContaining({
+        status: "CONFIRMED",
+        isShadow: true,
+        resultMetadataJson: expect.stringContaining('"shadow":true'),
+      }),
+    });
+  });
+
   it("does not push when the stored consent was revoked before dispatch", async () => {
     rcMock.getRuntimeConfigValue.mockImplementation((k: string) => {
       if (k.endsWith("_AGREEMENT_STATUS")) return Promise.resolve("PRODUCTION");
