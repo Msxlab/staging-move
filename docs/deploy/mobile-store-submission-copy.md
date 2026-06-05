@@ -9,14 +9,26 @@ Last updated: 2026-06-04
 
 These are not code bugs, but they still need operator/store-console action:
 
-- Play Console Data Safety and Apple App Privacy forms still need final console
-  confirmation against `apps/mobile/MOBILE_DATA_INVENTORY.md`.
 - Android build `15 (1.0.0)` is published to Play internal testing and marked
   `Available to internal testers`; the tester list is `LOCATEFLOW` with 4 users.
 - Android internal paid IAP now installs from Google Play and purchase/restore/cancel
   has passed on build `15` using Google Play License testing with the no-charge
   test card flow. Keep License testing selected for `LOCATEFLOW` before any
   future paid Billing QA; if the sheet shows a real card, stop before `Subscribe`.
+- Android build `17` is now finished as a Play internal AAB candidate from the
+  latest commit to package the `Ends {{date}}` cancel-at-period-end copy polish.
+  It has not been uploaded to Play and no production rollout was performed.
+
+Resolved store declaration confirmation:
+
+- On 2026-06-04, Play Console `App content` was checked in the live console:
+  `Need attention` was empty and `Actioned` listed 10 declarations, including
+  Data safety and Privacy policy, all ready to send for review.
+- On 2026-06-04, App Store Connect `App Privacy` was checked in the live
+  console: the privacy URL is `https://locateflow.com/privacy`, and 12 published
+  data types match `apps/mobile/MOBILE_DATA_INVENTORY.md` at category level.
+- Codex did not accept legal declarations, accept Terms, perform a production
+  rollout, or manually release the app.
 
 Resolved public URL blocker:
 

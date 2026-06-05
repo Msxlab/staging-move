@@ -72,6 +72,10 @@ describe("backup table catalog", () => {
     expect(BACKUP_TABLES.providerLogoCandidates.model).toBe(
       "providerLogoCandidate",
     );
+    expect(BACKUP_TABLES.addressChangeEvents.model).toBe("addressChangeEvent");
+    expect(BACKUP_TABLES.connectorFallbackActions.model).toBe(
+      "connectorFallbackAction",
+    );
   });
 
   it("keeps runtime secrets and active sessions out of app-level backups", () => {

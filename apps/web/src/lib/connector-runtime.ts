@@ -364,8 +364,21 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
     }
   }
 
-  // Missing connector or unreadable payload → hand to the manual fallback.
+  // Missing connector or unreadable payload → hand live rows to the manual
+  // fallback. Shadow rows are internal dry-run traffic, so never notify users.
   if (!connector || !payload) {
+    if (row.isShadow) {
+      await prisma.connectorDispatch.update({
+        where: { id: row.id },
+        data: {
+          status: "FAILED",
+          isShadow: true,
+          lastErrorCode: "NOT_SUPPORTED",
+          resultMetadataJson: JSON.stringify({ reason: connector ? "PAYLOAD_UNREADABLE" : "CONNECTOR_MISSING", shadow: true }),
+        },
+      });
+      return "FAILED";
+    }
     await prisma.connectorDispatch.update({
       where: { id: row.id },
       data: { status: "NEEDS_USER", lastErrorCode: "NOT_SUPPORTED" },
@@ -512,6 +525,18 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number;
   // row to NEEDS_USER and notify the owner, so they retry deliberately. (A
   // per-connector verify-then-resume sweep is the fuller solution.)
   const STALE_DISPATCHING_MS = 15 * 60 * 1000;
+  const staleShadow = await prisma.connectorDispatch.findMany({
+    where: { status: "DISPATCHING", isShadow: true, dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
+    select: { id: true },
+    take: 100,
+  });
+  for (const s of staleShadow) {
+    await prisma.connectorDispatch.updateMany({
+      where: { id: s.id, status: "DISPATCHING", isShadow: true },
+      data: { status: "FAILED", resultMetadataJson: JSON.stringify({ reason: "SHADOW_WORKER_TIMEOUT", shadow: true }) },
+    });
+  }
+
   const stale = await prisma.connectorDispatch.findMany({
     where: { status: "DISPATCHING", isShadow: false, dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
     select: { id: true, userId: true, connectorKey: true },
