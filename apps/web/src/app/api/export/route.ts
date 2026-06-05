@@ -8,6 +8,8 @@ import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
+import { getUserPlan } from "@/lib/plan-limits";
+import { planFeatures } from "@locateflow/shared";
 
 // POST /api/export
 // Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
@@ -39,9 +41,15 @@ const ALLOWED_TYPES = new Set([
   "subscription",
   "workspace",
   "analytics",
+  "tax",
   "full",
 ]);
 const ALLOWED_FORMATS = new Set(["csv", "json"]);
+
+// Export types that are a paid (Pro) capability rather than a GDPR data dump.
+// "full"/"addresses"/etc. remain available to everyone for data portability;
+// the tax/property report is a Pro deliverable gated on advancedExport.
+const ADVANCED_EXPORT_TYPES = new Set(["tax"]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,6 +115,30 @@ export async function POST(request: NextRequest) {
         },
         { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },
       );
+    }
+
+    // Pro-gated reports: the tax/property export is an entitlement, not a GDPR
+    // data dump, so it requires an active plan whose features include
+    // advancedExport (Pro). Inactive/expired Pro resolves to FREE_TRIAL here.
+    if (ADVANCED_EXPORT_TYPES.has(type)) {
+      const userPlan = await getUserPlan(userId);
+      if (!planFeatures(userPlan.plan).advancedExport) {
+        await createAuditLog({
+          userId,
+          action: "EXPORT_BLOCK",
+          entityType: "User",
+          entityId: userId,
+          changes: { type, format, code: "UPGRADE_REQUIRED", plan: userPlan.plan },
+          ...meta,
+        });
+        return NextResponse.json(
+          {
+            error: "Tax & property export is a Pro feature. Upgrade to Pro to export tax and property reports.",
+            code: "UPGRADE_REQUIRED",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     await createAuditLog({
@@ -543,6 +575,127 @@ export async function POST(request: NextRequest) {
         createdAt: i.createdAt,
         expiresAt: i.expiresAt,
       }));
+    }
+
+    if (type === "tax") {
+      // Pro "Tax & property export": a per-property summary suitable for tax
+      // prep (rental/home-office expenses, moving expenses). Distinct from the
+      // raw addresses/services dumps — it joins services to their property,
+      // annualizes recurring cost, and lists move events touching each address.
+      const [addresses, services, movingPlans] = await Promise.all([
+        prisma.address.findMany({
+          where: { userId, deletedAt: null },
+          select: {
+            id: true,
+            nickname: true,
+            type: true,
+            street: true,
+            street2: true,
+            city: true,
+            state: true,
+            zip: true,
+            ownership: true,
+            isPrimary: true,
+            startDate: true,
+            endDate: true,
+          },
+          orderBy: { isPrimary: "desc" },
+        }),
+        prisma.service.findMany({
+          where: { userId, deletedAt: null },
+          select: {
+            addressId: true,
+            providerName: true,
+            category: true,
+            monthlyCost: true,
+            billingCycle: true,
+            isActive: true,
+          },
+        }),
+        prisma.movingPlan.findMany({
+          where: { userId, deletedAt: null },
+          select: {
+            moveDate: true,
+            status: true,
+            fromAddressId: true,
+            toAddressId: true,
+            fromAddress: { select: { city: true, state: true } },
+            toAddress: { select: { city: true, state: true } },
+          },
+          orderBy: { moveDate: "desc" },
+        }),
+      ]);
+
+      const toNum = (value: unknown): number => {
+        const n = typeof value === "number" ? value : Number(value ?? 0);
+        return Number.isFinite(n) ? n : 0;
+      };
+      const round2 = (n: number): number => Math.round(n * 100) / 100;
+      const propertyLabel = (a: (typeof addresses)[number] | undefined): string => {
+        if (!a) return "Unassigned";
+        return a.nickname?.trim() || [a.street, a.city, a.state].filter(Boolean).join(", ") || "Address";
+      };
+      const addressById = new Map(addresses.map((a) => [a.id, a]));
+
+      // Flat, spreadsheet-friendly line items — one row per service, the most
+      // useful shape for itemizing deductible expenses by property.
+      const taxLineItems = services.map((svc) => {
+        const addr = svc.addressId ? addressById.get(svc.addressId) : undefined;
+        const monthlyCost = round2(toNum(svc.monthlyCost));
+        return {
+          property: propertyLabel(addr),
+          propertyType: addr?.type ?? "",
+          ownership: addr?.ownership ?? "",
+          occupancyStart: addr?.startDate ?? null,
+          occupancyEnd: addr?.endDate ?? null,
+          serviceProvider: svc.providerName ?? "",
+          serviceCategory: svc.category ?? "",
+          billingCycle: svc.billingCycle ?? "",
+          active: svc.isActive,
+          monthlyCost,
+          annualizedCost: round2(monthlyCost * 12),
+        };
+      });
+
+      // Grouped view with per-property totals + the moves that touched each
+      // address (useful for the moving-expense side of a tax return).
+      const taxByProperty = addresses.map((addr) => {
+        const propertyServices = taxLineItems.filter(
+          (li) => li.property === propertyLabel(addr) && li.propertyType === (addr.type ?? ""),
+        );
+        const moves = movingPlans
+          .filter((m) => m.fromAddressId === addr.id || m.toAddressId === addr.id)
+          .map((m) => ({
+            moveDate: m.moveDate,
+            status: m.status,
+            direction: m.toAddressId === addr.id ? "MOVED_IN" : "MOVED_OUT",
+            from: m.fromAddress ? [m.fromAddress.city, m.fromAddress.state].filter(Boolean).join(", ") : null,
+            to: m.toAddress ? [m.toAddress.city, m.toAddress.state].filter(Boolean).join(", ") : null,
+          }));
+        return {
+          property: propertyLabel(addr),
+          propertyType: addr.type ?? "",
+          ownership: addr.ownership ?? "",
+          isPrimary: addr.isPrimary,
+          occupancyStart: addr.startDate ?? null,
+          occupancyEnd: addr.endDate ?? null,
+          serviceCount: propertyServices.length,
+          totalAnnualizedCost: round2(
+            propertyServices.reduce((sum, li) => sum + li.annualizedCost, 0),
+          ),
+          moves,
+        };
+      });
+
+      data.tax = taxLineItems;
+      data.taxByProperty = taxByProperty;
+      data.taxTotals = {
+        propertyCount: addresses.length,
+        serviceCount: taxLineItems.length,
+        totalAnnualizedCost: round2(
+          taxLineItems.reduce((sum, li) => sum + li.annualizedCost, 0),
+        ),
+      };
     }
 
     emitSecurityEvent({

@@ -49,6 +49,7 @@ const exportOptions = [
   { title: "Services", description: "Export all services and billing info", icon: FileSpreadsheet, type: "services", formats: ["CSV", "JSON"] },
   { title: "Budget History", description: "Export monthly budget data", icon: FileSpreadsheet, type: "budget", formats: ["CSV", "JSON"] },
   { title: "Moving Plans", description: "Export plans with tasks and boxes", icon: FileText, type: "moving", formats: ["JSON"] },
+  { title: "Tax & Property Export", description: "Per-property summary for tax prep — annualized service costs + move history (Pro)", icon: FileDown, type: "tax", formats: ["CSV", "JSON"] },
   { title: "Full Data Export", description: "Export supported account data", icon: Download, type: "full", formats: ["JSON"] },
 ];
 
