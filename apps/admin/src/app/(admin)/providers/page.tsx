@@ -65,6 +65,7 @@ export default function ProvidersPage() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkCategory, setBulkCategory] = useState("");
   const [bulkScore, setBulkScore] = useState("");
+  const [bulkNetwork, setBulkNetwork] = useState("");
 
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -141,6 +142,7 @@ export default function ProvidersPage() {
     setBulkAction("");
     setBulkCategory("");
     setBulkScore("");
+    setBulkNetwork("");
   }
   function deselectAll() { resetBulk(); }
 
@@ -168,6 +170,15 @@ export default function ProvidersPage() {
       }
       body.data = { score };
       label = `set score to ${score}`;
+    } else if (bulkAction === "set_affiliate_network") {
+      const network = bulkNetwork.trim();
+      if (!network) { toast.error("Enter an affiliate network name."); return; }
+      body.data = { network };
+      label = `set affiliate network to "${network}"`;
+    } else if (bulkAction === "affiliate_activate") {
+      label = "activate affiliate offer (only rows with a valid https URL)";
+    } else if (bulkAction === "affiliate_deactivate") {
+      label = "deactivate affiliate offer";
     }
     // Confirm before firing — these write to the PUBLIC catalog and an
     // accidental "select all → deactivate" would otherwise silently take it
@@ -185,7 +196,9 @@ export default function ProvidersPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed"); return; }
-      toast.success(`${data.affected} providers updated`);
+      toast.success(
+        `${data.affected} providers updated${data.skipped ? ` · ${data.skipped} skipped (no valid https URL)` : ""}`,
+      );
       setPendingBulk(null);
       resetBulk();
       fetchProviders();
@@ -556,12 +569,15 @@ export default function ProvidersPage() {
       {selected.size > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
           <span className="text-sm font-medium text-primary">{selected.size} selected</span>
-          <select value={bulkAction} onChange={(e) => { setBulkAction(e.target.value); setBulkCategory(""); setBulkScore(""); }} className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground">
+          <select value={bulkAction} onChange={(e) => { setBulkAction(e.target.value); setBulkCategory(""); setBulkScore(""); setBulkNetwork(""); }} className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground">
             <option value="">Choose action...</option>
             <option value="activate">Activate</option>
             <option value="deactivate">Deactivate</option>
             <option value="change_category">Change Category</option>
             <option value="set_score">Set Score</option>
+            <option value="affiliate_activate">Affiliate: activate offer</option>
+            <option value="affiliate_deactivate">Affiliate: deactivate offer</option>
+            <option value="set_affiliate_network">Affiliate: set network</option>
             <option value="delete">Delete</option>
           </select>
           {bulkAction === "change_category" && (
@@ -587,12 +603,22 @@ export default function ProvidersPage() {
               className="w-32 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
             />
           )}
+          {bulkAction === "set_affiliate_network" && (
+            <input
+              value={bulkNetwork}
+              onChange={(e) => setBulkNetwork(e.target.value)}
+              placeholder="Network (impact, cj, direct…)"
+              maxLength={40}
+              className="w-56 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground"
+            />
+          )}
           <button
             onClick={handleBulk}
             disabled={
               !bulkAction ||
               (bulkAction === "change_category" && !bulkCategory) ||
-              (bulkAction === "set_score" && bulkScore.trim() === "")
+              (bulkAction === "set_score" && bulkScore.trim() === "") ||
+              (bulkAction === "set_affiliate_network" && bulkNetwork.trim() === "")
             }
             className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >

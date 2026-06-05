@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
   requirePasswordConfirm: vi.fn(),
   updateMany: vi.fn(),
+  findMany: vi.fn(),
   auditCreate: vi.fn(),
   revalidateTag: vi.fn(),
 }));
@@ -22,6 +23,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     serviceProvider: {
       updateMany: (...args: unknown[]) => mocks.updateMany(...args),
+      findMany: (...args: unknown[]) => mocks.findMany(...args),
     },
     adminAuditLog: {
       create: (...args: unknown[]) => mocks.auditCreate(...args),
@@ -45,7 +47,55 @@ describe("provider bulk route", () => {
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", role: "ADMIN" });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.updateMany.mockResolvedValue({ count: 1 });
+    mocks.findMany.mockResolvedValue([]);
     mocks.auditCreate.mockResolvedValue({});
+  });
+
+  it("bulk affiliate_activate only flips rows with a valid https URL and reports skipped", async () => {
+    mocks.findMany.mockResolvedValue([
+      { id: "p1", affiliateUrl: "https://partner.example/offer" },
+      { id: "p2", affiliateUrl: "http://insecure.example" },
+      { id: "p3", affiliateUrl: null },
+    ]);
+    mocks.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await POST(request({ action: "affiliate_activate", ids: ["p1", "p2", "p3"] }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["p1"] } },
+      data: { affiliateActive: true },
+    });
+    expect(body.skipped).toBe(2);
+    expect(body.affected).toBe(1);
+  });
+
+  it("bulk affiliate_deactivate flips all selected rows off (no URL guard)", async () => {
+    mocks.updateMany.mockResolvedValue({ count: 2 });
+
+    const response = await POST(request({ action: "affiliate_deactivate", ids: ["p1", "p2"] }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["p1", "p2"] } },
+      data: { affiliateActive: false },
+    });
+  });
+
+  it("bulk set_affiliate_network writes the network on the selected rows", async () => {
+    mocks.updateMany.mockResolvedValue({ count: 2 });
+
+    const response = await POST(
+      request({ action: "set_affiliate_network", ids: ["p1", "p2"], data: { network: "impact" } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["p1", "p2"] } },
+      data: { affiliateNetwork: "impact" },
+    });
   });
 
   it("rejects invalid score payloads before touching providers", async () => {

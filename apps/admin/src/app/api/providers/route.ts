@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { isHttpsUrl } from "@/lib/url-safety";
 import { parseClampedPositiveInt, parsePaginationParams } from "@/lib/pagination";
 import { validateCsvFileMetadata } from "@/lib/privacy";
 import { rebuildProviderCoverage } from "@locateflow/db";
@@ -12,6 +13,26 @@ import {
   normalizeProviderUrlDomain,
   slugifyProviderName,
 } from "@locateflow/shared";
+
+// Affiliate fields live outside normalizeProviderRecord. Validate them once for
+// both the single-create and CSV-import paths so they can't drift: an external
+// affiliate link must be https, and an offer can't be active without one.
+function extractAffiliateFields(
+  raw: Record<string, unknown>,
+): { affiliateUrl: string | null; affiliateNetwork: string | null; affiliateActive: boolean } | { error: string } {
+  const urlRaw = typeof raw.affiliateUrl === "string" ? raw.affiliateUrl.trim() : "";
+  if (urlRaw && !isHttpsUrl(urlRaw)) return { error: "affiliateUrl must be an https URL." };
+  const affiliateUrl = urlRaw || null;
+  const affiliateNetwork =
+    typeof raw.affiliateNetwork === "string" && raw.affiliateNetwork.trim()
+      ? raw.affiliateNetwork.trim().slice(0, 40)
+      : null;
+  const affiliateActive = raw.affiliateActive === true || raw.affiliateActive === "true";
+  if (affiliateActive && !isHttpsUrl(affiliateUrl)) {
+    return { error: "Set a valid https affiliateUrl before activating the affiliate offer." };
+  }
+  return { affiliateUrl, affiliateNetwork, affiliateActive };
+}
 
 function parseIncomingProvider(raw: Record<string, unknown>) {
   return normalizeProviderRecord({
@@ -239,6 +260,13 @@ export async function PUT(request: NextRequest) {
         continue;
       }
 
+      const affiliate = extractAffiliateFields(row);
+      if ("error" in affiliate) {
+        skipped++;
+        errors.push(`${normalized.name}: ${affiliate.error}`);
+        continue;
+      }
+
       try {
         const createdProvider = await prisma.$transaction(async (tx: any) => {
           const provider = await tx.serviceProvider.create({
@@ -258,6 +286,9 @@ export async function PUT(request: NextRequest) {
               popularityScore: normalized.popularityScore || 0,
               isActive: normalized.isActive ?? true,
               displayOrder: normalized.displayOrder || 0,
+              affiliateUrl: affiliate.affiliateUrl,
+              affiliateNetwork: affiliate.affiliateNetwork,
+              affiliateActive: affiliate.affiliateActive,
             },
           });
           await rebuildProviderCoverage(tx, {
@@ -317,6 +348,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Name and category are required" }, { status: 400 });
     }
 
+    const affiliate = extractAffiliateFields(body);
+    if ("error" in affiliate) {
+      return NextResponse.json({ error: affiliate.error }, { status: 400 });
+    }
+
     const conflicts = findProviderConflicts(await loadComparableProviders(), normalized);
     if (conflicts.length > 0) {
       const firstConflict = conflicts[0];
@@ -344,6 +380,9 @@ export async function POST(request: NextRequest) {
           popularityScore: normalized.popularityScore || 0,
           isActive: normalized.isActive ?? true,
           displayOrder: normalized.displayOrder || 0,
+          affiliateUrl: affiliate.affiliateUrl,
+          affiliateNetwork: affiliate.affiliateNetwork,
+          affiliateActive: affiliate.affiliateActive,
         },
       });
       await rebuildProviderCoverage(tx, {

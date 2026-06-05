@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { isHttpsUrl } from "@/lib/url-safety";
 import {
   rebuildProviderCoverage,
   updateWithVersion,
@@ -51,15 +52,6 @@ function getConflictMessage(conflictType: string, name: string, slug: string) {
     return `Provider website already exists in this category: ${name}`;
   }
   return `Provider already exists in this category: ${name}`;
-}
-
-function isHttpsUrl(value: string | null | undefined): value is string {
-  if (!value) return false;
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function buildNormalizedCandidate(existing: any, patch: Record<string, unknown>) {
