@@ -722,6 +722,7 @@ model ServiceProvider {
   governanceIssues      ProviderGovernanceIssue[]
   logoCandidates        ProviderLogoCandidate[]
   affiliateClicks       AffiliateClick[]
+  affiliateConversions  AffiliateConversion[]
 
   deletedAt DateTime?
 
@@ -753,9 +754,39 @@ model AffiliateClick {
   network    String?         @db.VarChar(40) // snapshot of affiliateNetwork at click time
   createdAt  DateTime        @default(now())
 
+  conversions AffiliateConversion[]
+
   @@index([providerId])
   @@index([userId])
   @@index([createdAt])
+  @@index([providerId, createdAt]) // windowed click-rate aggregation in the admin dashboard
+}
+
+// Affiliate conversion (Layer 1 revenue). One row per partner-reported payout
+// event, written by the server-to-server postback endpoint (never the browser).
+// Idempotent on (network, externalTransactionId) so a partner can safely retry
+// or re-send status updates. Links back to the originating click when the
+// partner echoes our click id.
+model AffiliateConversion {
+  id                    String          @id @default(cuid()) @db.VarChar(30)
+  affiliateClickId      String?         @db.VarChar(30)
+  affiliateClick        AffiliateClick? @relation(fields: [affiliateClickId], references: [id], onDelete: SetNull)
+  providerId            String          @db.VarChar(30)
+  provider              ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  network               String          @db.VarChar(40)
+  externalTransactionId String          @db.VarChar(191) // partner's transaction id
+  status                String          @default("PENDING") @db.VarChar(20) // PENDING | APPROVED | REJECTED | PAID
+  amountCents           Int             @default(0) // commission in minor units
+  currency              String          @default("USD") @db.VarChar(8)
+  occurredAt            DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@unique([network, externalTransactionId])
+  @@index([providerId])
+  @@index([network])
+  @@index([status])
+  @@index([occurredAt])
 }
 
 model ProviderLogoCandidate {
