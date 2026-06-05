@@ -16,9 +16,16 @@
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const key = (process.argv[2] || "").trim();
+const argv = process.argv.slice(2);
+const dryRun = argv.includes("--dry-run");
+const key = (argv.find((a) => !a.startsWith("-")) || "").trim();
 if (!/^[a-z][a-z0-9-]*$/.test(key)) {
-  console.error('Usage: node scripts/new-connector.mjs <key>   (lowercase kebab-case, e.g. "acme-bank")');
+  console.error('Usage: node scripts/new-connector.mjs <key> [--dry-run]   (lowercase kebab-case, e.g. "acme-bank")');
+  process.exit(1);
+}
+// Guard against the wrong CWD — this writes into packages/connectors.
+if (!existsSync("package.json") || !existsSync(join("packages", "connectors"))) {
+  console.error("Run from the repository root (package.json + packages/connectors must exist in the current directory).");
   process.exit(1);
 }
 const camel = key.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
@@ -107,6 +114,11 @@ describe("__KEY__ connector", () => {
 `;
 
 const fill = (s) => s.replaceAll("__CAMEL__", camel).replaceAll("__KEY__", key);
+
+if (dryRun) {
+  console.log(`[dry-run] Would create ${dir}/ with: index.ts, request.ts, ${key}.test.ts`);
+  process.exit(0);
+}
 
 mkdirSync(dir, { recursive: true });
 writeFileSync(join(dir, "index.ts"), fill(INDEX));

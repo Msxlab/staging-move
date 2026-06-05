@@ -39,13 +39,22 @@ function statusClass(status: string): string {
 export default function AddressChangesPage() {
   const [changes, setChanges] = useState<Change[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError(false);
     fetch("/api/connectors/changes")
-      .then((r) => (r.ok ? r.json() : { changes: [] }))
+      .then((r) => {
+        if (!r.ok) throw new Error("load failed");
+        return r.json();
+      })
       .then((d) => setChanges(d.changes || []))
-      .catch(() => undefined)
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    load();
   }, []);
 
   return (
@@ -64,6 +73,16 @@ export default function AddressChangesPage() {
 
       {loading ? (
         <p className="mt-6 text-sm text-foreground/50">Loading…</p>
+      ) : error ? (
+        <div className="mt-8 rounded-lg border border-foreground/10 p-8 text-center">
+          <p className="text-sm font-medium text-foreground">Couldn&apos;t load your address changes.</p>
+          <button
+            onClick={load}
+            className="mt-3 rounded-md border border-foreground/10 px-3 py-1.5 text-sm text-foreground hover:bg-foreground/[0.05]"
+          >
+            Retry
+          </button>
+        </div>
       ) : changes.length === 0 ? (
         <div className="mt-8 rounded-lg border border-foreground/10 p-8 text-center">
           <MapPin className="mx-auto h-6 w-6 text-foreground/30" />

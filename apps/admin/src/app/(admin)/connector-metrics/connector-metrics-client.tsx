@@ -9,13 +9,22 @@ import { summarizeConnectorMetrics, type ConnectorMetricSummary } from "@/lib/co
 export default function ConnectorMetricsClient() {
   const [summaries, setSummaries] = useState<ConnectorMetricSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError(false);
     fetch("/api/connectors")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("load failed");
+        return r.json();
+      })
       .then((d) => setSummaries(summarizeConnectorMetrics(d.dispatchByConnector || {})))
-      .catch(() => undefined)
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    load();
   }, []);
 
   return (
@@ -28,6 +37,16 @@ export default function ConnectorMetricsClient() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : error ? (
+        <div className="rounded-lg border border-foreground/10 p-6 text-center">
+          <p className="text-sm text-foreground">Couldn&apos;t load connector metrics.</p>
+          <button
+            onClick={load}
+            className="mt-3 rounded-md border border-foreground/10 px-3 py-1.5 text-sm text-foreground hover:bg-muted/30"
+          >
+            Retry
+          </button>
+        </div>
       ) : summaries.length === 0 ? (
         <EmptyState
           icon={Activity}

@@ -46,11 +46,14 @@ export default function AddressChangesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [changes, setChanges] = useState<Change[]>([]);
 
   const load = useCallback(async () => {
+    setError(false);
     const res = await api.get<{ changes: Change[] }>("/api/connectors/changes");
-    if (res.data?.changes) setChanges(res.data.changes);
+    if (res.error || !res.data) setError(true);
+    else setChanges(res.data.changes ?? []);
     setLoading(false);
   }, []);
 
@@ -75,6 +78,19 @@ export default function AddressChangesScreen() {
 
         {loading ? (
           <ActivityIndicator color={theme.colors.text} style={{ marginTop: 32 }} />
+        ) : error ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>{t("addressChanges.error", "Couldn't load your address changes.")}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setLoading(true);
+                void load();
+              }}
+              style={styles.retryBtn}
+            >
+              <Text style={styles.retryText}>{t("common.retry", "Retry")}</Text>
+            </TouchableOpacity>
+          </View>
         ) : changes.length === 0 ? (
           <View style={styles.empty}>
             <MapPin size={28} color={theme.colors.textMuted} />
@@ -164,4 +180,14 @@ const makeStyles = (theme: Theme) =>
     },
     connector: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
     status: { fontSize: 13, fontWeight: "500" },
+    retryBtn: {
+      marginTop: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.card,
+    },
+    retryText: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   });
