@@ -50,11 +50,13 @@
 
 ## 2) CONNECTOR LAYER-4 (flag-gated → STAGED test)
 
-> Connector'lar `FEATURE_API_CONNECTORS` + bir `ConnectorConfig` satırı olmadan **inert**. Test için kademeli aç.
+> Connector'lar `FEATURE_API_CONNECTORS` + bir `ConnectorConfig` satırı olmadan **inert**. Not: `FEATURE_API_CONNECTORS`
+> mevcut kodda global runtime/env switch'tir, per-user FeatureFlag değildir. Production SHADOW pilotu kısa izlenen pencere,
+> staging ortamı veya önceden kodlanmış user-targeted gate ile yapılmalı.
 
 ### 2a) SHADOW dry-run (G2) — SIFIR YAN-ETKİ, önce bunu test et
-- [ ] `FEATURE_API_CONNECTORS` aç + USPS için `ConnectorConfig`: `enabled=true, stage=SHADOW`
-- [ ] USPS consent ver (OAuth akışı)
+- [ ] `FEATURE_API_CONNECTORS` bilinçli aç + USPS için `ConnectorConfig`: `enabled=true, stage=SHADOW`
+- [ ] QA kullanıcısı için USPS `PartnerConsent` hazırla (sandbox OAuth veya kontrollü admin/script seed)
 - [ ] Primary adresini değiştir (from + to dolu)
 - [ ] **Beklenen:** `ConnectorDispatch` satırı `isShadow=true`, status `CONFIRMED`; executor `dryRun=true` olduğu için **USPS'e gerçek COA GİTMEDİ**; kullanıcıya bildirim **gitmedi**; `resultMetadataJson.shadow=true`
 - [ ] AddressChangeEvent satırı oluştu, `dispatchCount` real push'ları sayıyor (shadow hariç)
