@@ -27,6 +27,7 @@ export type ProviderCardData = {
   description?: string | null;
   logoUrl?: string | null;
   website?: string | null;
+  affiliateActive?: boolean;
   scope?: "FEDERAL" | "STATE" | string | null;
   states?: string[] | null;
   tags?: string[] | null;
