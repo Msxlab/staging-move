@@ -85,12 +85,12 @@ describe("resolveFallbackAction", () => {
       actionKey: "acme:WEB",
       label: "Open Acme",
       helperText: "Open Acme",
-      urlTemplate: "http://partners.example.test/address-change",
+      urlTemplate: "https://partners.example.test/address-change",
       type: "DEEP_LINK",
       enabled: true,
     });
     const a = await resolveFallbackAction("acme:WEB");
-    expect(a?.url).toBe("http://partners.example.test/address-change");
+    expect(a?.url).toBe("https://partners.example.test/address-change");
   });
 
   it("allows root-relative app links for web-based guided actions", async () => {

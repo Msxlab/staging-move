@@ -19,6 +19,37 @@ const FORCE_RESET = ["1", "true", "yes"].includes(
   String(process.env.STRIPE_MATRIX_FORCE_RESET || "").toLowerCase(),
 );
 
+// --- Safety guards. This script can create real Stripe customers/subscriptions
+// and write app subscription state, so it is DRY-RUN by default, requires an
+// explicit acknowledgement, and refuses a production-looking target. ---
+{
+  let isProd = false;
+  try {
+    isProd = new URL(BASE).host.includes("locateflow.com");
+  } catch {
+    isProd = false;
+  }
+  if (isProd && process.env.STRIPE_MATRIX_PRODUCTION_DRILL !== "yes") {
+    console.error(
+      `Refusing a production-looking base URL (${BASE}). Set STRIPE_MATRIX_PRODUCTION_DRILL=yes only for a deliberate, supervised prod drill.`,
+    );
+    process.exit(1);
+  }
+  const ack = process.env.STRIPE_MATRIX_I_UNDERSTAND_EXTERNAL_MUTATION;
+  if (ack !== "staging-only" && ack !== "yes") {
+    console.error(
+      "This script mutates external Stripe + app subscription state. Set STRIPE_MATRIX_I_UNDERSTAND_EXTERNAL_MUTATION=staging-only to acknowledge before running.",
+    );
+    process.exit(1);
+  }
+  if (!process.argv.includes("--apply")) {
+    console.error(
+      `[dry-run] BASE=${BASE}. This run WOULD create Stripe customers/subscriptions and write app subscription state. Re-run with --apply to actually execute.`,
+    );
+    process.exit(0);
+  }
+}
+
 const DEFAULT_SOURCES = [
   { plan: "INDIVIDUAL", interval: "MONTH" },
   { plan: "INDIVIDUAL", interval: "YEAR" },

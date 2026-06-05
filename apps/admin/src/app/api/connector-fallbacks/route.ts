@@ -45,7 +45,8 @@ function isAllowedUrlTemplate(value: string, type: FallbackActionType): boolean 
     const parsed = new URL(value);
     if (type === "MAILTO") return parsed.protocol === "mailto:";
     if (type === "PHONE") return parsed.protocol === "tel:";
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
+    // External links become user-facing buttons → require TLS (no plain http).
+    return parsed.protocol === "https:";
   } catch {
     return false;
   }
