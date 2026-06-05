@@ -76,8 +76,12 @@ export function resolveMobileServiceLogoUrls(service: MobileServiceLogoSource): 
     normalizeLogoUrl(service.provider?.logoUrl),
     normalizeLogoUrl(service.providerLogoUrl),
     normalizeLogoUrl(service.logoUrl),
-    domain ? `https://logo.clearbit.com/${domain}` : null,
+    // Google's favicon proxy returns a PNG for almost every domain; Clearbit's
+    // logo API 404s for most utility/government/regional providers in this
+    // catalog. Try the high-hit-rate source first so surfaces that render only
+    // the first candidate (no onError chain) still get a logo.
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
+    domain ? `https://logo.clearbit.com/${domain}` : null,
   ]).filter(isRenderableLogoUrl);
 }
 

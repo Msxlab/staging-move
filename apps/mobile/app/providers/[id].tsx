@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -32,9 +31,8 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
-import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import {
   getLocalizedCategoryLabel,
   getLocalizedCoverageLabel,
@@ -214,13 +212,13 @@ export default function ProviderDetailScreen() {
     );
   }
 
-  // RN's <Image> can't decode the .ico/.svg favicons most providers store, so
-  // resolve to a renderable URL (PNG favicon fallback) instead of a broken box.
-  const logoUrl = resolveMobileServiceLogoUrl({
+  // Render via the shared ServiceLogoMark so the hero uses the SAME tested
+  // fallback chain (renderable-URL filter + onError advance + emoji fallback +
+  // a11y) as the rest of the app instead of a single-URL Image that can blank out.
+  const logoService = {
     provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
     website: provider.website,
-  });
-  const hasLogo = Boolean(logoUrl);
+  };
   const trust = provider.trust || getProviderTrustSummary(provider);
   const categoryLabel = getLocalizedCategoryLabel(t, provider.category, getCategoryLabel(provider.category));
   const providerDescription = getLocalizedProviderDescription(t, i18n.language, provider);
@@ -263,17 +261,16 @@ export default function ProviderDetailScreen() {
 
         <Card variant="glow">
           <View style={styles.topRow}>
-            {hasLogo ? (
-              <Image
-                source={{ uri: logoUrl as string }}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.logoFallback}>
-                <CategoryIcon emoji={getCategoryIcon(provider.category)} size={26} color={theme.colors.primary} />
-              </View>
-            )}
+            <ServiceLogoMark
+              service={logoService}
+              fallbackIcon={getCategoryIcon(provider.category)}
+              size={56}
+              logoSize={48}
+              borderRadius={14}
+              backgroundColor={theme.colors.primaryFaded}
+              borderColor="rgba(127, 182, 232,0.2)"
+              fallbackFontSize={26}
+            />
             <View style={{ flex: 1 }}>
               <Text style={styles.providerName} numberOfLines={2}>
                 {provider.name}

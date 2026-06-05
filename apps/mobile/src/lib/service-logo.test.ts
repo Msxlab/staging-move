@@ -33,8 +33,8 @@ describe("mobile service logo helpers", () => {
         website: "https://www.coned.com/accounts",
       }),
     ).toEqual([
-      "https://logo.clearbit.com/coned.com",
       "https://www.google.com/s2/favicons?domain=coned.com&sz=128",
+      "https://logo.clearbit.com/coned.com",
     ]);
   });
 
@@ -49,8 +49,8 @@ describe("mobile service logo helpers", () => {
       }),
     ).toEqual([
       "https://assets.locateflow.com/providers/ups.png",
-      "https://logo.clearbit.com/ups.com",
       "https://www.google.com/s2/favicons?domain=ups.com&sz=128",
+      "https://logo.clearbit.com/ups.com",
     ]);
   });
 
@@ -66,8 +66,8 @@ describe("mobile service logo helpers", () => {
         },
       }),
     ).toEqual([
-      "https://logo.clearbit.com/usps.com",
       "https://www.google.com/s2/favicons?domain=usps.com&sz=128",
+      "https://logo.clearbit.com/usps.com",
     ]);
   });
 
@@ -78,8 +78,8 @@ describe("mobile service logo helpers", () => {
         website: "https://acme.example",
       }),
     ).toEqual([
-      "https://logo.clearbit.com/acme.example",
       "https://www.google.com/s2/favicons?domain=acme.example&sz=128",
+      "https://logo.clearbit.com/acme.example",
     ]);
   });
 
