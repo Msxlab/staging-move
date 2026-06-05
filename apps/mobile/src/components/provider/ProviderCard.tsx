@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
 import {
   getLocalizedCoverageLabel,
   getLocalizedCoverageMessage,
@@ -26,6 +27,7 @@ export type ProviderCardData = {
   subCategory?: string | null;
   description?: string | null;
   logoUrl?: string | null;
+  website?: string | null;
   scope?: "FEDERAL" | "STATE" | string | null;
   states?: string[] | null;
   tags?: string[] | null;
@@ -69,7 +71,14 @@ export function ProviderCard({
   const fullStyles = useMemo(() => makeFullStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const iconEmoji = getCategoryIcon(provider.category);
-  const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  // Resolve to a URL RN's <Image> can actually render: stored .ico/.svg favicons
+  // (the majority of the catalog) are skipped in favor of a PNG favicon derived
+  // from the provider website, so the card never shows a broken image box.
+  const logoUrl = resolveMobileServiceLogoUrl({
+    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+    website: provider.website,
+  });
+  const hasLogo = Boolean(logoUrl);
   const trust = provider.trust || getProviderTrustSummary(provider);
   const categoryLabel = t(`categories.${provider.category}`, { defaultValue: getCategoryLabel(provider.category) });
   const description = getLocalizedProviderDescription(t, i18n.language, provider);
@@ -88,7 +97,7 @@ export function ProviderCard({
       >
         <View style={compactStyles.row}>
           {hasLogo ? (
-            <Image source={{ uri: provider.logoUrl as string }} style={compactStyles.logo} resizeMode="contain" />
+            <Image source={{ uri: logoUrl as string }} style={compactStyles.logo} resizeMode="contain" />
           ) : (
             <View style={compactStyles.iconWrap}>
               <CategoryIcon emoji={iconEmoji} size={18} color={theme.colors.primary} />
@@ -135,7 +144,7 @@ export function ProviderCard({
     >
       <View style={fullStyles.top}>
         {hasLogo ? (
-          <Image source={{ uri: provider.logoUrl as string }} style={fullStyles.logo} resizeMode="contain" />
+          <Image source={{ uri: logoUrl as string }} style={fullStyles.logo} resizeMode="contain" />
         ) : (
           <View style={fullStyles.iconWrap}>
             <CategoryIcon emoji={iconEmoji} size={20} color={theme.colors.primary} />

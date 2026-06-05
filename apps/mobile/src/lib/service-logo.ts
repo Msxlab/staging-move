@@ -14,6 +14,31 @@ function normalizeLogoUrl(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+// React Native's <Image> cannot decode these formats, even though a browser
+// <img> renders them fine. Most provider logos are auto-ingested from favicons,
+// which are frequently .ico — so without this gate the stored logo URL fails
+// onError and the card silently falls back to the category emoji on mobile.
+const NON_RENDERABLE_EXTENSIONS = new Set([".ico", ".svg", ".bmp", ".tif", ".tiff"]);
+
+/**
+ * A candidate is usable on mobile only when RN's <Image> can actually load it:
+ * an absolute http(s) URL (host-less/relative paths have no origin to resolve
+ * against) whose extension isn't one RN cannot decode. URLs with no file
+ * extension (e.g. the Google favicon proxy, which returns PNG) are allowed.
+ */
+function isRenderableLogoUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+  const dot = parsed.pathname.lastIndexOf(".");
+  if (dot === -1) return true;
+  return !NON_RENDERABLE_EXTENSIONS.has(parsed.pathname.slice(dot).toLowerCase());
+}
+
 function extractDomain(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -53,7 +78,7 @@ export function resolveMobileServiceLogoUrls(service: MobileServiceLogoSource): 
     normalizeLogoUrl(service.logoUrl),
     domain ? `https://logo.clearbit.com/${domain}` : null,
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
-  ]);
+  ]).filter(isRenderableLogoUrl);
 }
 
 export function resolveMobileServiceLogoUrl(service: MobileServiceLogoSource): string | null {

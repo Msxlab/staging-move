@@ -34,6 +34,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
 import {
   getLocalizedCategoryLabel,
   getLocalizedCoverageLabel,
@@ -213,7 +214,13 @@ export default function ProviderDetailScreen() {
     );
   }
 
-  const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  // RN's <Image> can't decode the .ico/.svg favicons most providers store, so
+  // resolve to a renderable URL (PNG favicon fallback) instead of a broken box.
+  const logoUrl = resolveMobileServiceLogoUrl({
+    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+    website: provider.website,
+  });
+  const hasLogo = Boolean(logoUrl);
   const trust = provider.trust || getProviderTrustSummary(provider);
   const categoryLabel = getLocalizedCategoryLabel(t, provider.category, getCategoryLabel(provider.category));
   const providerDescription = getLocalizedProviderDescription(t, i18n.language, provider);
@@ -258,7 +265,7 @@ export default function ProviderDetailScreen() {
           <View style={styles.topRow}>
             {hasLogo ? (
               <Image
-                source={{ uri: provider.logoUrl as string }}
+                source={{ uri: logoUrl as string }}
                 style={styles.logo}
                 resizeMode="contain"
               />

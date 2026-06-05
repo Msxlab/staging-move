@@ -43,6 +43,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 
 // Billing cycle option labels are resolved at render time via t() —
@@ -376,7 +377,13 @@ export default function NewServiceScreen() {
   );
 
   const renderProviderAvatar = (provider: ScoredProvider, isSelected: boolean) => {
-    const logoUrl = typeof provider.logoUrl === "string" ? provider.logoUrl.trim() : "";
+    // Resolve to an RN-renderable URL: stored .ico/.svg favicons can't be
+    // decoded by <Image>, so fall back to a PNG favicon from the provider site.
+    const logoUrl =
+      resolveMobileServiceLogoUrl({
+        provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+        website: provider.website,
+      }) ?? "";
     const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
 
     return (

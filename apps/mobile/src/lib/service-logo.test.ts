@@ -54,6 +54,51 @@ describe("mobile service logo helpers", () => {
     ]);
   });
 
+  it("skips a stored .ico logo RN cannot render and uses website-derived fallbacks", () => {
+    // Matches production: most provider logos are favicon .ico files, which a
+    // browser <img> renders but React Native's <Image> cannot.
+    expect(
+      resolveMobileServiceLogoUrls({
+        provider: {
+          name: "USPS",
+          logoUrl: "https://assets.locateflow.com/provider-logo/abc/def.ico",
+          website: "https://www.usps.com",
+        },
+      }),
+    ).toEqual([
+      "https://logo.clearbit.com/usps.com",
+      "https://www.google.com/s2/favicons?domain=usps.com&sz=128",
+    ]);
+  });
+
+  it("skips .svg stored logos as well", () => {
+    expect(
+      resolveMobileServiceLogoUrls({
+        provider: { name: "ACME", logoUrl: "https://cdn.example/acme.svg" },
+        website: "https://acme.example",
+      }),
+    ).toEqual([
+      "https://logo.clearbit.com/acme.example",
+      "https://www.google.com/s2/favicons?domain=acme.example&sz=128",
+    ]);
+  });
+
+  it("drops host-less / relative logo URLs that RN cannot resolve", () => {
+    expect(
+      resolveMobileServiceLogoUrls({
+        provider: { name: "ACME", logoUrl: "/provider-logo/acme.png" },
+      }),
+    ).toEqual([]);
+  });
+
+  it("keeps a renderable .png stored logo", () => {
+    expect(
+      resolveMobileServiceLogoUrl({
+        provider: { name: "UPS", logoUrl: "https://assets.locateflow.com/provider-logo/abc/ups.png" },
+      }),
+    ).toBe("https://assets.locateflow.com/provider-logo/abc/ups.png");
+  });
+
   it("resolves a stable accessibility name", () => {
     expect(resolveMobileServiceLogoAltName({ provider: { name: " FedEx " }, providerName: "Postal" })).toBe("FedEx");
     expect(resolveMobileServiceLogoAltName({ customProvider: { name: " Local Gym " }, providerName: "Fitness" })).toBe("Local Gym");
