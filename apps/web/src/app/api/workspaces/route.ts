@@ -37,7 +37,12 @@ export async function GET() {
         status: m.status,
         planLabel: summary.planLabel,
         seatLimit: summary.seatLimit,
-        memberCount: await prisma.workspaceMember.count({ where: { workspaceId: m.workspace.id } }),
+        // Count seats actually occupied — exclude SUSPENDED so the displayed
+        // "x / limit" matches what invite-accept enforcement allows (it caps on
+        // non-SUSPENDED members), instead of inflating the count with suspended rows.
+        memberCount: await prisma.workspaceMember.count({
+          where: { workspaceId: m.workspace.id, status: { not: "SUSPENDED" } },
+        }),
         deletedAt: m.workspace.deletedAt,
       };
     }),

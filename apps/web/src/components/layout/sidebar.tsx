@@ -15,6 +15,7 @@ import {
   Building2,
   Bell,
   LifeBuoy,
+  Users,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import { LogoMark } from "@/components/marketing/logo";
 
 interface SidebarProps {
   showBudget?: boolean;
+  showWorkspace?: boolean;
   variant?: "desktop" | "mobile";
   open?: boolean;
   onClose?: () => void;
@@ -32,6 +34,7 @@ interface SidebarProps {
 
 export function Sidebar({
   showBudget = true,
+  showWorkspace = false,
   variant = "desktop",
   open = false,
   onClose,
@@ -56,6 +59,9 @@ export function Sidebar({
       ? [{ key: "budget" as const, href: "/budget", icon: DollarSign }]
       : []),
     { key: "moving", href: "/moving", icon: Truck },
+    ...(showWorkspace
+      ? [{ key: "workspace" as const, href: "/settings/workspace", icon: Users }]
+      : []),
     { key: "notifications", href: "/notifications", icon: Bell },
     { key: "support", href: "/support", icon: LifeBuoy },
   ] as const;

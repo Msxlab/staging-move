@@ -13,6 +13,7 @@ import { InstallPrompt } from "@/components/shared/install-prompt";
 type AppShellProps = {
   children: ReactNode;
   showBudget?: boolean;
+  showWorkspace?: boolean;
 };
 
 const EMBED_STORAGE_KEY = "lf:embed-mobile";
@@ -48,7 +49,7 @@ function useEmbedMode() {
   return embed;
 }
 
-export function AppShell({ children, showBudget = true }: AppShellProps) {
+export function AppShell({ children, showBudget = true, showWorkspace = false }: AppShellProps) {
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
@@ -95,7 +96,7 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
       >
         {tCommon("skipToMain")}
       </a>
-      <Sidebar showBudget={showBudget} />
+      <Sidebar showBudget={showBudget} showWorkspace={showWorkspace} />
       {mobileMenuOpen ? (
         <>
           <button
@@ -106,6 +107,7 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
           />
           <Sidebar
             showBudget={showBudget}
+            showWorkspace={showWorkspace}
             variant="mobile"
             open
             onClose={() => setMobileMenuOpen(false)}
