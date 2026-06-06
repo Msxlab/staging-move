@@ -30,6 +30,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import {
@@ -64,9 +65,14 @@ export default function AddressDetailScreen() {
   const [address, setAddress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch_ = useCallback(async () => {
     const res = await api.get<any>(`/api/addresses/${id}`);
+    // Distinguish a real "not found" from a transient network/500 — the latter
+    // must offer retry, not a permanent dead-end.
+    if (res.error) { setError(res.error); return; }
+    setError(null);
     if (res.data) setAddress(res.data.address || res.data);
   }, [id]);
 
@@ -113,12 +119,16 @@ export default function AddressDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("common.notFound")}</Text>
+          <Text style={styles.title}>{error ? t("common.error", { defaultValue: "Error" }) : t("common.notFound")}</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>{t("addresses.notFound")}</Text>
-        </View>
+        {error ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: theme.colors.textTertiary }}>{t("addresses.notFound")}</Text>
+          </View>
+        )}
       </SafeAreaView>
     );
   }

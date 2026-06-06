@@ -99,6 +99,22 @@ export default function MovingDetailScreen() {
     return true;
   }, [id, fetchMigration, fetchMoveTasks]);
 
+  // Advance the moving plan through the same state machine the web exposes:
+  // PLANNING -> IN_PROGRESS -> COMPLETED (PATCH /api/moving/[id]).
+  const changeStatus = async (status: "IN_PROGRESS" | "COMPLETED") => {
+    if (!plan) return;
+    setTaskBusy("status");
+    const res = await api.patch<any>(`/api/moving/${id}`, { status });
+    setTaskBusy(null);
+    if (res.error) {
+      hapticError();
+      Alert.alert(t("moving.title", { defaultValue: "Moving" }), res.error);
+      return;
+    }
+    hapticSuccess();
+    await fetch_();
+  };
+
   const generateMoveTasks = async () => {
     if (!plan) return;
     setTaskBusy("generate");
@@ -299,6 +315,31 @@ export default function MovingDetailScreen() {
             <UiBadge label={moveScopeLabel} variant={isInterstateMove ? "warning" : "success"} />
           </View>
         </Card>
+
+        {/* Lifecycle action — Start moving (PLANNING) / Mark complete (IN_PROGRESS) */}
+        {plan.status === "PLANNING" || plan.status === "IN_PROGRESS" ? (
+          <TouchableOpacity
+            onPress={() => changeStatus(plan.status === "PLANNING" ? "IN_PROGRESS" : "COMPLETED")}
+            disabled={taskBusy === "status"}
+            accessibilityRole="button"
+            style={{
+              backgroundColor: plan.status === "PLANNING" ? theme.colors.primary : theme.colors.emerald.text,
+              paddingVertical: 14,
+              borderRadius: 12,
+              alignItems: "center",
+              marginBottom: 12,
+              opacity: taskBusy === "status" ? 0.6 : 1,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+              {taskBusy === "status"
+                ? t("common.saving", { defaultValue: "Saving…" })
+                : plan.status === "PLANNING"
+                  ? t("moving.startMoving", { defaultValue: "Start moving" })
+                  : t("moving.markComplete", { defaultValue: "Mark complete" })}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Addresses */}
         <View style={styles.addressCards}>
