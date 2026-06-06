@@ -22,6 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -82,8 +83,12 @@ export default function DashboardScreen() {
       const hasPremium = ent
         ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
         : Boolean(sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date())));
+      const planValue = (ent?.plan ?? sub.plan ?? null) as string | null;
       setIsPremium(!!hasPremium);
-      setPlanTier((ent?.plan ?? sub.plan ?? null) as string | null);
+      setPlanTier(planValue);
+      // Mirror into the global auth store so ThemeProvider applies the
+      // Family/Pro accent palette app-wide (not just on this screen).
+      useAuthStore.getState().setPlanTier(planValue);
 
       // Household / Workspace card (Family/Pro). Best-effort and gated
       // server-side: when WORKSPACE_MODEL_ENABLED is off the API returns 404

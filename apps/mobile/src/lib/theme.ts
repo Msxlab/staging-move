@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef, type ReactNode } from "react";
 import { Appearance, useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   brandColors,
   semanticColors,
@@ -174,6 +175,106 @@ export type ThemePreference = "system" | "light" | "dark";
 /** What the app is actually rendering once `system` has been resolved. */
 export type ResolvedScheme = "light" | "dark";
 
+// ──────────────────────────────────────────────────────────────────────
+// Per-plan accent theming (Family / Pro)
+//
+// Family and Pro members get a plan-tinted palette: the primary/accent
+// hues + hero gradients shift while surfaces and text stay on the base
+// scheme so contrast/readability are preserved. Individual (or unknown)
+// plans render the base Aurora palette unchanged. The active plan is read
+// from the auth store (set after the client resolves entitlement) and
+// applied via `applyPlanPalette` inside `ThemeProvider`.
+// ──────────────────────────────────────────────────────────────────────
+
+type PlanAccentSet = {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  primaryFaded: string;
+  accent: string;
+  gradPrimary: readonly [string, string];
+  gradGlow: readonly [string, string];
+};
+
+const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet>> = {
+  // Family — crystal / emerald green, luxury.
+  FAMILY: {
+    dark: {
+      primary: "#34D8A6",
+      primaryLight: "#5FE7BE",
+      primaryDark: "#1FB98A",
+      primaryFaded: "rgba(52, 216, 166, 0.12)",
+      accent: "#87DDC0",
+      gradPrimary: ["#5FE7BE", "#34D8A6"],
+      gradGlow: ["rgba(52, 216, 166, 0.40)", "rgba(135, 221, 192, 0.10)"],
+    },
+    light: {
+      primary: "#0E9F6E",
+      primaryLight: "#34D8A6",
+      primaryDark: "#0A7D57",
+      primaryFaded: "rgba(14, 159, 110, 0.10)",
+      accent: "#0E9F6E",
+      gradPrimary: ["#34D8A6", "#0E9F6E"],
+      gradGlow: ["rgba(14, 159, 110, 0.30)", "rgba(52, 216, 166, 0.10)"],
+    },
+  },
+  // Pro — premium violet with a gold accent.
+  PRO: {
+    dark: {
+      primary: "#8B7CFF",
+      primaryLight: "#A99BFF",
+      primaryDark: "#6F5CF0",
+      primaryFaded: "rgba(139, 124, 255, 0.12)",
+      accent: "#E9C46A",
+      gradPrimary: ["#A99BFF", "#8B7CFF"],
+      gradGlow: ["rgba(139, 124, 255, 0.40)", "rgba(233, 196, 106, 0.12)"],
+    },
+    light: {
+      primary: "#6D28D9",
+      primaryLight: "#8B7CFF",
+      primaryDark: "#5B21B6",
+      primaryFaded: "rgba(109, 40, 217, 0.10)",
+      accent: "#B8860B",
+      gradPrimary: ["#8B7CFF", "#6D28D9"],
+      gradGlow: ["rgba(109, 40, 217, 0.30)", "rgba(233, 196, 106, 0.12)"],
+    },
+  },
+};
+
+/**
+ * Returns the base theme tinted for the given plan. FAMILY / PRO shift the
+ * primary + accent + hero gradients; any other value (Individual, null)
+ * returns the base palette unchanged. Cast through `unknown` because the
+ * base palette uses `as const` literal types and the plan values are
+ * different literals of the same shape.
+ */
+export function applyPlanPalette(
+  base: Theme,
+  scheme: ResolvedScheme,
+  plan: string | null | undefined,
+): Theme {
+  const key = (plan ?? "").toUpperCase();
+  const accentSet = key === "FAMILY" ? planAccents.FAMILY : key === "PRO" ? planAccents.PRO : null;
+  if (!accentSet) return base;
+  const p = accentSet[scheme];
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: p.primary,
+      primaryLight: p.primaryLight,
+      primaryDark: p.primaryDark,
+      primaryFaded: p.primaryFaded,
+      accent: p.accent,
+      gradient: {
+        ...base.colors.gradient,
+        primary: p.gradPrimary,
+        glow: p.gradGlow,
+      },
+    },
+  } as unknown as Theme;
+}
+
 const STORAGE_KEY = "locateflow.theme.preference";
 
 const ALL_PREFERENCES: ReadonlyArray<ThemePreference> = ["system", "light", "dark"];
@@ -277,9 +378,10 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
     return systemAppearanceScheme;
   }, [preference, systemScheme, systemAppearanceScheme]);
 
+  const planTier = useAuthStore((s) => s.planTier);
   const activeTheme = useMemo<Theme>(
-    () => (resolvedScheme === "light" ? lightTheme : theme),
-    [resolvedScheme],
+    () => applyPlanPalette(resolvedScheme === "light" ? lightTheme : theme, resolvedScheme, planTier),
+    [resolvedScheme, planTier],
   );
 
   const setPreference = useCallback(async (next: ThemePreference) => {

@@ -50,12 +50,21 @@ interface AuthState {
    * and the AuthGuard gate clears immediately without a redirect loop.
    */
   patchUser: (patch: Partial<AuthUser>) => void;
+  /**
+   * Effective plan tier ("FAMILY" | "PRO" | "INDIVIDUAL" | null), set after the
+   * client resolves the user's entitlement (e.g. on the dashboard). Drives
+   * per-plan theming in ThemeProvider — kept here (not on AuthUser) because it
+   * comes from /api/profile entitlement, not the auth/me user record.
+   */
+  planTier: string | null;
+  setPlanTier: (plan: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   loading: true,
+  planTier: null,
 
   async hydrate() {
     try {
@@ -73,13 +82,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async clearSession() {
     await tokenCache.clearToken(TOKEN_KEY);
-    set({ token: null, user: null, loading: false });
+    set({ token: null, user: null, planTier: null, loading: false });
   },
 
   patchUser(patch) {
     const current = get().user;
     if (!current) return;
     set({ user: { ...current, ...patch } });
+  },
+
+  setPlanTier(plan) {
+    set({ planTier: plan });
   },
 
   async refreshUser(apiBaseUrl) {
