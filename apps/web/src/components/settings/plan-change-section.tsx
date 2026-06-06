@@ -28,6 +28,7 @@ export function PlanChangeSection() {
   const [currentPlan, setCurrentPlan] = useState<string>("FREE_TRIAL");
   const [currentInterval, setCurrentInterval] = useState<Interval>("MONTH");
   const [hasStripeSub, setHasStripeSub] = useState(false);
+  const [inherited, setInherited] = useState(false);
   const [interval, setInterval] = useState<Interval>("MONTH");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -41,8 +42,15 @@ export function PlanChangeSection() {
         if (!res.ok) return;
         const data = await res.json();
         const sub = data?.subscription || null;
+        const ent = data?.entitlement || null;
+        const ws = data?.workspaceEntitlement || null;
+        const isInherited = ws?.inherited === true;
         if (!active) return;
-        const plan = String(sub?.plan || "FREE_TRIAL");
+        // Inherited Family/Pro members have no own paid row; their EFFECTIVE plan
+        // is the owner's. Deriving from sub alone wrongly showed them as
+        // FREE_TRIAL with upgrade/downgrade controls for a plan they can't manage.
+        setInherited(isInherited);
+        const plan = String((isInherited ? ent?.plan : null) || sub?.plan || "FREE_TRIAL");
         const ivl: Interval = sub?.billingInterval === "YEAR" ? "YEAR" : "MONTH";
         setCurrentPlan(plan);
         setCurrentInterval(ivl);
@@ -114,6 +122,28 @@ export function PlanChangeSection() {
   }
 
   if (loading) return null;
+
+  // Inherited Family/Pro members can't change a plan they don't own — show their
+  // effective plan and point them to the workspace owner instead of buy controls.
+  if (inherited) {
+    return (
+      <div className="rounded-2xl border border-border bg-foreground/5 p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl border border-tone-sky-br bg-tone-sky-bg p-2.5">
+            <Users className="h-5 w-5 text-tone-sky-fg" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-foreground">
+              {BILLING_PLAN_DEFINITIONS[(currentPlan as Tier)]?.displayName ?? currentPlan} · included with your plan
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your access comes from your family/workspace plan. To change the plan or billing, the workspace owner manages it from their account.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-foreground/5 p-5">
