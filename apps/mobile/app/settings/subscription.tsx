@@ -264,16 +264,21 @@ function LegacySubscriptionScreen() {
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
   const [entitlement, setEntitlement] = useState<any>(null);
   const [workspaceEntitlement, setWorkspaceEntitlement] = useState<{ workspaceId: string; inherited: boolean } | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchSubscription = useCallback(async () => {
     const res = await api.get<any>("/api/profile");
     if (res.data) {
+      setLoadError(false);
       setSubscription(res.data.subscription || null);
       // The EFFECTIVE entitlement (the owner's plan for an inherited Family/Pro
       // member) and whether it's inherited — without these the member's own row
       // is null/FREE_TRIAL and the screen wrongly shows "No active subscription".
       setEntitlement(res.data.entitlement || null);
       setWorkspaceEntitlement(res.data.workspaceEntitlement || null);
+    } else if (res.error) {
+      // Don't let a transient network/500 masquerade as "No active subscription".
+      setLoadError(true);
     }
   }, []);
 
@@ -775,6 +780,18 @@ function LegacySubscriptionScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {loadError && !subscription && !entitlement ? (
+          <TouchableOpacity
+            onPress={() => { void fetchSubscription(); }}
+            accessibilityRole="button"
+            style={{ borderRadius: 12, borderWidth: 1, borderColor: theme.colors.error, backgroundColor: theme.colors.errorFaded, padding: 12, marginBottom: 12 }}
+          >
+            <Text style={{ color: theme.colors.error, fontWeight: "700", fontSize: 13 }}>
+              {t("settings.subscription_loadError", { defaultValue: "Couldn't load your subscription. Tap to retry." })}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.currentPlanCard}>
           <View style={styles.currentPlanLeft}>
             <View style={styles.currentPlanIcon}>

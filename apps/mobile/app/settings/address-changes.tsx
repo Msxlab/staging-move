@@ -119,7 +119,7 @@ export default function AddressChangesScreen() {
               ) : (
                 c.dispatches.map((d, i) => (
                   <View key={`${d.connectorKey}-${i}`} style={styles.row}>
-                    <Text style={styles.connector}>{d.connectorKey.toUpperCase()}</Text>
+                    <Text style={styles.connector}>{(d.connectorKey || "").toUpperCase()}</Text>
                     <Text style={[styles.status, { color: statusColor(d.status, theme.colors.textSecondary) }]}>
                       {STATUS_LABEL[d.status] ?? d.status}
                     </Text>

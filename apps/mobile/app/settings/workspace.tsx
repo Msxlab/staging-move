@@ -381,7 +381,7 @@ export default function WorkspaceScreen() {
                           </Text>
                           <Text style={styles.memberSub}>
                             {ROLE_LABEL[m.role] ?? m.role}
-                            {m.status !== "ACTIVE" ? ` · ${m.status.toLowerCase()}` : ""}
+                            {m.status && m.status !== "ACTIVE" ? ` · ${m.status.toLowerCase()}` : ""}
                             {iAmManager && managedSyncOn(m.role, m.managedSyncEnabled) ? " · sync on" : ""}
                           </Text>
                         </View>

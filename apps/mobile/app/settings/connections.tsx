@@ -125,7 +125,7 @@ export default function ConnectionsScreen() {
                     <Link2 size={18} color={theme.colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowLabel}>{c.connectorKey.toUpperCase()}</Text>
+                    <Text style={styles.rowLabel}>{(c.connectorKey || "").toUpperCase()}</Text>
                     <Text style={styles.rowDesc}>{statusLabel(c.status, t)}</Text>
                   </View>
                   <TouchableOpacity
