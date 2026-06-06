@@ -30,6 +30,10 @@ vi.mock("@/lib/api-gates", async () => {
   };
 });
 
+vi.mock("@/lib/plan-limits", () => ({
+  getPlanForLimitScope: vi.fn(() => Promise.resolve({ isActive: true, hasPremium: true })),
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "budget-rate-key"),
   rateLimit: vi.fn(() => Promise.resolve({ success: true })),
@@ -37,9 +41,11 @@ vi.mock("@/lib/rate-limit", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireAppMutationUser } from "@/lib/api-gates";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { GET, POST } from "./route";
 
 const requireAppMutationUserMock = requireAppMutationUser as unknown as Mock;
+const getPlanForLimitScopeMock = getPlanForLimitScope as unknown as Mock;
 const budgetMock = prisma.budget as unknown as {
   findMany: Mock;
   findFirst: Mock;
@@ -53,6 +59,7 @@ describe("budget route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     requireAppMutationUserMock.mockResolvedValue("user-1");
+    getPlanForLimitScopeMock.mockResolvedValue({ isActive: true, hasPremium: true });
     budgetMock.findFirst.mockResolvedValue(null);
     budgetMock.create.mockImplementation(({ data }) => Promise.resolve({ id: "budget-1", ...data }));
     budgetMock.findMany.mockResolvedValue([]);
@@ -107,10 +114,8 @@ describe("budget route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(201);
-    expect(requireAppMutationUserMock).toHaveBeenCalledWith({
-      requirePremium: true,
-      subscriptionMessage: "A paid subscription is required to manage budgets.",
-    });
+    expect(requireAppMutationUserMock).toHaveBeenCalledWith();
+    expect(getPlanForLimitScopeMock).toHaveBeenCalledWith("user-1", {});
     expect(body.budget.actualExpenses).toBe(250);
     expect(budgetMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

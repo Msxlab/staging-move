@@ -6,22 +6,31 @@ import { addressSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
 import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
+import {
+  assertScopedRecordAction,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
     const address = await prisma.address.findUnique({
       where: { id },
       include: {
         services: {
-          where: activeTrackedServiceWhere(userId),
+          where: activeTrackedServiceWhereForScope(
+            { userId, workspaceId: scope.workspaceId },
+            scope.memberRole === "CHILD" ? { userId } : {},
+          ),
           include: {
             provider: { select: { id: true, name: true, logoUrl: true, website: true } },
             customProvider: { select: { id: true, name: true, category: true, website: true, phone: true, email: true, providerType: true, trustStatus: true } },
@@ -32,9 +41,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    if (!address || address.userId !== userId || address.deletedAt) {
+    if (!address || address.deletedAt) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
+    assertScopedRecordAction(address, scope, "address.view", { notFoundMessage: "Address not found" });
 
     const services = await enrichServicesWithProviderCatalog(
       address.services.map((service: any) => decryptServiceSensitiveFields(service)),
@@ -59,12 +69,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
 
     const existing = await prisma.address.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId || existing.deletedAt) {
+    if (!existing || existing.deletedAt) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
+    assertScopedRecordAction(existing, scope, "address.edit", {
+      notFoundMessage: "Address not found",
+      forbiddenMessage: "No permission to edit this address.",
+    });
 
     const body = await request.json();
     const validated = addressSchema.partial().parse(body);
@@ -85,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const address = await prisma.$transaction(async (tx) => {
       if (validated.isPrimary) {
         await tx.address.updateMany({
-          where: { userId, isPrimary: true, id: { not: id } },
+          where: scopedRecordWhere(scope, { isPrimary: true, id: { not: id } }),
           data: { isPrimary: false },
         });
       }
@@ -95,7 +110,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "UPDATE", entityType: "Address", entityId: id, changes: validated, ...meta });
 
-    const moveTaskSync = await syncMoveTasksForAddress(userId, id);
+    const moveTaskSync = await syncMoveTasksForAddress(userId, id, { workspaceId: scope.workspaceId });
 
     // Auto-sync to connected partners when the user's PRIMARY address location
     // changes (or an address becomes primary). Best-effort + gated; a no-op
@@ -111,11 +126,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       // consent must not get address edits auto-enqueued (P1, was flag-only).
       if (
         address.isPrimary &&
+        existing.userId === userId &&
         (locationChanged || becamePrimary) &&
         (await isApiConnectorsEnabled()) &&
-        (await userHasApiConnectorEntitlement(userId))
+        (await userHasApiConnectorEntitlement(scope.workspaceId ? scope.ownerUserId : userId))
       ) {
-        await enqueueAddressChange({ userId, toAddressId: id });
+        await enqueueAddressChange({ userId, toAddressId: id, workspaceId: scope.workspaceId });
       }
     } catch {
       // best-effort: a sync enqueue must never fail the address update
@@ -143,12 +159,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
 
     const existing = await prisma.address.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId || existing.deletedAt) {
+    if (!existing || existing.deletedAt) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
+    assertScopedRecordAction(existing, scope, "address.delete", {
+      notFoundMessage: "Address not found",
+      forbiddenMessage: "No permission to delete this address.",
+    });
 
     // If the address being removed is the user's PRIMARY, line up the most
     // recent remaining address to inherit primary status in the same
@@ -160,7 +181,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     let promotedPrimaryId: string | null = null;
     if (existing.isPrimary) {
       const nextPrimary = await prisma.address.findFirst({
-        where: { userId, deletedAt: null, id: { not: id } },
+        where: scopedRecordWhere(scope, { deletedAt: null, id: { not: id } }),
         orderBy: { createdAt: "desc" },
         select: { id: true },
       });
@@ -175,11 +196,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const now = new Date();
     const ops = [
       prisma.service.updateMany({
-        where: { addressId: id, userId, deletedAt: null },
+        where: scopedRecordWhere(scope, { addressId: id, deletedAt: null }),
         data: { isActive: false, deactivatedAt: now, deletedAt: now },
       }),
       prisma.budget.updateMany({
-        where: { addressId: id, userId, deletedAt: null },
+        where: scopedRecordWhere(scope, { addressId: id, deletedAt: null }),
         data: { deletedAt: now },
       }),
       prisma.address.update({ where: { id }, data: { deletedAt: now } }),

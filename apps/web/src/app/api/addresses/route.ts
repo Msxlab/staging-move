@@ -7,22 +7,33 @@ import { canCreateAddress } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import {
+  assertWorkspaceAction,
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 
 // GET /api/addresses
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { searchParams } = new URL(request.url);
     const pagination = parsePaginationParams(searchParams);
-    const where = { userId, deletedAt: null };
+    assertWorkspaceAction(scope, "address.view", { resourceUserId: userId });
+    const where = scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true });
 
     const [addresses, total] = await Promise.all([
       prisma.address.findMany({
         where,
         include: {
           services: {
-            where: activeTrackedServiceWhere(userId),
+            where: activeTrackedServiceWhereForScope(
+              { userId, workspaceId: scope.workspaceId },
+              scope.memberRole === "CHILD" ? { userId } : {},
+            ),
             select: { id: true, providerName: true, category: true, monthlyCost: true },
           },
           user: { select: { id: true, firstName: true, lastName: true } },
@@ -42,6 +53,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ addresses: decryptedAddresses, ...buildPaginatedResponse(decryptedAddresses, total, pagination) });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -54,6 +67,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "address.create", { resourceUserId: userId });
 
     // Rate limit: 20 writes per minute
     const rlKey = getRateLimitKey(request, "addr:create");
@@ -62,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
-    const limitCheck = await canCreateAddress(userId);
+    const limitCheck = await canCreateAddress(userId, planLimitScopeForDataScope(scope));
     if (!limitCheck.allowed) {
       return entitlementErrorResponse(limitCheck, "ADDRESS_LIMIT_REACHED");
     }
@@ -81,7 +96,7 @@ export async function POST(request: NextRequest) {
     const address = await prisma.$transaction(async (tx) => {
       if (validated.isPrimary) {
         await tx.address.updateMany({
-          where: { userId, isPrimary: true },
+          where: scopedRecordWhere(scope, { isPrimary: true }),
           data: { isPrimary: false },
         });
       }
@@ -89,6 +104,7 @@ export async function POST(request: NextRequest) {
         data: {
           ...encryptedData,
           userId,
+          ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
           startDate: new Date(validated.startDate),
           endDate: validated.endDate ? new Date(validated.endDate) : undefined,
         },

@@ -9,6 +9,8 @@ export interface CompleteMoveTaskOptions {
   selectedDestinationProviderId?: string | null;
   selectedCustomProviderId?: string | null;
   notes?: string | null;
+  workspaceId?: string | null;
+  completedByUserId?: string | null;
 }
 
 async function getSelectedProvider(
@@ -56,21 +58,35 @@ export async function completeMoveTaskWithLocalEffect(
   taskId: string,
   options: CompleteMoveTaskOptions = {},
 ) {
+  const actorUserId = options.completedByUserId || userId;
   const task = await prisma.moveTask.findFirst({
-    where: { id: taskId, userId, deletedAt: null },
+    where: {
+      id: taskId,
+      userId,
+      deletedAt: null,
+      ...(options.workspaceId ? { movingPlan: { workspaceId: options.workspaceId } } : {}),
+    },
     include: {
       service: true,
       destinationProvider: true,
       customProvider: true,
       destinationAddress: true,
+      movingPlan: { select: { workspaceId: true } },
     },
   });
 
   if (!task) throw new Error("Move task not found");
-  if (task.service && task.service.userId !== userId) {
+  const taskWorkspaceId = options.workspaceId || task.movingPlan.workspaceId || null;
+  if (
+    task.service &&
+    (taskWorkspaceId ? task.service.workspaceId !== taskWorkspaceId : task.service.userId !== userId)
+  ) {
     throw new Error("Move task service ownership mismatch");
   }
-  if (task.destinationAddress && task.destinationAddress.userId !== userId) {
+  if (
+    task.destinationAddress &&
+    (taskWorkspaceId ? task.destinationAddress.workspaceId !== taskWorkspaceId : task.destinationAddress.userId !== userId)
+  ) {
     throw new Error("Move task destination ownership mismatch");
   }
   if (task.destinationAddress && task.destinationAddress.deletedAt) {
@@ -87,12 +103,14 @@ export async function completeMoveTaskWithLocalEffect(
   const localEffect = {
     ...(parseMoveTaskLocalEffect(task.localEffect) || {}),
     appliedAt: now.toISOString(),
-    appliedBy: userId,
+    appliedBy: actorUserId,
     localOnly: true,
     noExternalAutomation: true,
     selectedDestinationProviderId: selectedProvider?.providerId || null,
     selectedCustomProviderId: selectedProvider?.customProviderId || null,
   };
+  const targetServiceUserId = task.service?.userId || task.destinationAddress?.userId || userId;
+  const targetWorkspaceId = task.service?.workspaceId || task.destinationAddress?.workspaceId || taskWorkspaceId;
 
   const result = await prisma.$transaction(async (tx) => {
     let createdServiceId: string | null = null;
@@ -103,7 +121,11 @@ export async function completeMoveTaskWithLocalEffect(
       task.serviceId
     ) {
       const service = await tx.service.findFirst({
-        where: { id: task.serviceId, userId, deletedAt: null },
+        where: {
+          id: task.serviceId,
+          deletedAt: null,
+          ...(taskWorkspaceId ? { workspaceId: taskWorkspaceId } : { userId }),
+        },
       });
       if (service) {
         await tx.service.update({
@@ -121,7 +143,8 @@ export async function completeMoveTaskWithLocalEffect(
     if (task.actionType === "TRANSFER_SERVICE" && task.service && task.destinationAddressId) {
       const existingDestinationService = await tx.service.findFirst({
         where: {
-          userId,
+          userId: task.service.userId,
+          ...(task.service.workspaceId ? { workspaceId: task.service.workspaceId } : {}),
           addressId: task.destinationAddressId,
           providerName: task.service.providerName,
           category: task.service.category,
@@ -131,7 +154,8 @@ export async function completeMoveTaskWithLocalEffect(
       if (!existingDestinationService) {
         const service = await tx.service.create({
           data: encryptServiceSensitiveFields({
-            userId,
+            userId: task.service.userId,
+            ...(task.service.workspaceId ? { workspaceId: task.service.workspaceId } : {}),
             addressId: task.destinationAddressId,
             providerId: task.service.providerId,
             customProviderId: task.service.customProviderId,
@@ -167,7 +191,8 @@ export async function completeMoveTaskWithLocalEffect(
     ) {
       const existingDestinationService = await tx.service.findFirst({
         where: {
-          userId,
+          userId: targetServiceUserId,
+          ...(targetWorkspaceId ? { workspaceId: targetWorkspaceId } : {}),
           addressId: task.destinationAddressId,
           providerName: selectedProvider.providerName,
           category: selectedProvider.category,
@@ -177,7 +202,8 @@ export async function completeMoveTaskWithLocalEffect(
       if (!existingDestinationService) {
         const service = await tx.service.create({
           data: encryptServiceSensitiveFields({
-            userId,
+            userId: targetServiceUserId,
+            ...(targetWorkspaceId ? { workspaceId: targetWorkspaceId } : {}),
             addressId: task.destinationAddressId,
             providerId: selectedProvider.providerId,
             customProviderId: selectedProvider.customProviderId,
@@ -203,7 +229,7 @@ export async function completeMoveTaskWithLocalEffect(
       where: { id: task.id },
       data: {
         ...lifecyclePatch,
-        completedByUserId: userId,
+        completedByUserId: actorUserId,
         notes: options.notes ?? task.notes,
         localEffect: {
           ...localEffect,

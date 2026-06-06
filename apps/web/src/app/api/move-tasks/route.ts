@@ -7,6 +7,13 @@ import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import { syncSuggestedMoveTasks } from "@/lib/move-task-generation";
 import { completeMoveTaskWithLocalEffect } from "@/lib/move-task-local-effects";
+import { apiGateErrorResponse } from "@/lib/api-gates";
+import {
+  assertWorkspaceAction,
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+  type WorkspaceDataScope,
+} from "@/lib/workspace-data-scope";
 
 function includeTaskContext() {
   return {
@@ -30,20 +37,30 @@ async function recordMoveTaskEvent(userId: string, event: string, metadata: Reco
   }).catch(() => null);
 }
 
+function moveTaskWhereForScope(scope: WorkspaceDataScope, extra: Record<string, unknown> = {}) {
+  const base = scope.workspaceId
+    ? {
+        movingPlan: { workspaceId: scope.workspaceId, deletedAt: null },
+        ...(scope.memberRole === "CHILD" ? { userId: scope.actorUserId } : {}),
+      }
+    : { userId: scope.actorUserId };
+  return { ...base, deletedAt: null, ...extra };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "address.view", { resourceUserId: userId });
     const { searchParams } = new URL(request.url);
     const movingPlanId = searchParams.get("movingPlanId") || undefined;
     const status = searchParams.get("status") || undefined;
 
     const tasks = await prisma.moveTask.findMany({
-      where: {
-        userId,
-        deletedAt: null,
+      where: moveTaskWhereForScope(scope, {
         ...(movingPlanId ? { movingPlanId } : {}),
         ...(status ? { status } : {}),
-      },
+      }),
       include: includeTaskContext(),
       orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
       take: 200,
@@ -58,6 +75,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -69,13 +88,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "address.edit", { resourceUserId: userId });
     const rlKey = getRateLimitKey(request, "move-task:generate");
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
-    const entitlement = await canGenerateMoveTasks(userId);
+    const entitlement = await canGenerateMoveTasks(userId, planLimitScopeForDataScope(scope));
     if (!entitlement.allowed) {
       return NextResponse.json(
         { error: entitlement.reason, code: entitlement.code, upgradeRequired: entitlement.upgradeRequired },
@@ -89,9 +110,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "movingPlanId is required" }, { status: 400 });
     }
 
-    const result = await syncSuggestedMoveTasks(userId, movingPlanId);
+    const plan = await prisma.movingPlan.findFirst({
+      where: {
+        id: movingPlanId,
+        deletedAt: null,
+        ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : { userId }),
+      },
+      select: { id: true, userId: true, workspaceId: true },
+    });
+    if (!plan) {
+      return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
+    }
+    assertWorkspaceAction(scope, "address.edit", {
+      resourceUserId: plan.userId,
+      message: "No permission to generate move tasks for this plan.",
+    });
+
+    const result = await syncSuggestedMoveTasks(plan.userId, movingPlanId);
     const tasks = await prisma.moveTask.findMany({
-      where: { userId, movingPlanId, deletedAt: null },
+      where: moveTaskWhereForScope(scope, { movingPlanId }),
       include: includeTaskContext(),
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     });
@@ -122,6 +159,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -142,6 +181,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const rlKey = getRateLimitKey(request, "move-task:update");
     const rl = await rateLimit(rlKey, { limit: 60, windowSeconds: 60 });
     if (!rl.success) {
@@ -164,19 +204,25 @@ export async function PATCH(request: NextRequest) {
     }
 
     const existing = await prisma.moveTask.findFirst({
-      where: { id, userId, deletedAt: null },
+      where: moveTaskWhereForScope(scope, { id }),
     });
     if (!existing) {
       return NextResponse.json({ error: "Move task not found" }, { status: 404 });
     }
+    assertWorkspaceAction(scope, "address.edit", {
+      resourceUserId: existing.userId,
+      message: "No permission to update this move task.",
+    });
 
     const task =
       event === "COMPLETE"
         ? (
-            await completeMoveTaskWithLocalEffect(userId, id, {
+            await completeMoveTaskWithLocalEffect(existing.userId, id, {
               notes,
               selectedDestinationProviderId,
               selectedCustomProviderId,
+              workspaceId: scope.workspaceId,
+              completedByUserId: userId,
             })
           ).task
         : await prisma.moveTask.update({
@@ -221,6 +267,8 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

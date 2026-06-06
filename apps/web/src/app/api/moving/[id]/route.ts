@@ -6,6 +6,10 @@ import { z } from "zod";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import {
+  assertScopedRecordAction,
+  resolveWorkspaceDataScope,
+} from "@/lib/workspace-data-scope";
 
 const MOVING_STATUS_VALUES = ["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELED"] as const;
 const movingStatusSchema = z.preprocess(
@@ -31,6 +35,7 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
     const plan = await prisma.movingPlan.findUnique({
       where: { id },
@@ -40,9 +45,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    if (!plan || plan.userId !== userId || plan.deletedAt) {
+    if (!plan || plan.deletedAt) {
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
+    assertScopedRecordAction(plan, scope, "address.view", { notFoundMessage: "Moving plan not found" });
 
     return NextResponse.json({ plan: { ...plan, status: normalizeMovingPlanStatus(plan.status) } });
   } catch (error) {
@@ -58,11 +64,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
 
     const existing = await prisma.movingPlan.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId || existing.deletedAt) {
+    if (!existing || existing.deletedAt) {
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
+    assertScopedRecordAction(existing, scope, "address.edit", { notFoundMessage: "Moving plan not found" });
 
     const body = await request.json();
     const validated = movingPatchSchema.parse(body);
@@ -107,14 +115,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     let moveTaskSync: unknown;
     if (effectiveStatus === "CANCELED") {
       const retired = await prisma.moveTask.updateMany({
-        where: { movingPlanId: plan.id, userId, source: "CLASSIFIER", deletedAt: null },
+        where: {
+          movingPlanId: plan.id,
+          ...(scope.workspaceId ? {} : { userId }),
+          source: "CLASSIFIER",
+          deletedAt: null,
+        },
         data: { deletedAt: new Date() },
       });
       moveTaskSync = { retiredSuggestedTasks: retired.count };
     } else if (effectiveStatus === "COMPLETED") {
       moveTaskSync = { skipped: "plan_completed" };
     } else {
-      moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+      moveTaskSync = scope.workspaceId
+        ? await syncMoveTasksForPlans(userId, [plan.id], { workspaceId: scope.workspaceId })
+        : await syncMoveTasksForPlans(userId, [plan.id]);
     }
 
     return NextResponse.json({ plan, moveTaskSync });
@@ -137,11 +152,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params;
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
 
     const existing = await prisma.movingPlan.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId || existing.deletedAt) {
+    if (!existing || existing.deletedAt) {
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
+    assertScopedRecordAction(existing, scope, "address.delete", { notFoundMessage: "Moving plan not found" });
 
     // Replicate the schema's MoveTask.movingPlan onDelete: Cascade, which never
     // fires for our soft deletes: soft-delete the plan's move tasks in the same
@@ -150,7 +167,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const now = new Date();
     const [moveTasksResult] = await prisma.$transaction([
       prisma.moveTask.updateMany({
-        where: { movingPlanId: id, userId, deletedAt: null },
+        where: { movingPlanId: id, ...(scope.workspaceId ? {} : { userId }), deletedAt: null },
         data: { deletedAt: now },
       }),
       prisma.movingPlan.update({ where: { id }, data: { deletedAt: now } }),

@@ -84,5 +84,11 @@ export async function POST(request: NextRequest) {
     select: { id: true, name: true },
   });
 
-  return NextResponse.json({ ...workspace, planLabel: workspacePlanLabel(plan) });
+  const response = NextResponse.json({ ...workspace, planLabel: workspacePlanLabel(plan) });
+  response.cookies.set("lf_workspace_id", workspace.id, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
 }

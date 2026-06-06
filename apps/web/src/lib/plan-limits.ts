@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
@@ -63,6 +63,11 @@ export interface PlanLimitCheck {
   setupGrace?: boolean;
   current?: number;
   limit?: number;
+}
+
+export interface PlanLimitScope {
+  workspaceId?: string | null;
+  planOwnerUserId?: string | null;
 }
 
 /**
@@ -132,6 +137,18 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   };
 }
 
+export async function getPlanForLimitScope(userId: string, scope: PlanLimitScope = {}): Promise<UserPlan> {
+  return getUserPlan(scope.planOwnerUserId || userId);
+}
+
+function recordScopeWhere(userId: string, scope: PlanLimitScope = {}) {
+  return scope.workspaceId ? { workspaceId: scope.workspaceId } : { userId };
+}
+
+function serviceScope(userId: string, scope: PlanLimitScope = {}) {
+  return scope.workspaceId ? { userId, workspaceId: scope.workspaceId } : { userId };
+}
+
 async function isInSetupGrace(userId: string): Promise<boolean> {
   const completed = await prisma.userEvent.findFirst({
     where: { userId, event: ONBOARDING_COMPLETED_EVENT },
@@ -170,9 +187,9 @@ function inactivePlanBlock(userPlan: UserPlan, action: "address" | "service" | "
 /**
  * Check if user can create a new address (enforce plan limits).
  */
-export async function canCreateAddress(userId: string): Promise<PlanLimitCheck> {
-  const userPlan = await getUserPlan(userId);
-  const count = await prisma.address.count({ where: { userId, deletedAt: null } });
+export async function canCreateAddress(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
+  const userPlan = await getPlanForLimitScope(userId, scope);
+  const count = await prisma.address.count({ where: { ...recordScopeWhere(userId, scope), deletedAt: null } });
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {
@@ -208,9 +225,9 @@ export async function canCreateAddress(userId: string): Promise<PlanLimitCheck> 
 /**
  * Check if user can create a new service.
  */
-export async function canCreateService(userId: string): Promise<PlanLimitCheck> {
-  const userPlan = await getUserPlan(userId);
-  const count = await prisma.service.count({ where: activeTrackedServiceWhere(userId) });
+export async function canCreateService(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
+  const userPlan = await getPlanForLimitScope(userId, scope);
+  const count = await prisma.service.count({ where: activeTrackedServiceWhereForScope(serviceScope(userId, scope)) });
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {
@@ -246,12 +263,12 @@ export async function canCreateService(userId: string): Promise<PlanLimitCheck> 
 /**
  * Check if user can create a new moving plan.
  */
-export async function canCreateMovingPlan(userId: string): Promise<PlanLimitCheck> {
-  const userPlan = await getUserPlan(userId);
+export async function canCreateMovingPlan(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
+  const userPlan = await getPlanForLimitScope(userId, scope);
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {
-      const count = await prisma.movingPlan.count({ where: { userId, deletedAt: null } });
+      const count = await prisma.movingPlan.count({ where: { ...recordScopeWhere(userId, scope), deletedAt: null } });
       if (count < SETUP_GRACE_LIMITS.maxMovingPlans) {
         return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
       }
@@ -273,12 +290,12 @@ export async function canCreateMovingPlan(userId: string): Promise<PlanLimitChec
   return { allowed: true };
 }
 
-export async function canCreateMovingDestinationAddress(userId: string): Promise<PlanLimitCheck> {
-  const existingMovingPlanCount = await prisma.movingPlan.count({ where: { userId, deletedAt: null } });
+export async function canCreateMovingDestinationAddress(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
+  const existingMovingPlanCount = await prisma.movingPlan.count({ where: { ...recordScopeWhere(userId, scope), deletedAt: null } });
   if (existingMovingPlanCount === 0 && await isInSetupGrace(userId)) {
     return { allowed: true, setupGrace: true, current: existingMovingPlanCount, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
   }
-  return canCreateAddress(userId);
+  return canCreateAddress(userId, scope);
 }
 
 /**
@@ -286,8 +303,8 @@ export async function canCreateMovingDestinationAddress(userId: string): Promise
  * Existing data remains readable, and completing already-created move tasks
  * stays available so users are not blocked from finishing local tracking.
  */
-export async function canGenerateMoveTasks(userId: string): Promise<PlanLimitCheck> {
-  const userPlan = await getUserPlan(userId);
+export async function canGenerateMoveTasks(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
+  const userPlan = await getPlanForLimitScope(userId, scope);
 
   if (!userPlan.isActive) {
     // Setup users have already been allowed to create their first moving

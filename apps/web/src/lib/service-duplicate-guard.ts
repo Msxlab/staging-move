@@ -1,5 +1,5 @@
 import { normalizeProviderName } from "@locateflow/shared";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 
 export interface ServiceDuplicateLookup {
   service: {
@@ -16,6 +16,7 @@ export interface ServiceDuplicateRecord {
 
 export interface ServiceDuplicateCandidate {
   userId: string;
+  workspaceId?: string | null;
   addressId: string;
   category: string;
   providerName: string;
@@ -35,12 +36,10 @@ export async function findDuplicateTrackedService(
   const category = cleanCategory(input.category);
   const normalizedName = normalizeProviderName(input.providerName);
   const candidates = await db.service.findMany({
-    where: {
-      ...activeTrackedServiceWhere(input.userId, {
-        addressId: input.addressId,
-        category,
-      }),
-    },
+    where: activeTrackedServiceWhereForScope(
+      { userId: input.userId, workspaceId: input.workspaceId },
+      { addressId: input.addressId, category },
+    ),
     select: {
       id: true,
       providerName: true,

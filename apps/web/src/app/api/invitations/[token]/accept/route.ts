@@ -89,5 +89,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     }).catch(() => {});
   }
 
-  return NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
+  const response = NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
+  response.cookies.set("lf_workspace_id", inv.workspaceId, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
 }

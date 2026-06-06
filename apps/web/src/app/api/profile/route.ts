@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   buildUnifiedEntitlementSnapshot,
   findSubscriptionForEntitlement,
@@ -11,6 +12,8 @@ import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/leg
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
   if (!metadata) return null;
@@ -39,11 +42,21 @@ async function hasCurrentDataConsent(userId: string, category: string): Promise<
 }
 
 // GET /api/profile
-export async function GET() {
+export async function GET(request?: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scopeRequest = request ?? new Request("http://locateflow.local");
+    const scope = await resolveWorkspaceDataScope(scopeRequest, userId);
 
-    const [user, subscription, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
+    const [
+      user,
+      subscription,
+      consentEvents,
+      addressCount,
+      serviceCount,
+      movingPlanCount,
+      onboardingEvents,
+    ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: { profile: true },
@@ -54,13 +67,19 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
-      prisma.address.count({ where: { userId, deletedAt: null } }),
-      prisma.service.count({ where: { userId, deletedAt: null, isActive: true } }),
+      prisma.address.count({ where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }) }),
+      prisma.service.count({
+        where: activeTrackedServiceWhereForScope(
+          { userId, workspaceId: scope.workspaceId },
+          scope.memberRole === "CHILD" ? { userId } : {},
+        ),
+      }),
       prisma.movingPlan.count({
-        where: {
-          userId,
-          status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] },
-        },
+        where: scopedRecordWhere(
+          scope,
+          { deletedAt: null, status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] } },
+          { childSelfOnly: true },
+        ),
       }),
       prisma.userEvent.findMany({
         where: { userId, event: { in: [...ONBOARDING_PROGRESS_EVENTS] } },
@@ -68,6 +87,10 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
       }),
     ]);
+    const entitlementSubscription =
+      scope.workspaceId && scope.ownerUserId !== userId
+        ? await findSubscriptionForEntitlement(scope.ownerUserId)
+        : subscription;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -88,7 +111,7 @@ export async function GET() {
       movingPlanCount,
       ...summarizeOnboardingEvents(onboardingEvents),
     });
-    const entitlement = buildUnifiedEntitlementSnapshot(subscription);
+    const entitlement = buildUnifiedEntitlementSnapshot(entitlementSubscription);
     const safeSubscription = sanitizeSubscriptionForClient(subscription);
 
     return NextResponse.json({
@@ -101,6 +124,9 @@ export async function GET() {
       profile: user.profile,
       subscription: safeSubscription,
       entitlement,
+      workspaceEntitlement: scope.workspaceId
+        ? { workspaceId: scope.workspaceId, ownerUserId: scope.ownerUserId, inherited: scope.ownerUserId !== userId }
+        : null,
       legalConsents,
       onboardingCompleted: onboardingProgress.completed,
       onboardingStep: onboardingProgress.step,
@@ -113,6 +139,8 @@ export async function GET() {
     if (error instanceof Error && error.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch profile:", error);
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
   }

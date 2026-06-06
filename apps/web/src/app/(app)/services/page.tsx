@@ -1,16 +1,23 @@
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { ServicesClient, type ServicesItem, type ServicesAddress } from "./services-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function ServicesPage() {
   const userId = await requireDbUserId();
+  const request = new Request("http://locateflow.local", { headers: await headers() });
+  const scope = await resolveWorkspaceDataScope(request, userId);
 
   const [serviceRows, addressRows] = await Promise.all([
     prisma.service.findMany({
-      where: activeTrackedServiceWhere(userId),
+      where: activeTrackedServiceWhereForScope(
+        { userId, workspaceId: scope.workspaceId },
+        scope.memberRole === "CHILD" ? { userId } : {},
+      ),
       include: {
         address: { select: { nickname: true, city: true, state: true } },
         provider: { select: { id: true, name: true, logoUrl: true, affiliateActive: true } },
@@ -18,7 +25,7 @@ export default async function ServicesPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.address.findMany({
-      where: { userId, deletedAt: null },
+      where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
       orderBy: { createdAt: "desc" },
     }),
   ]);

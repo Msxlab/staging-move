@@ -26,6 +26,7 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 export interface WorkspaceContext {
   userId: string;
   workspaceId: string;
+  ownerUserId: string;
   workspaceName: string;
   memberRole: WorkspaceRole;
   memberStatus: WorkspaceMemberStatus;
@@ -136,6 +137,7 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
   return {
     userId,
     workspaceId: workspace.id,
+    ownerUserId: workspace.ownerUserId,
     workspaceName: workspace.name,
     memberRole: role,
     memberStatus: status,

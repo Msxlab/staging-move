@@ -19,6 +19,11 @@ import {
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
 import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
+import { apiGateErrorResponse } from "@/lib/api-gates";
+import {
+  assertScopedRecordAction,
+  resolveWorkspaceDataScope,
+} from "@/lib/workspace-data-scope";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 
@@ -91,6 +96,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const authDiagnostics = createUserAuthDiagnostics();
   try {
     const userId = await requireDbUserId({ diagnostics: authDiagnostics });
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
     const service = await prisma.service.findUnique({
       where: { id },
@@ -102,9 +108,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    if (!service || service.userId !== userId || service.deletedAt) {
+    if (!service || service.deletedAt) {
       return serviceError("NOT_FOUND", "Service not found.", 404);
     }
+    assertScopedRecordAction(service, scope, "service.viewBasic", {
+      notFoundMessage: "Service not found.",
+      forbiddenMessage: "No permission to view this service.",
+    });
 
     // Decrypt sensitive fields
     const [decrypted] = await enrichServicesWithProviderCatalog([
@@ -115,6 +125,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     const authResponse = authErrorResponse(error, authDiagnostics, "GET", request);
     if (authResponse) return authResponse;
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch service:", error);
     return NextResponse.json({ error: "Failed to fetch service" }, { status: 500 });
   }
@@ -125,12 +137,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const authDiagnostics = createUserAuthDiagnostics();
   try {
     const userId = await requireVerifiedUser({ diagnostics: authDiagnostics });
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
-    if (!existing || existing.deletedAt || existing.userId !== userId) {
+    if (!existing || existing.deletedAt) {
       return serviceError("NOT_FOUND", "Service not found.", 404);
     }
+    assertScopedRecordAction(existing, scope, "service.edit", {
+      notFoundMessage: "Service not found.",
+      forbiddenMessage: "No permission to edit this service.",
+    });
 
     const body = await request.json();
     const validated = serviceSchema.partial().parse(body);
@@ -145,7 +162,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (validated.addressId) {
       const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
-      if (!address || address.userId !== userId || address.deletedAt) {
+      if (!address || address.deletedAt) {
+        return NextResponse.json({ error: "Address not found" }, { status: 404 });
+      }
+      if (scope.workspaceId ? address.workspaceId !== scope.workspaceId : address.userId !== userId) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
     }
@@ -168,6 +188,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const duplicate = await findDuplicateTrackedService(prisma, {
       userId,
+      workspaceId: scope.workspaceId,
       addressId: validated.addressId || existing.addressId,
       category: normalizedCategory,
       providerName: validated.providerName || existing.providerName,
@@ -210,7 +231,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       addressIdsToSync.length > 0
         ? await Promise.all(
             [...new Set(addressIdsToSync)].map((addressId) =>
-              safeSyncMoveTasksForAddress(userId, addressId),
+              safeSyncMoveTasksForAddress(userId, addressId, { workspaceId: scope.workspaceId }),
             ),
           )
         : [];
@@ -219,6 +240,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   } catch (error: any) {
     const authResponse = authErrorResponse(error, authDiagnostics, "PATCH", request);
     if (authResponse) return authResponse;
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }
@@ -235,12 +258,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const authDiagnostics = createUserAuthDiagnostics();
   try {
     const userId = await requireVerifiedUser({ diagnostics: authDiagnostics });
+    const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
-    if (!existing || existing.deletedAt || existing.userId !== userId) {
+    if (!existing || existing.deletedAt) {
       return serviceError("NOT_FOUND", "Service not found.", 404);
     }
+    assertScopedRecordAction(existing, scope, "service.edit", {
+      notFoundMessage: "Service not found.",
+      forbiddenMessage: "No permission to delete this service.",
+    });
 
     const now = new Date();
     await prisma.service.update({ where: { id }, data: { deletedAt: now, isActive: false, deactivatedAt: now } });
@@ -252,6 +280,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   } catch (error: any) {
     const authResponse = authErrorResponse(error, authDiagnostics, "DELETE", request);
     if (authResponse) return authResponse;
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.code === "P2025") {
       return serviceError("NOT_FOUND", "Service not found.", 404);
     }
