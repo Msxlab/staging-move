@@ -24,6 +24,8 @@ import {
   Ticket,
   Building2,
   FileText,
+  Zap,
+  Activity,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
@@ -86,6 +88,10 @@ export default function MoreScreen() {
         { icon: User, label: t("settings.profile"), route: "/settings/profile" },
         { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
         { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
+        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
+        // Typed-routes generation is stale for this recently-added screen; the
+        // file exists at app/settings/address-changes.tsx so the route is valid.
+        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href },
         { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
         { icon: Settings, label: t("settings.title"), route: "/settings" },
       ],
