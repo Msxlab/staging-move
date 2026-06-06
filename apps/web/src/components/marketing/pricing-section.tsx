@@ -59,7 +59,7 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Bell, label: "Bills and renewal reminders" },
     { icon: Wallet, label: "Per-home monthly budgets" },
     { icon: Truck, label: "Smart moving planner" },
-    { icon: FileText, label: "Document storage" },
+    { icon: Building2, label: "Custom providers" },
     { icon: Map, label: "US state-by-state guidance" },
     { icon: Download, label: "CSV and PDF export" },
   ],
@@ -79,16 +79,16 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Wrench, label: "1,000 services" },
     { icon: Crown, label: "Everything in Family" },
     { icon: Map, label: "Multi-property workflows" },
-    { icon: FileText, label: "Advanced export ready" },
-    { icon: ShieldCheck, label: "Built for power users" },
-    { icon: Download, label: "Unlimited move history" },
+    { icon: FileText, label: "Tax & property export (CSV + PDF)" },
+    { icon: ShieldCheck, label: "Partner Hub — guided partner updates" },
+    { icon: Download, label: "Built for power users" },
   ],
 };
 
 const PLAN_COPY: Record<PaidPlanId, { kicker: string; description: string; badge?: string }> = {
   INDIVIDUAL: {
     kicker: "For one person",
-    description: "Track addresses, services, renewals, move tasks, documents, and budgets in one calm place.",
+    description: "Track addresses, services, renewals, move tasks, and budgets in one calm place.",
     badge: "Most popular",
   },
   FAMILY: {
