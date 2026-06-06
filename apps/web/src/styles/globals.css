@@ -359,6 +359,14 @@
     --text-tertiary: rgba(236, 241, 248, 0.43);
   }
 
+  /* Per-plan accent — additive; AppShell adds .plan-family / .plan-pro only for
+     Family/Pro members. Dark is the default; a .light ancestor switches to the
+     light values. Absent class = base Aurora theme (no change). */
+  .plan-family { --primary: 162 68% 53%; --ring: 162 68% 53%; }
+  .light .plan-family { --primary: 160 84% 34%; --ring: 160 84% 34%; }
+  .plan-pro { --primary: 247 100% 74%; --ring: 247 100% 74%; }
+  .light .plan-pro { --primary: 263 70% 50%; --ring: 263 70% 50%; }
+
   .light {
     --background: 220 23% 96%;
     --foreground: 213 39% 13%;

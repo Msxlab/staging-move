@@ -65,6 +65,13 @@ function managedSyncOn(role: string, flag: boolean | null): boolean {
   return typeof flag === "boolean" ? flag : role === "CHILD";
 }
 
+// Managed sync (pushing an address change to a member's partner connectors on their
+// behalf) is not yet generally available: the connector backend stays gated behind
+// FEATURE_API_CONNECTORS until partner agreements + legal sign-off. Until then we surface
+// "Coming soon" and disable the consent toggle so Family/Pro users aren't shown a feature
+// that can't run yet. Flip to false once connectors are live to restore the toggle.
+const MANAGED_SYNC_COMING_SOON = true;
+
 function readWorkspaceCookie(): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${WORKSPACE_COOKIE_NAME}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
@@ -535,29 +542,31 @@ export default function WorkspaceSettingsPage() {
             </div>
           )}
 
-          {/* My managed-sync consent */}
+          {/* My managed-sync consent — "Coming soon" until partner connectors + legal sign-off */}
           <div className="rounded-2xl border border-border bg-foreground/5 p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Managed sync</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Managed sync</h3>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    Coming soon
+                  </span>
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Let an owner or admin push an address change to your connected partners on your behalf. They never see
-                  your partner passwords.
+                  Soon an owner or admin will be able to push an address change to your connected partners on your
+                  behalf — without ever seeing your partner passwords. We&apos;ll let you know the moment it&apos;s ready.
                 </p>
               </div>
               <button
+                type="button"
                 role="switch"
-                aria-checked={Boolean(myManagedSync)}
+                aria-checked={MANAGED_SYNC_COMING_SOON ? false : Boolean(myManagedSync)}
+                disabled
                 onClick={toggleMyManagedSync}
-                className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${
-                  myManagedSync ? "bg-primary" : "bg-foreground/20"
-                }`}
+                title="Coming soon"
+                className="relative mt-0.5 h-6 w-11 shrink-0 cursor-not-allowed rounded-full bg-foreground/15 opacity-60"
               >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
-                    myManagedSync ? "left-[22px]" : "left-0.5"
-                  }`}
-                />
+                <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white/70" />
               </button>
             </div>
           </div>
@@ -587,7 +596,9 @@ export default function WorkspaceSettingsPage() {
                         <p className="truncate text-xs text-muted-foreground">
                           {m.email}
                           {m.status !== "ACTIVE" ? ` · ${m.status.toLowerCase()}` : ""}
-                          {iAmManager && managedSyncOn(m.role, m.managedSyncEnabled) ? " · managed sync on" : ""}
+                          {!MANAGED_SYNC_COMING_SOON && iAmManager && managedSyncOn(m.role, m.managedSyncEnabled)
+                            ? " · managed sync on"
+                            : ""}
                         </p>
                       </div>
                       {canManageThis ? (

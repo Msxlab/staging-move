@@ -215,6 +215,44 @@ export async function sendSupportTicketReplyEmail(opts: {
   return sendEmail({ to: opts.userEmail, subject, html });
 }
 
+/**
+ * Resend of a workspace invitation from the admin surface. Mirrors the intent
+ * of the web `sendWorkspaceInvitationEmail` (doc 66) but renders through the
+ * admin `renderSupportEmail` shell so the admin app stays self-contained (it
+ * cannot import the web email-service templates). Best-effort: returns false
+ * when email is unconfigured in a production-like runtime, so the caller can
+ * still surface the regenerated link in dev.
+ */
+export async function sendWorkspaceInvitationEmail(opts: {
+  invitedEmail: string;
+  workspaceName: string;
+  roleLabel: string;
+  acceptUrl: string;
+  expiresAt: Date;
+}): Promise<boolean> {
+  const html = renderSupportEmail({
+    title: `You're invited to ${opts.workspaceName}`,
+    preheader: `Join ${opts.workspaceName} on LocateFlow.`,
+    userName: "there",
+    bodyLines: [
+      `You've been invited to join ${opts.workspaceName} on LocateFlow as ${opts.roleLabel}.`,
+      "Click below to accept the invitation. This link expires soon, so accept it while it's valid.",
+    ],
+    details: [
+      ["Workspace", opts.workspaceName],
+      ["Role", opts.roleLabel],
+      ["Expires", opts.expiresAt.toLocaleString()],
+    ],
+    ctaHref: opts.acceptUrl,
+    ctaLabel: "Accept Invitation",
+  });
+  return sendEmail({
+    to: opts.invitedEmail,
+    subject: `You're invited to join ${opts.workspaceName} on LocateFlow`.slice(0, 200),
+    html,
+  });
+}
+
 export async function sendSupportTicketStatusEmail(opts: {
   userEmail: string;
   userName: string;

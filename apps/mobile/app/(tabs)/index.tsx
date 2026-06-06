@@ -22,7 +22,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { Card } from "@/components/ui/Card";
+import { PlanHero } from "@/components/ui/PlanHero";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -50,6 +52,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
   const [isPremium, setIsPremium] = useState(false);
+  const [planTier, setPlanTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<{
     id: string;
@@ -81,7 +84,12 @@ export default function DashboardScreen() {
       const hasPremium = ent
         ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
         : Boolean(sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date())));
+      const planValue = (ent?.plan ?? sub.plan ?? null) as string | null;
       setIsPremium(!!hasPremium);
+      setPlanTier(planValue);
+      // Mirror into the global auth store so ThemeProvider applies the
+      // Family/Pro accent palette app-wide (not just on this screen).
+      useAuthStore.getState().setPlanTier(planValue);
 
       // Household / Workspace card (Family/Pro). Best-effort and gated
       // server-side: when WORKSPACE_MODEL_ENABLED is off the API returns 404
@@ -230,6 +238,16 @@ export default function DashboardScreen() {
     },
   ];
 
+  // Plan-aware header badge: Family = crystal green, Pro = premium gold, else generic Premium.
+  const planBadge = (() => {
+    const p = (planTier ?? "").toUpperCase();
+    if (p === "FAMILY")
+      return { label: t("dashboard.familyBadge", "Family"), fg: "#34D8A6", bg: "rgba(52,216,166,0.12)", border: "rgba(52,216,166,0.32)", glyph: "❖" };
+    if (p === "PRO")
+      return { label: t("dashboard.proBadge", "Pro"), fg: "#E9C46A", bg: "rgba(233,196,106,0.12)", border: "rgba(233,196,106,0.34)", glyph: "✦" };
+    return { label: t("dashboard.premiumBadge"), fg: "#B49BFF", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", glyph: "✦" };
+  })();
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
@@ -239,9 +257,9 @@ export default function DashboardScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(242, 196, 108,0.12)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.3)" }}>
-                <Text style={{ fontSize: 10, color: "#B49BFF" }}>{"✦"}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: "#B49BFF", letterSpacing: 0.3 }}>{t("dashboard.premiumBadge")}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: planBadge.bg, borderWidth: 1, borderColor: planBadge.border }}>
+                <Text style={{ fontSize: 10, color: planBadge.fg }}>{planBadge.glyph}</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: planBadge.fg, letterSpacing: 0.3 }}>{planBadge.label}</Text>
               </View>
             )}
           </View>
@@ -293,6 +311,9 @@ export default function DashboardScreen() {
             );
           })}
         </View>
+
+        {/* Plan welcome hero — mascots + plan identity (Family/Pro only) */}
+        <PlanHero />
 
         {/* Household / Workspace (Family & Pro) */}
         {workspace && (

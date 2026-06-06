@@ -198,6 +198,8 @@ export default function ProfileSettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
       >
         <Text style={styles.label}>{t("auth.firstName")} *</Text>
         <TextInput

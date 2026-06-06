@@ -109,7 +109,7 @@ export default function EditServiceScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Text style={styles.label}>{t("services.providerNameRequired")}</Text>
         <TextInput style={styles.input} value={form.providerName} onChangeText={(v) => update("providerName", v)} placeholderTextColor={theme.colors.textMuted} placeholder={t("services.providerNamePlaceholder")} />
 

@@ -29,6 +29,21 @@ async function resolveShowWorkspace(userId: string): Promise<boolean> {
   return plan === "FAMILY" || plan === "PRO" || Boolean(invitedMember);
 }
 
+/**
+ * The user's effective plan tier ("FAMILY" | "PRO" | "INDIVIDUAL" | ...), used by
+ * AppShell to apply the per-plan accent theme. Independent of the workspace flag —
+ * a Family/Pro user is themed even if the workspace model is off. Best-effort: any
+ * failure returns null (base theme).
+ */
+async function resolvePlanTier(userId: string): Promise<string | null> {
+  try {
+    const sub = await prisma.subscription.findUnique({ where: { userId } });
+    return String(getEffectiveEntitlement(sub).effectivePlan);
+  } catch {
+    return null;
+  }
+}
+
 async function getCurrentAppPath() {
   const headerStore = await headers();
   return normalizeAppRedirectPath(
@@ -75,9 +90,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   const showBudget = await loadShowBudgetPreference(gate.userId).catch(() => true);
   const showWorkspace = await resolveShowWorkspace(gate.userId).catch(() => false);
+  const planTier = await resolvePlanTier(gate.userId);
 
   return (
-    <AppShell showBudget={showBudget} showWorkspace={showWorkspace}>
+    <AppShell showBudget={showBudget} showWorkspace={showWorkspace} planTier={planTier}>
       {children}
     </AppShell>
   );
