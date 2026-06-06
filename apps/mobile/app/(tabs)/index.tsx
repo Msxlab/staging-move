@@ -24,6 +24,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { Card } from "@/components/ui/Card";
+import { PlanHero } from "@/components/ui/PlanHero";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -310,6 +311,9 @@ export default function DashboardScreen() {
             );
           })}
         </View>
+
+        {/* Plan welcome hero — mascots + plan identity (Family/Pro only) */}
+        <PlanHero />
 
         {/* Household / Workspace (Family & Pro) */}
         {workspace && (
