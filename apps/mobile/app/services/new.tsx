@@ -33,6 +33,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
+import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import {
   getRecommendedProviders,
@@ -254,6 +255,7 @@ export default function NewServiceScreen() {
     setSaving(true);
     let success = 0;
     let failed = 0;
+    let gateCode: string | null = null;
     for (const [, p] of selectedProviders) {
       const payload: any = {
         addressId: selectedAddress,
@@ -268,7 +270,10 @@ export default function NewServiceScreen() {
         payload.migrationAction = "NEW";
       }
       const res = await api.post("/api/services", payload);
-      if (res.error) failed++; else success++;
+      if (res.error) {
+        failed++;
+        if (res.code && UPSELL_GATE_CODES.includes(res.code) && !gateCode) gateCode = res.code;
+      } else success++;
     }
     if (success > 0 && fromServiceId) {
       try {
@@ -283,7 +288,19 @@ export default function NewServiceScreen() {
     }
     if (failed > 0) {
       hapticError();
-      Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
+      // A plan-limit / inactive-subscription gate gets an Upgrade affordance.
+      if (gateCode) {
+        Alert.alert(
+          t("subscription.upgradeTitle", { defaultValue: "Upgrade needed" }),
+          t("services.limitReached", { defaultValue: "You've reached your plan's service limit. Upgrade to add more." }),
+          [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
+        );
+      } else {
+        Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
+      }
     }
   };
 
