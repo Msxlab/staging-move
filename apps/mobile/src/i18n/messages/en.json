@@ -2,6 +2,7 @@
   "common": {
     "save": "Save",
     "saveChanges": "Save Changes",
+    "enabled": "Enabled",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -561,6 +562,7 @@
     "export_description": "Download a copy of your data.",
     "privacy_title": "Privacy",
     "privacy_description": "Manage security, privacy, and data controls.",
+    "privacy_doNotSell_title": "Do not sell or share",
     "privacy_doNotSell_description": "Opt out of sale or sharing of personal information.",
     "security": "Security",
     "twoFactor_enabledDescription": "Two-factor authentication is enabled for your account.",

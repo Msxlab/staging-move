@@ -262,11 +262,18 @@ function LegacySubscriptionScreen() {
   const [storeProductAvailability, setStoreProductAvailability] = useState<Partial<Record<NativeProductKey, boolean>>>({});
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
+  const [entitlement, setEntitlement] = useState<any>(null);
+  const [workspaceEntitlement, setWorkspaceEntitlement] = useState<{ workspaceId: string; inherited: boolean } | null>(null);
 
   const fetchSubscription = useCallback(async () => {
     const res = await api.get<any>("/api/profile");
     if (res.data) {
       setSubscription(res.data.subscription || null);
+      // The EFFECTIVE entitlement (the owner's plan for an inherited Family/Pro
+      // member) and whether it's inherited — without these the member's own row
+      // is null/FREE_TRIAL and the screen wrongly shows "No active subscription".
+      setEntitlement(res.data.entitlement || null);
+      setWorkspaceEntitlement(res.data.workspaceEntitlement || null);
     }
   }, []);
 
@@ -396,6 +403,18 @@ function LegacySubscriptionScreen() {
   const currentPlan = useMemo(
     () => currentPlanKey ? PLANS.find((plan) => plan.key === currentPlanKey) || null : null,
     [currentPlanKey]
+  );
+  // Effective entitlement: an inherited Family/Pro member has no own paid row,
+  // so the EFFECTIVE plan (the owner's) drives what we show. The own
+  // currentPlanKey is kept only for store purchase/manage gating below.
+  const inheritedEntitlement = workspaceEntitlement?.inherited === true;
+  const effectivePlanKey: string | null = entitlement?.plan || currentPlanKey;
+  const effectiveStatus: string = entitlement?.status || currentStatus;
+  const effectiveActive: boolean = entitlement?.isActive ?? hasServerSubscription;
+  const isPaidEffectivePlan = effectivePlanKey === "INDIVIDUAL" || effectivePlanKey === "FAMILY" || effectivePlanKey === "PRO";
+  const effectivePlan = useMemo(
+    () => effectivePlanKey ? PLANS.find((plan) => plan.key === effectivePlanKey) || null : null,
+    [effectivePlanKey]
   );
   const periodEndLabel = formatDateLabel(
     subscription?.currentPeriodEndsAt || subscription?.stripeCurrentPeriodEnd || subscription?.premiumUntil
@@ -753,36 +772,56 @@ function LegacySubscriptionScreen() {
             <View style={styles.currentPlanIcon}>
               <Crown size={18} color={theme.colors.amber.text} />
             </View>
-            <View>
-              <Text style={styles.currentPlanTitle}>
-                {currentPlan?.name
-                  ? currentPlan.name +
-                    (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
-                      ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
-                      : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
-                        ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
-                        : "")
-                  : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
-              </Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <Text style={styles.currentPlanTitle}>
+                  {effectivePlan?.name
+                    ? effectivePlan.name +
+                      (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
+                        ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
+                        : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
+                          ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
+                          : "")
+                    : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+                </Text>
+                {isPaidEffectivePlan ? <UiBadge label={effectivePlanKey as string} variant="primary" /> : null}
+              </View>
               <Text style={styles.currentPlanMeta}>
-                {periodEndLabel && currentStatus === "CANCEL_AT_PERIOD_END"
-                  ? t("settings.subscription_ends", {
-                      date: periodEndLabel,
-                      defaultValue: "Ends {{date}}",
-                    })
-                  : periodEndLabel
-                  ? t("settings.subscription_renews", { date: periodEndLabel })
-                  : trialEndLabel
-                    ? t("settings.subscription_renews", { date: trialEndLabel })
-                    : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
+                {inheritedEntitlement
+                  ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
+                  : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
+                    ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
+                    : periodEndLabel
+                      ? t("settings.subscription_renews", { date: periodEndLabel })
+                      : trialEndLabel
+                        ? t("settings.subscription_renews", { date: trialEndLabel })
+                        : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
               </Text>
             </View>
           </View>
           <UiBadge
-            label={currentStatus}
-            variant={currentStatus === "ACTIVE" || currentStatus === "TRIALING" ? "success" : "neutral"}
+            label={effectiveStatus}
+            variant={
+              effectiveStatus === "ACTIVE" || effectiveStatus === "TRIALING" || (effectiveActive && isPaidEffectivePlan)
+                ? "success"
+                : "neutral"
+            }
           />
         </View>
+
+        {effectivePlan && isPaidEffectivePlan && Array.isArray(effectivePlan.features) && effectivePlan.features.length > 0 ? (
+          <View style={styles.planFeaturesCard}>
+            <Text style={styles.planFeaturesTitle}>
+              {t("settings.subscription_includedFeatures", { defaultValue: "What's included" })}
+            </Text>
+            {effectivePlan.features.map((f: string) => (
+              <View key={f} style={styles.planFeatureRow}>
+                <Check size={14} color={theme.colors.emerald.text} />
+                <Text style={styles.planFeatureText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
           <View style={styles.mobileBillingNotice}>
@@ -1232,6 +1271,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   currentPlanTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   currentPlanMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  planFeaturesCard: {
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    padding: 16,
+    marginTop: 12,
+    gap: 8,
+  },
+  planFeaturesTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, marginBottom: 2 },
+  planFeatureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  planFeatureText: { fontSize: 13, color: theme.colors.textSecondary, flex: 1 },
   mobileBillingNotice: {
     borderRadius: theme.radius.lg,
     borderWidth: 1,

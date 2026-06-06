@@ -2,6 +2,7 @@
   "common": {
     "save": "Guardar",
     "saveChanges": "Guardar cambios",
+    "enabled": "Activado",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
@@ -561,6 +562,7 @@
     "export_description": "Descarga una copia de tus datos.",
     "privacy_title": "Privacidad",
     "privacy_description": "Gestiona seguridad, privacidad y controles de datos.",
+    "privacy_doNotSell_title": "No vender ni compartir",
     "privacy_doNotSell_description": "Opta por no vender ni compartir información personal.",
     "security": "Seguridad",
     "twoFactor_enabledDescription": "La autenticación de dos factores está activada en tu cuenta.",

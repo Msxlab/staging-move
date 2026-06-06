@@ -272,7 +272,7 @@ export default function PrivacySettingsScreen() {
     },
     {
       icon: Shield,
-      title: t("settings.privacy"),
+      title: t("settings.privacy_doNotSell_title"),
       description: t("settings.privacy_doNotSell_description"),
     },
   ];
