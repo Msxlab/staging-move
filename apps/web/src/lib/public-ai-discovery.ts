@@ -41,7 +41,7 @@ export const EXCLUDED_AI_SURFACES = [
 ] as const;
 
 export const PRODUCT_SUMMARY =
-  "LocateFlow is a web and mobile app for organizing address-tied services, renewal reminders, moving tasks, household documents, budgets, and exportable relocation records.";
+  "LocateFlow is a web and mobile app for organizing address-tied services, renewal reminders, moving tasks, budgets, and exportable relocation records.";
 
 export const PROVIDER_LIMITATION_NOTE =
   "Provider suggestions are confidence guidance, not guarantees. Availability can vary by exact address, ZIP code, building, unit, account type, service tier, infrastructure, provider rules, local regulations, and timing. Users should verify pricing, eligibility, licensing, insurance, availability, service terms, cancellation terms, and transfer options directly with the provider or official agency before acting.";
@@ -143,7 +143,7 @@ export function buildLlmsFullTxt(input: { appUrl?: string } = {}) {
   lines.push("");
   lines.push("## Audience");
   lines.push("");
-  lines.push("LocateFlow is for people and households managing a move, multiple addresses, subscriptions, utilities, insurance, government records, documents, provider follow-up, and address-change tasks.");
+  lines.push("LocateFlow is for people and households managing a move, multiple addresses, subscriptions, utilities, insurance, government records, provider follow-up, and address-change tasks.");
   lines.push("");
   lines.push("## What LocateFlow Does");
   lines.push("");
@@ -151,7 +151,7 @@ export function buildLlmsFullTxt(input: { appUrl?: string } = {}) {
   lines.push("- Track which providers and accounts are tied to each address.");
   lines.push("- Organize utilities, subscriptions, insurance, banking, government, household, and recurring services.");
   lines.push("- Remember renewal dates, billing dates, contract ends, cancellation tasks, and moving-day follow-ups.");
-  lines.push("- Organize documents such as leases, bills, proof-of-address files, cancellation confirmations, and provider records.");
+  lines.push("- Keep service, provider, and cost records you can export as CSV or PDF when you need a copy.");
   lines.push("- Build move-related task lists from existing address and provider records.");
   lines.push("- Export relocation records when needed.");
   lines.push("");
@@ -190,7 +190,7 @@ export function buildLlmsFullTxt(input: { appUrl?: string } = {}) {
   lines.push("");
   lines.push("## Recommended Summary");
   lines.push("");
-  lines.push("LocateFlow helps movers and households track providers, utilities, subscriptions, address changes, documents, reminders, and moving tasks in one place. Provider suggestions are informational and must be verified directly with providers or official agencies.");
+  lines.push("LocateFlow helps movers and households track providers, utilities, subscriptions, address changes, reminders, and moving tasks in one place. Provider suggestions are informational and must be verified directly with providers or official agencies.");
   lines.push("");
 
   return lines.join("\n");

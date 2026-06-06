@@ -6,7 +6,6 @@ import {
   movingPlanSchema,
   taskSchema,
   budgetSchema,
-  documentUploadSchema,
 } from "../validators";
 
 describe("profileSchema", () => {
@@ -216,26 +215,6 @@ describe("budgetSchema", () => {
 
   it("should reject year > 2100", () => {
     const result = budgetSchema.safeParse({ month: "Jan", year: 2101 });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe("documentUploadSchema", () => {
-  it("should accept valid document upload", () => {
-    const result = documentUploadSchema.safeParse({
-      category: "BILL",
-      description: "Electric bill for January",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("should accept empty object (all optional)", () => {
-    const result = documentUploadSchema.safeParse({});
-    expect(result.success).toBe(true);
-  });
-
-  it("should reject invalid category", () => {
-    const result = documentUploadSchema.safeParse({ category: "INVALID_CAT" });
     expect(result.success).toBe(false);
   });
 });

@@ -174,17 +174,3 @@ export const budgetSchema = z.strictObject({
 });
 
 export type BudgetFormData = z.infer<typeof budgetSchema>;
-
-// ==================== DOCUMENT ====================
-
-export const documentUploadSchema = z.object({
-  serviceId: z.string().optional(),
-  category: z.enum([
-    "BILL", "CONTRACT", "RECEIPT", "INSURANCE_POLICY", "LEASE_AGREEMENT",
-    "MORTGAGE_DOCUMENT", "TAX_DOCUMENT", "MEDICAL_RECORD", "SCHOOL_RECORD",
-    "ID_DOCUMENT", "OTHER"
-  ]).optional(),
-  description: z.string().max(500).optional(),
-});
-
-export type DocumentUploadFormData = z.infer<typeof documentUploadSchema>;
