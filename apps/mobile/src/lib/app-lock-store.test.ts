@@ -27,11 +27,13 @@ vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
 
+import * as LocalAuthentication from "expo-local-authentication";
 import { useAppLockStore } from "./app-lock-store";
 
 describe("app lock store", () => {
   beforeEach(() => {
     storage.clear();
+    (LocalAuthentication.authenticateAsync as any).mockResolvedValue({ success: true });
     useAppLockStore.setState({
       enabled: false,
       hydrated: false,
@@ -44,7 +46,10 @@ describe("app lock store", () => {
     });
   });
 
-  it("fails closed when app lock is enabled but biometric capability disappears", async () => {
+  it("falls back to device authentication when biometric capability disappears", async () => {
+    // hasHardware/isEnrolled are false (biometric capability gone), but the OS
+    // authenticate succeeds via the device passcode fallback — the user must NOT
+    // be bricked out of an already-authenticated session.
     storage.set("locateflow.appLock.enabled", "true");
 
     await useAppLockStore.getState().hydrate();
@@ -60,7 +65,32 @@ describe("app lock store", () => {
       fallbackLabel: "Use passcode",
     });
 
+    expect(result.success).toBe(true);
+    expect(useAppLockStore.getState().locked).toBe(false);
+  });
+
+  it("stays locked but is recoverable via disable when no auth method is available", async () => {
+    // No biometrics AND no device passcode → authenticate fails.
+    (LocalAuthentication.authenticateAsync as any).mockResolvedValueOnce({
+      success: false,
+      error: "not_available",
+    });
+    storage.set("locateflow.appLock.enabled", "true");
+
+    await useAppLockStore.getState().hydrate();
+    const result = await useAppLockStore.getState().unlock({
+      promptMessage: "Unlock",
+      cancelLabel: "Cancel",
+      fallbackLabel: "Use passcode",
+    });
+
     expect(result.success).toBe(false);
     expect(useAppLockStore.getState().locked).toBe(true);
+
+    // Recovery escape: disabling the non-functional lock keeps the user in
+    // their session instead of forcing a full sign-out.
+    await useAppLockStore.getState().disable();
+    expect(useAppLockStore.getState().locked).toBe(false);
+    expect(useAppLockStore.getState().enabled).toBe(false);
   });
 });

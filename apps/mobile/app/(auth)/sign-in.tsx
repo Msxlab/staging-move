@@ -128,7 +128,10 @@ export default function SignInScreen() {
     // no-op until the user accepts the in-app pre-prompt from onboarding /
     // settings. Kept here so previously-opted-in devices re-register on login.
     void registerForPushNotifications().catch(() => null);
-    router.replace("/(tabs)");
+    // Route through the same post-auth destination as the OAuth/Apple paths so a
+    // not-yet-onboarded password user lands on onboarding directly instead of
+    // flashing into the tab bar and being bounced back by the AuthGuard.
+    router.replace(getPostAuthMobileRoute(res.data.user));
   };
 
   const openOAuth = async (provider: OAuthProvider) => {
