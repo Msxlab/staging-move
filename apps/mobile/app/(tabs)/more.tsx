@@ -88,7 +88,10 @@ export default function MoreScreen() {
       title: t("settings.title"),
       items: [
         { icon: User, label: t("settings.profile"), route: "/settings/profile" },
-        { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
+        // Distinct from the notifications FEED in the More group below — this is
+        // the preferences screen, so label it as settings to avoid two identical
+        // "Notifications" rows.
+        { icon: Bell, label: t("settings.notificationSettings", { defaultValue: "Notification settings" }), route: "/settings/notifications" },
         { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
         { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
         // Typed-routes generation is stale for this recently-added screen; the

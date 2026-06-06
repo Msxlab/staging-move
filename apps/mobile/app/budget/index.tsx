@@ -24,6 +24,17 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
+// `service.monthlyCost` is the RAW per-cycle amount the user typed, so normalize
+// to a true monthly figure before summing (mirrors the tax-report math).
+function monthlyForCycle(cost: number, cycle?: string): number {
+  const c = (cycle || "MONTHLY").toUpperCase();
+  if (c === "YEARLY") return cost / 12;
+  if (c === "QUARTERLY") return cost / 3;
+  if (c === "WEEKLY") return (cost * 52) / 12;
+  if (c === "ONE_TIME") return 0;
+  return cost;
+}
+
 export default function BudgetScreen() {
 
   // theme: hook-injected styles
@@ -34,6 +45,7 @@ export default function BudgetScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [budgets, setBudgets] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
 
   // Locale-aware currency formatter — reused in every card.
   const fmt = (n: number) =>
@@ -47,7 +59,10 @@ export default function BudgetScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBudgets = useCallback(async () => {
-    const res = await api.get<any>("/api/budget");
+    const [res, svcRes] = await Promise.all([
+      api.get<any>("/api/budget"),
+      api.get<any>("/api/services", { limit: "200" }),
+    ]);
     if (res.error) {
       setError(res.error);
       return false;
@@ -56,6 +71,7 @@ export default function BudgetScreen() {
       setBudgets(res.data.budgets || res.data || []);
       setError(null);
     }
+    if (svcRes.data) setServices(svcRes.data.services || svcRes.data || []);
     return true;
   }, []);
 
@@ -83,6 +99,7 @@ export default function BudgetScreen() {
 
   const totalExpenses = budgets.reduce((sum, b) => sum + (b.actualExpenses || 0), 0);
   const totalIncome = budgets.reduce((sum, b) => sum + (b.actualIncome || 0), 0);
+  const monthlyServiceCost = services.reduce((sum, s) => sum + monthlyForCycle(Number(s.monthlyCost) || 0, s.billingCycle), 0);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -95,6 +112,20 @@ export default function BudgetScreen() {
           <Plus size={20} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Live monthly spend derived from the user's tracked services — shows
+          even with zero manual budgets, which was the confusing "$0" before. */}
+      {monthlyServiceCost > 0 ? (
+        <View style={styles.serviceBanner}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.serviceBannerLabel}>{t("budget.monthlyServiceCosts", { defaultValue: "Monthly service costs" })}</Text>
+            <Text style={styles.serviceBannerSub}>
+              {t("budget.fromYourServices", { count: services.length, defaultValue: "From your {{count}} tracked services" })}
+            </Text>
+          </View>
+          <Text style={styles.serviceBannerValue}>{fmt(monthlyServiceCost)}</Text>
+        </View>
+      ) : null}
 
       {/* Summary Cards */}
       <View style={styles.summaryRow}>
@@ -187,6 +218,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   addBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
+  serviceBanner: { flexDirection: "row", alignItems: "center", marginHorizontal: 20, marginBottom: 16, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card },
+  serviceBannerLabel: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+  serviceBannerSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
+  serviceBannerValue: { fontSize: 20, fontWeight: "800", color: theme.colors.primary },
   summaryRow: { flexDirection: "row", paddingHorizontal: 20, gap: 10, marginBottom: 16 },
   summaryCard: { flex: 1, borderRadius: theme.radius.lg, borderWidth: 1, padding: 12, alignItems: "center", gap: 4 },
   summaryValue: { fontSize: 16, fontWeight: "800" },

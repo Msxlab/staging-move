@@ -307,7 +307,7 @@ export default function WorkspaceScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {featureOff ? (
-          <Text style={styles.empty}>{t("workspace.unavailable", "Shared workspaces aren't available on your account yet.")}</Text>
+          <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out for Family & Pro — coming soon. Your plan's higher limits are already active.")}</Text>
         ) : workspaces.length === 0 ? (
           <View style={{ alignItems: "center" }}>
             <Text style={styles.empty}>
