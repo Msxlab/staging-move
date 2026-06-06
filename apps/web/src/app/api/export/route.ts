@@ -10,7 +10,7 @@ import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 import { getUserPlan } from "@/lib/plan-limits";
 import { planFeatures } from "@locateflow/shared";
-import { monthlyAmountForCycle } from "@/lib/budget-planning";
+import { buildTaxReportData } from "@/lib/tax-report-data";
 
 // POST /api/export
 // Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
@@ -583,132 +583,10 @@ export async function POST(request: NextRequest) {
       // prep (rental/home-office expenses, moving expenses). Distinct from the
       // raw addresses/services dumps — it joins services to their property,
       // annualizes recurring cost, and lists move events touching each address.
-      const [addresses, services, movingPlans] = await Promise.all([
-        prisma.address.findMany({
-          where: { userId, deletedAt: null },
-          select: {
-            id: true,
-            nickname: true,
-            type: true,
-            street: true,
-            street2: true,
-            city: true,
-            state: true,
-            zip: true,
-            ownership: true,
-            isPrimary: true,
-            startDate: true,
-            endDate: true,
-          },
-          orderBy: { isPrimary: "desc" },
-        }),
-        prisma.service.findMany({
-          where: { userId, deletedAt: null },
-          select: {
-            addressId: true,
-            providerName: true,
-            category: true,
-            monthlyCost: true,
-            billingCycle: true,
-            isActive: true,
-          },
-        }),
-        prisma.movingPlan.findMany({
-          where: { userId, deletedAt: null },
-          select: {
-            moveDate: true,
-            status: true,
-            fromAddressId: true,
-            toAddressId: true,
-            fromAddress: { select: { city: true, state: true } },
-            toAddress: { select: { city: true, state: true } },
-          },
-          orderBy: { moveDate: "desc" },
-        }),
-      ]);
-
-      const toNum = (value: unknown): number => {
-        const n = typeof value === "number" ? value : Number(value ?? 0);
-        return Number.isFinite(n) ? n : 0;
-      };
-      const round2 = (n: number): number => Math.round(n * 100) / 100;
-      const propertyLabel = (a: (typeof addresses)[number] | undefined): string => {
-        if (!a) return "Unassigned";
-        return a.nickname?.trim() || [a.street, a.city, a.state].filter(Boolean).join(", ") || "Address";
-      };
-      const addressById = new Map(addresses.map((a) => [a.id, a]));
-
-      // Flat, spreadsheet-friendly line items — one row per service. `monthlyCost`
-      // is the RAW per-cycle amount the user typed, so it is normalized to a true
-      // monthly figure via the shared cycle helper before annualizing. ONE_TIME
-      // costs are counted once (not multiplied to a full year).
-      const taxLineItems = services.map((svc) => {
-        const addr = svc.addressId ? addressById.get(svc.addressId) : undefined;
-        const cycleAmount = round2(toNum(svc.monthlyCost));
-        const billingCycle = svc.billingCycle ?? "";
-        const oneTime = billingCycle.trim().toUpperCase() === "ONE_TIME";
-        const monthlyEquivalent = round2(monthlyAmountForCycle(cycleAmount, billingCycle));
-        // Recurring → 12× the true monthly cost; one-time → the amount once.
-        const annualizedCost = oneTime ? cycleAmount : round2(monthlyEquivalent * 12);
-        return {
-          addressId: svc.addressId ?? null,
-          property: propertyLabel(addr),
-          propertyType: addr?.type ?? "",
-          ownership: addr?.ownership ?? "",
-          occupancyStart: addr?.startDate ?? null,
-          occupancyEnd: addr?.endDate ?? null,
-          serviceProvider: svc.providerName ?? "",
-          serviceCategory: svc.category ?? "",
-          billingCycle,
-          oneTime,
-          active: svc.isActive,
-          cycleAmount,
-          monthlyEquivalent,
-          annualizedCost,
-        };
-      });
-
-      // Grouped view with per-property totals + the moves that touched each
-      // address. Grouped strictly by address id (not label/type) so two
-      // properties that share a nickname can never double-count each other's
-      // services.
-      const taxByProperty = addresses.map((addr) => {
-        const propertyServices = taxLineItems.filter((li) => li.addressId === addr.id);
-        const moves = movingPlans
-          .filter((m) => m.fromAddressId === addr.id || m.toAddressId === addr.id)
-          .map((m) => ({
-            moveDate: m.moveDate,
-            status: m.status,
-            direction: m.toAddressId === addr.id ? "MOVED_IN" : "MOVED_OUT",
-            from: m.fromAddress ? [m.fromAddress.city, m.fromAddress.state].filter(Boolean).join(", ") : null,
-            to: m.toAddress ? [m.toAddress.city, m.toAddress.state].filter(Boolean).join(", ") : null,
-          }));
-        return {
-          property: propertyLabel(addr),
-          propertyType: addr.type ?? "",
-          ownership: addr.ownership ?? "",
-          isPrimary: addr.isPrimary,
-          occupancyStart: addr.startDate ?? null,
-          occupancyEnd: addr.endDate ?? null,
-          serviceCount: propertyServices.length,
-          totalMonthlyEquivalent: round2(propertyServices.reduce((sum, li) => sum + li.monthlyEquivalent, 0)),
-          totalAnnualizedCost: round2(propertyServices.reduce((sum, li) => sum + li.annualizedCost, 0)),
-          moves,
-        };
-      });
-
-      // Services whose address was deleted/unassigned still belong in the report.
-      const unassignedServices = taxLineItems.filter((li) => !li.addressId || !addressById.has(li.addressId));
-
-      data.tax = taxLineItems;
-      data.taxByProperty = taxByProperty;
-      data.taxTotals = {
-        propertyCount: addresses.length,
-        serviceCount: taxLineItems.length,
-        unassignedServiceCount: unassignedServices.length,
-        totalMonthlyEquivalent: round2(taxLineItems.reduce((sum, li) => sum + li.monthlyEquivalent, 0)),
-        totalAnnualizedCost: round2(taxLineItems.reduce((sum, li) => sum + li.annualizedCost, 0)),
-      };
+      const taxData = await buildTaxReportData(userId);
+      data.tax = taxData.tax;
+      data.taxByProperty = taxData.taxByProperty;
+      data.taxTotals = taxData.taxTotals;
     }
 
     emitSecurityEvent({

@@ -5,6 +5,10 @@ import { apiGateErrorResponse } from "@/lib/api-gates";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { generateAddressReportPdf } from "@/lib/pdf/address-report";
 import { generateFullAccountPdf } from "@/lib/pdf/full-account";
+import { generateTaxReportPdf } from "@/lib/pdf/tax-report";
+import { buildTaxReportData } from "@/lib/tax-report-data";
+import { getUserPlan } from "@/lib/plan-limits";
+import { planFeatures } from "@locateflow/shared";
 import type { PdfAccountSnapshot, PdfAddress } from "@/lib/pdf/types";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
@@ -136,7 +140,30 @@ export async function POST(request: NextRequest) {
       return pdfResponse(buffer, `locateflow-account-snapshot.pdf`);
     }
 
-    return noStoreJson({ error: "Unsupported export type. Use 'address' or 'full'." }, 400);
+    if (type === "tax") {
+      // Pro-gated, like the CSV/JSON tax export. Inactive/expired Pro resolves
+      // to FREE_TRIAL here, so this also blocks lapsed Pro.
+      const userPlan = await getUserPlan(userId);
+      if (!planFeatures(userPlan.plan).advancedExport) {
+        await createAuditLog({
+          userId,
+          action: "EXPORT_BLOCK",
+          entityType: "User",
+          entityId: userId,
+          changes: { status: "upgrade_required", type, format: "pdf", code: "UPGRADE_REQUIRED" },
+          ...meta,
+        });
+        return noStoreJson(
+          { error: "Tax & property export is a Pro feature. Upgrade to Pro to export tax and property reports.", code: "UPGRADE_REQUIRED" },
+          403,
+        );
+      }
+      const buffer = await buildTaxPdf(userId);
+      await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: userId });
+      return pdfResponse(buffer, `locateflow-tax-property-report.pdf`);
+    }
+
+    return noStoreJson({ error: "Unsupported export type. Use 'address', 'full', or 'tax'." }, 400);
   } catch (error) {
     const gateResponse = apiGateErrorResponse(error);
     if (gateResponse) return gateResponse;
@@ -253,6 +280,15 @@ async function buildAddressPdf(
     })),
   };
   return generateAddressReportPdf(pdfAddress, userName);
+}
+
+async function buildTaxPdf(userId: string): Promise<Buffer> {
+  const [data, user] = await Promise.all([
+    buildTaxReportData(userId),
+    prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } }),
+  ]);
+  const userName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+  return generateTaxReportPdf(data, userName);
 }
 
 async function buildFullAccountPdf(userId: string): Promise<Buffer> {
