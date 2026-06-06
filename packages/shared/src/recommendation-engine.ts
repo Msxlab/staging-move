@@ -911,7 +911,8 @@ export function getCategoryOrder(category: string): number {
   return CATEGORY_META[category]?.order ?? 999;
 }
 
-export function getCategoryLabel(category: string): string {
+export function getCategoryLabel(category?: string | null): string {
+  if (!category) return "Other";
   return CATEGORY_META[category]?.label || category.replace(/_/g, " ").split(" ").map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
 }
 

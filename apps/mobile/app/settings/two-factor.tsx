@@ -87,7 +87,7 @@ export default function TwoFactorScreen() {
     setBusy(true);
     const res = await api.post<any>("/api/auth/mfa/confirm", { mfaCode: code });
     setBusy(false);
-    if (res.data?.success || res.data) {
+    if (res.data?.success === true) {
       hapticSuccess();
       setDone(true);
       setMfaEnabled(true);
@@ -107,9 +107,10 @@ export default function TwoFactorScreen() {
     setBusy(true);
     const res = await api.post<any>("/api/auth/mfa/disable", { password });
     setBusy(false);
-    if (res.data?.success || res.data) {
+    if (res.data?.success === true) {
       hapticSuccess();
       setMfaEnabled(false);
+      setDone(false); // clear the "enabled" card so the disabled state renders
       setPassword("");
       Alert.alert(
         t("settings.twoFactor", { defaultValue: "Two-factor authentication" }),

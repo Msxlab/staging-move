@@ -441,7 +441,11 @@ function LegacySubscriptionScreen() {
     isActivePaidPlan &&
     !isStoreManaged &&
     !isStripeManaged;
-  const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
+  // An inherited Family/Pro member already has access via the workspace owner's
+  // plan — let them start a native purchase and they'd be double-charged for a
+  // redundant Individual sub. Block it; the inherited notice explains why.
+  const canStartNativePurchase =
+    canUseNativePurchases && !managedSubscriptionBlocksPurchase && !inheritedEntitlement;
   const canManageBilling =
     (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
     (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
@@ -477,7 +481,11 @@ function LegacySubscriptionScreen() {
       : null;
   const visiblePlans = useMemo(
     () =>
-      PLANS.filter((plan) =>
+      // Inherited Family/Pro members already have access — don't offer them
+      // plans to buy (would double-charge); the inherited notice covers it.
+      inheritedEntitlement
+        ? []
+        : PLANS.filter((plan) =>
         shouldShowMobileSubscriptionPlan({
           planKey: plan.key,
           currentPlanKey,
@@ -490,7 +498,7 @@ function LegacySubscriptionScreen() {
           currentPlanKey,
         }),
       ),
-    [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
+    [inheritedEntitlement, currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
   );
 
   const managedElsewhereMessage = isStripeManaged

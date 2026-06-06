@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { QueryClient } from "@tanstack/react-query";
 import { setAnalyticsEnabled } from "@/lib/analytics";
+import { useAppLockStore } from "@/lib/app-lock-store";
 
 const SENSITIVE_ASYNC_STORAGE_KEYS = [
   "locateflow.handledOAuthCodes",
@@ -16,5 +17,9 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {
   queryClient?.clear();
   setAnalyticsEnabled(false);
+  // Reset the biometric app-lock so the next account on this device doesn't
+  // inherit (and get gated behind) the previous user's lock — the flag is
+  // device-keyed, not user-keyed.
+  await useAppLockStore.getState().disable().catch(() => {});
   await Promise.all(SENSITIVE_ASYNC_STORAGE_KEYS.map((key) => AsyncStorage.removeItem(key))).catch(() => {});
 }

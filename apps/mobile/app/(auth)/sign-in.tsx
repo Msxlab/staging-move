@@ -94,7 +94,14 @@ export default function SignInScreen() {
       {
         email: email.trim(),
         password,
-        ...(requiresMfa && mfaCode ? { mfaCode } : {}),
+        // A 6-digit numeric value is a TOTP code; anything else is treated as a
+        // recovery/backup code so a user who lost their authenticator can still
+        // sign in (the web login route accepts mfaCode OR backupCode).
+        ...(requiresMfa && mfaCode
+          ? /^\d{6}$/.test(mfaCode.trim())
+            ? { mfaCode: mfaCode.trim() }
+            : { backupCode: mfaCode.trim() }
+          : {}),
       },
     );
 

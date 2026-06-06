@@ -462,7 +462,24 @@ export default function NewServiceScreen() {
         {/* ── Address Selector (shared) ── */}
         <Text style={styles.sectionLabel}>{t("services.selectAddress")}</Text>
         {addresses.length === 0 ? (
-          <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
+          <View>
+            <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
+            <TouchableOpacity
+              onPress={() => router.push("/addresses/new")}
+              accessibilityRole="button"
+              style={{
+                marginTop: 10,
+                backgroundColor: theme.colors.primary,
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+                {t("addresses.addAddress", { defaultValue: "Add an address" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
             <View style={styles.chipRow}>
