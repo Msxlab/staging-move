@@ -856,6 +856,21 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "This only opens the connector surface; each user still needs active annual Pro, explicit partner consent, and an enabled connector config.",
   },
   {
+    key: "WORKSPACE_MODEL_ENABLED",
+    label: "Workspace / Household Model Enabled",
+    description:
+      "Master switch for the Family/Pro multi-member workspace (shared addresses, services, household budget, member roles & invitations). When off, every /api/workspaces route returns 404 and domain reads stay on the single-user path, so Family/Pro accounts behave like Individual. Turn on only AFTER the workspace backfill has provisioned existing Family/Pro owners.",
+    scope: "WEB",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app", "mobile app", "admin app"],
+    validation: "boolean",
+    note: "Workspace creation still requires a Family or Pro plan; this flag only opens the surface. Run the migrate-to-workspaces backfill before enabling so existing owners have a workspace and their records are stamped with workspaceId.",
+  },
+  {
     key: "GUIDED_PARTNERS",
     label: "Guided Partner Catalog",
     description:
@@ -1703,6 +1718,7 @@ export function validateRuntimeConfigValueShape(
     "STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED",
     "FEATURE_FLAGS_ENABLED",
     "FEATURE_API_CONNECTORS",
+    "WORKSPACE_MODEL_ENABLED",
     "ALLOW_PRODUCTION_REPLACE_RESTORE",
     "PLACES_AUTOCOMPLETE_ENABLED",
     "NOTIFICATION_PUSH_ENABLED",
