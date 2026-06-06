@@ -144,8 +144,8 @@ export default function ServicesScreen() {
 
   const fetchServices = useCallback(async () => {
     const [servicesRes, addressesRes] = await Promise.all([
-      api.get<any>("/api/services", selectedAddressId ? { addressId: selectedAddressId } : undefined),
-      api.get<any>("/api/addresses"),
+      api.get<any>("/api/services", { ...(selectedAddressId ? { addressId: selectedAddressId } : {}), limit: "200" }),
+      api.get<any>("/api/addresses", { limit: "200" }),
     ]);
     if (servicesRes.error || addressesRes.error) {
       setError(servicesRes.error || addressesRes.error || "Could not load services.");

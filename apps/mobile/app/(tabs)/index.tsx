@@ -54,7 +54,7 @@ export default function DashboardScreen() {
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes] = await Promise.all([
       api.get<any>("/api/profile"),
-      api.get<any>("/api/addresses"),
+      api.get<any>("/api/addresses", { limit: "200" }),
       api.get<any>("/api/moving"),
     ]);
     if (res.error || addrRes.error || movingRes.error) {
@@ -245,8 +245,8 @@ export default function DashboardScreen() {
       >
         {error ? (
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
-        ) : null}
-
+        ) : (
+          <>
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {statCards.map((card) => {
@@ -369,6 +369,8 @@ export default function DashboardScreen() {
             </Card>
           );
         })()}
+          </>
+        )}
 
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>

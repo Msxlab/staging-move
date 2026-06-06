@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -46,7 +46,10 @@ export default function CustomProvidersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadProviders = useCallback(async (nextSearch = search) => {
+  // Stable (no `search` dep) so the mount effect runs ONCE — previously it
+  // re-fired on every keystroke and raced handleSearch, momentarily blanking
+  // the list with an unfiltered reload.
+  const loadProviders = useCallback(async (nextSearch: string = "") => {
     const params: Record<string, string> = {};
     if (nextSearch.trim()) params.search = nextSearch.trim();
     const res = await api.get<{ providers?: CustomProvider[] }>("/api/custom-providers", params);
@@ -57,7 +60,7 @@ export default function CustomProvidersScreen() {
       setError("");
       setProviders(res.data?.providers || []);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -69,13 +72,17 @@ export default function CustomProvidersScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadProviders();
+    await loadProviders(search);
     setRefreshing(false);
-  }, [loadProviders]);
+  }, [loadProviders, search]);
 
-  const handleSearch = async (value: string) => {
+  // Debounce search so we issue one request ~300ms after the last keystroke
+  // instead of one per character.
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = (value: string) => {
     setSearch(value);
-    await loadProviders(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { void loadProviders(value); }, 300);
   };
 
   if (loading) return <LoadingScreen />;
