@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -48,6 +48,26 @@ export default function ExportScreen() {
   const { t } = useTranslation();
   const [exporting, setExporting] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
+  // Re-auth method available to this account: password, or (for OAuth-only
+  // accounts) an authenticator/backup code. Without this, OAuth-only users were
+  // blocked from exporting even though the server accepts an MFA/backup code.
+  const [security, setSecurity] = useState<{ hasPasswordLogin: boolean; mfaEnabled: boolean } | null>(null);
+  useEffect(() => {
+    (async () => {
+      const res = await api.get<any>("/api/auth/security");
+      if (res.data?.account) {
+        setSecurity({
+          hasPasswordLogin: res.data.account.hasPasswordLogin === true,
+          mfaEnabled: res.data.account.mfaEnabled === true,
+        });
+      }
+    })();
+  }, []);
+
+  // Default to password until we know; switch to code only for OAuth-only + MFA.
+  const usePasswordStepUp = security ? security.hasPasswordLogin : true;
+  const useCodeStepUp = security ? !security.hasPasswordLogin && security.mfaEnabled : false;
+  const noStepUpMethod = security ? !security.hasPasswordLogin && !security.mfaEnabled : false;
 
   // Export option labels resolve at render — users switching language
   // mid-session see the new titles without a reload.
@@ -66,10 +86,17 @@ export default function ExportScreen() {
   const handleExport = async (type: string, format: string) => {
     setExporting(`${type}-${format}`);
     try {
+      // Send the step-up field that matches the account's available method: a
+      // password, or (OAuth-only + MFA) a 6-digit TOTP / backup code.
+      const stepUpField = usePasswordStepUp
+        ? { confirmPassword }
+        : /^\d{6}$/.test(confirmPassword.trim())
+          ? { mfaCode: confirmPassword.trim() }
+          : { backupCode: confirmPassword.trim() };
       const res = await api.post<any>(`/api/export`, {
         type,
         format: format.toLowerCase(),
-        confirmPassword,
+        ...stepUpField,
       });
       if (res.error) {
         hapticError();
@@ -153,16 +180,26 @@ export default function ExportScreen() {
           </Text>
         </View>
 
-        <Input
-          placeholder={t("auth.password")}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          isPassword
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel={t("settings.currentPasswordA11y")}
-          accessibilityHint={t("settings.currentPasswordHint")}
-        />
+        {noStepUpMethod ? (
+          <View style={styles.noticeBox}>
+            <Text style={styles.noticeText}>
+              {t("settings.export_needsStepUp", { defaultValue: "Set a password or turn on two-factor authentication to export your data." })}
+            </Text>
+          </View>
+        ) : (
+          <Input
+            placeholder={useCodeStepUp
+              ? t("settings.export_codePlaceholder", { defaultValue: "Authenticator or backup code" })
+              : t("auth.password")}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            isPassword={usePasswordStepUp}
+            autoCapitalize="none"
+            autoCorrect={false}
+            accessibilityLabel={t("settings.currentPasswordA11y")}
+            accessibilityHint={t("settings.currentPasswordHint")}
+          />
+        )}
 
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
