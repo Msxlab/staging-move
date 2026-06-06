@@ -8,6 +8,9 @@ import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
+import { getUserPlan } from "@/lib/plan-limits";
+import { planFeatures } from "@locateflow/shared";
+import { buildTaxReportData } from "@/lib/tax-report-data";
 
 // POST /api/export
 // Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
@@ -39,9 +42,15 @@ const ALLOWED_TYPES = new Set([
   "subscription",
   "workspace",
   "analytics",
+  "tax",
   "full",
 ]);
 const ALLOWED_FORMATS = new Set(["csv", "json"]);
+
+// Export types that are a paid (Pro) capability rather than a GDPR data dump.
+// "full"/"addresses"/etc. remain available to everyone for data portability;
+// the tax/property report is a Pro deliverable gated on advancedExport.
+const ADVANCED_EXPORT_TYPES = new Set(["tax"]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,6 +116,30 @@ export async function POST(request: NextRequest) {
         },
         { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },
       );
+    }
+
+    // Pro-gated reports: the tax/property export is an entitlement, not a GDPR
+    // data dump, so it requires an active plan whose features include
+    // advancedExport (Pro). Inactive/expired Pro resolves to FREE_TRIAL here.
+    if (ADVANCED_EXPORT_TYPES.has(type)) {
+      const userPlan = await getUserPlan(userId);
+      if (!planFeatures(userPlan.plan).advancedExport) {
+        await createAuditLog({
+          userId,
+          action: "EXPORT_BLOCK",
+          entityType: "User",
+          entityId: userId,
+          changes: { type, format, code: "UPGRADE_REQUIRED", plan: userPlan.plan },
+          ...meta,
+        });
+        return NextResponse.json(
+          {
+            error: "Tax & property export is a Pro feature. Upgrade to Pro to export tax and property reports.",
+            code: "UPGRADE_REQUIRED",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     await createAuditLog({
@@ -545,6 +578,17 @@ export async function POST(request: NextRequest) {
       }));
     }
 
+    if (type === "tax") {
+      // Pro "Tax & property export": a per-property summary suitable for tax
+      // prep (rental/home-office expenses, moving expenses). Distinct from the
+      // raw addresses/services dumps — it joins services to their property,
+      // annualizes recurring cost, and lists move events touching each address.
+      const taxData = await buildTaxReportData(userId);
+      data.tax = taxData.tax;
+      data.taxByProperty = taxData.taxByProperty;
+      data.taxTotals = taxData.taxTotals;
+    }
+
     emitSecurityEvent({
       type: "EXPORT_ATTEMPT",
       severity: "info",
@@ -585,6 +629,41 @@ export async function POST(request: NextRequest) {
         }
         return v;
       };
+
+      // The tax report needs the per-property roll-ups + grand total an
+      // accountant wants, which the single-array flattener can't express. Emit a
+      // multi-section CSV: property summary, grand total, then detailed line items.
+      if (type === "tax") {
+        const esc = (value: unknown): string => {
+          const s = safeCsvValue(String(value ?? ""));
+          return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const row = (values: unknown[]): string => values.map(esc).join(",") + "\n";
+        const dateOnly = (d: unknown): string => (d ? new Date(d as string).toISOString().split("T")[0] : "");
+        const byProperty = (data.taxByProperty as any[]) || [];
+        const lineItems = (data.tax as any[]) || [];
+        const totals = (data.taxTotals as any) || {};
+
+        let csv = "PROPERTY SUMMARY\n";
+        csv += row(["property", "propertyType", "ownership", "isPrimary", "occupancyStart", "occupancyEnd", "serviceCount", "totalMonthlyEquivalent", "totalAnnualizedCost"]);
+        for (const p of byProperty) {
+          csv += row([p.property, p.propertyType, p.ownership, p.isPrimary, dateOnly(p.occupancyStart), dateOnly(p.occupancyEnd), p.serviceCount, p.totalMonthlyEquivalent, p.totalAnnualizedCost]);
+        }
+        csv += row(["GRAND TOTAL", "", "", "", "", "", totals.serviceCount ?? "", totals.totalMonthlyEquivalent ?? "", totals.totalAnnualizedCost ?? ""]);
+
+        csv += "\nLINE ITEMS\n";
+        csv += row(["property", "propertyType", "ownership", "serviceProvider", "serviceCategory", "billingCycle", "oneTime", "active", "cycleAmount", "monthlyEquivalent", "annualizedCost"]);
+        for (const it of lineItems) {
+          csv += row([it.property, it.propertyType, it.ownership, it.serviceProvider, it.serviceCategory, it.billingCycle, it.oneTime, it.active, it.cycleAmount, it.monthlyEquivalent, it.annualizedCost]);
+        }
+
+        return new NextResponse(csv, {
+          headers: {
+            "Content-Type": "text/csv",
+            "Content-Disposition": `attachment; filename="locateflow-tax-export.csv"`,
+          },
+        });
+      }
 
       if (listItems.length > 0) {
         const flatItems = listItems.map((item: any) => {

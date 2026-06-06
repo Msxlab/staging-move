@@ -34,6 +34,8 @@ type AddressOption = {
   state: string;
   zip: string;
   isPrimary: boolean;
+  nickname?: string | null;
+  city?: string | null;
 };
 
 type RecommendationsResponse = {
@@ -63,6 +65,7 @@ export default function ProvidersScreen() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [primaryAddress, setPrimaryAddress] = useState<AddressOption | null>(null);
+  const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [addressLoaded, setAddressLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,6 +87,7 @@ export default function ProvidersScreen() {
       }
       const addrs = res.data?.addresses || [];
       const primary = addrs.find((a) => a.isPrimary) || addrs[0] || null;
+      setAddresses(addrs);
       setPrimaryAddress(primary);
       setAddressLoaded(true);
     })();
@@ -195,10 +199,38 @@ export default function ProvidersScreen() {
   const selectedLabel = selectedCat ? t(`categories.${selectedCat}`, { defaultValue: getCategoryLabel(selectedCat) }) : null;
 
   const renderHeader = useCallback(() => {
-    if (search) return null; // Hide recommendations while searching
     return (
       <View>
-        {recommended.length > 0 ? (
+        {/* Location picker — browse providers for any of the user's addresses,
+            not just the primary one (web parity). */}
+        {addresses.length > 1 ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {addresses.map((a) => {
+              const active = a.id === primaryAddress?.id;
+              const label = a.nickname || a.city || a.state || t("addresses.title");
+              return (
+                <TouchableOpacity
+                  key={a.id}
+                  onPress={() => setPrimaryAddress(a)}
+                  accessibilityRole="button"
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: active ? theme.colors.primary : theme.colors.border,
+                    backgroundColor: active ? theme.colors.primary : "transparent",
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: active ? "#fff" : theme.colors.textSecondary }}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
+        {!search && recommended.length > 0 ? (
           <RecommendedRow
               title={t("providers.forYourMove")}
               description={
@@ -212,7 +244,7 @@ export default function ProvidersScreen() {
         ) : null}
       </View>
     );
-  }, [recommended, primaryAddress, router, search]);
+  }, [recommended, primaryAddress, addresses, router, search, t, theme]);
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;

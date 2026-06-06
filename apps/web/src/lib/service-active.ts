@@ -28,3 +28,14 @@ export function activeTrackedServiceWhere(
     ...extra,
   };
 }
+
+export function activeTrackedServiceWhereForScope(
+  scope: { userId: string; workspaceId?: string | null },
+  extra: Record<string, unknown> = {},
+) {
+  return {
+    ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : { userId: scope.userId }),
+    ...ACTIVE_TRACKED_SERVICE_WHERE,
+    ...extra,
+  };
+}

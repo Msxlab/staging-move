@@ -49,6 +49,7 @@ const exportOptions = [
   { title: "Services", description: "Export all services and billing info", icon: FileSpreadsheet, type: "services", formats: ["CSV", "JSON"] },
   { title: "Budget History", description: "Export monthly budget data", icon: FileSpreadsheet, type: "budget", formats: ["CSV", "JSON"] },
   { title: "Moving Plans", description: "Export plans with tasks and boxes", icon: FileText, type: "moving", formats: ["JSON"] },
+  { title: "Tax & Property Export", description: "Per-property summary for tax prep — annualized service costs + move history (Pro)", icon: FileDown, type: "tax", formats: ["CSV", "JSON"] },
   { title: "Full Data Export", description: "Export supported account data", icon: Download, type: "full", formats: ["JSON"] },
 ];
 
@@ -89,6 +90,7 @@ export default function ExportPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [generatingFullPdf, setGeneratingFullPdf] = useState(false);
+  const [generatingTaxPdf, setGeneratingTaxPdf] = useState(false);
   const [exportPassword, setExportPassword] = useState("");
 
   useEffect(() => {
@@ -170,6 +172,27 @@ export default function ExportPage() {
       toast.error(err instanceof Error ? err.message : "Failed to generate PDF");
     }
     setGeneratingFullPdf(false);
+  };
+
+  // Tax & property PDF — per-property summary (Pro). The server 403s non-Pro
+  // with a clear message that downloadFromUrl surfaces as a toast.
+  const handleTaxPdf = async () => {
+    setGeneratingTaxPdf(true);
+    try {
+      await downloadFromUrl(
+        "/api/export/pdf",
+        "locateflow-tax-property-report.pdf",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "tax", confirmPassword: exportPassword }),
+        },
+      );
+      toast.success("Tax & property PDF downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate PDF");
+    }
+    setGeneratingTaxPdf(false);
   };
 
   return (
@@ -270,6 +293,30 @@ export default function ExportPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-honey-fg text-white text-xs font-medium hover:bg-tone-honey-fg/80 transition disabled:opacity-50 shrink-0"
           >
             {generatingFullPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            Download PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Tax & Property Report (PDF) — Pro */}
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+          <FileDown className="h-4 w-4 text-tone-honey-fg" />
+          <h3 className="text-sm font-semibold text-foreground">Tax &amp; Property Report (PDF) · Pro</h3>
+        </div>
+        <div className="flex items-center gap-3 px-5 pb-5">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-foreground/40">
+              Per-property summary with occupancy, service counts, monthly-equivalent and annualized costs, and a grand total —
+              formatted for tax prep. Includes a &ldquo;not tax advice&rdquo; disclaimer.
+            </p>
+          </div>
+          <button
+            onClick={handleTaxPdf}
+            disabled={generatingTaxPdf || !exportPassword}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-honey-fg text-white text-xs font-medium hover:bg-tone-honey-fg/80 transition disabled:opacity-50 shrink-0"
+          >
+            {generatingTaxPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
             Download PDF
           </button>
         </div>

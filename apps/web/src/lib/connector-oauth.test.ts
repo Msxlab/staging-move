@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   subscriptionFindUnique: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   consentFindMany: vi.fn(),
+  consentFindUnique: vi.fn(),
   consentUpdate: vi.fn(),
   consentUpdateMany: vi.fn(),
   consentCreate: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock("@/lib/db", () => ({
     subscription: { findUnique: (...a: unknown[]) => mocks.subscriptionFindUnique(...a) },
     partnerConsent: {
       findMany: (...a: unknown[]) => mocks.consentFindMany(...a),
+      findUnique: (...a: unknown[]) => mocks.consentFindUnique(...a),
       update: (...a: unknown[]) => mocks.consentUpdate(...a),
       updateMany: (...a: unknown[]) => mocks.consentUpdateMany(...a),
       create: (...a: unknown[]) => mocks.consentCreate(...a),
@@ -248,13 +250,18 @@ describe("refreshConsentAccessToken", () => {
         }),
       ),
     );
+    // First read: still granted at version 0. The CAS write loses (count 0) and
+    // the reload finds the consent revoked → null, so no token is written here.
+    mocks.consentFindUnique
+      .mockResolvedValueOnce({ status: "GRANTED", tokenVersion: 0 })
+      .mockResolvedValueOnce({ status: "REVOKED", tokenEncrypted: null, tokenVersion: 1 });
     mocks.consentUpdateMany.mockResolvedValue({ count: 0 });
 
     await expect(refreshConsentAccessToken("consent_1", "usps", "refresh-token")).resolves.toBeNull();
 
     expect(mocks.consentUpdateMany).toHaveBeenCalledWith({
-      where: { id: "consent_1", status: "GRANTED" },
-      data: expect.objectContaining({ tokenEncrypted: "fresh-access" }),
+      where: { id: "consent_1", status: "GRANTED", tokenVersion: 0 },
+      data: expect.objectContaining({ tokenEncrypted: "fresh-access", tokenVersion: { increment: 1 } }),
     });
   });
 
@@ -274,9 +281,35 @@ describe("refreshConsentAccessToken", () => {
         }),
       ),
     );
+    mocks.consentFindUnique.mockResolvedValue({ status: "GRANTED", tokenVersion: 0 });
     mocks.consentUpdateMany.mockResolvedValue({ count: 1 });
 
     await expect(refreshConsentAccessToken("consent_1", "usps", "refresh-token")).resolves.toBe("fresh-access");
+  });
+
+  it("returns a concurrent winner's stored token when its own CAS write loses", async () => {
+    mockConfig({
+      CONNECTOR_USPS_OAUTH_CLIENT_ID: "client",
+      CONNECTOR_USPS_OAUTH_CLIENT_SECRET: "secret",
+      CONNECTOR_USPS_OAUTH_AUTHORIZE_URL: "https://apis.usps.com/oauth/authorize",
+      CONNECTOR_USPS_OAUTH_TOKEN_URL: "https://apis.usps.com/oauth/token",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ access_token: "mine", expires_in: 3600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    // Read at v0, lose the CAS (count 0), reload finds a newer winner token at v1.
+    mocks.consentFindUnique
+      .mockResolvedValueOnce({ status: "GRANTED", tokenVersion: 0 })
+      .mockResolvedValueOnce({ status: "GRANTED", tokenEncrypted: "winner-token", tokenVersion: 1 });
+    mocks.consentUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(refreshConsentAccessToken("consent_1", "usps", "refresh-token")).resolves.toBe("winner-token");
   });
 });
 

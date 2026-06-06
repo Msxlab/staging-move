@@ -1,15 +1,19 @@
 ﻿import Link from "next/link";
 import { Plus, Truck, Calendar, ArrowRight } from "lucide-react";
+import { headers } from "next/headers";
 import { EmptyState } from "@/components/shared/empty-state";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 
 export const dynamic = "force-dynamic";
 
 export default async function MovingPage() {
   const userId = await requireDbUserId();
+  const request = new Request("http://locateflow.local", { headers: await headers() });
+  const scope = await resolveWorkspaceDataScope(request, userId);
   // Server-side translations — the status badge labels re-compute per
   // request so Spanish users see "Planificando" instead of "Planning".
   const t = await getTranslations("moving");
@@ -24,7 +28,7 @@ export default async function MovingPage() {
   };
 
   const plans = await prisma.movingPlan.findMany({
-    where: { userId, deletedAt: null },
+    where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
     include: {
       fromAddress: { select: { street: true, city: true, state: true, zip: true } },
       toAddress: { select: { street: true, city: true, state: true, zip: true } },

@@ -51,6 +51,25 @@ export async function runConnectorAttempt(
     return { outcome: "NEEDS_USER", metadata: { reason: "PUSH_NOT_SUPPORTED" } };
   }
 
+  // 2.5. SHADOW dry-run: prove the request mapping works WITHOUT sending it.
+  //      Returns a shadow-marked result and never proceeds to verify (which
+  //      would hit the partner). The dispatcher records it without a real side
+  //      effect, so a new connector can be validated against live traffic shape
+  //      before ROLLOUT/GA.
+  if (ctx.dryRun) {
+    try {
+      connector.buildRequest(input);
+    } catch {
+      return {
+        outcome: "FAILED",
+        errorCode: "VALIDATION_REJECTED",
+        retryable: false,
+        metadata: { reason: "DRY_RUN_BUILD_FAILED", shadow: true },
+      };
+    }
+    return { outcome: "SUBMITTED", metadata: { reason: "DRY_RUN", shadow: true } };
+  }
+
   try {
     const request = connector.buildRequest(input);
     const pushResult = await connector.push(request, ctx);

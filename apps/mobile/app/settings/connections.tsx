@@ -25,9 +25,12 @@ interface Consent {
   scopes: string[];
 }
 
-// The partners LocateFlow can connect to. Mirrors the connector registry; the
-// list is intentionally small until partner OAuth credentials are configured.
-const AVAILABLE_CONNECTORS: Array<{ key: string; name: string }> = [{ key: "usps", name: "USPS" }];
+interface CatalogEntry {
+  connectorKey: string;
+  displayName: string;
+  mode: "API_SYNC" | "GUIDED_UPDATE" | "COMING_SOON";
+  guidedAction: { key: string; label: string; url: string; helperText?: string } | null;
+}
 
 export default function ConnectionsScreen() {
   const theme = useAppTheme();
@@ -37,10 +40,43 @@ export default function ConnectionsScreen() {
   const [pageLoading, setPageLoading] = useState(true);
   const [consents, setConsents] = useState<Consent[]>([]);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
+  const [apiSync, setApiSync] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  // Manually push the current (primary) address to every connected partner.
+  // The server defaults to the primary address and returns { created } (the
+  // number of dispatches queued); 400/403/503 carry a clear reason.
+  const syncNow = async () => {
+    setSyncing(true);
+    const res = await api.post<any>("/api/connector-dispatch", {});
+    setSyncing(false);
+    if (res.error) {
+      hapticError();
+      Alert.alert(t("connections.syncNow", { defaultValue: "Sync now" }), res.error);
+      return;
+    }
+    hapticSuccess();
+    const created = res.data?.created ?? 0;
+    Alert.alert(
+      t("connections.syncNow", { defaultValue: "Sync now" }),
+      created > 0
+        ? t("connections.syncQueued", { count: created, defaultValue: "Queued {{count}} address update(s)." })
+        : t("connections.syncNoneQueued", { defaultValue: "Everything is already up to date." }),
+    );
+  };
 
   const load = useCallback(async () => {
-    const res = await api.get<{ consents: Consent[] }>("/api/partner-consents");
-    if (res.data?.consents) setConsents(res.data.consents);
+    // The honest catalog: each partner's DERIVED mode (API_SYNC / GUIDED_UPDATE /
+    // COMING_SOON) + whether THIS user is entitled to API sync. Replaces the
+    // hardcoded USPS row that offered "Connect" to everyone and 403'd non-Pro.
+    const [consentRes, catRes] = await Promise.all([
+      api.get<{ consents: Consent[] }>("/api/partner-consents"),
+      api.get<{ connectors: CatalogEntry[]; entitlement: { apiSync: boolean } }>("/api/connectors/catalog"),
+    ]);
+    if (consentRes.data?.consents) setConsents(consentRes.data.consents);
+    if (catRes.data?.connectors) setCatalog(catRes.data.connectors);
+    setApiSync(catRes.data?.entitlement?.apiSync === true);
     setPageLoading(false);
   }, []);
 
@@ -95,7 +131,7 @@ export default function ConnectionsScreen() {
 
   if (pageLoading) return <LoadingScreen />;
 
-  const connectable = AVAILABLE_CONNECTORS.filter((c) => !grantedByKey.has(c.key));
+  const connectable = catalog.filter((c) => !grantedByKey.has(c.connectorKey));
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -117,7 +153,16 @@ export default function ConnectionsScreen() {
 
         {consents.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t("connections.connected", "Connected")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t("connections.connected", "Connected")}</Text>
+              <TouchableOpacity onPress={syncNow} disabled={syncing} style={styles.connectBtn} activeOpacity={0.7}>
+                {syncing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.connectBtnText}>{t("connections.syncNow", { defaultValue: "Sync now" })}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
             <View style={styles.card}>
               {consents.map((c, i) => (
                 <View key={c.id} style={[styles.row, i < consents.length - 1 && styles.rowBorder]}>
@@ -125,7 +170,7 @@ export default function ConnectionsScreen() {
                     <Link2 size={18} color={theme.colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowLabel}>{c.connectorKey.toUpperCase()}</Text>
+                    <Text style={styles.rowLabel}>{(c.connectorKey || "").toUpperCase()}</Text>
                     <Text style={styles.rowDesc}>{statusLabel(c.status, t)}</Text>
                   </View>
                   <TouchableOpacity
@@ -151,21 +196,36 @@ export default function ConnectionsScreen() {
             <Text style={styles.empty}>{t("connections.allConnected", "All available partners are connected.")}</Text>
           ) : (
             <View style={styles.card}>
-              {connectable.map((c, i) => (
-                <View key={c.key} style={[styles.row, i < connectable.length - 1 && styles.rowBorder]}>
+              {connectable.map((c, i) => {
+                // Only an API_SYNC partner the user is entitled to gets a live
+                // OAuth "Connect". API_SYNC without entitlement → upsell; a
+                // GUIDED_UPDATE partner → a how-to link; COMING_SOON → disabled.
+                const canConnect = c.mode === "API_SYNC" && apiSync;
+                const modeLabel =
+                  c.mode === "API_SYNC"
+                    ? canConnect
+                      ? t("connections.mode_apiSync", { defaultValue: "Automatic sync" })
+                      : t("connections.mode_proRequired", { defaultValue: "Automatic sync · Pro" })
+                    : c.mode === "COMING_SOON"
+                      ? t("connections.mode_comingSoon", { defaultValue: "Coming soon" })
+                      : t("connections.mode_guided", { defaultValue: "Guided update" });
+                return (
+                <View key={c.connectorKey} style={[styles.row, i < connectable.length - 1 && styles.rowBorder]}>
                   <View style={styles.rowIcon}>
                     <Link2 size={18} color={theme.colors.textTertiary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowLabel}>{c.name}</Text>
+                    <Text style={styles.rowLabel}>{c.displayName}</Text>
+                    <Text style={styles.rowDesc}>{modeLabel}</Text>
                   </View>
+                  {canConnect ? (
                   <TouchableOpacity
-                    onPress={() => connect(c.key)}
-                    disabled={busyKey === c.key}
+                    onPress={() => connect(c.connectorKey)}
+                    disabled={busyKey === c.connectorKey}
                     style={styles.connectBtn}
                     activeOpacity={0.7}
                   >
-                    {busyKey === c.key ? (
+                    {busyKey === c.connectorKey ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <>
@@ -174,8 +234,25 @@ export default function ConnectionsScreen() {
                       </>
                     )}
                   </TouchableOpacity>
+                  ) : c.mode === "API_SYNC" ? (
+                    <TouchableOpacity onPress={() => router.push("/settings/subscription")} style={styles.connectBtn} activeOpacity={0.7}>
+                      <Text style={styles.connectBtnText}>{t("connections.upgrade", { defaultValue: "Upgrade" })}</Text>
+                    </TouchableOpacity>
+                  ) : c.mode === "GUIDED_UPDATE" && c.guidedAction?.url ? (
+                    <TouchableOpacity onPress={() => openWebUrl(c.guidedAction!.url)} style={styles.connectBtn} activeOpacity={0.7}>
+                      <ExternalLink size={14} color="#fff" />
+                      <Text style={styles.connectBtnText}>{t("connections.howTo", { defaultValue: "How to" })}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={[styles.connectBtn, { opacity: 0.5 }]}>
+                      <Text style={styles.connectBtnText}>
+                        {c.mode === "COMING_SOON" ? t("connections.soon", { defaultValue: "Soon" }) : t("connections.guided", { defaultValue: "Guide" })}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              ))}
+                );
+              })}
             </View>
           )}
         </View>

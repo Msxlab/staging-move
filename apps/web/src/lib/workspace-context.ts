@@ -26,6 +26,7 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 export interface WorkspaceContext {
   userId: string;
   workspaceId: string;
+  ownerUserId: string;
   workspaceName: string;
   memberRole: WorkspaceRole;
   memberStatus: WorkspaceMemberStatus;
@@ -117,8 +118,12 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
   if (!member) {
     throw new WorkspaceContextError(403, "NO_WORKSPACE_ACCESS", "You don't have access to this workspace.");
   }
-  if (member.status === "SUSPENDED") {
-    throw new WorkspaceContextError(403, "MEMBER_SUSPENDED", "Your access to this workspace is suspended.");
+  // Allow-list, not a SUSPENDED-only denylist: any status that isn't an active
+  // membership (or a read-only OVERFLOW after a downgrade) fails closed. The
+  // status column is free-form VarChar, so an unknown/future value must NOT
+  // silently grant full context. can() further clamps OVERFLOW to read-only.
+  if (member.status !== "ACTIVE" && member.status !== "OVERFLOW") {
+    throw new WorkspaceContextError(403, "MEMBER_SUSPENDED", "Your access to this workspace is not active.");
   }
 
   // Extended client filters soft-deleted workspaces → null means gone/missing.
@@ -136,6 +141,7 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
   return {
     userId,
     workspaceId: workspace.id,
+    ownerUserId: workspace.ownerUserId,
     workspaceName: workspace.name,
     memberRole: role,
     memberStatus: status,

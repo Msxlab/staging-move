@@ -21,17 +21,25 @@ import { registerForPushNotifications } from "@/lib/push";
 
 interface Prefs {
   emailTaskReminders: boolean;
+  emailBillReminders: boolean;
+  emailBillOverdue: boolean;
+  emailContractExpiring: boolean;
   emailWeeklyDigest: boolean;
   emailMoveAlerts: boolean;
   pushTaskReminders: boolean;
+  pushBillReminders: boolean;
   pushMoveAlerts: boolean;
 }
 
 const DEFAULT_PREFS: Prefs = {
   emailTaskReminders: true,
+  emailBillReminders: true,
+  emailBillOverdue: true,
+  emailContractExpiring: true,
   emailWeeklyDigest: false,
   emailMoveAlerts: true,
   pushTaskReminders: true,
+  pushBillReminders: true,
   pushMoveAlerts: true,
 };
 
@@ -63,7 +71,7 @@ export default function NotificationSettingsScreen() {
 
   const handleSave = async () => {
     setSaving(true);
-    const wantsPush = prefs.pushTaskReminders || prefs.pushMoveAlerts;
+    const wantsPush = prefs.pushTaskReminders || prefs.pushBillReminders || prefs.pushMoveAlerts;
     if (wantsPush) {
       const registered = await registerForPushNotifications();
       if (!registered) {
@@ -100,6 +108,21 @@ export default function NotificationSettingsScreen() {
           desc: t("notifications.email_taskReminders_desc"),
         },
         {
+          key: "emailBillReminders" as keyof Prefs,
+          label: t("notifications.email_billReminders_label", { defaultValue: "Bill reminders" }),
+          desc: t("notifications.email_billReminders_desc", { defaultValue: "Upcoming bill due dates." }),
+        },
+        {
+          key: "emailBillOverdue" as keyof Prefs,
+          label: t("notifications.email_billOverdue_label", { defaultValue: "Overdue bills" }),
+          desc: t("notifications.email_billOverdue_desc", { defaultValue: "When a tracked bill becomes overdue." }),
+        },
+        {
+          key: "emailContractExpiring" as keyof Prefs,
+          label: t("notifications.email_contractExpiring_label", { defaultValue: "Contract expiry" }),
+          desc: t("notifications.email_contractExpiring_desc", { defaultValue: "When a contract or auto-renewal is approaching." }),
+        },
+        {
           key: "emailWeeklyDigest" as keyof Prefs,
           label: t("notifications.email_weeklyDigest_label"),
           desc: t("notifications.email_weeklyDigest_desc"),
@@ -119,6 +142,11 @@ export default function NotificationSettingsScreen() {
           key: "pushTaskReminders" as keyof Prefs,
           label: t("notifications.push_taskReminders_label"),
           desc: t("notifications.push_taskReminders_desc"),
+        },
+        {
+          key: "pushBillReminders" as keyof Prefs,
+          label: t("notifications.push_billReminders_label", { defaultValue: "Bill reminders" }),
+          desc: t("notifications.push_billReminders_desc", { defaultValue: "Upcoming bill due dates." }),
         },
         {
           key: "pushMoveAlerts" as keyof Prefs,

@@ -84,6 +84,12 @@ const IMPORT_MODEL_OPS = {
       prismaUnsafe.address.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.address.create({ data }),
   },
+  addressChangeEvents: {
+    count: () => prisma.addressChangeEvent.count(),
+    findUniqueById: (id: string) =>
+      prisma.addressChangeEvent.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.addressChangeEvent.create({ data }),
+  },
   movingPlans: {
     count: () => prisma.movingPlan.count(),
     findUniqueById: (id: string) =>
@@ -142,6 +148,12 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.providerGovernanceIssue.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.providerGovernanceIssue.create({ data }),
+  },
+  connectorFallbackActions: {
+    count: () => prisma.connectorFallbackAction.count(),
+    findUniqueById: (id: string) =>
+      prisma.connectorFallbackAction.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.connectorFallbackAction.create({ data }),
   },
   adminUsers: {
     count: () => prisma.adminUser.count(),

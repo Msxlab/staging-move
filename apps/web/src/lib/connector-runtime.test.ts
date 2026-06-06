@@ -4,7 +4,7 @@ const rcMock = vi.hoisted(() => ({ getRuntimeConfigValue: vi.fn() }));
 const dbMocks = vi.hoisted(() => ({
   prisma: {
     connectorConfig: { findUnique: vi.fn() },
-    connectorDispatch: { update: vi.fn() },
+    connectorDispatch: { findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     partnerConsent: { findUnique: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
     user: { findUnique: vi.fn() },
@@ -22,7 +22,7 @@ vi.mock("@/lib/email-service", () => ({ sendConnectorActionNeededEmail: vi.fn() 
 vi.mock("@/lib/notification-preferences", () => ({ isWebNotificationEnabled: vi.fn(() => false) }));
 
 import { connectorRegistry } from "./connector-registry";
-import { toCanonicalAddress, isApiSyncConnector, runDispatchRow } from "./connector-runtime";
+import { toCanonicalAddress, isApiSyncConnector, runDispatchRow, runDueDispatches } from "./connector-runtime";
 
 describe("toCanonicalAddress", () => {
   it("maps DB address fields and normalizes USA → US", () => {
@@ -99,7 +99,9 @@ describe("runDispatchRow mode gate", () => {
       circuitState: "CLOSED",
       stage: "GA",
     });
+    dbMocks.prisma.connectorDispatch.findMany.mockResolvedValue([]);
     dbMocks.prisma.connectorDispatch.update.mockResolvedValue({});
+    dbMocks.prisma.connectorDispatch.updateMany.mockResolvedValue({ count: 0 });
     dbMocks.prisma.user.findUnique.mockResolvedValue({ email: null, firstName: null });
     dbMocks.prisma.notificationPreference.findMany.mockResolvedValue([]);
   });
@@ -131,6 +133,88 @@ describe("runDispatchRow mode gate", () => {
         resultMetadataJson: JSON.stringify({ reason: "MODE_NOT_API_SYNC" }),
       }),
     });
+  });
+
+  it("keeps a shadow-created row in dry-run even if the connector is later promoted", async () => {
+    dbMocks.prisma.connectorConfig.findUnique.mockResolvedValue({
+      enabled: true,
+      circuitState: "CLOSED",
+      stage: "GA",
+    });
+
+    const status = await runDispatchRow({
+      id: "dispatch_shadow",
+      connectorKey: "usps",
+      userId: "user_1",
+      consentId: "consent_1",
+      idempotencyKey: "idem_shadow",
+      attemptCount: 0,
+      isShadow: true,
+      payloadEncrypted: JSON.stringify({
+        eventId: "event_1",
+        from: { street1: "1 Old St", city: "Austin", state: "TX", zip: "78701", country: "US" },
+        to: { street1: "2 New St", city: "Austin", state: "TX", zip: "78702", country: "US" },
+        fullName: "User One",
+        fields: {},
+      }),
+    });
+
+    expect(status).toBe("CONFIRMED");
+    expect(dbMocks.prisma.partnerConsent.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.connectorDispatch.update).toHaveBeenCalledWith({
+      where: { id: "dispatch_shadow" },
+      data: expect.objectContaining({
+        status: "CONFIRMED",
+        isShadow: true,
+        resultMetadataJson: expect.stringContaining('"shadow":true'),
+      }),
+    });
+  });
+
+  it("fails an unreadable shadow row without handing it to the user fallback", async () => {
+    const status = await runDispatchRow({
+      id: "dispatch_shadow_bad_payload",
+      connectorKey: "usps",
+      userId: "user_1",
+      consentId: "consent_1",
+      idempotencyKey: "idem_shadow_bad",
+      attemptCount: 0,
+      isShadow: true,
+      payloadEncrypted: "not-json",
+    });
+
+    expect(status).toBe("FAILED");
+    expect(dbMocks.prisma.connectorConfig.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.partnerConsent.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(dbMocks.prisma.connectorDispatch.update).toHaveBeenCalledWith({
+      where: { id: "dispatch_shadow_bad_payload" },
+      data: expect.objectContaining({
+        status: "FAILED",
+        isShadow: true,
+        lastErrorCode: "NOT_SUPPORTED",
+      }),
+    });
+  });
+
+  it("marks stale shadow dry-run claims failed instead of notifying users", async () => {
+    dbMocks.prisma.connectorDispatch.findMany
+      .mockResolvedValueOnce([{ id: "shadow_stale" }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    dbMocks.prisma.connectorDispatch.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(runDueDispatches()).resolves.toEqual({ processed: 0, failed: 0 });
+
+    expect(dbMocks.prisma.connectorDispatch.updateMany).toHaveBeenCalledWith({
+      where: { id: "shadow_stale", status: "DISPATCHING", isShadow: true },
+      data: {
+        status: "FAILED",
+        resultMetadataJson: JSON.stringify({ reason: "SHADOW_WORKER_TIMEOUT", shadow: true }),
+      },
+    });
+    expect(dbMocks.prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("does not push when the stored consent was revoked before dispatch", async () => {

@@ -21,14 +21,21 @@ vi.mock("@/lib/webhook-idempotency", () => ({
   hasProcessedWebhookEvent: mocks.hasProcessedWebhookEvent,
   markWebhookEventProcessed: mocks.markWebhookEventProcessed,
 }));
-// Mock the connector package so uspsConnector stands in as an async-confirm
-// connector: its parseWebhook reads our echoed ref + outcome out of the
-// (already signature-verified) payload — exactly what a real parseWebhook does.
-vi.mock("@locateflow/connectors", () => ({
-  uspsConnector: {
-    manifest: { allowedHosts: ["apis.usps.com"] },
-    parseWebhook: (payload: any) =>
-      payload?.ref ? { ref: payload.ref, result: { outcome: payload.outcome, errorCode: payload.errorCode, confirmationNumber: payload.conf } } : null,
+// Mock the app connector registry so a stand-in async-confirm connector is
+// addressable for "usps": its parseWebhook reads our echoed ref + outcome out of
+// the (already signature-verified) payload — exactly what a real parseWebhook does.
+vi.mock("@/lib/connector-registry", () => ({
+  connectorRegistry: {
+    get: (key: string) =>
+      key === "usps"
+        ? {
+            manifest: { allowedHosts: ["apis.usps.com"] },
+            parseWebhook: (payload: any) =>
+              payload?.ref
+                ? { ref: payload.ref, result: { outcome: payload.outcome, errorCode: payload.errorCode, confirmationNumber: payload.conf } }
+                : null,
+          }
+        : undefined,
   },
 }));
 

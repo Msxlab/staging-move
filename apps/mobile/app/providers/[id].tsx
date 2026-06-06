@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -24,6 +23,7 @@ import {
   AlertTriangle,
   Info,
   Clock,
+  Sparkles,
 } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -32,8 +32,9 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { openWebUrl } from "@/lib/in-app-browser";
 import {
   getLocalizedCategoryLabel,
   getLocalizedCoverageLabel,
@@ -213,7 +214,13 @@ export default function ProviderDetailScreen() {
     );
   }
 
-  const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  // Render via the shared ServiceLogoMark so the hero uses the SAME tested
+  // fallback chain (renderable-URL filter + onError advance + emoji fallback +
+  // a11y) as the rest of the app instead of a single-URL Image that can blank out.
+  const logoService = {
+    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+    website: provider.website,
+  };
   const trust = provider.trust || getProviderTrustSummary(provider);
   const categoryLabel = getLocalizedCategoryLabel(t, provider.category, getCategoryLabel(provider.category));
   const providerDescription = getLocalizedProviderDescription(t, i18n.language, provider);
@@ -256,17 +263,16 @@ export default function ProviderDetailScreen() {
 
         <Card variant="glow">
           <View style={styles.topRow}>
-            {hasLogo ? (
-              <Image
-                source={{ uri: provider.logoUrl as string }}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.logoFallback}>
-                <CategoryIcon emoji={getCategoryIcon(provider.category)} size={26} color={theme.colors.primary} />
-              </View>
-            )}
+            <ServiceLogoMark
+              service={logoService}
+              fallbackIcon={getCategoryIcon(provider.category)}
+              size={56}
+              logoSize={48}
+              borderRadius={14}
+              backgroundColor={theme.colors.primaryFaded}
+              borderColor="rgba(127, 182, 232,0.2)"
+              fallbackFontSize={26}
+            />
             <View style={{ flex: 1 }}>
               <Text style={styles.providerName} numberOfLines={2}>
                 {provider.name}
@@ -389,6 +395,35 @@ export default function ProviderDetailScreen() {
             </View>
           ) : null}
         </Card>
+
+        {provider.affiliateActive ? (
+          <TouchableOpacity
+            style={styles.affiliateBtn}
+            onPress={async () => {
+              // The redirect target is resolved server-side (the click endpoint
+              // returns the stored https URL), so the app never trusts a
+              // client-held affiliate link. Opens in an in-app browser
+              // (SFSafariViewController / Custom Tabs) — store-safe for
+              // real-world service links.
+              try {
+                const res = await api.post<{ url?: string }>("/api/affiliate/click", {
+                  providerId: provider.id,
+                  source: "provider_detail",
+                });
+                if (res.data?.url) await openWebUrl(res.data.url);
+              } catch {
+                // Non-critical CTA — never block the screen on a tracking failure.
+              }
+            }}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t("providers.getStartedA11y", { provider: provider.name })}
+            accessibilityHint={t("providers.getStartedHint", { defaultValue: "Opens the provider's site in a browser" })}
+          >
+            <Sparkles size={16} color={theme.colors.primary} />
+            <Text style={styles.affiliateBtnText}>{t("providers.getStarted", { defaultValue: "Get started" })}</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {provider.website ? (
           <TouchableOpacity
@@ -545,6 +580,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 14,
   },
   actionText: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
+  affiliateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: theme.colors.primaryFaded,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.35)",
+    paddingVertical: 15,
+    marginTop: 14,
+  },
+  affiliateBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.primary },
   section: { marginTop: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },

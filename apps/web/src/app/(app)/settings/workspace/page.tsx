@@ -54,6 +54,8 @@ const ROLE_LABEL: Record<string, string> = {
   CHILD: "Child",
   VIEW_ONLY: "View only",
 };
+const WORKSPACE_COOKIE_NAME = "lf_workspace_id";
+const WORKSPACE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 function isManagerRole(role: string): boolean {
   return role === "OWNER" || role === "ADMIN";
@@ -61,6 +63,15 @@ function isManagerRole(role: string): boolean {
 
 function managedSyncOn(role: string, flag: boolean | null): boolean {
   return typeof flag === "boolean" ? flag : role === "CHILD";
+}
+
+function readWorkspaceCookie(): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${WORKSPACE_COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function persistWorkspaceSelection(workspaceId: string) {
+  document.cookie = `${WORKSPACE_COOKIE_NAME}=${encodeURIComponent(workspaceId)}; path=/; max-age=${WORKSPACE_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
 export default function WorkspaceSettingsPage() {
@@ -113,7 +124,12 @@ export default function WorkspaceSettingsPage() {
         const list: Workspace[] = Array.isArray(wsData.workspaces) ? wsData.workspaces : [];
         setWorkspaces(list);
         setMyUserId(meData.user?.id ?? null);
-        if (list.length > 0) setSelectedId(list[0].id);
+        if (list.length > 0) {
+          const cookieWorkspaceId = readWorkspaceCookie();
+          const nextSelectedId = list.find((w) => w.id === cookieWorkspaceId)?.id ?? list[0].id;
+          setSelectedId(nextSelectedId);
+          persistWorkspaceSelection(nextSelectedId);
+        }
       } catch {
         if (!cancelled) toast.error("Couldn't load your workspaces.");
       } finally {
@@ -416,7 +432,10 @@ export default function WorkspaceSettingsPage() {
           {workspaces.map((w) => (
             <button
               key={w.id}
-              onClick={() => setSelectedId(w.id)}
+              onClick={() => {
+                setSelectedId(w.id);
+                persistWorkspaceSelection(w.id);
+              }}
               className={`rounded-xl border px-3 py-1.5 text-sm transition ${
                 w.id === selectedId
                   ? "border-primary bg-primary/10 text-foreground"

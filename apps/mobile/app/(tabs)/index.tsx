@@ -54,7 +54,7 @@ export default function DashboardScreen() {
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes] = await Promise.all([
       api.get<any>("/api/profile"),
-      api.get<any>("/api/addresses"),
+      api.get<any>("/api/addresses", { limit: "200" }),
       api.get<any>("/api/moving"),
     ]);
     if (res.error || addrRes.error || movingRes.error) {
@@ -64,8 +64,14 @@ export default function DashboardScreen() {
     if (res.data) {
       setError(null);
       const profileData = res.data.profile || res.data;
+      // Premium = the EFFECTIVE entitlement (an inherited Family/Pro member has
+      // no own paid row but inherits access). Fall back to the own-subscription
+      // heuristic only when the resolved entitlement is absent.
+      const ent = res.data.entitlement;
       const sub = res.data.subscription || {};
-      const hasPremium = sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
+      const hasPremium = ent
+        ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
+        : Boolean(sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date())));
       setIsPremium(!!hasPremium);
 
       const addresses = addrRes.data?.addresses || [];
@@ -239,8 +245,8 @@ export default function DashboardScreen() {
       >
         {error ? (
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
-        ) : null}
-
+        ) : (
+          <>
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {statCards.map((card) => {
@@ -363,6 +369,8 @@ export default function DashboardScreen() {
             </Card>
           );
         })()}
+          </>
+        )}
 
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>

@@ -2,9 +2,9 @@
  * Connector runtime — the durable dispatch worker (I/O shell).
  *
  * Ties the pure @locateflow/connectors framework to this app's DB + token
- * vault. Enqueue writes self-contained ConnectorDispatch rows (the encrypted
- * CanonicalAddressChange travels on the row, so no AddressChangeEvent model is
- * required yet). The worker claims due rows, runs one attempt through the
+ * vault. Enqueue creates one AddressChangeEvent and self-contained
+ * ConnectorDispatch rows (the encrypted CanonicalAddressChange travels on each
+ * row). The worker claims due rows, runs one attempt through the
  * connector with an allowlisted/breaker-wrapped client, then applies the
  * planner's decision (confirm / await / re-queue with backoff / fall back).
  *
@@ -70,10 +70,12 @@ function buildContext(
   connector: AddressConnector,
   accessToken: string | null,
   idempotencyKey: string,
+  dryRun = false,
 ): ConnectorContext {
   return {
     accessToken,
     idempotencyKey,
+    dryRun,
     http: createConnectorHttpClient({
       allowedHosts: connector.manifest.allowedHosts,
       breaker: breakerFor(connector.manifest.key),
@@ -97,16 +99,21 @@ function rolloutBucket(userId: string, connectorKey: string): number {
   return createHash("sha256").update(`${userId}:${connectorKey}`).digest().readUInt16BE(0) % 100;
 }
 
+type DispatchPlan = "LIVE" | "SHADOW" | "SKIP";
+
 /**
- * Whether the admin control plane currently lets this connector dispatch for
- * this user. Honors the circuit state, lifecycle stage, and gradual rollout %
- * (the `enabled` kill switch is already applied by the query filter).
+ * What the admin control plane currently lets this connector do for this user:
+ *  - LIVE   : real server-side push (GA, or ROLLOUT within the rollout %).
+ *  - SHADOW : dry-run only (stage SHADOW) — runs the full pipeline, never pushes.
+ *  - SKIP   : circuit open/disabled, retired, or outside the rollout bucket.
+ * The `enabled` kill switch is already applied by the query filter upstream.
  */
-function isConnectorDispatchable(config: ConnectorControl, userId: string): boolean {
-  if (config.circuitState === "OPEN" || config.circuitState === "DISABLED") return false;
-  if (config.stage === "SHADOW" || config.stage === "RETIRED") return false;
-  if (config.stage === "ROLLOUT" && rolloutBucket(userId, config.connectorKey) >= config.rolloutPercent) return false;
-  return true; // GA, or ROLLOUT within %, with a CLOSED/HALF_OPEN circuit
+function resolveDispatchPlan(config: ConnectorControl, userId: string): DispatchPlan {
+  if (config.circuitState === "OPEN" || config.circuitState === "DISABLED") return "SKIP";
+  if (config.stage === "RETIRED") return "SKIP";
+  if (config.stage === "SHADOW") return "SHADOW";
+  if (config.stage === "ROLLOUT" && rolloutBucket(userId, config.connectorKey) >= config.rolloutPercent) return "SKIP";
+  return "LIVE"; // GA, or ROLLOUT within %, with a CLOSED/HALF_OPEN circuit
 }
 
 /**
@@ -188,6 +195,7 @@ export async function enqueueAddressChange(input: {
   const configByKey = new Map<string, ConnectorControl>(configs.map((c) => [c.connectorKey, c]));
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "LocateFlow User";
   const changeRef = randomUUID();
+
   const base: Omit<CanonicalAddressChange, "fields"> = {
     eventId: changeRef,
     from: fromAddress ? toCanonicalAddress(fromAddress) : null,
@@ -195,63 +203,112 @@ export async function enqueueAddressChange(input: {
     fullName,
   };
 
-  let created = 0;
+  const dispatchesToCreate: Array<{
+    connectorKey: string;
+    consentId: string;
+    isShadow: boolean;
+    payload: CanonicalAddressChange;
+  }> = [];
+  let liveCreated = 0;
   for (const consent of consents) {
     const config = configByKey.get(consent.connectorKey);
     if (!config || !connectorRegistry.has(consent.connectorKey)) continue;
-    if (!isConnectorDispatchable(config, input.userId)) continue;
-    // Mode gate (defense-in-depth): only auto-push when the connector is truly
-    // API_SYNC — signed agreement + credentials. Otherwise the honest path is
-    // the guided flow, not a server push that would fail or overreach.
-    if (!(await isApiSyncConnector(consent.connectorKey, { enabled: config.enabled, stage: config.stage }))) continue;
+    const plan = resolveDispatchPlan(config, input.userId);
+    if (plan === "SKIP") continue;
+    const adapter = connectorRegistry.get(consent.connectorKey);
+    // LIVE = real push: defense-in-depth — only when truly API_SYNC (signed
+    // agreement + credentials). SHADOW = dry-run: only push-capable connectors
+    // are worth shadowing, and since we never actually push, no agreement or
+    // credentials are required.
+    if (plan === "LIVE") {
+      if (!(await isApiSyncConnector(consent.connectorKey, { enabled: config.enabled, stage: config.stage }))) continue;
+    } else if (!adapter?.manifest.capabilities.addressUpdatePush) {
+      continue; // shadowing a non-push connector is meaningless
+    }
     // Skip a connector that needs an origin when we have none (e.g. a primary-
     // address EDIT auto-sync with no `from`) — don't file a doomed null-origin
     // COA the partner would reject. A real move (from+to) still dispatches.
-    if (base.from === null && connectorRegistry.get(consent.connectorKey)?.manifest.requiresOrigin) continue;
+    if (base.from === null && adapter?.manifest.requiresOrigin) continue;
     // Enforce the manifest's per-user-per-day cap (fraud control for COA-style
     // filings, e.g. USPS perUserPerDay:2) — declared but previously unenforced.
     // Count live/successful filings in the last 24h; skip a connector at its cap.
-    const rateLimit = connectorRegistry.get(consent.connectorKey)?.manifest.rateLimit;
-    const perConnectorPerMinute = rateLimit?.perConnectorPerMinute;
-    if (perConnectorPerMinute && perConnectorPerMinute > 0) {
-      const since = new Date(Date.now() - 60 * 1000);
-      const recent = await prisma.connectorDispatch.count({
-        where: {
-          connectorKey: consent.connectorKey,
-          createdAt: { gte: since },
-          status: { in: [...LIVE_DISPATCH_STATUSES] },
-        },
-      });
-      if (recent >= perConnectorPerMinute) continue;
-    }
-    const perUserPerDay = rateLimit?.perUserPerDay;
-    if (perUserPerDay && perUserPerDay > 0) {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const recent = await prisma.connectorDispatch.count({
-        where: {
-          userId: input.userId,
-          connectorKey: consent.connectorKey,
-          createdAt: { gte: since },
-          status: { in: [...LIVE_DISPATCH_STATUSES] },
-        },
-      });
-      if (recent >= perUserPerDay) continue;
+    if (plan === "LIVE") {
+      const rateLimit = connectorRegistry.get(consent.connectorKey)?.manifest.rateLimit;
+      const perConnectorPerMinute = rateLimit?.perConnectorPerMinute;
+      if (perConnectorPerMinute && perConnectorPerMinute > 0) {
+        const since = new Date(Date.now() - 60 * 1000);
+        const recent = await prisma.connectorDispatch.count({
+          where: {
+            connectorKey: consent.connectorKey,
+            createdAt: { gte: since },
+            status: { in: [...LIVE_DISPATCH_STATUSES] },
+            isShadow: false,
+          },
+        });
+        if (recent >= perConnectorPerMinute) continue;
+      }
+      const perUserPerDay = rateLimit?.perUserPerDay;
+      if (perUserPerDay && perUserPerDay > 0) {
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recent = await prisma.connectorDispatch.count({
+          where: {
+            userId: input.userId,
+            connectorKey: consent.connectorKey,
+            createdAt: { gte: since },
+            status: { in: [...LIVE_DISPATCH_STATUSES] },
+            isShadow: false,
+          },
+        });
+        if (recent >= perUserPerDay) continue;
+      }
     }
     const payload: CanonicalAddressChange = { ...base, fields: {} };
-    await prisma.connectorDispatch.create({
+    const isShadow = plan === "SHADOW";
+    dispatchesToCreate.push({ connectorKey: consent.connectorKey, consentId: consent.id, isShadow, payload });
+    if (!isShadow) liveCreated += 1;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // The canonical "user moved" event. Created once; each dispatch below links
+    // back to it via addressChangeEventId. Loose refs keep it decoupled from
+    // Address; the canonical values still travel encrypted on every dispatch row.
+    const event = await tx.addressChangeEvent.create({
       data: {
-        connectorKey: consent.connectorKey,
         userId: input.userId,
-        consentId: consent.id,
-        eventId: changeRef,
-        idempotencyKey: `${changeRef}:${consent.connectorKey}`,
-        status: "QUEUED",
-        payloadEncrypted: encrypt(JSON.stringify(payload)),
+        changeRef,
+        fromAddressId: fromAddress?.id ?? null,
+        toAddressId: toAddress.id,
+        workspaceId: input.workspaceId ?? null,
+        fullName,
+        status: "PENDING",
       },
     });
-    created += 1;
-  }
-  return { changeRef, created };
+
+    for (const dispatch of dispatchesToCreate) {
+      await tx.connectorDispatch.create({
+        data: {
+          connectorKey: dispatch.connectorKey,
+          userId: input.userId,
+          consentId: dispatch.consentId,
+          eventId: changeRef,
+          addressChangeEventId: event.id,
+          idempotencyKey: `${changeRef}:${dispatch.connectorKey}`,
+          status: "QUEUED",
+          isShadow: dispatch.isShadow,
+          payloadEncrypted: encrypt(JSON.stringify(dispatch.payload)),
+        },
+      });
+    }
+
+    // User-facing dispatchCount counts real pushes only. Shadow rows are kept
+    // for internal validation but do not imply that a partner received a sync.
+    await tx.addressChangeEvent.update({
+      where: { id: event.id },
+      data: { status: liveCreated > 0 ? "DISPATCHED" : "NO_TARGETS", dispatchCount: liveCreated },
+    });
+  });
+
+  return { changeRef, created: liveCreated };
 }
 
 interface DispatchRow {
@@ -262,6 +319,7 @@ interface DispatchRow {
   idempotencyKey: string;
   attemptCount: number;
   payloadEncrypted: string | null;
+  isShadow?: boolean;
 }
 
 /** Tell the user (in-app + email) that a sync needs their attention. Best-effort. */
@@ -306,8 +364,21 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
     }
   }
 
-  // Missing connector or unreadable payload → hand to the manual fallback.
+  // Missing connector or unreadable payload → hand live rows to the manual
+  // fallback. Shadow rows are internal dry-run traffic, so never notify users.
   if (!connector || !payload) {
+    if (row.isShadow) {
+      await prisma.connectorDispatch.update({
+        where: { id: row.id },
+        data: {
+          status: "FAILED",
+          isShadow: true,
+          lastErrorCode: "NOT_SUPPORTED",
+          resultMetadataJson: JSON.stringify({ reason: connector ? "PAYLOAD_UNREADABLE" : "CONNECTOR_MISSING", shadow: true }),
+        },
+      });
+      return "FAILED";
+    }
     await prisma.connectorDispatch.update({
       where: { id: row.id },
       data: { status: "NEEDS_USER", lastErrorCode: "NOT_SUPPORTED" },
@@ -329,6 +400,27 @@ export async function runDispatchRow(row: DispatchRow): Promise<string> {
       data: { status: "QUEUED", nextRetryAt: new Date(Date.now() + 5 * 60_000) },
     });
     return "QUEUED";
+  }
+  // SHADOW dry-run: a row created as shadow stays dry-run even if the connector
+  // is promoted later, and a live queued row is demoted if the operator rolls
+  // the connector back to SHADOW before processing. No partner push happens.
+  if (row.isShadow || control.stage === "SHADOW") {
+    const ctx = buildContext(connector, null, row.idempotencyKey, true);
+    const result = await runConnectorAttempt(connector, payload, ctx);
+    const status = result.outcome === "FAILED" ? "FAILED" : "CONFIRMED";
+    await prisma.connectorDispatch.update({
+      where: { id: row.id },
+      data: {
+        status,
+        isShadow: true,
+        attemptCount: row.attemptCount + 1,
+        dispatchedAt: new Date(),
+        confirmedAt: status === "CONFIRMED" ? new Date() : undefined,
+        lastErrorCode: result.errorCode ?? null,
+        resultMetadataJson: JSON.stringify({ ...(result.metadata ?? {}), shadow: true }),
+      },
+    });
+    return status;
   }
   if (!(await isApiSyncConnector(row.connectorKey, { enabled: control.enabled, stage: control.stage }))) {
     await prisma.connectorDispatch.update({
@@ -433,8 +525,20 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number;
   // row to NEEDS_USER and notify the owner, so they retry deliberately. (A
   // per-connector verify-then-resume sweep is the fuller solution.)
   const STALE_DISPATCHING_MS = 15 * 60 * 1000;
+  const staleShadow = await prisma.connectorDispatch.findMany({
+    where: { status: "DISPATCHING", isShadow: true, dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
+    select: { id: true },
+    take: 100,
+  });
+  for (const s of staleShadow) {
+    await prisma.connectorDispatch.updateMany({
+      where: { id: s.id, status: "DISPATCHING", isShadow: true },
+      data: { status: "FAILED", resultMetadataJson: JSON.stringify({ reason: "SHADOW_WORKER_TIMEOUT", shadow: true }) },
+    });
+  }
+
   const stale = await prisma.connectorDispatch.findMany({
-    where: { status: "DISPATCHING", dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
+    where: { status: "DISPATCHING", isShadow: false, dispatchedAt: { lt: new Date(now.getTime() - STALE_DISPATCHING_MS) } },
     select: { id: true, userId: true, connectorKey: true },
     take: 100,
   });
@@ -442,6 +546,26 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number;
     const flipped = await prisma.connectorDispatch.updateMany({
       where: { id: s.id, status: "DISPATCHING" },
       data: { status: "NEEDS_USER" },
+    });
+    if (flipped.count > 0) await notifyNeedsUser(s.userId, s.connectorKey, s.id).catch(() => {});
+  }
+
+  // Recovery sweep for rows stuck in SUBMITTED past a generous window — a sync
+  // read-back stayed pending (e.g. a USPS mailed-letter validation never flipped
+  // to ACTIVE) or an async confirmation webhook never arrived. We never re-send
+  // (the filing already reached the partner); we surface it so the user verifies
+  // it deliberately. The window is long so a normally-pending validation is not
+  // flagged early.
+  const STALE_SUBMITTED_MS = 7 * 24 * 60 * 60 * 1000;
+  const stuck = await prisma.connectorDispatch.findMany({
+    where: { status: "SUBMITTED", isShadow: false, dispatchedAt: { lt: new Date(now.getTime() - STALE_SUBMITTED_MS) } },
+    select: { id: true, userId: true, connectorKey: true },
+    take: 100,
+  });
+  for (const s of stuck) {
+    const flipped = await prisma.connectorDispatch.updateMany({
+      where: { id: s.id, status: "SUBMITTED" },
+      data: { status: "NEEDS_USER", resultMetadataJson: JSON.stringify({ reason: "CONFIRMATION_TIMEOUT" }) },
     });
     if (flipped.count > 0) await notifyNeedsUser(s.userId, s.connectorKey, s.id).catch(() => {});
   }
@@ -458,6 +582,7 @@ export async function runDueDispatches(limit = 25): Promise<{ processed: number;
       idempotencyKey: true,
       attemptCount: true,
       payloadEncrypted: true,
+      isShadow: true,
     },
   });
 

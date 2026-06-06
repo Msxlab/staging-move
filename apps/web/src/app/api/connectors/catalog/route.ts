@@ -4,7 +4,8 @@ import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { connectorRegistry } from "@/lib/connector-registry";
 import { userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
-import { getGuidedConnectorAction, type GuidedConnectorAction } from "@/lib/guided-connector-actions";
+import { type GuidedConnectorAction } from "@/lib/guided-connector-actions";
+import { resolveFallbackAction } from "@/lib/fallback-actions";
 import { resolveConnectorMode, type AddressConnector, type ConnectorMode } from "@locateflow/connectors";
 
 export const runtime = "nodejs";
@@ -89,9 +90,17 @@ async function guidedPartners(): Promise<Array<{ connectorKey: string; displayNa
   return out;
 }
 
-function guidedActionFor(adapter: AddressConnector, mode: ConnectorMode): GuidedConnectorAction | null {
+async function guidedActionFor(
+  adapter: AddressConnector,
+  mode: ConnectorMode,
+): Promise<GuidedConnectorAction | null> {
   if (mode !== "GUIDED_UPDATE") return null;
-  return getGuidedConnectorAction(adapter.manifest.fallbackActionKey);
+  // DB-backed (admin-editable) fallback, layered over the in-code default. The
+  // catalog keeps the existing public shape (no `type`); per-move template
+  // rendering is applied later, when a specific change needs the guided action.
+  const resolved = await resolveFallbackAction(adapter.manifest.fallbackActionKey);
+  if (!resolved) return null;
+  return { key: resolved.key, label: resolved.label, url: resolved.url, helperText: resolved.helperText };
 }
 
 /**
@@ -140,7 +149,7 @@ export async function GET() {
         connectorKey: adapter.manifest.key,
         displayName: adapter.manifest.displayName,
         mode,
-        guidedAction: guidedActionFor(adapter, mode),
+        guidedAction: await guidedActionFor(adapter, mode),
       };
     }),
   );

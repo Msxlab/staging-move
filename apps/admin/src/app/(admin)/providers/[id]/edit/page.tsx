@@ -33,6 +33,9 @@ type ProviderFormState = {
   popularityScore: number;
   isActive: boolean;
   displayOrder: number;
+  affiliateUrl: string;
+  affiliateNetwork: string;
+  affiliateActive: boolean;
 };
 
 export default function EditProviderPage() {
@@ -45,6 +48,7 @@ export default function EditProviderPage() {
     description: "", website: "", phone: "", logoUrl: "",
     scope: "FEDERAL", states: [] as string[], zipCodes: "", tags: "",
     popularityScore: 50, isActive: true, displayOrder: 0,
+    affiliateUrl: "", affiliateNetwork: "", affiliateActive: false,
   });
 
   useEffect(() => {
@@ -70,6 +74,8 @@ export default function EditProviderPage() {
           tags: tags.join(", "),
           popularityScore: p.popularityScore || 0, isActive: p.isActive ?? true,
           displayOrder: p.displayOrder || 0,
+          affiliateUrl: p.affiliateUrl || "", affiliateNetwork: p.affiliateNetwork || "",
+          affiliateActive: p.affiliateActive ?? false,
         });
       } catch { toast.error("Failed to load provider"); }
       finally { setLoading(false); }
@@ -184,6 +190,44 @@ export default function EditProviderPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-muted-foreground">Tags (comma separated)</label>
             <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-foreground">Affiliate (revenue)</h2>
+            <p className="mt-1 text-xs text-muted-foreground">When active with a valid https link, a &ldquo;Get started&rdquo; CTA appears for users and clicks are tracked. Leave inactive to hide it.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-muted-foreground">Affiliate URL (https)</label>
+              <input
+                type="url"
+                value={form.affiliateUrl}
+                onChange={(e) => setForm({ ...form, affiliateUrl: e.target.value })}
+                placeholder="https://partner.example/offer?ref=locateflow"
+                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-muted-foreground">Network</label>
+              <input
+                value={form.affiliateNetwork}
+                onChange={(e) => setForm({ ...form, affiliateNetwork: e.target.value })}
+                placeholder="impact, cj, direct…"
+                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="affiliateActive"
+              checked={form.affiliateActive}
+              onChange={(e) => setForm({ ...form, affiliateActive: e.target.checked })}
+              className="h-4 w-4 rounded border-input"
+            />
+            <label htmlFor="affiliateActive" className="text-sm text-foreground">Affiliate offer active</label>
           </div>
         </div>
 

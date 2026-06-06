@@ -10,6 +10,10 @@ vi.mock("@/lib/db", () => ({
     workspace: { findUnique: vi.fn() },
     subscription: { findUnique: vi.fn() },
     workspaceMember: { findFirst: vi.fn(), count: vi.fn(), create: vi.fn() },
+    // Backfill of the joining member's shared rows into the workspace.
+    address: { updateMany: vi.fn() },
+    service: { updateMany: vi.fn() },
+    movingPlan: { updateMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }));

@@ -46,7 +46,10 @@ import {
   getAnnualActionLabels,
   shouldEmphasizeAnnualBilledPrice,
 } from "@/lib/subscription-app-review";
-import { shouldShowMobileSubscriptionPlan } from "@/lib/subscription-visible-plans";
+import {
+  shouldRenderMobileSubscriptionPlanCard,
+  shouldShowMobileSubscriptionPlan,
+} from "@/lib/subscription-visible-plans";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -259,11 +262,23 @@ function LegacySubscriptionScreen() {
   const [storeProductAvailability, setStoreProductAvailability] = useState<Partial<Record<NativeProductKey, boolean>>>({});
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
+  const [entitlement, setEntitlement] = useState<any>(null);
+  const [workspaceEntitlement, setWorkspaceEntitlement] = useState<{ workspaceId: string; inherited: boolean } | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchSubscription = useCallback(async () => {
     const res = await api.get<any>("/api/profile");
     if (res.data) {
+      setLoadError(false);
       setSubscription(res.data.subscription || null);
+      // The EFFECTIVE entitlement (the owner's plan for an inherited Family/Pro
+      // member) and whether it's inherited — without these the member's own row
+      // is null/FREE_TRIAL and the screen wrongly shows "No active subscription".
+      setEntitlement(res.data.entitlement || null);
+      setWorkspaceEntitlement(res.data.workspaceEntitlement || null);
+    } else if (res.error) {
+      // Don't let a transient network/500 masquerade as "No active subscription".
+      setLoadError(true);
     }
   }, []);
 
@@ -394,6 +409,18 @@ function LegacySubscriptionScreen() {
     () => currentPlanKey ? PLANS.find((plan) => plan.key === currentPlanKey) || null : null,
     [currentPlanKey]
   );
+  // Effective entitlement: an inherited Family/Pro member has no own paid row,
+  // so the EFFECTIVE plan (the owner's) drives what we show. The own
+  // currentPlanKey is kept only for store purchase/manage gating below.
+  const inheritedEntitlement = workspaceEntitlement?.inherited === true;
+  const effectivePlanKey: string | null = entitlement?.plan || currentPlanKey;
+  const effectiveStatus: string = entitlement?.status || currentStatus;
+  const effectiveActive: boolean = entitlement?.isActive ?? hasServerSubscription;
+  const isPaidEffectivePlan = effectivePlanKey === "INDIVIDUAL" || effectivePlanKey === "FAMILY" || effectivePlanKey === "PRO";
+  const effectivePlan = useMemo(
+    () => effectivePlanKey ? PLANS.find((plan) => plan.key === effectivePlanKey) || null : null,
+    [effectivePlanKey]
+  );
   const periodEndLabel = formatDateLabel(
     subscription?.currentPeriodEndsAt || subscription?.stripeCurrentPeriodEnd || subscription?.premiumUntil
   );
@@ -419,7 +446,11 @@ function LegacySubscriptionScreen() {
     isActivePaidPlan &&
     !isStoreManaged &&
     !isStripeManaged;
-  const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
+  // An inherited Family/Pro member already has access via the workspace owner's
+  // plan — let them start a native purchase and they'd be double-charged for a
+  // redundant Individual sub. Block it; the inherited notice explains why.
+  const canStartNativePurchase =
+    canUseNativePurchases && !managedSubscriptionBlocksPurchase && !inheritedEntitlement;
   const canManageBilling =
     (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
     (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
@@ -455,16 +486,24 @@ function LegacySubscriptionScreen() {
       : null;
   const visiblePlans = useMemo(
     () =>
-      PLANS.filter((plan) =>
+      // Inherited Family/Pro members already have access — don't offer them
+      // plans to buy (would double-charge); the inherited notice covers it.
+      inheritedEntitlement
+        ? []
+        : PLANS.filter((plan) =>
         shouldShowMobileSubscriptionPlan({
           planKey: plan.key,
           currentPlanKey,
           isNativeStorePlatform,
           mobileStorePurchasesEnabled,
           hasConfiguredNativeSku: isPaidNativePlanKey(plan.key) ? hasConfiguredNativeSku(plan.key) : false,
+        }) &&
+        shouldRenderMobileSubscriptionPlanCard({
+          planKey: plan.key,
+          currentPlanKey,
         }),
       ),
-    [currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
+    [inheritedEntitlement, currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
   );
 
   const managedElsewhereMessage = isStripeManaged
@@ -476,6 +515,20 @@ function LegacySubscriptionScreen() {
       : currentProvider === "PLAY_STORE"
         ? t("settings.subscription_playStoreManagedReadOnly", {
             defaultValue: "Your subscription is managed in Google Play. You can continue using your account here.",
+          })
+        : nativePurchaseUnavailableMessage;
+
+  const managedElsewherePlanCardMessage = isStripeManaged
+    ? t("settings.subscription_webManagedPlanCardReadOnly", {
+        defaultValue: "Managed on web. Use web billing to change plans.",
+      })
+    : currentProvider === "APP_STORE"
+      ? t("settings.subscription_appStoreManagedPlanCardReadOnly", {
+          defaultValue: "Managed in the App Store. Use that store to change plans.",
+        })
+      : currentProvider === "PLAY_STORE"
+        ? t("settings.subscription_playStoreManagedPlanCardReadOnly", {
+            defaultValue: "Managed in Google Play. Use that store to change plans.",
           })
         : nativePurchaseUnavailableMessage;
 
@@ -629,10 +682,14 @@ function LegacySubscriptionScreen() {
     setProcessingPlan("MANAGE");
 
     // Store-managed subscriptions: send the user to the native management page.
+    // Seed only with THIS subscription's product / the current plan's SKU — never
+    // the Individual monthly/yearly fallback, which would open the wrong product's
+    // management page for a Family/Pro store subscriber. undefined opens the
+    // account's general subscriptions list, which is the correct fallback.
     if (isCurrentPlatformStoreManaged && canUseNativePurchases) {
       setProcessingPlan(null);
       await openNativeSubscriptionSettings(
-        subscription?.billingProductId || currentPlanStoreSku || monthlySku || yearlySku || undefined,
+        subscription?.billingProductId || currentPlanStoreSku || undefined,
       );
       return;
     }
@@ -727,36 +784,73 @@ function LegacySubscriptionScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {loadError && !subscription && !entitlement ? (
+          <TouchableOpacity
+            onPress={() => { void fetchSubscription(); }}
+            accessibilityRole="button"
+            style={{ borderRadius: 12, borderWidth: 1, borderColor: theme.colors.error, backgroundColor: theme.colors.errorFaded, padding: 12, marginBottom: 12 }}
+          >
+            <Text style={{ color: theme.colors.error, fontWeight: "700", fontSize: 13 }}>
+              {t("settings.subscription_loadError", { defaultValue: "Couldn't load your subscription. Tap to retry." })}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.currentPlanCard}>
           <View style={styles.currentPlanLeft}>
             <View style={styles.currentPlanIcon}>
               <Crown size={18} color={theme.colors.amber.text} />
             </View>
-            <View>
-              <Text style={styles.currentPlanTitle}>
-                {currentPlan?.name
-                  ? currentPlan.name +
-                    (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
-                      ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
-                      : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
-                        ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
-                        : "")
-                  : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
-              </Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <Text style={styles.currentPlanTitle}>
+                  {effectivePlan?.name
+                    ? effectivePlan.name +
+                      (currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "YEAR"
+                        ? ` · ${t("settings.subscription_billingIntervalAnnual", { defaultValue: "Annual" })}`
+                        : currentPlanKey === "INDIVIDUAL" && subscription?.billingInterval === "MONTH"
+                          ? ` · ${t("settings.subscription_billingIntervalMonthly", { defaultValue: "Monthly" })}`
+                          : "")
+                    : t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+                </Text>
+                {isPaidEffectivePlan ? <UiBadge label={effectivePlanKey as string} variant="primary" /> : null}
+              </View>
               <Text style={styles.currentPlanMeta}>
-                {periodEndLabel
-                  ? t("settings.subscription_renews", { date: periodEndLabel })
-                  : trialEndLabel
-                    ? t("settings.subscription_renews", { date: trialEndLabel })
-                    : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
+                {inheritedEntitlement
+                  ? t("settings.subscription_inheritedNotice", { defaultValue: "Included with your family/workspace plan" })
+                  : periodEndLabel && effectiveStatus === "CANCEL_AT_PERIOD_END"
+                    ? t("settings.subscription_ends", { date: periodEndLabel, defaultValue: "Ends {{date}}" })
+                    : periodEndLabel
+                      ? t("settings.subscription_renews", { date: periodEndLabel })
+                      : trialEndLabel
+                        ? t("settings.subscription_renews", { date: trialEndLabel })
+                        : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
               </Text>
             </View>
           </View>
           <UiBadge
-            label={currentStatus}
-            variant={currentStatus === "ACTIVE" || currentStatus === "TRIALING" ? "success" : "neutral"}
+            label={effectiveStatus}
+            variant={
+              effectiveStatus === "ACTIVE" || effectiveStatus === "TRIALING" || (effectiveActive && isPaidEffectivePlan)
+                ? "success"
+                : "neutral"
+            }
           />
         </View>
+
+        {effectivePlan && isPaidEffectivePlan && Array.isArray(effectivePlan.features) && effectivePlan.features.length > 0 ? (
+          <View style={styles.planFeaturesCard}>
+            <Text style={styles.planFeaturesTitle}>
+              {t("settings.subscription_includedFeatures", { defaultValue: "What's included" })}
+            </Text>
+            {effectivePlan.features.map((f: string) => (
+              <View key={f} style={styles.planFeatureRow}>
+                <Check size={14} color={theme.colors.emerald.text} />
+                <Text style={styles.planFeatureText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
           <View style={styles.mobileBillingNotice}>
@@ -1058,6 +1152,10 @@ function LegacySubscriptionScreen() {
                   {t("settings.subscription_upgradeOnWeb", { defaultValue: "Upgrade on the web" })}
                 </Text>
               </TouchableOpacity>
+            ) : paidPlanKey && isNativeStorePlatform && managedSubscriptionBlocksPurchase ? (
+              <View style={styles.disabledPurchaseNotice}>
+                <Text style={styles.disabledPurchaseText}>{managedElsewherePlanCardMessage}</Text>
+              </View>
             ) : paidPlanKey && isNativeStorePlatform && !planHasConfiguredNativeSku ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>
@@ -1075,11 +1173,7 @@ function LegacySubscriptionScreen() {
               </View>
             ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
-                <Text style={styles.disabledPurchaseText}>
-                  {managedSubscriptionBlocksPurchase
-                    ? managedElsewhereMessage
-                    : nativePurchaseUnavailableMessage}
-                </Text>
+                <Text style={styles.disabledPurchaseText}>{nativePurchaseUnavailableMessage}</Text>
               </View>
             ) : (
               <TouchableOpacity
@@ -1206,6 +1300,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   currentPlanTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   currentPlanMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  planFeaturesCard: {
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    padding: 16,
+    marginTop: 12,
+    gap: 8,
+  },
+  planFeaturesTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, marginBottom: 2 },
+  planFeatureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  planFeatureText: { fontSize: 13, color: theme.colors.textSecondary, flex: 1 },
   mobileBillingNotice: {
     borderRadius: theme.radius.lg,
     borderWidth: 1,

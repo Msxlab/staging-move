@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { isHttpsUrl } from "@/lib/url-safety";
 import {
   rebuildProviderCoverage,
   updateWithVersion,
@@ -222,6 +223,36 @@ export async function PATCH(
     if (body.states !== undefined) updateData.states = JSON.stringify(normalized.states);
     if (body.zipCodes !== undefined) updateData.zipCodes = JSON.stringify(normalized.zipCodes);
     if (body.tags !== undefined) updateData.tags = JSON.stringify(normalized.tags);
+
+    // Affiliate fields are outside normalizeProviderRecord — handle + validate
+    // them here. An external affiliate link must be https (it becomes a
+    // user-facing CTA), and an offer cannot be activated without one.
+    if (body.affiliateUrl !== undefined) {
+      const raw = typeof body.affiliateUrl === "string" ? body.affiliateUrl.trim() : "";
+      if (raw && !isHttpsUrl(raw)) {
+        return NextResponse.json({ error: "affiliateUrl must be an https URL." }, { status: 400 });
+      }
+      updateData.affiliateUrl = raw || null;
+    }
+    if (body.affiliateNetwork !== undefined) {
+      updateData.affiliateNetwork =
+        typeof body.affiliateNetwork === "string" && body.affiliateNetwork.trim()
+          ? body.affiliateNetwork.trim().slice(0, 40)
+          : null;
+    }
+    if (body.affiliateActive !== undefined) {
+      updateData.affiliateActive = body.affiliateActive === true || body.affiliateActive === "true";
+    }
+    const resultingActive =
+      updateData.affiliateActive !== undefined ? updateData.affiliateActive : existing.affiliateActive;
+    const resultingUrl =
+      updateData.affiliateUrl !== undefined ? updateData.affiliateUrl : existing.affiliateUrl;
+    if (resultingActive && !isHttpsUrl(resultingUrl)) {
+      return NextResponse.json(
+        { error: "Set a valid https affiliateUrl before activating the affiliate offer." },
+        { status: 400 },
+      );
+    }
 
     // Optimistic concurrency: admins editing the same provider in two
     // tabs at the same time must NOT silently last-write-wins. The

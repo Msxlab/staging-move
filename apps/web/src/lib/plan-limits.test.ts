@@ -28,6 +28,7 @@ import {
   canCreateMovingPlan,
   canCreateService,
   canGenerateMoveTasks,
+  getPlanForLimitScope,
   getUserPlan,
 } from "./plan-limits";
 
@@ -394,5 +395,60 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
       hasPremium: true,
       limits: { maxAddresses: 17, maxServices: 250 },
     });
+  });
+
+  it("uses the workspace owner's Family plan and workspace service count for members", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+    mocks.serviceCount.mockResolvedValue(249);
+
+    await expect(
+      canCreateService("member_1", { workspaceId: "ws_1", planOwnerUserId: "owner_1" }),
+    ).resolves.toMatchObject({ allowed: true });
+
+    expect(mocks.subscriptionFindUnique.mock.calls[0]?.[0]?.where?.userId).toBe("owner_1");
+    expect(mocks.serviceCount).toHaveBeenCalledWith({
+      where: {
+        workspaceId: "ws_1",
+        ...ACTIVE_TRACKED_SERVICE_WHERE,
+      },
+    });
+  });
+
+  it("blocks a workspace member when the owner's Family workspace service limit is full", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+    mocks.serviceCount.mockResolvedValue(250);
+
+    await expect(
+      canCreateService("member_1", { workspaceId: "ws_1", planOwnerUserId: "owner_1" }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      current: 250,
+      limit: 250,
+    });
+  });
+
+  it("uses the workspace owner's Pro plan and workspace address count for members", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("PRO"));
+    mocks.addressCount.mockResolvedValue(24);
+
+    await expect(
+      canCreateAddress("member_1", { workspaceId: "ws_1", planOwnerUserId: "owner_1" }),
+    ).resolves.toMatchObject({ allowed: true });
+
+    expect(mocks.addressCount).toHaveBeenCalledWith({
+      where: { workspaceId: "ws_1", deletedAt: null },
+    });
+  });
+
+  it("resolves scoped plans directly through the owner user id", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("PRO"));
+
+    await expect(getPlanForLimitScope("member_1", { planOwnerUserId: "owner_1" })).resolves.toMatchObject({
+      plan: "PRO",
+      isActive: true,
+      hasPremium: true,
+    });
+    expect(mocks.subscriptionFindUnique.mock.calls[0]?.[0]?.where?.userId).toBe("owner_1");
   });
 });

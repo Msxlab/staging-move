@@ -1,18 +1,25 @@
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { AddressesClient, type AddressItem } from "./addresses-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AddressesPage() {
   const userId = await requireDbUserId();
+  const request = new Request("http://locateflow.local", { headers: await headers() });
+  const scope = await resolveWorkspaceDataScope(request, userId);
 
   const rows = await prisma.address.findMany({
-    where: { userId, deletedAt: null },
+    where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
     include: {
       services: {
-        where: activeTrackedServiceWhere(userId),
+        where: activeTrackedServiceWhereForScope(
+          { userId, workspaceId: scope.workspaceId },
+          scope.memberRole === "CHILD" ? { userId } : {},
+        ),
         select: { id: true, monthlyCost: true },
       },
     },

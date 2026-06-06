@@ -37,13 +37,20 @@ Verified Google Play subscription catalog, Google Cloud API readiness, service-a
   - Missing bearer: HTTP 401 `Missing OIDC token`.
   - Fake bearer: HTTP 401 `Invalid OIDC token`.
 - Valid RTDN-format delivery through Google Cloud Pub/Sub reached the live webhook; DigitalOcean run logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
+- EAS Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
+- Android internal track submit was attempted safely for build `15` and stopped before upload:
+  - EAS non-interactive submit requires Google service-account key setup.
+  - Direct Android Publisher OAuth upload could not use DigitalOcean app spec `SECRET` placeholders as OAuth secrets.
+  - `gcloud` is not installed locally, so no alternate signed-in user token path is available from the shell.
+  - No Play edit, upload, track commit, internal release update, production rollout, or live payment occurred.
 
 ## Blocked
 
 - Service-account JSON key creation remains blocked by Google organization policy `iam.disableServiceAccountKeyCreation`; this is now handled by the OAuth fallback rather than a launch blocker for Android Publisher auth.
 - Fake-token Android verification reaches the Google Publisher dependency path and fails closed as provider unavailable. A real internal-test Play purchase token is still needed to prove successful paid entitlement activation end to end.
 - Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page. Codex did not accept legal terms on the user's behalf.
+- Play internal track update for build `15` remains console/credential gated until a usable Play submit credential is available or the already-open Play Console can be controlled manually/through Chrome.
 
 ## Launch Impact
 
-Android products, backend auth, and RTDN Pub/Sub push delivery are ready for internal paid-IAP testing, but Android paid IAP is not production-ready until a real internal-test purchase verifies entitlement activation.
+Android products, backend auth, and RTDN Pub/Sub push delivery are ready for internal paid-IAP testing, but Android paid IAP is not production-ready until build `15` is available to internal testers and a real internal-test purchase verifies entitlement activation.

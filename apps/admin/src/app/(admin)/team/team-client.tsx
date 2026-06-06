@@ -65,7 +65,6 @@ const ROLE_COLORS: Record<string, string> = {
 const RESOURCE_LABELS: Record<string, string> = {
   users: "Users",
   subscriptions: "Subscriptions",
-  reviews: "Reviews",
   providers: "Providers",
   state_rules: "State Rules",
   badges: "Badges",

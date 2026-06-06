@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import { useTranslations } from "next-intl";
 import {
   generateChecklist,
@@ -71,7 +72,7 @@ export interface ServicesItem {
   monthlyCost: number; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
-  provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null } | null;
+  provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null; affiliateActive?: boolean } | null;
   customProvider?: { id?: string; name?: string | null; website?: string | null } | null;
   providerLogoUrl?: string | null;
   logoUrl?: string | null;
@@ -133,9 +134,12 @@ export function ServicesClient({
           isBusinessOwner: prof.isBusinessOwner ?? false,
           moveType: prof.moveType || "PERSONAL",
         };
-        const completedTemplates = new Set<string>(
-          (activePlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
-        );
+        // Move tasks don't persist a templateId and use `status` (not `completed`),
+        // so the old `t.completed && t.templateId` filter referenced two fields that
+        // never exist — the set was always empty. Match the dashboard's empty set.
+        // Properly reflecting completed templates (persist templateId on MoveTask +
+        // derive done from status) is a separate enhancement, not a go-live blocker.
+        const completedTemplates = new Set<string>();
         const toState = activePlan.toAddress?.state || "";
         let stateRule: ChecklistStateRuleContext | null = null;
         if (toState) {
@@ -428,6 +432,16 @@ export function ServicesClient({
                                   <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}/mo</span>
                                 )}
                               </div>
+                              {service.provider?.affiliateActive && service.provider.id && (
+                                <div className="mt-2.5">
+                                  <AffiliateCtaButton
+                                    providerId={service.provider.id}
+                                    source="services"
+                                    addressId={service.addressId}
+                                    stopPropagation
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

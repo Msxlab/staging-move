@@ -59,7 +59,9 @@ export default function AddressesScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAddresses = useCallback(async () => {
-    const res = await api.get<any>("/api/addresses");
+    // limit=200 (the route max): these are small per-user collections shown as
+    // one list — the default page size of 50 silently dropped power users' rows.
+    const res = await api.get<any>("/api/addresses", { limit: "200" });
     if (res.error) {
       setError(res.error);
       return false;

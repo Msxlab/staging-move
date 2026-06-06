@@ -3,6 +3,7 @@ import { Database, Lock, Shield, UserCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { createPublicPageMetadata } from "@/lib/seo";
 import {
+  displayCompanyAddress,
   displayLegalEntityName,
   LEGAL_CONTACTS,
   mailto,
@@ -38,6 +39,8 @@ const highlights = [
   },
 ] as const;
 
+const publicCompanyAddress = displayCompanyAddress();
+
 export default function PrivacyPage() {
   return (
     <PublicPageShell
@@ -54,6 +57,7 @@ export default function PrivacyPage() {
             {LEGAL_CONTACTS.privacy}
           </a>
         </p>
+        {publicCompanyAddress ? <p>Mailing address: {publicCompanyAddress}</p> : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

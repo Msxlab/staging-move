@@ -78,6 +78,10 @@ export async function POST(request: NextRequest) {
     ipAddress: ip,
     userAgent: ua,
     deviceType: "Mobile",
+    // Label native sessions so the session list shows "LocateFlow app / iOS"
+    // instead of "Unknown browser" (the native client sends no parseable UA).
+    browser: "LocateFlow app",
+    os: /iPhone|iPad|iPod|Darwin/i.test(ua) ? "iOS" : /Android/i.test(ua) ? "Android" : "Mobile",
   });
 
   const hasPasswordLogin = Boolean(exchanged.user.passwordHash);

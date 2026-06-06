@@ -562,40 +562,6 @@ export const EMAIL_TEMPLATES_ALL = [
     ),
   },
   {
-    slug: "review-approved",
-    name: "Review Approved",
-    subject: "Your LocateFlow review was approved",
-    category: "NOTIFICATION",
-    variables: JSON.stringify(["firstName", "providerName", "appUrl"]),
-    isActive: true,
-    isDefault: true,
-    body: wrap(
-      "Review approved",
-      "Your LocateFlow review was approved.",
-      p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your review for <strong>{{providerName}}</strong> was approved. Thank you for sharing your experience with other LocateFlow users.") +
-        button("{{appUrl}}/community", "View Reviews"),
-    ),
-  },
-  {
-    slug: "review-rejected",
-    name: "Review Needs Attention",
-    subject: "Your LocateFlow review needs attention",
-    category: "NOTIFICATION",
-    variables: JSON.stringify(["firstName", "providerName", "reason", "appUrl"]),
-    isActive: true,
-    isDefault: true,
-    body: wrap(
-      "Review needs attention",
-      "Your LocateFlow review needs attention.",
-      p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your review for <strong>{{providerName}}</strong> could not be published as submitted.") +
-        rows([["Reason", "{{reason}}"]]) +
-        note("You can edit and resubmit your review at any time.") +
-        button("{{appUrl}}/community", "Edit Review"),
-    ),
-  },
-  {
     slug: "family-invite",
     name: "Family Invitation (Deprecated)",
     subject: "LocateFlow family invitations are not currently available",

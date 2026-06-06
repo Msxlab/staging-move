@@ -9,7 +9,7 @@ import {
   Switch,
   Linking,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
@@ -272,7 +272,7 @@ export default function PrivacySettingsScreen() {
     },
     {
       icon: Shield,
-      title: t("settings.privacy"),
+      title: t("settings.privacy_doNotSell_title"),
       description: t("settings.privacy_doNotSell_description"),
     },
   ];
@@ -377,6 +377,34 @@ export default function PrivacySettingsScreen() {
                     : t("settings.emailSetupLink")}
                   onPress={requestPasswordLink}
                   loading={passwordSetupBusy}
+                  fullWidth
+                />
+              </View>
+
+              <View style={styles.passwordBox}>
+                <Text style={styles.subheading}>{t("settings.twoFactor", { defaultValue: "Two-factor authentication" })}</Text>
+                <Text style={styles.mutedText}>
+                  {security.account.hasPasswordLogin
+                    ? security.account.mfaEnabled
+                      ? t("settings.twoFactor_onDescription", { defaultValue: "2FA is on. Manage or turn it off." })
+                      : t("settings.twoFactor_offDescription", { defaultValue: "Add a one-time code from an authenticator app for stronger account security." })
+                    : t("settings.twoFactor_needsPassword", { defaultValue: "Set a password first to enable two-factor authentication." })}
+                </Text>
+                <Button
+                  title={
+                    !security.account.hasPasswordLogin
+                      ? t("settings.twoFactor_setPasswordCta", { defaultValue: "Email a set-password link" })
+                      : security.account.mfaEnabled
+                        ? t("settings.twoFactor_manage", { defaultValue: "Manage two-factor" })
+                        : t("settings.twoFactor_enable", { defaultValue: "Enable two-factor" })
+                  }
+                  onPress={
+                    !security.account.hasPasswordLogin
+                      ? requestPasswordLink
+                      : () => router.push("/settings/two-factor" as Href)
+                  }
+                  variant={security.account.mfaEnabled ? "outline" : "primary"}
+                  loading={!security.account.hasPasswordLogin ? passwordSetupBusy : false}
                   fullWidth
                 />
               </View>

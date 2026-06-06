@@ -66,8 +66,6 @@ const BADGES = [
   { code: "FIFTY_TASKS", name: "Unstoppable", description: "Completed 50 tasks", category: "TASK", requirement: "TASK_COMPLETED_50", rarity: "EPIC", points: 100 },
   { code: "FIRST_MOVE", name: "Mover", description: "Created your first moving plan", category: "MOVING", requirement: "MOVE_COUNT_1", rarity: "COMMON", points: 20 },
   { code: "THREE_MOVES", name: "Veteran Mover", description: "Managed 3 moves", category: "MOVING", requirement: "MOVE_COUNT_3", rarity: "RARE", points: 75 },
-  { code: "FIRST_REVIEW", name: "Voice of the Community", description: "Wrote your first review", category: "COMMUNITY", requirement: "REVIEW_COUNT_1", rarity: "COMMON", points: 15 },
-  { code: "FIVE_REVIEWS", name: "Trusted Reviewer", description: "Wrote 5 reviews", category: "COMMUNITY", requirement: "REVIEW_COUNT_5", rarity: "UNCOMMON", points: 50 },
   { code: "FIRST_DOCUMENT", name: "Archivist", description: "Uploaded your first document", category: "DOCUMENT", requirement: "DOCUMENT_COUNT_1", rarity: "COMMON", points: 10 },
   { code: "TEN_DOCUMENTS", name: "Filing Pro", description: "Uploaded 10 documents", category: "DOCUMENT", requirement: "DOCUMENT_COUNT_10", rarity: "UNCOMMON", points: 30 },
 ];

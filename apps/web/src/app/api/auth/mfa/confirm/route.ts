@@ -62,7 +62,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!verifyTOTP(secret, parsed.data.mfaCode)) {
-    return NextResponse.json({ error: "Invalid MFA code." }, { status: 401 });
+    // 400 (validation), NOT 401: the bearer session is valid — only the typed
+    // code is wrong. Mobile's ApiClient treats every 401 as session death and
+    // force-logs-out, so a single mistyped enrollment digit must not be a 401.
+    return NextResponse.json({ error: "Invalid MFA code." }, { status: 400 });
   }
 
   await prisma.user.update({

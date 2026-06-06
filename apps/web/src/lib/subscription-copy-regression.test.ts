@@ -60,6 +60,16 @@ describe("subscription acquisition copy", () => {
     expect(source).toContain('subscription.accessType === "FREE_ACCESS"');
   });
 
+  it("settings shows pending plan change copy for scheduled downgrades", () => {
+    const source = readRepoFile("src/components/settings/subscription-management.tsx");
+
+    expect(source).toContain("const showGeneralPendingChangeNotice =");
+    expect(source).toContain("Plan change scheduled");
+    expect(source).toContain("Then");
+    expect(source).toContain("starts automatically, with no extra charge today.");
+    expect(source).toContain("Your");
+  });
+
   it("trial reminder seed copy is calm and does not headline refunds", () => {
     const source = readFileSync(
       path.join(process.cwd(), "../../packages/db/prisma/seed-data/email-templates.ts"),

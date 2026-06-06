@@ -54,6 +54,16 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
             invitationId: inv.id,
           },
         });
+        // Stamp the joining member's existing shared resources into the
+        // workspace so they don't vanish from scoped reads and they count toward
+        // the pooled limit. Budgets are intentionally NOT merged — a member's
+        // personal budget stays private; the household uses the owner-keyed one.
+        const backfill = { userId: session.userId, workspaceId: null };
+        await Promise.all([
+          tx.address.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
+          tx.service.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
+          tx.movingPlan.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
+        ]);
       }
       await tx.workspaceInvitation.update({
         where: { id: inv.id },
@@ -89,5 +99,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     }).catch(() => {});
   }
 
-  return NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
+  const response = NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
+  response.cookies.set("lf_workspace_id", inv.workspaceId, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
 }

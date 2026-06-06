@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Flag,
   Plug,
+  Link2,
   Lock,
   LifeBuoy,
   Sparkles,
@@ -72,6 +73,7 @@ export const navGroups: NavGroup[] = [
     labelKey: "content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },
     ],
@@ -93,6 +95,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },
+      { name: "Connector Metrics", nameKey: "connectorMetrics", href: "/connector-metrics", icon: BarChart3, show: ({ permissions }) => permissions.connectors.canRead },
+      { name: "Connector Fallbacks", nameKey: "connectorFallbacks", href: "/connector-fallbacks", icon: Link2, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Security", nameKey: "security", href: "/security", icon: Lock, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText, show: ({ permissions }) => permissions.audit_logs.canRead },
       { name: "Admin Team", nameKey: "adminTeam", href: "/team", icon: Shield, show: ({ role }) => meetsRole(role, "ADMIN") },

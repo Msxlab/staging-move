@@ -104,6 +104,9 @@ type ProviderFormState = {
   popularityScore: number;
   isActive: boolean;
   displayOrder: number;
+  affiliateUrl: string;
+  affiliateNetwork: string;
+  affiliateActive: boolean;
 };
 
 export default function NewProviderPage() {
@@ -126,6 +129,9 @@ export default function NewProviderPage() {
     popularityScore: 50,
     isActive: true,
     displayOrder: 0,
+    affiliateUrl: "",
+    affiliateNetwork: "",
+    affiliateActive: false,
   });
 
   function handleSlug(name: string) {
@@ -433,6 +439,38 @@ export default function NewProviderPage() {
                 <p className="text-xs text-muted-foreground">Logo preview</p>
               </div>
             )}
+          </div>
+          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+            <p className="text-sm font-medium text-foreground">Affiliate (optional)</p>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Affiliate URL (https)</label>
+              <input
+                type="url"
+                value={form.affiliateUrl}
+                onChange={(e) => setForm({ ...form, affiliateUrl: e.target.value })}
+                placeholder="https://partner.example/offer?ref=locateflow"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Network</label>
+              <input
+                value={form.affiliateNetwork}
+                onChange={(e) => setForm({ ...form, affiliateNetwork: e.target.value })}
+                placeholder="impact, cj, direct…"
+                maxLength={40}
+                className={inputCls}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={form.affiliateActive}
+                onChange={(e) => setForm({ ...form, affiliateActive: e.target.checked })}
+                className="h-4 w-4 rounded border-input"
+              />
+              Affiliate offer active (requires a valid https URL)
+            </label>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-muted-foreground">

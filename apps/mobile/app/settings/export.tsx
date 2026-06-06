@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -48,6 +48,26 @@ export default function ExportScreen() {
   const { t } = useTranslation();
   const [exporting, setExporting] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
+  // Re-auth method available to this account: password, or (for OAuth-only
+  // accounts) an authenticator/backup code. Without this, OAuth-only users were
+  // blocked from exporting even though the server accepts an MFA/backup code.
+  const [security, setSecurity] = useState<{ hasPasswordLogin: boolean; mfaEnabled: boolean } | null>(null);
+  useEffect(() => {
+    (async () => {
+      const res = await api.get<any>("/api/auth/security");
+      if (res.data?.account) {
+        setSecurity({
+          hasPasswordLogin: res.data.account.hasPasswordLogin === true,
+          mfaEnabled: res.data.account.mfaEnabled === true,
+        });
+      }
+    })();
+  }, []);
+
+  // Default to password until we know; switch to code only for OAuth-only + MFA.
+  const usePasswordStepUp = security ? security.hasPasswordLogin : true;
+  const useCodeStepUp = security ? !security.hasPasswordLogin && security.mfaEnabled : false;
+  const noStepUpMethod = security ? !security.hasPasswordLogin && !security.mfaEnabled : false;
 
   // Export option labels resolve at render — users switching language
   // mid-session see the new titles without a reload.
@@ -59,20 +79,41 @@ export default function ExportScreen() {
     { type: "support", title: t("settings.support"), desc: "", icon: Ticket, formats: ["JSON"] },
     { type: "notifications", title: t("notifications.title"), desc: "", icon: Bell, formats: ["JSON"] },
     { type: "subscription", title: t("settings.subscription"), desc: "", icon: Crown, formats: ["JSON"] },
+    { type: "tax", title: t("settings.exportTaxTitle", { defaultValue: "Tax & Property (Pro)" }), desc: "", icon: FileText, formats: ["CSV", "JSON"] },
     { type: "full", title: t("settings.export"), desc: "", icon: Database, formats: ["JSON"] },
   ];
 
   const handleExport = async (type: string, format: string) => {
     setExporting(`${type}-${format}`);
     try {
+      // Send the step-up field that matches the account's available method: a
+      // password, or (OAuth-only + MFA) a 6-digit TOTP / backup code.
+      const stepUpField = usePasswordStepUp
+        ? { confirmPassword }
+        : /^\d{6}$/.test(confirmPassword.trim())
+          ? { mfaCode: confirmPassword.trim() }
+          : { backupCode: confirmPassword.trim() };
       const res = await api.post<any>(`/api/export`, {
         type,
         format: format.toLowerCase(),
-        confirmPassword,
+        ...stepUpField,
       });
       if (res.error) {
         hapticError();
-        Alert.alert(t("common.retry"), t("toast.networkError"));
+        if (res.code === "UPGRADE_REQUIRED") {
+          // Pro-gated export (tax & property) for a non-Pro account — surface the
+          // server's reason and offer a path to upgrade rather than a generic error.
+          Alert.alert(
+            t("settings.exportProTitle", { defaultValue: "Pro feature" }),
+            res.error,
+            [
+              { text: t("common.cancel"), style: "cancel" },
+              { text: t("settings.upgradeToPro", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+            ],
+          );
+        } else {
+          Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
+        }
       } else {
         hapticSuccess();
         const dataStr = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
@@ -89,16 +130,26 @@ export default function ExportScreen() {
           encoding: FileSystem.EncodingType.UTF8,
         });
 
-        const shareUri = Platform.OS === "android"
-          ? await FileSystem.getContentUriAsync(fileUri)
-          : fileUri;
-
-        await Share.share({
-          url: shareUri,
-          message: t("settings.exportShareMessage", { type }),
-          title: t("settings.exportShareTitle", { type, format }),
-        });
-        await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
+        // iOS: share the file URL ALONE. Passing a `message` alongside a file
+        // `url` makes iOS drop the attachment for Save-to-Files and most targets,
+        // so the export "did nothing". Android RN Share cannot attach a file via
+        // `url` (only `message` is honored) — that needs a native share module in
+        // a future build; keep the content-uri attempt as best-effort.
+        if (Platform.OS === "ios") {
+          await Share.share({
+            url: fileUri,
+            title: t("settings.exportShareTitle", { type, format }),
+          });
+        } else {
+          const contentUri = await FileSystem.getContentUriAsync(fileUri);
+          await Share.share({
+            url: contentUri,
+            title: t("settings.exportShareTitle", { type, format }),
+          });
+        }
+        // Do NOT delete here: cacheDirectory is OS-reclaimed, and deleting
+        // immediately after the sheet presents can race a target still copying
+        // the file.
       }
     } catch (error) {
       hapticError();
@@ -129,16 +180,26 @@ export default function ExportScreen() {
           </Text>
         </View>
 
-        <Input
-          placeholder={t("auth.password")}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          isPassword
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel={t("settings.currentPasswordA11y")}
-          accessibilityHint={t("settings.currentPasswordHint")}
-        />
+        {noStepUpMethod ? (
+          <View style={styles.noticeBox}>
+            <Text style={styles.noticeText}>
+              {t("settings.export_needsStepUp", { defaultValue: "Set a password or turn on two-factor authentication to export your data." })}
+            </Text>
+          </View>
+        ) : (
+          <Input
+            placeholder={useCodeStepUp
+              ? t("settings.export_codePlaceholder", { defaultValue: "Authenticator or backup code" })
+              : t("auth.password")}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            isPassword={usePasswordStepUp}
+            autoCapitalize="none"
+            autoCorrect={false}
+            accessibilityLabel={t("settings.currentPasswordA11y")}
+            accessibilityHint={t("settings.currentPasswordHint")}
+          />
+        )}
 
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;

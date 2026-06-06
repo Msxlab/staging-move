@@ -50,11 +50,18 @@ vi.mock("@/lib/user-step-up", () => ({
   verifyUserStepUp: vi.fn(() => Promise.resolve({ ok: true, method: "password" })),
 }));
 
+vi.mock("@/lib/plan-limits", () => ({
+  getUserPlan: vi.fn(() =>
+    Promise.resolve({ plan: "PRO", status: "ACTIVE", isActive: true, hasPremium: true, isTrialExpired: false, limits: {} }),
+  ),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { verifyUserStepUp } from "@/lib/user-step-up";
+import { getUserPlan } from "@/lib/plan-limits";
 import { POST } from "./route";
 
 const mockPrisma = {
@@ -77,6 +84,7 @@ const mockPrisma = {
   user: { findUnique: (prisma as any).user.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
+const mockGetUserPlan = getUserPlan as any;
 const mockVerifyUserStepUp = verifyUserStepUp as any;
 const mockEnforceRateLimitPolicy = enforceRateLimitPolicy as any;
 const mockCreateAuditLog = createAuditLog as any;
@@ -111,6 +119,7 @@ describe("export route", () => {
     mockPrisma.workspaceInvitation.findMany.mockResolvedValue([]);
     mockPrisma.user.findUnique.mockResolvedValue({ email: "user@example.com" });
     mockVerifyUserStepUp.mockResolvedValue({ ok: true, method: "password" });
+    mockGetUserPlan.mockResolvedValue({ plan: "PRO", status: "ACTIVE", isActive: true, hasPremium: true, isTrialExpired: false, limits: {} });
     mockEnforceRateLimitPolicy.mockResolvedValue({
       success: true,
       remaining: 2,
@@ -424,6 +433,141 @@ describe("export route", () => {
     expect(response.headers.get("Retry-After")).toBe("60");
     expect(body.code).toBe("EXPORT_RATE_LIMITED");
     expect(mockVerifyUserStepUp).not.toHaveBeenCalled();
+  });
+
+  it("blocks the Pro tax export for non-Pro plans before touching data", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", status: "FREE_ACCESS", isActive: true, hasPremium: false, isTrialExpired: false, limits: {} });
+
+    const response = await POST(makeRequest({ type: "tax", format: "json" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("UPGRADE_REQUIRED");
+    expect(mockPrisma.address.findMany).not.toHaveBeenCalled();
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: "EXPORT_BLOCK",
+      changes: expect.objectContaining({ code: "UPGRADE_REQUIRED", type: "tax" }),
+    }));
+  });
+
+  it("returns a per-property tax summary with annualized cost for Pro users", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      {
+        id: "addr-1",
+        nickname: "Rental Condo",
+        type: "RENTAL",
+        street: "5 Oak",
+        street2: null,
+        city: "Austin",
+        state: "TX",
+        zip: "78701",
+        ownership: "OWN",
+        isPrimary: true,
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+      },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "Con Edison", category: "UTILITY_ELECTRIC", monthlyCost: 50, billingCycle: "MONTHLY", isActive: true },
+      { addressId: null, providerName: "Floating Service", category: "OTHER", monthlyCost: 10, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([
+      {
+        moveDate: new Date("2025-01-01"),
+        status: "COMPLETED",
+        fromAddressId: "addr-0",
+        toAddressId: "addr-1",
+        fromAddress: { city: "Dallas", state: "TX" },
+        toAddress: { city: "Austin", state: "TX" },
+      },
+    ]);
+
+    const response = await POST(makeRequest({ type: "tax", format: "json" }));
+    const data = JSON.parse(await response.text());
+
+    expect(response.status).toBe(200);
+    // Line items: one per service; recurring cost annualized to ×12.
+    expect(data.tax).toHaveLength(2);
+    const conEd = data.tax.find((li: any) => li.serviceProvider === "Con Edison");
+    expect(conEd).toMatchObject({ property: "Rental Condo", propertyType: "RENTAL", ownership: "OWN", annualizedCost: 600 });
+    // Unassigned service falls under a synthetic "Unassigned" property bucket.
+    expect(data.tax.find((li: any) => li.serviceProvider === "Floating Service").property).toBe("Unassigned");
+    // Grouped per-property totals + the move that touched the address.
+    expect(data.taxByProperty).toHaveLength(1);
+    expect(data.taxByProperty[0]).toMatchObject({ property: "Rental Condo", serviceCount: 1, totalAnnualizedCost: 600 });
+    expect(data.taxByProperty[0].moves[0]).toMatchObject({ direction: "MOVED_IN", to: "Austin, TX" });
+    expect(data.taxTotals).toMatchObject({ propertyCount: 1, serviceCount: 2, totalAnnualizedCost: 720 });
+  });
+
+  it("annualizes per billing cycle — YEARLY/QUARTERLY are not multiplied by 12, ONE_TIME counts once", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      { id: "addr-1", nickname: "Home", type: "HOME", street: "1 Main", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "OWN", isPrimary: true, startDate: null, endDate: null },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "Yearly Policy", category: "INSURANCE", monthlyCost: 1200, billingCycle: "YEARLY", isActive: true },
+      { addressId: "addr-1", providerName: "Quarterly Svc", category: "OTHER", monthlyCost: 300, billingCycle: "QUARTERLY", isActive: true },
+      { addressId: "addr-1", providerName: "Setup Fee", category: "OTHER", monthlyCost: 500, billingCycle: "ONE_TIME", isActive: true },
+      { addressId: "addr-1", providerName: "Monthly Svc", category: "OTHER", monthlyCost: 100, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+
+    const data = JSON.parse(await (await POST(makeRequest({ type: "tax", format: "json" }))).text());
+
+    const byProvider = (name: string) => data.tax.find((li: any) => li.serviceProvider === name);
+    // YEARLY 1200/yr → 1200 annual (NOT 14,400), 100 monthly-equivalent.
+    expect(byProvider("Yearly Policy")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100, oneTime: false });
+    // QUARTERLY 300/qtr → 1200 annual, 100 monthly-equivalent.
+    expect(byProvider("Quarterly Svc")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100 });
+    // ONE_TIME 500 → counted once, no monthly recurring.
+    expect(byProvider("Setup Fee")).toMatchObject({ annualizedCost: 500, monthlyEquivalent: 0, oneTime: true });
+    // MONTHLY 100 → 1200 annual.
+    expect(byProvider("Monthly Svc")).toMatchObject({ annualizedCost: 1200, monthlyEquivalent: 100 });
+    // Totals: 1200 + 1200 + 500 + 1200 = 4100 annualized; monthly-equiv 100*3 = 300.
+    expect(data.taxTotals).toMatchObject({ totalAnnualizedCost: 4100, totalMonthlyEquivalent: 300 });
+  });
+
+  it("groups by address id so two properties with the same nickname don't double-count", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      { id: "addr-1", nickname: "Rental", type: "RENTAL", street: "1 A St", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "OWN", isPrimary: true, startDate: null, endDate: null },
+      { id: "addr-2", nickname: "Rental", type: "RENTAL", street: "2 B St", street2: null, city: "Dallas", state: "TX", zip: "75201", ownership: "OWN", isPrimary: false, startDate: null, endDate: null },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "Elec A", category: "UTILITY_ELECTRIC", monthlyCost: 100, billingCycle: "MONTHLY", isActive: true },
+      { addressId: "addr-2", providerName: "Elec B", category: "UTILITY_ELECTRIC", monthlyCost: 50, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+
+    const data = JSON.parse(await (await POST(makeRequest({ type: "tax", format: "json" }))).text());
+
+    expect(data.taxByProperty).toHaveLength(2);
+    // Each same-named "Rental" property holds exactly its own service.
+    for (const prop of data.taxByProperty) {
+      expect(prop.serviceCount).toBe(1);
+    }
+    expect(data.taxByProperty.map((p: any) => p.totalAnnualizedCost).sort((a: number, b: number) => a - b)).toEqual([600, 1200]);
+  });
+
+  it("emits the tax line items as CSV with an annualizedCost column", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      { id: "addr-1", nickname: "Home", type: "HOME", street: "1 Main", street2: null, city: "Austin", state: "TX", zip: "78701", ownership: "RENT", isPrimary: true, startDate: null, endDate: null },
+    ]);
+    mockPrisma.service.findMany.mockResolvedValue([
+      { addressId: "addr-1", providerName: "PSEG", category: "UTILITY_ELECTRIC", monthlyCost: 100, billingCycle: "MONTHLY", isActive: true },
+    ]);
+    mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+
+    const response = await POST(makeRequest({ type: "tax", format: "csv" }));
+    const csv = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/csv");
+    // Multi-section CSV: property summary + grand total + line items.
+    expect(csv).toContain("PROPERTY SUMMARY");
+    expect(csv).toContain("GRAND TOTAL");
+    expect(csv).toContain("LINE ITEMS");
+    expect(csv).toContain("annualizedCost");
+    expect(csv).toContain("1200");
+    expect(csv).toContain("PSEG");
   });
 
   it("returns the auth gate response instead of a generic 500 when unauthenticated", async () => {

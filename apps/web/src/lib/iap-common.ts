@@ -390,10 +390,6 @@ export async function normalizeAppleTransactionPayload(
 export async function normalizeGoogleResult(
   result: GoogleSubscriptionResult,
 ): Promise<NormalizedIapState | null> {
-  if (result.response.testPurchase && isBillingProductionLike()) {
-    throw new Error("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
-  }
-
   const lineItem = result.response.lineItems?.[0];
   if (!lineItem?.productId) return null;
 
@@ -418,6 +414,45 @@ export async function normalizeGoogleResult(
     environment: result.response.testPurchase ? "Sandbox" : "Production",
     raw: result.response,
   };
+}
+
+function parseEmailAllowlist(value: string | null | undefined): Set<string> {
+  return new Set(
+    (value || "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function isGooglePlayTestPurchaseState(state: NormalizedIapState): boolean {
+  return (
+    state.provider === "PLAY_STORE" &&
+    state.environment === "Sandbox" &&
+    typeof state.raw === "object" &&
+    state.raw !== null &&
+    "testPurchase" in state.raw
+  );
+}
+
+async function assertGooglePlayTestPurchaseAllowedForUser(userId: string, state: NormalizedIapState) {
+  if (!isGooglePlayTestPurchaseState(state) || !isBillingProductionLike()) return;
+
+  const [user, qaEmail, extraEmails] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    }),
+    getRuntimeConfigValue("QA_RESETTABLE_ACCOUNT_EMAIL"),
+    getRuntimeConfigValue("GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS"),
+  ]);
+  const allowedEmails = parseEmailAllowlist(extraEmails);
+  if (qaEmail) allowedEmails.add(qaEmail.trim().toLowerCase());
+
+  const userEmail = user?.email?.trim().toLowerCase();
+  if (!userEmail || !allowedEmails.has(userEmail)) {
+    throw new Error("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+  }
 }
 
 /**
@@ -475,6 +510,7 @@ export async function applyIapStateToUser(opts: {
   if (existingBlocksNewPurchase && existingProvider !== state.provider) {
     throw new Error("ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE");
   }
+  await assertGooglePlayTestPurchaseAllowedForUser(userId, state);
 
   const now = new Date();
   // accessType is "PAID" once a real store transaction has cleared. Trial and

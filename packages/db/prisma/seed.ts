@@ -54,15 +54,6 @@ async function main() {
       points: 50,
     },
     {
-      code: "first_reviewer",
-      name: "First Review",
-      description: "Wrote your first community review",
-      category: "COMMUNITY",
-      requirement: "Write 1 review",
-      rarity: "COMMON",
-      points: 10,
-    },
-    {
       code: "streak_7",
       name: "Week Warrior",
       description: "7-day activity streak",

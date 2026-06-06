@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   HelpCircle,
@@ -48,6 +48,28 @@ interface HelpArticle {
 
 function asText(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+/**
+ * Route-level error boundary (expo-router picks up this named export). ANY render
+ * throw inside the Help route is caught HERE and shown as a graceful in-screen
+ * retry, instead of escaping to the app-wide ErrorBoundary's full-screen
+ * "Something went wrong". Belt-and-suspenders on top of the guarded data flow.
+ */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+  const theme = useAppTheme();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
+      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+        <ErrorState
+          title={t("help.unavailable", { defaultValue: "Help is temporarily unavailable" })}
+          message={t("help.errorBody", { defaultValue: "We couldn't open Help. Please try again." })}
+          onRetry={retry}
+        />
+      </View>
+    </SafeAreaView>
+  );
 }
 
 function normalizeFaqs(value: unknown): FAQ[] {

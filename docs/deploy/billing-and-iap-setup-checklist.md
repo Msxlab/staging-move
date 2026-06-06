@@ -151,7 +151,7 @@ Play Console setup (use Internal Testing track first):
 4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly subscriptions for those tiers too (`locateflow_family_*`, `locateflow_pro_*`) so the Play catalog and runtime config stay aligned.
 5. Play Console -> Setup -> API access: link the project that owns the service account whose email is configured in `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, or complete the OAuth fallback path if service-account key creation is blocked. Grant `View financial data, orders, cancellation survey responses` and `Manage orders and subscriptions`.
 6. Real-Time Developer Notifications: create a Pub/Sub topic, point it at `https://locateflow.com/api/webhooks/playstore`, configure the `aud` claim to match `GOOGLE_PLAY_RTDN_AUDIENCE`, and set `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` to the authenticated push service account. The webhook rejects payloads without that audience or expected identity in production.
-7. License testers: Play Console -> Settings -> License testing -> add at least one Google account; test purchases on that account skip the 3-month grace and surface as `testPurchase=true` (the verifier rejects these in production but accepts them in test/staging).
+7. License testers: Play Console -> Settings -> License testing -> add at least one Google account; test purchases on that account skip the 3-month grace and surface as `testPurchase=true`. Production only persists those verified test purchases for the configured QA account allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` plus optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`); test/staging accepts them normally.
 
 If IAP credentials are missing:
 

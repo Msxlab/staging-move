@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
   rateLimit: vi.fn(),
   getStripePriceIdForPlanAndInterval: vi.fn(),
+  mapStripePriceIdToPlanAndInterval: vi.fn(),
   subscriptionUpdate: vi.fn(),
   stripeConstructor: vi.fn(),
   stripeSubscriptionsRetrieve: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/billing", () => ({
   billingIntervalToCycle: (interval: string) => (interval === "YEAR" ? "yearly" : "monthly"),
   getStripePriceIdForPlanAndInterval: mocks.getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval: mocks.mapStripePriceIdToPlanAndInterval,
 }));
 vi.mock("@/lib/billing-config", () => ({
   requireStripeSecretKeyForMutation: vi.fn((key: string) => key),
@@ -51,6 +53,8 @@ import { POST } from "./route";
 const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
 };
+
+const FLEXIBLE_BILLING_API_VERSION = "2025-04-30.preview";
 
 function switchRequest(targetInterval: "MONTH" | "YEAR", body: Record<string, unknown> = {}) {
   return new NextRequest("https://locateflow.com/api/subscription/switch-cycle", {
@@ -88,6 +92,7 @@ describe("subscription switch-cycle route", () => {
     mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (_plan: string, interval: string) =>
       interval === "YEAR" ? "price_yearly" : "price_monthly",
     );
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue(null);
     mocks.stripeSubscriptionsUpdate.mockResolvedValue({
       id: "sub_123",
       current_period_end: 1_900_000_000,
@@ -193,9 +198,10 @@ describe("subscription switch-cycle route", () => {
       scheduled: true,
     });
     expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
-    expect(mocks.stripeSchedulesCreate).toHaveBeenCalledWith({
-      from_subscription: "sub_123",
-    });
+    expect(mocks.stripeSchedulesCreate).toHaveBeenCalledWith(
+      { from_subscription: "sub_123" },
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
     expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith(
       "sched_123",
       {
@@ -228,7 +234,10 @@ describe("subscription switch-cycle route", () => {
           },
         ],
       },
-      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+      expect.objectContaining({
+        apiVersion: FLEXIBLE_BILLING_API_VERSION,
+        idempotencyKey: expect.stringMatching(/^locateflow:/),
+      }),
     );
     const updateArgs = mocks.subscriptionUpdate.mock.calls[0][0];
     expect(updateArgs.data.billingInterval).toBeUndefined();
@@ -240,6 +249,82 @@ describe("subscription switch-cycle route", () => {
       cancelAtPeriodEnd: false,
       autoRenew: true,
     });
+  });
+
+  it("schedules annual to monthly using the local period end when Stripe omits period fields", async () => {
+    const futureUnix = Math.floor((Date.now() + 365 * 86_400_000) / 1000);
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: new Date(futureUnix * 1000),
+    });
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue({
+      ...stripeSubscription("price_yearly", "year"),
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      billingInterval: "YEAR",
+      pendingBillingInterval: "MONTH",
+      scheduled: true,
+    });
+    expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalledWith(
+      "sched_123",
+      expect.objectContaining({
+        phases: expect.arrayContaining([
+          expect.objectContaining({ end_date: futureUnix }),
+        ]),
+      }),
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
+  });
+
+  it("uses the current Stripe price mapping when the stored billing interval is missing", async () => {
+    const futureUnix = Math.floor((Date.now() + 365 * 86_400_000) / 1000);
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      provider: "STRIPE",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      billingInterval: null,
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_yearly",
+      stripeSubscriptionScheduleId: null,
+      currentPeriodEndsAt: new Date(futureUnix * 1000),
+    });
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
+    mocks.stripeSubscriptionsRetrieve.mockResolvedValue({
+      ...stripeSubscription("price_yearly", "year"),
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const response = await POST(switchRequest("MONTH"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      billingInterval: "YEAR",
+      pendingBillingInterval: "MONTH",
+      scheduled: true,
+    });
+    expect(mocks.stripeSubscriptionsUpdate).not.toHaveBeenCalled();
+    expect(mocks.stripeSchedulesUpdate).toHaveBeenCalled();
   });
 
   it("releases the Stripe schedule when the pending-interval DB write fails on missing columns", async () => {
@@ -271,7 +356,10 @@ describe("subscription switch-cycle route", () => {
 
     expect(response.status).toBe(503);
     expect(body).toMatchObject({ code: "PENDING_INTERVAL_PERSIST_FAILED" });
-    expect(mocks.stripeSchedulesRelease).toHaveBeenCalledWith("sched_123");
+    expect(mocks.stripeSchedulesRelease).toHaveBeenCalledWith(
+      "sched_123",
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
   });
 
   it("falls through to immediate swap when the annual period has already ended", async () => {

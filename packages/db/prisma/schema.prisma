@@ -68,6 +68,8 @@ model User {
   acquisitionRedemptions  AcquisitionRedemption[]
   partnerConsents         PartnerConsent[]
   connectorDispatches     ConnectorDispatch[]
+  addressChangeEvents     AddressChangeEvent[]
+  affiliateClicks         AffiliateClick[]
   ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
@@ -692,6 +694,13 @@ model ServiceProvider {
   phone   String? @db.VarChar(20)
   logoUrl String? @db.VarChar(500)
 
+  // Affiliate revenue (Layer 1). Inert until affiliateActive=true AND a valid
+  // https affiliateUrl is set. affiliateNetwork is a free-form tag (e.g.
+  // "impact", "cj", "direct") for reporting/payout reconciliation.
+  affiliateUrl     String?  @db.VarChar(500)
+  affiliateNetwork String?  @db.VarChar(40)
+  affiliateActive  Boolean  @default(false)
+
   scope    String @default("FEDERAL") @db.VarChar(20)
   states   String @default("[]") @db.VarChar(2000)
   zipCodes String @default("[]") @db.VarChar(2000)
@@ -712,6 +721,8 @@ model ServiceProvider {
   destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
   governanceIssues      ProviderGovernanceIssue[]
   logoCandidates        ProviderLogoCandidate[]
+  affiliateClicks       AffiliateClick[]
+  affiliateConversions  AffiliateConversion[]
 
   deletedAt DateTime?
 
@@ -726,6 +737,56 @@ model ServiceProvider {
   @@index([scope])
   @@index([slug])
   @@index([deletedAt])
+}
+
+// Affiliate click attribution (Layer 1 revenue). One row per outbound click to a
+// provider's affiliate link, recorded server-side by the click endpoint so the
+// app — not the browser — owns the redirect target. Conversions (payouts) are a
+// later additive model that references these rows.
+model AffiliateClick {
+  id         String          @id @default(cuid()) @db.VarChar(30)
+  userId     String          @db.VarChar(30)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String          @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  addressId  String?         @db.VarChar(30) // loose ref; context only, never restricts address deletion
+  source     String          @db.VarChar(40) // where the click originated: provider_detail, services, recommendation
+  network    String?         @db.VarChar(40) // snapshot of affiliateNetwork at click time
+  createdAt  DateTime        @default(now())
+
+  conversions AffiliateConversion[]
+
+  @@index([providerId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([providerId, createdAt]) // windowed click-rate aggregation in the admin dashboard
+}
+
+// Affiliate conversion (Layer 1 revenue). One row per partner-reported payout
+// event, written by the server-to-server postback endpoint (never the browser).
+// Idempotent on (network, externalTransactionId) so a partner can safely retry
+// or re-send status updates. Links back to the originating click when the
+// partner echoes our click id.
+model AffiliateConversion {
+  id                    String          @id @default(cuid()) @db.VarChar(30)
+  affiliateClickId      String?         @db.VarChar(30)
+  affiliateClick        AffiliateClick? @relation(fields: [affiliateClickId], references: [id], onDelete: SetNull)
+  providerId            String          @db.VarChar(30)
+  provider              ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  network               String          @db.VarChar(40)
+  externalTransactionId String          @db.VarChar(191) // partner's transaction id
+  status                String          @default("PENDING") @db.VarChar(20) // PENDING | APPROVED | REJECTED | PAID
+  amountCents           Int             @default(0) // commission in minor units
+  currency              String          @default("USD") @db.VarChar(8)
+  occurredAt            DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@unique([network, externalTransactionId])
+  @@index([providerId])
+  @@index([network])
+  @@index([status])
+  @@index([occurredAt])
 }
 
 model ProviderLogoCandidate {
@@ -1732,6 +1793,7 @@ model PartnerConsent {
   tokenEncrypted        String?   @db.Text // ACCESS token, encrypted with FIELD_ENCRYPTION_KEY
   refreshTokenEncrypted String?   @db.Text // refresh token, encrypted; mints new access tokens
   tokenExpiresAt        DateTime? // expiry of the ACCESS token above
+  tokenVersion          Int       @default(0) // optimistic-lock counter; bumped on each refresh write so concurrent refreshes can't clobber a rotated token
 
   consentSnapshotJson String @db.Text // immutable terms + scope shown at grant time
 
@@ -1777,14 +1839,21 @@ model ConnectorDispatch {
   consentId String?         @db.VarChar(30)
   consent   PartnerConsent? @relation(fields: [consentId], references: [id], onDelete: SetNull)
 
-  // Loose refs to the future AddressChangeEvent / Service — no FK yet (those
-  // models don't exist); tighten when they land.
-  eventId   String? @db.VarChar(30)
+  // Legacy loose change ref (the changeRef UUID), kept for backward-compat with
+  // the smoke script and any pre-existing rows. The real link is the nullable FK
+  // addressChangeEventId below; serviceId stays a loose ref until Service lands.
+  eventId   String? @db.VarChar(40)
   serviceId String? @db.VarChar(30)
+
+  // The canonical AddressChangeEvent this dispatch fanned out from. Nullable FK
+  // so the additive migration carries zero orphan risk on existing rows.
+  addressChangeEventId String?             @db.VarChar(30)
+  addressChangeEvent   AddressChangeEvent? @relation(fields: [addressChangeEventId], references: [id], onDelete: SetNull)
 
   idempotencyKey String @unique @db.VarChar(120)
 
   status        String  @default("QUEUED") @db.VarChar(20) // QUEUED|DISPATCHING|SUBMITTED|CONFIRMED|NEEDS_USER|FAILED
+  isShadow      Boolean @default(false) // internal dry-run rows; excluded from live/user-facing counts
   attemptCount  Int     @default(0)
   lastErrorCode String? @db.VarChar(30) // normalized ConnectorErrorCode
 
@@ -1806,6 +1875,68 @@ model ConnectorDispatch {
   @@index([userId])
   @@index([status, nextRetryAt])
   @@index([consentId])
+  @@index([addressChangeEventId])
+  @@index([isShadow, status])
+}
+
+// The canonical "the user moved" event — one row per address change a user
+// initiates. It fans out to 0..N ConnectorDispatch rows (one per consented +
+// enabled connector); the address is chosen ONCE here and the same value flows
+// to every connector. Loose VarChar refs (fromAddressId/toAddressId/workspaceId)
+// keep it decoupled like the connector tables above; only User is a hard FK.
+model AddressChangeEvent {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stable public ref (the changeRef UUID), also written to ConnectorDispatch.eventId
+  // for backward-compat; unique so an enqueue is idempotent at the event level.
+  changeRef String @unique @db.VarChar(40)
+
+  // Loose refs (no FK): addresses soft-delete and the canonical values already
+  // travel encrypted on each dispatch, so the event only needs the ids.
+  fromAddressId String? @db.VarChar(30)
+  toAddressId   String  @db.VarChar(30)
+  workspaceId   String? @db.VarChar(30)
+
+  fullName      String    @db.VarChar(200)
+  effectiveDate DateTime?
+
+  // PENDING (created) | DISPATCHED (>=1 connector queued) | NO_TARGETS (0 connectors)
+  status        String @default("PENDING") @db.VarChar(20)
+  dispatchCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dispatches ConnectorDispatch[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Admin-editable fallback (guided) action for a connector that can't auto-push
+// or is disabled — the deep-link / mailto / PDF the user completes manually.
+// DB-backed so adding a partner's guided flow is a data change, not a deploy.
+// Resolution layers a row here OVER the in-code default, so an empty table keeps
+// the shipped defaults. Global config (no per-user rows), like ConnectorConfig.
+model ConnectorFallbackAction {
+  id           String @id @default(cuid()) @db.VarChar(30)
+  actionKey    String @unique @db.VarChar(80) // e.g. "usps:MAIL_FORWARDING:DEEP_LINK"
+  connectorKey String @db.VarChar(40) //         for admin grouping/filtering
+
+  type        String  @default("DEEP_LINK") @db.VarChar(20) // DEEP_LINK | MAILTO | PDF | PHONE
+  label       String  @db.VarChar(120)
+  helperText  String  @db.Text
+  urlTemplate String? @db.Text //                {{to.street1}}-style placeholders, rendered per move
+  locale      String  @default("en") @db.VarChar(10)
+  enabled     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([connectorKey])
+  @@index([enabled])
 }
 
 // ==================== WORKSPACES (Family/Pro, flag-gated) ====================

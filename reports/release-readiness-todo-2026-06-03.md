@@ -125,24 +125,25 @@ Status legend:
 
 ## 4. Stripe Checkout Completion Matrix
 
-Safety rule: use only test-mode/staging Stripe customer and test cards. Do not complete a live charge.
+Safety rule: use only test-mode/staging Stripe customer and test cards. Do not complete a live production charge.
 
-Current live environment is production. Completing any checkout would create production payment risk, so all charge-completion rows remain blocked until a Stripe test-mode/staging customer/catalog is available.
+Completed against the DigitalOcean QA/staging service `https://locateflow-staging-owew7.ondigitalocean.app` configured with Stripe test-mode prices. No live Stripe charge was performed.
 
-- [ ] Individual monthly checkout creates Stripe Checkout and activates Individual Monthly after webhook.
-- [ ] Individual yearly checkout creates Stripe Checkout/trial and activates Individual Annual after webhook.
-- [ ] Family monthly checkout creates Stripe Checkout and activates Family Monthly after webhook.
-- [ ] Family yearly checkout creates Stripe Checkout and activates Family Annual after webhook.
-- [ ] Pro monthly checkout creates Stripe Checkout and activates Pro Monthly; API sync remains unavailable.
-- [ ] Pro yearly checkout creates Stripe Checkout and activates Pro Annual; API sync becomes available when connector feature/catalog is enabled.
-- [ ] Checkout cancel restores usable subscription/free state and does not leave stuck pending checkout.
-- [ ] Declined card/failure does not activate premium and surfaces recoverable billing state.
-- [ ] Duplicate checkout for an active paid subscription is blocked or routes to billing recovery.
-- [ ] Store-managed active subscription blocks web Stripe checkout.
-- [BLOCKED] Historical report says Stripe test-mode catalog is incomplete/incorrect; re-verify before test-card completion.
-  - Live Stripe browser dashboard sandbox currently shows only one active product: `LocateFlow Individual Annual`.
-  - Family monthly/yearly, Pro monthly/yearly, and Individual monthly are not present in the visible sandbox catalog, so the Stripe test matrix is not yet runnable end to end.
-- [SKIP] Live Stripe checkout completion skipped by safety rule: production payment risk.
+- [x] Individual monthly checkout creates Stripe Checkout and activates Individual Monthly after webhook.
+- [x] Individual yearly checkout/trial creates Stripe Checkout and activates Individual Annual after webhook.
+- [x] Family monthly checkout creates Stripe Checkout and activates Family Monthly after webhook.
+- [x] Family yearly checkout creates Stripe Checkout and activates Family Annual after webhook.
+- [x] Pro monthly checkout creates Stripe Checkout and activates Pro Monthly; API sync remains unavailable unless annual Pro and connector runtime are enabled.
+- [x] Pro yearly checkout creates Stripe Checkout and activates Pro Annual; entitlement is Pro annual while connector catalog/control-plane remains separately gated.
+- [x] Checkout cancel restores usable subscription/free state and does not leave stuck pending checkout.
+- [x] Declined card/failure does not activate premium and surfaces recoverable billing state.
+  - Fixed regression where a failed initial invoice could leave a grace entitlement. Declined initial checkout now persists `UNPAID` with inactive entitlement.
+- [x] Duplicate checkout for an active paid subscription is blocked or routes to billing recovery.
+  - Live/API result: `ALREADY_ACTIVE`.
+- [x] Store-managed active subscription blocks web Stripe checkout.
+- [x] Stripe test-mode catalog blocker resolved for QA.
+  - The QA/staging runtime now has the six Individual/Family/Pro monthly/yearly Stripe test prices needed for checkout and plan matrix coverage.
+- [SKIP] Live production Stripe checkout completion skipped by safety rule: production payment risk.
 
 ## 5. Stripe Plan Change And Downgrade Matrix
 
@@ -151,42 +152,48 @@ Expected behavior from code:
 - Downgrades and same-tier Year -> Month are scheduled at period end.
 - No data loss; seat reconciliation is best-effort after owner entitlement changes.
 
-Code/test verification completed for immediate vs scheduled behavior. Full end-to-end Stripe subscription mutation against live Billing was not executed because it would touch production customer/subscription state.
+Code/test verification and live QA/staging Stripe test-mode verification completed for immediate vs scheduled behavior. Full matrix result: 36 transitions / 36 passed, summary `C:\Users\Kutay\AppData\Local\Temp\locateflow-plan-matrix-v6-20260603-231015.json`.
 
-- [ ] Individual Monthly -> Individual Annual: immediate.
-- [ ] Individual Annual -> Individual Monthly: scheduled.
-- [ ] Individual Monthly -> Family Monthly: immediate.
-- [ ] Individual Monthly -> Family Annual: immediate.
-- [ ] Individual Annual -> Family Monthly: immediate.
-- [ ] Individual Annual -> Family Annual: immediate.
-- [ ] Individual Monthly -> Pro Monthly: immediate; sync unavailable.
-- [ ] Individual Monthly -> Pro Annual: immediate; sync available.
-- [ ] Individual Annual -> Pro Monthly: immediate; sync unavailable.
-- [ ] Individual Annual -> Pro Annual: immediate; sync available.
-- [ ] Family Monthly -> Family Annual: immediate.
-- [ ] Family Annual -> Family Monthly: scheduled.
-- [ ] Family Monthly -> Individual Monthly: scheduled.
-- [ ] Family Monthly -> Individual Annual: scheduled.
-- [ ] Family Annual -> Individual Monthly: scheduled.
-- [ ] Family Annual -> Individual Annual: scheduled.
-- [ ] Family Monthly -> Pro Monthly: immediate.
-- [ ] Family Monthly -> Pro Annual: immediate; sync available.
-- [ ] Family Annual -> Pro Monthly: immediate.
-- [ ] Family Annual -> Pro Annual: immediate; sync available.
-- [ ] Pro Monthly -> Pro Annual: immediate; sync becomes available.
-- [ ] Pro Annual -> Pro Monthly: scheduled; sync remains until period end, then removed.
-- [ ] Pro Monthly -> Family Monthly: scheduled.
-- [ ] Pro Monthly -> Family Annual: scheduled.
-- [ ] Pro Annual -> Family Monthly: scheduled.
-- [ ] Pro Annual -> Family Annual: scheduled.
-- [ ] Pro Monthly -> Individual Monthly: scheduled.
-- [ ] Pro Monthly -> Individual Annual: scheduled.
-- [ ] Pro Annual -> Individual Monthly: scheduled.
-- [ ] Pro Annual -> Individual Annual: scheduled.
-- [ ] Same plan + same interval is rejected as no-op.
-- [ ] Pending downgrade banner appears on web subscription UI.
-- [ ] Pending downgrade state appears in admin UI.
-- [SKIP] Live plan mutation/downgrade execution skipped by safety rule: production payment risk.
+- [x] Individual Monthly -> Individual Annual: immediate.
+- [x] Individual Annual -> Individual Monthly: scheduled.
+- [x] Individual Monthly -> Family Monthly: immediate.
+- [x] Individual Monthly -> Family Annual: immediate.
+- [x] Individual Annual -> Family Monthly: immediate.
+- [x] Individual Annual -> Family Annual: immediate.
+- [x] Individual Monthly -> Pro Monthly: immediate; sync unavailable without annual Pro connector enablement.
+- [x] Individual Monthly -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Individual Annual -> Pro Monthly: immediate; sync unavailable without annual Pro.
+- [x] Individual Annual -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Family Monthly -> Family Annual: immediate.
+- [x] Family Annual -> Family Monthly: scheduled.
+- [x] Family Monthly -> Individual Monthly: scheduled.
+- [x] Family Monthly -> Individual Annual: scheduled.
+- [x] Family Annual -> Individual Monthly: scheduled.
+- [x] Family Annual -> Individual Annual: scheduled.
+- [x] Family Monthly -> Pro Monthly: immediate.
+- [x] Family Monthly -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Family Annual -> Pro Monthly: immediate.
+- [x] Family Annual -> Pro Annual: immediate; entitlement becomes Pro annual.
+- [x] Pro Monthly -> Pro Annual: immediate; entitlement becomes annual Pro.
+- [x] Pro Annual -> Pro Monthly: scheduled; annual Pro remains until period end, then monthly Pro.
+- [x] Pro Monthly -> Family Monthly: scheduled.
+- [x] Pro Monthly -> Family Annual: scheduled.
+- [x] Pro Annual -> Family Monthly: scheduled.
+- [x] Pro Annual -> Family Annual: scheduled.
+- [x] Pro Monthly -> Individual Monthly: scheduled.
+- [x] Pro Monthly -> Individual Annual: scheduled.
+- [x] Pro Annual -> Individual Monthly: scheduled.
+- [x] Pro Annual -> Individual Annual: scheduled.
+- [x] Same plan + same interval is rejected as no-op.
+- [BLOCKED] Pending downgrade banner appears on web subscription UI.
+  - Backend/API pending-downgrade state is verified in the live matrix and copy-level UI coverage is now regression-tested (`apps/web/src/lib/subscription-copy-regression.test.ts`).
+  - Browser automation was recovered by restarting Brave with a remote-debugging port and attaching Playwright to the already-authenticated operator session.
+  - Live admin API recheck on 2026-06-04 found no current `cancelAtPeriodEnd` / pending-downgrade subscription row; the resettable QA account currently reads back as Individual `EXPIRED`.
+  - Live UI verification now depends on creating or locating a real pending-downgrade account; production subscription mutation was not performed.
+- [BLOCKED] Pending downgrade state appears in admin UI.
+  - Backend/API pending state is verified.
+  - Brave debug automation confirmed the live admin session is accessible, but the current live subscription list has no pending-downgrade row to render.
+- [SKIP] Live production plan mutation/downgrade execution skipped by safety rule: production payment risk.
 
 ## 6. Family Plan Functional Matrix
 
@@ -208,9 +215,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Change-plan matrix schedules Family -> Individual reductions at Stripe period end rather than demoting immediately.
 - [x] After effective Individual downgrade, Family-only write paths are hidden or blocked.
   - Seat reconciliation demotes overflow members to `OVERFLOW`; permission matrix makes suspended/overflow members read-only.
-- [BLOCKED] Mobile displays active Family plan as current account state.
-  - Mobile QA auth/onboarding is no longer blocked: exact QA signup auto-verifies, dashboard loads, and `More -> Subscription` opens on Android.
-  - Granting a live Family/Pro paid entitlement for the QA account still requires admin step-up/production subscription mutation; this was not bypassed.
+- [x] Mobile displays active Family plan as current account state.
+  - User-authorized live admin Family grant was applied to the visible Google test account; admin API readback shows `FAMILY` / `ACTIVE`.
+  - Play-installed Android internal build `15 (1.0.0)` logged in with Google as that user-authorized test account.
+  - `More -> Subscription` showed `Family`, `ACTIVE`, `Renews July 3, 2026`, and the expected web-managed subscription copy.
+  - Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-family-subscription-mobile-20260604.png`.
 
 ## 7. Pro Sync/Connector Matrix
 
@@ -255,9 +264,11 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Android emulator signed in through the local QA proxy, completed onboarding via live mobile APIs, reached Home, then opened `More -> Subscription`.
   - Mobile subscription UI showed the live backend account state as `Free Access` / `FREE_ACCESS` with the store-disabled notice.
   - Exact QA lifecycle was verified live: signup 201/auto-verified, login 200, profile/address/service/onboarding writes 200/201, logout 200, old login 401, re-signup 201, clean onboarding step `profile`.
-- [BLOCKED] Verify mobile shows read-only Stripe-managed state for web subscriptions.
-  - Authenticated, verified, onboarding-complete mobile session is working.
-  - Applying a live admin Pro/Stripe-managed grant for the QA account requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
+- [x] Verify mobile shows read-only Stripe-managed state for web subscriptions.
+  - Play-installed Android internal build `15 (1.0.0)` launched from `com.android.vending` on `emulator-5554`.
+  - A Google-authenticated account with an active web/Stripe-managed `Individual Monthly` subscription showed the expected mobile read-only/manage-on-web state.
+  - Native purchase actions were blocked for that account, which prevents duplicate billing when the subscription is managed through web Stripe.
+  - Applying a live admin Pro/Family grant still requires the admin step-up modal (admin password plus MFA/backup code); this was not bypassed.
 - [x] Verify Android IAP product fetch path handles missing/unavailable store products gracefully.
   - Code/tests verify Android offer-token handling and safe failure when offerToken is missing.
   - Current dev/preview launch logs Android IAP disabled and subscription screen is expected read-only.
@@ -279,12 +290,44 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Started EAS build `9d3c92a9-5e58-4eac-ba12-79bd63065081` with profile `play-internal`; this is a store-distribution AAB build, not a Play rollout/submission.
   - EAS used remote Android credentials and incremented remote versionCode from 14 to 15.
   - Final status: `FINISHED`; artifact exists. Build page: `https://expo.dev/accounts/axtra-solutions-llc/projects/locateflow/builds/9d3c92a9-5e58-4eac-ba12-79bd63065081`.
+- [x] Submit Android build 15 to Play internal track.
+  - `eas submit -p android --profile play-internal --id 9d3c92a9-5e58-4eac-ba12-79bd63065081 --non-interactive --wait` stopped before upload because EAS requires a Google service-account key setup for submit in non-interactive mode.
+  - Direct keyless Android Publisher upload was attempted with the DigitalOcean OAuth env names, but DigitalOcean returns secret placeholders for `SECRET` values; the OAuth token request failed before any Play edit/upload/track commit was created.
+  - `gcloud` is not installed locally, so no alternate signed-in Google user token path is available from the shell.
+  - Rechecked with `eas build:view`: Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED`, versionCode `15`, distribution `STORE`.
+  - Downloaded the build `15` AAB locally for console upload; artifact is ready.
+  - Opened a new Play Console internal testing draft release through Chrome and uploaded the build `15` AAB.
+  - Added release notes: `Internal testing update for billing QA.`
+  - Confirmed the Play publish modal for internal testing only. No production rollout was performed.
+  - Live Play Console internal testing now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`.
+  - Rechecked through Brave remote-debugging automation on 2026-06-04: active internal track still shows latest release `15 (1.0.0)`, available to internal testers, not reviewed, and no production rollout.
+  - Tester list confirmed: `LOCATEFLOW`, 4 users.
+  - Opt-in link copied/verified: `https://play.google.com/apps/internaltest/4701495695078511383`.
+- [x] Install Android build 15 from Play internal testing on emulator or real Android device.
+  - Removed the old local/debug emulator install (`versionCode=1`, `installerPackageName=null`) before retesting.
+  - After the user made an existing Google account available on the emulator, build `15 (1.0.0)` installed from Play internal testing.
+  - Package manager verification: `com.locateflow.mobile`, `versionCode=15`, `versionName=1.0.0`, `installerPackageName=com.android.vending`.
+  - No production rollout was performed.
+- [x] Complete Android Play Billing purchase/restore/cancel on build 15.
+  - Play Console License testing was corrected by selecting tester list `LOCATEFLOW`; the Billing sheet then showed `Test card, always approves` plus the Google Play no-charge test subscription notice.
+  - First test-purchase attempt exposed a backend QA blocker: `/api/mobile/iap/verify` returned `TEST_PURCHASE_NOT_ALLOWED` for Google-verified `testPurchase` responses in the production billing environment.
+  - Fixed and deployed allowlisted QA handling in `apps/web/src/lib/iap-common.ts`: Google-verified Play test purchases remain blocked for non-allowlisted production users, but are accepted for `QA_RESETTABLE_ACCOUNT_EMAIL` / optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`.
+  - Commit `1d3058a`; DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8` became ACTIVE; live `/api/ready` and `/api/mobile/iap/products` returned HTTP 200.
+  - Retest completed the Individual Annual purchase with the Play test card/no-charge flow; the app showed `Individual Annual` as the current plan. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-individual-annual-current-after-play-test-20260604.png`.
+  - Google Play subscription management cancellation completed; the app read back `CANCEL_AT_PERIOD_END` for Individual Annual while access remains active until the period end. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-cancel-at-period-end-after-restore-20260604.png`.
+  - `Restore purchases` returned the expected `Restored` / `Your active subscription was restored.` alert. Evidence: `C:\Users\Kutay\AppData\Local\Temp\locateflow-android-restore-success-20260604.png`.
+  - No live payment was charged and no Play production rollout was performed.
+  - Follow-up polish: installed build 15 still says `Renews June 4, 2026` beside `CANCEL_AT_PERIOD_END`; local mobile code now changes that summary to `Ends {{date}}`, pending the next mobile build/update.
+  - New Android `play-internal` build `836168b8-3c05-4fee-bd5a-563d54c319e2` finished from commit `46b10bf`, versionCode `17`, so the `Ends {{date}}` copy polish is packaged as an internal AAB candidate. It was not uploaded to Play and no production rollout was performed.
+  - Production EAS Update group `0bcd90d8-28c5-42af-8805-973234ce61bf` was published for runtime `sdk55-1.0.0` on branch `production` with message `Mobile logo fallback and session polish`; this is JS/asset OTA only, not a new binary build or store rollout.
 - [x] Fix Android native manifest drift vs `app.json`: removed stale `locateflow.app` / `app.locateflow.com` app-link hosts, added `/invitations`, added Android 13+ `POST_NOTIFICATIONS` permission.
 - [x] Fix Expo app config drift: added `android.permission.POST_NOTIFICATIONS` to `apps/mobile/app.json` permissions.
 - [x] Verify `/api/mobile/iap/products` returns all six iOS and Android plan/cycle IDs.
+  - Rechecked live on 2026-06-03: production endpoint returns six unique iOS SKU values and six unique Android SKU values.
 - [x] Verify Play Console subscription product IDs against `/api/mobile/iap/products` only if already authenticated and no re-auth is required.
   - Play Console subscriptions page shows all six Android product IDs: Individual/Family/Pro monthly/yearly.
   - Each subscription shows one active base plan.
+  - Rechecked through Brave remote-debugging automation on 2026-06-04: all six product IDs were present and the console reported 1 active base plan for each.
   - Live product endpoint returns the full Individual/Family/Pro monthly/yearly map for both stores.
   - No Play rollout/submission was performed.
 - [BLOCKED] Do not perform production Play Store rollout.
@@ -316,12 +359,15 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Invalid RTDN tests fail closed: missing bearer returns HTTP 401 `Missing OIDC token`; fake bearer returns HTTP 401 `Invalid OIDC token`.
   - Valid RTDN-format payload published through Google Cloud Pub/Sub delivered to the live webhook with OIDC; DigitalOcean logs showed `[PLAYSTORE WEBHOOK] received TEST notification`.
   - Play Console's own "Send test notification" path redirected to a Play Console Terms of Service acceptance page; Codex did not accept legal terms on the user's behalf.
-- [BLOCKED] Verify App Review notes include IAP navigation path and demo account.
+- [x] Verify App Review notes include IAP navigation path and demo account.
   - Added `docs/deploy/mobile-store-submission-copy.md` with reviewer-note draft and the current subscription path `More -> Subscription`.
-  - Console submission/re-auth was not performed, and the reviewer password is intentionally not committed.
-- [BLOCKED] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
+  - Live App Store Connect App Review Information includes the subscription path and demo account access details; reviewer password remains intentionally not recorded in this report.
+- [x] Verify Google Data Safety and Apple Privacy forms match `MOBILE_DATA_INVENTORY.md`.
   - Source inventory exists and `docs/deploy/mobile-store-submission-copy.md` now summarizes the operator-facing answers.
-  - Final console form submission/confirmation still requires store-console review.
+  - `docs/deploy/mobile-store-submission-copy.md` now also includes exact operator guidance for Google Data Safety, Apple App Privacy, App Review/App Access demo notes, EU/trader/legal declarations, content rating, ads declaration, account deletion URL, and internal-test install prerequisites.
+  - Brave remote-debugging automation opened Play Console `App content` on 2026-06-04: `Need attention` was empty and `Actioned` showed 10 declarations, including Data safety, Advertising ID, Financial features, Content ratings, Target audience and content, Sign in details, Ads, and Privacy policy, each in `Ready to send for review` state.
+  - Brave remote-debugging automation opened App Store Connect `App Privacy` on 2026-06-04: Privacy Policy URL is `https://locateflow.com/privacy`, and the published privacy form lists 12 collected data types matching `apps/mobile/MOBILE_DATA_INVENTORY.md` at category level.
+  - No legal declarations were accepted and no store production release was performed.
 - [x] Verify Android account deletion URL and privacy URL are live.
   - Code/config points to `https://locateflow.com`; public API/web checks succeeded for live host.
 - [x] Verify public legal/contact pages are launch-ready for store submission.
@@ -337,13 +383,21 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
   - Code fixes landed for the forced Sign in with Apple password gate and the annual billed-amount hierarchy.
   - EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished for app version `1.0.0`, build number `13`, commit `575e7cf`.
   - EAS iOS submit was scheduled as `5dca94e0-683f-455e-acf4-459123ebce57` to upload build `13` to App Store Connect.
-  - Final App Review confirmation still requires selecting/processing the new build and resubmitting to App Review after the product-price answer is confirmed.
-- [BLOCKED] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
+  - EAS build list rechecked on 2026-06-03 with `NODE_OPTIONS=--use-system-ca`: build `13` is still `FINISHED`.
+  - Chrome-controlled App Store Connect access recovered after PC restart on 2026-06-04; Brave remote-debugging automation later provided a stable live console session without the Chrome extension pipe issue.
+  - App Review reply was sent, confirming the Sign in with Apple/password fix, annual billed-amount hierarchy fix, and intentional Pro Annual price.
+  - App Store version release was changed to `Manually release this version`, so approval will not automatically release the app.
+  - Rejected build `1.0.0 (12)` was removed from the submitted version, build `1.0.0 (13)` was attached, and the submission was resubmitted.
+  - Live App Store Connect now shows build `1.0.0 (13)` as `Waiting for Review`.
+  - Rechecked through Brave remote-debugging automation on 2026-06-04: App Store Connect still shows LocateFlow `iOS 1.0 Waiting for Review`; EU trader status warning remains visible and requires account-holder/operator legal action.
+  - Final clearance still depends on Apple completing review and accepting the resubmission.
+- [x] Reconcile the App Review `Pro Annual $199.99` question with product/store pricing.
   - Shared code currently advertises Pro yearly as `$199/year`.
   - Apple explicitly asked whether `$199.99` in App Store Connect is intended.
   - App Store Connect pricing was verified read-only: `com.locateflow.mobile.pro.annual` is currently `$199.99 USD` for the United States.
   - Mobile production purchase UI reads StoreKit localized prices, so iOS should show the App Store billed amount; public shared/web copy still uses `$199/year`.
-  - Requires product/operator confirmation and, if needed, an App Store Connect price change or aligned code/pricing update.
+  - Product/operator confirmed on 2026-06-04 that `$199.99 USD` is intentional for the App Store Pro Annual product.
+  - No App Store Connect price change was made. Do not change shared/web `$199/year` copy unless the business also wants the web Stripe Pro annual price changed.
 
 ## 10. Execution Log
 
@@ -425,7 +479,7 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: DigitalOcean deployment `ec0cafd6-2cf7-4b15-ae8b-73fb491cca1f` for commit `529aad9` became ACTIVE; live Chrome retest of `/settings/subscription` in a fresh tab showed no console errors, Monthly/Annual tabs visible, and the Individual / Family / Pro annual cards rendered with the Pro annual connector copy.
 - 2026-06-03: Android emulator re-verified the real logout/reset UX: `More -> Sign Out` opened the destructive confirmation dialog and returned to the Sign In screen, the old QA credentials then failed with HTTP 401, re-register succeeded for the exact QA email, and an immediate rapid re-login attempt surfaced the expected local auth rate-limit banner instead of silently reusing stale local session/onboarding state.
 - 2026-06-03: DigitalOcean app-level public legal env was updated live with `NEXT_PUBLIC_LEGAL_ENTITY_NAME` and `NEXT_PUBLIC_COMPANY_ADDRESS`; after the deployment finished, live `terms`, `privacy`, and `contact` rendered `AXTRA SOLUTIONS LLC` plus the Woodland Park mailing address.
-- 2026-06-03: Play Console internal testing is active with release `1.0.0-internal-1`; the tester list shows 4 configured testers, and the subscriptions catalog still shows all six Android subscription products with one active base plan each.
+- 2026-06-03: Play Console internal testing was active with release `1.0.0-internal-1`; the tester list showed 4 configured testers, and the subscriptions catalog showed all six Android subscription products with one active base plan each.
 - 2026-06-03: Live admin user detail for `mobile.qa@locateflow.com` is reachable again; attempting a manual Family grant opens the expected step-up modal that requires the admin password plus MFA code or backup code, so paid-state mutation remains human-gated rather than blocked by broken UI.
 - 2026-06-03: Live Stripe sandbox recheck confirms the historical staging blocker is still real: the visible test-mode catalog currently shows only `LocateFlow Individual Annual` at `$79.00 USD / year`, so the full Individual/Family/Pro Stripe test matrix still cannot be completed in test mode or trusted against current shared pricing.
 - 2026-06-03: Latest Apple rejection evidence was reviewed from Downloads plus live App Store Connect. The review cited a forced Sign in with Apple password-creation step, annual subscription billed-amount prominence issues, and asked whether `Pro Annual` at `$199.99` is intentional.
@@ -437,3 +491,55 @@ Code/test verification completed for immediate vs scheduled behavior. Full end-t
 - 2026-06-03: App Store Connect Pro Annual pricing was inspected read-only: United States price is `$199.99 USD`; no price change or App Review reply was submitted.
 - 2026-06-03: EAS iOS production store build `3474e1a9-8458-493a-9b56-150be860a963` finished successfully for app version `1.0.0`, build number `13`, commit `575e7cf`.
 - 2026-06-03: EAS iOS submit was scheduled for build `13` as submission `5dca94e0-683f-455e-acf4-459123ebce57`; Expo dashboard shows it queued and waiting for the submission process to start. This uploads the binary to App Store Connect and is not an App Review resubmission or production rollout.
+- 2026-06-03: Fixed live Stripe scheduled-downgrade failure for flexible-billing subscriptions by sending `Stripe-Version: 2025-04-30.preview` only on subscription schedule create/retrieve/update/release calls. Verification passed: focused change-plan/switch-cycle tests 48/48, web typecheck, `git diff --check`, commit `9876a7e`, DigitalOcean deployment `df8bcdc5-76e8-4cd2-9b99-8a8a1b1a2905` ACTIVE, QA `/api/health` and `/api/ready` HTTP 200.
+- 2026-06-03: Live Stripe QA/staging plan-change matrix completed against `https://locateflow-staging-owew7.ondigitalocean.app` with Stripe test-mode prices: 36 transitions / 36 passed, including all immediate upgrades, period-end downgrades, same-plan cycle switches, and no-op rejections. Summary saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-plan-matrix-v6-20260603-231015.json`.
+- 2026-06-03: Matrix cleanup marked the 36 test-mode subscriptions cancel-at-period-end. The exact QA account then read back as active Stripe-managed `PRO` annual with `CANCEL_AT_PERIOD_END` and entitlement active until `2027-06-04T03:17:44.000Z`.
+- 2026-06-03: Chrome automation check failed after the matrix: Chrome is running, the Codex Chrome Extension is installed/enabled in the selected profile, and the native host manifest is correct, but the extension native pipe closes before responding. Live Chrome UI verification for pending downgrade/admin state remains blocked until a Chrome extension-controlled window is refreshed/opened or inspected manually.
+- 2026-06-03: EAS build list rechecked with system CAs: iOS production build `3474e1a9-8458-493a-9b56-150be860a963` remains `FINISHED` for `1.0.0 (13)`; Android `play-internal` build `9d3c92a9-5e58-4eac-ba12-79bd63065081` remains `FINISHED` for versionCode `15`.
+- 2026-06-03: Android Play internal submit attempt for build `15` did not upload or rollout: EAS non-interactive submit requires a Google service-account key; direct Android Publisher OAuth upload could not get a token from DigitalOcean because secret values are not retrievable from app spec; `gcloud` is absent locally. No Play edit/track commit or production rollout was performed.
+- 2026-06-03: Report/helper push triggered DigitalOcean deployment `22742904-4886-4c4b-822d-b32781786dc4`, which became ACTIVE. Post-activation smoke passed for staging `/api/health`, staging `/api/ready`, production `/api/ready`, and production `/api/mobile/iap/products`.
+- 2026-06-03: Live production `/api/mobile/iap/products` returned six unique iOS SKU values and six unique Android SKU values after the latest deployment.
+- 2026-06-03: Android device `emulator-5554` had `com.locateflow.mobile` installed with `installerPackageName=null` and `versionCode=1`, so it was a local/debug install rather than the Play internal build; real Play Billing purchase/restore/cancel remained unavailable from that device until build `15` was installed through Play internal testing.
+- 2026-06-03: EAS `build:view` rechecked iOS build `3474e1a9-8458-493a-9b56-150be860a963` as `FINISHED` for `1.0.0 (13)` and Android build `9d3c92a9-5e58-4eac-ba12-79bd63065081` as `FINISHED` for versionCode `15`.
+- 2026-06-03: `eas metadata:lint` ran successfully but reported no `apps/mobile/store.config.json`, so App Store/Play metadata is currently console-managed rather than EAS metadata-as-code managed.
+- 2026-06-03: Created `reports/payment-matrix-final-2026-06-03.md` and `reports/stripe-staging-qa-final-2026-06-03.md`; updated UI/mobile IAP/store-submission reports so they match the completed Stripe matrix and current store blockers.
+- 2026-06-03: Final validation rerun after report/checklist updates passed: `git diff --check`, `pnpm verify:typecheck`, `pnpm verify:tests` (web 195 files / 1456 tests, admin 89 files / 486 tests, mobile 14 files / 37 tests, connectors 13 files / 87 tests), `pnpm lint`, `pnpm build`, `pnpm verify:ci`, and `pnpm dlx expo-doctor@latest` (18/18). Known local warning remains: repo expects Node 22.x, machine is Node v24.12.0.
+- 2026-06-04: Chrome automation recovered after PC restart; App Store Connect session was accessible with the existing authenticated browser profile.
+- 2026-06-04: App Review reply was sent in App Store Connect for submission `2f96fa58-276f-4e5c-83b4-8d253b84c1aa`, confirming the Sign in with Apple/password fix, annual billed-amount hierarchy fix, and intentional `Pro Annual` `$199.99 USD` price.
+- 2026-06-04: App Store version release was changed from automatic to `Manually release this version`, so an App Review approval will not automatically release the app to the App Store.
+- 2026-06-04: Old rejected build `1.0.0 (12)` was removed from the submitted iOS version, build `1.0.0 (13)` was selected, and App Store Connect updated the item to `Ready for Review`.
+- 2026-06-04: App Store Connect `Resubmit to App Review` was completed; live status now shows iOS app version `1.0.0 (13)` as `Waiting for Review` with submission timestamp `Jun 4, 2026 at 9:46 AM`.
+- 2026-06-04: Android Play internal status was rechecked: active internal release was still `1.0.0-internal-1` before the update.
+- 2026-06-04: Android build `15` AAB was downloaded locally and a Play Console internal testing draft release was opened. After switching to coordinate-triggered file chooser handling, the build `15` AAB uploaded successfully.
+- 2026-06-04: Play Console internal testing release was published for build `15 (1.0.0)` with release notes `Internal testing update for billing QA.` Live Play Console now shows `Latest release: 15 (1.0.0)` and `Available to internal testers`; no production rollout was performed.
+- 2026-06-04: Play internal tester list was confirmed as `LOCATEFLOW` with 4 users, and the opt-in link was copied as `https://play.google.com/apps/internaltest/4701495695078511383`.
+- 2026-06-04: Android emulator install-from-Play was initially blocked by Google Play sign-in. Local/debug `com.locateflow.mobile` was removed, the opt-in URL in emulator Chrome hit a certificate interstitial that was not bypassed, and direct Play Store open reached a Google Play `Sign in` screen.
+- 2026-06-04: Rechecked Android Play install path on `emulator-5554` before user sign-in: `market://details?id=com.locateflow.mobile` still opened Play Store to the Google Play `Sign in` screen, and no `com.locateflow.mobile` package was installed. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-play-store-signin-recheck-20260604.png`.
+- 2026-06-04: Android account audit before user sign-in showed `Accounts: 0`, confirming there was no signed-in Google Play tester account on the emulator. Store-console human-gated guidance was expanded in `docs/deploy/mobile-store-submission-copy.md` for Data Safety, App Privacy, App Access/App Review notes, EU/trader/legal declarations, content rating, ads declaration, and account deletion URL.
+- 2026-06-04: After the user made an existing Google account available on the emulator, Play internal build `15 (1.0.0)` installed from Google Play. Package verification showed `com.locateflow.mobile`, `versionCode=15`, `versionName=1.0.0`, and `installerPackageName=com.android.vending`.
+- 2026-06-04: The Play-installed app showed a web/Stripe-managed `Individual Monthly` subscription as read-only/manage-on-web, so duplicate native purchase was correctly blocked for that account.
+- 2026-06-04: A clean QA app account completed onboarding through live mobile APIs, opened `More -> Subscription`, and launched the Google Play Billing sheet for `Individual Annual` at `$39.99/year`. Codex stopped before `Subscribe` at this checkpoint because Google Play showed a real saved payment method, not a test instrument. Screenshot saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-google-play-real-payment-sheet.png`. This was resolved later by saving Play Console License testing for `LOCATEFLOW`.
+- 2026-06-04: Play Console License testing verification/addition became the Android paid Billing QA blocker at this checkpoint: available Chrome profiles hit Google re-auth/2FA or signup gates, so Codex did not bypass account verification and no live payment was attempted. This was resolved later after Chrome/console access allowed saving tester list `LOCATEFLOW`.
+- 2026-06-04: Mobile subscription UI polish was added locally: duplicate current `Free Access` plan card is hidden when the summary already shows Free Access, and web/app-store/play-store managed plans now show concise per-card read-only copy. Focused mobile tests and mobile lint/typecheck passed.
+- 2026-06-04: New Android `play-internal` build candidate `97ece373-6c37-4394-8e43-7781cd51781b` was created for versionCode `16`; EAS later reported it as `FINISHED` for commit `3cfd03f`. This is a store-distribution AAB build candidate only, not a Play production rollout.
+- 2026-06-04: Play Console License testing was corrected by selecting and saving tester list `LOCATEFLOW`; the Android purchase sheet changed to the Google Play test card/no-charge subscription flow.
+- 2026-06-04: Android Play Billing test purchase initially succeeded in Google Play but backend verification rejected it with `TEST_PURCHASE_NOT_ALLOWED`; root cause was production-like rejection of Google-verified `testPurchase` responses.
+- 2026-06-04: Fixed Google Play test-purchase handling with production QA allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` and optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`), committed `1d3058a`, pushed it, and DigitalOcean deployment `27ff738b-69e6-4764-9ca7-a680ce2bb1c8` became ACTIVE.
+- 2026-06-04: Post-deploy live smoke passed for production `/api/ready` and `/api/mobile/iap/products`.
+- 2026-06-04: Android build `15` completed Individual Annual purchase through Google Play test card/no-charge flow; the app showed `Individual Annual` as current plan.
+- 2026-06-04: Android build `15` restore purchases returned the expected `Restored` alert.
+- 2026-06-04: Android build `15` cancellation through Google Play completed and the app reflected `CANCEL_AT_PERIOD_END`; no live payment, Play production rollout, or production release action was performed.
+- 2026-06-04: Local mobile copy fix added so `CANCEL_AT_PERIOD_END` summary says `Ends {{date}}` instead of `Renews {{date}}`; focused mobile test, mobile lint, and mobile typecheck passed. This copy fix is local and not yet in Play build `15`.
+- 2026-06-04: EAS build `97ece373-6c37-4394-8e43-7781cd51781b` rechecked as `FINISHED`, Android `versionCode=16`, distribution `STORE`, profile `play-internal`, build page `https://expo.dev/accounts/axtra-solutions-llc/projects/locateflow/builds/97ece373-6c37-4394-8e43-7781cd51781b`; it was not uploaded to Play and no production rollout was performed.
+- 2026-06-04: Final post-Play-Billing validation passed: focused mobile subscription visibility test 1 file / 6 tests, mobile lint/typecheck, focused web IAP tests 2 files / 20 tests, root `pnpm verify:typecheck`, `git diff --check`, production `/api/ready` HTTP 200 ready=true, and production `/api/mobile/iap/products` returned 6 unique Android plus 6 unique iOS product values.
+- 2026-06-04: Brave was restarted with remote debugging on port 9225 and Playwright attached to the already-authenticated Brave operator session instead of using Chrome profiles. Live tabs were accessible for Google Play Console, LocateFlow Admin, and App Store Connect.
+- 2026-06-04: Brave debug automation verified Google Play Console subscriptions: all six Android subscription product IDs were present and each showed 1 active base plan. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-brave-debug-play-subscriptions-20260604.png`.
+- 2026-06-04: Brave debug automation verified Google Play internal testing: active latest release is still `15 (1.0.0)`, available to internal testers, not reviewed; no production rollout was performed. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-brave-debug-play-internal-20260604.png`.
+- 2026-06-04: Brave debug automation verified App Store Connect: LocateFlow remains `iOS 1.0 Waiting for Review`; EU trader status warning is visible and remains a legal/operator action. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-brave-debug-appstore-status-20260604.png`.
+- 2026-06-04: Brave debug automation verified the live admin session and safely read admin subscription state without printing billing IDs. `mobile.qa@locateflow.com` currently reads as Individual `EXPIRED` after reset, and the current live subscription list has no `cancelAtPeriodEnd` / pending-downgrade row to render.
+- 2026-06-04: Brave debug automation verified Play Console App content: `Need attention` is empty and `Actioned` lists 10 declarations, including Data safety and Privacy policy, all ready to send for review. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-brave-debug-play-app-content-actioned-20260604.png`.
+- 2026-06-04: Brave debug automation verified App Store Connect App Privacy: privacy URL is `https://locateflow.com/privacy`, and 12 collected data types are published in categories matching `apps/mobile/MOBILE_DATA_INVENTORY.md`. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-brave-debug-appstore-privacy-20260604.png`.
+- 2026-06-04: Started new Android `play-internal` EAS build `836168b8-3c05-4fee-bd5a-563d54c319e2` from commit `46b10bf`, versionCode `17`, to package the latest `CANCEL_AT_PERIOD_END` copy polish. No Play upload or production rollout was performed.
+- 2026-06-04: User-authorized Family entitlement grant was verified for the visible Google test account: admin API returned `FAMILY` / `ACTIVE`, Android Play-installed build `15 (1.0.0)` was logged in through Google as that account, and `More -> Subscription` rendered `Family`, `ACTIVE`, `Renews July 3, 2026`, plus the web-managed subscription copy. Evidence saved at `C:\Users\Kutay\AppData\Local\Temp\locateflow-family-subscription-mobile-20260604.png`.
+- 2026-06-04: EAS Android `play-internal` build `836168b8-3c05-4fee-bd5a-563d54c319e2` was rechecked and is now `FINISHED` for versionCode `17`; no Play upload or production rollout was performed.
+- 2026-06-04: Production EAS Update group `0bcd90d8-28c5-42af-8805-973234ce61bf` was published and verified for iOS update `019e94fe-efc7-7402-a6f3-a63f961f616f` plus Android update `019e94fe-efc7-74bb-871f-1d47c1465657`, runtime `sdk55-1.0.0`, commit `cba9396`; this applied JS-only mobile logo/fallback polish without a new mobile build or store rollout.

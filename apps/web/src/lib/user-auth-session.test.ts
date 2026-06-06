@@ -74,11 +74,20 @@ vi.mock("@/lib/billing", () => ({
 
 import {
   createUserAuthDiagnostics,
+  generateFingerprint,
   generateMobileFingerprint,
   getUserSession,
   requireDbUserId,
   requireVerifiedUser,
 } from "./user-auth";
+
+async function legacyWebIpFingerprint(ip: string, userAgent: string): Promise<string> {
+  const data = new TextEncoder().encode(`${ip}|${userAgent || "unknown"}`);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 describe("getUserSession duplicate cookies", () => {
   beforeEach(() => {
@@ -224,7 +233,7 @@ describe("getUserSession duplicate cookies", () => {
     expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
   });
 
-  it("does not let the same UA bypass a web fingerprint mismatch from a different IP", async () => {
+  it("keeps new web sessions valid across IP changes when the UA fingerprint matches", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
     mocks.headersGet.mockImplementation((name: string) => {
@@ -238,7 +247,7 @@ describe("getUserSession duplicate cookies", () => {
       payload: {
         userId: "user-1",
         email: "user@example.com",
-        fp: "ip-bound-fingerprint-from-login",
+        fp: await generateFingerprint("198.51.100.10", "Test Browser"),
         fpMode: "web",
       },
     });
@@ -250,15 +259,59 @@ describe("getUserSession duplicate cookies", () => {
     });
     const diagnostics = createUserAuthDiagnostics();
 
-    await expect(getUserSession({ diagnostics })).resolves.toBeNull();
+    await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
+      userId: "user-1",
+      sessionId: "session-valid",
+    });
 
     expect(diagnostics).toMatchObject({
       jwtCandidateValidCount: 1,
       dbSessionFound: true,
-      fingerprintMatched: false,
-      finalFailureCode: "FINGERPRINT_MISMATCH",
+      fingerprintMatched: true,
+      finalFailureCode: null,
     });
-    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps legacy IP-bound web sessions valid across IP changes when the stored UA matches", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      const normalized = name.toLowerCase();
+      if (normalized === "cookie") return "user_session=valid-token";
+      if (normalized === "user-agent") return "Test Browser";
+      if (normalized === "x-forwarded-for") return "203.0.113.10";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: {
+        userId: "user-1",
+        email: "user@example.com",
+        fp: await legacyWebIpFingerprint("198.51.100.10", "Test Browser"),
+        fpMode: "web",
+      },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-legacy-web",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+      ipAddress: "198.51.100.10",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
+      userId: "user-1",
+      sessionId: "session-legacy-web",
+    });
+
+    expect(diagnostics).toMatchObject({
+      jwtCandidateValidCount: 1,
+      dbSessionFound: true,
+      fingerprintMatched: true,
+      finalFailureCode: null,
+    });
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
   });
 
   it("treats legacy web sessions with null userAgent as untrusted on fingerprint mismatch", async () => {

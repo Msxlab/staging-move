@@ -11,7 +11,6 @@ const ALLOWED_APP_REDIRECT_PREFIXES = [
   "/notifications",
   "/help",
   "/documents",
-  "/community",
   "/invitations",
 ] as const;
 

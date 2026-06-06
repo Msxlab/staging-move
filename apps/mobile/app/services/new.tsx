@@ -33,6 +33,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
+import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import {
   getRecommendedProviders,
@@ -43,6 +44,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 
 // Billing cycle option labels are resolved at render time via t() —
@@ -253,6 +255,7 @@ export default function NewServiceScreen() {
     setSaving(true);
     let success = 0;
     let failed = 0;
+    let gateCode: string | null = null;
     for (const [, p] of selectedProviders) {
       const payload: any = {
         addressId: selectedAddress,
@@ -267,7 +270,10 @@ export default function NewServiceScreen() {
         payload.migrationAction = "NEW";
       }
       const res = await api.post("/api/services", payload);
-      if (res.error) failed++; else success++;
+      if (res.error) {
+        failed++;
+        if (res.code && UPSELL_GATE_CODES.includes(res.code) && !gateCode) gateCode = res.code;
+      } else success++;
     }
     if (success > 0 && fromServiceId) {
       try {
@@ -282,7 +288,19 @@ export default function NewServiceScreen() {
     }
     if (failed > 0) {
       hapticError();
-      Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
+      // A plan-limit / inactive-subscription gate gets an Upgrade affordance.
+      if (gateCode) {
+        Alert.alert(
+          t("subscription.upgradeTitle", { defaultValue: "Upgrade needed" }),
+          t("services.limitReached", { defaultValue: "You've reached your plan's service limit. Upgrade to add more." }),
+          [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
+        );
+      } else {
+        Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
+      }
     }
   };
 
@@ -376,7 +394,13 @@ export default function NewServiceScreen() {
   );
 
   const renderProviderAvatar = (provider: ScoredProvider, isSelected: boolean) => {
-    const logoUrl = typeof provider.logoUrl === "string" ? provider.logoUrl.trim() : "";
+    // Resolve to an RN-renderable URL: stored .ico/.svg favicons can't be
+    // decoded by <Image>, so fall back to a PNG favicon from the provider site.
+    const logoUrl =
+      resolveMobileServiceLogoUrl({
+        provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+        website: provider.website,
+      }) ?? "";
     const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
 
     return (
@@ -455,7 +479,24 @@ export default function NewServiceScreen() {
         {/* ── Address Selector (shared) ── */}
         <Text style={styles.sectionLabel}>{t("services.selectAddress")}</Text>
         {addresses.length === 0 ? (
-          <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
+          <View>
+            <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
+            <TouchableOpacity
+              onPress={() => router.push("/addresses/new")}
+              accessibilityRole="button"
+              style={{
+                marginTop: 10,
+                backgroundColor: theme.colors.primary,
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+                {t("addresses.addAddress", { defaultValue: "Add an address" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
             <View style={styles.chipRow}>

@@ -61,7 +61,7 @@ async function main() {
   // Kept in sync by tests/admin-permissions-seed-parity (see admin app).
   // If you add a resource here, also add it there.
   const adminResources = [
-    "users", "subscriptions", "reviews", "providers",
+    "users", "subscriptions", "providers",
     "state_rules", "badges", "documents", "moving_plans", "tickets",
     "audit_logs", "admin_users", "settings",
     "blog", "acquisition_campaigns", "connectors",

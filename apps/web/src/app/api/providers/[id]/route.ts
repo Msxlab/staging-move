@@ -21,6 +21,7 @@ type ProviderRow = {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
   coverages?: Array<{
     state: string | null;
     zipPrefix: string | null;
@@ -126,6 +127,7 @@ function shape(p: ProviderRow, state: string | null) {
     website: p.website,
     phone: p.phone,
     logoUrl: p.logoUrl,
+    affiliateActive: p.affiliateActive === true,
     scope: p.scope,
     states,
     zipCodes,

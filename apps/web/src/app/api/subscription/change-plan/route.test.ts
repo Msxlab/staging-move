@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   getStripePriceIdForPlanAndInterval: vi.fn(),
+  mapStripePriceIdToPlanAndInterval: vi.fn(),
   reconcileSeatsForOwner: vi.fn(),
   subFindUnique: vi.fn(),
   subUpdate: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock("@/lib/billing-config", () => ({
 }));
 vi.mock("@/lib/billing", () => ({
   getStripePriceIdForPlanAndInterval: mocks.getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval: mocks.mapStripePriceIdToPlanAndInterval,
   billingIntervalToCycle: (i: string) => (i === "YEAR" ? "yearly" : "monthly"),
 }));
 vi.mock("@/lib/shared-billing", () => ({
@@ -55,6 +57,7 @@ const FUTURE_UNIX = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
 const PLAN_RANK: Record<string, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
 const PAID_PLANS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
 const INTERVALS = ["MONTH", "YEAR"] as const;
+const FLEXIBLE_BILLING_API_VERSION = "2025-04-30.preview";
 
 const PLAN_CHANGE_MATRIX = PAID_PLANS.flatMap((currentPlan) =>
   INTERVALS.flatMap((currentInterval) =>
@@ -95,6 +98,7 @@ describe("change-plan route", () => {
     mocks.rateLimit.mockResolvedValue({ success: true });
     mocks.getRuntimeConfigValue.mockResolvedValue("sk_test_123");
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_target");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue(null);
     mocks.reconcileSeatsForOwner.mockResolvedValue(undefined);
     mocks.subUpdate.mockResolvedValue({});
     mocks.subsRetrieve.mockResolvedValue({
@@ -207,7 +211,10 @@ describe("change-plan route", () => {
           locateflow_pending_billing_interval: "YEAR",
         }),
       }),
-      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^locateflow:/) }),
+      expect.objectContaining({
+        apiVersion: FLEXIBLE_BILLING_API_VERSION,
+        idempotencyKey: expect.stringMatching(/^locateflow:/),
+      }),
     );
     expect(mocks.subUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
@@ -217,6 +224,83 @@ describe("change-plan route", () => {
         stripeSubscriptionScheduleId: "sched_1",
       }),
     });
+  });
+
+  it("defers a downgrade using the local period end when Stripe retrieve omits period fields", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "PRO",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: "YEAR",
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+    mocks.subsRetrieve.mockResolvedValue({
+      id: "sub_123",
+      items: { data: [{ id: "si_1", price: { id: "price_current" }, quantity: 1 }] },
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "YEAR" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      pendingPlan: "FAMILY",
+      pendingBillingInterval: "YEAR",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).toHaveBeenCalledWith(
+      "sched_1",
+      expect.objectContaining({
+        phases: expect.arrayContaining([
+          expect.objectContaining({ end_date: FUTURE_UNIX }),
+        ]),
+      }),
+      expect.objectContaining({ apiVersion: FLEXIBLE_BILLING_API_VERSION }),
+    );
+  });
+
+  it("uses the current Stripe price mapping when the stored billing interval is missing", async () => {
+    mocks.subFindUnique.mockResolvedValue({
+      userId: "user_1",
+      plan: "PRO",
+      provider: "STRIPE",
+      status: "ACTIVE",
+      billingInterval: null,
+      stripeSubscriptionId: "sub_123",
+      stripePriceId: "price_current",
+      currentPeriodEndsAt: new Date(FUTURE_UNIX * 1000),
+      version: 1,
+    });
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "PRO",
+      billingInterval: "YEAR",
+    });
+    mocks.subsRetrieve.mockResolvedValue({
+      id: "sub_123",
+      items: { data: [{ id: "si_1", price: { id: "price_current" }, quantity: 1 }] },
+      current_period_start: null,
+      current_period_end: null,
+    });
+
+    const res = await POST(req({ targetPlan: "FAMILY", targetInterval: "YEAR" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      applied: "scheduled",
+      plan: "PRO",
+      pendingPlan: "FAMILY",
+      pendingBillingInterval: "YEAR",
+    });
+    expect(mocks.subsUpdate).not.toHaveBeenCalled();
+    expect(mocks.schedUpdate).toHaveBeenCalled();
   });
 
   it("defers a Family to Individual downgrade to period end", async () => {

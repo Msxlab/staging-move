@@ -19,3 +19,14 @@ export function shouldShowMobileSubscriptionPlan({
   if (planKey === "INDIVIDUAL") return true;
   return planKey === currentPlanKey || hasConfiguredNativeSku;
 }
+
+export function shouldRenderMobileSubscriptionPlanCard({
+  planKey,
+  currentPlanKey,
+}: {
+  planKey: PlanKey;
+  currentPlanKey: PlanKey;
+}) {
+  if (planKey === "FREE_TRIAL" && currentPlanKey === "FREE_TRIAL") return false;
+  return true;
+}

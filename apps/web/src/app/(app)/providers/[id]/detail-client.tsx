@@ -13,6 +13,7 @@ import {
   Flag,
   AlertTriangle,
 } from "lucide-react";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
@@ -41,6 +42,7 @@ export interface ProviderDetail {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string;
   coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string;
   coverageNote?: string | null;
@@ -180,6 +182,15 @@ export function ProviderDetailClient({
           >
             Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>
+          {provider.affiliateActive && (
+            <AffiliateCtaButton
+              providerId={provider.id}
+              source="provider_detail"
+              addressId={primaryAddress?.id ?? null}
+              iconClassName="h-4 w-4"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-primary/40 bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15 transition disabled:opacity-60"
+            />
+          )}
           {provider.website && (
             <a
               href={provider.website}

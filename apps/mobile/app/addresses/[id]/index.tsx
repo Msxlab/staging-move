@@ -30,11 +30,27 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import {
+  getCategoryIcon,
+  getCategoryLabel,
+  getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryLabel,
+} from "@/lib/recommendation-engine";
 
 const typeIcons: Record<string, any> = {
   HOME: Home, WORK: Briefcase, VACATION: Palmtree, STORAGE: Package, TEMPORARY: Clock,
 };
+
+function getServiceFallbackIcon(category: string): string {
+  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "•";
+}
+
+function getServiceCategoryLabel(category: string): string {
+  return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
+}
 
 export default function AddressDetailScreen() {
 
@@ -49,9 +65,14 @@ export default function AddressDetailScreen() {
   const [address, setAddress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch_ = useCallback(async () => {
     const res = await api.get<any>(`/api/addresses/${id}`);
+    // Distinguish a real "not found" from a transient network/500 — the latter
+    // must offer retry, not a permanent dead-end.
+    if (res.error) { setError(res.error); return; }
+    setError(null);
     if (res.data) setAddress(res.data.address || res.data);
   }, [id]);
 
@@ -98,12 +119,16 @@ export default function AddressDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("common.notFound")}</Text>
+          <Text style={styles.title}>{error ? t("common.error", { defaultValue: "Error" }) : t("common.notFound")}</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>{t("addresses.notFound")}</Text>
-        </View>
+        {error ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: theme.colors.textTertiary }}>{t("addresses.notFound")}</Text>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -225,10 +250,21 @@ export default function AddressDetailScreen() {
                 onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
               >
                 <View style={styles.serviceRow}>
-                  <Zap size={16} color={theme.colors.cyan.text} />
+                  <ServiceLogoMark
+                    service={s}
+                    fallbackIcon={getServiceFallbackIcon(s.category)}
+                    size={34}
+                    logoSize={26}
+                    borderRadius={11}
+                    backgroundColor={theme.colors.primaryFaded}
+                    borderColor={theme.colors.border}
+                    fallbackFontSize={15}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.serviceName}>{s.providerName || s.provider?.name || t("services.newTitle")}</Text>
-                    <Text style={styles.serviceCat}>{s.category}</Text>
+                    <Text style={styles.serviceCat}>
+                      {t(`categories.${s.category}`, { defaultValue: getServiceCategoryLabel(s.category) })}
+                    </Text>
                   </View>
                   {s.monthlyCost > 0 && (
                     <Text style={styles.serviceCost}>${s.monthlyCost}/mo</Text>

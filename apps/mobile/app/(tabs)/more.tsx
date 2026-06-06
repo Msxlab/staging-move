@@ -16,7 +16,6 @@ import {
   DollarSign,
   Search,
   HelpCircle,
-  Settings,
   ChevronRight,
   Shield,
   Bell,
@@ -24,6 +23,10 @@ import {
   Ticket,
   Building2,
   FileText,
+  Zap,
+  Activity,
+  Users,
+  Download,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
@@ -32,6 +35,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { ThemeSelector } from "@/components/ui/ThemeSelector";
 import { api } from "@/lib/api";
 import { unregisterPushNotifications } from "@/lib/push";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
@@ -86,8 +90,16 @@ export default function MoreScreen() {
         { icon: User, label: t("settings.profile"), route: "/settings/profile" },
         { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
         { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
+        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
+        // Typed-routes generation is stale for this recently-added screen; the
+        // file exists at app/settings/address-changes.tsx so the route is valid.
+        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href },
         { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
-        { icon: Settings, label: t("settings.title"), route: "/settings" },
+        // Workspace + Export were only reachable via a second, redundant
+        // "Settings" screen (the confusing "settings inside settings"). Surface
+        // them here directly and drop that duplicate menu entry.
+        { icon: Users, label: t("settings.workspace", { defaultValue: "Workspace" }), route: "/settings/workspace" as Href },
+        { icon: Download, label: t("settings.export"), route: "/settings/export" },
       ],
     },
     {
@@ -167,6 +179,12 @@ export default function MoreScreen() {
             </View>
           </View>
         ))}
+
+        {/* Appearance (theme) — was only on the now-removed second Settings
+            screen; surfaced here so the More tab is the single settings hub. */}
+        <View style={{ marginBottom: 16 }}>
+          <ThemeSelector />
+        </View>
 
         {/* Language selector — mirrored to User.preferredLocale via
             /api/user/locale so the choice follows the user. */}

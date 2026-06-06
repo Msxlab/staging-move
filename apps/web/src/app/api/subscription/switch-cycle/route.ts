@@ -11,6 +11,7 @@ import {
 import {
   billingIntervalToCycle,
   getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval,
   type StripeBillingInterval,
 } from "@/lib/billing";
 import { captureMessage } from "@/lib/sentry";
@@ -27,6 +28,10 @@ import {
   getStripeSubscriptionCurrentPeriodEndUnix,
   getStripeSubscriptionCurrentPeriodStartUnix,
 } from "@/lib/stripe-subscription-period";
+import {
+  STRIPE_API_VERSION,
+  withFlexibleBillingApiVersion,
+} from "@/lib/stripe-api-version";
 
 // POST /api/subscription/switch-cycle
 // Body: { targetInterval: "MONTH" | "YEAR", acceptedSubscriptionTerms: true }
@@ -35,6 +40,12 @@ import {
 // yearly billing. Monthly -> yearly is an immediate upgrade with Stripe
 // proration. Yearly -> monthly is a deferred downgrade: keep the already
 // paid annual access until current_period_end, then start monthly billing.
+function dateToUnixSeconds(date: Date | string | null | undefined): number | null {
+  if (!date) return null;
+  const time = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  return Number.isFinite(time) && time > 0 ? Math.floor(time / 1000) : null;
+}
+
 function scheduleIdFromStripeSub(stripeSub: Stripe.Subscription) {
   const schedule = stripeSub.schedule;
   if (!schedule) return null;
@@ -48,9 +59,15 @@ async function retrieveOrCreateSchedule(
 ) {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
   if (scheduleId) {
-    return stripe.subscriptionSchedules.retrieve(scheduleId);
+    return stripe.subscriptionSchedules.retrieve(
+      scheduleId,
+      withFlexibleBillingApiVersion(),
+    );
   }
-  return stripe.subscriptionSchedules.create({ from_subscription: stripeSub.id });
+  return stripe.subscriptionSchedules.create(
+    { from_subscription: stripeSub.id },
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 async function releaseAttachedSchedule(
@@ -60,7 +77,10 @@ async function releaseAttachedSchedule(
 ) {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
   if (!scheduleId) return;
-  await stripe.subscriptionSchedules.release(scheduleId);
+  await stripe.subscriptionSchedules.release(
+    scheduleId,
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 type LocalSubscriptionForSwitch = {
@@ -217,7 +237,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (subscription.billingInterval === targetInterval) {
+    const mappedCurrentPrice = await mapStripePriceIdToPlanAndInterval(subscription.stripePriceId);
+    const currentInterval: StripeBillingInterval =
+      subscription.billingInterval === "YEAR" || subscription.billingInterval === "MONTH"
+        ? subscription.billingInterval
+        : mappedCurrentPrice?.billingInterval || "MONTH";
+
+    if (currentInterval === targetInterval) {
       if (subscription.pendingBillingInterval === targetInterval) {
         return NextResponse.json(
           { error: "This billing cycle change is already scheduled." },
@@ -244,7 +270,7 @@ export async function POST(request: NextRequest) {
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: STRIPE_API_VERSION });
 
     // Load the subscription so we know which item to swap. A LocateFlow
     // subscription has exactly one line item (the plan), but we look it up
@@ -262,8 +288,10 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
-    if (subscription.billingInterval === "YEAR" && targetInterval === "MONTH") {
-      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
+    if (currentInterval === "YEAR" && targetInterval === "MONTH") {
+      const periodEndUnix =
+        getStripeSubscriptionCurrentPeriodEndUnix(stripeSub) ||
+        dateToUnixSeconds(subscription.currentPeriodEndsAt);
       const periodEnd = periodEndUnix
         ? new Date(periodEndUnix * 1000)
         : subscription.currentPeriodEndsAt;
@@ -334,14 +362,14 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
-        {
+        withFlexibleBillingApiVersion({
           idempotencyKey: buildStripeIdempotencyKey([
             "subscription-schedule",
             schedule.id,
             "YEAR-to-MONTH",
             String(periodEndUnix),
           ]),
-        },
+        }),
       );
 
       // Rollback path: the Stripe schedule is live, but if our DB cannot
@@ -373,7 +401,10 @@ export async function POST(request: NextRequest) {
         if (!isMissingDbColumnError(error)) throw error;
         warnSchemaCompatibilityFallback("subscription:switch-cycle-pending-write", error);
         try {
-          await stripe.subscriptionSchedules.release(schedule.id);
+          await stripe.subscriptionSchedules.release(
+            schedule.id,
+            withFlexibleBillingApiVersion(),
+          );
         } catch (rollbackError) {
           captureMessage(
             `[SWITCH_CYCLE] Failed to release orphaned schedule ${schedule.id}: ${

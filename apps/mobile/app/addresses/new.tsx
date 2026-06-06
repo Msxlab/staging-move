@@ -22,6 +22,7 @@ import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type 
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 const US_STATES = [
@@ -111,7 +112,21 @@ export default function NewAddressScreen() {
     setLoading(false);
     if (res.error) {
       hapticError();
-      Alert.alert(t("common.retry"), res.error);
+      // Plan-limit / inactive-subscription gates carry a code + an upgrade
+      // message — turn those into an upsell with an Upgrade button instead of a
+      // generic "Try again" that dead-ends the user.
+      if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
+        Alert.alert(
+          t("subscription.upgradeTitle", { defaultValue: "Upgrade needed" }),
+          res.error,
+          [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
+        );
+      } else {
+        Alert.alert(t("common.retry"), res.error);
+      }
     } else {
       hapticSuccess();
       router.back();

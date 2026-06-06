@@ -7,6 +7,7 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
+import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   decryptServiceSensitiveFields,
   encryptServiceSensitiveFields,
@@ -16,7 +17,13 @@ import {
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
-import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
+import {
+  assertWorkspaceAction,
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+} from "@/lib/workspace-data-scope";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 const SERVICE_CREATE_RATE_LIMIT = { limit: 120, windowSeconds: 300 } as const;
@@ -52,6 +59,8 @@ function limitErrorCode(code?: string) {
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "service.viewBasic", { resourceUserId: userId });
     const { searchParams } = new URL(request.url);
     const addressId = searchParams.get("addressId")?.slice(0, 50);
     // Stored categories are normalized to trimmed-uppercase on create, so the
@@ -59,7 +68,10 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")?.slice(0, 50).trim().toUpperCase();
     const search = searchParams.get("search")?.slice(0, 200);
 
-    const where: any = activeTrackedServiceWhere(userId);
+    const where: any = activeTrackedServiceWhereForScope(
+      { userId, workspaceId: scope.workspaceId },
+      scope.memberRole === "CHILD" ? { userId } : {},
+    );
     if (addressId) where.addressId = addressId;
     if (category) where.category = category;
     if (search) {
@@ -83,12 +95,16 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Decrypt sensitive fields for response
-    const decryptedServices = services.map((s: any) => decryptServiceSensitiveFields(s));
+    const decryptedServices = await enrichServicesWithProviderCatalog(
+      services.map((s: any) => decryptServiceSensitiveFields(s)),
+    );
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch services:", error);
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 });
   }
@@ -98,6 +114,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireVerifiedUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "service.create", { resourceUserId: userId });
 
     // Allow legitimate bulk provider selection without removing abuse protection.
     const rlKey = getRateLimitKey(request, "svc:create");
@@ -110,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Plan limit check
-    const limitCheck = await canCreateService(userId);
+    const limitCheck = await canCreateService(userId, planLimitScopeForDataScope(scope));
     if (!limitCheck.allowed) {
       let subscription:
         | {
@@ -209,14 +227,11 @@ export async function POST(request: NextRequest) {
     }
 
     const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
-    if (!address) {
+    if (!address || address.deletedAt) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
-    if (address.userId !== userId) {
+    if (scope.workspaceId ? address.workspaceId !== scope.workspaceId : address.userId !== userId) {
       return serviceError("FORBIDDEN", "You don't have permission to add services to this address", 403);
-    }
-    if (address.deletedAt) {
-      return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
     // Validate providerId if supplied
@@ -238,6 +253,7 @@ export async function POST(request: NextRequest) {
 
     const duplicate = await findDuplicateTrackedService(prisma, {
       userId,
+      workspaceId: scope.workspaceId,
       addressId: validated.addressId,
       category: normalizedCategory,
       providerName: validated.providerName,
@@ -257,7 +273,8 @@ export async function POST(request: NextRequest) {
     const service = await prisma.service.create({
       data: {
         ...encryptedData,
-        userId: address.userId,
+        userId,
+        ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
         contractEndDate: validated.contractEndDate ? new Date(validated.contractEndDate) : undefined,
         activatedAt: new Date(),
       },
@@ -290,12 +307,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const moveTaskSync = await safeSyncMoveTasksForAddress(userId, validated.addressId);
+    const moveTaskSync = await safeSyncMoveTasksForAddress(userId, validated.addressId, { workspaceId: scope.workspaceId });
 
     return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync }, { status: 201 });
   } catch (error: any) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

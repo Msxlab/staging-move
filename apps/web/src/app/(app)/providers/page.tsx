@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { ProvidersClient, type ProviderItem, type AddressOption } from "./providers-client";
 
 // Page is user-scoped (user's addresses drive the view) — dynamic is
@@ -38,6 +40,7 @@ type ProviderRow = {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
 };
 
 function parseJsonArray(value: string): string[] {
@@ -51,10 +54,12 @@ function parseJsonArray(value: string): string[] {
 
 export default async function ProvidersPage() {
   const userId = await requireDbUserId();
+  const request = new Request("http://locateflow.local", { headers: await headers() });
+  const scope = await resolveWorkspaceDataScope(request, userId);
 
   const [addresses, providerRows] = await Promise.all([
     prisma.address.findMany({
-      where: { userId, deletedAt: null },
+      where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
       orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }],
     }),
     getActiveProviders() as unknown as Promise<ProviderRow[]>,
@@ -86,6 +91,7 @@ export default async function ProvidersPage() {
     popularityScore: p.popularityScore || 0,
     displayOrder: p.displayOrder || 0,
     userCount: p.userCount || 0,
+    affiliateActive: p.affiliateActive === true,
   }));
 
   const primaryAddress = addressOptions.find((a) => a.isPrimary) || addressOptions[0] || null;

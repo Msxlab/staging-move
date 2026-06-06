@@ -79,11 +79,11 @@ export async function GET() {
     await requirePermission("connectors", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const [connectors, dispatchCounts, dispatchByConnectorRows, consentRows, recentFailures] = await Promise.all([
       prisma.connectorConfig.findMany({ orderBy: { connectorKey: "asc" } }),
-      prisma.connectorDispatch.groupBy({ by: ["status"], _count: { _all: true } }),
-      prisma.connectorDispatch.groupBy({ by: ["connectorKey", "status"], _count: { _all: true } }),
+      prisma.connectorDispatch.groupBy({ by: ["status"], where: { isShadow: false }, _count: { _all: true } }),
+      prisma.connectorDispatch.groupBy({ by: ["connectorKey", "status"], where: { isShadow: false }, _count: { _all: true } }),
       prisma.partnerConsent.groupBy({ by: ["connectorKey", "status"], _count: { _all: true } }),
       prisma.connectorDispatch.findMany({
-        where: { lastErrorCode: { not: null } },
+        where: { lastErrorCode: { not: null }, isShadow: false },
         select: { connectorKey: true, lastErrorCode: true, status: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: RECENT_FAILURE_SCAN,

@@ -33,7 +33,7 @@ export interface CanonicalAddress {
  * same value flows to every connector — connectors never pick the address.
  */
 export interface CanonicalAddressChange {
-  /** Originating AddressChangeEvent id — used for idempotency and audit. */
+  /** Originating address-change reference, used for idempotency and audit. */
   eventId: string;
   /** Address moved away from; null on a user's first-ever address. */
   from: CanonicalAddress | null;
@@ -171,6 +171,13 @@ export interface ConnectorContext {
   /** Allowlist + timeout + circuit-breaker wrapped HTTP client. */
   http: ConnectorHttpClient;
   logger: ConnectorLogger;
+  /**
+   * SHADOW dry-run: when true, the executor runs the full pre-flight (field
+   * validation, push-capability, request mapping) but SKIPS the side-effecting
+   * push — so a new connector can be validated against the real traffic shape
+   * with zero partner impact before ROLLOUT/GA.
+   */
+  dryRun?: boolean;
   /** Cooperative cancellation honored across retries and timeouts. */
   signal?: AbortSignal;
 }

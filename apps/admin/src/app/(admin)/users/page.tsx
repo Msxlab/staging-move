@@ -28,7 +28,7 @@ const USER_COLUMNS = [
   { key: "health", label: "Health", defaultVisible: true },
   { key: "addresses", label: "Addresses", defaultVisible: true },
   { key: "services", label: "Services", defaultVisible: true },
-  { key: "reviews", label: "Reviews", defaultVisible: false },
+  { key: "serviceNotes", label: "Service Notes", defaultVisible: false },
   { key: "moves", label: "Moves", defaultVisible: true },
   { key: "joined", label: "Joined" },
   { key: "deletedAt", label: "Blocked/Deleted", defaultVisible: true },
@@ -47,7 +47,7 @@ interface User {
   lastActivityAt: string | null;
   subscription: { plan: string; status: string; trialEndsAt: string | null } | null;
   profile: { familyStatus: string | null; hasChildren: boolean } | null;
-  _count: { addresses: number; services: number; providerReviews: number; movingPlans: number };
+  _count: { addresses: number; services: number; serviceNotes: number; movingPlans: number };
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -80,13 +80,13 @@ export default function UsersPage() {
   const cols = useColumnVisibility({
     storageKey: "admin.users.cols",
     // Bump version when adding columns so the saved defaults migrate.
-    version: 3,
+    version: 4,
     columns: USER_COLUMNS,
   });
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   const [accountStatus, setAccountStatus] = useState<"active" | "deleted" | "all">("active");
-  const [filters, setFilters] = useState({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState({ plan: "", subStatus: "", hasServiceNotes: "", hasMoving: "", dateFrom: "", dateTo: "" });
   const [pendingDelete, setPendingDelete] = useState<
     | { type: "single"; userId: string; email: string }
     | { type: "bulk"; count: number }
@@ -109,7 +109,7 @@ export default function UsersPage() {
       });
       if (filters.plan) params.set("plan", filters.plan);
       if (filters.subStatus) params.set("subStatus", filters.subStatus);
-      if (filters.hasReviews) params.set("hasReviews", filters.hasReviews);
+      if (filters.hasServiceNotes) params.set("hasServiceNotes", filters.hasServiceNotes);
       if (filters.hasMoving) params.set("hasMoving", filters.hasMoving);
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
@@ -234,7 +234,7 @@ export default function UsersPage() {
   }
 
   function clearFilters() {
-    setFilters({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
+    setFilters({ plan: "", subStatus: "", hasServiceNotes: "", hasMoving: "", dateFrom: "", dateTo: "" });
     setAccountStatus("active");
     bulk.clear();
     setPage(1);
@@ -397,8 +397,8 @@ export default function UsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Has Reviews</label>
-              <select value={filters.hasReviews} onChange={(e) => { setFilters({ ...filters, hasReviews: e.target.value }); setPage(1); }} className={inputCls}>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Has Service Notes</label>
+              <select value={filters.hasServiceNotes} onChange={(e) => { setFilters({ ...filters, hasServiceNotes: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">Any</option>
                 <option value="true">Yes</option>
               </select>
@@ -455,7 +455,7 @@ export default function UsersPage() {
               {cols.isVisible("health") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Health</th>}
               {cols.isVisible("addresses") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Addr</th>}
               {cols.isVisible("services") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Svc</th>}
-              {cols.isVisible("reviews") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Rev</th>}
+              {cols.isVisible("serviceNotes") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Notes</th>}
               {cols.isVisible("moves") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Moves</th>}
               {cols.isVisible("joined") && (
                 <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground cursor-pointer" onClick={() => toggleSort("createdAt")}>
@@ -544,7 +544,7 @@ export default function UsersPage() {
                   )}
                   {cols.isVisible("addresses") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.addresses}</td>}
                   {cols.isVisible("services") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.services}</td>}
-                  {cols.isVisible("reviews") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.providerReviews}</td>}
+                  {cols.isVisible("serviceNotes") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.serviceNotes}</td>}
                   {cols.isVisible("moves") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.movingPlans}</td>}
                   {cols.isVisible("joined") && <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>}
                   {cols.isVisible("deletedAt") && (

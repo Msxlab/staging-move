@@ -11,6 +11,7 @@ import {
 import {
   billingIntervalToCycle,
   getStripePriceIdForPlanAndInterval,
+  mapStripePriceIdToPlanAndInterval,
   type StripeBillingInterval,
 } from "@/lib/billing";
 import { isPaidBillingPlan, type PaidBillingPlan } from "@/lib/shared-billing";
@@ -29,6 +30,10 @@ import {
   getStripeSubscriptionCurrentPeriodEndUnix,
   getStripeSubscriptionCurrentPeriodStartUnix,
 } from "@/lib/stripe-subscription-period";
+import {
+  STRIPE_API_VERSION,
+  withFlexibleBillingApiVersion,
+} from "@/lib/stripe-api-version";
 
 // POST /api/subscription/change-plan
 // Body: {
@@ -48,6 +53,12 @@ import {
 
 const TIER_RANK: Record<string, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
 
+function dateToUnixSeconds(date: Date | string | null | undefined): number | null {
+  if (!date) return null;
+  const time = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  return Number.isFinite(time) && time > 0 ? Math.floor(time / 1000) : null;
+}
+
 function scheduleIdFromStripeSub(stripeSub: Stripe.Subscription): string | null {
   const schedule = stripeSub.schedule;
   if (!schedule) return null;
@@ -61,7 +72,10 @@ async function releaseAttachedSchedule(
 ): Promise<void> {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
   if (!scheduleId) return;
-  await stripe.subscriptionSchedules.release(scheduleId);
+  await stripe.subscriptionSchedules.release(
+    scheduleId,
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 async function retrieveOrCreateSchedule(
@@ -70,8 +84,16 @@ async function retrieveOrCreateSchedule(
   existingScheduleId?: string | null,
 ): Promise<Stripe.SubscriptionSchedule> {
   const scheduleId = existingScheduleId || scheduleIdFromStripeSub(stripeSub);
-  if (scheduleId) return stripe.subscriptionSchedules.retrieve(scheduleId);
-  return stripe.subscriptionSchedules.create({ from_subscription: stripeSub.id });
+  if (scheduleId) {
+    return stripe.subscriptionSchedules.retrieve(
+      scheduleId,
+      withFlexibleBillingApiVersion(),
+    );
+  }
+  return stripe.subscriptionSchedules.create(
+    { from_subscription: stripeSub.id },
+    withFlexibleBillingApiVersion(),
+  );
 }
 
 interface LocalSub {
@@ -212,8 +234,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const currentPlan = String(subscription.plan || "INDIVIDUAL");
-    const currentInterval: StripeBillingInterval = subscription.billingInterval === "YEAR" ? "YEAR" : "MONTH";
+    const mappedCurrentPrice = await mapStripePriceIdToPlanAndInterval(subscription.stripePriceId);
+    const currentPlan = isPaidBillingPlan(subscription.plan)
+      ? subscription.plan
+      : mappedCurrentPrice?.plan || "INDIVIDUAL";
+    const currentInterval: StripeBillingInterval =
+      subscription.billingInterval === "YEAR" || subscription.billingInterval === "MONTH"
+        ? subscription.billingInterval
+        : mappedCurrentPrice?.billingInterval || "MONTH";
     const targetInterval = explicitInterval || currentInterval;
 
     if (targetPlan === currentPlan && targetInterval === currentInterval) {
@@ -231,7 +259,7 @@ export async function POST(request: NextRequest) {
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: STRIPE_API_VERSION });
 
     const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
     const primaryItem = subscription.stripePriceId
@@ -251,7 +279,9 @@ export async function POST(request: NextRequest) {
       (targetRank === currentRank && currentInterval === "YEAR" && targetInterval === "MONTH");
 
     if (isReduction) {
-      const periodEndUnix = getStripeSubscriptionCurrentPeriodEndUnix(stripeSub);
+      const periodEndUnix =
+        getStripeSubscriptionCurrentPeriodEndUnix(stripeSub) ||
+        dateToUnixSeconds(subscription.currentPeriodEndsAt);
       const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : subscription.currentPeriodEndsAt;
       // No period left → nothing to defer; apply now so the customer actually
       // moves to the lower plan instead of silently auto-renewing the old one.
@@ -296,14 +326,14 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
-        {
+        withFlexibleBillingApiVersion({
           idempotencyKey: buildStripeIdempotencyKey([
             "subscription-change-plan-schedule",
             schedule.id,
             `${currentPlan}-${currentInterval}->${targetPlan}-${targetInterval}`,
             String(periodEndUnix),
           ]),
-        },
+        }),
       );
 
       // Track the scheduled change locally. The plan stays current until the
@@ -332,7 +362,10 @@ export async function POST(request: NextRequest) {
         if (!isMissingDbColumnError(error)) throw error;
         warnSchemaCompatibilityFallback("subscription:change-plan-schedule-write", error);
         try {
-          await stripe.subscriptionSchedules.release(schedule.id);
+          await stripe.subscriptionSchedules.release(
+            schedule.id,
+            withFlexibleBillingApiVersion(),
+          );
         } catch (rollbackError) {
           captureMessage(
             `[CHANGE_PLAN] Failed to release orphaned schedule ${schedule.id}: ${

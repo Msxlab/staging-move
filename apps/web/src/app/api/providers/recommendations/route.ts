@@ -14,12 +14,15 @@ import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tier
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
 import { getCommunityPopularity } from "@/lib/community-popularity";
+import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
 // Returns tiered clusters with "next critical actions" based on what user already has
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
 
     const rl = await enforceRateLimitPolicy(request, "provider_recommendations", {
       userId,
@@ -45,10 +48,22 @@ export async function GET(request: NextRequest) {
 
     const [profile, addresses, services, movingPlan] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
-      prisma.address.findMany({ where: { userId } }),
-      prisma.service.findMany({ where: { userId, isActive: true }, select: { providerName: true, category: true, providerId: true } }),
+      prisma.address.findMany({
+        where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
+      }),
+      prisma.service.findMany({
+        where: activeTrackedServiceWhereForScope(
+          { userId, workspaceId: scope.workspaceId },
+          scope.memberRole === "CHILD" ? { userId } : {},
+        ),
+        select: { providerName: true, category: true, providerId: true },
+      }),
       prisma.movingPlan.findFirst({
-        where: { userId, status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] } },
+        where: scopedRecordWhere(
+          scope,
+          { deletedAt: null, status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] } },
+          { childSelfOnly: true },
+        ),
         orderBy: { moveDate: "asc" },
       }),
     ]);
@@ -136,6 +151,7 @@ export async function GET(request: NextRequest) {
       popularityScore: p.popularityScore || 0,
       displayOrder: p.displayOrder || 0,
       userCount: p.userCount || 0,
+      affiliateActive: Boolean((p as { affiliateActive?: boolean }).affiliateActive),
       coverageModel: p.coverageModel || "state",
       coverageMatchLevel: getProviderMatchLevelFromDb(p, {
         state: fallbackState,

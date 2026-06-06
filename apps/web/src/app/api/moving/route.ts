@@ -12,6 +12,12 @@ import {
   normalizeMovingState,
   validateMovingAddressStates,
 } from "@/lib/moving-address-validation";
+import {
+  assertWorkspaceAction,
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -28,11 +34,13 @@ function addressesMatch(
 }
 
 // GET /api/moving
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "address.view", { resourceUserId: userId });
     const plans = await prisma.movingPlan.findMany({
-      where: { userId, deletedAt: null },
+      where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
       include: {
         fromAddress: { select: { street: true, city: true, state: true, zip: true } },
         toAddress: { select: { street: true, city: true, state: true, zip: true } },
@@ -54,6 +62,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAppMutationUser();
+    const scope = await resolveWorkspaceDataScope(request, userId);
+    assertWorkspaceAction(scope, "address.create", { resourceUserId: userId });
 
     // Rate limit: 10 plans per minute
     const rlKey = getRateLimitKey(request, "moving:create");
@@ -70,12 +80,12 @@ export async function POST(request: NextRequest) {
     const needsNewDestinationAddress = Boolean(validated.destinationAddress);
 
     // Plan limit check
-    const limitCheck = await canCreateMovingPlan(userId);
+    const limitCheck = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
     if (!limitCheck.allowed) {
       return entitlementErrorResponse(limitCheck, "MOVING_PLAN_LIMIT_REACHED");
     }
     if (needsNewDestinationAddress) {
-      const addressLimitCheck = await canCreateMovingDestinationAddress(userId);
+      const addressLimitCheck = await canCreateMovingDestinationAddress(userId, planLimitScopeForDataScope(scope));
       if (!addressLimitCheck.allowed) {
         return entitlementErrorResponse(addressLimitCheck, "ADDRESS_LIMIT_REACHED");
       }
@@ -87,14 +97,20 @@ export async function POST(request: NextRequest) {
     }
 
     const fromAddress = await prisma.address.findUnique({ where: { id: validated.fromAddressId } });
-    if (!fromAddress || fromAddress.userId !== userId || fromAddress.deletedAt) {
+    if (!fromAddress || fromAddress.deletedAt) {
+      return NextResponse.json({ error: "Origin address not found" }, { status: 404 });
+    }
+    if (scope.workspaceId ? fromAddress.workspaceId !== scope.workspaceId : fromAddress.userId !== userId) {
       return NextResponse.json({ error: "Origin address not found" }, { status: 404 });
     }
 
     let toAddress: { id?: string; street: string; city: string; state: string; zip: string } | null = null;
     if (validated.toAddressId) {
       const existingDestination = await prisma.address.findUnique({ where: { id: validated.toAddressId } });
-      if (!existingDestination || existingDestination.userId !== userId || existingDestination.deletedAt) {
+      if (!existingDestination || existingDestination.deletedAt) {
+        return NextResponse.json({ error: "Destination address not found" }, { status: 404 });
+      }
+      if (scope.workspaceId ? existingDestination.workspaceId !== scope.workspaceId : existingDestination.userId !== userId) {
         return NextResponse.json({ error: "Destination address not found" }, { status: 404 });
       }
       if (addressesMatch(fromAddress, existingDestination)) {
@@ -142,6 +158,7 @@ export async function POST(request: NextRequest) {
               : validated.destinationAddress.formattedAddress,
             isPrimary: false,
             userId,
+            ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
             startDate: new Date(validated.destinationAddress.startDate),
             endDate: validated.destinationAddress.endDate ? new Date(validated.destinationAddress.endDate) : undefined,
           },
@@ -156,6 +173,7 @@ export async function POST(request: NextRequest) {
       const created = await tx.movingPlan.create({
         data: {
           userId,
+          ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
           fromAddressId: validated.fromAddressId,
           toAddressId: destinationAddressId,
           moveDate: new Date(validated.moveDate),
@@ -167,7 +185,9 @@ export async function POST(request: NextRequest) {
       return { plan: created, destinationAddressId };
     });
 
-    const moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+    const moveTaskSync = scope.workspaceId
+      ? await syncMoveTasksForPlans(userId, [plan.id], { workspaceId: scope.workspaceId })
+      : await syncMoveTasksForPlans(userId, [plan.id]);
 
     return NextResponse.json({ plan, destinationAddressId, moveTaskSync }, { status: 201 });
   } catch (error: any) {

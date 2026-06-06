@@ -1,12 +1,12 @@
 ﻿import React, { useMemo } from "react";
-import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
+import { View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { ChevronRight, MapPin, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
-import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import {
   getLocalizedCoverageLabel,
   getLocalizedCoverageMessage,
@@ -26,6 +26,8 @@ export type ProviderCardData = {
   subCategory?: string | null;
   description?: string | null;
   logoUrl?: string | null;
+  website?: string | null;
+  affiliateActive?: boolean;
   scope?: "FEDERAL" | "STATE" | string | null;
   states?: string[] | null;
   tags?: string[] | null;
@@ -69,7 +71,13 @@ export function ProviderCard({
   const fullStyles = useMemo(() => makeFullStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const iconEmoji = getCategoryIcon(provider.category);
-  const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  // Render via the shared ServiceLogoMark so this card uses the SAME tested
+  // fallback chain (renderable-URL filter + onError advance + category-emoji
+  // fallback + a11y label) as the services screen — never a blank box.
+  const logoService = {
+    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+    website: provider.website,
+  };
   const trust = provider.trust || getProviderTrustSummary(provider);
   const categoryLabel = t(`categories.${provider.category}`, { defaultValue: getCategoryLabel(provider.category) });
   const description = getLocalizedProviderDescription(t, i18n.language, provider);
@@ -87,13 +95,16 @@ export function ProviderCard({
         accessibilityHint={description || categoryLabel}
       >
         <View style={compactStyles.row}>
-          {hasLogo ? (
-            <Image source={{ uri: provider.logoUrl as string }} style={compactStyles.logo} resizeMode="contain" />
-          ) : (
-            <View style={compactStyles.iconWrap}>
-              <CategoryIcon emoji={iconEmoji} size={18} color={theme.colors.primary} />
-            </View>
-          )}
+          <ServiceLogoMark
+            service={logoService}
+            fallbackIcon={iconEmoji}
+            size={36}
+            logoSize={30}
+            borderRadius={10}
+            backgroundColor={theme.colors.primaryFaded}
+            borderColor="rgba(127, 182, 232,0.2)"
+            fallbackFontSize={16}
+          />
           {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         </View>
 
@@ -134,13 +145,16 @@ export function ProviderCard({
       accessibilityHint={description || categoryLabel}
     >
       <View style={fullStyles.top}>
-        {hasLogo ? (
-          <Image source={{ uri: provider.logoUrl as string }} style={fullStyles.logo} resizeMode="contain" />
-        ) : (
-          <View style={fullStyles.iconWrap}>
-            <CategoryIcon emoji={iconEmoji} size={20} color={theme.colors.primary} />
-          </View>
-        )}
+        <ServiceLogoMark
+          service={logoService}
+          fallbackIcon={iconEmoji}
+          size={40}
+          logoSize={32}
+          borderRadius={12}
+          backgroundColor={theme.colors.primaryFaded}
+          borderColor="rgba(127, 182, 232,0.2)"
+          fallbackFontSize={18}
+        />
         <View style={{ flex: 1 }}>
           <Text style={fullStyles.name} numberOfLines={1}>
             {provider.name}

@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryKey,
@@ -60,6 +61,7 @@ export interface ProviderItem {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  affiliateActive?: boolean;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string;
   coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string;
   coverageNote?: string | null;
@@ -379,6 +381,11 @@ export function ProvidersClient({
                   {p.explanation?.reason && (
                     <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{p.explanation.reason}</p>
                   )}
+                  {p.affiliateActive && (
+                    <div className="mt-2">
+                      <AffiliateCtaButton providerId={p.id} source="recommendation" stopPropagation />
+                    </div>
+                  )}
                       </>
                     );
                   })()}
@@ -527,6 +534,11 @@ export function ProvidersClient({
                     </span>
                   ) : null}
                 </div>
+                {p.affiliateActive && (
+                  <div className="mt-2.5">
+                    <AffiliateCtaButton providerId={p.id} source="providers" stopPropagation />
+                  </div>
+                )}
               </div>
                   </>
                 );

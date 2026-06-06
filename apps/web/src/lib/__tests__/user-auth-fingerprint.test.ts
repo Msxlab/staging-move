@@ -5,16 +5,22 @@ import {
 } from "../user-auth";
 
 describe("fingerprint generators", () => {
-  it("web fingerprint is stable for same IP+UA", async () => {
+  it("web fingerprint is stable for the same UA", async () => {
     const a = await generateFingerprint("1.2.3.4", "Chrome/123");
     const b = await generateFingerprint("1.2.3.4", "Chrome/123");
     expect(a).toBe(b);
     expect(a).toHaveLength(64);
   });
 
-  it("web fingerprint changes when IP changes", async () => {
+  it("web fingerprint is stable across IP changes", async () => {
     const a = await generateFingerprint("1.2.3.4", "Chrome/123");
     const b = await generateFingerprint("5.6.7.8", "Chrome/123");
+    expect(a).toBe(b);
+  });
+
+  it("web fingerprint changes when UA changes", async () => {
+    const a = await generateFingerprint("1.2.3.4", "Chrome/123");
+    const b = await generateFingerprint("1.2.3.4", "Firefox/123");
     expect(a).not.toBe(b);
   });
 

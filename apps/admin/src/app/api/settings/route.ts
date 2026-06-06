@@ -40,10 +40,12 @@ const grantPremiumSchema = z
   .object({
     userId: z.string().min(1).max(40).optional(),
     email: z.string().email().max(254).optional(),
-    // FAMILY/BUSINESS are not real billing tiers — only INDIVIDUAL is in
-    // BILLING_PLAN_DEFINITIONS. Allowing them here would write a value
-    // the read side silently downgrades to FREE_TRIAL.
-    plan: z.literal("INDIVIDUAL").optional(),
+    // FAMILY/PRO are admin-grantable plans (BILLING_PLAN_DEFINITIONS); the read
+    // side resolves them like the user-detail grant does. Self-serve Stripe
+    // purchase additionally needs STRIPE_PRICE_* env, but a manual admin grant
+    // does not. Keeping this to INDIVIDUAL-only diverged from the user-detail
+    // grant UI, which already supports Family/Pro.
+    plan: z.enum(["INDIVIDUAL", "FAMILY", "PRO"]).optional(),
     // durationDays is required: an admin manual premium grant must always
     // have an explicit expiration. premiumUntil is the entitlement gate;
     // a null expiration grants permanent premium silently.
