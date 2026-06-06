@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 
+// channel:type must match what the reminder crons read (see
+// notification-preferences.ts WEB_NOTIFICATION_PREFERENCE_DEFINITIONS) so a
+// toggle here is actually honored by bill/overdue/contract delivery.
 const MOBILE_NOTIFICATION_PREFERENCES = [
   { key: "emailTaskReminders", channel: "EMAIL", type: "TASK_REMINDER", enabled: true, frequency: "IMMEDIATE" },
-  { key: "emailWeeklyDigest", channel: "EMAIL", type: "WEEKLY_DIGEST", enabled: false, frequency: "WEEKLY" },
+  { key: "emailBillReminders", channel: "EMAIL", type: "BILL_REMINDER", enabled: true, frequency: "IMMEDIATE" },
+  { key: "emailBillOverdue", channel: "EMAIL", type: "BILL_OVERDUE", enabled: true, frequency: "IMMEDIATE" },
+  { key: "emailContractExpiring", channel: "EMAIL", type: "CONTRACT_EXPIRY", enabled: true, frequency: "IMMEDIATE" },
   { key: "emailMoveAlerts", channel: "EMAIL", type: "MOVE_ALERT", enabled: true, frequency: "IMMEDIATE" },
+  { key: "emailWeeklyDigest", channel: "EMAIL", type: "WEEKLY_DIGEST", enabled: false, frequency: "WEEKLY" },
   { key: "pushTaskReminders", channel: "PUSH", type: "TASK_REMINDER", enabled: true, frequency: "IMMEDIATE" },
+  { key: "pushBillReminders", channel: "PUSH", type: "BILL_REMINDER", enabled: true, frequency: "IMMEDIATE" },
   { key: "pushMoveAlerts", channel: "PUSH", type: "MOVE_ALERT", enabled: true, frequency: "IMMEDIATE" },
 ] as const;
 
