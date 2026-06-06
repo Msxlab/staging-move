@@ -11,7 +11,6 @@ import {
   assertWorkspaceAction,
   planLimitScopeForDataScope,
   resolveWorkspaceDataScope,
-  scopedRecordWhere,
 } from "@/lib/workspace-data-scope";
 
 const GLOBAL_BUDGET_SCOPE_KEY = "__global__";
@@ -67,7 +66,13 @@ export async function GET(request: NextRequest) {
     const addressId = searchParams.get("addressId");
     const month = searchParams.get("month");
 
-    const where: any = scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true });
+    // Workspace members keep their own legacy budgets (created before the
+    // workspace, workspaceId=null) visible alongside the shared workspace budget.
+    // invite-accept intentionally does NOT stamp budgets into the workspace, so a
+    // strict workspaceId filter would hide a member's existing budgets entirely.
+    const where: any = scope.workspaceId
+      ? { OR: [{ workspaceId: scope.workspaceId }, { userId, workspaceId: null }], deletedAt: null }
+      : { userId, deletedAt: null };
     if (id) where.id = id;
     if (addressId) where.addressId = addressId;
     if (month) {

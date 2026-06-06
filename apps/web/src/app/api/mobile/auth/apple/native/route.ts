@@ -317,6 +317,9 @@ export async function POST(request: NextRequest) {
     ipAddress: ip,
     userAgent: ua,
     deviceType: "Mobile",
+    // Label native sessions ("LocateFlow app / iOS") instead of "Unknown browser".
+    browser: "LocateFlow app",
+    os: /iPhone|iPad|iPod|Darwin/i.test(ua) ? "iOS" : /Android/i.test(ua) ? "Android" : "Mobile",
   });
 
   return NextResponse.json({
