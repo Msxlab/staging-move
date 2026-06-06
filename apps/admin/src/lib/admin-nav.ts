@@ -10,6 +10,7 @@
 import {
   LayoutDashboard,
   Users,
+  Home,
   CreditCard,
   Building2,
   MapPin,
@@ -64,6 +65,7 @@ export const navGroups: NavGroup[] = [
       { name: "Dashboard", nameKey: "dashboard", href: "/", icon: LayoutDashboard },
       { name: "Users", nameKey: "users", href: "/users", icon: Users, show: ({ permissions }) => permissions.users.canRead },
       { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard, show: ({ permissions }) => permissions.subscriptions.canRead },
+      { name: "Workspaces", nameKey: "workspaces", href: "/workspaces", icon: Home, show: ({ permissions }) => permissions.users.canRead },
       { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket, show: ({ permissions }) => permissions.acquisition_campaigns.canRead },
       { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
     ],

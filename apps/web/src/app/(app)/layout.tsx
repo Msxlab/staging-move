@@ -6,6 +6,28 @@ import { destroyUserSession, requireDbUserId } from "@/lib/auth";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import { loadShowBudgetPreference } from "@/lib/user-preferences";
+import { prisma } from "@/lib/db";
+import { getEffectiveEntitlement } from "@locateflow/shared";
+import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
+
+/**
+ * Show the Household/Workspace nav entry only when the workspace model is on AND
+ * the user is a Family/Pro owner OR an invited member of someone's workspace. A
+ * solo Individual owner (their auto-provisioned single-seat workspace) gets no
+ * entry. Best-effort: any failure hides the entry rather than breaking the app.
+ */
+async function resolveShowWorkspace(userId: string): Promise<boolean> {
+  if (!(await isWorkspaceModelEnabled())) return false;
+  const [sub, invitedMember] = await Promise.all([
+    prisma.subscription.findUnique({ where: { userId } }),
+    prisma.workspaceMember.findFirst({
+      where: { userId, role: { not: "OWNER" } },
+      select: { id: true },
+    }),
+  ]);
+  const plan = String(getEffectiveEntitlement(sub).effectivePlan);
+  return plan === "FAMILY" || plan === "PRO" || Boolean(invitedMember);
+}
 
 async function getCurrentAppPath() {
   const headerStore = await headers();
@@ -52,9 +74,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const showBudget = await loadShowBudgetPreference(gate.userId).catch(() => true);
+  const showWorkspace = await resolveShowWorkspace(gate.userId).catch(() => false);
 
   return (
-    <AppShell showBudget={showBudget}>
+    <AppShell showBudget={showBudget} showWorkspace={showWorkspace}>
       {children}
     </AppShell>
   );

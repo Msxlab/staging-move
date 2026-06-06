@@ -8,10 +8,15 @@ import { getEffectiveEntitlement, seatLimitForPlan } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
 
-/** 404 when the workspace model is off — routes are invisible until enabled. */
+/**
+ * 404 when the workspace model is off — routes are invisible until enabled.
+ * The stable `WORKSPACE_DISABLED` code lets clients tell "feature is off" apart
+ * from a transient/network failure, so they don't render a permanent
+ * "coming soon" state on a flaky connection.
+ */
 export async function workspaceFeatureGate(): Promise<NextResponse | null> {
   if (!(await isWorkspaceModelEnabled())) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "Not found", code: "WORKSPACE_DISABLED" }, { status: 404 });
   }
   return null;
 }
