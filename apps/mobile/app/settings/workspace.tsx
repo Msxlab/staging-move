@@ -79,6 +79,8 @@ export default function WorkspaceScreen() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("MEMBER");
   const [busy, setBusy] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nameInput, setNameInput] = useState("");
 
   const selected = workspaces.find((w) => w.id === selectedId) ?? null;
   const iAmManager = selected ? isManagerRole(selected.role) : false;
@@ -158,6 +160,22 @@ export default function WorkspaceScreen() {
         },
       },
     ]);
+  };
+
+  const renameWorkspace = async () => {
+    const name = nameInput.trim();
+    if (!name || name.length > 60 || !selectedId) return;
+    setBusy(true);
+    const res = await api.patch(`/api/workspaces/${selectedId}`, { name });
+    setBusy(false);
+    if (res.error) {
+      hapticError();
+      Alert.alert(t("common.retry", "Try again"), res.error);
+      return;
+    }
+    hapticSuccess();
+    setRenaming(false);
+    void load();
   };
 
   const transfer = (m: Member) => {
@@ -335,7 +353,32 @@ export default function WorkspaceScreen() {
             {selected && (
               <>
                 <View style={styles.card}>
-                  <Text style={styles.wsName}>{selected.name}</Text>
+                  {selected.role === "OWNER" && renaming ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <TextInput
+                        value={nameInput}
+                        onChangeText={setNameInput}
+                        maxLength={60}
+                        autoFocus
+                        style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.colors.text }}
+                        placeholderTextColor={theme.colors.textMuted}
+                      />
+                      <TouchableOpacity onPress={renameWorkspace} disabled={busy}>
+                        <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{t("common.save", "Save")}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setRenaming(false)} disabled={busy}>
+                        <Text style={{ color: theme.colors.textTertiary }}>{t("common.cancel", "Cancel")}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={selected.role === "OWNER" ? () => { setNameInput(selected.name); setRenaming(true); } : undefined}
+                      disabled={selected.role !== "OWNER"}
+                      activeOpacity={selected.role === "OWNER" ? 0.6 : 1}
+                    >
+                      <Text style={styles.wsName}>{selected.name}{selected.role === "OWNER" ? "  ✎" : ""}</Text>
+                    </TouchableOpacity>
+                  )}
                   <Text style={styles.wsMeta}>
                     {selected.planLabel} · {ROLE_LABEL[selected.role] ?? selected.role} · {selected.memberCount}/
                     {selected.seatLimit} members
