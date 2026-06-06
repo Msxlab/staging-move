@@ -1,5 +1,6 @@
 export * from "./validators";
 export * from "./types";
+export * from "./address-validation";
 export * from "./constants";
 export * from "./design-tokens";
 export * from "./intl-helpers";

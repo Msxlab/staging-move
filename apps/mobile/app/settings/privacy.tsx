@@ -21,6 +21,7 @@ import {
   Lock,
   Smartphone,
   ExternalLink,
+  ChevronRight,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
@@ -264,16 +265,19 @@ export default function PrivacySettingsScreen() {
       icon: Eye,
       title: t("settings.privacy_title"),
       description: t("settings.privacy_description"),
+      onPress: handleOpenPrivacyPolicy,
     },
     {
       icon: Lock,
       title: t("settings.security"),
       description: t("settings.twoFactor_enabledDescription"),
+      onPress: () => router.push("/settings/two-factor" as Href),
     },
     {
       icon: Shield,
       title: t("settings.privacy_doNotSell_title"),
       description: t("settings.privacy_doNotSell_description"),
+      onPress: handleOpenPrivacyPolicy,
     },
   ];
 
@@ -479,21 +483,24 @@ export default function PrivacySettingsScreen() {
           ) : null}
         </Card>
 
-        {/* Info Cards */}
+        {/* Info Cards — tappable (Privacy/Do-not-sell → policy, Security → 2FA) */}
         {infoItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Card key={item.title} variant="default" style={{ marginBottom: 12 }}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoIcon}>
-                  <Icon size={18} color={theme.colors.primary} />
+            <TouchableOpacity key={item.title} onPress={item.onPress} activeOpacity={0.6} accessibilityRole="button">
+              <Card variant="default" style={{ marginBottom: 12 }}>
+                <View style={styles.infoRow}>
+                  <View style={styles.infoIcon}>
+                    <Icon size={18} color={theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.infoTitle}>{item.title}</Text>
+                    <Text style={styles.infoDesc}>{item.description}</Text>
+                  </View>
+                  <ChevronRight size={18} color={theme.colors.textMuted} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.infoTitle}>{item.title}</Text>
-                  <Text style={styles.infoDesc}>{item.description}</Text>
-                </View>
-              </View>
-            </Card>
+              </Card>
+            </TouchableOpacity>
           );
         })}
 

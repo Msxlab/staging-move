@@ -66,16 +66,18 @@ export default function NewAddressPage() {
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [uspsSuggestion, setUspsSuggestion] = useState<{
+    street1: string; street2: string | null; city: string; state: string; zip: string; zipPlus4: string | null;
+  } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSave = async (payload: typeof form) => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -86,6 +88,33 @@ export default function NewAddressPage() {
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    // USPS address validation (Tier 2): offer a standardized correction when
+    // available. Fail-open + inert unless the plan is entitled AND USPS is
+    // configured — it never blocks saving.
+    try {
+      const v = await fetch("/api/addresses/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ street1: form.street, street2: form.street2 || null, city: form.city, state: form.state, zip: form.zip }),
+      });
+      if (v.ok) {
+        const data = await v.json();
+        if (data?.enabled && data.status === "CORRECTED" && data.suggestion) {
+          setUspsSuggestion(data.suggestion);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {
+      // fail open — validation outage must never block address entry
+    }
+    await doSave(form);
   };
 
   const updateField = (field: string, value: string | boolean | number | null) => {
@@ -119,6 +148,49 @@ export default function NewAddressPage() {
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
+        </div>
+      )}
+
+      {uspsSuggestion && (
+        <div className="p-4 rounded-xl border border-tone-sky-br bg-tone-sky-bg space-y-2">
+          <p className="text-sm font-semibold text-foreground">{t("uspsSuggestTitle")}</p>
+          <p className="text-sm text-muted-foreground">
+            {uspsSuggestion.street1}
+            {uspsSuggestion.street2 ? `, ${uspsSuggestion.street2}` : ""}, {uspsSuggestion.city}, {uspsSuggestion.state}{" "}
+            {uspsSuggestion.zipPlus4 ? `${uspsSuggestion.zip}-${uspsSuggestion.zipPlus4}` : uspsSuggestion.zip}
+          </p>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                const s = uspsSuggestion;
+                const next = {
+                  ...form,
+                  street: s.street1,
+                  street2: s.street2 || form.street2,
+                  city: s.city,
+                  state: s.state,
+                  zip: s.zipPlus4 ? `${s.zip}-${s.zipPlus4}` : s.zip,
+                };
+                setForm(next);
+                setUspsSuggestion(null);
+                void doSave(next);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
+            >
+              {t("uspsUseIt")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUspsSuggestion(null);
+                void doSave(form);
+              }}
+              className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground"
+            >
+              {t("uspsKeepMine")}
+            </button>
+          </div>
         </div>
       )}
 

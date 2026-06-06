@@ -7,7 +7,7 @@ import type {
 } from "../core";
 import { createConnectorRegistry, runConnectorAttempt, validateManifest } from "../core";
 import { uspsConnector, uspsManifest } from "./index";
-import { buildUspsCoaRequest } from "./request";
+import { buildUspsCoaRequest, buildUspsAddressValidateUrl, parseUspsValidatedAddress } from "./request";
 
 const input: CanonicalAddressChange = {
   eventId: "evt-1",
@@ -138,5 +138,40 @@ describe("USPS healthCheck", () => {
     const result = await uspsConnector.healthCheck!(ctx);
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("SCHEMA_DRIFT");
+  });
+});
+
+describe("USPS Addresses 3.0 validation helpers (Tier 2)", () => {
+  it("builds the validate URL against the allowlisted host with the right params", () => {
+    const url = buildUspsAddressValidateUrl({ street1: "1 N Glebe Rd", street2: "Apt 2", city: "Arlington", state: "VA", zip: "22201-1234" });
+    const u = new URL(url);
+    expect(u.host).toBe("apis.usps.com");
+    expect(u.pathname).toBe("/addresses/v3/address");
+    expect(u.searchParams.get("streetAddress")).toBe("1 N Glebe Rd");
+    expect(u.searchParams.get("secondaryAddress")).toBe("Apt 2");
+    expect(u.searchParams.get("state")).toBe("VA");
+    expect(u.searchParams.get("ZIPCode")).toBe("22201"); // 5-digit only
+  });
+
+  it("parses a standardized USPS response into ZIP+4 + DPV deliverability", () => {
+    const parsed = parseUspsValidatedAddress({
+      address: { streetAddress: "1 N GLEBE RD", secondaryAddress: "APT 2", city: "ARLINGTON", state: "VA", ZIPCode: "22201", ZIPPlus4: "1234" },
+      additionalInfo: { DPVConfirmation: "Y" },
+    });
+    expect(parsed).toEqual({
+      street1: "1 N GLEBE RD",
+      street2: "APT 2",
+      city: "ARLINGTON",
+      state: "VA",
+      zip: "22201",
+      zipPlus4: "1234",
+      deliverable: true,
+    });
+  });
+
+  it("returns null on a shapeless / no-match body so the caller treats it as NO_MATCH", () => {
+    expect(parseUspsValidatedAddress({})).toBeNull();
+    expect(parseUspsValidatedAddress(null)).toBeNull();
+    expect(parseUspsValidatedAddress({ address: { city: "Nowhere" } })).toBeNull(); // missing street/state/zip
   });
 });

@@ -98,6 +98,24 @@ export function buildRefreshBody(params: {
   };
 }
 
+/**
+ * client_credentials grant — for server-to-server APIs (e.g. USPS Addresses 3.0
+ * validation) where there is no per-user grant, just an app-level token. Optional
+ * `scope` for providers that require it (USPS: "addresses").
+ */
+export function buildClientCredentialsBody(params: {
+  clientId: string;
+  clientSecret: string;
+  scope?: string;
+}): Record<string, string> {
+  return {
+    grant_type: "client_credentials",
+    client_id: params.clientId,
+    client_secret: params.clientSecret,
+    ...(params.scope ? { scope: params.scope } : {}),
+  };
+}
+
 export interface OAuthTokens {
   accessToken: string;
   refreshToken: string | null;

@@ -10,7 +10,10 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Bell, CheckCheck } from "lucide-react-native";
+import {
+  ArrowLeft, Bell, CheckCheck, Receipt, AlertTriangle, Clock, CheckCircle2,
+  Truck, Users, Zap, Crown, type LucideIcon,
+} from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -26,6 +29,38 @@ interface FeedNotification {
   href?: string;
   read: boolean;
   createdAt: string;
+}
+
+// A friendly icon + tint per notification type so the feed reads like a real
+// inbox instead of identical grey dots.
+function presentationFor(type: string, theme: Theme): { Icon: LucideIcon; tint: string } {
+  switch (type) {
+    case "BILL_REMINDER": return { Icon: Receipt, tint: theme.colors.primary };
+    case "BILL_OVERDUE": return { Icon: AlertTriangle, tint: theme.colors.error };
+    case "CONTRACT_EXPIRY": return { Icon: Clock, tint: theme.colors.amber.text };
+    case "TASK_REMINDER":
+    case "TASK_DUE": return { Icon: CheckCircle2, tint: theme.colors.emerald.text };
+    case "MOVE_ALERT":
+    case "MOVE_REMINDER": return { Icon: Truck, tint: theme.colors.primary };
+    case "WORKSPACE_MEMBERSHIP": return { Icon: Users, tint: theme.colors.primary };
+    case "CONNECTOR_ACTION_NEEDED": return { Icon: Zap, tint: theme.colors.amber.text };
+    case "SUBSCRIPTION":
+    case "ACCOUNT_UPDATED": return { Icon: Crown, tint: theme.colors.amber.text };
+    default: return { Icon: Bell, tint: theme.colors.textTertiary };
+  }
+}
+
+function formatRelativeTime(iso: string, t: (k: string, o?: any) => string, dateLocale: string): string {
+  const ts = new Date(iso).getTime();
+  if (!Number.isFinite(ts)) return "";
+  const min = Math.floor((Date.now() - ts) / 60000);
+  if (min < 1) return t("notifications.now", { defaultValue: "now" });
+  if (min < 60) return t("notifications.minuteShort", { count: min, defaultValue: "{{count}}m" });
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return t("notifications.hourShort", { count: hr, defaultValue: "{{count}}h" });
+  const day = Math.floor(hr / 24);
+  if (day < 7) return t("notifications.dayShort", { count: day, defaultValue: "{{count}}d" });
+  return new Date(iso).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function NotificationsScreen() {
@@ -165,6 +200,7 @@ export default function NotificationsScreen() {
           <View style={styles.list}>
             {notifications.map((notif) => {
               const body = notificationBody(notif);
+              const { Icon, tint } = presentationFor(notif.type, theme);
               return (
               <TouchableOpacity
                 key={notif.id}
@@ -172,16 +208,19 @@ export default function NotificationsScreen() {
                 onPress={() => !notif.read && markRead(notif.id)}
                 activeOpacity={0.6}
               >
-                <View style={[styles.dot, { backgroundColor: notif.read ? "transparent" : theme.colors.primary }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.notifTitle, notif.read && styles.notifTitleRead]}>
-                    {notificationTitle(notif)}
-                  </Text>
-                  {body ? <Text style={styles.notifBody} numberOfLines={2}>{body}</Text> : null}
-                  <Text style={styles.notifTime}>
-                    {new Date(notif.createdAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
-                  </Text>
+                <View style={[styles.notifChip, { backgroundColor: tint + "22" }]}>
+                  <Icon size={18} color={tint} />
                 </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.notifTopRow}>
+                    <Text style={[styles.notifTitle, notif.read && styles.notifTitleRead]} numberOfLines={1}>
+                      {notificationTitle(notif)}
+                    </Text>
+                    <Text style={styles.notifTime}>{formatRelativeTime(notif.createdAt, t, dateLocale)}</Text>
+                  </View>
+                  {body ? <Text style={styles.notifBody} numberOfLines={2}>{body}</Text> : null}
+                </View>
+                {!notif.read ? <View style={styles.unreadDot} /> : null}
               </TouchableOpacity>
               );
             })}
@@ -203,11 +242,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   list: { gap: 8 },
   notifRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
   notifUnread: { borderColor: `${theme.colors.primary}30`, backgroundColor: `${theme.colors.primary}08` },
-  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 5, flexShrink: 0 },
-  notifTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
+  notifChip: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  notifTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0, backgroundColor: theme.colors.primary },
+  notifTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text },
   notifTitleRead: { color: theme.colors.textMuted },
   notifBody: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 17 },
-  notifTime: { fontSize: 11, color: theme.colors.textMuted, marginTop: 4 },
+  notifTime: { fontSize: 11, color: theme.colors.textMuted, flexShrink: 0 },
   emptyTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginTop: 12 },
   emptySubtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4 },
 });

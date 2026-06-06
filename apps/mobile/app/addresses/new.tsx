@@ -108,7 +108,49 @@ export default function NewAddressScreen() {
       return;
     }
     setLoading(true);
-    const res = await api.post("/api/addresses", form);
+    // USPS address validation (Tier 2) — silently skipped unless the account is
+    // entitled AND USPS is configured. A standardized correction is offered as a
+    // choice; it NEVER blocks the save (fail-open).
+    let payload: typeof form = form;
+    try {
+      const v = await api.post<any>("/api/addresses/validate", {
+        street1: form.street,
+        street2: form.street2 || null,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+      });
+      const s = v.data;
+      if (s?.enabled && s.status === "CORRECTED" && s.suggestion) {
+        const sug = s.suggestion;
+        const line = `${sug.street1}${sug.street2 ? ", " + sug.street2 : ""}\n${sug.city}, ${sug.state} ${sug.zipPlus4 ? `${sug.zip}-${sug.zipPlus4}` : sug.zip}`;
+        const useIt = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            t("addresses.uspsSuggestTitle", { defaultValue: "USPS standardized your address" }),
+            line,
+            [
+              { text: t("addresses.uspsKeepMine", { defaultValue: "Keep mine" }), style: "cancel", onPress: () => resolve(false) },
+              { text: t("addresses.uspsUseIt", { defaultValue: "Use USPS version" }), onPress: () => resolve(true) },
+            ],
+            { cancelable: false },
+          );
+        });
+        if (useIt) {
+          payload = {
+            ...form,
+            street: sug.street1,
+            street2: sug.street2 || form.street2,
+            city: sug.city,
+            state: sug.state,
+            zip: sug.zipPlus4 ? `${sug.zip}-${sug.zipPlus4}` : sug.zip,
+          };
+          setForm(payload);
+        }
+      }
+    } catch {
+      // fail open — address validation must never block saving
+    }
+    const res = await api.post("/api/addresses", payload);
     setLoading(false);
     if (res.error) {
       hapticError();

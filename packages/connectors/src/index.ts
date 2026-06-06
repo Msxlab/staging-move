@@ -10,4 +10,11 @@
 export * from "./core";
 
 export { uspsConnector, uspsManifest } from "./usps";
-export { buildUspsCoaRequest } from "./usps/request";
+export {
+  buildUspsCoaRequest,
+  buildUspsAddressValidateUrl,
+  parseUspsValidatedAddress,
+  type UspsAddressFields,
+  type UspsValidatedAddress,
+} from "./usps/request";
+export { buildClientCredentialsBody } from "./core/oauth";
