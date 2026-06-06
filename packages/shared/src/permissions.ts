@@ -33,12 +33,14 @@ export type WorkspaceAction =
   | "service.viewSensitive"
   | "service.create"
   | "service.edit"
+  | "service.delete"
   | "addressChange.initiate"
   | "addressChange.manageForMembers"
   | "syncAttempt.complete"
   | "export.tax"
   | "billing.manage"
   | "budget.view"
+  | "budget.manage"
   | "connector.connect"
   | "connector.revokeOwn";
 
@@ -125,13 +127,22 @@ export function can(role: WorkspaceRole, action: WorkspaceAction, ctx: Permissio
       if (role === "CHILD") return ctx.isSelf === true;
       return true;
 
+    case "budget.manage":
+      // Writing the shared household budget is a manager-or-member action; a
+      // VIEW_ONLY member can read (budget.view) but never overwrite it, and a
+      // CHILD has no financial access at all.
+      return role === "OWNER" || role === "ADMIN" || role === "MEMBER";
+
     case "address.edit":
     case "address.delete":
     case "service.edit":
+    case "service.delete":
+      // Managers act on any record in the workspace; everyone else (MEMBER,
+      // CHILD) may only edit/delete their OWN records. (Previously service.edit
+      // was granted to MEMBER unconditionally — a cross-member mutation hole.)
       if (role === "VIEW_ONLY") return false;
       if (isManagerRole(role)) return true;
-      if (role === "MEMBER") return action === "service.edit" ? true : ctx.isSelf === true;
-      if (role === "CHILD") return ctx.isSelf === true;
+      if (role === "MEMBER" || role === "CHILD") return ctx.isSelf === true;
       return false;
 
     case "addressChange.initiate":

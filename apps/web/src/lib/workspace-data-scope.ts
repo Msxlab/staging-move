@@ -91,20 +91,6 @@ export function scopedRecordWhere(
   return { ...base, ...extra };
 }
 
-export function scopedServiceWhere(
-  scope: WorkspaceDataScope,
-  extra: Record<string, unknown> = {},
-  options: { childSelfOnly?: boolean } = {},
-) {
-  return {
-    userId: scope.actorUserId,
-    ...(scope.workspaceId && !(options.childSelfOnly && scope.memberRole === "CHILD")
-      ? { workspaceId: scope.workspaceId }
-      : {}),
-    ...extra,
-  };
-}
-
 export function recordBelongsToScope(
   record: { userId?: string | null; workspaceId?: string | null },
   scope: WorkspaceDataScope,

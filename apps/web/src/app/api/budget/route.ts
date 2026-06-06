@@ -141,7 +141,9 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireAppMutationUser();
     const scope = await resolveWorkspaceDataScope(request, userId);
-    assertWorkspaceAction(scope, "budget.view", { resourceUserId: userId });
+    // Writing the shared budget requires the manage permission — a VIEW_ONLY
+    // member can read (budget.view) but must not overwrite the household budget.
+    assertWorkspaceAction(scope, "budget.manage", { resourceUserId: userId });
     const planScope = planLimitScopeForDataScope(scope);
     const plan = await getPlanForLimitScope(userId, planScope);
     if (!plan.isActive || !plan.hasPremium) {

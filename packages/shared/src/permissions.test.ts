@@ -136,3 +136,34 @@ describe("can — suspended status gate", () => {
     expect(can("ADMIN", "member.invite", { status: "OVERFLOW" })).toBe(false);
   });
 });
+
+describe("can — service edit/delete are self-gated for members (no cross-member mutation)", () => {
+  it("a MEMBER may only edit/delete their OWN service, not another member's", () => {
+    expect(can("MEMBER", "service.edit", { isSelf: true })).toBe(true);
+    expect(can("MEMBER", "service.edit", { isSelf: false })).toBe(false);
+    expect(can("MEMBER", "service.delete", { isSelf: true })).toBe(true);
+    expect(can("MEMBER", "service.delete", { isSelf: false })).toBe(false);
+  });
+
+  it("managers may edit/delete any service; VIEW_ONLY none", () => {
+    for (const role of ["OWNER", "ADMIN"] as const) {
+      expect(can(role, "service.edit", { isSelf: false })).toBe(true);
+      expect(can(role, "service.delete", { isSelf: false })).toBe(true);
+    }
+    expect(can("VIEW_ONLY", "service.edit", { isSelf: true })).toBe(false);
+    expect(can("VIEW_ONLY", "service.delete", { isSelf: true })).toBe(false);
+    expect(can("CHILD", "service.delete", { isSelf: false })).toBe(false);
+  });
+});
+
+describe("can — budget.manage is a write gate (read != write)", () => {
+  it("OWNER/ADMIN/MEMBER can manage the budget; VIEW_ONLY and CHILD cannot", () => {
+    expect(can("OWNER", "budget.manage")).toBe(true);
+    expect(can("ADMIN", "budget.manage")).toBe(true);
+    expect(can("MEMBER", "budget.manage")).toBe(true);
+    // VIEW_ONLY can READ the budget but must not overwrite it.
+    expect(can("VIEW_ONLY", "budget.view")).toBe(true);
+    expect(can("VIEW_ONLY", "budget.manage")).toBe(false);
+    expect(can("CHILD", "budget.manage")).toBe(false);
+  });
+});

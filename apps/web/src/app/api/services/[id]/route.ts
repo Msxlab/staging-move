@@ -265,7 +265,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (!existing || existing.deletedAt) {
       return serviceError("NOT_FOUND", "Service not found.", 404);
     }
-    assertScopedRecordAction(existing, scope, "service.edit", {
+    assertScopedRecordAction(existing, scope, "service.delete", {
       notFoundMessage: "Service not found.",
       forbiddenMessage: "No permission to delete this service.",
     });

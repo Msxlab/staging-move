@@ -95,8 +95,15 @@ export async function POST(request: NextRequest) {
     // can never leave the user with zero primary addresses.
     const address = await prisma.$transaction(async (tx) => {
       if (validated.isPrimary) {
+        // Demote only the ACTOR's own primaries — primary is a per-user concept,
+        // so a member setting their primary must not flip another member's (or
+        // the owner's) primary across the shared workspace.
         await tx.address.updateMany({
-          where: scopedRecordWhere(scope, { isPrimary: true }),
+          where: {
+            userId: scope.actorUserId,
+            ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
+            isPrimary: true,
+          },
           data: { isPrimary: false },
         });
       }

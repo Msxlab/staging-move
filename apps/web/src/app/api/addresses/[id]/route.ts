@@ -37,7 +37,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
           orderBy: { createdAt: "desc" },
         },
-        budgets: true,
+        // Budgets are financial data. A CHILD has zero financial visibility, so
+        // they never receive any; everyone else only sees budgets within their
+        // resolved scope (the shared workspace budget, or their own legacy rows).
+        // Without this filter a CHILD could read the owner's budget off their
+        // own (shared) address — see the address-detail financial-leak fix.
+        budgets:
+          scope.memberRole === "CHILD"
+            ? { where: { id: { in: [] } } }
+            : {
+                where: scope.workspaceId
+                  ? { workspaceId: scope.workspaceId, deletedAt: null }
+                  : { userId, deletedAt: null },
+              },
       },
     });
 
@@ -99,8 +111,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // the same reason.
     const address = await prisma.$transaction(async (tx) => {
       if (validated.isPrimary) {
+        // Demote only the ACTOR's own primaries (per-user primary) — never flip
+        // another member's or the owner's primary across the shared workspace.
         await tx.address.updateMany({
-          where: scopedRecordWhere(scope, { isPrimary: true, id: { not: id } }),
+          where: {
+            userId: scope.actorUserId,
+            ...(scope.workspaceId ? { workspaceId: scope.workspaceId } : {}),
+            isPrimary: true,
+            id: { not: id },
+          },
           data: { isPrimary: false },
         });
       }

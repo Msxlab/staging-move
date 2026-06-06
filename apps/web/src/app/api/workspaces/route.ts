@@ -75,13 +75,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const workspace = await prisma.workspace.create({
-    data: {
-      ownerUserId: session.userId,
-      name,
-      members: { create: { userId: session.userId, role: "OWNER", status: "ACTIVE" } },
-    },
-    select: { id: true, name: true },
+  const workspace = await prisma.$transaction(async (tx) => {
+    const ws = await tx.workspace.create({
+      data: {
+        ownerUserId: session.userId,
+        name,
+        members: { create: { userId: session.userId, role: "OWNER", status: "ACTIVE" } },
+      },
+      select: { id: true, name: true },
+    });
+    // Stamp the owner's existing personal rows into the new workspace so they
+    // stay visible AND count toward the pooled workspace limit once workspace
+    // mode is enabled (otherwise null-workspace rows vanish from scoped reads
+    // and under-count the pool).
+    const where = { userId: session.userId, workspaceId: null };
+    await Promise.all([
+      tx.address.updateMany({ where, data: { workspaceId: ws.id } }),
+      tx.service.updateMany({ where, data: { workspaceId: ws.id } }),
+      tx.movingPlan.updateMany({ where, data: { workspaceId: ws.id } }),
+      tx.budget.updateMany({ where, data: { workspaceId: ws.id } }),
+    ]);
+    return ws;
   });
 
   const response = NextResponse.json({ ...workspace, planLabel: workspacePlanLabel(plan) });

@@ -125,7 +125,7 @@ export async function GET(request?: NextRequest) {
       subscription: safeSubscription,
       entitlement,
       workspaceEntitlement: scope.workspaceId
-        ? { workspaceId: scope.workspaceId, ownerUserId: scope.ownerUserId, inherited: scope.ownerUserId !== userId }
+        ? { workspaceId: scope.workspaceId, inherited: scope.ownerUserId !== userId }
         : null,
       legalConsents,
       onboardingCompleted: onboardingProgress.completed,
