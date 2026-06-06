@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Bell,
   AlertTriangle,
+  Users,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
@@ -50,6 +51,14 @@ export default function DashboardScreen() {
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<{
+    id: string;
+    name: string;
+    planLabel: string;
+    role: string;
+    memberCount: number;
+    seatLimit: number;
+  } | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes] = await Promise.all([
@@ -73,6 +82,17 @@ export default function DashboardScreen() {
         ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
         : Boolean(sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date())));
       setIsPremium(!!hasPremium);
+
+      // Household / Workspace card (Family/Pro). Best-effort and gated
+      // server-side: when WORKSPACE_MODEL_ENABLED is off the API returns 404
+      // (no data) so wsList is empty and the card hides. Only a real multi-seat
+      // household (Family/Pro, seatLimit > 1) surfaces the card — a solo
+      // Individual workspace stays hidden.
+      const wsRes = await api.get<{ workspaces: any[] }>("/api/workspaces");
+      const wsList = wsRes.data?.workspaces ?? [];
+      const primaryWs =
+        wsList.filter((w: any) => !w.deletedAt).find((w: any) => (w.seatLimit ?? 1) > 1) ?? null;
+      setWorkspace(primaryWs ?? null);
 
       const addresses = addrRes.data?.addresses || [];
       const plans = movingRes.data?.plans || [];
@@ -273,6 +293,37 @@ export default function DashboardScreen() {
             );
           })}
         </View>
+
+        {/* Household / Workspace (Family & Pro) */}
+        {workspace && (
+          <Card
+            variant="default"
+            onPress={() => router.push("/settings/workspace")}
+            style={{ marginTop: 20 }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <View style={styles.planIcon}>
+                <Users size={18} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.planTitle}>{workspace.name}</Text>
+                <Text style={styles.planDate}>
+                  {workspace.planLabel} · {workspace.memberCount}/{workspace.seatLimit}{" "}
+                  {t("workspace.membersShort", "members")}
+                </Text>
+              </View>
+              <UiBadge
+                label={
+                  ({ OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", CHILD: "Child", VIEW_ONLY: "View only" } as Record<string, string>)[
+                    workspace.role
+                  ] ?? workspace.role
+                }
+                variant={workspace.role === "OWNER" ? "primary" : "neutral"}
+              />
+              <ArrowRight size={16} color={theme.colors.textTertiary} />
+            </View>
+          </Card>
+        )}
 
         {/* Active Moving Plan */}
         {stats?.activePlan && (

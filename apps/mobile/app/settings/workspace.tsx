@@ -71,6 +71,7 @@ export default function WorkspaceScreen() {
 
   const [pageLoading, setPageLoading] = useState(true);
   const [featureOff, setFeatureOff] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -100,13 +101,22 @@ export default function WorkspaceScreen() {
   }, []);
 
   const load = useCallback(async () => {
+    setLoadError(false);
     const res = await api.get<{ workspaces: Workspace[] }>("/api/workspaces");
-    if (res.error && !res.data) {
-      // 404 = feature off; any other error → also show the unavailable state.
+    if (res.code === "WORKSPACE_DISABLED") {
+      // Feature is genuinely off for this environment (server gate).
       setFeatureOff(true);
       setPageLoading(false);
       return;
     }
+    if (res.error && !res.data) {
+      // Transient/network failure — show a retryable error, NOT the permanent
+      // "coming soon" state (which would be a lie on a flaky connection).
+      setLoadError(true);
+      setPageLoading(false);
+      return;
+    }
+    setFeatureOff(false);
     const list = res.data?.workspaces ?? [];
     setWorkspaces(list);
     if (list.length > 0) setSelectedId((cur) => cur ?? list[0].id);
@@ -306,7 +316,26 @@ export default function WorkspaceScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {featureOff ? (
+        {loadError ? (
+          <View style={{ alignItems: "center" }}>
+            <Text style={styles.empty}>
+              {t("workspace.loadError", "Couldn't load your workspace. Check your connection and try again.")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => { setPageLoading(true); void load(); }}
+              style={{
+                marginTop: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                borderRadius: 12,
+                backgroundColor: theme.colors.primary,
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>{t("common.retry", "Retry")}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : featureOff ? (
           <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out for Family & Pro — coming soon. Your plan's higher limits are already active.")}</Text>
         ) : workspaces.length === 0 ? (
           <View style={{ alignItems: "center" }}>
