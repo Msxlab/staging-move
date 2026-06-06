@@ -1,21 +1,17 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { useAuthStore } from "@/lib/auth-store";
-
-// Plan mascots — a little "household" of animals on the dashboard. Family shows
-// the family; Pro shows the same crew dressed up (top hat) for a premium feel.
-// Emoji-based so it ships via OTA with zero binary assets; the layout is ready
-// for illustrated <Image> art to drop in later without other changes.
-const FAMILY_MASCOTS = ["🦊", "🐻", "🐰", "🦉"];
-const PRO_MASCOTS = ["🦊", "🐻", "🐰"];
+import { RaccoonMascot } from "@/components/ui/RaccoonMascot";
 
 /**
- * Plan-themed welcome hero shown on the dashboard for Family / Pro members.
- * Colors come from the active (plan-tinted) theme, so it is crystal-green for
- * Family and premium violet/gold for Pro automatically. Renders nothing for
- * Individual / unknown plans.
+ * Plan-themed welcome hero on the dashboard for Family / Pro members: a kawaii
+ * raccoon household (dad / mom / kid) with a plan-colored gradient. Pro dresses
+ * the crew in top hats + bow ties. Colors come from the active (plan-tinted)
+ * theme, so it is crystal-green for Family and premium violet/gold for Pro.
+ * Renders nothing for Individual / unknown plans.
  */
 export function PlanHero() {
   const theme = useAppTheme();
@@ -26,29 +22,33 @@ export function PlanHero() {
   if (key !== "FAMILY" && key !== "PRO") return null;
 
   const isPro = key === "PRO";
-  const mascots = isPro ? PRO_MASCOTS : FAMILY_MASCOTS;
-  const title = isPro
-    ? t("plan.proTitle", "Pro household")
-    : t("plan.familyTitle", "Family household");
+  const title = isPro ? t("plan.proTitle", "Pro household") : t("plan.familyTitle", "Family household");
   const subtitle = isPro
     ? t("plan.proSubtitle", "Premium tools for your whole crew.")
     : t("plan.familySubtitle", "Everyone under one roof, together.");
 
   return (
-    <View style={styles.hero} accessibilityRole="summary">
-      <View style={styles.mascotRow}>
-        {mascots.map((m, i) => (
-          <View key={i} style={[styles.bubble, i > 0 && styles.bubbleOverlap]}>
-            <Text style={styles.mascot}>{m}</Text>
-          </View>
-        ))}
-        {isPro && <Text style={styles.hat}>🎩</Text>}
+    <View style={styles.wrap} accessibilityRole="summary">
+      <LinearGradient
+        colors={[`${theme.colors.primary}2E`, `${theme.colors.primary}00`]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1.1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.crew}>
+        <RaccoonMascot size={64} fur="#94a3b3" variant="dad" suited={isPro} />
+        <View style={styles.overlap}>
+          <RaccoonMascot size={54} fur="#aeb9c6" variant="mom" suited={isPro} />
+        </View>
+        <View style={styles.overlap}>
+          <RaccoonMascot size={42} fur="#bcc6d1" variant="kid" suited={isPro} />
+        </View>
       </View>
       <View style={styles.copy}>
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={styles.subtitle} numberOfLines={2}>
           {subtitle}
         </Text>
       </View>
@@ -61,39 +61,29 @@ export function PlanHero() {
 
 const makeStyles = (t: Theme) =>
   StyleSheet.create({
-    hero: {
+    wrap: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      padding: 16,
+      gap: 8,
       marginTop: 16,
-      borderRadius: 20,
-      backgroundColor: t.colors.primaryFaded,
-      borderWidth: 1,
-      borderColor: `${t.colors.primary}33`,
-    },
-    mascotRow: { flexDirection: "row", alignItems: "center" },
-    bubble: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      alignItems: "center",
-      justifyContent: "center",
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 22,
+      overflow: "hidden",
       backgroundColor: t.colors.card,
-      borderWidth: 1.5,
-      borderColor: `${t.colors.primary}55`,
+      borderWidth: 1,
+      borderColor: `${t.colors.primary}3D`,
     },
-    bubbleOverlap: { marginLeft: -12 },
-    mascot: { fontSize: 20 },
-    hat: { fontSize: 18, marginLeft: 6 },
-    copy: { flex: 1 },
-    title: { fontSize: 15, fontWeight: "700", color: t.colors.text },
-    subtitle: { fontSize: 12, color: t.colors.textTertiary, marginTop: 2 },
+    crew: { flexDirection: "row", alignItems: "flex-end" },
+    overlap: { marginLeft: -14 },
+    copy: { flex: 1, paddingLeft: 4 },
+    title: { fontSize: 15.5, fontWeight: "800", color: t.colors.text },
+    subtitle: { fontSize: 12, color: t.colors.textSecondary, marginTop: 2 },
     pill: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: 11,
+      paddingVertical: 5,
       borderRadius: 999,
       backgroundColor: t.colors.primary,
     },
-    pillText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5, color: "#FFFFFF" },
+    pillText: { fontSize: 10.5, fontWeight: "800", letterSpacing: 0.6, color: "#fff" },
   });
