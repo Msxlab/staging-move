@@ -682,10 +682,14 @@ function LegacySubscriptionScreen() {
     setProcessingPlan("MANAGE");
 
     // Store-managed subscriptions: send the user to the native management page.
+    // Seed only with THIS subscription's product / the current plan's SKU — never
+    // the Individual monthly/yearly fallback, which would open the wrong product's
+    // management page for a Family/Pro store subscriber. undefined opens the
+    // account's general subscriptions list, which is the correct fallback.
     if (isCurrentPlatformStoreManaged && canUseNativePurchases) {
       setProcessingPlan(null);
       await openNativeSubscriptionSettings(
-        subscription?.billingProductId || currentPlanStoreSku || monthlySku || yearlySku || undefined,
+        subscription?.billingProductId || currentPlanStoreSku || undefined,
       );
       return;
     }

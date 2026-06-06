@@ -391,12 +391,20 @@ export default function PrivacySettingsScreen() {
                     : t("settings.twoFactor_needsPassword", { defaultValue: "Set a password first to enable two-factor authentication." })}
                 </Text>
                 <Button
-                  title={security.account.mfaEnabled
-                    ? t("settings.twoFactor_manage", { defaultValue: "Manage two-factor" })
-                    : t("settings.twoFactor_enable", { defaultValue: "Enable two-factor" })}
-                  onPress={() => router.push("/settings/two-factor" as Href)}
+                  title={
+                    !security.account.hasPasswordLogin
+                      ? t("settings.twoFactor_setPasswordCta", { defaultValue: "Email a set-password link" })
+                      : security.account.mfaEnabled
+                        ? t("settings.twoFactor_manage", { defaultValue: "Manage two-factor" })
+                        : t("settings.twoFactor_enable", { defaultValue: "Enable two-factor" })
+                  }
+                  onPress={
+                    !security.account.hasPasswordLogin
+                      ? requestPasswordLink
+                      : () => router.push("/settings/two-factor" as Href)
+                  }
                   variant={security.account.mfaEnabled ? "outline" : "primary"}
-                  disabled={!security.account.hasPasswordLogin}
+                  loading={!security.account.hasPasswordLogin ? passwordSetupBusy : false}
                   fullWidth
                 />
               </View>

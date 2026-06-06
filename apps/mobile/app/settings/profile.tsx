@@ -208,7 +208,7 @@ export default function ProfileSettingsScreen() {
           onChangeText={(v) => update("firstName", v)}
         />
 
-        <Text style={styles.label}>{t("auth.lastName")}</Text>
+        <Text style={styles.label}>{t("auth.lastName")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="Doe"
