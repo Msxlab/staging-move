@@ -14,6 +14,8 @@ type AppShellProps = {
   children: ReactNode;
   showBudget?: boolean;
   showWorkspace?: boolean;
+  /** Effective plan tier — applies the per-plan accent theme on the shell. */
+  planTier?: string | null;
 };
 
 const EMBED_STORAGE_KEY = "lf:embed-mobile";
@@ -49,10 +51,12 @@ function useEmbedMode() {
   return embed;
 }
 
-export function AppShell({ children, showBudget = true, showWorkspace = false }: AppShellProps) {
+export function AppShell({ children, showBudget = true, showWorkspace = false, planTier = null }: AppShellProps) {
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
+  // Per-plan accent class consumed by globals.css (.plan-family / .plan-pro).
+  const planClass = planTier === "PRO" ? "plan-pro" : planTier === "FAMILY" ? "plan-family" : "";
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -84,7 +88,7 @@ export function AppShell({ children, showBudget = true, showWorkspace = false }:
   if (embedShell) return embedShell;
 
   return (
-    <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
+    <div className={`flex min-h-screen relative ${planClass}`} style={{ background: "var(--surface)" }}>
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark-only-blobs">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-tone-orange-bg blur-[150px]" />
         <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-tone-foil-bg blur-[120px]" />
