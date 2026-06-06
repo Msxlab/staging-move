@@ -149,6 +149,8 @@ export default function EditAddressScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
       >
         <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
         <View style={styles.chipRow}>

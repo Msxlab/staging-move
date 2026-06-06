@@ -62,6 +62,13 @@ function managedSyncOn(role: string, flag: boolean | null): boolean {
   return typeof flag === "boolean" ? flag : role === "CHILD";
 }
 
+// Managed sync (pushing an address change to a member's partner connectors on their
+// behalf) is not yet generally available: the connector backend stays gated behind
+// FEATURE_API_CONNECTORS until partner agreements + legal sign-off. Until then we surface
+// "Coming soon" and disable the consent switch so Family/Pro users aren't shown a feature
+// that can't run yet. Flip to false once connectors are live to restore the switch.
+const MANAGED_SYNC_COMING_SOON = true;
+
 export default function WorkspaceScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -315,7 +322,13 @@ export default function WorkspaceScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         {loadError ? (
           <View style={{ alignItems: "center" }}>
             <Text style={styles.empty}>
@@ -422,15 +435,27 @@ export default function WorkspaceScreen() {
                 <View style={styles.card}>
                   <View style={styles.rowBetween}>
                     <View style={{ flex: 1, paddingRight: 12 }}>
-                      <Text style={styles.cardTitle}>{t("workspace.managedSync", "Managed sync")}</Text>
+                      <Text style={styles.cardTitle}>
+                        {t("workspace.managedSync", "Managed sync")}
+                        {MANAGED_SYNC_COMING_SOON ? `  ·  ${t("common.comingSoon", "Coming soon")}` : ""}
+                      </Text>
                       <Text style={styles.cardDesc}>
-                        {t(
-                          "workspace.managedSyncDesc",
-                          "Let an owner or admin push an address change to your connected partners on your behalf.",
-                        )}
+                        {MANAGED_SYNC_COMING_SOON
+                          ? t(
+                              "workspace.managedSyncSoon",
+                              "Soon, an owner or admin will be able to push an address change to your connected partners on your behalf. We'll let you know when it's ready.",
+                            )
+                          : t(
+                              "workspace.managedSyncDesc",
+                              "Let an owner or admin push an address change to your connected partners on your behalf.",
+                            )}
                       </Text>
                     </View>
-                    <Switch value={Boolean(myManagedSync)} onValueChange={toggleManagedSync} />
+                    <Switch
+                      value={MANAGED_SYNC_COMING_SOON ? false : Boolean(myManagedSync)}
+                      onValueChange={toggleManagedSync}
+                      disabled={MANAGED_SYNC_COMING_SOON}
+                    />
                   </View>
                 </View>
 
@@ -454,7 +479,9 @@ export default function WorkspaceScreen() {
                           <Text style={styles.memberSub}>
                             {ROLE_LABEL[m.role] ?? m.role}
                             {m.status && m.status !== "ACTIVE" ? ` · ${m.status.toLowerCase()}` : ""}
-                            {iAmManager && managedSyncOn(m.role, m.managedSyncEnabled) ? " · sync on" : ""}
+                            {!MANAGED_SYNC_COMING_SOON && iAmManager && managedSyncOn(m.role, m.managedSyncEnabled)
+                              ? " · sync on"
+                              : ""}
                           </Text>
                         </View>
                         {tappable && <Text style={styles.manage}>{t("workspace.manage", "Manage")}</Text>}
