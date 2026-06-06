@@ -174,32 +174,36 @@ export default function ExportScreen() {
           {t("settings.export_description")}
         </Text>
 
-        <View style={styles.noticeBox}>
-          <Text style={styles.noticeText}>
-            {t("settings.privacy_description")}
-          </Text>
-        </View>
-
-        {noStepUpMethod ? (
-          <View style={styles.noticeBox}>
-            <Text style={styles.noticeText}>
+        <View style={styles.stepUpCard}>
+          <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
+          {noStepUpMethod ? (
+            <Text style={styles.stepUpHint}>
               {t("settings.export_needsStepUp", { defaultValue: "Set a password or turn on two-factor authentication to export your data." })}
             </Text>
-          </View>
-        ) : (
-          <Input
-            placeholder={useCodeStepUp
-              ? t("settings.export_codePlaceholder", { defaultValue: "Authenticator or backup code" })
-              : t("auth.password")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            isPassword={usePasswordStepUp}
-            autoCapitalize="none"
-            autoCorrect={false}
-            accessibilityLabel={t("settings.currentPasswordA11y")}
-            accessibilityHint={t("settings.currentPasswordHint")}
-          />
-        )}
+          ) : (
+            <>
+              <Text style={styles.stepUpHint}>
+                {useCodeStepUp
+                  ? t("settings.export_codeHint", { defaultValue: "Enter a code from your authenticator app (or a backup code) to export." })
+                  : t("settings.export_passwordHint", { defaultValue: "Enter your password to download your data." })}
+              </Text>
+              <View style={{ marginTop: 10 }}>
+                <Input
+                  placeholder={useCodeStepUp
+                    ? t("settings.export_codePlaceholder", { defaultValue: "Authenticator or backup code" })
+                    : t("auth.password")}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  isPassword={usePasswordStepUp}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel={t("settings.currentPasswordA11y")}
+                  accessibilityHint={t("settings.currentPasswordHint")}
+                />
+              </View>
+            </>
+          )}
+        </View>
 
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
@@ -260,6 +264,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   subtitle: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginBottom: 20 },
   noticeBox: { marginBottom: 16, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(242, 196, 108,0.08)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.2)" },
   noticeText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
+  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 20 },
+  stepUpTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginBottom: 4 },
+  stepUpHint: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18 },
   card: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 12 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   cardIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", alignItems: "center", justifyContent: "center" },
