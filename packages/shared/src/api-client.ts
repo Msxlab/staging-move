@@ -95,7 +95,10 @@ export class ApiClient {
     return headers;
   }
 
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  private async handleResponse<T>(
+    response: Response,
+    opts?: { skipUnauthorizedHandler?: boolean },
+  ): Promise<ApiResponse<T>> {
     if (response.status === 401) {
       let body: any = null;
       try {
@@ -103,7 +106,12 @@ export class ApiClient {
       } catch {
         body = null;
       }
-      await this.config.onUnauthorized?.();
+      // Some endpoints (e.g. MFA-confirm on an older server) return 401 for a
+      // bad input rather than a dead session. A caller can opt out of the global
+      // sign-out handler so a wrong code doesn't log the user out.
+      if (!opts?.skipUnauthorizedHandler) {
+        await this.config.onUnauthorized?.();
+      }
       const code = typeof body?.code === "string" ? body.code : "UNAUTHORIZED";
       return { error: buildApiErrorMessage(response.status, body), code };
     }
@@ -169,7 +177,11 @@ export class ApiClient {
     }
   }
 
-  async post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+  async post<T>(
+    path: string,
+    body?: unknown,
+    opts?: { skipUnauthorizedHandler?: boolean },
+  ): Promise<ApiResponse<T>> {
     try {
       const url = new URL(path, this.config.baseUrl);
       const headers = await this.getHeaders();
@@ -178,7 +190,7 @@ export class ApiClient {
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
-      return this.handleResponse<T>(response);
+      return this.handleResponse<T>(response, opts);
     } catch (error) {
       const err = this.normalizeError(error);
       this.config.onError?.(err);

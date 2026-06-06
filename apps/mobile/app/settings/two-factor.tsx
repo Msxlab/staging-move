@@ -85,7 +85,9 @@ export default function TwoFactorScreen() {
   const confirmSetup = async () => {
     if (code.length < 6) return;
     setBusy(true);
-    const res = await api.post<any>("/api/auth/mfa/confirm", { mfaCode: code });
+    // skipUnauthorizedHandler: an older server returns 401 for a wrong code; that
+    // must NOT trip the global sign-out — the session is fine, the digits aren't.
+    const res = await api.post<any>("/api/auth/mfa/confirm", { mfaCode: code }, { skipUnauthorizedHandler: true });
     setBusy(false);
     if (res.data?.success === true) {
       hapticSuccess();
