@@ -9,7 +9,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Plus, ChevronRight, MessageCircle, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,20 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+
+/** Route-level boundary — a render throw shows a graceful retry, not the
+ * app-wide "Something went wrong". */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+  const theme = useAppTheme();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
+      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+        <ErrorState title={t("help.supportTickets", { defaultValue: "Support" })} onRetry={retry} />
+      </View>
+    </SafeAreaView>
+  );
+}
 
 // Built per-render against the active theme so the dot color flips
 // when the user changes Appearance.
