@@ -71,14 +71,14 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   useEffect(() => {
-    authenticatingRef.current = authenticating;
-  }, [authenticating]);
-
-  useEffect(() => {
     if (!canProtect || !hydrated || !enabled) return;
 
     const subscription = AppState.addEventListener("change", (nextState: AppStateStatus) => {
-      if (authenticatingRef.current) return;
+      // Bail while WE are showing the biometric prompt (it backgrounds the app)
+      // or while already locked — either way an inactive/active blip must not
+      // stamp a background time or re-fire lock(). Read `locked` live to dodge a
+      // stale closure (it's not in the dep array).
+      if (authenticatingRef.current || useAppLockStore.getState().locked) return;
       if (nextState === "background" || nextState === "inactive") {
         lastBackgroundAt.current = Date.now();
         return;
@@ -88,6 +88,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         lastBackgroundAt.current &&
         Date.now() - lastBackgroundAt.current > BACKGROUND_LOCK_GRACE_MS
       ) {
+        lastBackgroundAt.current = null; // consume the stamp so it can't re-fire
         lock();
       }
     });
@@ -102,7 +103,13 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     }
     if (!hydrated || !enabled || authenticating || promptedForCurrentLock.current) return;
     promptedForCurrentLock.current = true;
-    void unlock(promptCopy);
+    // Set the guard SYNCHRONOUSLY (not via a render-mirrored effect) so the
+    // prompt's immediate AppState=inactive can never slip past the listener
+    // above. Clear it once the prompt resolves.
+    authenticatingRef.current = true;
+    void unlock(promptCopy).finally(() => {
+      authenticatingRef.current = false;
+    });
   }, [authenticating, canProtect, enabled, hydrated, locked, promptCopy, unlock]);
 
   const handleTryAgain = () => {

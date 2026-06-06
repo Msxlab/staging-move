@@ -73,11 +73,20 @@ export default function NotificationSettingsScreen() {
     setSaving(true);
     const wantsPush = prefs.pushTaskReminders || prefs.pushBillReminders || prefs.pushMoveAlerts;
     if (wantsPush) {
-      const registered = await registerForPushNotifications();
+      // Toggling a push category ON is an explicit opt-in — bypass the
+      // soft-prompt gate so the OS permission prompt actually fires (otherwise,
+      // on a fresh install the gate silently no-ops and nothing is delivered).
+      const registered = await registerForPushNotifications({ requireSoftPrompt: false });
       if (!registered) {
         setSaving(false);
         hapticError();
-        Alert.alert(t("notifications.title"), t("toast.networkError"));
+        // Failure here is a denied/undetermined OS permission, not a network error.
+        Alert.alert(
+          t("notifications.title"),
+          t("notifications.pushPermissionDenied", {
+            defaultValue: "Turn on notifications for LocateFlow in your device Settings to receive push alerts.",
+          }),
+        );
         return;
       }
     }

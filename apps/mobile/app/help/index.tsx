@@ -213,6 +213,15 @@ export default function HelpScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Must stay ABOVE the `if (loading)` early return — declaring this hook after
+  // a conditional return changes the hook count between the first (loading) and
+  // second render, which throws "Rendered more hooks than during the previous
+  // render" and took the whole Help screen down.
+  const handleContactUs = useCallback(async () => {
+    const supportUrl = `${APP_WEB_URL}/contact`;
+    await openWebUrl(supportUrl);
+  }, []);
+
   if (loading) return <LoadingScreen />;
 
   const filteredFaqs = search
@@ -227,11 +236,6 @@ export default function HelpScreen() {
         a.category?.toLowerCase().includes(search.toLowerCase())
       )
     : articles;
-
-  const handleContactUs = useCallback(async () => {
-    const supportUrl = `${APP_WEB_URL}/contact`;
-    await openWebUrl(supportUrl);
-  }, []);
 
   if (selectedArticle) {
     return (

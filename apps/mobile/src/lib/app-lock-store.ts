@@ -162,16 +162,19 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
   async unlock(copy) {
     const state = get();
     if (!state.enabled || !state.locked) return { success: true, skipped: true };
+    if (state.authenticating) return { success: false, reason: "already_authenticating" };
 
+    // Flag BEFORE the first await so the whole async window (capability check +
+    // the OS prompt that backgrounds the app) is covered by the gate's guard.
+    set({ authenticating: true, error: null });
     const capability = await resolveCapability();
     set(capability);
     if (!capability.available) {
       const reason = capability.reason || "not_available";
-      set({ locked: true, error: reason });
+      set({ authenticating: false, locked: true, error: reason });
       return { success: false, reason };
     }
 
-    set({ authenticating: true, error: null });
     const result = await authenticate(copy);
     set({ authenticating: false });
     if (result.success) {
