@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Search, ChevronLeft, ChevronRight, CreditCard, Users, Calendar,
-  TrendingUp, Filter, X, Eye, Clock, XCircle, CheckCircle2,
+  TrendingUp, Filter, X, Eye, Clock, XCircle, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
@@ -53,6 +53,9 @@ const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-tone-sage-bg text-tone-sage-fg",
   TRIALING: "bg-tone-cyan-bg text-tone-cyan-fg",
   CANCELED: "bg-destructive/10 text-destructive",
+  PAST_DUE: "bg-tone-honey-bg text-tone-honey-fg",
+  GRACE_PERIOD: "bg-tone-honey-bg text-tone-honey-fg",
+  UNPAID: "bg-destructive/10 text-destructive",
   EXPIRED: "bg-tone-slate-bg text-muted-foreground",
 };
 
@@ -137,7 +140,7 @@ export default function SubscriptionsClient() {
       {/* KPI Cards — Active / Trialing / Canceled cards double as status filters. */}
       {stats && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -177,6 +180,17 @@ export default function SubscriptionsClient() {
                 <div className="rounded-lg bg-destructive/10 p-2"><XCircle className="h-4 w-4 text-destructive" /></div>
               </div>
             </button>
+            <button onClick={() => { setFilters({ ...filters, status: filters.status === "PAST_DUE" ? "" : "PAST_DUE" }); setPage(1); }}
+              title="Past due / grace period — payments to recover"
+              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "PAST_DUE" ? "border-tone-honey-br bg-tone-honey-bg" : "border-border hover:border-tone-honey-br"}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Past Due{filters.status === "PAST_DUE" ? " · filtered" : ""}</p>
+                  <p className="mt-1 text-2xl font-bold text-tone-honey-fg">{stats.pastDueCount ?? 0}</p>
+                </div>
+                <div className="rounded-lg bg-tone-honey-bg p-2"><AlertTriangle className="h-4 w-4 text-tone-honey-fg" /></div>
+              </div>
+            </button>
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -188,7 +202,7 @@ export default function SubscriptionsClient() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Click Active / Trialing / Canceled to filter by status. Plan, source, and platform live in the filters panel.
+            Click Active / Trialing / Canceled / Past Due to filter by status. Past Due covers PAST_DUE, GRACE_PERIOD, and UNPAID — the payments to recover. Plan, source, and platform live in the filters panel.
           </p>
         </>
       )}

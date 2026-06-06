@@ -89,7 +89,10 @@ export async function GET(request: NextRequest) {
       };
     }
     if (plan) where.plan = plan;
-    if (status) where.status = status;
+    // "PAST_DUE" from the dunning KPI card means the whole payment-recovery
+    // group, not just the literal PAST_DUE status, so it matches the card count.
+    if (status === "PAST_DUE") where.status = { in: ["PAST_DUE", "GRACE_PERIOD", "UNPAID"] };
+    else if (status) where.status = status;
     if (provider) where.provider = provider;
     if (platform) where.platform = platform === "unassigned" ? null : platform;
     if (accessType) where.accessType = accessType === "none" ? null : accessType;
@@ -109,6 +112,7 @@ export async function GET(request: NextRequest) {
       activeCount,
       trialingCount,
       canceledCount,
+      pastDueCount,
       newThisMonth,
       planCounts,
       statusCounts,
@@ -165,6 +169,8 @@ export async function GET(request: NextRequest) {
       prisma.subscription.count({ where: { status: "ACTIVE" } }),
       prisma.subscription.count({ where: { status: "TRIALING" } }),
       prisma.subscription.count({ where: { status: "CANCELED" } }),
+      // Dunning surface: payment-recovery states an operator should act on.
+      prisma.subscription.count({ where: { status: { in: ["PAST_DUE", "GRACE_PERIOD", "UNPAID"] } } }),
       prisma.subscription.count({ where: { createdAt: { gte: thisMonth } } }),
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
       prisma.subscription.groupBy({ by: ["status"], _count: { id: true } }),
@@ -219,7 +225,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       subscriptions: sanitizedSubscriptions, total, page, perPage,
-      stats: { totalAll, activeCount, trialingCount, canceledCount, newThisMonth, planMap, statusMap, providerMap, platformMap, accessTypeMap },
+      stats: { totalAll, activeCount, trialingCount, canceledCount, pastDueCount, newThisMonth, planMap, statusMap, providerMap, platformMap, accessTypeMap },
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
