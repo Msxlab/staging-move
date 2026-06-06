@@ -9,16 +9,13 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
+import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function daysUntilDate(date: Date, now: Date) {
-  return Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / DAY_MS);
 }
 
 function formatDate(date: Date, locale?: string | null) {
@@ -44,12 +41,16 @@ export async function GET(req: Request) {
   try {
     const now = new Date();
     const start = startOfDay(now);
-    const horizon = new Date(start.getTime() + (Math.max(...TASK_REMINDER_DAYS) + 1) * DAY_MS);
+    // Widen the scan window by a day on each side so a task on the user's local
+    // calendar edge (their timezone differs from the server's) is still a
+    // candidate; the exact lead-day match below is timezone-aware.
+    const windowStart = new Date(start.getTime() - DAY_MS);
+    const horizon = new Date(start.getTime() + (Math.max(...TASK_REMINDER_DAYS) + 2) * DAY_MS);
 
     const tasks = await prisma.moveTask.findMany({
       where: {
         deletedAt: null,
-        dueDate: { gte: start, lt: horizon },
+        dueDate: { gte: windowStart, lt: horizon },
         status: { notIn: ["COMPLETED", "DISMISSED"] },
         user: { deletedAt: null },
         movingPlan: { deletedAt: null },
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
         title: true,
         dueDate: true,
         userId: true,
-        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true } },
+        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
         movingPlan: {
           select: {
             id: true,
@@ -89,7 +90,8 @@ export async function GET(req: Request) {
 
     for (const task of tasks) {
       if (!task.user || !task.dueDate) continue;
-      const daysUntilDue = daysUntilDate(task.dueDate, now);
+      const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
+      const daysUntilDue = daysUntilDateOnly(task.dueDate, now, userTimeZone);
       if (!TASK_REMINDER_DAYS.includes(daysUntilDue)) continue;
 
       const userPreferences = preferencesByUser.get(task.userId) || [];

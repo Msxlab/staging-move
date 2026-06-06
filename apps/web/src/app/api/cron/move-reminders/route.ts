@@ -5,6 +5,7 @@ import { createInAppNotification } from "@/lib/in-app-notifications";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
+import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 
 export const runtime = "nodejs";
 
@@ -16,21 +17,32 @@ async function handleCron(request: NextRequest) {
 
     const now = new Date();
     const reminderDays = [7, 3, 1];
-    // Bound the preference read to users who actually have an upcoming move in
-    // the reminder window — the previous unfiltered findMany loaded EVERY
-    // user's preferences into memory on every run. The extra userId-only scan
-    // is far cheaper than the full-table read it replaces.
+    // Scan all upcoming moves once over a window with a day of slack on each
+    // side, then decide per-plan whether it's an exact lead-day match in THE
+    // USER'S timezone (the previous per-day server-time window could fire on
+    // the wrong local calendar day or miss the exact match for far timezones).
+    const windowStart = new Date(now);
+    windowStart.setDate(windowStart.getDate() - 1);
     const windowEnd = new Date(now);
-    windowEnd.setDate(windowEnd.getDate() + Math.max(...reminderDays) + 1);
-    const candidatePlans = await prisma.movingPlan.findMany({
+    windowEnd.setDate(windowEnd.getDate() + Math.max(...reminderDays) + 2);
+    const plans = await prisma.movingPlan.findMany({
       where: {
-        moveDate: { gte: now, lt: windowEnd },
+        moveDate: { gte: windowStart, lt: windowEnd },
         status: { in: ["PLANNING", "IN_PROGRESS"] },
+        // The soft-delete extension scopes the plan itself, but not the
+        // included user relation — exclude plans whose owner was deleted so
+        // we don't email a removed account (mirrors task-reminders).
         user: { deletedAt: null },
       },
-      select: { userId: true },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, profile: { select: { timezone: true } } } },
+        fromAddress: { select: { city: true, state: true } },
+        toAddress: { select: { city: true, state: true } },
+      },
+      orderBy: { moveDate: "asc" },
+      take: 1000,
     });
-    const candidateUserIds = [...new Set(candidatePlans.map((p) => p.userId))];
+    const candidateUserIds = [...new Set(plans.map((p) => p.userId))];
     const preferenceRecords = candidateUserIds.length > 0
       ? await prisma.notificationPreference.findMany({
           where: { userId: { in: candidateUserIds } },
@@ -43,30 +55,12 @@ async function handleCron(request: NextRequest) {
     let pushSent = 0;
     const errors: string[] = [];
 
-    for (const days of reminderDays) {
-      const targetDate = new Date(now);
-      targetDate.setDate(targetDate.getDate() + days);
-      const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-
-      const plans = await prisma.movingPlan.findMany({
-        where: {
-          moveDate: { gte: startOfDay, lt: endOfDay },
-          status: { in: ["PLANNING", "IN_PROGRESS"] },
-          // The soft-delete extension scopes the plan itself, but not the
-          // included user relation — exclude plans whose owner was deleted so
-          // we don't email a removed account (mirrors task-reminders).
-          user: { deletedAt: null },
-        },
-        include: {
-          user: { select: { email: true, firstName: true } },
-          fromAddress: { select: { city: true, state: true } },
-          toAddress: { select: { city: true, state: true } },
-        },
-      });
-
+    {
       for (const plan of plans) {
+        const userTimeZone = resolveReminderTimeZone(plan.user.profile?.timezone);
+        const days = daysUntilDateOnly(plan.moveDate, now, userTimeZone);
+        if (!reminderDays.includes(days)) continue;
+
         const userPreferences = preferencesByUser.get(plan.userId) || [];
         const notificationSettings = buildWebNotificationSettings(userPreferences);
         const emailAllowed = Boolean(
