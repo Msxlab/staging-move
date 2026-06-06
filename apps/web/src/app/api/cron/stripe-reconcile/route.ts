@@ -276,6 +276,11 @@ async function handleCron(request: NextRequest) {
             billingInterval: liveBillingInterval,
             stripePriceId: livePriceId,
             stripeCurrentPeriodEnd: livePeriodEnd,
+            // Write BOTH period-end fields. The entitlement resolver prefers
+            // currentPeriodEndsAt; if reconcile only updated stripeCurrentPeriodEnd,
+            // a dropped renewal webhook would leave currentPeriodEndsAt stale and
+            // the user would read as expired despite Stripe being current.
+            currentPeriodEndsAt: livePeriodEnd,
             canceledAt: liveCanceledAt,
             lastSyncedAt: new Date(),
           },

@@ -7,7 +7,7 @@ import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { emitSecurityEvent } from "@/lib/security-events";
-import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { markWebhookEventProcessed, releaseProcessedWebhookEvent } from "@/lib/webhook-idempotency";
 import { isMissingDbColumnError, warnSchemaCompatibilityFallback } from "@/lib/db-schema-compat";
 import { formatPlanLabel, fireAndLogEmail as fireAndLogBillingEmail } from "@/lib/billing-email-utils";
 import {
@@ -334,11 +334,17 @@ async function syncLocalSubscriptionFromStripe(input: {
     billingProductId: priceId,
     stripeCurrentPeriodEnd: currentPeriodEnd,
     currentPeriodEndsAt: currentPeriodEnd,
-    gracePeriodEndsAt: null,
     lastSyncedAt: new Date(),
     plan: input.plan || "INDIVIDUAL",
     version: { increment: 1 },
   };
+  // Only clear the dunning grace window when the subscription is NOT past due.
+  // invoice.payment_failed sets a 7-day grace; a concurrently-delivered
+  // customer.subscription.updated(past_due) must not race that grace back to
+  // null and lock the user out mid-dunning.
+  if (newStatus !== "PAST_DUE") {
+    updateData.gracePeriodEndsAt = null;
+  }
   // firstChargeAt marks when a trial converts to a paid charge. Only write it
   // while a trial end is known; a later non-trial sync (trial_end === null)
   // must not null out the timestamp the checkout flow already recorded.
@@ -561,8 +567,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, stale: true });
     }
 
-    // DB-backed idempotency — skip already-processed events (survives restarts)
-    if (await hasProcessedWebhookEvent(event.id)) {
+    // DB-backed idempotency — atomically RESERVE this event before doing any
+    // work (survives restarts). A concurrent duplicate delivery hits the unique
+    // PK and bails here, BEFORE any side effect runs — closing the old
+    // check-then-act race where two deliveries could both pass a read-only
+    // check and double-fire. If processing later fails, the reservation is
+    // released (catch below) so Stripe's retry can re-process the event.
+    const reservation = await markWebhookEventProcessed(event.id, "stripe");
+    if (reservation === "duplicate") {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -570,6 +582,7 @@ export async function POST(request: NextRequest) {
     // (see applyStripeWebhookUpdate / syncLocalSubscriptionFromStripe).
     const eventDate = new Date(event.created * 1000);
 
+    try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -1128,13 +1141,72 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case "charge.dispute.created":
+      case "charge.dispute.funds_withdrawn": {
+        // A chargeback withdraws the funds but Stripe does NOT auto-cancel the
+        // subscription and fires no refund event — without this, a disputed
+        // subscription keeps full premium ("dispute = free service"). Revoke
+        // access immediately (PAST_DUE, no grace); if the dispute is later won
+        // and billing resumes, customer.subscription.updated(active) restores it.
+        const dispute = event.data.object as Stripe.Dispute;
+        const chargeRef = dispute.charge;
+        const chargeId = typeof chargeRef === "string" ? chargeRef : chargeRef?.id;
+        if (!chargeId) break;
+        let disputeCustomerId: string | null = null;
+        let disputeSubscriptionId: string | null = null;
+        let disputeUserId: string | null = null;
+        try {
+          const charge = await stripe.charges.retrieve(chargeId);
+          disputeCustomerId =
+            typeof charge.customer === "string" ? charge.customer : charge.customer?.id || null;
+          disputeUserId = typeof charge.metadata?.userId === "string" ? charge.metadata.userId : null;
+          const invoiceRef = charge.invoice;
+          if (invoiceRef) {
+            const invoiceId = typeof invoiceRef === "string" ? invoiceRef : invoiceRef.id;
+            const invoice = await stripe.invoices.retrieve(invoiceId);
+            if (invoice.subscription) {
+              disputeSubscriptionId =
+                typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription.id;
+            }
+          }
+        } catch (err: any) {
+          console.warn("[WEBHOOK] charge.dispute charge/invoice lookup failed:", err?.message);
+        }
+        if (disputeCustomerId) {
+          await applyStripeWebhookUpdate({
+            scope: "webhook:charge-dispute",
+            eventDate,
+            where: disputeSubscriptionId
+              ? { stripeCustomerId: disputeCustomerId, stripeSubscriptionId: disputeSubscriptionId, ...(disputeUserId ? { userId: disputeUserId } : {}), provider: { not: "ADMIN" } }
+              : { stripeCustomerId: disputeCustomerId, ...(disputeUserId ? { userId: disputeUserId } : {}), provider: { not: "ADMIN" } },
+            data: {
+              status: "PAST_DUE",
+              provider: "STRIPE",
+              platform: "web",
+              autoRenew: false,
+              cancelAtPeriodEnd: false,
+              gracePeriodEndsAt: null,
+              lastSyncedAt: new Date(),
+              version: { increment: 1 },
+            },
+          });
+          const disputeRecipient = await lookupUserByStripeCustomer(disputeCustomerId);
+          if (disputeRecipient) {
+            await reconcileSeatsForOwner(disputeRecipient.userId).catch(() => {});
+          }
+        }
+        break;
+      }
+
       default:
         captureMessage(`Unhandled Stripe event: ${event.type}`, "warning");
     }
-
-    const markResult = await markWebhookEventProcessed(event.id, "stripe");
-    if (markResult === "duplicate") {
-      return NextResponse.json({ received: true, duplicate: true });
+    } catch (err) {
+      // Processing failed after the event was reserved — release the
+      // reservation so Stripe's retry re-processes it instead of treating it
+      // as a duplicate and dropping the work.
+      await releaseProcessedWebhookEvent(event.id, "stripe").catch(() => {});
+      throw err;
     }
 
     return NextResponse.json({ received: true });
