@@ -35,29 +35,22 @@ export async function POST(req: NextRequest) {
 
   const { token, platform, deviceName } = parsed.data;
 
-  const existing = await prisma.pushDevice.findUnique({
-    where: { token },
-    select: { id: true, userId: true },
-  });
-
-  if (existing && existing.userId !== userId) {
-    return NextResponse.json({ error: "Push token already registered" }, { status: 409 });
-  }
-
   try {
-    const device = existing
-      ? await prisma.pushDevice.update({
-        where: { id: existing.id },
-        data: { platform, deviceName, lastSeenAt: new Date() },
-      })
-      : await prisma.pushDevice.create({
-        data: { userId, token, platform, deviceName },
-      });
+    // Push tokens are per-DEVICE, not per-user. When a device changes hands
+    // (a family iPad, a hand-me-down phone, or simply a logout/login on the
+    // same device), re-assign the token to the current signed-in user so they
+    // receive their notifications and the previous owner stops receiving theirs
+    // on a device they no longer hold.
+    const device = await prisma.pushDevice.upsert({
+      where: { token },
+      update: { userId, platform, deviceName, lastSeenAt: new Date() },
+      create: { userId, token, platform, deviceName },
+    });
 
     return NextResponse.json({ id: device.id });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return NextResponse.json({ error: "Push token already registered" }, { status: 409 });
+      return NextResponse.json({ error: "Push token registration conflict" }, { status: 409 });
     }
     throw error;
   }

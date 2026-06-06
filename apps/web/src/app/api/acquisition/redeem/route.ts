@@ -207,6 +207,14 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
+    if (error?.code === "P2002") {
+      // Lost the @@unique([userId, campaignId]) race with a concurrent
+      // redemption — the other request already granted this user free access.
+      return NextResponse.json(
+        { code: "ALREADY_REDEEMED", error: "You already used this offer." },
+        { status: 409 },
+      );
+    }
     console.error("Failed to redeem acquisition campaign:", error);
     return NextResponse.json({ error: "Failed to redeem campaign" }, { status: 500 });
   }

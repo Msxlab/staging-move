@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 const mocks = vi.hoisted(() => ({
   requireDbUserId: vi.fn(),
-  pushFindUnique: vi.fn(),
-  pushCreate: vi.fn(),
-  pushUpdate: vi.fn(),
+  pushUpsert: vi.fn(),
   pushDeleteMany: vi.fn(),
   rateLimit: vi.fn(),
 }));
@@ -22,9 +21,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/db", () => ({
   prisma: {
     pushDevice: {
-      findUnique: (...args: unknown[]) => mocks.pushFindUnique(...args),
-      create: (...args: unknown[]) => mocks.pushCreate(...args),
-      update: (...args: unknown[]) => mocks.pushUpdate(...args),
+      upsert: (...args: unknown[]) => mocks.pushUpsert(...args),
       deleteMany: (...args: unknown[]) => mocks.pushDeleteMany(...args),
     },
   },
@@ -46,47 +43,47 @@ describe("push register route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requireDbUserId.mockResolvedValue("user-1");
-    mocks.pushFindUnique.mockResolvedValue(null);
-    mocks.pushCreate.mockResolvedValue({ id: "device-1" });
-    mocks.pushUpdate.mockResolvedValue({ id: "device-1" });
+    mocks.pushUpsert.mockResolvedValue({ id: "device-1" });
     mocks.pushDeleteMany.mockResolvedValue({ count: 1 });
     mocks.rateLimit.mockResolvedValue({ success: true });
   });
 
-  it("creates a new token for the current user", async () => {
+  it("registers a token for the current user via upsert", async () => {
     const response = await POST(postRequest({ token: TOKEN, platform: "ios", deviceName: "iPhone" }));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ id: "device-1" });
-    expect(mocks.pushCreate).toHaveBeenCalledWith({
-      data: { userId: "user-1", token: TOKEN, platform: "ios", deviceName: "iPhone" },
+    expect(mocks.pushUpsert).toHaveBeenCalledWith({
+      where: { token: TOKEN },
+      update: { userId: "user-1", platform: "ios", deviceName: "iPhone", lastSeenAt: expect.any(Date) },
+      create: { userId: "user-1", token: TOKEN, platform: "ios", deviceName: "iPhone" },
     });
-    expect(mocks.pushUpdate).not.toHaveBeenCalled();
   });
 
-  it("updates metadata when the token already belongs to the current user", async () => {
-    mocks.pushFindUnique.mockResolvedValue({ id: "device-1", userId: "user-1" });
-
+  it("reassigns a reused device's token to the current user instead of rejecting", async () => {
+    // Push tokens are per-device: when a device that previously belonged to
+    // another user signs in, the registration must move the token to the new
+    // user (the upsert update sets userId), not return 409.
     const response = await POST(postRequest({ token: TOKEN, platform: "android", deviceName: "Pixel" }));
 
     expect(response.status).toBe(200);
-    expect(mocks.pushUpdate).toHaveBeenCalledWith({
-      where: { id: "device-1" },
-      data: expect.objectContaining({ platform: "android", deviceName: "Pixel" }),
+    expect(mocks.pushUpsert).toHaveBeenCalledWith({
+      where: { token: TOKEN },
+      update: expect.objectContaining({ userId: "user-1", platform: "android", deviceName: "Pixel" }),
+      create: expect.objectContaining({ userId: "user-1", token: TOKEN }),
     });
-    expect(mocks.pushCreate).not.toHaveBeenCalled();
   });
 
-  it("rejects cross-user token takeover attempts", async () => {
-    mocks.pushFindUnique.mockResolvedValue({ id: "device-1", userId: "user-2" });
+  it("returns 409 only when a concurrent insert loses the unique race", async () => {
+    mocks.pushUpsert.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("unique", { code: "P2002", clientVersion: "test" }),
+    );
 
     const response = await POST(postRequest({ token: TOKEN, platform: "ios" }));
     const body = await response.json();
 
     expect(response.status).toBe(409);
-    expect(body.error).toBe("Push token already registered");
-    expect(mocks.pushCreate).not.toHaveBeenCalled();
-    expect(mocks.pushUpdate).not.toHaveBeenCalled();
+    expect(body.error).toBe("Push token registration conflict");
   });
 
   it("does not let unregister requests delete another user's token", async () => {
@@ -102,7 +99,6 @@ describe("push register route", () => {
     const response = await POST(postRequest({ token: TOKEN, platform: "ios" }));
 
     expect(response.status).toBe(429);
-    expect(mocks.pushFindUnique).not.toHaveBeenCalled();
-    expect(mocks.pushCreate).not.toHaveBeenCalled();
+    expect(mocks.pushUpsert).not.toHaveBeenCalled();
   });
 });

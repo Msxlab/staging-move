@@ -115,7 +115,6 @@ export default function ExportScreen() {
           Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
         }
       } else {
-        hapticSuccess();
         const dataStr = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
         const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
 
@@ -132,20 +131,22 @@ export default function ExportScreen() {
 
         // iOS: share the file URL ALONE. Passing a `message` alongside a file
         // `url` makes iOS drop the attachment for Save-to-Files and most targets,
-        // so the export "did nothing". Android RN Share cannot attach a file via
-        // `url` (only `message` is honored) — that needs a native share module in
-        // a future build; keep the content-uri attempt as best-effort.
-        if (Platform.OS === "ios") {
-          await Share.share({
-            url: fileUri,
-            title: t("settings.exportShareTitle", { type, format }),
-          });
-        } else {
-          const contentUri = await FileSystem.getContentUriAsync(fileUri);
-          await Share.share({
-            url: contentUri,
-            title: t("settings.exportShareTitle", { type, format }),
-          });
+        // so the export "did nothing". Android RN Share cannot reliably attach a
+        // file via `url` (needs a native share module in a future build) — keep
+        // the content-uri attempt as best-effort.
+        const shareUrl =
+          Platform.OS === "ios" ? fileUri : await FileSystem.getContentUriAsync(fileUri);
+        const shareResult = await Share.share({
+          url: shareUrl,
+          title: t("settings.exportShareTitle", { type, format }),
+        });
+
+        // Only report success when the user actually completed a share. A
+        // dismissed sheet must not be reported as a successful export — the
+        // success haptic previously fired before the sheet even opened. (Android
+        // always returns sharedAction; iOS distinguishes a real dismissal.)
+        if (shareResult.action === Share.sharedAction) {
+          hapticSuccess();
         }
         // Do NOT delete here: cacheDirectory is OS-reclaimed, and deleting
         // immediately after the sheet presents can race a target still copying

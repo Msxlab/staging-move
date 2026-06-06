@@ -302,7 +302,7 @@ export async function normalizeAppleResult(
   const expiresAt = result.transaction.expiresDate
     ? new Date(result.transaction.expiresDate)
     : null;
-  const gracePeriodEndsAt = result.renewal?.gracePeriodExpiresDate
+  let gracePeriodEndsAt = result.renewal?.gracePeriodExpiresDate
     ? new Date(result.renewal.gracePeriodExpiresDate)
     : null;
 
@@ -325,6 +325,17 @@ export async function normalizeAppleResult(
   }
   if (result.transaction.revocationDate) {
     status = "REFUNDED";
+  }
+
+  // Apple billing-retry (rawStatus 3 → PAST_DUE) means the renewal card was
+  // declined but the user has NOT canceled and Apple keeps retrying. Without a
+  // grace window the entitlement resolver revokes access instantly, while an
+  // equivalent Stripe/web subscriber keeps access for 7 days (dunning grace).
+  // Give iOS the same 7-day courtesy grace, anchored to the period end, when
+  // Apple itself did not provide one.
+  if (status === "PAST_DUE" && !gracePeriodEndsAt) {
+    const graceAnchor = expiresAt ?? new Date(now);
+    gracePeriodEndsAt = new Date(graceAnchor.getTime() + 7 * 24 * 60 * 60 * 1000);
   }
 
   return {

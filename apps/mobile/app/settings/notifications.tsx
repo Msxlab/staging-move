@@ -72,36 +72,41 @@ export default function NotificationSettingsScreen() {
   const handleSave = async () => {
     setSaving(true);
     const wantsPush = prefs.pushTaskReminders || prefs.pushBillReminders || prefs.pushMoveAlerts;
+    let pushPermissionDenied = false;
     if (wantsPush) {
       // Toggling a push category ON is an explicit opt-in — bypass the
       // soft-prompt gate so the OS permission prompt actually fires (otherwise,
       // on a fresh install the gate silently no-ops and nothing is delivered).
       const registered = await registerForPushNotifications({ requireSoftPrompt: false });
-      if (!registered) {
-        setSaving(false);
-        hapticError();
-        // Failure here is a denied/undetermined OS permission, not a network error.
-        Alert.alert(
-          t("notifications.title"),
-          t("notifications.pushPermissionDenied", {
-            defaultValue: "Turn on notifications for LocateFlow in your device Settings to receive push alerts.",
-          }),
-        );
-        return;
-      }
+      pushPermissionDenied = !registered;
     }
+
+    // Persist the preferences REGARDLESS of the push-permission outcome. A
+    // denied/undetermined OS permission must not silently discard the user's
+    // edits (including unrelated email toggles) — we save what they chose and
+    // warn separately that push needs the OS permission before it can deliver.
     const res = await api.put<any>("/api/notifications/preferences", prefs);
     setSaving(false);
     if (res.error) {
       hapticError();
       Alert.alert(t("common.retry"), res.error);
-    } else {
-      if (res.data?.preferences) {
-        setPrefs({ ...DEFAULT_PREFS, ...res.data.preferences });
-      }
-      hapticSuccess();
-      router.back();
+      return;
     }
+    if (res.data?.preferences) {
+      setPrefs({ ...DEFAULT_PREFS, ...res.data.preferences });
+    }
+    if (pushPermissionDenied) {
+      hapticError();
+      Alert.alert(
+        t("notifications.title"),
+        t("notifications.pushPermissionDenied", {
+          defaultValue: "Your preferences were saved. To receive push alerts, turn on notifications for LocateFlow in your device Settings.",
+        }),
+      );
+      return;
+    }
+    hapticSuccess();
+    router.back();
   };
 
   if (pageLoading) return <LoadingScreen />;

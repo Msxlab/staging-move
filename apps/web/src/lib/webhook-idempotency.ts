@@ -23,3 +23,15 @@ export async function markWebhookEventProcessed(id: string, source: string) {
     throw error;
   }
 }
+
+/**
+ * Release a previously-reserved webhook event so a retry can re-process it.
+ *
+ * Used when an event is reserved up-front (atomic, race-free) but processing
+ * then fails: deleting the marker lets the provider's retry re-run the handler
+ * instead of seeing a duplicate and silently dropping the work. Scoped by
+ * source so one provider can't release another's marker.
+ */
+export async function releaseProcessedWebhookEvent(id: string, source: string) {
+  await prisma.processedWebhookEvent.deleteMany({ where: { id, source } });
+}

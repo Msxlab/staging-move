@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
-  Linking,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +32,7 @@ import { api, APP_WEB_URL } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
 import { getPasswordLinkAction } from "@/lib/password-management";
+import { openWebUrl } from "@/lib/in-app-browser";
 
 const PRIVACY_POLICY_URL = `${APP_WEB_URL}/privacy`;
 const TERMS_OF_USE_URL = `${APP_WEB_URL}/terms`;
@@ -225,18 +225,18 @@ export default function PrivacySettingsScreen() {
   };
 
   const handleOpenPrivacyPolicy = async () => {
-    try {
-      await Linking.openURL(PRIVACY_POLICY_URL);
-    } catch {
+    // Owned page → chromeless in-app browser with the shared session and
+    // ?embed=mobile (matches subscription/help), not a full Safari/Chrome jump.
+    const opened = await openWebUrl(PRIVACY_POLICY_URL);
+    if (!opened) {
       hapticError();
       Alert.alert(t("settings.privacy"), t("providers.linkUnavailable"));
     }
   };
 
   const handleOpenTermsOfUse = async () => {
-    try {
-      await Linking.openURL(TERMS_OF_USE_URL);
-    } catch {
+    const opened = await openWebUrl(TERMS_OF_USE_URL);
+    if (!opened) {
       hapticError();
       Alert.alert(t("settings.privacy"), t("providers.linkUnavailable"));
     }

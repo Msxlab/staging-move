@@ -6,6 +6,7 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 
 export const runtime = "nodejs";
 
@@ -24,37 +25,45 @@ async function handleCron(request: NextRequest) {
     let pushSent = 0;
     const errors: string[] = [];
 
-    for (const days of reminderDays) {
-      const targetDate = new Date(now);
-      targetDate.setDate(targetDate.getDate() + days);
-      const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
+    // Scan all contracts ending within the window (one day of slack on each
+    // side), then decide per-service whether it's an exact lead-day match in
+    // THE USER'S timezone, so a far-timezone user isn't reminded on the wrong
+    // local day or skipped by the exact integer match.
+    const windowStart = new Date(now);
+    windowStart.setDate(windowStart.getDate() - 1);
+    const windowEnd = new Date(now);
+    windowEnd.setDate(windowEnd.getDate() + Math.max(...reminderDays) + 2);
 
-      const services = await prisma.service.findMany({
-        where: {
-          isActive: true,
-          contractEndDate: { gte: startOfDay, lt: endOfDay },
-          // Soft-delete scopes the service row but not the included user —
-          // skip services whose owner was deleted (mirrors task-reminders).
-          user: { deletedAt: null },
-        },
-        include: {
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
-        },
-      });
+    const services = await prisma.service.findMany({
+      where: {
+        isActive: true,
+        contractEndDate: { gte: windowStart, lt: windowEnd },
+        // Soft-delete scopes the service row but not the included user —
+        // skip services whose owner was deleted (mirrors task-reminders).
+        user: { deletedAt: null },
+      },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
+      },
+      orderBy: { contractEndDate: "asc" },
+      take: 1000,
+    });
 
-      const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
-      const preferenceRecords = userIds.length > 0
-        ? await prisma.notificationPreference.findMany({
-            where: { userId: { in: userIds } },
-            select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
-          })
-        : [];
-      const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
+    const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
+    const preferenceRecords = userIds.length > 0
+      ? await prisma.notificationPreference.findMany({
+          where: { userId: { in: userIds } },
+          select: { userId: true, channel: true, type: true, enabled: true, frequency: true },
+        })
+      : [];
+    const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
 
+    {
       for (const service of services) {
-        if (!service.user?.email) continue;
+        if (!service.user?.email || !service.contractEndDate) continue;
+        const userTimeZone = resolveReminderTimeZone(service.user.profile?.timezone);
+        const days = daysUntilDateOnly(service.contractEndDate, now, userTimeZone);
+        if (!reminderDays.includes(days)) continue;
 
         const userPreferences = preferencesByUser.get(service.user.id) || [];
         const notificationSettings = buildWebNotificationSettings(userPreferences);

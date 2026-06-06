@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Globe, Phone, Mail, Calendar, DollarSign, FileText, Edit } from "lucide-react";
+import { ArrowLeft, Globe, Phone, Mail, Calendar, DollarSign, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,6 @@ interface ServiceDetail {
   activatedAt?: string;
   notes?: string;
   address?: { nickname?: string; city?: string; state?: string };
-  documents?: { id: string; fileName: string; uploadedAt: string }[];
 }
 
 export default function ServiceDetailPage() {
@@ -201,27 +200,6 @@ export default function ServiceDetailPage() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {service.documents && service.documents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Documents</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {service.documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{doc.fileName}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(doc.uploadedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
-              </div>
-            ))}
           </CardContent>
         </Card>
       )}

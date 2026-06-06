@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
     processedWebhookEvent: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
     subscription: {
       updateMany: vi.fn(),
@@ -58,6 +59,7 @@ import { POST } from "./route";
 const processedMock = mocks.prisma.processedWebhookEvent as {
   findUnique: Mock;
   create: Mock;
+  deleteMany: Mock;
 };
 const subscriptionMock = mocks.prisma.subscription as {
   updateMany: Mock;
@@ -237,6 +239,7 @@ describe("Stripe webhook idempotency and livemode", () => {
     });
     processedMock.findUnique.mockResolvedValue(null);
     processedMock.create.mockResolvedValue({});
+    processedMock.deleteMany.mockResolvedValue({ count: 1 });
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
     subscriptionMock.findFirst.mockResolvedValue(localSubscription());
     subscriptionMock.findMany.mockResolvedValue([]);
@@ -274,14 +277,19 @@ describe("Stripe webhook idempotency and livemode", () => {
 
   it("skips a duplicate event after successful processing", async () => {
     const first = await POST(request());
-    processedMock.findUnique.mockResolvedValueOnce({ id: "evt_1" });
+    // The second delivery's atomic reservation insert hits the unique PK and
+    // bails before any side effect runs.
+    processedMock.create.mockRejectedValueOnce(
+      Object.assign(new Error("duplicate"), { code: "P2002" }),
+    );
     const second = await POST(request());
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     await expect(second.json()).resolves.toMatchObject({ duplicate: true });
     expect(subscriptionMock.updateMany).toHaveBeenCalledTimes(1);
-    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    // Both deliveries attempt to reserve; only the first succeeds.
+    expect(processedMock.create).toHaveBeenCalledTimes(2);
   });
 
   it("clears stale pending schedule fields when Stripe sync switches to a new subscription", async () => {
@@ -639,7 +647,8 @@ describe("Stripe webhook idempotency and livemode", () => {
 
     expect(response.status).toBe(500);
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
-    expect(processedMock.create).not.toHaveBeenCalled();
+    // Reserved up-front, then released on failure so Stripe's retry re-processes.
+    expect(processedMock.deleteMany).toHaveBeenCalled();
   });
 
   it("keeps webhook retryable when no local subscription/user can be mapped", async () => {
@@ -650,7 +659,8 @@ describe("Stripe webhook idempotency and livemode", () => {
 
     expect(response.status).toBe(500);
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
-    expect(processedMock.create).not.toHaveBeenCalled();
+    // Reserved up-front, then released on failure so Stripe's retry re-processes.
+    expect(processedMock.deleteMany).toHaveBeenCalled();
   });
 
   it("accepts testmode webhook events in staging", async () => {
@@ -670,7 +680,9 @@ describe("Stripe webhook idempotency and livemode", () => {
     const failed = await POST(request());
     expect(failed.status).toBe(500);
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
-    expect(processedMock.create).not.toHaveBeenCalled();
+    // Reserved up-front, then released on failure so the retry can re-process.
+    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    expect(processedMock.deleteMany).toHaveBeenCalledTimes(1);
 
     mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValueOnce({
       plan: "INDIVIDUAL",
@@ -680,7 +692,8 @@ describe("Stripe webhook idempotency and livemode", () => {
 
     expect(retry.status).toBe(200);
     expect(subscriptionMock.updateMany).toHaveBeenCalledTimes(1);
-    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    // Reserve attempted on both deliveries; the retry's reservation sticks.
+    expect(processedMock.create).toHaveBeenCalledTimes(2);
   });
 
   it("rejects testmode events in production without mutation", async () => {

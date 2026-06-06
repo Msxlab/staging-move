@@ -4,7 +4,6 @@ import {
   Zap,
   Truck,
   Bell,
-  FileText,
   CheckCircle2,
   ArrowRight,
   Shield,
@@ -16,7 +15,7 @@ import { createPublicPageMetadata } from "@/lib/seo";
 export const metadata = createPublicPageMetadata({
   title: "How It Works",
   description:
-    "See how LocateFlow helps organize providers, addresses, reminders, documents, and moving tasks without replacing provider confirmation.",
+    "See how LocateFlow helps organize providers, addresses, reminders, and moving tasks without replacing provider confirmation.",
   path: "/how-it-works",
 });
 
@@ -35,7 +34,7 @@ const steps = [
     title: "Log every service",
     body: "Utility, bank, insurance, streaming, gym, HOA - whatever shows up on a statement. Add the provider details you want to track.",
     detail:
-      "Document capture and provider matching may assist entry when available, but you should confirm provider, plan, billing, and contract details before relying on them.",
+      "Provider matching may assist entry when available, but you should confirm provider, plan, billing, and contract details before relying on them.",
   },
   {
     step: "03",
@@ -62,9 +61,9 @@ const pillars = [
     body: "Your account data is scoped to your account. LocateFlow uses access controls and privacy tools and does not sell user-entered relocation data.",
   },
   {
-    icon: FileText,
-    title: "Documents in one place",
-    body: "Store contracts, receipts, and proof-of-address with the service they belong to. Search finds the file, not the folder.",
+    icon: Bell,
+    title: "Reminders that reach you",
+    body: "Renewal windows, contract end dates, and bill due dates you save become reminders in the app and by email - before they turn into late fees.",
   },
   {
     icon: CheckCircle2,
@@ -121,7 +120,7 @@ export default function HowItWorksPage() {
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
-            <span><strong className="text-foreground">Wednesday.</strong> Add a new HOA statement and attach the document to the right address so it is easier to find later.</span>
+            <span><strong className="text-foreground">Wednesday.</strong> Add a new HOA statement to the right address so the cost and renewal are easy to find later.</span>
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />

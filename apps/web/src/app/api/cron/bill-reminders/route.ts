@@ -6,12 +6,11 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import {
   buildWebNotificationSettings,
-  getDaysUntilDate,
-  getNextBillingDate,
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
   MAX_WEB_NOTIFICATION_REMINDER_DAYS,
 } from "@/lib/notification-preferences";
+import { nextBillingOccurrence, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 
 /**
  * GET /api/cron/bill-reminders
@@ -62,7 +61,7 @@ export async function GET(req: Request) {
         user: { deletedAt: null },
       },
       include: {
-        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+        user: { select: { id: true, email: true, firstName: true, lastName: true, profile: { select: { timezone: true } } } },
       },
     });
     const userIds = [...new Set(services.map((service) => service.user?.id).filter(Boolean))] as string[];
@@ -92,13 +91,19 @@ export async function GET(req: Request) {
       const pushAllowed = isPushTypeEnabled(userPreferences, "BILL_REMINDER");
       if (!emailAllowed && !pushAllowed) continue;
 
-      const dueDate = getNextBillingDate(svc.billingDay || currentDay, now);
-      const daysUntilDue = getDaysUntilDate(dueDate, now);
+      const userTimeZone = resolveReminderTimeZone(svc.user.profile?.timezone);
+      const { date: dueDate, daysUntil: daysUntilDue } = nextBillingOccurrence(
+        svc.billingDay || currentDay,
+        now,
+        userTimeZone,
+      );
       const leadDays = Number.parseInt(notificationSettings.config.reminderDays, 10);
       if (!Number.isFinite(leadDays) || daysUntilDue !== leadDays) continue;
 
       try {
-        const dueDateText = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        // dueDate is a UTC-midnight date-only value — format it in UTC so the
+        // displayed day matches the user's billing day regardless of server tz.
+        const dueDateText = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
         const dedupeKey = `cron:bill-reminder:${svc.id}:${dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`;
         const notificationBody = `${svc.providerName} is due ${daysUntilDue === 0 ? "today" : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`} on ${dueDateText}.`;
 

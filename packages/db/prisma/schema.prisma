@@ -380,6 +380,9 @@ model AcquisitionRedemption {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // One redemption per (user, campaign) — DB-enforced so two concurrent POSTs
+  // can't both grant free access. campaignId NULLs stay distinct in MySQL.
+  @@unique([userId, campaignId])
   @@index([campaignId])
   @@index([userId])
   @@index([subscriptionId])
@@ -1274,10 +1277,15 @@ model Notification {
   sendAt    DateTime  @default(now())
   expiresAt DateTime?
 
-  metadata String? @db.Text // JSON
+  metadata  String? @db.Text // JSON
+  dedupeKey String? @db.VarChar(191) // normalized idempotency key for IN_APP dedupe
 
   createdAt DateTime @default(now())
 
+  // Atomic dedupe for in-app notifications. NULLs are distinct in MySQL, so
+  // notifications without a dedupeKey are never collapsed; keyed ones can only
+  // exist once per (user, channel, key).
+  @@unique([userId, channel, dedupeKey])
   @@index([userId, read])
   @@index([userId, type])
   @@index([sendAt, sent])

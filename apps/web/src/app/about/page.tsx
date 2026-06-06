@@ -13,7 +13,7 @@ export const metadata = createPublicPageMetadata({
 });
 
 const principles = [
-  "LocateFlow helps people keep track of addresses, service-provider records, moving tasks, reminders, documents, and exports.",
+  "LocateFlow helps people keep track of addresses, service-provider records, moving tasks, reminders, and exports.",
   "LocateFlow is not a provider marketplace, broker, mover, utility company, government agency, or official address-change service.",
   "LocateFlow does not automatically update external provider accounts. Users still verify and complete changes with each provider or agency.",
   "Provider and moving guidance is informational and may be incomplete or outdated, so users should confirm details with authoritative sources.",
@@ -32,18 +32,18 @@ export default function AboutPage() {
       <PublicPageShell
         eyebrow="About"
         title="LocateFlow is a home-service and moving organization app."
-        description="It gives individuals one place to manage the records that follow an address: utilities, banks, insurance, subscriptions, documents, renewal dates, and moving tasks."
+        description="It gives individuals one place to manage the records that follow an address: utilities, banks, insurance, subscriptions, renewal dates, and moving tasks."
       >
         <PublicSection title="What LocateFlow is">
           <p>
             LocateFlow is built for people who want a reliable list of every service,
-            document, renewal, and task tied to where they live. It is especially
+            renewal, and task tied to where they live. It is especially
             useful before, during, and after a move because address changes tend to
             scatter across providers, agencies, inboxes, apps, and paper records.
           </p>
           <p>
             The product is intentionally practical: save the provider, attach the
-            address, note the renewal date, keep the document, and export the record
+            address, note the renewal date, and export the record
             when you need a copy.
           </p>
         </PublicSection>
