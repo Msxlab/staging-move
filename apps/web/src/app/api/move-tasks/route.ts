@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const userId = await requireDbUserId();
     const scope = await resolveWorkspaceDataScope(request, userId);
     assertWorkspaceAction(scope, "address.edit", { resourceUserId: userId });
-    const rlKey = getRateLimitKey(request, "move-task:generate");
+    const rlKey = getRateLimitKey(request, "move-task:generate", { userId });
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
@@ -182,7 +182,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const scope = await resolveWorkspaceDataScope(request, userId);
-    const rlKey = getRateLimitKey(request, "move-task:update");
+    const rlKey = getRateLimitKey(request, "move-task:update", { userId });
     const rl = await rateLimit(rlKey, { limit: 60, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

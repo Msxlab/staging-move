@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(request, "legal:acceptance"), {
+  const rl = await rateLimit(getRateLimitKey(request, "legal:acceptance", { userId }), {
     limit: 20,
     windowSeconds: 60,
     failClosed: true,

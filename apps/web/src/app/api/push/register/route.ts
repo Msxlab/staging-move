@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(req, "push:register"), {
+  const rl = await rateLimit(getRateLimitKey(req, "push:register", { userId }), {
     limit: 20,
     windowSeconds: 60,
   });
@@ -64,7 +64,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(req, "push:unregister"), {
+  const rl = await rateLimit(getRateLimitKey(req, "push:unregister", { userId }), {
     limit: 20,
     windowSeconds: 60,
   });

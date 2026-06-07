@@ -134,12 +134,19 @@ export function ServicesClient({
           isBusinessOwner: prof.isBusinessOwner ?? false,
           moveType: prof.moveType || "PERSONAL",
         };
-        // Move tasks don't persist a templateId and use `status` (not `completed`),
-        // so the old `t.completed && t.templateId` filter referenced two fields that
-        // never exist — the set was always empty. Match the dashboard's empty set.
-        // Properly reflecting completed templates (persist templateId on MoveTask +
-        // derive done from status) is a separate enhancement, not a go-live blocker.
+        // Reflect completed MoveTasks in the checklist: a generated task now
+        // persists `templateId` (the checklist item it maps to), so a COMPLETED
+        // task with a non-null templateId marks that checklist item DONE. Tasks
+        // without a templateId (no matching checklist item) are simply skipped.
         const completedTemplates = new Set<string>();
+        try {
+          const moveTasksRes = await fetch(
+            `/api/move-tasks?movingPlanId=${activePlan.id}&status=COMPLETED`,
+          ).then((r) => r.json());
+          for (const t of moveTasksRes?.tasks || []) {
+            if (t?.templateId && t?.status === "COMPLETED") completedTemplates.add(t.templateId);
+          }
+        } catch { /* non-blocking: fall back to empty set */ }
         const toState = activePlan.toAddress?.state || "";
         let stateRule: ChecklistStateRuleContext | null = null;
         if (toState) {

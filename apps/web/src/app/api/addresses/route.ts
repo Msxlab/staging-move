@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     assertWorkspaceAction(scope, "address.create", { resourceUserId: userId });
 
     // Rate limit: 20 writes per minute
-    const rlKey = getRateLimitKey(request, "addr:create");
+    const rlKey = getRateLimitKey(request, "addr:create", { userId });
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

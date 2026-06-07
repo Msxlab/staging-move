@@ -5,6 +5,7 @@ import {
   type MoveServiceTransitionPlan,
   type MoveTransitionProviderInput,
 } from "@locateflow/shared";
+import { resolveChecklistTemplateId } from "@/lib/checklist-template-map";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageConfidenceFromDb, resolveEffectiveState } from "@/lib/provider-matching";
 import { canGenerateMoveTasks } from "@/lib/plan-limits";
@@ -318,6 +319,10 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
           : null,
       actionType: plan.actionType,
       source: "CLASSIFIER",
+      // Link back to the relocation-checklist template item (e.g. "P1_ELECTRIC")
+      // so a COMPLETED task can mark that checklist item DONE. Null when the
+      // service category has no corresponding checklist item — graceful no-op.
+      templateId: resolveChecklistTemplateId(plan.serviceCategory),
       title: buildTaskTitle(plan),
       description: plan.userFacingCopy,
       reason: plan.primaryReason,

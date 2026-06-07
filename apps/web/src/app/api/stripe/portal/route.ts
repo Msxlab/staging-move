@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const userId = await requireDbUserId();
 
     // Rate limit: 5 portal sessions per minute
-    const rlKey = getRateLimitKey(request, "stripe:portal");
+    const rlKey = getRateLimitKey(request, "stripe:portal", { userId });
     const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

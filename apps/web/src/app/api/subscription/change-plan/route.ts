@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
 
     const userId = await requireDbUserId();
 
-    const rlKey = getRateLimitKey(request, "subscription:change-plan");
+    const rlKey = getRateLimitKey(request, "subscription:change-plan", { userId });
     const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

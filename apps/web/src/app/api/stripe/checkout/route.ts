@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     const userId = await requireDbUserId();
 
     // Rate limit: 5 checkout sessions per minute
-    const rlKey = getRateLimitKey(request, "stripe:checkout");
+    const rlKey = getRateLimitKey(request, "stripe:checkout", { userId });
     const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import {
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
 import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
 import { canSeeRawBillingIds, maskEmail } from "@/lib/privacy";
+
+/**
+ * Step-up credential fields are carried in the same JSON body as the
+ * campaign payload. Pull them out here so `mutableCampaignData` never
+ * sees them as campaign columns and `requirePasswordConfirm` gets what
+ * it expects.
+ */
+function extractStepUp(body: any) {
+  return {
+    confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
+    mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
+    backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+  };
+}
 
 const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
   code: "ACTIVE_CAMPAIGN_CONFLICT",
@@ -174,6 +189,27 @@ export async function PATCH(
     const session = await requirePermission("acquisition_campaigns", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
+    const requestMeta = getAuditRequestMeta(request);
+
+    // Edits + status changes (activate / pause / end) rewrite the live
+    // campaign — including the bound Stripe price and the public pricing
+    // copy. Gate behind admin password + MFA step-up before any mutation.
+    const { confirmPassword, mfaCode, backupCode } = extractStepUp(body);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "acquisition_campaign_update",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
+    }
+
     const data = mutableCampaignData(body);
     const existing = await (prisma as any).acquisitionCampaign.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
@@ -197,21 +233,20 @@ export async function PATCH(
       const conflict = await findActiveCampaignConflict(tx, merged, id);
       if (conflict) return { conflict };
       const campaign = await tx.acquisitionCampaign.update({ where: { id }, data });
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "UPDATE",
-          entityType: "AcquisitionCampaign",
-          entityId: id,
-          changes: JSON.stringify(data),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
-      });
       return { campaign };
     });
     if (result.conflict) {
       return NextResponse.json(ACTIVE_CAMPAIGN_CONFLICT_RESPONSE, { status: 409 });
     }
+    await writeAdminAudit(session, {
+      action: "ACQUISITION_CAMPAIGN_UPDATE",
+      entityType: "AcquisitionCampaign",
+      entityId: id,
+      before: { status: existing.status, code: existing.code, stripePriceId: existing.stripePriceId },
+      after: { status: result.campaign.status, code: result.campaign.code, stripePriceId: result.campaign.stripePriceId },
+      metadata: { operation: "acquisition_campaign_update", changedFields: Object.keys(data) },
+      request: requestMeta,
+    });
     return NextResponse.json({ campaign: result.campaign, priceValidation });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -233,6 +268,27 @@ export async function POST(
     if (body.action !== "duplicate") {
       return NextResponse.json({ error: "Invalid action." }, { status: 400 });
     }
+    const requestMeta = getAuditRequestMeta(request);
+
+    // Duplicating clones the bound Stripe price ID and pricing copy into a
+    // new draft campaign — same blast radius as a create, so gate it behind
+    // admin password + MFA step-up.
+    const { confirmPassword, mfaCode, backupCode } = extractStepUp(body);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "acquisition_campaign_duplicate",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
+    }
+
     const source = await (prisma as any).acquisitionCampaign.findUnique({ where: { id } });
     if (!source) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     const code = normalizeCode(body.code || `${source.code}_COPY`);
@@ -261,15 +317,13 @@ export async function POST(
         createdByAdminId: session.adminId,
       },
     });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE",
-        entityType: "AcquisitionCampaign",
-        entityId: duplicate.id,
-        changes: JSON.stringify({ duplicatedFrom: id, code }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "ACQUISITION_CAMPAIGN_DUPLICATE",
+      entityType: "AcquisitionCampaign",
+      entityId: duplicate.id,
+      after: { code, status: duplicate.status },
+      metadata: { operation: "acquisition_campaign_duplicate", duplicatedFrom: id },
+      request: requestMeta,
     });
     return NextResponse.json({ campaign: duplicate }, { status: 201 });
   } catch (error: any) {
@@ -290,6 +344,29 @@ export async function DELETE(
   try {
     const session = await requirePermission("acquisition_campaigns", "canDelete", { minimumRole: "ADMIN" });
     const { id } = await params;
+    const requestMeta = getAuditRequestMeta(request);
+
+    // Deleting a campaign is destructive (and unbinds a live Stripe price
+    // for non-redeemed drafts) — gate behind admin password + MFA step-up.
+    // The body is optional: a no-body request fails closed with a 403 that
+    // tells the client to collect the password + MFA code.
+    const body = await request.json().catch(() => ({}));
+    const { confirmPassword, mfaCode, backupCode } = extractStepUp(body);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "acquisition_campaign_delete",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
+    }
+
     const existing = await (prisma as any).acquisitionCampaign.findUnique({
       where: { id },
       select: { id: true, code: true, status: true, redemptionCount: true },
@@ -321,18 +398,14 @@ export async function DELETE(
       );
     }
 
-    await (prisma as any).$transaction(async (tx: any) => {
-      await tx.acquisitionCampaign.delete({ where: { id } });
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "DELETE",
-          entityType: "AcquisitionCampaign",
-          entityId: id,
-          changes: JSON.stringify({ code: existing.code, status: existing.status }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
-      });
+    await (prisma as any).acquisitionCampaign.delete({ where: { id } });
+    await writeAdminAudit(session, {
+      action: "ACQUISITION_CAMPAIGN_DELETE",
+      entityType: "AcquisitionCampaign",
+      entityId: id,
+      before: { code: existing.code, status: existing.status },
+      metadata: { operation: "acquisition_campaign_delete" },
+      request: requestMeta,
     });
     return NextResponse.json({ ok: true });
   } catch (error: any) {

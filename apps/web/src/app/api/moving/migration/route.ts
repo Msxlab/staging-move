@@ -25,7 +25,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
-    const rl = await rateLimit(getRateLimitKey(request, "moving:migration"), {
+    const rl = await rateLimit(getRateLimitKey(request, "moving:migration", { userId }), {
       limit: 30,
       windowSeconds: 60,
     });

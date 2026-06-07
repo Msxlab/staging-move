@@ -60,7 +60,7 @@ export async function POST(
     const { id } = await params;
 
     // Rate limit: 20 replies per hour
-    const rlKey = getRateLimitKey(request, "ticket:reply");
+    const rlKey = getRateLimitKey(request, "ticket:reply", { userId });
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 3600 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many replies. Please wait." }, { status: 429 });
