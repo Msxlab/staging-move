@@ -5,6 +5,7 @@ import {
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
 import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
+import { canSeeRawBillingIds, maskEmail } from "@/lib/privacy";
 
 const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
   code: "ACTIVE_CAMPAIGN_CONFLICT",
@@ -126,7 +127,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
+    const session = await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
+    const showRawEmails = canSeeRawBillingIds(session.role);
     const { id } = await params;
     const campaign = await (prisma as any).acquisitionCampaign.findUnique({
       where: { id },
@@ -142,7 +144,21 @@ export async function GET(
       },
     });
     if (!campaign) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-    return NextResponse.json({ campaign });
+    // Redemption rows carry end-user PII (email). Mask it for non-ADMIN
+    // readers (VIEWER/MODERATOR), matching every other admin surface.
+    const safeCampaign = showRawEmails
+      ? campaign
+      : {
+          ...campaign,
+          redemptions: Array.isArray(campaign.redemptions)
+            ? campaign.redemptions.map((redemption: any) =>
+                redemption?.user
+                  ? { ...redemption, user: { ...redemption.user, email: maskEmail(redemption.user.email) } }
+                  : redemption,
+              )
+            : campaign.redemptions,
+        };
+    return NextResponse.json({ campaign: safeCampaign });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

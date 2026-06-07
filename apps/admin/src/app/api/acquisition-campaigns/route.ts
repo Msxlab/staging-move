@@ -6,6 +6,31 @@ import {
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
 import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
+import { canSeeRawBillingIds, maskEmail } from "@/lib/privacy";
+
+/**
+ * Mask the user/admin email fields carried by a campaign's `redemptions`
+ * and `createdByAdmin` relations unless the caller is ADMIN/SUPER_ADMIN.
+ * The campaign list/detail are readable by VIEWER (acquisition_campaigns
+ * baseline), but a redemption email is end-user PII — every other admin
+ * surface masks it for non-privileged roles, so do the same here.
+ */
+function redactCampaignEmails(campaign: any, showRaw: boolean) {
+  if (!campaign || showRaw) return campaign;
+  return {
+    ...campaign,
+    createdByAdmin: campaign.createdByAdmin
+      ? { ...campaign.createdByAdmin, email: maskEmail(campaign.createdByAdmin.email) }
+      : campaign.createdByAdmin,
+    redemptions: Array.isArray(campaign.redemptions)
+      ? campaign.redemptions.map((redemption: any) =>
+          redemption?.user
+            ? { ...redemption, user: { ...redemption.user, email: maskEmail(redemption.user.email) } }
+            : redemption,
+        )
+      : campaign.redemptions,
+  };
+}
 
 const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
   code: "ACTIVE_CAMPAIGN_CONFLICT",
@@ -99,7 +124,8 @@ async function findActiveCampaignConflict(client: any, candidate: any, excludeId
 
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
+    const session = await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
+    const showRawEmails = canSeeRawBillingIds(session.role);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const accessType = searchParams.get("accessType");
@@ -142,7 +168,10 @@ export async function GET(request: NextRequest) {
       }),
       (prisma as any).acquisitionCampaign.count({ where }),
     ]);
-    return NextResponse.json({ campaigns, total, page, pageSize });
+    const safeCampaigns = Array.isArray(campaigns)
+      ? campaigns.map((campaign: any) => redactCampaignEmails(campaign, showRawEmails))
+      : campaigns;
+    return NextResponse.json({ campaigns: safeCampaigns, total, page, pageSize });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

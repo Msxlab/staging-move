@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { buildCsv } from "@/lib/csv-safety";
 
 // GET /api/affiliate/export?type=clicks|conversions
 //
@@ -9,18 +10,12 @@ import { requirePermission } from "@/lib/auth";
 // provider). Bounded to keep a single download sane.
 const MAX_ROWS = 5000;
 
-function csvCell(value: unknown): string {
-  // Formula-injection guard + quoting, same posture as the user data export.
-  const raw = value === null || value === undefined ? "" : String(value);
-  const guarded = raw.length > 0 && "=+-@".includes(raw.trimStart()[0] ?? "") ? "'" + raw : raw;
-  return guarded.includes(",") || guarded.includes('"') || guarded.includes("\n")
-    ? `"${guarded.replace(/"/g, '""')}"`
-    : guarded;
-}
-
-function csv(headers: string[], rows: unknown[][]): string {
-  return [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\n") + "\n";
-}
+// Use the canonical CSV-injection guard (`buildCsv`/`csvField`) shared with the
+// waitlist + provider exports rather than a bespoke escaper. The previous local
+// `csvCell` only neutralized a leading `=+-@` and missed the `\t`/`\r` formula
+// triggers — and `externalTransactionId` is attacker-influenceable (it is taken
+// verbatim from the affiliate-network postback body), so a malicious partner
+// could smuggle a spreadsheet formula into this export.
 
 const iso = (d: Date | null | undefined): string => (d ? d.toISOString() : "");
 
@@ -46,7 +41,7 @@ export async function GET(request: NextRequest) {
           provider: { select: { name: true } },
         },
       });
-      body = csv(
+      body = buildCsv(
         ["providerName", "providerId", "network", "status", "amountCents", "currency", "externalTransactionId", "occurredAt", "createdAt"],
         rows.map((r) => [
           r.provider?.name ?? "",
@@ -73,7 +68,7 @@ export async function GET(request: NextRequest) {
           provider: { select: { name: true } },
         },
       });
-      body = csv(
+      body = buildCsv(
         ["providerName", "providerId", "source", "network", "addressId", "createdAt"],
         rows.map((r) => [
           r.provider?.name ?? "",
