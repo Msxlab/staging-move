@@ -44,6 +44,8 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { LatestBlogPosts } from "@/components/marketing/latest-blog-posts";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { HeroPhoneMock } from "@/components/marketing/hero-phone-mock";
+import { RaccoonHero } from "@/components/illustrations/RaccoonHero";
+import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-storm";
 import { HardStats } from "@/components/marketing/hard-stats";
 import { MovingMomentMock } from "@/components/marketing/moving-moment-mock";
@@ -229,6 +231,16 @@ export default async function LandingPage() {
 
           <div className="relative">
             <HeroPhoneMock />
+            {/* Mover raccoon — the site mascot, hugging a moving box, peeking in
+                beside the phone. Decorative (aria-hidden) and absolutely
+                positioned so it never reflows the CTA. Hidden below lg so it
+                can't crowd the phone or the buttons on narrow screens; the box
+                picks up --primary, the fur the muted token, so it tracks both
+                themes and the per-plan accent. */}
+            <RaccoonHero
+              size={168}
+              className="pointer-events-none absolute -bottom-10 -left-6 hidden text-foreground/40 drop-shadow-sm lg:block xl:-left-16"
+            />
           </div>
         </div>
 
@@ -335,6 +347,14 @@ export default async function LandingPage() {
       <section id="how-it-works" className="bg-muted/50 py-20">
         <div className="container">
           <div className="text-center mb-16">
+            {/* Subtle mascot accent — the reading raccoon peeking over the
+                steps, keeping the "Field Guide" character consistent with the
+                blog. Decorative, token-themed, sits above the heading so it
+                reads as a friendly guide, not clutter. */}
+            <RaccoonReading
+              size={104}
+              className="mx-auto mb-4 text-foreground/35"
+            />
             <h2 className="text-3xl font-bold mb-4">{t("section_how_title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
