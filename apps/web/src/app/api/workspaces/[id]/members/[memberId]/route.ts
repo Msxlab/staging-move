@@ -50,6 +50,7 @@ async function emailMembershipChange(
 }
 
 const ASSIGNABLE_ROLES = ["ADMIN", "MEMBER", "CHILD", "VIEW_ONLY"]; // OWNER goes through transfer, not role change
+const ASSIGNABLE_STATUSES = ["ACTIVE", "SUSPENDED"]; // OVERFLOW is seat-driven, never set by hand
 
 async function resolvePair(workspaceId: string, memberId: string, callerUserId: string) {
   const [caller, target] = await Promise.all([
@@ -59,7 +60,12 @@ async function resolvePair(workspaceId: string, memberId: string, callerUserId: 
   return { caller, target };
 }
 
-/** PATCH /api/workspaces/[id]/members/[memberId] — change a member's role. */
+/**
+ * PATCH /api/workspaces/[id]/members/[memberId] — change a member's role OR
+ * their status (SUSPENDED ↔ ACTIVE). The body carries exactly one of `role` or
+ * `status`; supplying both is rejected. Status changes route to a dedicated
+ * suspend/reactivate flow that reconciles seats on reactivation.
+ */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
@@ -68,12 +74,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id, memberId } = await params;
 
   const { caller, target } = await resolvePair(id, memberId, session.userId);
+  // 404 when the CALLER isn't a member of this workspace (they may not even see
+  // it) or the target member doesn't exist here — never leak the row's existence.
   if (!caller || !target) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await request.json().catch(() => ({}));
+  const wantsStatus = typeof body?.status === "string";
+  const wantsRole = typeof body?.role === "string";
+  if (wantsStatus && wantsRole) {
+    return NextResponse.json({ error: "Change role or status, not both." }, { status: 422 });
+  }
+  if (wantsStatus) {
+    return patchStatus({ request, id, memberId, session, caller, target, body });
+  }
+
+  // ── Role change (existing behaviour) ──────────────────────────────────────
   if (target.userId === session.userId) {
     return NextResponse.json({ error: "You can't change your own role." }, { status: 409 });
   }
 
-  const body = await request.json().catch(() => ({}));
   const newRole = typeof body?.role === "string" ? body.role : "";
   if (!ASSIGNABLE_ROLES.includes(newRole)) {
     return NextResponse.json({ error: "Invalid role" }, { status: 422 });
@@ -126,6 +145,109 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   return NextResponse.json({ id: updated.id, role: updated.role });
 }
 
+type MemberRow = NonNullable<Awaited<ReturnType<typeof resolvePair>>["target"]>;
+
+/**
+ * Suspend (ACTIVE/OVERFLOW → SUSPENDED) or reactivate (SUSPENDED → ACTIVE) a
+ * member. Gated on the same authority as removal (`member.remove`): OWNER/ADMIN
+ * only, an ADMIN may not act on the OWNER or another ADMIN, and the OWNER can
+ * never be the target. Self is blocked to prevent the caller locking themselves
+ * out. Reactivation reconciles seats — a reactivated member over the seat limit
+ * is demoted to read-only OVERFLOW (the reconcile helper never demotes the owner).
+ */
+async function patchStatus(args: {
+  request: NextRequest;
+  id: string;
+  memberId: string;
+  session: { userId: string };
+  caller: MemberRow;
+  target: MemberRow;
+  body: { status?: unknown };
+}): Promise<NextResponse> {
+  const { request, id, memberId, session, caller, target, body } = args;
+  const newStatus = typeof body?.status === "string" ? body.status : "";
+  if (!ASSIGNABLE_STATUSES.includes(newStatus)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 422 });
+  }
+
+  // A member may never suspend themselves (lockout) — surface a clear 409 even
+  // for the OWNER, who would otherwise be blocked by the 403 below anyway.
+  if (target.userId === session.userId) {
+    return NextResponse.json({ error: "You can't change your own status." }, { status: 409 });
+  }
+  // Suspending/reactivating is a removal-class roster action: OWNER/ADMIN only,
+  // and the OWNER is never a valid target. The caller is known to belong to the
+  // workspace (resolved above), so a denial here is a genuine 403, not a 404.
+  if (!can(caller.role as WorkspaceRole, "member.remove", { targetRole: target.role as WorkspaceRole, status: caller.status as WorkspaceMemberStatus })) {
+    return NextResponse.json({ error: "You can't change this member's status." }, { status: 403 });
+  }
+
+  const suspending = newStatus === "SUSPENDED";
+  if (suspending && target.status === "SUSPENDED") {
+    return NextResponse.json({ id: target.id, status: target.status }); // idempotent no-op
+  }
+  if (!suspending && target.status !== "SUSPENDED") {
+    // Reactivation only applies to a suspended member; OVERFLOW is seat-driven
+    // and resolves itself via reconcile, so don't let a manual ACTIVE override it.
+    return NextResponse.json({ id: target.id, status: target.status });
+  }
+
+  const fromStatus = target.status;
+  const updated = await prisma.workspaceMember.update({
+    where: { id: memberId },
+    data: suspending
+      ? { status: "SUSPENDED", suspendedAt: new Date(), suspendedReason: null }
+      : { status: "ACTIVE", suspendedAt: null, suspendedReason: null },
+  });
+
+  await createInAppNotification({
+    userId: target.userId,
+    type: "WORKSPACE_MEMBERSHIP",
+    title: suspending ? "Workspace access suspended" : "Workspace access restored",
+    body: suspending
+      ? "Your access to a shared workspace was suspended. You can still view data, but changes are paused until access is restored."
+      : "Your full access to a shared workspace was restored.",
+    href: "/settings/workspace",
+  }).catch(() => {});
+
+  const targetUser = await prisma.user.findUnique({ where: { id: target.userId }, select: { email: true } });
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: suspending
+      ? WORKSPACE_AUDIT_ACTIONS.MEMBER_SUSPENDED
+      : WORKSPACE_AUDIT_ACTIONS.MEMBER_REACTIVATED,
+    workspaceId: id,
+    entityType: "workspace_member",
+    entityId: memberId,
+    metadata: {
+      targetUserId: target.userId,
+      targetEmail: maskTargetEmail(targetUser?.email),
+      fromStatus,
+      toStatus: updated.status,
+    },
+  });
+
+  // Notify the OWNER of the status change (suppressed when the owner performed it).
+  const wsName = await workspaceDisplayName(id);
+  await notifyWorkspaceOwnerOfRosterChange({
+    workspaceId: id,
+    actorUserId: session.userId,
+    title: suspending ? "A member was suspended" : "A member was reactivated",
+    body: suspending
+      ? `${maskTargetEmail(targetUser?.email) ?? "A member"}'s access to ${wsName} was suspended.`
+      : `${maskTargetEmail(targetUser?.email) ?? "A member"}'s access to ${wsName} was reactivated.`,
+    dedupeSuffix: `status:${memberId}:${updated.status}`,
+  });
+
+  // Reactivating a member adds an active seat back — if that pushes the
+  // workspace over its seat limit, reconcile demotes the newest non-owner
+  // member(s) to read-only OVERFLOW (never the owner). Best-effort.
+  if (!suspending) await reconcileWorkspaceSeats(id).catch(() => {});
+
+  return NextResponse.json({ id: updated.id, status: updated.status });
+}
+
 /** DELETE /api/workspaces/[id]/members/[memberId] — remove a member. */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
   const off = await workspaceFeatureGate();
@@ -135,6 +257,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id, memberId } = await params;
 
   const { caller, target } = await resolvePair(id, memberId, session.userId);
+  // 404 when the caller isn't a member here or the target doesn't exist (don't
+  // leak existence); 403 below is a real permission denial on a known member.
   if (!caller || !target) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (target.userId === session.userId) {
     return NextResponse.json({ error: "Use leave to remove yourself." }, { status: 409 });

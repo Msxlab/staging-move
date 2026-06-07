@@ -10,11 +10,34 @@
  * on 401 via the middleware error. This matches the web app session cookie.
  */
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { tokenCache } from "@/lib/auth";
 
 const TOKEN_KEY = "locateflow.session";
+// planTier lives in AsyncStorage (NOT SecureStore) alongside the other
+// non-secret UI prefs (theme, app-lock). Persisting it lets ThemeProvider
+// derive the correct Family/Pro palette on the FIRST render after a cold
+// launch — before /api/profile resolves — so the dashboard theme + raccoon
+// mascots no longer flash the base Aurora palette.
+const PLAN_TIER_KEY = "locateflow.planTier";
 const AUTH_REFRESH_TIMEOUT_MS = 12_000;
+
+/**
+ * The only plan values that may drive theming. A persisted value outside this
+ * set (corruption, a future/renamed tier, a downgraded build) is coerced to
+ * `null` so it can never break the palette — `applyPlanPalette` then falls
+ * back to the base Aurora theme. "INDIVIDUAL" is valid but renders the base
+ * palette (no accent), same as `null`.
+ */
+const KNOWN_PLAN_TIERS = ["FAMILY", "PRO", "INDIVIDUAL"] as const;
+
+/** Normalize an arbitrary persisted/server value to a safe plan tier or null. */
+function normalizePlanTier(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const upper = value.toUpperCase();
+  return (KNOWN_PLAN_TIERS as readonly string[]).includes(upper) ? upper : null;
+}
 
 export interface AuthUser {
   id: string;
@@ -68,8 +91,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async hydrate() {
     try {
-      const token = await tokenCache.getToken(TOKEN_KEY);
-      set({ token, loading: false });
+      // Restore the token (SecureStore) and the cached plan tier (AsyncStorage)
+      // together so the very first render after launch already has the right
+      // plan palette — no flash of the base Aurora theme before /api/profile.
+      const [token, storedPlan] = await Promise.all([
+        tokenCache.getToken(TOKEN_KEY),
+        AsyncStorage.getItem(PLAN_TIER_KEY).catch(() => null),
+      ]);
+      set({ token, planTier: normalizePlanTier(storedPlan), loading: false });
     } catch {
       set({ loading: false });
     }
@@ -81,7 +110,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async clearSession() {
-    await tokenCache.clearToken(TOKEN_KEY);
+    // CRITICAL: drop the persisted plan tier too. Otherwise a previous user's
+    // Family/Pro palette would be restored on the next launch and leak into a
+    // new (e.g. Individual) session before /api/profile corrects it.
+    await Promise.all([
+      tokenCache.clearToken(TOKEN_KEY),
+      AsyncStorage.removeItem(PLAN_TIER_KEY).catch(() => {}),
+    ]);
     set({ token: null, user: null, planTier: null, loading: false });
   },
 
@@ -92,7 +127,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setPlanTier(plan) {
-    set({ planTier: plan });
+    // Validate against the known set so a bad value can never reach theming,
+    // then persist (fire-and-forget) so the correct palette survives the next
+    // cold launch. The in-memory update is synchronous so the UI reacts now.
+    const normalized = normalizePlanTier(plan);
+    if (get().planTier !== normalized) {
+      set({ planTier: normalized });
+    }
+    if (normalized === null) {
+      void AsyncStorage.removeItem(PLAN_TIER_KEY).catch(() => {});
+    } else {
+      void AsyncStorage.setItem(PLAN_TIER_KEY, normalized).catch(() => {});
+    }
   },
 
   async refreshUser(apiBaseUrl) {

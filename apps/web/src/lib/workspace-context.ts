@@ -12,6 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import {
   getEffectiveEntitlement,
   can,
@@ -22,6 +23,33 @@ import {
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+
+/** Canonical lf_workspace_id cookie name + write options (match accept/create routes). */
+const WORKSPACE_COOKIE_NAME = "lf_workspace_id";
+const WORKSPACE_COOKIE_OPTIONS = {
+  path: "/",
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 365,
+};
+
+/**
+ * Overwrite the lf_workspace_id cookie with the resolved workspace id so a stale
+ * value stops forcing the oldest-workspace fallback on every request.
+ *
+ * Best-effort: cookies() can only be mutated from a Route Handler / Server
+ * Action. In a Server Component render (pages also resolve context) the write
+ * throws read-only — we swallow it. The next API call the client makes runs in a
+ * route handler and self-heals the cookie there. MUST never throw: regressing
+ * this back into the resolver would re-introduce the lockout it guards against.
+ */
+async function overwriteStaleWorkspaceCookie(workspaceId: string): Promise<void> {
+  try {
+    const store = await cookies();
+    store.set(WORKSPACE_COOKIE_NAME, workspaceId, WORKSPACE_COOKIE_OPTIONS);
+  } catch {
+    /* outside a writable response scope (e.g. server-component render) — ignore */
+  }
+}
 
 export interface WorkspaceContext {
   userId: string;
@@ -158,6 +186,13 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
 
   const role = member.role as WorkspaceRole;
   const status = member.status as WorkspaceMemberStatus;
+
+  // Self-heal a stale header/cookie: rewrite lf_workspace_id to the workspace we
+  // actually resolved so the bad value stops mis-routing every future request.
+  // Best-effort and non-throwing (see helper) — never regress the lockout fix.
+  if (staleWorkspaceCookie) {
+    await overwriteStaleWorkspaceCookie(workspace.id);
+  }
 
   return {
     userId,

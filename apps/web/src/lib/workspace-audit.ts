@@ -37,6 +37,10 @@ export const WORKSPACE_AUDIT_ACTIONS = {
   MEMBER_REMOVED: "WS_MEMBER_REMOVED",
   /** WORKSPACE_MEMBER_LEFT — a member removed themselves. */
   MEMBER_LEFT: "WS_MEMBER_LEFT",
+  /** WORKSPACE_MEMBER_SUSPENDED — a member's access was suspended (read-only). */
+  MEMBER_SUSPENDED: "WS_MEMBER_SUSPEND",
+  /** WORKSPACE_MEMBER_REACTIVATED — a suspended member was reactivated. */
+  MEMBER_REACTIVATED: "WS_MEMBER_REACTIV",
 } as const;
 
 export type WorkspaceAuditAction =
