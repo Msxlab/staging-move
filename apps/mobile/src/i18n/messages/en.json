@@ -59,6 +59,7 @@
   "auth": {
     "signIn_title": "Welcome back",
     "signUp_title": "Create your account",
+    "inviteSignUpContext": "You're creating an account to join the household you were invited to. We'll add you automatically once you're signed in.",
     "email": "Email",
     "password": "Password",
     "firstName": "First name",
@@ -149,7 +150,10 @@
     "pushPromptTitle": "Stay on top of your move",
     "pushPromptBody": "Turn on notifications to get reminders for bills, tasks, and key move dates before they slip by.",
     "pushPromptEnable": "Enable notifications",
-    "pushPromptDismiss": "Dismiss"
+    "pushPromptDismiss": "Dismiss",
+    "firstRunTitle": "Welcome to LocateFlow",
+    "firstRunBody": "Add your first address and we'll help you keep every service, bill, and move in one calm place.",
+    "firstRunCta": "Set up your first address"
   },
   "addresses": {
     "title": "Addresses",
@@ -781,6 +785,7 @@
     "providers_empty": "No providers found.",
     "moving_title": "Do you have a move planned?",
     "moving_description": "If yes, we'll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.",
+    "invitedMemberMovingNote": "You've joined a household. A move plan is optional — your household's owner manages the shared move. You can add your own any time.",
     "moving_yes": "Yes, plan my move",
     "moving_no": "Not right now",
     "moving_skipped": "No problem! You can create a moving plan anytime from the Moving tab.",

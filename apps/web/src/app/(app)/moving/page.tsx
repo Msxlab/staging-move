@@ -2,6 +2,7 @@
 import { Plus, Truck, Calendar, ArrowRight } from "lucide-react";
 import { headers } from "next/headers";
 import { EmptyState } from "@/components/shared/empty-state";
+import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -53,6 +54,7 @@ export default async function MovingPage() {
       {plans.length === 0 ? (
         <EmptyState
           icon={Truck}
+          illustration={<RaccoonReading size={148} className="text-foreground/45" />}
           title={tEmpty("movingPlans")}
           description={tEmpty("movingPlansDescription")}
           actionLabel={tEmpty("startMove")}

@@ -19,6 +19,7 @@ import { isBlogLocale } from "@locateflow/shared";
 import { getPublicCategoryBySlug, listPublicPosts } from "@/lib/blog/queries";
 import { blogPostPath } from "@/lib/blog/urls";
 import { JsonLd, breadcrumbSchema, collectionPageSchema } from "@/components/seo/json-ld";
+import { BlogHeroFallback } from "@/components/blog/blog-hero-fallback";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -198,10 +199,7 @@ export default async function BlogCategoryPage({
                       className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   ) : (
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,hsl(var(--primary)/0.18),transparent_60%),radial-gradient(circle_at_75%_75%,var(--foil-c,hsl(var(--primary)/0.06)),transparent_55%)]"
-                    />
+                    <BlogHeroFallback variant="card" />
                   )}
                 </div>
                 <div className="mt-5 space-y-2">

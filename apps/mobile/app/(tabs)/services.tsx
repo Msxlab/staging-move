@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import {
@@ -228,7 +228,36 @@ export default function ServicesScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>{t("services.title")}</Text>
+            <Text style={styles.subtitle}>{t("common.loading")}</Text>
+          </View>
+          <View style={styles.addButton}>
+            <Plus size={20} color="#fff" />
+          </View>
+        </View>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <SkeletonBlock width="80%" height={13} />
+            </View>
+            <View style={styles.summaryItem}>
+              <SkeletonBlock width="80%" height={13} />
+            </View>
+          </View>
+        </View>
+        <View style={[styles.scrollContent, styles.list]}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonCard key={i} lines={2} showFooter />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const filtered = filterCat ? services.filter((s) => getMergedDisplayCategoryKey(s.category) === filterCat) : services;
   const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
@@ -415,6 +444,7 @@ export default function ServicesScreen() {
           if (selectedAddressId) suggestParams.addressId = selectedAddressId;
           return (
             <EmptyState
+              mascot="mom"
               icon={<Zap size={32} color={theme.colors.primary} />}
               title={filterCat ? t("services.emptyCategory") : t("services.empty")}
               description={

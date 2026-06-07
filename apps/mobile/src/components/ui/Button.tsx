@@ -8,9 +8,11 @@ import {
   type ViewStyle,
   type TextStyle,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticLight } from "@/lib/haptics";
+import { usePressScale } from "@/lib/use-press-scale";
 
 interface ButtonProps {
   title: string;
@@ -51,6 +53,8 @@ export function Button({
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { animatedStyle, onPressIn, onPressOut } = usePressScale();
+  const interactive = !disabled && !loading;
   const trailingIcon = rightIcon || iconRight;
   const handlePress = () => {
     if (!loading && !disabled) {
@@ -91,46 +95,54 @@ export function Button({
 
   if (variant === "gradient") {
     return (
+      <Animated.View style={animatedStyle}>
+        <TouchableOpacity
+          onPress={handlePress}
+          onPressIn={interactive ? onPressIn : undefined}
+          onPressOut={interactive ? onPressOut : undefined}
+          disabled={disabled || loading}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel || title}
+          accessibilityHint={accessibilityHint}
+          accessibilityState={{ disabled: disabled || loading }}
+          style={[(disabled || loading) && styles.disabled, style]}
+        >
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.accent]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[
+              styles.base,
+              styles[`size_${size}`],
+              fullWidth && styles.fullWidth,
+              { ...theme.shadow.glow },
+            ]}
+          >
+            {content}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Animated.View style={[animatedStyle, fullWidth && styles.fullWidth]}>
       <TouchableOpacity
         onPress={handlePress}
+        onPressIn={interactive ? onPressIn : undefined}
+        onPressOut={interactive ? onPressOut : undefined}
         disabled={disabled || loading}
+        style={buttonStyles}
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: disabled || loading }}
-        style={[(disabled || loading) && styles.disabled, style]}
       >
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.accent]}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={[
-            styles.base,
-            styles[`size_${size}`],
-            fullWidth && styles.fullWidth,
-            { ...theme.shadow.glow },
-          ]}
-        >
-          {content}
-        </LinearGradient>
+        {content}
       </TouchableOpacity>
-    );
-  }
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      disabled={disabled || loading}
-      style={buttonStyles}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: disabled || loading }}
-    >
-      {content}
-    </TouchableOpacity>
+    </Animated.View>
   );
 }
 

@@ -7,7 +7,9 @@ import {
   type AccessibilityState,
   type ViewStyle,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import { useAppTheme, type Theme } from "@/lib/theme";
+import { usePressScale } from "@/lib/use-press-scale";
 
 interface CardProps {
   children: React.ReactNode;
@@ -34,22 +36,27 @@ export function Card({
 }: CardProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
   const cardStyle = [styles.base, styles[variant], style];
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.7}
-        style={cardStyle}
-        accessible={accessible}
-        accessibilityRole={accessibilityRole}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint={accessibilityHint}
-        accessibilityState={accessibilityState}
-      >
-        {children}
-      </TouchableOpacity>
+      <Animated.View style={animatedStyle}>
+        <TouchableOpacity
+          onPress={onPress}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={0.7}
+          style={cardStyle}
+          accessible={accessible}
+          accessibilityRole={accessibilityRole}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint={accessibilityHint}
+          accessibilityState={accessibilityState}
+        >
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
     );
   }
 

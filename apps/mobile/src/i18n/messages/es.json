@@ -59,6 +59,7 @@
   "auth": {
     "signIn_title": "Bienvenido de vuelta",
     "signUp_title": "Crea tu cuenta",
+    "inviteSignUpContext": "Estás creando una cuenta para unirte al hogar al que te invitaron. Te agregaremos automáticamente cuando inicies sesión.",
     "email": "Correo",
     "password": "Contraseña",
     "firstName": "Nombre",
@@ -149,7 +150,10 @@
     "pushPromptTitle": "No te pierdas nada de tu mudanza",
     "pushPromptBody": "Activa las notificaciones para recibir recordatorios de facturas, tareas y fechas clave antes de que se te pasen.",
     "pushPromptEnable": "Activar notificaciones",
-    "pushPromptDismiss": "Descartar"
+    "pushPromptDismiss": "Descartar",
+    "firstRunTitle": "Bienvenido a LocateFlow",
+    "firstRunBody": "Agrega tu primera dirección y te ayudaremos a tener cada servicio, factura y mudanza en un solo lugar tranquilo.",
+    "firstRunCta": "Configura tu primera dirección"
   },
   "addresses": {
     "title": "Direcciones",
@@ -781,6 +785,7 @@
     "providers_empty": "No se encontraron proveedores.",
     "moving_title": "¿Tienes una mudanza planeada?",
     "moving_description": "Si sí, generaremos una lista personalizada con tareas y plazos. Si no, puedes agregar una en cualquier momento desde la pestaña Mudanza.",
+    "invitedMemberMovingNote": "Te has unido a un hogar. El plan de mudanza es opcional: el propietario del hogar gestiona la mudanza compartida. Puedes agregar el tuyo en cualquier momento.",
     "moving_yes": "Sí, planear mi mudanza",
     "moving_no": "Ahora no",
     "moving_skipped": "¡Sin problema! Puedes crear un plan de mudanza en cualquier momento desde la pestaña Mudanza.",

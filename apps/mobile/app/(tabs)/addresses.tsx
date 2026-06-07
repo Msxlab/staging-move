@@ -32,7 +32,7 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import type { Address } from "@locateflow/shared";
 
@@ -123,7 +123,26 @@ export default function AddressesScreen() {
     [t]
   );
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>{t("addresses.title")}</Text>
+            <Text style={styles.subtitle}>{t("common.loading")}</Text>
+          </View>
+          <View style={styles.addButton}>
+            <Plus size={20} color="#fff" />
+          </View>
+        </View>
+        <View style={[styles.scrollContent, styles.list]}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonCard key={i} lines={2} showFooter />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const totalMonthly = addresses.reduce(
     (sum, a) =>
@@ -180,6 +199,7 @@ export default function AddressesScreen() {
           <ErrorState message={error} onRetry={load} />
         ) : addresses.length === 0 ? (
           <EmptyState
+            mascot="dad"
             icon={<MapPin size={32} color={theme.colors.primary} />}
             title={t("addresses.empty")}
             description={t("addresses.emptyDescription")}

@@ -41,6 +41,7 @@ import {
   setPendingLegalConsents,
 } from "@/lib/legal";
 import { exchangeMobileOAuthCallbackUrl } from "@/lib/mobile-oauth-handoff";
+import { consumePendingInviteJoin, extractInviteToken, setPendingInviteToken } from "@/lib/workspace-invite";
 
 // Cache the last known onboarding-completion flag so a transient /api/profile
 // failure does not silently route a brand-new account into (tabs). Cache hits
@@ -130,6 +131,18 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleOAuthUrl = async (url: string | null) => {
+      // Invite deep links: a NEVER-REGISTERED invitee taps /invitations/<token>
+      // with no session, so the AuthGuard is about to bounce them to sign-in and
+      // the native invite landing never renders. Stash the token NOW so that, as
+      // soon as they finish signing up / signing in, the auth screens auto-join
+      // them to the inviting workspace. (An already-signed-in user instead lands
+      // on the invite screen directly and Joins there — this stash is harmless:
+      // that screen also captures the token, and it's consumed on the next auth.)
+      const inviteToken = extractInviteToken(url);
+      if (inviteToken) {
+        await setPendingInviteToken(inviteToken).catch(() => {});
+      }
+
       // exchangeMobileOAuthCallbackUrl is idempotent and coalesces concurrent
       // callers (see apps/mobile/src/lib/mobile-oauth-handoff.ts). When the
       // WebBrowser path in (auth)/sign-in.tsx already won the race, this
@@ -160,6 +173,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           await setPendingLegalConsents(null);
         }
       }
+      // OAuth handoff (incl. invited users who signed up via Google/Apple from
+      // the invite link): now that a session exists, consume any stashed invite
+      // token to auto-join. Idempotent + best-effort; the onboarding mount also
+      // retries this for the new-user path.
+      await consumePendingInviteJoin().catch(() => null);
       router.replace(getPostAuthMobileRoute(exchanged.user));
     };
 

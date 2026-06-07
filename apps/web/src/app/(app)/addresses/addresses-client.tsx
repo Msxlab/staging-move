@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, MapPin, Home, Briefcase, Palmtree, Star, Edit, Trash2, Zap, Eye, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
+import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -105,6 +106,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
       {addresses.length === 0 ? (
         <EmptyState
           icon={MapPin}
+          illustration={<RaccoonReading size={148} className="text-foreground/45" />}
           title={tEmpty("addresses")}
           description={tEmpty("addressesDescription")}
           actionLabel={tEmpty("addAddress")}

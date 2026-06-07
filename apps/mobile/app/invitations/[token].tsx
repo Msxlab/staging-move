@@ -8,7 +8,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { acceptInvite, type InviteErrorCode } from "@/lib/workspace-invite";
+import { acceptInvite, setPendingInviteToken, type InviteErrorCode } from "@/lib/workspace-invite";
 
 interface InviteDetails {
   workspaceName: string | null;
@@ -73,6 +73,11 @@ export default function InvitationScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    // Stash the token so invite context survives even if the session ends before
+    // the user taps Join (e.g. they need to switch accounts, or get bounced to
+    // sign-in). It's consumed + cleared on the next successful auth. Harmless for
+    // an already-signed-in user who Joins right here.
+    void setPendingInviteToken(tokenStr).catch(() => {});
     const res = await api.get<InviteDetails>(`/api/invitations/${tokenStr}`);
     if (res.error || !res.data) {
       setErrorMsg(res.error || t("invite.invalid", "This invitation is no longer valid."));
@@ -98,6 +103,10 @@ export default function InvitationScreen() {
       Alert.alert(t("invite.cantJoin", "Couldn't join"), errorCopy(res.code, res.message));
       return;
     }
+    // Joined here directly — clear the stashed token so it isn't re-consumed on a
+    // later sign-in (the accept endpoint would just no-op with ALREADY_MEMBER,
+    // but clearing keeps the handoff state tidy).
+    void setPendingInviteToken(null).catch(() => {});
     hapticSuccess();
     setJoined(true);
   };

@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
@@ -81,7 +81,26 @@ export default function MovingScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>{t("moving.title")}</Text>
+            <Text style={styles.subtitle}>{t("common.loading")}</Text>
+          </View>
+          <View style={styles.addButton}>
+            <Plus size={20} color="#fff" />
+          </View>
+        </View>
+        <View style={[styles.scrollContent, styles.list]}>
+          {[0, 1, 2].map((i) => (
+            <SkeletonCard key={i} lines={2} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -113,6 +132,7 @@ export default function MovingScreen() {
           <ErrorState message={error} onRetry={load} />
         ) : plans.length === 0 ? (
           <EmptyState
+            mascot="kid"
             icon={<Truck size={32} color={theme.colors.primary} />}
             title={t("moving.checklistEmpty")}
             description={t("moving.subtitle")}

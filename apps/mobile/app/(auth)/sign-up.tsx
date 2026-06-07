@@ -24,6 +24,7 @@ import {
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
 import { getPostAuthMobileRoute } from "@/lib/post-auth-route";
+import { consumePendingInviteJoin, hydratePendingInviteToken } from "@/lib/workspace-invite";
 import { registerForPushNotifications } from "@/lib/push";
 import {
   canAttemptAppleOAuth,
@@ -56,6 +57,20 @@ export default function SignUpScreen() {
   const [oauthProviders, setOauthProviders] = useState<OAuthProviderStatusMap | null>(null);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
   const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
+  // True when the user reached sign-up from an invite deep link (token stashed
+  // by the root layout). Drives the "you're joining a household" banner so the
+  // continuity is visible; the actual auto-join happens post-auth.
+  const [hasPendingInvite, setHasPendingInvite] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void hydratePendingInviteToken().then((token) => {
+      if (!cancelled) setHasPendingInvite(Boolean(token));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     api.get<{ providers?: OAuthProviderStatusMap }>("/api/auth/oauth/providers")
@@ -149,6 +164,11 @@ export default function SignUpScreen() {
       await setSession(loginRes.data.token, loginRes.data.user);
       hapticSuccess();
       void registerForPushNotifications().catch(() => null);
+      // Auto-verified account (e.g. QA allowlist): a session exists right away,
+      // so consume any pending invite token NOW to auto-join the invitee. The
+      // normal email-verify path below has no session yet — its token is
+      // consumed on the later sign-in (see sign-in.tsx).
+      await consumePendingInviteJoin().catch(() => null);
       router.replace(getPostAuthMobileRoute(loginRes.data.user));
       setLoading(false);
       return;
@@ -182,6 +202,7 @@ export default function SignUpScreen() {
           // The native Apple route persisted these consents during the handoff.
           await setPendingLegalConsents(null);
           hapticSuccess();
+          await consumePendingInviteJoin().catch(() => null);
           router.replace(getPostAuthMobileRoute(native.user));
           return;
         }
@@ -206,6 +227,7 @@ export default function SignUpScreen() {
         return;
       }
       hapticSuccess();
+      await consumePendingInviteJoin().catch(() => null);
       router.replace(getPostAuthMobileRoute(result.user));
     } catch (err: any) {
       await setPendingLegalConsents(null);
@@ -239,6 +261,17 @@ export default function SignUpScreen() {
         <LogoBrand />
         <Text style={styles.title}>{t("auth.signUp_title")}</Text>
         <Text style={styles.subtitle}>{t("auth.signUp")}</Text>
+
+        {hasPendingInvite ? (
+          <View style={styles.inviteBanner}>
+            <Text style={styles.inviteBannerText}>
+              {t(
+                "auth.inviteSignUpContext",
+                "You're creating an account to join the household you were invited to. We'll add you automatically once you're signed in.",
+              )}
+            </Text>
+          </View>
+        ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -351,6 +384,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
   title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
+  inviteBanner: {
+    padding: 12,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.primaryFaded,
+    marginBottom: 12,
+  },
+  inviteBannerText: { fontSize: 12, color: theme.colors.text, lineHeight: 18 },
   error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },
   oauthButton: {

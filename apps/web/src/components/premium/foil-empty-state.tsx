@@ -12,6 +12,12 @@ interface FoilEmptyStateProps {
   secondaryAction?: ReactNode;
   /** Override the default Lucide icon shown above the title. */
   icon?: ReactNode;
+  /**
+   * Full custom illustration (e.g. the raccoon mascot) shown in place of the
+   * foil disc. When provided it replaces the disc + icon entirely so the
+   * mascot can stand on its own foil glow. Keep it decorative / aria-hidden.
+   */
+  illustration?: ReactNode;
 }
 
 /**
@@ -19,7 +25,9 @@ interface FoilEmptyStateProps {
  * pairs a tonal foil illustration with one short sentence and one CTA.
  *
  * The "foil" effect comes from a soft radial glow behind a thin double ring;
- * we deliberately avoid stock illustration to stay on-brand.
+ * we deliberately avoid stock illustration to stay on-brand. Pass
+ * `illustration` to swap the small foil disc for the raccoon mascot when a
+ * surface wants the friendlier, on-brand character treatment.
  */
 export function FoilEmptyState({
   eyebrow,
@@ -28,11 +36,12 @@ export function FoilEmptyState({
   action,
   secondaryAction,
   icon,
+  illustration,
 }: FoilEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-6">
       <div className="relative mb-6">
-        {/* foil glow */}
+        {/* foil glow — kept behind both the disc and the mascot variant */}
         <div
           aria-hidden="true"
           className="absolute inset-0 -z-10 rounded-full"
@@ -42,29 +51,35 @@ export function FoilEmptyState({
             transform: "scale(2.4)",
           }}
         />
-        {/* outer thin ring */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-[-12px] rounded-full"
-          style={{ border: "1px solid rgba(180,155,255,0.22)" }}
-        />
-        {/* inner foil disc */}
-        <div
-          className="relative flex h-16 w-16 items-center justify-center rounded-full"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(221,231,245,0.18) 0%, rgba(180,155,255,0.10) 50%, rgba(127,182,232,0.16) 100%)",
-            border: "1px solid rgba(127,182,232,0.30)",
-          }}
-        >
-          {icon ?? (
-            <Sparkles
-              className="h-7 w-7 text-tone-orange-fg"
+        {illustration ? (
+          <div className="relative flex items-center justify-center">{illustration}</div>
+        ) : (
+          <>
+            {/* outer thin ring */}
+            <div
               aria-hidden="true"
-              strokeWidth={1.5}
+              className="absolute inset-[-12px] rounded-full"
+              style={{ border: "1px solid rgba(180,155,255,0.22)" }}
             />
-          )}
-        </div>
+            {/* inner foil disc */}
+            <div
+              className="relative flex h-16 w-16 items-center justify-center rounded-full"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(221,231,245,0.18) 0%, rgba(180,155,255,0.10) 50%, rgba(127,182,232,0.16) 100%)",
+                border: "1px solid rgba(127,182,232,0.30)",
+              }}
+            >
+              {icon ?? (
+                <Sparkles
+                  className="h-7 w-7 text-tone-orange-fg"
+                  aria-hidden="true"
+                  strokeWidth={1.5}
+                />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {eyebrow ? (
