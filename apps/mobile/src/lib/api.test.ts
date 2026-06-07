@@ -22,6 +22,13 @@ vi.mock("expo-constants", () => ({
   },
 }));
 
+// api.ts (and auth-store.ts, which it imports) pull `Platform` from
+// react-native; the real module ships Flow syntax that the vitest rollup
+// transform can't parse. Mock it like the other mobile lib tests do.
+vi.mock("react-native", () => ({
+  Platform: { OS: "ios" },
+}));
+
 vi.mock("@/lib/auth-store", () => ({
   getToken: vi.fn(() => Promise.resolve("token")),
   useAuthStore: {

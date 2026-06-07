@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Search,
   Filter,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   X,
   AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -205,6 +207,14 @@ export default function MovingPage() {
         eyebrow="Operations"
         title="<em>Moving</em> Plans"
         subtitle="Track and manage all user relocations"
+        actions={
+          <Link
+            href="/moving/at-risk"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm font-medium text-tone-honey-fg hover:shadow-md"
+          >
+            <ShieldAlert className="h-4 w-4" /> At-risk board
+          </Link>
+        }
       />
 
       {/* KPI Cards */}
@@ -598,6 +608,13 @@ export default function MovingPage() {
                       </div>
                     </div>
                     <div className="mt-4 flex gap-2">
+                      <Link
+                        href={`/moving/${plan.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+                      >
+                        <Eye className="h-3 w-3" /> View Plan Detail
+                      </Link>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

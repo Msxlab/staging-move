@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Users, Monitor, Smartphone, Tablet, BarChart3,
-  TrendingUp, Eye, Clock, Activity,
+  TrendingUp, TrendingDown, Eye, Clock, Activity, Minus,
+  Truck, MapPin, ArrowRight, Timer, Filter, X, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
@@ -24,6 +25,31 @@ interface AnalyticsData {
   totalEvents: number;
 }
 
+interface Kpi { value: number; previous: number; delta: number | null }
+
+interface OverviewData {
+  window: { range: string; start: string; end: string; days: number };
+  filters: { plan: string | null; platform: string | null; region: string | null };
+  regionOptions: string[];
+  kpis: { activeUsers: Kpi; sessions: Kpi; newUsers: Kpi; events: Kpi };
+  registrations: Record<string, number>;
+  platforms: [string, number][];
+  devices: [string, number][];
+  regions: [string, number][];
+  planMix: { plan: string; count: number }[];
+  moveAnalytics: {
+    totalMoves: number;
+    topPairs: { from: string; to: string; count: number }[];
+    topOrigins: { state: string; count: number }[];
+    topDestinations: { state: string; count: number }[];
+    interstate: number;
+    intrastate: number;
+    interstatePct: number;
+    intrastatePct: number;
+    avgLeadTimeDays: number | null;
+  };
+}
+
 const DEVICE_ICONS: Record<string, any> = {
   Desktop: Monitor, Mobile: Smartphone, Tablet: Tablet,
 };
@@ -37,6 +63,32 @@ const BROWSER_COLORS: Record<string, string> = {
   Chrome: "bg-tone-sage-fg", Safari: "bg-tone-sky-fg", Firefox: "bg-tone-orange-fg",
   Edge: "bg-tone-foil-fg", Opera: "bg-destructive", Unknown: "bg-tone-slate-fg",
 };
+
+const RANGE_OPTIONS: { id: string; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "7d", label: "7 days" },
+  { id: "30d", label: "30 days" },
+  { id: "90d", label: "90 days" },
+  { id: "custom", label: "Custom" },
+];
+
+const PLAN_OPTIONS: { id: string; label: string }[] = [
+  { id: "FREE_TRIAL", label: "Free Access" },
+  { id: "INDIVIDUAL", label: "Individual" },
+  { id: "FAMILY", label: "Family" },
+  { id: "PRO", label: "Pro" },
+];
+
+const PLATFORM_OPTIONS: { id: string; label: string }[] = [
+  { id: "WEB", label: "Web" },
+  { id: "IOS_APP", label: "iOS App" },
+  { id: "ANDROID_APP", label: "Android App" },
+  { id: "PWA", label: "PWA" },
+];
+
+function planLabel(plan: string) {
+  return PLAN_OPTIONS.find((p) => p.id === plan)?.label || plan;
+}
 
 function BarChart({ data, colorMap, maxItems = 6 }: { data: [string, number][]; colorMap?: Record<string, string>; maxItems?: number }) {
   const items = data.slice(0, maxItems);
@@ -135,11 +187,48 @@ function SparkLine({ data }: { data: Record<string, number> }) {
   );
 }
 
+/** KPI card with "vs previous period" delta badge. */
+function KpiCard({ label, kpi, icon: Icon }: { label: string; kpi: Kpi; icon: any }) {
+  const delta = kpi.delta;
+  const up = delta !== null && delta > 0;
+  const down = delta !== null && delta < 0;
+  const DeltaIcon = up ? TrendingUp : down ? TrendingDown : Minus;
+  const deltaColor = up ? "text-tone-sage-fg" : down ? "text-destructive" : "text-muted-foreground";
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <p className="mt-2 text-3xl font-bold text-foreground">{kpi.value.toLocaleString()}</p>
+      <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+        <span className={`inline-flex items-center gap-0.5 font-medium ${deltaColor}`}>
+          <DeltaIcon className="h-3.5 w-3.5" />
+          {delta === null ? "new" : `${delta > 0 ? "+" : ""}${delta}%`}
+        </span>
+        <span className="text-muted-foreground">vs prev ({kpi.previous.toLocaleString()})</span>
+      </div>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionDetails, setSessionDetails] = useState(false);
 
+  // Global date-range + segmentation state.
+  const [range, setRange] = useState("30d");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [plan, setPlan] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [region, setRegion] = useState("");
+
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+
+  // Static, all-time widgets (audience breakdown, spending, recent sessions).
   useEffect(() => {
     fetch("/api/analytics")
       .then((r) => r.json())
@@ -147,6 +236,42 @@ export default function AnalyticsPage() {
       .catch(() => toast.error("Failed to load analytics"))
       .finally(() => setLoading(false));
   }, []);
+
+  // Date-range + segmentation aware overview.
+  const loadOverview = useCallback(() => {
+    setOverviewLoading(true);
+    const params = new URLSearchParams({ range });
+    if (range === "custom") {
+      if (customFrom) params.set("from", customFrom);
+      if (customTo) params.set("to", customTo);
+    }
+    if (plan) params.set("plan", plan);
+    if (platform) params.set("platform", platform);
+    if (region) params.set("region", region);
+
+    fetch(`/api/analytics/overview?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.error) throw new Error(d.error);
+        setOverview(d);
+      })
+      .catch(() => toast.error("Failed to load overview"))
+      .finally(() => setOverviewLoading(false));
+  }, [range, customFrom, customTo, plan, platform, region]);
+
+  useEffect(() => {
+    // For non-custom ranges fetch immediately. For custom, wait for both dates.
+    if (range === "custom" && (!customFrom || !customTo)) {
+      setOverviewLoading(false);
+      return;
+    }
+    loadOverview();
+  }, [loadOverview, range, customFrom, customTo]);
+
+  const hasFilters = Boolean(plan || platform || region);
+  const clearFilters = () => { setPlan(""); setPlatform(""); setRegion(""); };
+
+  const regionOptions = overview?.regionOptions || [];
 
   if (loading) return <div className="py-20 text-center text-muted-foreground">Loading analytics...</div>;
   if (!data) return <div className="py-20 text-center text-muted-foreground">Failed to load</div>;
@@ -166,10 +291,130 @@ export default function AnalyticsPage() {
         }
       />
 
-      {/* Active Users */}
+      {/* ── Global date-range + segmentation control bar ───────── */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Date range pills */}
+          <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setRange(opt.id)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  range === opt.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {range === "custom" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo || undefined}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+                aria-label="From date"
+              />
+              <span className="text-xs text-muted-foreground">to</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom || undefined}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+                aria-label="To date"
+              />
+            </div>
+          )}
+
+          {overview && (
+            <span className="ml-auto text-[11px] text-muted-foreground">
+              {new Date(overview.window.start).toLocaleDateString()} –{" "}
+              {new Date(overview.window.end).toLocaleDateString()} · {overview.window.days}d window
+            </span>
+          )}
+        </div>
+
+        {/* Segmentation filters */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Filter className="h-3.5 w-3.5" /> Segment
+          </span>
+
+          <select
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+            aria-label="Filter by plan"
+          >
+            <option value="">All plans</option>
+            {PLAN_OPTIONS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+            aria-label="Filter by platform"
+          >
+            <option value="">All platforms</option>
+            {PLATFORM_OPTIONS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+
+          <select
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+            aria-label="Filter by region"
+          >
+            <option value="">All regions</option>
+            {region && !regionOptions.includes(region) && (
+              <option value={region}>{region}</option>
+            )}
+            {regionOptions.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            >
+              <X className="h-3.5 w-3.5" /> Clear
+            </button>
+          )}
+
+          {overviewLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </div>
+      </div>
+
+      {/* ── KPIs with vs-previous-period deltas ────────────────── */}
+      {overview && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <KpiCard label="Active Users" kpi={overview.kpis.activeUsers} icon={Users} />
+          <KpiCard label="New Users" kpi={overview.kpis.newUsers} icon={TrendingUp} />
+          <KpiCard label="Sessions" kpi={overview.kpis.sessions} icon={Eye} />
+          <KpiCard label="Events" kpi={overview.kpis.events} icon={Activity} />
+        </div>
+      )}
+
+      {/* All-time totals (context) */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "Total Users", value: data.activeUsers.total, icon: Users, color: "text-foreground", bg: "bg-card" },
+          { label: "Total Users (all-time)", value: data.activeUsers.total, icon: Users, color: "text-foreground", bg: "bg-card" },
           { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
           { label: "This Week", value: data.activeUsers.week, icon: TrendingUp, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
           { label: "This Month", value: data.activeUsers.month, icon: BarChart3, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg" },
@@ -184,29 +429,186 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Session Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-medium text-muted-foreground">Total Sessions</p>
-            <Eye className="h-4 w-4 text-tone-cyan-fg" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{data.totalSessions}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-medium text-muted-foreground">Total Events</p>
-            <Clock className="h-4 w-4 text-tone-orange-fg" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{data.totalEvents}</p>
-        </div>
+      {/* Registration Trend (within window) */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          New Registrations {overview ? `(last ${overview.window.days}d)` : ""}
+        </h2>
+        {overview ? (
+          <SparkLine data={overview.registrations} />
+        ) : (
+          <SparkLine data={data.dailyRegistrations} />
+        )}
       </div>
 
-      {/* Registration Trend */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">User Registrations (Last 30 Days)</h2>
-        <SparkLine data={data.dailyRegistrations} />
-      </div>
+      {/* ── MOVE ANALYTICS ─────────────────────────────────────── */}
+      {overview && (
+        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Truck className="h-4 w-4 text-tone-orange-fg" /> Move Analytics
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {overview.moveAnalytics.totalMoves.toLocaleString()} moves in window
+            </span>
+          </div>
+
+          {overview.moveAnalytics.totalMoves === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No moving plans scheduled in this window.
+            </p>
+          ) : (
+            <>
+              {/* Headline move metrics */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-lg bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <ArrowRight className="h-3.5 w-3.5" /> Interstate vs Intrastate
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-foreground">
+                    {overview.moveAnalytics.interstatePct}% / {overview.moveAnalytics.intrastatePct}%
+                  </p>
+                  <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full bg-tone-sky-fg" style={{ width: `${overview.moveAnalytics.interstatePct}%` }} />
+                    <div className="h-full bg-tone-sage-fg" style={{ width: `${overview.moveAnalytics.intrastatePct}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {overview.moveAnalytics.interstate} cross-state · {overview.moveAnalytics.intrastate} in-state
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Timer className="h-3.5 w-3.5" /> Avg Move Lead Time
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-foreground">
+                    {overview.moveAnalytics.avgLeadTimeDays === null
+                      ? "—"
+                      : `${overview.moveAnalytics.avgLeadTimeDays} days`}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    From plan creation to move date
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" /> Distinct State Pairs
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-foreground">
+                    {overview.moveAnalytics.topPairs.length >= 10 ? "10+" : overview.moveAnalytics.topPairs.length}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Top origin → destination routes
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Top origin → destination state pairs */}
+                <div>
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Top Routes (origin → destination)
+                  </p>
+                  <div className="space-y-2">
+                    {overview.moveAnalytics.topPairs.map((p) => {
+                      const max = overview.moveAnalytics.topPairs[0]?.count || 1;
+                      const barPct = Math.round((p.count / max) * 100);
+                      return (
+                        <div key={`${p.from}-${p.to}`}>
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1.5 font-medium text-foreground">
+                              <span className="font-mono">{p.from}</span>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-mono">{p.to}</span>
+                              {p.from === p.to && (
+                                <span className="rounded-full bg-tone-sage-bg px-1.5 py-0.5 text-[9px] font-medium text-tone-sage-fg">
+                                  in-state
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-muted-foreground">{p.count}</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-tone-orange-fg transition-all" style={{ width: `${barPct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Top origins / destinations */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Top Origins
+                    </p>
+                    {overview.moveAnalytics.topOrigins.length > 0 ? (
+                      <BarChart data={overview.moveAnalytics.topOrigins.map((o) => [o.state, o.count])} maxItems={8} />
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No data</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Top Destinations
+                    </p>
+                    {overview.moveAnalytics.topDestinations.length > 0 ? (
+                      <BarChart data={overview.moveAnalytics.topDestinations.map((d) => [d.state, d.count])} maxItems={8} />
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No data</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Segmented breakdown (within window) ────────────────── */}
+      {overview && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-5">
+            Segmented Breakdown {overview.filters.plan ? `· ${planLabel(overview.filters.plan)}` : ""}
+          </h2>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Platform (window)</p>
+              {overview.platforms.length > 0 ? (
+                <DonutChart data={overview.platforms} />
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-8">No session data in window.</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan Mix</p>
+              {overview.planMix.length > 0 ? (
+                <DonutChart data={overview.planMix.map((p) => [planLabel(p.plan), p.count])} />
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-8">No subscriptions.</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Device Type (window)</p>
+              {overview.devices.length > 0 ? (
+                <BarChart data={overview.devices} maxItems={4} />
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-8">No data</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Region (window)</p>
+              {overview.regions.length > 0 ? (
+                <BarChart data={overview.regions} maxItems={8} />
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-8">No location data in window</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Spending Aggregate */}
       <SpendingByRegionWidget />
@@ -214,9 +616,9 @@ export default function AnalyticsPage() {
       {/* Email Pipeline Health */}
       <EmailHealthWidget />
 
-      {/* Audience Breakdown — Platform / Device / OS / Browser grouped under one card */}
+      {/* Audience Breakdown — Platform / Device / OS / Browser grouped under one card (all-time) */}
       <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-5">Audience Breakdown</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-5">Audience Breakdown <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Platform */}
           <div>
@@ -269,7 +671,7 @@ export default function AnalyticsPage() {
 
       {/* Geography */}
       <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Top Regions</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">Top Regions <span className="text-xs font-normal text-muted-foreground">(all-time)</span></h2>
         {data.regions.length > 0 ? (
           <BarChart data={data.regions} maxItems={8} />
         ) : (
