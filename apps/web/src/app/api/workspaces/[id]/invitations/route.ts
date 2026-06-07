@@ -35,8 +35,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Only surface invitations that can still be accepted. An expired PENDING
+  // invite no longer consumes a seat (see countUsedSeats) and shouldn't appear
+  // as actionable in the roster UI either — keep both views consistent.
   const invitations = await prisma.workspaceInvitation.findMany({
-    where: { workspaceId: id, status: "PENDING" },
+    where: { workspaceId: id, status: "PENDING", expiresAt: { gte: new Date() } },
     orderBy: { createdAt: "desc" },
     select: { id: true, invitedEmail: true, role: true, status: true, expiresAt: true, tokenLast4: true, createdAt: true },
   });

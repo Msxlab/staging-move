@@ -6,6 +6,13 @@ import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { hashInvitationToken, seatLimitForPlan } from "@/lib/workspace-invitations";
 import { createInAppNotification } from "@/lib/in-app-notifications";
+import {
+  WORKSPACE_AUDIT_ACTIONS,
+  maskTargetEmail,
+  notifyWorkspaceOwnerOfRosterChange,
+  workspaceDisplayName,
+  writeWorkspaceAudit,
+} from "@/lib/workspace-audit";
 
 export const runtime = "nodejs";
 
@@ -14,7 +21,7 @@ export const runtime = "nodejs";
  * whose email matches the invited email; joins the workspace (idempotent) and
  * marks the invite accepted in one transaction.
  */
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   const session = await getUserSession();
@@ -40,10 +47,25 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     await prisma.$transaction(async (tx) => {
       const existing = await tx.workspaceMember.findFirst({ where: { workspaceId: inv.workspaceId, userId: session.userId } });
       if (!existing) {
-        const memberCount = await tx.workspaceMember.count({
-          where: { workspaceId: inv.workspaceId, status: { not: "SUSPENDED" } },
-        });
-        if (memberCount >= seatLimit) throw new Error("SEAT_FULL");
+        // Match countUsedSeats(): a used seat is a non-suspended member OR a
+        // still-outstanding (non-expired) PENDING invite. Exclude the invite
+        // being accepted right now — it's about to become a member, so counting
+        // it here would double-charge the household for this single join.
+        const now = new Date();
+        const [memberCount, pendingCount] = await Promise.all([
+          tx.workspaceMember.count({
+            where: { workspaceId: inv.workspaceId, status: { not: "SUSPENDED" } },
+          }),
+          tx.workspaceInvitation.count({
+            where: {
+              workspaceId: inv.workspaceId,
+              status: "PENDING",
+              expiresAt: { gte: now },
+              id: { not: inv.id },
+            },
+          }),
+        ]);
+        if (memberCount + pendingCount >= seatLimit) throw new Error("SEAT_FULL");
         await tx.workspaceMember.create({
           data: {
             workspaceId: inv.workspaceId,
@@ -86,6 +108,22 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     throw e;
   }
 
+  // Audit the join (user-actor: the joining member). Best-effort.
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: WORKSPACE_AUDIT_ACTIONS.INVITATION_ACCEPTED,
+    workspaceId: inv.workspaceId,
+    entityType: "workspace_invitation",
+    entityId: inv.id,
+    metadata: {
+      invitationId: inv.id,
+      role: inv.role,
+      invitedByUserId: inv.invitedByUserId ?? undefined,
+      targetEmail: maskTargetEmail(inv.invitedEmail),
+    },
+  });
+
   // Notify the inviter that their invite was accepted (best-effort, deduped).
   if (inv.invitedByUserId) {
     const ws = await prisma.workspace.findUnique({ where: { id: inv.workspaceId }, select: { name: true } });
@@ -97,6 +135,20 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       href: "/settings/workspace",
       dedupeKey: `ws-invite-accepted:${inv.id}`,
     }).catch(() => {});
+  }
+
+  // Notify the OWNER that a new member joined (suppressed when the owner is the
+  // one joining, or when the owner was the inviter — they're already covered by
+  // the inviter notice above). Mirrors the transfer route's owner-aware notice.
+  if (inv.invitedByUserId !== workspace.ownerUserId) {
+    const wsName = await workspaceDisplayName(inv.workspaceId);
+    await notifyWorkspaceOwnerOfRosterChange({
+      workspaceId: inv.workspaceId,
+      actorUserId: session.userId,
+      title: "A new member joined",
+      body: `${maskTargetEmail(inv.invitedEmail) ?? "A new member"} joined ${wsName}.`,
+      dedupeSuffix: `joined:${inv.id}`,
+    });
   }
 
   const response = NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
