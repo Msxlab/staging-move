@@ -1,5 +1,6 @@
 import { ApiClient } from "@locateflow/shared";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 function extractHost(value?: string | null) {
   if (!value) return null;
@@ -99,10 +100,40 @@ async function getToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Native platform sent to the server as `X-Client-Platform`. The server uses
+ * this to label the session device ("LocateFlow iOS app") instead of
+ * "Unknown browser" — the native fetch User-Agent has no parseable browser
+ * token, so without this header the session showed up as an unknown browser.
+ */
+const CLIENT_PLATFORM = Platform.OS; // "ios" | "android" | (web fallback)
+
+/**
+ * App version reported via `X-Client-Version`. Prefers the native binary
+ * version, then the Expo config version, then a dev fallback.
+ */
+const CLIENT_VERSION =
+  Constants.expoConfig?.version ??
+  (Constants as any).nativeAppVersion ??
+  "0.0.0";
+
+/**
+ * Descriptive User-Agent for the native client, e.g.
+ * "LocateFlow/1.2.3 (iOS; Expo)". The server recognizes the "LocateFlow"
+ * marker as a secondary signal (after X-Client-Platform) when labeling the
+ * session device.
+ */
+const CLIENT_USER_AGENT = `LocateFlow/${CLIENT_VERSION} (${
+  Platform.OS === "ios" ? "iOS" : Platform.OS === "android" ? "Android" : "Mobile"
+}; Expo)`;
+
 export const api = new ApiClient({
   baseUrl: API_URL,
   getToken,
   clientType: "mobile",
+  clientPlatform: CLIENT_PLATFORM,
+  clientVersion: CLIENT_VERSION,
+  userAgent: CLIENT_USER_AGENT,
   timeoutMs: 20_000,
   onUnauthorized: async () => {
     // Token invalid — wipe it so the user is routed back to sign-in.

@@ -21,6 +21,7 @@ interface Workspace {
   planLabel: string;
   seatLimit: number;
   memberCount: number;
+  isPersonalSolo: boolean;
   deletedAt: string | null;
 }
 
@@ -492,6 +493,11 @@ export default function WorkspaceSettingsPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-foreground">{selected.name}</h2>
+                    {selected.isPersonalSolo && (
+                      <span className="rounded-full border border-border bg-foreground/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Personal
+                      </span>
+                    )}
                     {iAmOwner && (
                       <button
                         onClick={() => {
@@ -506,9 +512,15 @@ export default function WorkspaceSettingsPage() {
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {selected.planLabel} · You are {ROLE_LABEL[selected.role] ?? selected.role} ·{" "}
-                  {selected.memberCount} / {selected.seatLimit} members
-                  {iAmManager && invitations.length > 0 ? ` (+${invitations.length} pending)` : ""}
+                  {selected.isPersonalSolo ? (
+                    <>{selected.planLabel} · Personal · just you</>
+                  ) : (
+                    <>
+                      {selected.planLabel} · You are {ROLE_LABEL[selected.role] ?? selected.role} ·{" "}
+                      {selected.memberCount} / {selected.seatLimit} members
+                      {iAmManager && invitations.length > 0 ? ` (+${invitations.length} pending)` : ""}
+                    </>
+                  )}
                 </p>
               </div>
               {selected.role !== "OWNER" && (
@@ -645,8 +657,18 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
 
-          {/* Invitations (managers only) */}
-          {iAmManager && (
+          {/* A solo personal workspace has no spare seats to invite into — surface
+              a quiet hint instead of a full invite form so it reads as the owner's
+              own data container, not a household they staff. */}
+          {iAmManager && selected.isPersonalSolo && (
+            <div className="rounded-2xl border border-border bg-foreground/5 p-5 text-xs text-muted-foreground">
+              This is your personal workspace — just your own data. Upgrade to a Family or Pro plan to
+              invite people and share it as a household.
+            </div>
+          )}
+
+          {/* Invitations (managers only) — hidden for a solo personal workspace */}
+          {iAmManager && !selected.isPersonalSolo && (
             <div className="rounded-2xl border border-border bg-foreground/5 overflow-hidden">
               <div className="px-5 pt-5 pb-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground/40">Invite a member</h3>

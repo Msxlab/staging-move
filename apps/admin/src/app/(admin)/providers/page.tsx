@@ -308,18 +308,29 @@ export default function ProvidersPage() {
     finally { setImporting(false); }
   }
 
-  function handleExport() {
-    const allProviders = Object.values(groups).flat();
-    const filtered = selected.size > 0 ? allProviders.filter((p) => selected.has(p.id)) : allProviders;
-    const csv = [
-      "Name,Slug,Category,Scope,Score,Active,Website",
-      ...filtered.map((p) => `"${p.name}","${p.slug}","${p.category}","${p.scope}",${p.popularityScore},${p.isActive},"${p.website || ""}"`)
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "providers.csv"; a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${filtered.length} providers`);
+  async function handleExport() {
+    // Server-side export at /api/providers/export — admin-gated, CSV-injection
+    // safe, and audit-logged. The previous in-page Blob path built the CSV from
+    // React state and wrote no audit row, so a bulk catalog export left no
+    // trace. When rows are selected we pass just those ids; otherwise the
+    // server exports the full (bounded) catalog.
+    try {
+      const params = new URLSearchParams();
+      if (selected.size > 0) params.set("ids", Array.from(selected).join(","));
+      const res = await fetch(`/api/providers/export?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || `Export failed (${res.status})`);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "providers.csv"; a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+    } catch {
+      toast.error("Failed to export providers");
+    }
   }
 
   const allProviders = Object.values(groups).flat();

@@ -14,6 +14,7 @@ import {
   summarizeOAuthError,
 } from "@/lib/oauth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { labelMobileSession } from "@/lib/password-login";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { resolveClientIP } from "@/lib/rate-limit";
@@ -309,6 +310,10 @@ export async function POST(request: NextRequest) {
   const ua = request.headers.get("user-agent") || "";
   const ip = resolveClientIP(request);
   const fingerprint = await generateMobileFingerprint(ua);
+  // Label native sessions ("LocateFlow iOS app") instead of "Unknown browser".
+  // This is the Apple-native iOS handoff, but we still honor X-Client-Platform
+  // and fall back to UA sniffing for robustness.
+  const mobileLabel = labelMobileSession(ua, request.headers.get("x-client-platform"));
   const token = await createUserSession({
     userId: user.id,
     email: user.email,
@@ -317,9 +322,8 @@ export async function POST(request: NextRequest) {
     ipAddress: ip,
     userAgent: ua,
     deviceType: "Mobile",
-    // Label native sessions ("LocateFlow app / iOS") instead of "Unknown browser".
-    browser: "LocateFlow app",
-    os: /iPhone|iPad|iPod|Darwin/i.test(ua) ? "iOS" : /Android/i.test(ua) ? "Android" : "Mobile",
+    browser: mobileLabel.browser,
+    os: mobileLabel.os,
   });
 
   return NextResponse.json({

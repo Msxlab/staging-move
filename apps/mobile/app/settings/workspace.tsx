@@ -29,6 +29,7 @@ interface Workspace {
   planLabel: string;
   seatLimit: number;
   memberCount: number;
+  isPersonalSolo?: boolean;
 }
 interface Member {
   id: string;
@@ -424,17 +425,25 @@ export default function WorkspaceScreen() {
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity
-                      onPress={selected.role === "OWNER" ? () => { setNameInput(selected.name); setRenaming(true); } : undefined}
-                      disabled={selected.role !== "OWNER"}
-                      activeOpacity={selected.role === "OWNER" ? 0.6 : 1}
-                    >
-                      <Text style={styles.wsName}>{selected.name}{selected.role === "OWNER" ? "  ✎" : ""}</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={selected.role === "OWNER" ? () => { setNameInput(selected.name); setRenaming(true); } : undefined}
+                        disabled={selected.role !== "OWNER"}
+                        activeOpacity={selected.role === "OWNER" ? 0.6 : 1}
+                      >
+                        <Text style={styles.wsName}>{selected.name}{selected.role === "OWNER" ? "  ✎" : ""}</Text>
+                      </TouchableOpacity>
+                      {selected.isPersonalSolo && (
+                        <View style={styles.personalBadge}>
+                          <Text style={styles.personalBadgeText}>{t("workspace.personal", "Personal")}</Text>
+                        </View>
+                      )}
+                    </View>
                   )}
                   <Text style={styles.wsMeta}>
-                    {selected.planLabel} · {ROLE_LABEL[selected.role] ?? selected.role} · {selected.memberCount}/
-                    {selected.seatLimit} members
+                    {selected.isPersonalSolo
+                      ? `${selected.planLabel} · ${t("workspace.justYou", "Personal · just you")}`
+                      : `${selected.planLabel} · ${ROLE_LABEL[selected.role] ?? selected.role} · ${selected.memberCount}/${selected.seatLimit} ${t("workspace.membersLower", "members")}`}
                   </Text>
                   {selected.role !== "OWNER" && (
                     <TouchableOpacity onPress={leave} disabled={busy} style={styles.leaveBtn}>
@@ -501,7 +510,18 @@ export default function WorkspaceScreen() {
                   })}
                 </View>
 
-                {iAmManager && (
+                {iAmManager && selected.isPersonalSolo && (
+                  <View style={[styles.card, { marginTop: 22 }]}>
+                    <Text style={styles.cardDesc}>
+                      {t(
+                        "workspace.personalHint",
+                        "This is your personal workspace — just your own data. Upgrade to a Family or Pro plan to invite people and share it as a household.",
+                      )}
+                    </Text>
+                  </View>
+                )}
+
+                {iAmManager && !selected.isPersonalSolo && (
                   <>
                     <Text style={styles.section}>{t("workspace.invite", "INVITE A MEMBER")}</Text>
                     <View style={styles.card}>
@@ -624,6 +644,21 @@ const makeStyles = (theme: Theme) =>
     rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     wsName: { fontSize: 17, fontWeight: "700", color: theme.colors.text },
     wsMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 4 },
+    personalBadge: {
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.background,
+      paddingVertical: 2,
+      paddingHorizontal: 8,
+    },
+    personalBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
     leaveBtn: {
       alignSelf: "flex-start",
       marginTop: 12,

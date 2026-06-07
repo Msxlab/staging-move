@@ -22,6 +22,7 @@ import {
 import { PasswordChangeForm } from "./password-form";
 import { InfoHint } from "@/components/info-hint";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 const MODEL_ICONS: Record<string, typeof Users> = {
   users: Users,
@@ -112,6 +113,9 @@ export default function SettingsPage() {
   const [data, setData] = useState<SettingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [stepUpExport, setStepUpExport] = useState<"users" | "waitlist" | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -132,30 +136,65 @@ export default function SettingsPage() {
     void load();
   }, []);
 
-  async function exportData(type: string) {
-    const endpointMap: Record<string, string> = {
-      users: "/api/users?perPage=9999",
-      providers: "/api/providers?perPage=9999",
-      subscriptions: "/api/subscriptions?perPage=9999",
-      waitlist: "/api/waitlist",
-    };
-    const responseKeyMap: Record<string, string> = {
-      users: "users",
-      providers: "providers",
-      subscriptions: "subscriptions",
-      waitlist: "signups",
-    };
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
-    setExporting(type);
+  // Entry point for the export buttons. PII datasets (users, waitlist) go
+  // through the hardened server routes that mask emails + audit, gated behind
+  // a step-up password/MFA modal. Providers route through their audited server
+  // export. Subscriptions use the already-masked /api/subscriptions GET
+  // (emails arrive masked from the server and are nested under an object that
+  // the CSV serializer drops), so they download directly.
+  function exportData(type: string) {
+    if (type === "users" || type === "waitlist") {
+      setExportError(null);
+      setStepUpExport(type);
+      return;
+    }
+    if (type === "providers") {
+      void exportProviders();
+      return;
+    }
+    void exportSubscriptions();
+  }
+
+  async function exportProviders() {
+    setExporting("providers");
     try {
-      const res = await fetch(endpointMap[type]);
+      const res = await fetch("/api/providers/export");
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        toast.error(json?.error || `Export failed (${res.status})`);
+        return;
+      }
+      downloadBlob(await res.blob(), "providers-export.csv");
+      toast.success("Exported providers");
+    } catch {
+      toast.error("Failed to export providers");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function exportSubscriptions() {
+    setExporting("subscriptions");
+    try {
+      const res = await fetch("/api/subscriptions?perPage=9999");
       const json = await res.json();
-      const items = json[responseKeyMap[type]] || [];
+      const items = json.subscriptions || [];
       if (!Array.isArray(items) || items.length === 0) {
         toast.error("No data to export");
         return;
       }
-
+      // Server already masks billing identifiers + nested user email for
+      // non-privileged roles; the object filter below also drops the nested
+      // `user` block (and its email) entirely, so only scalar fields ship.
       const header = Object.keys(items[0])
         .filter((key) => typeof items[0][key] !== "object")
         .join(",");
@@ -165,20 +204,41 @@ export default function SettingsPage() {
           .map(([, value]) => `"${String(value ?? "").replace(/"/g, '""')}"`)
           .join(","),
       );
-      const blob = new Blob([header + "\n" + rows.join("\n")], {
-        type: "text/csv",
-      });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `${type}-export.csv`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${items.length} ${type} records`);
+      downloadBlob(
+        new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" }),
+        "subscriptions-export.csv",
+      );
+      toast.success(`Exported ${items.length} subscriptions records`);
     } catch {
-      toast.error(`Failed to export ${type}`);
+      toast.error("Failed to export subscriptions");
     } finally {
       setExporting(null);
+    }
+  }
+
+  async function confirmStepUpExport(_password: string, stepUp: StepUpValues) {
+    if (!stepUpExport) return;
+    const type = stepUpExport;
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      const res = await fetch(`/api/${type}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stepUp),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        setExportError(json?.error || `Export failed (${res.status})`);
+        return;
+      }
+      downloadBlob(await res.blob(), `${type}-export.csv`);
+      toast.success(`Exported ${type}`);
+      setStepUpExport(null);
+    } catch {
+      setExportError("Export failed");
+    } finally {
+      setExportBusy(false);
     }
   }
 
@@ -553,6 +613,23 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <PasswordConfirmModal
+        open={stepUpExport !== null}
+        title={stepUpExport === "waitlist" ? "Export waitlist CSV" : "Export users CSV"}
+        description={`This export contains ${stepUpExport === "waitlist" ? "signup" : "user"} PII (emails). Enter your admin password and MFA code to continue. This action is audit-logged.`}
+        confirmLabel="Export"
+        busy={exportBusy}
+        error={exportError}
+        requiresMfa
+        onClose={() => {
+          if (!exportBusy) {
+            setStepUpExport(null);
+            setExportError(null);
+          }
+        }}
+        onConfirm={confirmStepUpExport}
+      />
     </div>
   );
 }
