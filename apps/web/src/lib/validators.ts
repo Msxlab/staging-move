@@ -10,7 +10,7 @@ export const profileSchema = z.strictObject({
   hasChildren: z.boolean().default(false),
   childrenCount: z.number().min(0).max(20).default(0),
   hasPets: z.boolean().default(false),
-  petTypes: z.array(z.string()).max(20).default([]),
+  petTypes: z.array(z.string().min(1).max(50)).max(20).default([]),
   carCount: z.number().min(0).max(20).default(0),
   hasMotorcycle: z.boolean().default(false),
   hasBoatRV: z.boolean().default(false),
