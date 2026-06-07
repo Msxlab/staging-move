@@ -4,11 +4,46 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Search, ChevronLeft, ChevronRight, CreditCard, Users, Calendar,
   TrendingUp, Filter, X, Eye, Clock, XCircle, CheckCircle2, AlertTriangle,
+  Ban, RefreshCw, ShieldCheck, Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
+
+// Lifecycle action identifiers — one per server route under
+// /api/subscriptions/[id]/<action>. Each is gated by the step-up modal.
+type LifecycleAction = "cancel_now" | "cancel_period_end" | "refund" | "resync" | "revalidate";
+
+interface AdminApiError {
+  message: string;
+  requiresMfa: boolean;
+}
+
+async function readAdminApiError(response: Response, fallback: string): Promise<AdminApiError> {
+  const data = await response.json().catch(() => ({}));
+  const requiresMfa = Boolean((data as any)?.requiresMfa);
+  const rawMessage = typeof (data as any)?.error === "string" ? (data as any).error : fallback;
+  if (response.status === 401) return { message: "Admin session expired. Please sign in again.", requiresMfa };
+  if (response.status === 403 && rawMessage === "Forbidden") {
+    return { message: "Your admin account does not have permission to perform this action.", requiresMfa };
+  }
+  if (requiresMfa && response.status === 403) {
+    return { message: "MFA is required for this operation. Add an authenticator code or backup code and retry.", requiresMfa };
+  }
+  return { message: rawMessage, requiresMfa };
+}
+
+/** Format a Stripe minor-unit amount (e.g. cents) with its currency code. */
+function formatMinorAmount(amount: number, currency: string): string {
+  const code = (currency || "usd").toUpperCase();
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(amount / 100);
+  } catch {
+    return `${code} ${(amount / 100).toFixed(2)}`;
+  }
+}
 
 interface Sub {
   id: string;
@@ -73,6 +108,19 @@ export default function SubscriptionsClient() {
   const [filters, setFilters] = useState({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" });
   const perPage = 20;
 
+  // ── Lifecycle action step-up state ───────────────────────────────────────
+  // `pendingAction` drives the PasswordConfirmModal; null means closed.
+  const [pendingAction, setPendingAction] = useState<LifecycleAction | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionRequiresMfa, setActionRequiresMfa] = useState(false);
+  // Refund preview (amount + currency) fetched read-only before the operator
+  // steps up, so the confirm dialog can state the EXACT amount + user.
+  const [refundPreview, setRefundPreview] = useState<
+    { refundable: boolean; amount?: number; currency?: string; reason?: string } | null
+  >(null);
+  const [refundPreviewLoading, setRefundPreviewLoading] = useState(false);
+
   const fetchSubs = useCallback(async () => {
     setLoading(true);
     try {
@@ -129,6 +177,169 @@ export default function SubscriptionsClient() {
     return { label: "OK", cls: "bg-tone-sage-bg text-tone-sage-fg" };
   }
 
+  const isStripe = detail?.provider === "STRIPE" && Boolean(detail?.stripeSubscriptionId);
+  const stripeCancellable = isStripe && !["CANCELED", "EXPIRED"].includes(detail?.status || "");
+  const isStore = detail?.provider === "APP_STORE" || detail?.provider === "PLAY_STORE";
+
+  // Map each lifecycle action to its server route, HTTP verb, and the copy the
+  // confirm dialog shows so the operator sees EXACTLY what will happen + who.
+  function actionConfig(action: LifecycleAction, sub: Sub) {
+    const who = `${sub.user.firstName ?? ""} ${sub.user.lastName ?? ""}`.trim() || maskEmail(sub.user.email);
+    switch (action) {
+      case "cancel_now":
+        return {
+          path: `/api/subscriptions/${sub.id}/cancel`,
+          body: { mode: "now" },
+          title: "Cancel subscription now",
+          confirmLabel: "Cancel Now",
+          description: `Immediately cancel the Stripe subscription for ${who} (${maskEmail(sub.user.email)}). Access ends right away. Enter your admin password and MFA code or backup code to confirm.`,
+        };
+      case "cancel_period_end":
+        return {
+          path: `/api/subscriptions/${sub.id}/cancel`,
+          body: { mode: "period_end" },
+          title: "Cancel at period end",
+          confirmLabel: "Cancel at Period End",
+          description: `Cancel renewal for ${who} (${maskEmail(sub.user.email)}). Access continues until the current period ends, then the subscription will not renew. Enter your admin password and MFA code or backup code to confirm.`,
+        };
+      case "refund": {
+        const amountText =
+          refundPreview?.refundable && typeof refundPreview.amount === "number"
+            ? formatMinorAmount(refundPreview.amount, refundPreview.currency || "usd")
+            : null;
+        return {
+          path: `/api/subscriptions/${sub.id}/refund`,
+          body: typeof refundPreview?.amount === "number" ? { expectedAmount: refundPreview.amount } : {},
+          title: "Refund last invoice",
+          confirmLabel: amountText ? `Refund ${amountText}` : "Refund",
+          description: amountText
+            ? `Refund ${amountText} to ${who} (${maskEmail(sub.user.email)}) for their latest paid invoice. This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`
+            : `Refund the latest paid invoice for ${who} (${maskEmail(sub.user.email)}). This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`,
+        };
+      }
+      case "resync":
+        return {
+          path: `/api/subscriptions/${sub.id}/resync`,
+          body: {},
+          title: "Force re-sync from Stripe",
+          confirmLabel: "Re-sync from Stripe",
+          description: `Re-fetch this subscription from Stripe and overwrite the local status, period end, and plan for ${who} (${maskEmail(sub.user.email)}). No money moves. Enter your admin password and MFA code or backup code to confirm.`,
+        };
+      case "revalidate":
+        return {
+          path: `/api/subscriptions/${sub.id}/revalidate`,
+          body: {},
+          title: "Re-validate store receipt",
+          confirmLabel: "Re-validate Receipt",
+          description: `Re-read the stored ${sub.provider === "APP_STORE" ? "App Store transaction id" : "Play Store purchase token"} and refresh recorded health for ${who} (${maskEmail(sub.user.email)}). Enter your admin password and MFA code or backup code to confirm.`,
+        };
+    }
+  }
+
+  // Open the step-up modal for an action. For refunds, fetch the read-only
+  // amount preview first so the dialog can name the exact amount.
+  async function openAction(action: LifecycleAction) {
+    if (!detail) return;
+    setActionError(null);
+    setActionRequiresMfa(false);
+    if (action === "refund") {
+      setRefundPreview(null);
+      setRefundPreviewLoading(true);
+      setPendingAction(action);
+      try {
+        const res = await fetch(`/api/subscriptions/${detail.id}/refund`);
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const { message } = await readAdminApiError(res, "Failed to load refund preview.");
+          setActionError(message);
+          setRefundPreview({ refundable: false });
+        } else {
+          setRefundPreview(data);
+          if (!data?.refundable) {
+            setActionError(
+              data?.reason === "no_paid_invoice"
+                ? "No paid invoice is available to refund for this subscription."
+                : "This subscription has no Stripe invoice to refund.",
+            );
+          }
+        }
+      } catch {
+        setActionError("Failed to load refund preview.");
+        setRefundPreview({ refundable: false });
+      } finally {
+        setRefundPreviewLoading(false);
+      }
+      return;
+    }
+    setPendingAction(action);
+  }
+
+  function closeAction() {
+    if (actionBusy) return;
+    setPendingAction(null);
+    setActionError(null);
+    setActionRequiresMfa(false);
+    setRefundPreview(null);
+  }
+
+  async function confirmAction(_password: string, stepUp: StepUpValues) {
+    if (!detail || !pendingAction) return;
+    const cfg = actionConfig(pendingAction, detail);
+    if (!cfg) return;
+    // Block the refund submit if there is nothing refundable.
+    if (pendingAction === "refund" && !refundPreview?.refundable) {
+      setActionError("There is no refundable invoice for this subscription.");
+      return;
+    }
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const res = await fetch(cfg.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...cfg.body, ...stepUp }),
+      });
+      if (!res.ok) {
+        const { message, requiresMfa } = await readAdminApiError(res, "Action failed.");
+        setActionError(message);
+        setActionRequiresMfa(requiresMfa);
+        toast.error(message);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      // Refund returns no subscription row; everything else returns the updated row.
+      if (pendingAction === "refund") {
+        toast.success(
+          typeof data?.amount === "number"
+            ? `Refunded ${formatMinorAmount(data.amount, data.currency || "usd")}.`
+            : "Refund issued.",
+        );
+      } else if (pendingAction === "revalidate" && data?.revalidated === false) {
+        toast.error(data?.error || "Stored receipt credential is missing.");
+      } else {
+        toast.success("Action completed.");
+      }
+      // Merge the updated row into the open detail + the table.
+      if (data?.subscription) {
+        const next = { ...detail, ...data.subscription } as Sub;
+        setDetail(next);
+        setSubs((prev) => prev.map((s) => (s.id === next.id ? { ...s, ...data.subscription } : s)));
+      }
+      setPendingAction(null);
+      setActionRequiresMfa(false);
+      setRefundPreview(null);
+      // Refresh stats/counts after a mutation.
+      fetchSubs();
+    } catch {
+      setActionError("Action failed.");
+      toast.error("Action failed.");
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  const pendingCfg = detail && pendingAction ? actionConfig(pendingAction, detail) : null;
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -181,11 +392,11 @@ export default function SubscriptionsClient() {
               </div>
             </button>
             <button onClick={() => { setFilters({ ...filters, status: filters.status === "PAST_DUE" ? "" : "PAST_DUE" }); setPage(1); }}
-              title="Past due / grace period — payments to recover"
+              title="Needs attention — PAST_DUE / GRACE_PERIOD / UNPAID payments to recover"
               className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "PAST_DUE" ? "border-tone-honey-br bg-tone-honey-bg" : "border-border hover:border-tone-honey-br"}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">Past Due{filters.status === "PAST_DUE" ? " · filtered" : ""}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Needs Attention{filters.status === "PAST_DUE" ? " · filtered" : ""}</p>
                   <p className="mt-1 text-2xl font-bold text-tone-honey-fg">{stats.pastDueCount ?? 0}</p>
                 </div>
                 <div className="rounded-lg bg-tone-honey-bg p-2"><AlertTriangle className="h-4 w-4 text-tone-honey-fg" /></div>
@@ -202,7 +413,7 @@ export default function SubscriptionsClient() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Click Active / Trialing / Canceled / Past Due to filter by status. Past Due covers PAST_DUE, GRACE_PERIOD, and UNPAID — the payments to recover. Plan, source, and platform live in the filters panel.
+            Click Active / Trialing / Canceled / Needs Attention to filter by status. Needs Attention covers PAST_DUE, GRACE_PERIOD, and UNPAID — the payments to recover. Plan, source, and platform live in the filters panel.
           </p>
         </>
       )}
@@ -420,6 +631,63 @@ export default function SubscriptionsClient() {
                 </div>
               )}
 
+              {/* ── Lifecycle actions — each opens the step-up confirm modal ── */}
+              {(isStripe || isStore) && (
+                <div className="rounded-lg border border-border p-3">
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lifecycle actions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {stripeCancellable && (
+                      <>
+                        <button
+                          onClick={() => openAction("cancel_period_end")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                          title="Cancel renewal at the end of the current period"
+                        >
+                          <Clock className="h-3.5 w-3.5" /> Cancel at period end
+                        </button>
+                        <button
+                          onClick={() => openAction("cancel_now")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          title="Cancel immediately — access ends now"
+                        >
+                          <Ban className="h-3.5 w-3.5" /> Cancel now
+                        </button>
+                      </>
+                    )}
+                    {isStripe && (
+                      <>
+                        <button
+                          onClick={() => openAction("refund")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          title="Refund the latest paid invoice"
+                        >
+                          <Undo2 className="h-3.5 w-3.5" /> Refund last invoice
+                        </button>
+                        <button
+                          onClick={() => openAction("resync")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                          title="Re-fetch from Stripe and overwrite local status/plan/period"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" /> Force re-sync
+                        </button>
+                      </>
+                    )}
+                    {isStore && (
+                      <button
+                        onClick={() => openAction("revalidate")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                        title="Re-read the stored receipt and refresh recorded health"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" /> Re-validate receipt
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Each action requires admin password + MFA step-up and is written to the audit log. Money-moving actions (cancel now, refund) state the exact impact before you confirm.
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-wrap justify-end gap-2 pt-2">
                 {detail.provider === "STRIPE" && stripeDashboardUrl(detail.stripeCustomerId) ? (
                   <a
@@ -444,6 +712,23 @@ export default function SubscriptionsClient() {
           </div>
         </div>
       )}
+
+      {/* Step-up confirm modal — gates EVERY lifecycle mutation. */}
+      <PasswordConfirmModal
+        open={Boolean(pendingAction && pendingCfg)}
+        title={pendingCfg?.title || "Confirm action"}
+        description={
+          pendingAction === "refund" && refundPreviewLoading
+            ? "Loading the refundable amount…"
+            : pendingCfg?.description || ""
+        }
+        confirmLabel={pendingCfg?.confirmLabel || "Confirm"}
+        busy={actionBusy}
+        error={actionError}
+        requiresMfa={actionRequiresMfa}
+        onClose={closeAction}
+        onConfirm={confirmAction}
+      />
     </div>
   );
 }

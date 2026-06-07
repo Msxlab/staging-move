@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, CheckCircle2, Circle, Edit2, Plug, Plus, ShieldAlert, ToggleLeft, ToggleRight } from "lucide-react";
+import Link from "next/link";
+import { Activity, CheckCircle2, ChevronRight, Circle, Edit2, Plug, Plus, ShieldAlert, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -372,6 +373,13 @@ export default function ConnectorsClient() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    <Link
+                      href={`/connectors/${available.connectorKey}`}
+                      aria-label={`Open ${available.displayName} detail`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                    >
+                      Detail <ChevronRight className="h-4 w-4" />
+                    </Link>
                     {!available.registered ? (
                       <button
                         onClick={() => startRegister(available)}
@@ -445,7 +453,9 @@ export default function ConnectorsClient() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background"><Plug className="h-4 w-4 text-muted-foreground" /></div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono font-medium text-foreground">{c.connectorKey}</p>
+                    <Link href={`/connectors/${c.connectorKey}`} className="font-mono font-medium text-foreground hover:underline" title="Open connector detail">
+                      {c.connectorKey}
+                    </Link>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${c.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{c.enabled ? "ON" : "OFF"}</span>
                     <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{c.stage}</span>
                     {c.circuitState !== "CLOSED" && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">{c.circuitState}</span>}
@@ -478,6 +488,7 @@ export default function ConnectorsClient() {
                 <button onClick={() => runHealthCheck(c.connectorKey)} disabled={healthChecks[c.connectorKey]?.running} aria-label="Test connection (health check)" className="rounded p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-50" title="Test connection (health check)"><Activity className={`h-4 w-4 ${healthChecks[c.connectorKey]?.running ? "animate-pulse" : ""}`} /></button>
                 <button onClick={() => startEdit(c)} aria-label="Edit connector" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Edit2 className="h-4 w-4" /></button>
                 <button onClick={() => bulkRevoke(c)} aria-label="Revoke all consents (incident)" className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke all consents (incident)"><ShieldAlert className="h-4 w-4" /></button>
+                <Link href={`/connectors/${c.connectorKey}`} aria-label="Open connector detail" className="rounded p-1.5 text-muted-foreground hover:bg-accent" title="Open detail"><ChevronRight className="h-4 w-4" /></Link>
               </div>
             </div>
           ))
