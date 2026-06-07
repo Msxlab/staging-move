@@ -10,9 +10,9 @@ import {
   TextInput,
   Switch,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Users, Trash2, ExternalLink } from "lucide-react-native";
+import { ArrowLeft, Users, Trash2, ExternalLink, Ticket } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
@@ -375,6 +375,17 @@ export default function WorkspaceScreen() {
                 {t("workspace.upgradeWeb", "See Family & Pro on the web")}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/workspace/accept-invite" as Href)}
+              style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("workspace.haveInviteA11y", "Have an invite? Join a workspace")}
+            >
+              <Ticket size={16} color={theme.colors.primary} />
+              <Text style={{ color: theme.colors.primary, fontWeight: "600", fontSize: 14 }}>
+                {t("workspace.haveInvite", "Have an invite? Join a workspace")}
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -546,6 +557,21 @@ export default function WorkspaceScreen() {
                 )}
               </>
             )}
+
+            {/* Persistent entry point: a Pro user can be invited to additional
+                workspaces, so keep "Join a workspace" reachable even when one
+                workspace already exists. */}
+            <TouchableOpacity
+              onPress={() => router.push("/workspace/accept-invite" as Href)}
+              style={styles.joinInviteRow}
+              accessibilityRole="button"
+              accessibilityLabel={t("workspace.haveInviteA11y", "Have an invite? Join a workspace")}
+            >
+              <Ticket size={16} color={theme.colors.primary} />
+              <Text style={styles.joinInviteText}>
+                {t("workspace.haveInvite", "Have an invite? Join a workspace")}
+              </Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -653,4 +679,13 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
     },
     primaryBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+    joinInviteRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 24,
+      paddingVertical: 8,
+    },
+    joinInviteText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
   });
