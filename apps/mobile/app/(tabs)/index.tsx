@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import * as Haptics from "expo-haptics";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -86,6 +87,9 @@ export default function DashboardScreen() {
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
   // id of the invite currently being accepted/declined (disables its buttons).
   const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
+  // Bumped on a successful invite-accept to fire the PlanHero crew's one-shot
+  // celebration bounce. A plain counter keeps the trigger decoupled from PlanHero.
+  const [celebrateTick, setCelebrateTick] = useState(0);
   // Push re-prompt card: shown only to users who never accepted push and
   // haven't dismissed the card. `null` = still deciding (render nothing).
   const [showPushPrompt, setShowPushPrompt] = useState<boolean | null>(null);
@@ -291,6 +295,10 @@ export default function DashboardScreen() {
       try {
         const result = await acceptPendingInvitation(invite.id);
         if (result.ok) {
+          // Celebrate: success haptic + bump the tick so the PlanHero crew does a
+          // one-shot bounce. Haptics are best-effort (unsupported on some devices).
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          setCelebrateTick((n) => n + 1);
           // Drop the accepted invite immediately, then refresh the dashboard.
           // acceptPendingInvitation already wrote the resolved plan tier into the
           // auth store (via refreshPlanTierFromProfile) so ThemeProvider repaints
@@ -534,8 +542,9 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {/* Plan welcome hero — mascots + plan identity (Family/Pro only) */}
-        <PlanHero />
+        {/* Plan welcome hero — mascots + plan identity (Family/Pro only).
+            celebrateTick fires a one-shot bounce when an invite is accepted. */}
+        <PlanHero celebrateTick={celebrateTick} />
 
         {/* Household / Workspace (Family & Pro) */}
         {workspace && (

@@ -9,6 +9,7 @@ import Svg, {
   Rect,
   Stop,
 } from "react-native-svg";
+import { RaccoonWalking } from "@/components/ui/RaccoonWalking";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -96,6 +97,14 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
 
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
+      {/* Branded mascot beat: the LocateFlow raccoon strolls in with a little
+          suitcase while the wordmark mark draws. Purely decorative — it owns its
+          own Reanimated drivers and never touches the ready/onFinish hand-off, so
+          it can never block or delay app readiness. */}
+      <View style={styles.mascotArea} pointerEvents="none">
+        <RaccoonWalking size={150} />
+      </View>
+
       <View style={styles.logoArea}>
         <Animated.View
           style={[
@@ -223,6 +232,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
+  },
+  mascotArea: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginBottom: 20,
   },
   logoArea: {
     alignItems: "center",
