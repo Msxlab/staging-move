@@ -18,7 +18,7 @@ name: Scheduled cron jobs
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch (10m); blog-publish (hourly)
+    - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch + scheduled-delivery (10m); blog-publish (hourly)
     - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup
     - cron: "0 6 * * *" # daily 06:00: trial-check + the daily reminder batch
     - cron: "0 9 * * 1" # Mondays: weekly-digest
@@ -58,6 +58,7 @@ jobs:
             "*/5 * * * *")
               hit "$WEB/api/cron/checkout-cleanup"
               if [ $(( 10#$(date -u +%M) % 10 )) -eq 0 ]; then hit "$WEB/api/cron/connector-dispatch"; fi
+              if [ $(( 10#$(date -u +%M) % 10 )) -eq 0 ]; then hit "$WEB/api/cron/scheduled-delivery"; fi
               if [ "$(date -u +%M)" = "00" ]; then hit "$WEB/api/cron/blog-publish"; fi
               ;;
             "15 3 * * *")
