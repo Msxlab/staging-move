@@ -54,7 +54,46 @@ export async function GET() {
     }),
   );
 
-  return NextResponse.json({ workspaces }, { headers: { "Cache-Control": "no-store" } });
+  // A Family/Pro member keeps their auto-provisioned personal-solo workspace
+  // alongside the shared household one, which reads as a confusing "second
+  // workspace." Suppress that redundant personal-solo ONLY when it is safe to:
+  //  - the user is an active member of >= 1 OTHER multi-seat workspace
+  //    (the shared household/workspace they actually use), AND
+  //  - the personal-solo holds NO scoped data (Address/Service/MovingPlan/Budget
+  //    rows for that workspaceId all count 0).
+  // DATA-SAFE: if the personal-solo has ANY scoped data, it is kept (relabeled
+  // "Personal" via isPersonalSolo) so the user never loses access to it. We never
+  // delete or mutate a workspace here — emptiness is purely about visibility.
+  const activeMultiSeatCount = workspaces.filter(
+    (w) => !w.isPersonalSolo && !w.deletedAt && w.status === "ACTIVE" && w.seatLimit > 1,
+  ).length;
+
+  const visibleWorkspaces = await Promise.all(
+    workspaces.map(async (w) => {
+      const isRedundantPersonalCandidate =
+        w.isPersonalSolo && !w.deletedAt && activeMultiSeatCount >= 1;
+      if (!isRedundantPersonalCandidate) return { workspace: w, hidden: false };
+
+      // Count any scoped data this personal-solo holds. We include soft-deleted
+      // rows so a workspace with recoverable data is never hidden out from under
+      // the user. If anything exists, keep the workspace visible.
+      const [addresses, services, movingPlans, budgets] = await Promise.all([
+        prisma.address.count({ where: { workspaceId: w.id } }),
+        prisma.service.count({ where: { workspaceId: w.id } }),
+        prisma.movingPlan.count({ where: { workspaceId: w.id } }),
+        prisma.budget.count({ where: { workspaceId: w.id } }),
+      ]);
+      const isEmpty = addresses + services + movingPlans + budgets === 0;
+      return { workspace: w, hidden: isEmpty };
+    }),
+  );
+
+  // Exclude the empty, redundant personal-solo entirely so it disappears from
+  // both the list and the switcher; everything else (including any personal-solo
+  // that DID have data) passes through unchanged.
+  const filtered = visibleWorkspaces.filter((entry) => !entry.hidden).map((entry) => entry.workspace);
+
+  return NextResponse.json({ workspaces: filtered }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {

@@ -134,7 +134,13 @@ export default function WorkspaceSettingsPage() {
         setMyUserId(meData.user?.id ?? null);
         if (list.length > 0) {
           const cookieWorkspaceId = readWorkspaceCookie();
-          const nextSelectedId = list.find((w) => w.id === cookieWorkspaceId)?.id ?? list[0].id;
+          // Default to the cookie's workspace if it's still in the list; else
+          // prefer a shared (non-personal) workspace over a personal-solo so a
+          // Family/Pro member lands on the household they actually share, not
+          // their own data container. Fall back to the first entry otherwise.
+          const sharedDefault = list.find((w) => !w.isPersonalSolo);
+          const nextSelectedId =
+            list.find((w) => w.id === cookieWorkspaceId)?.id ?? sharedDefault?.id ?? list[0].id;
           setSelectedId(nextSelectedId);
           persistWorkspaceSelection(nextSelectedId);
         }

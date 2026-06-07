@@ -127,7 +127,13 @@ export default function WorkspaceScreen() {
     setFeatureOff(false);
     const list = res.data?.workspaces ?? [];
     setWorkspaces(list);
-    if (list.length > 0) setSelectedId((cur) => cur ?? list[0].id);
+    // Default to a shared (non-personal) workspace when present so a Family/Pro
+    // member lands on the household they actually share, not their own personal
+    // data container. The empty, redundant personal-solo is already excluded
+    // server-side, so it never appears in the switcher.
+    if (list.length > 0) {
+      setSelectedId((cur) => cur ?? list.find((w) => !w.isPersonalSolo)?.id ?? list[0].id);
+    }
     setPageLoading(false);
   }, []);
 
