@@ -302,6 +302,18 @@ export async function processAccountDeletionRequest(requestId: string) {
         }
       }
       await rawPrisma.movingPlan.deleteMany({ where: { userId: request.userId } });
+      // No-FK residue tables keyed by userId/email — the User cascade has no
+      // relation to these, so without an explicit purge a GDPR Art. 17 erasure
+      // leaves the user's PLAINTEXT email in WaitlistSignup and their queued
+      // notification bodies in NotificationQueue. The admin hard-delete path
+      // already purges these; mirror it here so self-service erasure is complete.
+      const deletedUserEmail = user.email || requestData.email || null;
+      await rawPrisma.waitlistSignup.deleteMany({
+        where: deletedUserEmail
+          ? { OR: [{ userId: request.userId }, { email: deletedUserEmail }] }
+          : { userId: request.userId },
+      });
+      await rawPrisma.notificationQueue.deleteMany({ where: { userId: request.userId } });
       await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
     } catch (error) {
@@ -312,6 +324,11 @@ export async function processAccountDeletionRequest(requestId: string) {
   }
 
   const finalStatus = cleanupComplete && (userDeleted || !user) ? "COMPLETED" : "PROCESSING";
+  // Once the user is physically erased, scrub the residual PII (plaintext email +
+  // billing identifier) out of the retained GDPRRequest record. The request row
+  // is kept as proof the erasure happened, but must not itself carry recoverable
+  // personal data after an Art. 17 deletion.
+  const scrubResidualPii = finalStatus === "COMPLETED" && userDeleted;
   await prisma.gDPRRequest.update({
     where: { id: request.id },
     data: {
@@ -319,7 +336,8 @@ export async function processAccountDeletionRequest(requestId: string) {
       completedAt: finalStatus === "COMPLETED" ? new Date() : null,
       requestData: toRequestDataJson({
         ...requestData,
-        stripeSubscriptionId,
+        email: scrubResidualPii ? null : requestData.email,
+        stripeSubscriptionId: scrubResidualPii ? null : stripeSubscriptionId,
         cleanup: {
           stripeCanceled,
           userDeleted,

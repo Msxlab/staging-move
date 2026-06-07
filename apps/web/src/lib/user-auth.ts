@@ -88,10 +88,40 @@ export async function generateFingerprint(
   return sha256Hex(`web|${userAgent || "unknown"}`);
 }
 
-// Mobile: UA only. Mobile IP changes frequently (Wi-Fi ↔ LTE, carrier NAT),
-// so including IP would force re-login on every network switch. UA stays
-// stable across network changes and still detects device-swap hijack.
+// Strips the app-version token out of the descriptive mobile User-Agent so the
+// fingerprint stays stable across app updates. The mobile client sends a UA of
+// the form "LocateFlow/<version> (iOS; Expo)" (see apps/mobile/src/lib/api.ts).
+// The <version> changes on every release; if it were part of the hashed input,
+// a single version bump would change every signed-in user's recomputed
+// fingerprint, fail the `fp` claim check in getUserSession, and silently log
+// out the entire mobile install base. We normalize "LocateFlow/<version>" →
+// "LocateFlow" before hashing so device-swap detection (platform/OS still in
+// the UA) is preserved while version churn no longer invalidates sessions.
+export function stripMobileUserAgentVersion(userAgent: string): string {
+  return userAgent.replace(
+    /\bLocateFlow\/[^\s);]+/gi,
+    "LocateFlow",
+  );
+}
+
+// Mobile: UA only (version-independent). Mobile IP changes frequently
+// (Wi-Fi ↔ LTE, carrier NAT), so including IP would force re-login on every
+// network switch. UA (minus the app version) stays stable across network
+// changes AND app updates, while still detecting device-swap hijack via the
+// platform/OS tokens.
 export async function generateMobileFingerprint(
+  userAgent: string,
+): Promise<string> {
+  return sha256Hex(`mobile|${stripMobileUserAgentVersion(userAgent) || "unknown"}`);
+}
+
+// Legacy mobile fingerprint: the previous scheme hashed the raw,
+// version-inclusive UA ("mobile|LocateFlow/1.2.3 (iOS; Expo)"). Sessions minted
+// before the version-independent change carry an `fp` claim computed this way.
+// During the transition we accept it as a fallback so the fix itself does not
+// mass-logout users on deploy. Once all such sessions have rotated out (≤30d,
+// the session TTL) this fallback becomes dead and can be removed.
+async function generateLegacyMobileVersionFingerprint(
   userAgent: string,
 ): Promise<string> {
   return sha256Hex(`mobile|${userAgent || "unknown"}`);
@@ -555,7 +585,28 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           Boolean(legacyWebFp) &&
           legacyWebFp === payload.fp &&
           sessionUserAgentMatches(record.userAgent, userAgent);
-        if (acceptsLegacyWebIpFingerprint) {
+        // Legacy mobile transition: sessions minted before the
+        // version-independent mobile fingerprint carry an `fp` derived from the
+        // version-inclusive UA captured at login time. Recompute it from the
+        // *stored* UA (record.userAgent) — the version embedded there is the
+        // one the fp was minted from, which the current request UA no longer
+        // carries after an app update. We additionally require the stripped
+        // (version-independent) form of the stored UA and the current UA to
+        // match, so this fallback only rescues genuine app-version churn on the
+        // same device, never a different device whose stored fp happens to be
+        // legacy. After this acceptance the session keeps its legacy fp until
+        // the next login re-mints the version-independent one.
+        const legacyMobileFp =
+          fpMode === "mobile" && record.userAgent && record.userAgent !== "unknown"
+            ? await generateLegacyMobileVersionFingerprint(record.userAgent).catch(() => null)
+            : null;
+        const acceptsLegacyMobileFingerprint =
+          fpMode === "mobile" &&
+          Boolean(legacyMobileFp) &&
+          legacyMobileFp === payload.fp &&
+          stripMobileUserAgentVersion(record.userAgent || "") ===
+            stripMobileUserAgentVersion(userAgent);
+        if (acceptsLegacyWebIpFingerprint || acceptsLegacyMobileFingerprint) {
           if (diagnostics) diagnostics.fingerprintMatched = true;
         } else {
           if (diagnostics) diagnostics.fingerprintMatched = false;
