@@ -19,10 +19,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id, invId } = await params;
 
+  // 404 vs 403 (per-member invitation route):
+  //  • Caller isn't a member of this workspace → 404. They may not even see the
+  //    workspace, so never confirm the invitation's existence.
+  //  • Caller is a member but lacks invite-management permission → 403. This is
+  //    checked BEFORE the existence lookup on purpose: a non-manager gets the
+  //    same 403 whether or not `invId` exists, so the blanket denial can't be
+  //    used to probe which invitations exist.
+  //  • Caller may manage invitations but this invId isn't in the workspace → 404.
   const caller = await prisma.workspaceMember.findFirst({ where: { workspaceId: id, userId: session.userId } });
   if (!caller) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!can(caller.role as WorkspaceRole, "member.invite", { status: caller.status as WorkspaceMemberStatus })) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: "You can't manage invitations for this workspace." }, { status: 403 });
   }
 
   const inv = await prisma.workspaceInvitation.findFirst({ where: { id: invId, workspaceId: id } });

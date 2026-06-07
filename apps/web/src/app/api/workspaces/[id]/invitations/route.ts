@@ -114,12 +114,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         if (alreadyMember) throw new Error("ALREADY_MEMBER");
       }
 
-      const pending = await tx.workspaceInvitation.findFirst({ where: { workspaceId: id, invitedEmail, status: "PENDING" } });
+      // Block a duplicate while a prior invite is still LIVE — i.e. PENDING and
+      // not yet expired. Mirrors countUsedSeats / the pending-list filter, which
+      // also treat an expired PENDING invite as no longer outstanding. This keeps
+      // a legitimate re-invite possible once the prior invite expired (or was
+      // REVOKED — that status already falls outside this filter), instead of
+      // permanently wedging the email behind a stale invitation.
+      const pending = await tx.workspaceInvitation.findFirst({
+        where: { workspaceId: id, invitedEmail, status: "PENDING", expiresAt: { gte: new Date() } },
+      });
       if (pending) throw new Error("PENDING_INVITE");
 
       const [memberCount, pendingCount] = await Promise.all([
         tx.workspaceMember.count({ where: { workspaceId: id, status: { not: "SUSPENDED" } } }),
-        tx.workspaceInvitation.count({ where: { workspaceId: id, status: "PENDING" } }),
+        tx.workspaceInvitation.count({ where: { workspaceId: id, status: "PENDING", expiresAt: { gte: new Date() } } }),
       ]);
       if (memberCount + pendingCount >= seatLimitForPlan(plan)) throw new Error("SEAT_FULL");
 
