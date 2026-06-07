@@ -8,21 +8,21 @@
 .adm-aurora {
   /* Default (dark) palette */
   --au-ink:       #F2F6FB;
-  --au-ink-2:     #C2CDDC;
-  --au-ink-3:     #8B99AE;
-  --au-ink-4:     #5A687E;
+  --au-ink-2:     #CBD5E4;
+  --au-ink-3:     #9AA8BD;
+  --au-ink-4:     #6E7C92;
 
-  --au-base:      #11161F;
-  --au-base-2:    #161C28;
-  --au-base-3:    #1C2433;
-  --au-pane:      rgba(255, 255, 255, 0.05);
-  --au-pane-2:    rgba(255, 255, 255, 0.08);
-  --au-pane-3:    rgba(255, 255, 255, 0.11);
+  --au-base:      #171E2B;
+  --au-base-2:    #1C2535;
+  --au-base-3:    #232D40;
+  --au-pane:      rgba(255, 255, 255, 0.07);
+  --au-pane-2:    rgba(255, 255, 255, 0.11);
+  --au-pane-3:    rgba(255, 255, 255, 0.15);
 
-  --au-edge:      rgba(255, 255, 255, 0.12);
-  --au-edge-2:    rgba(255, 255, 255, 0.08);
-  --au-rule:      rgba(255, 255, 255, 0.09);
-  --au-rule-2:    rgba(255, 255, 255, 0.14);
+  --au-edge:      rgba(255, 255, 255, 0.16);
+  --au-edge-2:    rgba(255, 255, 255, 0.12);
+  --au-rule:      rgba(255, 255, 255, 0.13);
+  --au-rule-2:    rgba(255, 255, 255, 0.18);
 
   --au-cool:      #8FC2F0;
   --au-cool-2:    #5C9DDC;
@@ -430,24 +430,24 @@ html:not(.dark) .adm-aurora .admin-panel {
 /* --- Dark (default) ------------------------------------------------- */
 .adm-aurora {
   /* shadcn surface tokens — HSL channel triplets (no hsl() wrapper) */
-  --background:           218 33% 11%;
-  --foreground:           214 40% 97%;
-  --card:                 217 30% 15%;
-  --card-foreground:      214 40% 97%;
-  --popover:              217 30% 15%;
-  --popover-foreground:   214 40% 97%;
+  --background:           218 26% 14%;
+  --foreground:           214 40% 98%;
+  --card:                 218 22% 19%;
+  --card-foreground:      214 40% 98%;
+  --popover:              218 22% 19%;
+  --popover-foreground:   214 40% 98%;
   --primary:              207 67% 70%;
   --primary-foreground:   218 43% 6%;
-  --secondary:            215 24% 80%;
+  --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
-  --muted:                217 26% 19%;
-  --muted-foreground:     215 20% 74%;
-  --accent:               217 26% 21%;
-  --accent-foreground:    214 40% 97%;
+  --muted:                218 22% 24%;
+  --muted-foreground:     215 22% 78%;
+  --accent:               218 22% 27%;
+  --accent-foreground:    214 40% 98%;
   --destructive:          359 75% 75%;
   --destructive-foreground: 218 43% 6%;
-  --border:               217 24% 26%;
-  --input:                217 24% 26%;
+  --border:               217 20% 30%;
+  --input:                217 20% 30%;
   --ring:                 207 67% 70%;
   --radius:               0.625rem;
 
@@ -471,17 +471,17 @@ html:not(.dark) .adm-aurora .admin-panel {
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
-  --tone-rose-bg:    rgba(127, 182, 232, 0.16); --tone-rose-br:    rgba(127, 182, 232, 0.30); --tone-rose-fg:    var(--au-cool);
-  --tone-foil-bg:    rgba(180, 155, 255, 0.16); --tone-foil-br:    rgba(180, 155, 255, 0.30); --tone-foil-fg:    var(--au-violet);
-  --tone-sage-bg:    rgba(135, 221, 192, 0.16); --tone-sage-br:    rgba(135, 221, 192, 0.30); --tone-sage-fg:    var(--au-mint);
-  --tone-honey-bg:   rgba(242, 196, 108, 0.16); --tone-honey-br:   rgba(242, 196, 108, 0.30); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(180, 155, 255, 0.16); --tone-umber-br:   rgba(180, 155, 255, 0.30); --tone-umber-fg:   var(--au-violet);
-  --tone-slate-bg:   rgba(168, 181, 201, 0.16); --tone-slate-br:   rgba(168, 181, 201, 0.30); --tone-slate-fg:   var(--au-ink-2);
-  --tone-orange-bg:  rgba(127, 182, 232, 0.16); --tone-orange-br:  rgba(127, 182, 232, 0.30); --tone-orange-fg:  var(--au-cool);
-  --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.30); --tone-emerald-fg: var(--au-mint);
-  --tone-amber-bg:   rgba(242, 196, 108, 0.16); --tone-amber-br:   rgba(242, 196, 108, 0.30); --tone-amber-fg:   var(--au-amber);
-  --tone-sky-bg:     rgba(127, 182, 232, 0.16); --tone-sky-br:     rgba(127, 182, 232, 0.30); --tone-sky-fg:     var(--au-cool);
-  --tone-cyan-bg:    rgba(127, 182, 232, 0.16); --tone-cyan-br:    rgba(127, 182, 232, 0.30); --tone-cyan-fg:    var(--au-cool);
+  --tone-rose-bg:    rgba(127, 182, 232, 0.20); --tone-rose-br:    rgba(127, 182, 232, 0.36); --tone-rose-fg:    var(--au-cool);
+  --tone-foil-bg:    rgba(180, 155, 255, 0.20); --tone-foil-br:    rgba(180, 155, 255, 0.36); --tone-foil-fg:    var(--au-violet);
+  --tone-sage-bg:    rgba(135, 221, 192, 0.20); --tone-sage-br:    rgba(135, 221, 192, 0.36); --tone-sage-fg:    var(--au-mint);
+  --tone-honey-bg:   rgba(242, 196, 108, 0.20); --tone-honey-br:   rgba(242, 196, 108, 0.36); --tone-honey-fg:   var(--au-amber);
+  --tone-umber-bg:   rgba(180, 155, 255, 0.20); --tone-umber-br:   rgba(180, 155, 255, 0.36); --tone-umber-fg:   var(--au-violet);
+  --tone-slate-bg:   rgba(168, 181, 201, 0.20); --tone-slate-br:   rgba(168, 181, 201, 0.36); --tone-slate-fg:   var(--au-ink-2);
+  --tone-orange-bg:  rgba(127, 182, 232, 0.20); --tone-orange-br:  rgba(127, 182, 232, 0.36); --tone-orange-fg:  var(--au-cool);
+  --tone-emerald-bg: rgba(135, 221, 192, 0.20); --tone-emerald-br: rgba(135, 221, 192, 0.36); --tone-emerald-fg: var(--au-mint);
+  --tone-amber-bg:   rgba(242, 196, 108, 0.20); --tone-amber-br:   rgba(242, 196, 108, 0.36); --tone-amber-fg:   var(--au-amber);
+  --tone-sky-bg:     rgba(127, 182, 232, 0.20); --tone-sky-br:     rgba(127, 182, 232, 0.36); --tone-sky-fg:     var(--au-cool);
+  --tone-cyan-bg:    rgba(127, 182, 232, 0.20); --tone-cyan-br:    rgba(127, 182, 232, 0.36); --tone-cyan-fg:    var(--au-cool);
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);

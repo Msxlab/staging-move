@@ -49,7 +49,9 @@ import { HardStats } from "@/components/marketing/hard-stats";
 import { MovingMomentMock } from "@/components/marketing/moving-moment-mock";
 import { BilingualShowcase } from "@/components/marketing/bilingual-showcase";
 import { TestimonialQuote } from "@/components/marketing/testimonial-quote";
-import { JsonLd } from "@/components/seo/json-ld";
+import { SocialProof } from "@/components/marketing/social-proof";
+import { EarlyAccessCapture } from "@/components/marketing/early-access-capture";
+import { JsonLd, faqPageSchema } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -105,6 +107,27 @@ export default async function LandingPage() {
     { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
     { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
+    // Product / privacy entries — expanded for SEO and to answer the
+    // questions the marketing review flagged. The provider-account answer
+    // is deliberately careful: per the legal posture, LocateFlow does NOT
+    // auto-update accounts. Keep this non-committal and flag-gated in spirit
+    // even if connectors later ship behind FEATURE_API_CONNECTORS.
+    {
+      q: "Does LocateFlow update my provider accounts?",
+      a: "No. LocateFlow does not log into or change your accounts with banks, utilities, government agencies, or any other provider on your behalf. What it does is help you track which services, subscriptions, and renewals are tied to each address, and guide you through the changes you need to make — with checklists, reminders, and links — so you can update each provider yourself through their official channel.",
+    },
+    {
+      q: "What exactly does LocateFlow do?",
+      a: "LocateFlow is an organizer for the chaos of moving and address changes. You keep your addresses, service providers, subscriptions, documents, and moving tasks in one place, and LocateFlow reminds you what still needs attention. It is an organizational and research aid — it does not act as a broker, agency, or provider, and it does not replace any of them.",
+    },
+    {
+      q: "Will LocateFlow remind me before a service renews?",
+      a: "Yes. You can record renewal and key dates for the services tied to your addresses, and LocateFlow sends reminders ahead of time so a subscription doesn't quietly renew against an old address or lapse when you need it. You decide what to act on — LocateFlow surfaces the timing, you make the change.",
+    },
+    {
+      q: "Who can see my address and provider data?",
+      a: "Your data is yours. Web analytics is consent-gated, access is protected with encryption in transit and access controls, and you can export or delete your data from settings at any time. Some billing, audit, legal, and security records may be retained when required. See our Privacy Policy for the full detail.",
+    },
   ];
   const structuredData = {
     "@context": "https://schema.org",
@@ -401,6 +424,10 @@ export default async function LandingPage() {
       {/* Bilingual showcase — the wedge */}
       <BilingualShowcase />
 
+      {/* Social proof — testimonial card wall. SAMPLE/placeholder content
+          (see component) — owner must swap for real, attributable quotes. */}
+      <SocialProof />
+
       {/* Testimonial — emotional landing right before pricing */}
       <TestimonialQuote />
 
@@ -436,9 +463,15 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ - pulls directly from the pricing FAQ keys so the landing and
-          pricing pages stay in sync when the copy is edited. */}
+      {/* FAQ - pulls the billing keys from the pricing FAQ so landing and
+          pricing stay in sync, plus product/privacy entries defined above.
+          Emits FAQPage structured data so the Q&A is eligible for rich
+          results in search. */}
       <section id="faq" className="bg-muted/50 py-20">
+        <JsonLd
+          id="ld-home-faq"
+          data={faqPageSchema(faqs.map((faq) => ({ question: faq.q, answer: faq.a })))}
+        />
         <div className="container max-w-3xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">{tPricing("faq_title")}</h2>
@@ -456,6 +489,10 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Email capture — early access / newsletter. Reuses the existing
+          WaitlistForm + /api/waitlist endpoint (source: home-early-access). */}
+      <EarlyAccessCapture />
 
       {/* Mobile App CTA */}
       <section className="container py-20 border-t">
