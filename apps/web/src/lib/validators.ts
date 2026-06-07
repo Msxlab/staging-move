@@ -23,7 +23,7 @@ export const profileSchema = z.strictObject({
   isImmigrant: z.boolean().default(false),
   immigrationStatus: z
     .union([
-      z.enum(["CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"]),
+      z.enum(["CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "O1", "OTHER_VISA"]),
       z.literal(""),
     ])
     .default(""),

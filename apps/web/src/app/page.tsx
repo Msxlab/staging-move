@@ -50,7 +50,6 @@ import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-st
 import { HardStats } from "@/components/marketing/hard-stats";
 import { MovingMomentMock } from "@/components/marketing/moving-moment-mock";
 import { BilingualShowcase } from "@/components/marketing/bilingual-showcase";
-import { TestimonialQuote } from "@/components/marketing/testimonial-quote";
 import { SocialProof } from "@/components/marketing/social-proof";
 import { EarlyAccessCapture } from "@/components/marketing/early-access-capture";
 import { JsonLd, faqPageSchema } from "@/components/seo/json-ld";
@@ -448,8 +447,11 @@ export default async function LandingPage() {
           (see component) — owner must swap for real, attributable quotes. */}
       <SocialProof />
 
-      {/* Testimonial — emotional landing right before pricing */}
-      <TestimonialQuote />
+      {/* NOTE: The standalone <TestimonialQuote/> pull-quote was removed because
+          it shipped a FABRICATED named-customer attribution ("Maria L · Moved 4
+          times in 6 years") live and ungated — an FTC/endorsement risk. Mirroring
+          the gated SocialProof above, no fake named testimonial may render on the
+          live home page. Re-add only with a real, consented, attributable quote. */}
 
       <PricingSection
         ctaHref={ctaTarget.href}
