@@ -35,6 +35,15 @@ export interface WorkspaceContext {
   // Convenience flags materialized from the permission matrix.
   canManageMembers: boolean;
   canInitiateSync: boolean;
+  /**
+   * True when the request asked for a workspace (via X-Workspace-Id header or
+   * lf_workspace_id cookie) that the user is NOT a member of, and we silently
+   * fell back to their oldest workspace instead. Routes should overwrite the
+   * lf_workspace_id cookie with `workspaceId` (or clear it) so the stale value
+   * — e.g. left behind after the user was removed, or carried over from another
+   * device — stops mis-routing future requests. Absent/false on the normal path.
+   */
+  staleWorkspaceCookie?: boolean;
 }
 
 export type WorkspaceContextCode =
@@ -110,10 +119,22 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
 
   const requestedId = resolveWorkspaceIdFromRequest(request);
 
-  // Find the member row: the requested workspace, or the user's oldest one.
-  const member = requestedId
+  // Find the member row for the explicitly requested workspace, if any.
+  let member = requestedId
     ? await prisma.workspaceMember.findFirst({ where: { workspaceId: requestedId, userId } })
-    : await prisma.workspaceMember.findFirst({ where: { userId }, orderBy: { joinedAt: "asc" } });
+    : null;
+
+  // A requested workspace the user isn't a member of must NOT lock them out of
+  // the whole app: the header/cookie can be stale (user removed from that
+  // workspace, or a 1-year cookie carried over from another browser/device).
+  // Fall back to the user's oldest workspace — the same default used when no
+  // workspace was requested at all — and flag the stale cookie so the caller
+  // can overwrite/clear it. Only a user with NO membership anywhere is denied.
+  let staleWorkspaceCookie = false;
+  if (!member) {
+    member = await prisma.workspaceMember.findFirst({ where: { userId }, orderBy: { joinedAt: "asc" } });
+    if (member && requestedId) staleWorkspaceCookie = true;
+  }
 
   if (!member) {
     throw new WorkspaceContextError(403, "NO_WORKSPACE_ACCESS", "You don't have access to this workspace.");
@@ -146,6 +167,7 @@ export async function requireWorkspaceContext(request: Request): Promise<Workspa
     memberRole: role,
     memberStatus: status,
     entitlement,
+    staleWorkspaceCookie,
     ...materializeContextFlags(role, status),
   };
 }

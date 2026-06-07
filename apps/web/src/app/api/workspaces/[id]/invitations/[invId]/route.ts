@@ -3,11 +3,16 @@ import { can, type WorkspaceRole, type WorkspaceMemberStatus } from "@locateflow
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
+import {
+  WORKSPACE_AUDIT_ACTIONS,
+  maskTargetEmail,
+  writeWorkspaceAudit,
+} from "@/lib/workspace-audit";
 
 export const runtime = "nodejs";
 
 /** DELETE /api/workspaces/[id]/invitations/[invId] — revoke a pending invite. */
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string; invId: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; invId: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   const session = await getUserSession();
@@ -28,5 +33,20 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     where: { id: invId },
     data: { status: "REVOKED", revokedAt: new Date(), revokedByUserId: session.userId },
   });
+
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: WORKSPACE_AUDIT_ACTIONS.INVITATION_REVOKED,
+    workspaceId: id,
+    entityType: "workspace_invitation",
+    entityId: invId,
+    metadata: {
+      invitationId: invId,
+      role: inv.role,
+      targetEmail: maskTargetEmail(inv.invitedEmail),
+    },
+  });
+
   return NextResponse.json({ revoked: true });
 }

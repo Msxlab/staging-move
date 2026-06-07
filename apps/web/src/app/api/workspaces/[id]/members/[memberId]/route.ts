@@ -6,6 +6,13 @@ import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { sendWorkspaceMembershipEmail } from "@/lib/email-service";
 import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
+import {
+  WORKSPACE_AUDIT_ACTIONS,
+  maskTargetEmail,
+  notifyWorkspaceOwnerOfRosterChange,
+  workspaceDisplayName,
+  writeWorkspaceAudit,
+} from "@/lib/workspace-audit";
 
 export const runtime = "nodejs";
 
@@ -79,6 +86,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "You can't change this member's role." }, { status: 403 });
   }
 
+  const fromRole = target.role;
   const updated = await prisma.workspaceMember.update({ where: { id: memberId }, data: { role: newRole } });
   await createInAppNotification({
     userId: target.userId,
@@ -88,11 +96,38 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     href: "/settings/workspace",
   }).catch(() => {});
   await emailMembershipChange("role_changed", id, target.userId, updated.role);
+
+  const targetUser = await prisma.user.findUnique({ where: { id: target.userId }, select: { email: true } });
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: WORKSPACE_AUDIT_ACTIONS.MEMBER_ROLE_CHANGED,
+    workspaceId: id,
+    entityType: "workspace_member",
+    entityId: memberId,
+    metadata: {
+      targetUserId: target.userId,
+      targetEmail: maskTargetEmail(targetUser?.email),
+      fromRole,
+      toRole: updated.role,
+    },
+  });
+
+  // Notify the OWNER of the role change (suppressed when the owner performed it).
+  const wsName = await workspaceDisplayName(id);
+  await notifyWorkspaceOwnerOfRosterChange({
+    workspaceId: id,
+    actorUserId: session.userId,
+    title: "A member's role changed",
+    body: `${maskTargetEmail(targetUser?.email) ?? "A member"}'s role in ${wsName} changed from ${fromRole} to ${updated.role}.`,
+    dedupeSuffix: `role:${memberId}:${updated.role}`,
+  });
+
   return NextResponse.json({ id: updated.id, role: updated.role });
 }
 
 /** DELETE /api/workspaces/[id]/members/[memberId] — remove a member. */
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   const session = await getUserSession();
@@ -112,6 +147,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   // (Address/Service carrying this workspaceId) stays with the workspace, and
   // their personal connector consents are user-scoped — untouched by design.
   const removedUserId = target.userId;
+  const removedRole = target.role;
+  const removedUser = await prisma.user.findUnique({ where: { id: removedUserId }, select: { email: true } });
   await prisma.workspaceMember.delete({ where: { id: memberId } });
   await createInAppNotification({
     userId: removedUserId,
@@ -121,6 +158,31 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     href: "/settings/workspace",
   }).catch(() => {});
   await emailMembershipChange("removed", id, removedUserId);
+
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: WORKSPACE_AUDIT_ACTIONS.MEMBER_REMOVED,
+    workspaceId: id,
+    entityType: "workspace_member",
+    entityId: memberId,
+    metadata: {
+      targetUserId: removedUserId,
+      targetEmail: maskTargetEmail(removedUser?.email),
+      removedRole,
+    },
+  });
+
+  // Notify the OWNER that a member was removed (suppressed when the owner did it).
+  const wsName = await workspaceDisplayName(id);
+  await notifyWorkspaceOwnerOfRosterChange({
+    workspaceId: id,
+    actorUserId: session.userId,
+    title: "A member was removed",
+    body: `${maskTargetEmail(removedUser?.email) ?? "A member"} was removed from ${wsName}.`,
+    dedupeSuffix: `removed:${removedUserId}`,
+  });
+
   // Removing a member frees a seat — restore an OVERFLOW member if one is waiting.
   await reconcileWorkspaceSeats(id).catch(() => {});
   return NextResponse.json({ removed: true });

@@ -4,11 +4,18 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { reconcileWorkspaceSeats } from "@/lib/workspace-ownership";
+import {
+  WORKSPACE_AUDIT_ACTIONS,
+  maskTargetEmail,
+  notifyWorkspaceOwnerOfRosterChange,
+  workspaceDisplayName,
+  writeWorkspaceAudit,
+} from "@/lib/workspace-audit";
 
 export const runtime = "nodejs";
 
 /** POST /api/workspaces/[id]/members/leave — the caller leaves the workspace. */
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   const session = await getUserSession();
@@ -30,7 +37,34 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     );
   }
 
+  const leaverRole = caller.role;
+  const leaver = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } });
   await prisma.workspaceMember.delete({ where: { id: caller.id } });
+
+  await writeWorkspaceAudit({
+    request,
+    actorUserId: session.userId,
+    action: WORKSPACE_AUDIT_ACTIONS.MEMBER_LEFT,
+    workspaceId: id,
+    entityType: "workspace_member",
+    entityId: caller.id,
+    metadata: {
+      leftRole: leaverRole,
+      targetEmail: maskTargetEmail(leaver?.email),
+    },
+  });
+
+  // Notify the OWNER that a member left (suppressed when the owner is the actor —
+  // owners can't leave without transferring first, but the guard is harmless).
+  const wsName = await workspaceDisplayName(id);
+  await notifyWorkspaceOwnerOfRosterChange({
+    workspaceId: id,
+    actorUserId: session.userId,
+    title: "A member left",
+    body: `${maskTargetEmail(leaver?.email) ?? "A member"} left ${wsName}.`,
+    dedupeSuffix: `left:${session.userId}`,
+  });
+
   // Freeing a seat may let an OVERFLOW (read-only) member regain full access.
   await reconcileWorkspaceSeats(id).catch(() => {});
   return NextResponse.json({ left: true });

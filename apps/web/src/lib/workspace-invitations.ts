@@ -29,11 +29,22 @@ export function invitationExpiry(now: Date = new Date()): Date {
 // admin, and mobile). Re-exported so existing importers keep working.
 export { seatLimitForPlan } from "@locateflow/shared";
 
-/** Used seats = non-suspended members + pending invitations. */
+/**
+ * Used seats = non-suspended members + still-outstanding pending invitations.
+ *
+ * A PENDING invitation only consumes a seat while it can still be accepted, so
+ * invitations whose `expiresAt` has passed are excluded — an expired invite can
+ * never become a member, so holding a seat for it would wrongly block new
+ * invites/joins. Pair this with the pending-list query (which applies the same
+ * filter) so an expired invite stops counting AND stops showing as pending.
+ */
 export async function countUsedSeats(workspaceId: string): Promise<number> {
+  const now = new Date();
   const [members, pending] = await Promise.all([
     prisma.workspaceMember.count({ where: { workspaceId, status: { not: "SUSPENDED" } } }),
-    prisma.workspaceInvitation.count({ where: { workspaceId, status: "PENDING" } }),
+    prisma.workspaceInvitation.count({
+      where: { workspaceId, status: "PENDING", expiresAt: { gte: now } },
+    }),
   ]);
   return members + pending;
 }

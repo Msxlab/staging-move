@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { sendTrialExpiringEmail } from "@/lib/email-service";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { INDIVIDUAL_ANNUAL_PRICE_LABEL } from "@/lib/shared-billing";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
+import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
@@ -150,14 +152,27 @@ async function handleCron(request: NextRequest) {
       renewalNotified++;
     }
 
+    // Owners whose access this cron lapses must have their workspace seats
+    // reconciled — otherwise members keep ACTIVE write access to a workspace
+    // nobody is paying for. updateMany cannot return touched rows, so we read
+    // the matching owner userIds (same `now` snapshot, same filter) right
+    // before each transition, dedupe them, and reconcile after the updates.
+    const affectedOwnerIds = new Set<string>();
+    const collectOwners = async (where: Prisma.SubscriptionWhereInput) => {
+      const rows = await prisma.subscription.findMany({ where, select: { userId: true } });
+      for (const row of rows) affectedOwnerIds.add(row.userId);
+    };
+
     // Mark expired legacy trials (plan=FREE_TRIAL but no Stripe-backed accessType).
+    const legacyTrialWhere: Prisma.SubscriptionWhereInput = {
+      plan: "FREE_TRIAL",
+      accessType: { not: "FREE_TRIAL" },
+      status: "TRIALING",
+      trialEndsAt: { lt: now },
+    };
+    await collectOwners(legacyTrialWhere);
     const expiredTrials = await prisma.subscription.updateMany({
-      where: {
-        plan: "FREE_TRIAL",
-        accessType: { not: "FREE_TRIAL" },
-        status: "TRIALING",
-        trialEndsAt: { lt: now },
-      },
+      where: legacyTrialWhere,
       data: {
         status: "EXPIRED",
       },
@@ -169,12 +184,14 @@ async function handleCron(request: NextRequest) {
     // we expire them here too so users don't keep TRIALING+isActive past
     // the trial date if reconcile is delayed. Scoped tightly so we do not
     // touch rows that still have time left on their trial.
+    const providerTrialWhere: Prisma.SubscriptionWhereInput = {
+      accessType: "FREE_TRIAL",
+      status: "TRIALING",
+      trialEndsAt: { lt: now },
+    };
+    await collectOwners(providerTrialWhere);
     const expiredProviderTrials = await prisma.subscription.updateMany({
-      where: {
-        accessType: "FREE_TRIAL",
-        status: "TRIALING",
-        trialEndsAt: { lt: now },
-      },
+      where: providerTrialWhere,
       data: {
         status: "EXPIRED",
         autoRenew: false,
@@ -182,16 +199,18 @@ async function handleCron(request: NextRequest) {
     });
     expired += expiredProviderTrials.count;
 
+    const freeAccessWhere: Prisma.SubscriptionWhereInput = {
+      accessType: "FREE_ACCESS",
+      // ADMIN-provider rows here are campaign FREE_ACCESS grants. Manual
+      // admin premium grants live in a separate path below (premiumUntil
+      // is the gate, not freeAccessEndsAt).
+      premiumGrantedBy: null,
+      status: { in: ["ACTIVE", "FREE_ACCESS"] },
+      freeAccessEndsAt: { lt: now },
+    };
+    await collectOwners(freeAccessWhere);
     const expiredFreeAccess = await prisma.subscription.updateMany({
-      where: {
-        accessType: "FREE_ACCESS",
-        // ADMIN-provider rows here are campaign FREE_ACCESS grants. Manual
-        // admin premium grants live in a separate path below (premiumUntil
-        // is the gate, not freeAccessEndsAt).
-        premiumGrantedBy: null,
-        status: { in: ["ACTIVE", "FREE_ACCESS"] },
-        freeAccessEndsAt: { lt: now },
-      },
+      where: freeAccessWhere,
       data: {
         status: "FREE_ACCESS_EXPIRED",
         autoRenew: false,
@@ -203,13 +222,15 @@ async function handleCron(request: NextRequest) {
     // Manual admin premium grants: drop status to EXPIRED once premiumUntil
     // passes so getEffectiveEntitlement reports MANUAL_PREMIUM_EXPIRED and
     // plan-limits stops granting Individual limits.
+    const manualPremiumWhere: Prisma.SubscriptionWhereInput = {
+      provider: "ADMIN",
+      premiumGrantedBy: { not: null },
+      status: "ACTIVE",
+      premiumUntil: { lt: now },
+    };
+    await collectOwners(manualPremiumWhere);
     const expiredManualPremium = await prisma.subscription.updateMany({
-      where: {
-        provider: "ADMIN",
-        premiumGrantedBy: { not: null },
-        status: "ACTIVE",
-        premiumUntil: { lt: now },
-      },
+      where: manualPremiumWhere,
       data: {
         status: "EXPIRED",
         autoRenew: false,
@@ -218,7 +239,23 @@ async function handleCron(request: NextRequest) {
     });
     expired += expiredManualPremium.count;
 
-    return NextResponse.json({ success: true, sent, freeAccessNotified, renewalNotified, expired });
+    // Seat-reconciliation safety net (SEAT-013): for every owner whose access
+    // this cron lapsed, collapse over-limit workspaces they OWN to a single
+    // seat (reconcileSeatsForOwner → reconcileWorkspaceSeats demotes non-owner
+    // members to read-only OVERFLOW when the owner's entitlement hasAccess is
+    // false, without demoting the OWNER). Best-effort: one owner's failure must
+    // not abort the cron.
+    let seatsReconciled = 0;
+    for (const ownerUserId of affectedOwnerIds) {
+      try {
+        await reconcileSeatsForOwner(ownerUserId);
+        seatsReconciled++;
+      } catch (reconcileError) {
+        console.error(`Seat reconcile failed for owner ${ownerUserId}:`, reconcileError);
+      }
+    }
+
+    return NextResponse.json({ success: true, sent, freeAccessNotified, renewalNotified, expired, seatsReconciled });
   } catch (error) {
     console.error("Trial check cron failed:", error);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });
