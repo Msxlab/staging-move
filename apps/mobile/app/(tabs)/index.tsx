@@ -24,6 +24,7 @@ import {
   Users,
   Mail,
   X,
+  CalendarClock,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
@@ -43,6 +44,8 @@ import {
 import { Card } from "@/components/ui/Card";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { FirstRunHero } from "@/components/ui/FirstRunHero";
+import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
+import type { ServiceLike } from "@/lib/service-insights";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
@@ -72,6 +75,9 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  // Full tracked-services list — powers the client-side savings/insights card.
+  // Fetched alongside the dashboard payload (no new endpoint).
+  const [services, setServices] = useState<ServiceLike[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
@@ -98,14 +104,20 @@ export default function DashboardScreen() {
   const [pushPromptBusy, setPushPromptBusy] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
-    const [res, addrRes, movingRes, invites] = await Promise.all([
+    const [res, addrRes, movingRes, svcRes, invites] = await Promise.all([
       api.get<any>("/api/profile"),
       api.get<any>("/api/addresses", { limit: "200" }),
       api.get<any>("/api/moving"),
+      // Full tracked-services list for the savings/insights card. Best-effort:
+      // an error here just leaves the card hidden, never blocks the dashboard.
+      api.get<any>("/api/services", { limit: "200" }),
       // Best-effort: never blocks the dashboard. Empty when the feature gate is
       // off or the user has no actionable invites, in which case the banner hides.
       fetchPendingInvitations(),
     ]);
+    // Surface services independently of the core payload so the insights card
+    // still renders even if profile/addresses errored (and vice-versa).
+    setServices(svcRes.data?.services || []);
     // Pending invites are independent of the core dashboard payload, so surface
     // them even when the rest of the dashboard errors out.
     setPendingInvites(invites);
@@ -179,8 +191,6 @@ export default function DashboardScreen() {
       // Generate relocation checklist for active plan
       if (activePlan) {
         try {
-          const svcRes = await api.get<any>("/api/services");
-          const svcs = svcRes.data?.services || [];
           const checklistProfile: UserChecklistProfile = {
             hasChildren: profileData.hasChildren ?? false,
             childrenCount: profileData.childrenCount ?? 0,
@@ -595,6 +605,10 @@ export default function DashboardScreen() {
           <FirstRunHero onSetup={() => router.push("/addresses/new")} />
         )}
 
+        {/* Savings / insights — computed client-side from tracked services.
+            Self-hides when there are no active services to summarize. */}
+        <SavingsInsightsCard services={services} />
+
         {/* Household / Workspace (Family & Pro) */}
         {workspace && (
           <Card
@@ -731,6 +745,7 @@ export default function DashboardScreen() {
             { label: t("addresses.newTitle"), icon: MapPin, route: "/addresses/new" as Href },
             { label: t("services.newTitle"), icon: Zap, route: "/services/new" as Href },
             { label: t("moving.newPlan"), icon: Truck, route: "/moving/new" as Href },
+            { label: t("reminders.title", { defaultValue: "Reminders" }), icon: CalendarClock, route: "/reminders" as Href },
           ]).map((action) => {
             const Icon = action.icon;
             return (

@@ -287,7 +287,19 @@
     "coverageLocalHelp": "Stays in your private records only.",
     "coverageStatewideHelp": "We'll review and may add it to the directory for this state.",
     "coverageNationwideHelp": "We'll review and may add it as a nationwide directory entry.",
-    "coverageStateRequired": "Statewide coverage needs an address with a state. Switch coverage or pick another address."
+    "coverageStateRequired": "Statewide coverage needs an address with a state. Switch coverage or pick another address.",
+    "renewalIn_one": "Renews in 1 day",
+    "renewalIn_other": "Renews in {{count}} days",
+    "renewalContractIn_one": "Contract ends in 1 day",
+    "renewalContractIn_other": "Contract ends in {{count}} days",
+    "renewalToday": "Due today",
+    "renewalPast": "Was due",
+    "renewalContractEnded": "Contract ended",
+    "renewalOnBilling": "Next bill · {{date}}",
+    "renewalOnContract": "Contract date · {{date}}",
+    "renewalSoonBadge": "Soon",
+    "renewalOverdueBadge": "Overdue",
+    "autoRenews": "auto-renews"
   },
   "providers": {
     "title": "Providers",
@@ -1033,5 +1045,29 @@
     "push_taskReminders_desc": "Push the same task reminders to this device.",
     "push_moveAlerts_label": "Move alerts",
     "push_moveAlerts_desc": "Push notifications for active-move milestones."
+  },
+  "insights": {
+    "title": "Spending insights",
+    "headline": "Tracking {{total}}/mo across {{count}} services",
+    "perMonth": "per month",
+    "perYear": "per year",
+    "topCategory": "{{category}} is your biggest category at {{amount}}/mo",
+    "missingCost_one": "1 service is missing a cost — add it for a complete picture",
+    "missingCost_other": "{{count}} services are missing a cost — add them for a complete picture"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "intro_one": "1 coming up",
+    "intro_other": "{{count}} coming up",
+    "emptyTitle": "Nothing coming up",
+    "emptyDescription": "Renewals and reminders for your services will show up here so nothing slips by.",
+    "renewalLabel": "Renewal",
+    "contractLabel": "Contract",
+    "reminderLabel": "Reminder",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "overdue": "Overdue",
+    "inDays_one": "in 1 day",
+    "inDays_other": "in {{count}} days"
   }
 }

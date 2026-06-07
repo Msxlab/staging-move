@@ -287,7 +287,19 @@
     "coverageLocalHelp": "Permanece solo en tus registros privados.",
     "coverageStatewideHelp": "Lo revisaremos y podríamos añadirlo al directorio de este estado.",
     "coverageNationwideHelp": "Lo revisaremos y podríamos añadirlo como entrada nacional del directorio.",
-    "coverageStateRequired": "La cobertura estatal requiere una dirección con estado. Cambia la cobertura o elige otra dirección."
+    "coverageStateRequired": "La cobertura estatal requiere una dirección con estado. Cambia la cobertura o elige otra dirección.",
+    "renewalIn_one": "Se renueva en 1 día",
+    "renewalIn_other": "Se renueva en {{count}} días",
+    "renewalContractIn_one": "El contrato termina en 1 día",
+    "renewalContractIn_other": "El contrato termina en {{count}} días",
+    "renewalToday": "Vence hoy",
+    "renewalPast": "Venció",
+    "renewalContractEnded": "Contrato finalizado",
+    "renewalOnBilling": "Próxima factura · {{date}}",
+    "renewalOnContract": "Fecha de contrato · {{date}}",
+    "renewalSoonBadge": "Pronto",
+    "renewalOverdueBadge": "Vencido",
+    "autoRenews": "renovación automática"
   },
   "providers": {
     "title": "Proveedores",
@@ -1033,5 +1045,29 @@
     "push_taskReminders_desc": "Envía los mismos recordatorios a este dispositivo.",
     "push_moveAlerts_label": "Alertas de mudanza",
     "push_moveAlerts_desc": "Notificaciones push para hitos de la mudanza activa."
+  },
+  "insights": {
+    "title": "Resumen de gastos",
+    "headline": "Sigues {{total}}/mes en {{count}} servicios",
+    "perMonth": "al mes",
+    "perYear": "al año",
+    "topCategory": "{{category}} es tu mayor categoría con {{amount}}/mes",
+    "missingCost_one": "A 1 servicio le falta el coste — añádelo para verlo completo",
+    "missingCost_other": "A {{count}} servicios les falta el coste — añádelos para verlo completo"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "intro_one": "1 próximamente",
+    "intro_other": "{{count}} próximamente",
+    "emptyTitle": "Nada próximo",
+    "emptyDescription": "Las renovaciones y recordatorios de tus servicios aparecerán aquí para que no se te escape nada.",
+    "renewalLabel": "Renovación",
+    "contractLabel": "Contrato",
+    "reminderLabel": "Recordatorio",
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "overdue": "Vencido",
+    "inDays_one": "en 1 día",
+    "inDays_other": "en {{count}} días"
   }
 }

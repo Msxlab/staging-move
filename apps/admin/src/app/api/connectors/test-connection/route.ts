@@ -22,9 +22,23 @@ async function rc(name: string): Promise<string> {
   return (await getAdminRuntimeConfigValue(name)) ?? process.env[name] ?? "";
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     await requirePermission("connectors", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+
+    // The live credential test is USPS-specific (it mints a client_credentials
+    // token and runs a sample USPS address validation). When a connectorKey is
+    // supplied, only run for "usps"; any other key is a result, not an error, so
+    // the per-connector detail view can show "not supported".
+    const body = await req.json().catch(() => ({}));
+    const connectorKey = body?.connectorKey;
+    if (typeof connectorKey === "string" && connectorKey !== "usps") {
+      return NextResponse.json({
+        ok: false,
+        reason: "NOT_SUPPORTED",
+        detail: "Live credential test is only implemented for the USPS connector.",
+      });
+    }
 
     const [clientId, clientSecret, tokenUrl] = await Promise.all([
       rc("CONNECTOR_USPS_OAUTH_CLIENT_ID"),

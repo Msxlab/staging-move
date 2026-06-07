@@ -27,6 +27,7 @@ import {
   Activity,
   Users,
   Download,
+  CalendarClock,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
@@ -112,6 +113,7 @@ export default function MoreScreen() {
         { icon: Search, label: t("providers.title"), route: "/providers" },
         { icon: Building2, label: t("customProviders.title"), route: "/custom-providers" },
         { icon: FileText, label: t("blog.title"), route: "/blog" },
+        { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href },
         { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
         { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
         { icon: HelpCircle, label: t("settings.help"), route: "/help" },

@@ -20,6 +20,8 @@ import {
   MapPin,
   DollarSign,
   Calendar,
+  CalendarClock,
+  RefreshCw,
   Trash2,
   FileText,
   Edit,
@@ -33,6 +35,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { getCategoryLabel, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { resolveServiceRenewal, RENEWAL_SOON_DAYS } from "@/lib/service-insights";
 
 function getServiceCategoryLabel(category: string): string {
   return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
@@ -47,7 +50,7 @@ export default function ServiceDetailScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -169,6 +172,32 @@ export default function ServiceDetailScreen() {
     },
   ].filter(Boolean) as any[];
 
+  // Renewal tracking, derived from existing fields (contractEndDate, or the
+  // recurring billingDay + billingCycle). No schema change — see service-insights.
+  const renewal = resolveServiceRenewal(service);
+  const renewalSoon = renewal != null && renewal.days >= 0 && renewal.days <= RENEWAL_SOON_DAYS;
+  const renewalOverdue = renewal != null && renewal.days < 0;
+  const renewalDateStr = renewal
+    ? renewal.date.toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric", year: "numeric" })
+    : "";
+  // Headline copy depends on where the date came from + how close it is.
+  const renewalHeadline = renewal
+    ? renewalOverdue
+      ? renewal.source === "contract"
+        ? t("services.renewalContractEnded", { defaultValue: "Contract ended" })
+        : t("services.renewalPast", { defaultValue: "Was due" })
+      : renewal.days === 0
+        ? t("services.renewalToday", { defaultValue: "Due today" })
+        : renewal.source === "contract"
+          ? t("services.renewalContractIn", { count: renewal.days, defaultValue: `Contract ends in ${renewal.days} days` })
+          : t("services.renewalIn", { count: renewal.days, defaultValue: `Renews in ${renewal.days} days` })
+    : "";
+  const renewalTone = renewalOverdue
+    ? theme.colors.error
+    : renewalSoon
+      ? theme.colors.amber.text
+      : theme.colors.primary;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -211,6 +240,44 @@ export default function ServiceDetailScreen() {
             )}
           </View>
         </Card>
+
+        {/* Renewal tracking — derived from contractEndDate or billingDay/cycle.
+            Only renders when the service carries a date signal. */}
+        {renewal && (
+          <View
+            style={[
+              styles.renewalCard,
+              { borderColor: renewalTone + "55", backgroundColor: renewalTone + "12" },
+            ]}
+          >
+            <View style={[styles.renewalIcon, { backgroundColor: renewalTone + "22" }]}>
+              {renewal.source === "contract" ? (
+                <CalendarClock size={18} color={renewalTone} />
+              ) : (
+                <RefreshCw size={18} color={renewalTone} />
+              )}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.renewalHeadline, { color: renewalTone }]}>{renewalHeadline}</Text>
+              <Text style={styles.renewalDate}>
+                {renewal.source === "contract"
+                  ? t("services.renewalOnContract", { date: renewalDateStr, defaultValue: `Contract date · ${renewalDateStr}` })
+                  : t("services.renewalOnBilling", { date: renewalDateStr, defaultValue: `Next bill · ${renewalDateStr}` })}
+                {service.autoRenewal ? ` · ${t("services.autoRenews", { defaultValue: "auto-renews" })}` : ""}
+              </Text>
+            </View>
+            {(renewalSoon || renewalOverdue) && (
+              <UiBadge
+                label={
+                  renewalOverdue
+                    ? t("services.renewalOverdueBadge", { defaultValue: "Overdue" })
+                    : t("services.renewalSoonBadge", { defaultValue: "Soon" })
+                }
+                variant={renewalOverdue ? "error" : "warning"}
+              />
+            )}
+          </View>
+        )}
 
         {/* Info Rows */}
         <Card variant="default" style={{ marginTop: 16 }}>
@@ -285,6 +352,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text },
   heroCat: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   heroBadges: { flexDirection: "row", gap: 6, marginTop: 14 },
+  renewalCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+  },
+  renewalIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  renewalHeadline: { fontSize: 15, fontWeight: "700" },
+  renewalDate: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
   infoRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 4,
   },
