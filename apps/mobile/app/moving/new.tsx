@@ -19,7 +19,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
@@ -40,6 +40,7 @@ export default function NewMovingPlanScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
@@ -449,7 +450,8 @@ export default function NewMovingPlanScreen() {
                       update("moveDate", date.toISOString().slice(0, 10));
                     }
                   }}
-                  themeVariant="dark"
+                  themeVariant={resolvedScheme}
+                  textColor={theme.colors.text}
                 />
               )}
               {Platform.OS === "ios" && showDatePicker && (

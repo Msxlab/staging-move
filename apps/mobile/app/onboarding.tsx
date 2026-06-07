@@ -38,7 +38,7 @@ import {
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { Button } from "@/components/ui/Button";
@@ -141,6 +141,7 @@ export default function OnboardingScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
@@ -1252,7 +1253,8 @@ export default function OnboardingScreen() {
                             updateMoving("moveDate", date.toISOString().slice(0, 10));
                           }
                         }}
-                        themeVariant="dark"
+                        themeVariant={resolvedScheme}
+                        textColor={theme.colors.text}
                       />
                     )}
                     {Platform.OS === "ios" && showMoveDatePicker ? (

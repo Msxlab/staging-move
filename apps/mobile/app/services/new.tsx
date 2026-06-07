@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -44,7 +43,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
-import { resolveMobileServiceLogoUrl } from "@/lib/service-logo";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 
 // Billing cycle option labels are resolved at render time via t() —
@@ -128,7 +127,6 @@ export default function NewServiceScreen() {
   const [providerSearch, setProviderSearch] = useState("");
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
-  const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, boolean>>({});
 
   const [saving, setSaving] = useState(false);
 
@@ -394,29 +392,26 @@ export default function NewServiceScreen() {
   );
 
   const renderProviderAvatar = (provider: ScoredProvider, isSelected: boolean) => {
-    // Resolve to an RN-renderable URL: stored .ico/.svg favicons can't be
-    // decoded by <Image>, so fall back to a PNG favicon from the provider site.
-    const logoUrl =
-      resolveMobileServiceLogoUrl({
-        provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
-        website: provider.website,
-      }) ?? "";
-    const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
-
+    // Render via the shared ServiceLogoMark so the browse list uses the SAME
+    // logo-resolution + fallback chain as the saved-services list and
+    // ProviderCard: stored logo → website-derived favicon/Clearbit, with
+    // renderable-URL filtering and onError advance across every candidate
+    // (not just the first). Falls back to the category emoji — never a blank
+    // or letter avatar — once all logo candidates are exhausted.
     return (
-      <View style={[styles.providerAvatar, isSelected && styles.providerAvatarActive]}>
-        {showLogo ? (
-          <Image
-            source={{ uri: logoUrl }}
-            style={styles.providerLogo}
-            resizeMode="contain"
-            accessibilityLabel={t("services.providerLogoA11y", { provider: provider.name })}
-            onError={() => setFailedLogoUrls((prev) => ({ ...prev, [logoUrl]: true }))}
-          />
-        ) : (
-          <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
-        )}
-      </View>
+      <ServiceLogoMark
+        service={{
+          provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+          website: provider.website,
+        }}
+        fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
+        size={36}
+        logoSize={32}
+        borderRadius={10}
+        backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
+        borderColor={isSelected ? theme.colors.primary : theme.colors.border}
+        fallbackFontSize={14}
+      />
     );
   };
 
@@ -1041,19 +1036,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
   providerItemActive: { backgroundColor: theme.colors.primaryFaded },
-  providerAvatar: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: theme.colors.border,
-    alignItems: "center", justifyContent: "center",
-  },
-  providerAvatarActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  providerLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: theme.colors.surface,
-  },
-  providerAvatarText: { fontSize: 14, fontWeight: "700", color: theme.colors.textSecondary },
   providerName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
   providerMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
