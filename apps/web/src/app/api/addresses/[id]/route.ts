@@ -9,6 +9,7 @@ import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
 import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
+import { redactServices } from "@/lib/service-visibility";
 import { enqueueAddressChange } from "@/lib/connector-runtime";
 import { isApiConnectorsEnabled, userHasApiConnectorEntitlement } from "@/lib/connector-oauth";
 import {
@@ -58,8 +59,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     assertScopedRecordAction(address, scope, "address.view", { notFoundMessage: "Address not found" });
 
-    const services = await enrichServicesWithProviderCatalog(
-      address.services.map((service: any) => decryptServiceSensitiveFields(service)),
+    // Decrypt sensitive fields, then redact those the caller's role may not see
+    // (service.viewSensitive — AUTH-015). Each member's own services and the
+    // workspace owner keep full visibility; basic fields are always returned.
+    const services = redactServices(
+      await enrichServicesWithProviderCatalog(
+        address.services.map((service: any) => decryptServiceSensitiveFields(service)),
+      ),
+      scope,
     );
 
     return NextResponse.json({

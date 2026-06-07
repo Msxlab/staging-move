@@ -118,12 +118,19 @@ export async function POST(
 
     const appUrl = appBaseUrl(await getAdminRuntimeConfigValue("NEXT_PUBLIC_APP_URL"));
     const acceptUrl = `${appUrl}/invitations/${token}`;
+    // Localize the invite to the invited user's preferred language when they
+    // already have an account; new invitees (no User row) fall back to EN.
+    const invitedUser = await prisma.user.findUnique({
+      where: { email: updated.invitedEmail },
+      select: { preferredLocale: true },
+    });
     const emailSent = await sendWorkspaceInvitationEmail({
       invitedEmail: updated.invitedEmail,
       workspaceName: inv.workspace?.name || "your workspace",
       roleLabel: ROLE_LABELS[updated.role] ?? updated.role,
       acceptUrl,
       expiresAt: updated.expiresAt,
+      locale: invitedUser?.preferredLocale ?? null,
     }).catch(() => false);
 
     await writeAdminAudit(session, {

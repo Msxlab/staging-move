@@ -19,6 +19,7 @@ import {
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
+import { redactServices } from "@/lib/service-visibility";
 import {
   assertWorkspaceAction,
   planLimitScopeForDataScope,
@@ -94,9 +95,14 @@ export async function GET(request: NextRequest) {
       prisma.service.count({ where }),
     ]);
 
-    // Decrypt sensitive fields for response
-    const decryptedServices = await enrichServicesWithProviderCatalog(
-      services.map((s: any) => decryptServiceSensitiveFields(s)),
+    // Decrypt sensitive fields for response, then redact those the caller's
+    // role may not see (service.viewSensitive — AUTH-015). The actor's own
+    // records and the workspace owner keep full visibility.
+    const decryptedServices = redactServices(
+      await enrichServicesWithProviderCatalog(
+        services.map((s: any) => decryptServiceSensitiveFields(s)),
+      ),
+      scope,
     );
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
