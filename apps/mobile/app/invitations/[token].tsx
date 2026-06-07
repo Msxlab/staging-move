@@ -8,6 +8,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { acceptInvite, type InviteErrorCode } from "@/lib/workspace-invite";
 
 interface InviteDetails {
   workspaceName: string | null;
@@ -44,6 +45,31 @@ export default function InvitationScreen() {
   const [invite, setInvite] = useState<InviteDetails | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
+  const [joined, setJoined] = useState(false);
+
+  // Map the accept endpoint's error codes to friendly copy (mirrors
+  // app/workspace/accept-invite.tsx). Defaults sensibly in English.
+  const errorCopy = useCallback(
+    (code: InviteErrorCode, detail: string | null): string => {
+      switch (code) {
+        case "EXPIRED":
+          return t("invite.errorExpired", "This invitation has expired or is no longer valid. Ask the workspace owner to send a new one.");
+        case "SEAT_FULL":
+          return t("invite.errorSeatFull", "This workspace is full. Ask the owner to free up a seat, then try again.");
+        case "ALREADY_MEMBER":
+          return t("invite.errorAlreadyMember", "You're already a member of this workspace.");
+        case "WRONG_EMAIL":
+          return t("invite.errorWrongEmail", "This invitation was sent to a different email address. Sign in with the invited account to accept it.");
+        case "UNAUTHORIZED":
+          return t("invite.errorUnauthorized", "Please sign in to accept this invitation.");
+        case "INVALID_TOKEN":
+          return t("invite.errorInvalidToken", "That doesn't look like a valid invite link. Paste the full link from your invitation email.");
+        default:
+          return detail || t("invite.errorUnknown", "Something went wrong. Check your connection and try again.");
+      }
+    },
+    [t],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,18 +88,46 @@ export default function InvitationScreen() {
 
   const accept = async () => {
     setAccepting(true);
-    const res = await api.post<{ workspaceId: string; role: string }>(`/api/invitations/${tokenStr}/accept`, {});
+    // Route through the shared helper so this deep-link path ALSO refreshes the
+    // plan entitlement (planTier) on success — that's what makes the new
+    // Family/Pro theme + mascots apply immediately after joining.
+    const res = await acceptInvite(tokenStr);
     setAccepting(false);
-    if (res.error || !res.data) {
+    if (!res.ok) {
       hapticError();
-      Alert.alert(t("invite.cantJoin", "Couldn't join"), res.error || t("invite.invalid", "This invitation is no longer valid."));
+      Alert.alert(t("invite.cantJoin", "Couldn't join"), errorCopy(res.code, res.message));
       return;
     }
     hapticSuccess();
-    router.replace("/(tabs)");
+    setJoined(true);
   };
 
   if (loading) return <LoadingScreen />;
+
+  if (joined) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <View style={styles.center}>
+          <View style={styles.card}>
+            <View style={styles.iconWrap}>
+              <Check size={28} color={theme.colors.success} />
+            </View>
+            <Text style={styles.title}>
+              {t("invite.successTitle", "You're in!")}
+            </Text>
+            <Text style={styles.body}>
+              {invite?.workspaceName
+                ? `${t("invite.successJoined", "You've joined")} ${invite.workspaceName}. ${t("invite.successPlanActive", "Your shared plan is now active.")}`
+                : t("invite.successBody", "You've joined the workspace. Your shared plan is now active.")}
+            </Text>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace("/(tabs)")} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>{t("invite.goToDashboard", "Go to dashboard")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const roleLabel = invite ? ROLE_LABEL[invite.role] ?? invite.role : "";
 
