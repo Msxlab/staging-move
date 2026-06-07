@@ -434,13 +434,18 @@ export async function POST(request: NextRequest) {
     );
     // Embed `mfaEnabled` in the JWT so the Edge-Runtime middleware can gate
     // access without a DB call. SUPER_ADMINs without MFA are steered to the
-    // setup page (see admin middleware `applyMfaSetupGate`).
+    // setup page (see admin middleware `applyMfaSetupGate`). The `mcp`
+    // (mustChangePassword) claim is embedded for the same reason: an invited
+    // admin who signs in with a temporary path is steered to
+    // /set-password/change before any admin surface loads.
+    const mustChangePassword = Boolean((admin as any).mustChangePassword);
     const token = await createSession(
       admin.id,
       admin.email,
       admin.role,
       fp,
       Boolean((admin as any).mfaEnabled),
+      mustChangePassword,
     );
 
     // Create DB-tracked admin session
@@ -500,6 +505,7 @@ export async function POST(request: NextRequest) {
         lastName: admin.lastName,
         role: admin.role,
         mfaEnabled: (admin as any).mfaEnabled || false,
+        mustChangePassword,
       },
     });
   } catch (error) {

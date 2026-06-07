@@ -58,6 +58,8 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "WorkspaceMember",
   "WorkspaceInvitation", // pending invites with hashed tokens — transient/expiring, not restored (token-table rationale)
   "WorkspaceAuthChallenge", // short-lived step-up challenges — never restore live auth state
+  "AdminSetPasswordToken", // single-use, expiring admin invite/set-password tokens — never restore live token state (same rationale as PasswordResetToken)
+  "AdminActionOtp", // single-use, expiring admin step-up OTP hashes — never restore live token state (same token-table rationale)
 ]);
 
 describe("backup table catalog", () => {

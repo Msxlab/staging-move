@@ -8,24 +8,47 @@ import { getAdminStripeClient } from "@/lib/admin-stripe";
 import { maskProviderIdentifier } from "@/lib/privacy";
 
 /**
- * Admin lifecycle action: REFUND the latest paid invoice for a Stripe
- * subscription via refunds.create on that invoice's payment_intent.
+ * Admin lifecycle action: REFUND a paid invoice for a Stripe subscription via
+ * refunds.create on that invoice's payment_intent.
  *
- *  - GET  → read-only PREVIEW of the refundable amount + currency + masked
- *           user so the UI confirm dialog can state EXACTLY what will be
- *           refunded and to whom BEFORE the operator steps up. Money moves
- *           only on POST.
+ * Supports both a FULL refund of the latest paid invoice (the original
+ * behaviour) and two extensions:
+ *   - PARTIAL amount — refund only part of the chosen invoice's paid amount.
+ *   - PICK an invoice — refund a SPECIFIC paid invoice (by its human-facing
+ *     invoice number) instead of always the latest, so an operator can refund
+ *     an older charge.
+ *
+ *  - GET  → read-only PREVIEW. Returns the latest refundable invoice (amount +
+ *           currency + masked id) AND, when `?invoiceNumber=` is supplied, the
+ *           refundable amount for THAT specific invoice. So the confirm dialog
+ *           can state EXACTLY which invoice and amount BEFORE the operator
+ *           steps up. Money moves only on POST.
  *  - POST → performs the refund behind the full step-up (password + MFA) and
  *           writes START/COMPLETE/FAIL audit rows including the amount.
+ *
+ * SECURITY — the invoice is always re-resolved SERVER-SIDE against this
+ * subscription's own invoice list (the client only supplies a human invoice
+ * number, never a raw Stripe id). The `expectedAmount` guard still applies:
+ * the server refuses if the refundable amount changed since the preview. A
+ * partial `amount` is clamped to the invoice's paid amount so an operator can
+ * never refund more than was charged.
  *
  * Keyed by Subscription.id.
  */
 
 const refundSchema = z
   .object({
-    // Caller echoes back the previewed amount (minor units) so the server can
-    // refuse if the latest invoice changed between preview and confirm — the
-    // operator never refunds a different amount than the dialog showed.
+    // Optional human-facing invoice number (e.g. "ABCD-0001") selecting a
+    // SPECIFIC invoice. Omitted → the latest paid invoice (original behaviour).
+    invoiceNumber: z.string().trim().min(1).max(64).optional(),
+    // Optional PARTIAL refund amount in minor units. Omitted → full refund of
+    // the resolved invoice's paid amount.
+    amount: z.number().int().positive().optional(),
+    // Caller echoes back the previewed PAID amount (minor units) of the
+    // resolved invoice so the server can refuse if it changed between preview
+    // and confirm — the operator never refunds against a different invoice
+    // state than the dialog showed. This is the invoice's full paid amount,
+    // NOT the partial `amount` being refunded.
     expectedAmount: z.number().int().nonnegative().optional(),
     confirmPassword: z.string().max(256).optional(),
     mfaCode: z.string().trim().max(16).optional(),
@@ -33,45 +56,66 @@ const refundSchema = z
   })
   .strict();
 
-interface LatestPaidInvoice {
+interface RefundableInvoice {
   invoiceId: string;
+  number: string | null;
   paymentIntentId: string;
   amount: number; // minor units (e.g. cents) already paid
+  alreadyRefunded: number; // minor units already refunded against this charge
   currency: string;
+  created: number | null;
 }
 
 /**
- * Resolve the latest PAID invoice for the subscription and the payment_intent
- * that funded it. Returns null when there is nothing refundable.
+ * Resolve a refundable invoice for the subscription. When `invoiceNumber` is
+ * supplied, find THAT paid invoice; otherwise return the latest paid invoice.
+ * Returns null when there is nothing refundable for the request. Always scoped
+ * to the subscription so a number from another customer can never be targeted.
  */
-async function findLatestRefundable(
+async function findRefundable(
   stripe: Stripe,
   stripeSubscriptionId: string,
-): Promise<LatestPaidInvoice | null> {
+  invoiceNumber: string | null,
+): Promise<RefundableInvoice | null> {
+  // When picking a specific invoice we may need to scan further back than the
+  // single latest; the read-only invoices route caps history at 24, so match.
   const invoices = await stripe.invoices.list({
     subscription: stripeSubscriptionId,
     status: "paid",
-    limit: 1,
+    limit: invoiceNumber ? 24 : 1,
+    expand: ["data.charge"],
   });
-  const invoice = invoices.data[0];
+
+  const invoice = invoiceNumber
+    ? invoices.data.find((inv) => inv.number === invoiceNumber)
+    : invoices.data[0];
   if (!invoice || !invoice.id) return null;
 
   const amountPaid = invoice.amount_paid ?? 0;
   if (amountPaid <= 0) return null;
 
-  // payment_intent may be an id string or an expanded object depending on
-  // expansion; we requested neither so it is an id string here.
   const paymentIntentId =
     typeof invoice.payment_intent === "string"
       ? invoice.payment_intent
       : invoice.payment_intent?.id || null;
   if (!paymentIntentId) return null;
 
+  // How much has already been refunded against this invoice's charge, so the
+  // preview/guard can cap a partial refund to the remaining refundable amount.
+  const charge = invoice.charge;
+  const alreadyRefunded =
+    charge && typeof charge !== "string" && typeof charge.amount_refunded === "number"
+      ? charge.amount_refunded
+      : 0;
+
   return {
     invoiceId: invoice.id,
+    number: invoice.number || null,
     paymentIntentId,
     amount: amountPaid,
+    alreadyRefunded,
     currency: invoice.currency || "usd",
+    created: invoice.created ?? null,
   };
 }
 
@@ -110,6 +154,7 @@ export async function GET(
     // preview; the actual refund (POST) requires ADMIN + step-up below.
     await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
     const { id: subscriptionId } = await params;
+    const invoiceNumber = request.nextUrl.searchParams.get("invoiceNumber");
     const subscription = await loadSubscriptionForRefund(subscriptionId);
     if (
       !subscription ||
@@ -123,16 +168,25 @@ export async function GET(
     }
 
     const stripe = await getAdminStripeClient();
-    const latest = await findLatestRefundable(stripe, subscription.stripeSubscriptionId);
+    const latest = await findRefundable(stripe, subscription.stripeSubscriptionId, invoiceNumber || null);
     if (!latest) {
-      return NextResponse.json({ refundable: false, reason: "no_paid_invoice" }, { status: 200 });
+      return NextResponse.json(
+        { refundable: false, reason: invoiceNumber ? "invoice_not_refundable" : "no_paid_invoice" },
+        { status: 200 },
+      );
     }
 
+    const remaining = Math.max(latest.amount - latest.alreadyRefunded, 0);
     return NextResponse.json({
-      refundable: true,
+      refundable: remaining > 0,
+      reason: remaining > 0 ? undefined : "already_fully_refunded",
       amount: latest.amount,
+      alreadyRefunded: latest.alreadyRefunded,
+      remainingRefundable: remaining,
       currency: latest.currency,
+      invoiceNumber: latest.number,
       maskedInvoiceId: maskProviderIdentifier(latest.invoiceId),
+      created: latest.created ? new Date(latest.created * 1000).toISOString() : null,
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -155,7 +209,7 @@ export async function POST(
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid refund request." }, { status: 400 });
     }
-    const { expectedAmount, confirmPassword, mfaCode, backupCode } = parsed.data;
+    const { invoiceNumber, amount, expectedAmount, confirmPassword, mfaCode, backupCode } = parsed.data;
     const { id: subscriptionId } = await params;
     const requestMeta = getAuditRequestMeta(request);
 
@@ -213,7 +267,7 @@ export async function POST(
     const userId = subscription.userId;
 
     const stripe = await getAdminStripeClient();
-    const latest = await findLatestRefundable(stripe, subscription.stripeSubscriptionId);
+    const latest = await findRefundable(stripe, subscription.stripeSubscriptionId, invoiceNumber || null);
     if (!latest) {
       await writeAdminAudit(session, {
         action: "SUBSCRIPTION_REFUND_FAILED",
@@ -222,19 +276,25 @@ export async function POST(
         metadata: {
           operation: "billing_subscription_refund",
           status: "failed",
-          reasonCode: "no_paid_invoice",
+          reasonCode: invoiceNumber ? "invoice_not_refundable" : "no_paid_invoice",
           targetUserId: userId,
+          invoiceNumber: invoiceNumber || null,
           before: refundAuditBase(subscription),
         },
         request: requestMeta,
       });
       return NextResponse.json(
-        { error: "No paid invoice is available to refund for this subscription." },
+        {
+          error: invoiceNumber
+            ? "That invoice is not available to refund for this subscription."
+            : "No paid invoice is available to refund for this subscription.",
+        },
         { status: 409 },
       );
     }
 
-    // Guard against a different invoice/amount than the operator confirmed.
+    // Guard against a different invoice/amount than the operator confirmed: the
+    // echoed expectedAmount must still equal the resolved invoice's paid amount.
     if (typeof expectedAmount === "number" && expectedAmount !== latest.amount) {
       await writeAdminAudit(session, {
         action: "SUBSCRIPTION_REFUND_FAILED",
@@ -245,6 +305,7 @@ export async function POST(
           status: "failed",
           reasonCode: "amount_mismatch",
           targetUserId: userId,
+          invoiceNumber: latest.number,
           confirmedAmount: expectedAmount,
           actualAmount: latest.amount,
           currency: latest.currency,
@@ -258,13 +319,65 @@ export async function POST(
       );
     }
 
-    // Stripe idempotency key embeds the payment_intent so a retry refunds the
-    // SAME charge; the audit `operationId` uses a MASKED id so no raw provider
+    // Resolve the amount to refund. Default = full remaining refundable amount.
+    // A partial amount is rejected (not silently clamped) when it exceeds what
+    // remains refundable, so the operator is told exactly why rather than
+    // refunding a surprise smaller figure.
+    const remaining = Math.max(latest.amount - latest.alreadyRefunded, 0);
+    if (remaining <= 0) {
+      await writeAdminAudit(session, {
+        action: "SUBSCRIPTION_REFUND_FAILED",
+        entityType: "Subscription",
+        entityId: subscription.id,
+        metadata: {
+          operation: "billing_subscription_refund",
+          status: "failed",
+          reasonCode: "already_fully_refunded",
+          targetUserId: userId,
+          invoiceNumber: latest.number,
+          before: refundAuditBase(subscription),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json(
+        { error: "This invoice has already been fully refunded." },
+        { status: 409 },
+      );
+    }
+    const isPartial = typeof amount === "number";
+    if (isPartial && amount! > remaining) {
+      await writeAdminAudit(session, {
+        action: "SUBSCRIPTION_REFUND_FAILED",
+        entityType: "Subscription",
+        entityId: subscription.id,
+        metadata: {
+          operation: "billing_subscription_refund",
+          status: "failed",
+          reasonCode: "amount_exceeds_remaining",
+          targetUserId: userId,
+          invoiceNumber: latest.number,
+          requestedAmount: amount,
+          remainingRefundable: remaining,
+          currency: latest.currency,
+          before: refundAuditBase(subscription),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json(
+        { error: "The requested amount is more than what remains refundable on this invoice." },
+        { status: 409 },
+      );
+    }
+    const refundAmount = isPartial ? amount! : remaining;
+
+    // Stripe idempotency key embeds the payment_intent + amount so a retry of
+    // the SAME partial/full refund is a no-op, but a different amount is a new
+    // refund. The audit `operationId` uses a MASKED id so no raw provider
     // identifier ever lands in the log (parity with the other lifecycle routes).
-    const idempotencyKey = `admin-subscription-refund:${subscription.id}:${latest.paymentIntentId}`
+    const idempotencyKey = `admin-subscription-refund:${subscription.id}:${latest.paymentIntentId}:${refundAmount}`
       .replace(/[^A-Za-z0-9:_-]/g, "_")
       .slice(0, 255);
-    const operationId = `admin-subscription-refund:${subscription.id}:${maskProviderIdentifier(latest.paymentIntentId)}`;
+    const operationId = `admin-subscription-refund:${subscription.id}:${maskProviderIdentifier(latest.paymentIntentId)}:${refundAmount}`;
 
     await writeAdminAudit(session, {
       action: "SUBSCRIPTION_REFUND_STARTED",
@@ -275,8 +388,12 @@ export async function POST(
         status: "started",
         operationId,
         targetUserId: userId,
-        amount: latest.amount,
+        refundKind: isPartial ? "partial" : "full",
+        amount: refundAmount,
+        invoicePaidAmount: latest.amount,
+        remainingRefundable: remaining,
         currency: latest.currency,
+        invoiceNumber: latest.number,
         maskedInvoiceId: maskProviderIdentifier(latest.invoiceId),
         before: refundAuditBase(subscription),
       },
@@ -286,7 +403,7 @@ export async function POST(
     let refund: Stripe.Refund;
     try {
       refund = await stripe.refunds.create(
-        { payment_intent: latest.paymentIntentId },
+        { payment_intent: latest.paymentIntentId, amount: refundAmount },
         { idempotencyKey },
       );
     } catch (stripeError: any) {
@@ -306,8 +423,10 @@ export async function POST(
           reasonCode: "provider_refund_failed",
           operationId,
           targetUserId: userId,
-          amount: latest.amount,
+          refundKind: isPartial ? "partial" : "full",
+          amount: refundAmount,
           currency: latest.currency,
+          invoiceNumber: latest.number,
           errorType: stripeError?.type || null,
           errorCode: stripeError?.code || null,
           before: refundAuditBase(subscription),
@@ -329,8 +448,10 @@ export async function POST(
         status: "completed",
         operationId,
         targetUserId: userId,
-        amount: refund.amount ?? latest.amount,
+        refundKind: isPartial ? "partial" : "full",
+        amount: refund.amount ?? refundAmount,
         currency: refund.currency || latest.currency,
+        invoiceNumber: latest.number,
         refundStatus: refund.status || null,
         maskedRefundId: maskProviderIdentifier(refund.id),
         maskedInvoiceId: maskProviderIdentifier(latest.invoiceId),
@@ -341,8 +462,10 @@ export async function POST(
 
     return NextResponse.json({
       refunded: true,
-      amount: refund.amount ?? latest.amount,
+      refundKind: isPartial ? "partial" : "full",
+      amount: refund.amount ?? refundAmount,
       currency: refund.currency || latest.currency,
+      invoiceNumber: latest.number,
       status: refund.status || null,
     });
   } catch (error: any) {

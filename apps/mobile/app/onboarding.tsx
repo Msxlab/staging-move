@@ -43,6 +43,7 @@ import { api } from "@/lib/api";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
@@ -1091,9 +1092,19 @@ export default function OnboardingScreen() {
                         onPress={() => { hapticLight(); toggleProvider(provider as any); }}
                         activeOpacity={0.7}
                       >
-                        <View style={[styles.providerAvatar, isSelected && styles.providerAvatarActive]}>
-                          <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
-                        </View>
+                        <ServiceLogoMark
+                          service={{
+                            provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+                            website: provider.website,
+                          }}
+                          fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
+                          size={36}
+                          logoSize={30}
+                          borderRadius={10}
+                          backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
+                          borderColor="rgba(127, 182, 232,0.2)"
+                          fallbackFontSize={16}
+                        />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
                           <Text style={styles.recoReason} numberOfLines={1}>
@@ -1144,9 +1155,19 @@ export default function OnboardingScreen() {
                               <TouchableOpacity
                                 style={[styles.providerItem, sel && styles.providerItemActive]}
                                 onPress={() => { hapticLight(); toggleProvider(provider as any); }}>
-                                <View style={[styles.providerAvatar, sel && styles.providerAvatarActive]}>
-                                  <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
-                                </View>
+                                <ServiceLogoMark
+                                  service={{
+                                    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+                                    website: provider.website,
+                                  }}
+                                  fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
+                                  size={36}
+                                  logoSize={30}
+                                  borderRadius={10}
+                                  backgroundColor={sel ? theme.colors.primary : "rgba(255,255,255,0.05)"}
+                                  borderColor="rgba(127, 182, 232,0.2)"
+                                  fallbackFontSize={16}
+                                />
                                 <View style={{ flex: 1 }}>
                                   <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
                                   {description ? (
@@ -1454,12 +1475,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
   providerItemActive: { backgroundColor: "rgba(127, 182, 232,0.08)" },
-  providerAvatar: {
-    width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.05)",
-    alignItems: "center", justifyContent: "center",
-  },
-  providerAvatarActive: { backgroundColor: theme.colors.primary },
-  providerAvatarText: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
   providerName: { fontSize: 14, fontWeight: "500", color: theme.colors.text },
   providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
   providerMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },

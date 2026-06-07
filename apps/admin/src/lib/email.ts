@@ -319,6 +319,45 @@ export async function sendHardDeleteOtpEmail(opts: {
   });
 }
 
+/**
+ * Invite a NEW admin to set their own password. The account was created in a
+ * "must set password" state (seeded with an unguessable random password); this
+ * email carries the single-use, expiring set-password link. Only sha256(token)
+ * is stored server-side — the plaintext token lives solely in `setPasswordUrl`.
+ * Best-effort: returns false when email is unconfigured in a production-like
+ * runtime so the caller can still surface the link in dev (sendEmail logs it).
+ */
+export async function sendAdminInviteEmail(opts: {
+  to: string;
+  inviterName: string;
+  roleLabel: string;
+  setPasswordUrl: string;
+  expiresAt: Date;
+}): Promise<boolean> {
+  const html = renderSupportEmail({
+    title: "You've been invited to the LocateFlow admin panel",
+    preheader: "Set your password to activate your admin account.",
+    userName: "there",
+    bodyLines: [
+      `${opts.inviterName} invited you to the LocateFlow admin panel as ${opts.roleLabel}.`,
+      "Click below to set your password and activate your account. For security, no password was set for you — you choose it.",
+      "This link is single-use and expires soon. If it lapses, ask an admin to re-send the invitation.",
+      "If you weren't expecting this invitation, you can safely ignore this email.",
+    ],
+    details: [
+      ["Role", opts.roleLabel],
+      ["Expires", opts.expiresAt.toLocaleString()],
+    ],
+    ctaHref: opts.setPasswordUrl,
+    ctaLabel: "Set Your Password",
+  });
+  return sendEmail({
+    to: opts.to,
+    subject: "Set your password — LocateFlow admin",
+    html,
+  });
+}
+
 export async function sendSupportTicketStatusEmail(opts: {
   userEmail: string;
   userName: string;

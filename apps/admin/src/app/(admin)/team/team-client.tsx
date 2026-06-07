@@ -153,6 +153,10 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     mfaCode: "",
     backupCode: "",
   });
+  // Invite mode (default): the new admin gets an emailed single-use
+  // set-password link and is forced to rotate on first login. When false,
+  // the operator sets an explicit temporary password (legacy path).
+  const [inviteMode, setInviteMode] = useState(true);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
@@ -187,10 +191,15 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     e.preventDefault();
     setCreating(true);
     try {
+      // In invite mode we DON'T send a password — the server seeds an
+      // unguessable one, flags the account must-change, and emails a
+      // single-use set-password link.
+      const { password, ...rest } = form;
+      const payload = inviteMode ? rest : form;
       const res = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -198,8 +207,21 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         setForm((prev) => ({ ...prev, confirmPassword: "", mfaCode: "", backupCode: "" }));
         return;
       }
-      toast.success(`Admin ${data.admin.email} created`);
+      if (data.invited) {
+        toast.success(
+          data.inviteEmailSent
+            ? `Invitation sent to ${data.admin.email}`
+            : `Admin ${data.admin.email} created — email not configured; share the set-password link manually`,
+        );
+        // Dev convenience: the server returns the link only outside production.
+        if (data.setPasswordUrl) {
+          console.info("[admin-invite] set-password link:", data.setPasswordUrl);
+        }
+      } else {
+        toast.success(`Admin ${data.admin.email} created`);
+      }
       setShowForm(false);
+      setInviteMode(true);
       setForm({
         email: "",
         password: "",
@@ -428,6 +450,45 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               New admins receive the default permission matrix for their role.
             </p>
           </div>
+
+          {/* Invite vs. explicit-password mode. Invite is the default and
+              recommended path: the new admin sets their own password via an
+              emailed single-use link and is forced to rotate on first login. */}
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="radio"
+                name="createMode"
+                checked={inviteMode}
+                onChange={() => setInviteMode(true)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                <span className="font-medium text-foreground">Send an invitation</span>
+                <span className="block text-xs text-muted-foreground">
+                  Emails a single-use set-password link. No password is set by you; the admin
+                  chooses their own and is forced to do so on first login.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="radio"
+                name="createMode"
+                checked={!inviteMode}
+                onChange={() => setInviteMode(false)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                <span className="font-medium text-foreground">Set a temporary password</span>
+                <span className="block text-xs text-muted-foreground">
+                  You set an initial password and share it out-of-band. Use only when email
+                  delivery isn&apos;t available.
+                </span>
+              </span>
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <input
               placeholder="First Name"
@@ -451,15 +512,18 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               required
               className={inputCls}
             />
-            <input
-              type="password"
-              placeholder="Temporary password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-              minLength={12}
-              className={inputCls}
-            />
+            {!inviteMode && (
+              <input
+                type="password"
+                placeholder="Temporary password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                minLength={12}
+                className={inputCls}
+                autoComplete="new-password"
+              />
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <select
@@ -473,7 +537,9 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               <option value="SUPER_ADMIN">Super Admin</option>
             </select>
             <p className="text-xs text-muted-foreground">
-              Passwords must be at least 12 characters and include upper, lower, and numeric characters.
+              {inviteMode
+                ? "The invitee picks their own password (12+ chars, upper, lower, numeric)."
+                : "Passwords must be at least 12 characters and include upper, lower, and numeric characters."}
             </p>
           </div>
           <input

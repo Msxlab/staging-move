@@ -16,7 +16,17 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
-const PUBLIC_EXACT_PATHS = new Set(["/login", "/api/auth/login", "/api/healthz"]);
+// /set-password (the invite link landing page) and /api/auth/set-password
+// (its token-gated GET/POST) are reachable WITHOUT a session: the invitee is
+// by definition not yet authenticated. Authorization is enforced by the
+// single-use, expiring token itself, not the session cookie.
+const PUBLIC_EXACT_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/api/healthz",
+  "/set-password",
+  "/api/auth/set-password",
+]);
 const PUBLIC_PREFIX_PATHS: string[] = [];
 const PUBLIC_STATIC_PATHS = ["/sw.js", "/register-sw.js", "/robots.txt"];
 
@@ -531,6 +541,38 @@ export async function middleware(request: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET, {
       algorithms: ["HS256"],
     });
+
+    // ── Forced password rotation gate ─────────────────────────
+    // An invited admin signs in with a must-change-password flag (JWT
+    // claim `mcp`). Until they set their own password, restrict them to
+    // the rotation surface only. After /api/auth/force-password-change
+    // succeeds it reissues the JWT with `mcp: false` (see
+    // refreshSessionCookie). This runs BEFORE the MFA gate so the very
+    // first thing a new admin does is own their password.
+    const mustChangePassword = payload.mcp === true;
+    if (mustChangePassword) {
+      const allowedDuringRotation =
+        pathname === "/set-password/change" ||
+        pathname === "/api/auth/force-password-change" ||
+        pathname === "/api/auth/me" ||
+        pathname === "/api/auth/logout";
+      if (!allowedDuringRotation) {
+        if (isApiRoute) {
+          return hardenEarlyResponse(
+            NextResponse.json(
+              {
+                error: "You must set a new password before continuing.",
+                passwordChangeRequired: true,
+              },
+              { status: 403 },
+            ),
+          );
+        }
+        return hardenEarlyResponse(
+          NextResponse.redirect(new URL("/set-password/change", request.url)),
+        );
+      }
+    }
 
     // ── MFA setup gate ────────────────────────────────────────
     // Roles that handle the most sensitive operations must have MFA

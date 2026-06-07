@@ -8,8 +8,8 @@ import { reconcileWorkspaceSeats } from "@/lib/workspace-seats";
 export const runtime = "nodejs";
 
 // Mirrors apps/web .../members/[memberId] ASSIGNABLE_ROLES. OWNER is never an
-// assignable target — ownership moves through transfer, not a role change, and
-// the admin surface deliberately does not expose transfer (deferred).
+// assignable target — ownership moves through the dedicated transfer-ownership
+// route (.../transfer-ownership), not a role change.
 const ASSIGNABLE_ROLES = ["ADMIN", "MEMBER", "CHILD", "VIEW_ONLY"] as const;
 
 /** Snapshot of a member row for the audit before/after diff. */

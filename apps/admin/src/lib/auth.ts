@@ -97,6 +97,13 @@ export interface AdminSession {
    * (legacy session) — treat as "unknown" and fall back to DB lookup.
    */
   mfaEnabled?: boolean;
+  /**
+   * Forced-password-rotation flag from the JWT claim. When true the admin
+   * was invited (or otherwise flagged) and must set a new password before
+   * any admin surface is reachable. Middleware gates on this without a DB
+   * call; the page-guard re-reads the DB as the authoritative check.
+   */
+  mustChangePassword?: boolean;
 }
 
 /**
@@ -126,13 +133,17 @@ export async function createSession(
   email: string,
   role: string,
   fingerprint?: string,
-  mfaEnabled?: boolean
+  mfaEnabled?: boolean,
+  mustChangePassword?: boolean
 ): Promise<string> {
   const claims: Record<string, unknown> = { adminId, email, role };
   if (fingerprint) claims.fp = fingerprint;
   // Embed the MFA-enabled flag so middleware (Edge Runtime, no DB) can
   // gate access for roles that require MFA without an extra round trip.
   if (typeof mfaEnabled === "boolean") claims.mfaEnabled = mfaEnabled;
+  // Embed the forced-rotation flag for the same reason — middleware can
+  // steer a must-change admin to /set-password/change without a DB read.
+  if (typeof mustChangePassword === "boolean") claims.mcp = mustChangePassword;
 
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
@@ -157,7 +168,7 @@ export async function createSession(
  */
 export async function refreshSessionCookie(
   session: AdminSession,
-  overrides: { mfaEnabled?: boolean } = {}
+  overrides: { mfaEnabled?: boolean; mustChangePassword?: boolean } = {}
 ): Promise<string> {
   const cookieStore = await cookies();
   const existing = cookieStore.get(COOKIE_NAME)?.value;
@@ -176,13 +187,18 @@ export async function refreshSessionCookie(
     typeof overrides.mfaEnabled === "boolean"
       ? overrides.mfaEnabled
       : session.mfaEnabled;
+  const mustChangePassword =
+    typeof overrides.mustChangePassword === "boolean"
+      ? overrides.mustChangePassword
+      : session.mustChangePassword;
 
   const newToken = await createSession(
     session.adminId,
     session.email,
     session.role,
     session.fingerprint,
-    mfaEnabled
+    mfaEnabled,
+    mustChangePassword
   );
 
   // Mirror the new row into AdminSession so getSession() finds it.
@@ -250,6 +266,10 @@ export async function getSession(): Promise<AdminSession | null> {
       mfaEnabled:
         typeof payload.mfaEnabled === "boolean"
           ? (payload.mfaEnabled as boolean)
+          : undefined,
+      mustChangePassword:
+        typeof payload.mcp === "boolean"
+          ? (payload.mcp as boolean)
           : undefined,
     };
   } catch {
