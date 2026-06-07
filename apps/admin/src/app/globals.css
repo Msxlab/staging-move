@@ -161,24 +161,24 @@
     /* Dark mode — Linear-style graphite canvas: near-black neutral surfaces
        (faint cool tint, not navy), hairline borders, one restrained blue
        accent. Lower saturation + tighter contrast steps read calmer + sharper. */
-    --background: 222 16% 7%;
-    --foreground: 220 15% 96%;
-    --card: 222 14% 10%;
-    --card-foreground: 220 15% 96%;
-    --popover: 222 15% 11%;
-    --popover-foreground: 220 15% 96%;
+    --background: 222 16% 11%;
+    --foreground: 220 16% 97%;
+    --card: 222 14% 15%;
+    --card-foreground: 220 16% 97%;
+    --popover: 222 15% 16%;
+    --popover-foreground: 220 16% 97%;
     --primary: 208 85% 64%;
     --primary-foreground: 222 40% 8%;
-    --secondary: 220 8% 68%;
+    --secondary: 220 10% 78%;
     --secondary-foreground: 222 40% 8%;
-    --muted: 222 12% 13%;
-    --muted-foreground: 220 8% 61%;
-    --accent: 222 12% 15%;
-    --accent-foreground: 220 15% 96%;
+    --muted: 222 12% 18%;
+    --muted-foreground: 220 11% 72%;
+    --accent: 222 12% 21%;
+    --accent-foreground: 220 16% 97%;
     --destructive: 359 68% 70%;
     --destructive-foreground: 222 40% 8%;
-    --border: 222 11% 16%;
-    --input: 222 11% 16%;
+    --border: 222 12% 24%;
+    --input: 222 12% 24%;
     --ring: 208 85% 64%;
   }
 }
@@ -410,7 +410,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem 0.75rem;
+  padding: 1.125rem 1.5rem 0.875rem;
   border-bottom: 1px solid var(--border);
 }
 
@@ -461,9 +461,9 @@
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(236, 241, 248, 0.45);
+  color: rgba(236, 241, 248, 0.62);
 }
-.light .kpi-foil .kpi-label { color: rgba(20, 32, 47, 0.55); }
+.light .kpi-foil .kpi-label { color: rgba(20, 32, 47, 0.65); }
 
 /* Tier breakdown bar — segmented bar showing INDV / FAM / PRO share */
 .tier-bar {

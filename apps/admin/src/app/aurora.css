@@ -7,34 +7,34 @@
 
 .adm-aurora {
   /* Default (dark) palette */
-  --au-ink:       #ECF1F8;
-  --au-ink-2:     #A8B5C9;
-  --au-ink-3:     #6E7C92;
-  --au-ink-4:     #4C586D;
+  --au-ink:       #F2F6FB;
+  --au-ink-2:     #C2CDDC;
+  --au-ink-3:     #8B99AE;
+  --au-ink-4:     #5A687E;
 
-  --au-base:      #0A0F18;
-  --au-base-2:    #0E1521;
-  --au-base-3:    #131C2C;
-  --au-pane:      rgba(255, 255, 255, 0.03);
-  --au-pane-2:    rgba(255, 255, 255, 0.05);
-  --au-pane-3:    rgba(255, 255, 255, 0.08);
+  --au-base:      #11161F;
+  --au-base-2:    #161C28;
+  --au-base-3:    #1C2433;
+  --au-pane:      rgba(255, 255, 255, 0.05);
+  --au-pane-2:    rgba(255, 255, 255, 0.08);
+  --au-pane-3:    rgba(255, 255, 255, 0.11);
 
-  --au-edge:      rgba(255, 255, 255, 0.10);
-  --au-edge-2:    rgba(255, 255, 255, 0.05);
-  --au-rule:      rgba(255, 255, 255, 0.06);
-  --au-rule-2:    rgba(255, 255, 255, 0.10);
+  --au-edge:      rgba(255, 255, 255, 0.12);
+  --au-edge-2:    rgba(255, 255, 255, 0.08);
+  --au-rule:      rgba(255, 255, 255, 0.09);
+  --au-rule-2:    rgba(255, 255, 255, 0.14);
 
-  --au-cool:      #7FB6E8;
+  --au-cool:      #8FC2F0;
   --au-cool-2:    #5C9DDC;
-  --au-cool-soft: rgba(127, 182, 232, 0.14);
-  --au-violet:    #B49BFF;
-  --au-violet-soft: rgba(180, 155, 255, 0.14);
-  --au-mint:      #87DDC0;
-  --au-mint-soft: rgba(135, 221, 192, 0.14);
-  --au-amber:     #F2C46C;
-  --au-amber-soft:rgba(242, 196, 108, 0.14);
-  --au-coral:     #F08C8E;
-  --au-coral-soft:rgba(240, 140, 142, 0.16);
+  --au-cool-soft: rgba(127, 182, 232, 0.20);
+  --au-violet:    #C2ADFF;
+  --au-violet-soft: rgba(180, 155, 255, 0.20);
+  --au-mint:      #96E6CC;
+  --au-mint-soft: rgba(135, 221, 192, 0.20);
+  --au-amber:     #F5CE82;
+  --au-amber-soft:rgba(242, 196, 108, 0.20);
+  --au-coral:     #F49A9C;
+  --au-coral-soft:rgba(240, 140, 142, 0.22);
   --au-rose:      #F0A0B8;
 
   --au-aurora-1:  rgba(127, 182, 232, 0.18);
@@ -42,8 +42,8 @@
   --au-aurora-3:  rgba(135, 221, 192, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
-  --au-row: 44px;
-  --au-pad: 16px;
+  --au-row: 48px;
+  --au-pad: 18px;
   --au-gap: 16px;
 
   position: relative;
@@ -232,10 +232,10 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 
 /* === Eyebrow / Display heading / Pill =============================== */
 .adm-aurora .au-eyebrow {
-  font: 500 10px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
-  letter-spacing: 0.14em;
+  font: 500 10.5px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--au-ink-3);
+  color: var(--au-ink-2);
 }
 .adm-aurora .au-eyebrow.cool   { color: var(--au-cool); }
 .adm-aurora .au-eyebrow.violet { color: var(--au-violet); }
@@ -430,24 +430,24 @@ html:not(.dark) .adm-aurora .admin-panel {
 /* --- Dark (default) ------------------------------------------------- */
 .adm-aurora {
   /* shadcn surface tokens — HSL channel triplets (no hsl() wrapper) */
-  --background:           218 43% 6%;
-  --foreground:           214 36% 95%;
-  --card:                 217 41% 9%;
-  --card-foreground:      214 36% 95%;
-  --popover:              217 41% 9%;
-  --popover-foreground:   214 36% 95%;
+  --background:           218 33% 11%;
+  --foreground:           214 40% 97%;
+  --card:                 217 30% 15%;
+  --card-foreground:      214 40% 97%;
+  --popover:              217 30% 15%;
+  --popover-foreground:   214 40% 97%;
   --primary:              207 67% 70%;
   --primary-foreground:   218 43% 6%;
-  --secondary:            215 22% 72%;
+  --secondary:            215 24% 80%;
   --secondary-foreground: 218 43% 6%;
-  --muted:                217 38% 12%;
-  --muted-foreground:     215 18% 65%;
-  --accent:               217 38% 14%;
-  --accent-foreground:    214 36% 95%;
+  --muted:                217 26% 19%;
+  --muted-foreground:     215 20% 74%;
+  --accent:               217 26% 21%;
+  --accent-foreground:    214 40% 97%;
   --destructive:          359 75% 75%;
   --destructive-foreground: 218 43% 6%;
-  --border:               217 32% 18%;
-  --input:                217 32% 18%;
+  --border:               217 24% 26%;
+  --input:                217 24% 26%;
   --ring:                 207 67% 70%;
   --radius:               0.625rem;
 
@@ -471,17 +471,17 @@ html:not(.dark) .adm-aurora .admin-panel {
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
-  --tone-rose-bg:    rgba(127, 182, 232, 0.10); --tone-rose-br:    rgba(127, 182, 232, 0.22); --tone-rose-fg:    var(--au-cool);
-  --tone-foil-bg:    rgba(180, 155, 255, 0.10); --tone-foil-br:    rgba(180, 155, 255, 0.22); --tone-foil-fg:    var(--au-violet);
-  --tone-sage-bg:    rgba(135, 221, 192, 0.10); --tone-sage-br:    rgba(135, 221, 192, 0.22); --tone-sage-fg:    var(--au-mint);
-  --tone-honey-bg:   rgba(242, 196, 108, 0.10); --tone-honey-br:   rgba(242, 196, 108, 0.22); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(180, 155, 255, 0.10); --tone-umber-br:   rgba(180, 155, 255, 0.22); --tone-umber-fg:   var(--au-violet);
-  --tone-slate-bg:   rgba(168, 181, 201, 0.10); --tone-slate-br:   rgba(168, 181, 201, 0.22); --tone-slate-fg:   var(--au-ink-2);
-  --tone-orange-bg:  rgba(127, 182, 232, 0.10); --tone-orange-br:  rgba(127, 182, 232, 0.22); --tone-orange-fg:  var(--au-cool);
-  --tone-emerald-bg: rgba(135, 221, 192, 0.10); --tone-emerald-br: rgba(135, 221, 192, 0.22); --tone-emerald-fg: var(--au-mint);
-  --tone-amber-bg:   rgba(242, 196, 108, 0.10); --tone-amber-br:   rgba(242, 196, 108, 0.22); --tone-amber-fg:   var(--au-amber);
-  --tone-sky-bg:     rgba(127, 182, 232, 0.10); --tone-sky-br:     rgba(127, 182, 232, 0.22); --tone-sky-fg:     var(--au-cool);
-  --tone-cyan-bg:    rgba(127, 182, 232, 0.10); --tone-cyan-br:    rgba(127, 182, 232, 0.22); --tone-cyan-fg:    var(--au-cool);
+  --tone-rose-bg:    rgba(127, 182, 232, 0.16); --tone-rose-br:    rgba(127, 182, 232, 0.30); --tone-rose-fg:    var(--au-cool);
+  --tone-foil-bg:    rgba(180, 155, 255, 0.16); --tone-foil-br:    rgba(180, 155, 255, 0.30); --tone-foil-fg:    var(--au-violet);
+  --tone-sage-bg:    rgba(135, 221, 192, 0.16); --tone-sage-br:    rgba(135, 221, 192, 0.30); --tone-sage-fg:    var(--au-mint);
+  --tone-honey-bg:   rgba(242, 196, 108, 0.16); --tone-honey-br:   rgba(242, 196, 108, 0.30); --tone-honey-fg:   var(--au-amber);
+  --tone-umber-bg:   rgba(180, 155, 255, 0.16); --tone-umber-br:   rgba(180, 155, 255, 0.30); --tone-umber-fg:   var(--au-violet);
+  --tone-slate-bg:   rgba(168, 181, 201, 0.16); --tone-slate-br:   rgba(168, 181, 201, 0.30); --tone-slate-fg:   var(--au-ink-2);
+  --tone-orange-bg:  rgba(127, 182, 232, 0.16); --tone-orange-br:  rgba(127, 182, 232, 0.30); --tone-orange-fg:  var(--au-cool);
+  --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.30); --tone-emerald-fg: var(--au-mint);
+  --tone-amber-bg:   rgba(242, 196, 108, 0.16); --tone-amber-br:   rgba(242, 196, 108, 0.30); --tone-amber-fg:   var(--au-amber);
+  --tone-sky-bg:     rgba(127, 182, 232, 0.16); --tone-sky-br:     rgba(127, 182, 232, 0.30); --tone-sky-fg:     var(--au-cool);
+  --tone-cyan-bg:    rgba(127, 182, 232, 0.16); --tone-cyan-br:    rgba(127, 182, 232, 0.30); --tone-cyan-fg:    var(--au-cool);
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
@@ -589,12 +589,12 @@ html:not(.dark) .adm-aurora .kpi-foil {
 .adm-aurora .kpi-foil .kpi-value {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 1.75rem;
-  letter-spacing: 0;
+  font-size: 1.875rem;
+  letter-spacing: -0.01em;
   color: var(--au-ink);
 }
 .adm-aurora .kpi-foil .kpi-label {
-  color: var(--au-ink-3);
+  color: var(--au-ink-2);
 }
 
 /* Health pill — keep semantic green/amber/red, but use Aurora ramp. */
@@ -664,21 +664,37 @@ html:not(.dark) .adm-aurora .kpi-foil {
   box-shadow: 0 0 0 2px rgba(127, 182, 232, 0.20);
 }
 
-/* Tables inside admin-panel — slim hover with Aurora cool tint. */
+/* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
+   Zebra gives quiet row separation at rest; hover keeps the Aurora cool tint
+   on top. Header reads one tier brighter (ink-2) so columns scan cleanly. */
+.adm-aurora .admin-panel table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.025);
+}
+html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
+  background: rgba(20, 32, 47, 0.03);
+}
 .adm-aurora .admin-panel table tbody tr:hover {
   background: var(--au-cool-soft);
 }
 .adm-aurora .admin-panel thead th {
-  background: var(--au-pane);
-  border-bottom: 1px solid var(--au-rule);
-  color: var(--au-ink-3);
+  background: var(--au-pane-2);
+  border-bottom: 1px solid var(--au-rule-2);
+  color: var(--au-ink-2);
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .adm-aurora .admin-panel tbody td {
   border-bottom: 1px solid var(--au-rule);
+}
+/* Roomier rows — nudge the per-cell vertical rhythm up a step without
+   editing every table call site. Only adds height when a page used the
+   default py-3; pages with their own larger padding win via specificity. */
+.adm-aurora .admin-panel thead th,
+.adm-aurora .admin-panel tbody td {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
 }
 
 /* Buttons — primary/destructive/ghost variants used across the admin

@@ -36,7 +36,7 @@ export function AdminPageHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-foreground/40 mb-2">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-foreground/55 mb-2">
             {eyebrow}
           </p>
         ) : null}

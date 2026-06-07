@@ -54,7 +54,7 @@ export function AdminPanel({
           {actions ? <div className="shrink-0">{actions}</div> : null}
         </header>
       )}
-      <div className={dense ? "px-5 py-3" : "p-5"}>{children}</div>
+      <div className={dense ? "px-6 py-4" : "p-6"}>{children}</div>
     </section>
   );
 }
