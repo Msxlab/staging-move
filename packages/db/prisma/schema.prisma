@@ -1208,6 +1208,30 @@ model AdminAuditLog {
   @@index([action, createdAt])
 }
 
+// Single-use, attempt-limited, target-bound email OTP for the most
+// destructive admin operations (today: irreversible user HARD DELETE).
+// The acting admin first clears password + MFA step-up, then a 6-digit
+// code is emailed to THEIR OWN address and a row is written here storing
+// ONLY sha256(code) — the plaintext code never touches the DB or any log.
+// Deliberately NOT FK-linked to AdminUser: like AdminAuditLog this is a
+// security artifact that must survive even if the admin row is later
+// removed, and the second endpoint matches on adminUserId + operation +
+// targetId rather than navigating a relation.
+model AdminActionOtp {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30) // acting admin (code is emailed to THEM)
+  operation   String    @db.VarChar(40) // e.g. "user_hard_delete"
+  targetId    String    @db.VarChar(30) // entity the OTP authorizes (the user id)
+  codeHash    String    @db.VarChar(64) // sha256(code) hex — never the plaintext code
+  attempts    Int       @default(0)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId, operation, targetId])
+  @@index([expiresAt])
+}
+
 model RuntimeConfigEntry {
   id          String  @id @default(cuid()) @db.VarChar(30)
   key         String  @unique @db.VarChar(100)
