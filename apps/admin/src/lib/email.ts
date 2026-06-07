@@ -229,26 +229,52 @@ export async function sendWorkspaceInvitationEmail(opts: {
   roleLabel: string;
   acceptUrl: string;
   expiresAt: Date;
+  locale?: string | null;
 }): Promise<boolean> {
-  const html = renderSupportEmail({
-    title: `You're invited to ${opts.workspaceName}`,
-    preheader: `Join ${opts.workspaceName} on LocateFlow.`,
-    userName: "there",
-    bodyLines: [
-      `You've been invited to join ${opts.workspaceName} on LocateFlow as ${opts.roleLabel}.`,
-      "Click below to accept the invitation. This link expires soon, so accept it while it's valid.",
-    ],
-    details: [
-      ["Workspace", opts.workspaceName],
-      ["Role", opts.roleLabel],
-      ["Expires", opts.expiresAt.toLocaleString()],
-    ],
-    ctaHref: opts.acceptUrl,
-    ctaLabel: "Accept Invitation",
-  });
+  // Inline content is translated in-process, mirroring the web app's
+  // `sendWorkspaceInvitationEmail`: ES targets the US Hispanic audience and
+  // everything else falls back to EN. The recipient locale comes from the
+  // invited user's `preferredLocale` (resolved by the caller). The English
+  // copy below is identical to the pre-localization version.
+  const isEs = (opts.locale || "").toLowerCase().startsWith("es");
+  const html = isEs
+    ? renderSupportEmail({
+        title: `Te invitaron a ${opts.workspaceName}`,
+        preheader: `Únete a ${opts.workspaceName} en LocateFlow.`,
+        userName: "hola",
+        bodyLines: [
+          `Te invitaron a unirte a ${opts.workspaceName} en LocateFlow como ${opts.roleLabel}.`,
+          "Haz clic abajo para aceptar la invitación. Este enlace caduca pronto, así que acéptalo mientras sea válido.",
+        ],
+        details: [
+          ["Espacio", opts.workspaceName],
+          ["Rol", opts.roleLabel],
+          ["Caduca", opts.expiresAt.toLocaleString()],
+        ],
+        ctaHref: opts.acceptUrl,
+        ctaLabel: "Aceptar invitación",
+      })
+    : renderSupportEmail({
+        title: `You're invited to ${opts.workspaceName}`,
+        preheader: `Join ${opts.workspaceName} on LocateFlow.`,
+        userName: "there",
+        bodyLines: [
+          `You've been invited to join ${opts.workspaceName} on LocateFlow as ${opts.roleLabel}.`,
+          "Click below to accept the invitation. This link expires soon, so accept it while it's valid.",
+        ],
+        details: [
+          ["Workspace", opts.workspaceName],
+          ["Role", opts.roleLabel],
+          ["Expires", opts.expiresAt.toLocaleString()],
+        ],
+        ctaHref: opts.acceptUrl,
+        ctaLabel: "Accept Invitation",
+      });
   return sendEmail({
     to: opts.invitedEmail,
-    subject: `You're invited to join ${opts.workspaceName} on LocateFlow`.slice(0, 200),
+    subject: isEs
+      ? `Te invitaron a unirte a ${opts.workspaceName} en LocateFlow`.slice(0, 200)
+      : `You're invited to join ${opts.workspaceName} on LocateFlow`.slice(0, 200),
     html,
   });
 }

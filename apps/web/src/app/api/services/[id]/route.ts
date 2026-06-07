@@ -19,6 +19,7 @@ import {
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
 import { enrichServicesWithProviderCatalog } from "@/lib/service-provider-logo-enrichment";
+import { redactService } from "@/lib/service-visibility";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   assertScopedRecordAction,
@@ -116,12 +117,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       forbiddenMessage: "No permission to view this service.",
     });
 
-    // Decrypt sensitive fields
+    // Decrypt sensitive fields, then redact those the caller's role may not see
+    // (service.viewSensitive — AUTH-015). The record's own user and the
+    // workspace owner keep full visibility.
     const [decrypted] = await enrichServicesWithProviderCatalog([
       decryptServiceSensitiveFields(service as any),
     ]);
 
-    return NextResponse.json({ service: decrypted });
+    return NextResponse.json({ service: redactService(decrypted, scope) });
   } catch (error) {
     const authResponse = authErrorResponse(error, authDiagnostics, "GET", request);
     if (authResponse) return authResponse;
