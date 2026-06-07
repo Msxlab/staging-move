@@ -490,6 +490,8 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
     "signInCta": "Sign In",
+    "inviteSignUpContext": "You're creating an account to join the household you were invited to. We'll take you to accept the invitation right after you sign in.",
+    "inviteAfterVerify": "Once you verify your email and sign in, we'll bring you back to accept your household invitation.",
     "signUpCta": "Create Account",
     "orContinueWith": "Or continue with",
     "continueWithGoogle": "Continue with Google",

@@ -1,12 +1,14 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Loader2, AlertCircle, CheckCircle2, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
 import { PasswordInput } from "@/components/ui/password-input";
 import { trackEvent } from "@/lib/analytics";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -14,7 +16,28 @@ interface OAuthProviderStatus {
   message: string;
 }
 
-export default function SignUpPage() {
+function SignUpForm() {
+  const searchParams = useSearchParams();
+  // Carry the post-signup destination THROUGH account creation so an invited
+  // user who lands here from /invitations/<token> is returned to that landing
+  // after verifying + signing in — where the existing email-matched Join button
+  // consumes the invite exactly once. normalizeAppRedirectPath rejects anything
+  // outside the app's allow-listed prefixes (and resolves to /dashboard
+  // otherwise), so an attacker can't smuggle an off-site redirect through here.
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTo = normalizeAppRedirectPath(rawRedirect);
+  // We only treat it as an INVITE redirect when it actually points at an invite
+  // landing — that's what flips the copy to "joining a household" framing and
+  // forwards the context to sign-in instead of a generic onboarding handoff.
+  const isInviteRedirect = useMemo(
+    () => redirectTo.startsWith("/invitations/"),
+    [redirectTo],
+  );
+  const oauthRedirect = isInviteRedirect ? redirectTo : "/onboarding";
+  const signInHref = rawRedirect
+    ? `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
+    : "/sign-in";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -60,7 +83,7 @@ export default function SignUpPage() {
       return;
     }
     trackEvent("sign_up_started", { method: "google" });
-    window.location.href = "/api/auth/oauth/google?redirect=/onboarding";
+    window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(oauthRedirect)}`;
   }
 
   function startAppleOAuth() {
@@ -69,7 +92,7 @@ export default function SignUpPage() {
       return;
     }
     trackEvent("sign_up_started", { method: "apple" });
-    window.location.href = "/api/auth/oauth/apple?redirect=/onboarding";
+    window.location.href = `/api/auth/oauth/apple?redirect=${encodeURIComponent(oauthRedirect)}`;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,8 +137,13 @@ export default function SignUpPage() {
           <p className="text-sm text-muted-foreground">
             {tAuth("checkEmailDescription", { email })}
           </p>
+          {isInviteRedirect && (
+            <p className="text-xs text-muted-foreground">
+              {tAuth("inviteAfterVerify")}
+            </p>
+          )}
           <Link
-            href="/sign-in"
+            href={signInHref}
             className="inline-block rounded-xl bg-primary hover:bg-primary/90 px-4 py-2.5 text-sm font-semibold text-primary-foreground transition"
           >
             {tAuth("signInCta")}
@@ -137,6 +165,13 @@ export default function SignUpPage() {
             <p className="text-sm text-muted-foreground">{tAuth("signUp_subtitle")} {tLanding("noCreditCard")}</p>
           </div>
         </div>
+
+        {isInviteRedirect && (
+          <div className="flex gap-2 rounded-xl border border-tone-orange-br bg-tone-orange-bg px-3 py-2.5 text-sm text-tone-orange-fg">
+            <Users className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{tAuth("inviteSignUpContext")}</span>
+          </div>
+        )}
 
         {error && (
           <div className="flex gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
@@ -242,7 +277,7 @@ export default function SignUpPage() {
 
         <p className="text-center text-xs text-muted-foreground">
           {tAuth("haveAccount")}{" "}
-          <Link href="/sign-in" className="text-primary hover:underline">{tCommon("signIn")}</Link>
+          <Link href={signInHref} className="text-primary hover:underline">{tCommon("signIn")}</Link>
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
@@ -253,5 +288,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
   );
 }

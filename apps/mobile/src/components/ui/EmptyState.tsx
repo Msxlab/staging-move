@@ -2,6 +2,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
+import { RaccoonMascot, type RaccoonVariant } from "./RaccoonMascot";
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -11,6 +12,12 @@ interface EmptyStateProps {
   onAction?: () => void;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
+  /**
+   * When set, a friendly raccoon mascot greets the user instead of the plain
+   * icon disc — consistent with the splash + PlanHero personality. The icon is
+   * still accepted (and ignored) so call sites don't need to change shape.
+   */
+  mascot?: RaccoonVariant;
 }
 
 export function EmptyState({
@@ -21,6 +28,7 @@ export function EmptyState({
   onAction,
   secondaryActionLabel,
   onSecondaryAction,
+  mascot,
 }: EmptyStateProps) {
 
   // theme: hook-injected styles
@@ -30,7 +38,13 @@ export function EmptyState({
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.container} accessibilityRole="summary" accessibilityLabel={title} accessibilityHint={description}>
-      <View style={styles.iconWrapper} accessible={false}>{icon}</View>
+      {mascot ? (
+        <View style={styles.mascotWrapper} accessible={false}>
+          <RaccoonMascot size={92} variant={mascot} fur="#aeb9c6" />
+        </View>
+      ) : (
+        <View style={styles.iconWrapper} accessible={false}>{icon}</View>
+      )}
       <Text style={styles.title} accessibilityRole="header">{title}</Text>
       <Text style={styles.description}>{description}</Text>
       {actionLabel && onAction && (
@@ -74,6 +88,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: "rgba(127, 182, 232, 0.2)",
+  },
+  mascotWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   title: {
     fontSize: 20,

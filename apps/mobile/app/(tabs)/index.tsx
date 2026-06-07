@@ -42,9 +42,11 @@ import {
 } from "@/lib/workspace-invite";
 import { Card } from "@/components/ui/Card";
 import { PlanHero } from "@/components/ui/PlanHero";
+import { FirstRunHero } from "@/components/ui/FirstRunHero";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
+import { CountUp } from "@/components/ui/CountUp";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import type { DashboardStats } from "@locateflow/shared";
 import {
@@ -334,41 +336,80 @@ export default function DashboardScreen() {
     [inviteBusyId, t],
   );
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
+            <Text style={styles.title}>{t("tabs.dashboard")}</Text>
+          </View>
+          <View style={styles.notifButton}>
+            <Bell size={22} color={theme.colors.textSecondary} />
+          </View>
+        </View>
+        <View style={styles.scrollContent}>
+          <SkeletonStatGrid />
+          <View style={{ height: 20 }} />
+          <SkeletonCard lines={2} showFooter />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const currencyFmt = (n: number) =>
+    new Intl.NumberFormat(i18n.language || "en", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(n);
 
   const statCards: Array<{
     icon: typeof MapPin;
     label: string;
-    value: string;
+    // Raw numeric value drives the count-up animation; `format` renders it.
+    value: number;
+    format?: (n: number) => string;
     color: { bg: string; border: string; text: string };
     route: Href;
   }> = [
     {
       icon: MapPin,
       label: t("dashboard.stat_addresses"),
-      value: String(stats?.addressCount || 0),
+      value: stats?.addressCount || 0,
       color: theme.colors.orange,
       route: "/(tabs)/addresses",
     },
     {
       icon: Zap,
       label: t("dashboard.stat_services"),
-      value: String(stats?.serviceCount || 0),
+      value: stats?.serviceCount || 0,
       color: theme.colors.cyan,
       route: "/(tabs)/services",
     },
     {
       icon: DollarSign,
       label: t("dashboard.stat_monthly"),
-      value: new Intl.NumberFormat(i18n.language || "en", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-      }).format(stats?.monthlyExpenses || 0),
+      value: stats?.monthlyExpenses || 0,
+      format: currencyFmt,
       color: theme.colors.emerald,
       route: "/(tabs)/services",
     },
   ];
+
+  // Free / no-data users get a friendly first-run hero instead of a cold
+  // "0 / 0 / $0" grid. PlanHero only renders for Family/Pro, so this fills the
+  // gap for everyone else who hasn't added anything yet.
+  const isEmptyAccount =
+    !!stats &&
+    (stats.addressCount || 0) === 0 &&
+    (stats.serviceCount || 0) === 0;
+  const showFirstRunHero =
+    isEmptyAccount &&
+    !workspace &&
+    !stats?.activePlan &&
+    (planTier ?? "").toUpperCase() !== "FAMILY" &&
+    (planTier ?? "").toUpperCase() !== "PRO";
 
   // Plan-aware header badge: Family = crystal green, Pro = premium gold, else generic Premium.
   const planBadge = (() => {
@@ -533,9 +574,11 @@ export default function DashboardScreen() {
                 activeOpacity={0.7}
               >
                 <Icon size={20} color={card.color.text} />
-                <Text style={[styles.statValue, { color: card.color.text }]}>
-                  {card.value}
-                </Text>
+                <CountUp
+                  value={card.value}
+                  format={card.format}
+                  style={[styles.statValue, { color: card.color.text }]}
+                />
                 <Text style={styles.statLabel}>{card.label}</Text>
               </TouchableOpacity>
             );
@@ -545,6 +588,12 @@ export default function DashboardScreen() {
         {/* Plan welcome hero — mascots + plan identity (Family/Pro only).
             celebrateTick fires a one-shot bounce when an invite is accepted. */}
         <PlanHero celebrateTick={celebrateTick} />
+
+        {/* Free / first-run hero — friendly raccoon + setup CTA for users who
+            have nothing yet. Mutually exclusive with PlanHero (Family/Pro). */}
+        {showFirstRunHero && (
+          <FirstRunHero onSetup={() => router.push("/addresses/new")} />
+        )}
 
         {/* Household / Workspace (Family & Pro) */}
         {workspace && (

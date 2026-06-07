@@ -16,6 +16,7 @@
  * accept page uses: `POST /api/invitations/<token>/accept`.
  */
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -48,6 +49,86 @@ export function extractInviteToken(input: string | null | undefined): string | n
   // (which is brittle across the locateflow:// scheme and pasted fragments).
   const match = trimmed.match(TOKEN_RE);
   return match ? match[0] : null;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Pending-invite token continuity (signup/sign-in handoff)
+ *
+ * A NEVER-REGISTERED invitee who taps the universal link `/invitations/<token>`
+ * has no session, so the AuthGuard bounces them to /(auth)/sign-in before the
+ * native invite landing can render. To keep the invite context alive ACROSS
+ * account creation, we stash the parsed token here (memory + AsyncStorage,
+ * mirroring the pending-legal-consents pattern in src/lib/legal.ts) at the
+ * deep-link entry point, then consume it once the user has a session — auto-
+ * joining them to the inviting workspace with the invited role.
+ *
+ * The token is the SAME single-use credential the accept endpoint expects, so
+ * "consume" just means: read it, call acceptInvite, and clear it regardless of
+ * outcome (a stale/expired token must not get stuck retrying forever).
+ * ------------------------------------------------------------------------- */
+
+const PENDING_INVITE_TOKEN_STORAGE_KEY = "locateflow.pendingInviteToken";
+
+let pendingInviteToken: string | null = null;
+let inviteHydratePromise: Promise<string | null> | null = null;
+
+/** The in-memory pending invite token, if one was captured this session. */
+export function getPendingInviteToken(): string | null {
+  return pendingInviteToken;
+}
+
+/**
+ * Persist (or clear) the pending invite token. Accepts a raw URL / deep link /
+ * bare token and normalizes via extractInviteToken; a non-invite string clears
+ * nothing and returns without writing. Pass null to clear.
+ */
+export async function setPendingInviteToken(rawToken: string | null): Promise<void> {
+  const token = rawToken == null ? null : extractInviteToken(rawToken);
+  pendingInviteToken = token;
+  if (token) {
+    await AsyncStorage.setItem(PENDING_INVITE_TOKEN_STORAGE_KEY, token).catch(() => {});
+  } else {
+    await AsyncStorage.removeItem(PENDING_INVITE_TOKEN_STORAGE_KEY).catch(() => {});
+  }
+}
+
+/** Load the pending invite token from disk into memory (idempotent, coalesced). */
+export async function hydratePendingInviteToken(): Promise<string | null> {
+  if (pendingInviteToken) return pendingInviteToken;
+  if (inviteHydratePromise) return inviteHydratePromise;
+
+  inviteHydratePromise = (async () => {
+    try {
+      const raw = await AsyncStorage.getItem(PENDING_INVITE_TOKEN_STORAGE_KEY);
+      pendingInviteToken = raw ? extractInviteToken(raw) : null;
+      return pendingInviteToken;
+    } catch {
+      return null;
+    } finally {
+      inviteHydratePromise = null;
+    }
+  })();
+
+  return inviteHydratePromise;
+}
+
+/**
+ * Auto-join the workspace behind any pending invite token, then clear it.
+ *
+ * Call this right after a session is established (signup auto-verify, sign-in,
+ * or OAuth). Returns the accept result, or null when there was no pending
+ * invite. The token is ALWAYS cleared afterward — even on failure — so a
+ * stale/expired/wrong-email invite never blocks the user in a retry loop; they
+ * can re-open the email link to try again.
+ */
+export async function consumePendingInviteJoin(): Promise<AcceptInviteResult | null> {
+  const token = pendingInviteToken ?? (await hydratePendingInviteToken());
+  if (!token) return null;
+  try {
+    return await acceptInvite(token);
+  } finally {
+    await setPendingInviteToken(null);
+  }
 }
 
 /** Stable error codes the UI maps to localized copy. */

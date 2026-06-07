@@ -62,6 +62,7 @@ import {
   setPendingLegalConsents,
 } from "@/lib/legal";
 import { detectStateZipMismatch } from "@locateflow/shared";
+import { consumePendingInviteJoin } from "@/lib/workspace-invite";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -151,6 +152,11 @@ export default function OnboardingScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [legalConsents, setLegalConsents] = useState(() => getPendingLegalConsents() || getDefaultLegalConsents());
+  // Set when this user reached onboarding straight after auto-joining a
+  // workspace via an invite link. We show a "you've joined" banner and DON'T
+  // push them to create their own moving plan — they're a member, not an owner
+  // setting up a fresh household. false = normal (owner) onboarding.
+  const [joinedAsMember, setJoinedAsMember] = useState(false);
 
   // Step 0 – Profile
   const [profile, setProfile] = useState({
@@ -209,6 +215,31 @@ export default function OnboardingScreen() {
       }));
     }
   }, [user]);
+
+  // Catch-all auto-join: every post-auth path for a brand-new account routes
+  // through onboarding (getPostAuthMobileRoute → "/onboarding"). If the user
+  // arrived here straight from an invite link, consume the stashed token now so
+  // they're joined to the inviting workspace before they finish setup. The auth
+  // screens also call this; the helper clears the token + the accept endpoint is
+  // idempotent, so a duplicate call is a harmless ALREADY_MEMBER no-op.
+  useEffect(() => {
+    let cancelled = false;
+    void consumePendingInviteJoin()
+      .then((res) => {
+        if (cancelled || !res || !res.ok) return;
+        // A joining member is NOT an owner setting up a fresh household — flag it
+        // so we skip the "create your own moving plan" push below. We don't have
+        // the workspace name from the accept result, so the banner uses generic
+        // "household" copy; the role is what gates the member onboarding path.
+        if (res.role !== "OWNER") {
+          setJoinedAsMember(true);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1183,10 +1214,33 @@ export default function OnboardingScreen() {
                 {t("onboarding.moving_description")}
               </Text>
 
+              {joinedAsMember && (
+                <View style={styles.memberBanner}>
+                  <Text style={styles.memberBannerText}>
+                    {t(
+                      "onboarding.invitedMemberMovingNote",
+                      "You've joined a household. A move plan is optional — your household's owner manages the shared move. You can add your own any time.",
+                    )}
+                  </Text>
+                </View>
+              )}
+
               {wantsToMove === null && (
                 <View style={{ marginTop: 32, gap: 12, width: "100%" }}>
-                  <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
-                  <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
+                  {/* A joining member shouldn't be pushed to create their own
+                      move plan, so for them "Not right now" is the primary
+                      action and "plan a move" the secondary one. */}
+                  {joinedAsMember ? (
+                    <>
+                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} fullWidth size="lg" />
+                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} variant="ghost" fullWidth size="lg" />
+                    </>
+                  ) : (
+                    <>
+                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
+                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
+                    </>
+                  )}
                 </View>
               )}
 
@@ -1328,6 +1382,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: "rgba(240, 140, 142, 0.10)", borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)",
   },
   errorText: { fontSize: 13, color: "#F08C8E", textAlign: "center" },
+  memberBanner: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.glass.bg,
+    width: "100%",
+  },
+  memberBannerText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, textAlign: "center" },
   row: { flexDirection: "row", gap: 12, width: "100%" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
   chip: {

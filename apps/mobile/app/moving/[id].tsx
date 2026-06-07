@@ -33,7 +33,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
@@ -239,7 +239,24 @@ export default function MovingDetailScreen() {
     ]);
   };
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <ArrowLeft size={22} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{t("moving.detailTitle")}</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        <View style={[styles.scrollContent, { gap: 16 }]}>
+          <SkeletonCard lines={3} showFooter />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} showFooter />
+        </View>
+      </SafeAreaView>
+    );
+  }
   if (!plan) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>

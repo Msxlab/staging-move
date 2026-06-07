@@ -490,6 +490,8 @@
     "noAccount": "¿No tienes cuenta?",
     "haveAccount": "¿Ya tienes cuenta?",
     "signInCta": "Iniciar sesión",
+    "inviteSignUpContext": "Estás creando una cuenta para unirte al hogar al que te invitaron. Te llevaremos a aceptar la invitación justo después de iniciar sesión.",
+    "inviteAfterVerify": "Cuando verifiques tu correo e inicies sesión, te traeremos de vuelta para aceptar tu invitación al hogar.",
     "signUpCta": "Crear cuenta",
     "orContinueWith": "O continúa con",
     "continueWithGoogle": "Continuar con Google",

@@ -15,6 +15,8 @@ import { getLocale } from "next-intl/server";
 import { listPublicCategories, listPublicPosts } from "@/lib/blog/queries";
 import { blogCategoryPath, blogPostPath } from "@/lib/blog/urls";
 import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/seo";
+import { BlogHeroFallback } from "@/components/blog/blog-hero-fallback";
+import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 
 export const dynamic = "force-dynamic";
 
@@ -154,6 +156,7 @@ export default async function BlogIndexPage({
       <section className="container max-w-6xl py-14 sm:py-20">
         {listing.items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
+            <RaccoonReading size={132} className="mx-auto mb-5 text-primary/40" />
             <p className="font-display text-2xl text-foreground">No posts yet.</p>
             <p className="mt-2 text-sm text-muted-foreground">
               We&apos;re drafting the first issue. Check back soon, or subscribe via{" "}
@@ -182,10 +185,7 @@ export default async function BlogIndexPage({
                       className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     />
                   ) : (
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.18),transparent_60%),radial-gradient(circle_at_80%_80%,var(--foil-c,hsl(var(--primary)/0.08)),transparent_55%)]"
-                    />
+                    <BlogHeroFallback variant="hero" />
                   )}
                 </div>
                 <div className="flex flex-col justify-center gap-5 p-8 md:p-10">
@@ -231,10 +231,7 @@ export default async function BlogIndexPage({
                             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                           />
                         ) : (
-                          <div
-                            aria-hidden="true"
-                            className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,hsl(var(--primary)/0.18),transparent_60%),radial-gradient(circle_at_75%_75%,var(--foil-c,hsl(var(--primary)/0.06)),transparent_55%)]"
-                          />
+                          <BlogHeroFallback variant="card" />
                         )}
                       </div>
                       <div className="mt-5 space-y-3">

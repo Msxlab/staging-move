@@ -28,6 +28,7 @@ import {
   breadcrumbSchema,
 } from "@/components/seo/json-ld";
 import { BlogViewTracker } from "@/components/blog/view-tracker";
+import { BlogHeroFallback } from "@/components/blog/blog-hero-fallback";
 import { Button } from "@/components/ui/button";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
@@ -209,10 +210,13 @@ export default async function BlogPostPage({
         </div>
       </header>
 
-      {/* Cover image — full-bleed but capped so the article retains its column rhythm */}
-      {post.ogImageUrl ? (
-        <div className="container max-w-5xl pt-8 sm:pt-12">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-3xl bg-card/40">
+      {/* Cover image — full-bleed but capped so the article retains its column
+          rhythm. With no uploaded cover we fall back to the illustrated
+          reading-raccoon banner so the article still opens on something
+          branded instead of jumping straight into prose. */}
+      <div className="container max-w-5xl pt-8 sm:pt-12">
+        <div className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-border/60 bg-card/40">
+          {post.ogImageUrl ? (
             <Image
               src={post.ogImageUrl}
               alt={post.ogImageAlt ?? post.title}
@@ -221,9 +225,11 @@ export default async function BlogPostPage({
               sizes="(min-width: 1024px) 960px, 100vw"
               className="object-cover"
             />
-          </div>
+          ) : (
+            <BlogHeroFallback variant="hero" />
+          )}
         </div>
-      ) : null}
+      </div>
 
       {/* Body — sanitized HTML rendered into our prose styles. The
           `blog-prose` class is defined in globals.css with rose-tinted
@@ -305,10 +311,7 @@ export default async function BlogPostPage({
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                     ) : (
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.15),transparent_60%)]"
-                      />
+                      <BlogHeroFallback variant="card" />
                     )}
                   </div>
                   <div className="mt-4 space-y-2">
