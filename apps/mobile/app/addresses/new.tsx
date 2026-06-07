@@ -19,7 +19,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
@@ -38,6 +38,10 @@ export default function NewAddressScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  // Drive the native date-picker wheel's text/background colors from the
+  // active color scheme. A hardcoded "dark" themeVariant rendered near-white
+  // wheel text that was invisible against the light-mode background.
+  const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
@@ -320,7 +324,8 @@ export default function NewAddressScreen() {
                 update("startDate", date.toISOString().slice(0, 10));
               }
             }}
-            themeVariant="dark"
+            themeVariant={resolvedScheme}
+            textColor={theme.colors.text}
           />
         )}
         {Platform.OS === "ios" && showDatePicker && (
