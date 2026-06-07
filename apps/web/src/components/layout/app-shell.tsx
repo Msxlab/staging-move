@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Header } from "@/components/layout/header";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { PendingInvitationsBanner } from "@/components/layout/pending-invitations-banner";
 import { Sidebar } from "@/components/layout/sidebar";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 
@@ -128,6 +129,7 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
           className="flex-1 min-w-0 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
         >
           <div className="mx-auto w-full max-w-screen-2xl">
+            <PendingInvitationsBanner />
             {children}
           </div>
         </main>

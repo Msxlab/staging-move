@@ -135,7 +135,17 @@
     "upcomingBills_empty": "No bills due in the next 7 days.",
     "quickActions": "Quick actions",
     "premiumBadge": "Premium",
-    "loadFailed": "Dashboard unavailable"
+    "loadFailed": "Dashboard unavailable",
+    "inviteHeading": "Workspace invitation",
+    "inviteBody": "{{inviter}} invited you to join {{workspace}}",
+    "inviteBodyNoInviter": "You've been invited to join {{workspace}}",
+    "inviteBodyNoWorkspace": "{{inviter}} invited you to join their workspace",
+    "inviteBodyGeneric": "You've been invited to join a workspace",
+    "inviteAccept": "Accept",
+    "inviteDecline": "Decline",
+    "inviteAccepted": "You're in! Your shared plan is now active.",
+    "inviteAcceptFailed": "Couldn't accept the invitation. Please try again.",
+    "inviteDeclineFailed": "Couldn't decline the invitation. Please try again."
   },
   "addresses": {
     "title": "Addresses",

@@ -1042,5 +1042,27 @@
     "cycle_monthly": "Monthly",
     "cycle_yearly": "Yearly",
     "save_yearly": "Save 17% with yearly billing"
+  },
+  "invitations": {
+    "headingOne": "You have an invitation",
+    "headingMany": "You have {count} invitations",
+    "message": "{inviter} invited you to join {workspace} as {role}.",
+    "messageNoWorkspace": "{inviter} invited you to join their workspace as {role}.",
+    "someone": "Someone",
+    "aWorkspace": "a workspace",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepting": "Accepting…",
+    "declining": "Declining…",
+    "accepted": "You've joined {workspace}!",
+    "declined": "Invitation declined.",
+    "acceptError": "Couldn't accept the invitation. Please try again.",
+    "declineError": "Couldn't decline the invitation. Please try again.",
+    "dismiss": "Dismiss",
+    "role_OWNER": "owner",
+    "role_ADMIN": "an admin",
+    "role_MEMBER": "a member",
+    "role_CHILD": "a child member",
+    "role_VIEW_ONLY": "a view-only member"
   }
 }

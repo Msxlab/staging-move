@@ -135,7 +135,17 @@
     "upcomingBills_empty": "No hay facturas en los próximos 7 días.",
     "quickActions": "Acciones rápidas",
     "premiumBadge": "Premium",
-    "loadFailed": "Panel no disponible"
+    "loadFailed": "Panel no disponible",
+    "inviteHeading": "Invitación al espacio",
+    "inviteBody": "{{inviter}} te invitó a unirte a {{workspace}}",
+    "inviteBodyNoInviter": "Te invitaron a unirte a {{workspace}}",
+    "inviteBodyNoWorkspace": "{{inviter}} te invitó a unirte a su espacio",
+    "inviteBodyGeneric": "Te invitaron a unirte a un espacio",
+    "inviteAccept": "Aceptar",
+    "inviteDecline": "Rechazar",
+    "inviteAccepted": "¡Listo! Tu plan compartido ya está activo.",
+    "inviteAcceptFailed": "No se pudo aceptar la invitación. Inténtalo de nuevo.",
+    "inviteDeclineFailed": "No se pudo rechazar la invitación. Inténtalo de nuevo."
   },
   "addresses": {
     "title": "Direcciones",

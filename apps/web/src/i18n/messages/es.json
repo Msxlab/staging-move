@@ -1042,5 +1042,27 @@
     "cycle_monthly": "Mensual",
     "cycle_yearly": "Anual",
     "save_yearly": "Ahorra 17% con facturación anual"
+  },
+  "invitations": {
+    "headingOne": "Tienes una invitación",
+    "headingMany": "Tienes {count} invitaciones",
+    "message": "{inviter} te invitó a unirte a {workspace} como {role}.",
+    "messageNoWorkspace": "{inviter} te invitó a unirte a su espacio como {role}.",
+    "someone": "Alguien",
+    "aWorkspace": "un espacio",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "accepting": "Aceptando…",
+    "declining": "Rechazando…",
+    "accepted": "¡Te uniste a {workspace}!",
+    "declined": "Invitación rechazada.",
+    "acceptError": "No se pudo aceptar la invitación. Inténtalo de nuevo.",
+    "declineError": "No se pudo rechazar la invitación. Inténtalo de nuevo.",
+    "dismiss": "Descartar",
+    "role_OWNER": "propietario",
+    "role_ADMIN": "administrador",
+    "role_MEMBER": "miembro",
+    "role_CHILD": "miembro infantil",
+    "role_VIEW_ONLY": "miembro de solo lectura"
   }
 }
