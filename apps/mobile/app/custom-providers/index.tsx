@@ -85,6 +85,14 @@ export default function CustomProvidersScreen() {
     searchTimer.current = setTimeout(() => { void loadProviders(value); }, 300);
   };
 
+  // Cancel a pending debounced search on unmount so the timer doesn't fire a
+  // state update on an unmounted component (mirrors providers/index.tsx).
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, []);
+
   if (loading) return <LoadingScreen />;
 
   return (

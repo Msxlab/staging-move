@@ -219,7 +219,16 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
         let activePlan: DashboardStats["activePlan"] = null;
 
-        const inProgressPlan = plans.find((p: any) => p.status === "IN_PROGRESS") || plans[0];
+        // Only surface a genuinely active move on the dashboard. The /api/moving
+        // feed returns ALL non-deleted plans (including COMPLETED / CANCELED)
+        // ordered by moveDate desc, so a blind `plans[0]` fallback would light up
+        // the "active move" banner + checklist for a finished or canceled plan.
+        // Prefer an IN_PROGRESS plan, then fall back to any non-terminal (PLANNING)
+        // plan — never a COMPLETED / CANCELED one.
+        const inProgressPlan =
+          plans.find((p: any) => p.status === "IN_PROGRESS") ||
+          plans.find((p: any) => p.status === "PLANNING") ||
+          null;
         if (inProgressPlan) {
           activePlan = {
             id: inProgressPlan.id, fromCity: inProgressPlan.fromAddress?.city || "Origin",
