@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { calculateBudgetPlan, parseBudgetCategoryLimits } from "@/lib/budget-planning";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { formatCurrency } from "@/lib/utils";
 
 function monthKeyFromDate(date: Date) {
@@ -35,12 +36,13 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
   if (!budget) return notFound();
 
   const services = await prisma.service.findMany({
-    where: {
+    // Match the active-tracked filter every other budget surface uses so this
+    // drill-in snapshot can't include canceled / migrated services (which would
+    // overstate the projected total vs. the budget list + summary endpoints).
+    where: activeTrackedServiceWhere(
       userId,
-      deletedAt: null,
-      isActive: true,
-      ...(budget.addressId ? { addressId: budget.addressId } : {}),
-    },
+      budget.addressId ? { addressId: budget.addressId } : {},
+    ),
     select: {
       id: true,
       providerName: true,
