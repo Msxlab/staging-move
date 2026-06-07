@@ -145,7 +145,11 @@
     "inviteDecline": "Decline",
     "inviteAccepted": "You're in! Your shared plan is now active.",
     "inviteAcceptFailed": "Couldn't accept the invitation. Please try again.",
-    "inviteDeclineFailed": "Couldn't decline the invitation. Please try again."
+    "inviteDeclineFailed": "Couldn't decline the invitation. Please try again.",
+    "pushPromptTitle": "Stay on top of your move",
+    "pushPromptBody": "Turn on notifications to get reminders for bills, tasks, and key move dates before they slip by.",
+    "pushPromptEnable": "Enable notifications",
+    "pushPromptDismiss": "Dismiss"
   },
   "addresses": {
     "title": "Addresses",

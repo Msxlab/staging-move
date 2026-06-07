@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WEB: https://locateflow.com
+      ADMIN: https://admin.locateflow.com
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       SCHED: ${{ github.event.schedule }}
     steps:
@@ -73,6 +74,11 @@ jobs:
               hit "$WEB/api/cron/move-reminders"
               hit "$WEB/api/cron/contract-reminders"
               hit "$WEB/api/cron/admin-daily-digest"
+              # Admin DB backup (admin host) + web data-retention sweep run with
+              # the daily batch so they don't depend on the weekly Sunday slot
+              # alone — backup is daily, and data-retention is safe to run daily.
+              hit "$ADMIN/api/cron/backup"
+              hit "$WEB/api/cron/data-retention"
               ;;
             "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
             "0 10 1 * *") hit "$WEB/api/cron/monthly-report" ;;

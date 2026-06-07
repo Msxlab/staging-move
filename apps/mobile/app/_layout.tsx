@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as Notifications from "expo-notifications";
 import * as SystemUI from "expo-system-ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { api, API_URL } from "@/lib/api";
@@ -78,6 +79,42 @@ initMobileSentry();
 // initI18n returns a promise that the splash screen masks, so the
 // first painted screen already renders in the right locale.
 const i18nReady = initI18n().catch(() => undefined);
+
+// Map a delivered push notification's `data` payload onto an in-app route.
+// The server attaches these keys when sending pushes (see
+// apps/web/src/lib/notifications.ts -> sendPush, where `data` = the
+// notification `metadata`). We route most-specific-first:
+//   movingPlanId -> the moving-plan detail screen
+//   taskId       -> the move tab (task lives inside its plan's timeline)
+//   serviceId    -> the service detail screen (bill/contract reminders)
+//   supportTicketId -> the support ticket thread
+//   subscriptionId  -> the subscription settings screen
+// Anything else falls back to the in-app notifications list so a tap is
+// never a dead end. Returns null when there's nothing actionable.
+function resolveNotificationRoute(
+  data: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!data || typeof data !== "object") return null;
+  const str = (v: unknown): string | null =>
+    typeof v === "string" && v.length > 0 ? v : null;
+
+  const movingPlanId = str(data.movingPlanId);
+  if (movingPlanId) return `/moving/${movingPlanId}`;
+
+  const taskId = str(data.taskId);
+  if (taskId) return "/(tabs)/moving";
+
+  const serviceId = str(data.serviceId);
+  if (serviceId) return `/services/${serviceId}`;
+
+  const supportTicketId = str(data.supportTicketId);
+  if (supportTicketId) return `/help/tickets/${supportTicketId}`;
+
+  if (str(data.subscriptionId)) return "/settings/subscription";
+
+  // Generic / informational notification — land on the notifications list.
+  return "/notifications";
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -239,6 +276,62 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       return () => { cancelled = true; };
     }
   }, [token, user, loading, segments, needsOnboarding, router]);
+
+  // 5) Route on notification taps.
+  //
+  // Two entry points:
+  //   a) Cold start — the app was launched by tapping a notification while
+  //      killed. getLastNotificationResponseAsync replays that tap once the
+  //      tree mounts.
+  //   b) Warm — addNotificationResponseReceivedListener fires while the app
+  //      is foregrounded or backgrounded.
+  //
+  // Both are gated on an authenticated, onboarded session: routing a logged-
+  // out user into /moving/[id] would just bounce them through the AuthGuard.
+  // We also wait for needsOnboarding to resolve so we don't deep-link into the
+  // app while the user still belongs on /onboarding. The handled-response is
+  // tracked so the cold-start replay isn't re-processed when the warm listener
+  // later reports the same tap.
+  useEffect(() => {
+    // Require a fully-resolved, onboarded session. needsOnboarding is tri-state
+    // (null = still loading); only `false` means "in the app and safe to deep-
+    // link". The warm listener is re-attached once this becomes true.
+    if (!token || !user || needsOnboarding !== false) return;
+
+    let cancelled = false;
+    const handledIds = new Set<string>();
+
+    const routeFromResponse = (
+      response: Notifications.NotificationResponse | null,
+    ) => {
+      if (cancelled || !response) return;
+      const id = response.notification.request.identifier;
+      if (id) {
+        if (handledIds.has(id)) return;
+        handledIds.add(id);
+      }
+      const data = response.notification.request.content.data as
+        | Record<string, unknown>
+        | null
+        | undefined;
+      const route = resolveNotificationRoute(data);
+      if (route) router.push(route as Parameters<typeof router.push>[0]);
+    };
+
+    // Cold-start: replay the tap that launched the app, if any.
+    Notifications.getLastNotificationResponseAsync()
+      .then(routeFromResponse)
+      .catch(() => {});
+
+    // Warm: taps while the app is already running.
+    const subscription =
+      Notifications.addNotificationResponseReceivedListener(routeFromResponse);
+
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, [token, user, needsOnboarding, router]);
 
   return (
     <>

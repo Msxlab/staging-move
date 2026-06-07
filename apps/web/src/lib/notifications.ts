@@ -89,11 +89,19 @@ async function sendPush(payload: NotificationPayload): Promise<boolean> {
   });
   if (devices.length === 0) return false;
 
+  const channelId = pushChannelId(payload);
   const messages = devices.map((device) => ({
     to: device.token,
     title: payload.subject,
     body: toPushBody(payload.body),
     sound: "default",
+    // priority:"high" + an Android channel are what make the OS wake the
+    // screen / show a heads-up banner. Without these, Expo delivers at NORMAL
+    // priority and Android may batch/silence the notification on a locked
+    // screen. channelId routes to a channel registered in the mobile app
+    // (apps/mobile/src/lib/push.ts) — "move-alerts" is HIGH importance.
+    priority: "high" as const,
+    channelId,
     data: {
       ...(payload.metadata || {}),
       dedupeKey: payload.dedupeKey || null,
@@ -151,6 +159,31 @@ async function sendPush(payload: NotificationPayload): Promise<boolean> {
   }
 
   return successCount > 0;
+}
+
+/**
+ * Map a notification to an Android push channel registered in the mobile app
+ * (apps/mobile/src/lib/push.ts). The channel controls OS importance: the
+ * "move-alerts" channel is HIGH importance, so move/task notifications wake the
+ * screen and show a heads-up banner; "billing" is DEFAULT; "default" is the
+ * fallback. iOS ignores channelId (it has no channels) but is unaffected by it.
+ *
+ * The "kind" is carried on `metadata` (callers set `metadata.kind`, e.g.
+ * "task-reminder", "bill-reminder", "move-reminder"). We also tolerate
+ * screaming-snake forms like "MOVE_ALERT" / "TASK_REMINDER" / "BILL_DUE" and a
+ * `metadata.type` fallback, normalizing case before matching.
+ */
+function pushChannelId(payload: NotificationPayload): "move-alerts" | "billing" | "default" {
+  const meta = payload.metadata || {};
+  const raw =
+    (typeof meta.kind === "string" && meta.kind) ||
+    (typeof meta.type === "string" && meta.type) ||
+    "";
+  const k = raw.toLowerCase();
+
+  if (k.includes("move") || k.includes("task")) return "move-alerts";
+  if (k.includes("bill")) return "billing";
+  return "default";
 }
 
 function toPushBody(body: string) {

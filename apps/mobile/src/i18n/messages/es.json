@@ -145,7 +145,11 @@
     "inviteDecline": "Rechazar",
     "inviteAccepted": "¡Listo! Tu plan compartido ya está activo.",
     "inviteAcceptFailed": "No se pudo aceptar la invitación. Inténtalo de nuevo.",
-    "inviteDeclineFailed": "No se pudo rechazar la invitación. Inténtalo de nuevo."
+    "inviteDeclineFailed": "No se pudo rechazar la invitación. Inténtalo de nuevo.",
+    "pushPromptTitle": "No te pierdas nada de tu mudanza",
+    "pushPromptBody": "Activa las notificaciones para recibir recordatorios de facturas, tareas y fechas clave antes de que se te pasen.",
+    "pushPromptEnable": "Activar notificaciones",
+    "pushPromptDismiss": "Descartar"
   },
   "addresses": {
     "title": "Direcciones",
