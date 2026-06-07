@@ -30,6 +30,12 @@ export async function GET() {
   const workspaces = await Promise.all(
     memberships.map(async (m) => {
       const summary = await planSummaryForOwner(m.workspace.ownerUserId);
+      // Count seats actually occupied — exclude SUSPENDED so the displayed
+      // "x / limit" matches what invite-accept enforcement allows (it caps on
+      // non-SUSPENDED members), instead of inflating the count with suspended rows.
+      const memberCount = await prisma.workspaceMember.count({
+        where: { workspaceId: m.workspace.id, status: { not: "SUSPENDED" } },
+      });
       return {
         id: m.workspace.id,
         name: m.workspace.name,
@@ -37,12 +43,12 @@ export async function GET() {
         status: m.status,
         planLabel: summary.planLabel,
         seatLimit: summary.seatLimit,
-        // Count seats actually occupied — exclude SUSPENDED so the displayed
-        // "x / limit" matches what invite-accept enforcement allows (it caps on
-        // non-SUSPENDED members), instead of inflating the count with suspended rows.
-        memberCount: await prisma.workspaceMember.count({
-          where: { workspaceId: m.workspace.id, status: { not: "SUSPENDED" } },
-        }),
+        memberCount,
+        // Every user auto-owns a personal workspace. When the caller is its sole
+        // OWNER and the plan grants no extra seats, it's a solo data container —
+        // not a household they manage. UIs use this to relabel it "Personal" and
+        // de-emphasize the invite affordance (inviting is already seat-gated to 1).
+        isPersonalSolo: m.role === "OWNER" && memberCount === 1 && summary.seatLimit <= 1,
         deletedAt: m.workspace.deletedAt,
       };
     }),

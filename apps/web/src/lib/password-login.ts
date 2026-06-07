@@ -40,8 +40,72 @@ export interface PasswordLoginOptions {
   exposeBearerToken: boolean;
 }
 
-function parseUA(ua: string) {
+/**
+ * Resolves the native-app platform for the session label. The mobile client
+ * sends an explicit `X-Client-Platform` header ("ios"/"android") on every
+ * request; we trust that first. When it's absent (e.g. an older build) we fall
+ * back to sniffing the descriptive `User-Agent` the client also sets
+ * ("LocateFlow/<version> (iOS; Expo)"). Returns null for ordinary browsers.
+ */
+function detectMobileClient(
+  ua: string,
+  clientPlatformHeader?: string | null,
+): "iOS" | "Android" | "Mobile" | null {
+  const platform = clientPlatformHeader?.trim().toLowerCase();
+  if (platform === "ios") return "iOS";
+  if (platform === "android") return "Android";
+  if (platform === "ipados") return "iOS";
+
+  // Fall back to the descriptive UA the mobile client sends. Only treat it as
+  // the native app when the LocateFlow marker is present, so we never
+  // mislabel a real mobile browser as the app.
+  if (/LocateFlow/i.test(ua)) {
+    if (/iOS|iPhone|iPad|iPod|Darwin/i.test(ua)) return "iOS";
+    if (/Android/i.test(ua)) return "Android";
+    return "Mobile";
+  }
+  return null;
+}
+
+/**
+ * Computes the session device label for a known-native mobile request. Used by
+ * the mobile OAuth handoff routes (exchange / apple-native) which create the
+ * session directly rather than going through {@link parseUA}. Always returns a
+ * "LocateFlow ..." browser label and an OS, never "Unknown browser".
+ */
+export function labelMobileSession(
+  ua: string,
+  clientPlatformHeader?: string | null,
+): { browser: string; os: string } {
+  const platform = detectMobileClient(ua, clientPlatformHeader) ?? "Mobile";
+  if (platform === "iOS") return { browser: "LocateFlow iOS app", os: "iOS" };
+  if (platform === "Android") return { browser: "LocateFlow Android app", os: "Android" };
+  return { browser: "LocateFlow app", os: "Mobile" };
+}
+
+function parseUA(ua: string, clientPlatformHeader?: string | null) {
   const r = { browser: "Unknown", os: "Unknown", deviceType: "Desktop" };
+
+  // Native app first: when the request carries our client-platform header (or a
+  // LocateFlow User-Agent), label the session as the app instead of falling
+  // through to browser parsing — the native UA has no Chrome/Safari token, so
+  // it would otherwise resolve to "Unknown browser".
+  const mobilePlatform = detectMobileClient(ua, clientPlatformHeader);
+  if (mobilePlatform) {
+    r.deviceType = "Mobile";
+    if (mobilePlatform === "iOS") {
+      r.browser = "LocateFlow iOS app";
+      r.os = "iOS";
+    } else if (mobilePlatform === "Android") {
+      r.browser = "LocateFlow Android app";
+      r.os = "Android";
+    } else {
+      r.browser = "LocateFlow app";
+      r.os = "Mobile";
+    }
+    return r;
+  }
+
   if (!ua) return r;
   if (ua.includes("Edg")) r.browser = "Edge";
   else if (ua.includes("OPR") || ua.includes("Opera")) r.browser = "Opera";
@@ -306,7 +370,7 @@ export async function handlePasswordLogin(
 
   await clearLoginFailures(lockKey).catch(() => null);
 
-  const parsedUA = parseUA(ua);
+  const parsedUA = parseUA(ua, request.headers.get("x-client-platform"));
   const fp = options.clientType === "mobile"
     ? await generateMobileFingerprint(ua)
     : await generateFingerprint(ip, ua);

@@ -4,6 +4,22 @@ export interface ApiClientConfig {
   baseUrl: string;
   getToken: () => Promise<string | null>;
   clientType?: "web" | "mobile";
+  /**
+   * Native platform identifier sent on every request as `X-Client-Platform`
+   * (e.g. "ios" / "android"). The server uses this to label the session device
+   * ("LocateFlow iOS app") instead of "Unknown browser", since the native
+   * fetch User-Agent carries no parseable browser token.
+   */
+  clientPlatform?: string;
+  /** App version sent on every request as `X-Client-Version`. */
+  clientVersion?: string;
+  /**
+   * Descriptive User-Agent for the native client, e.g.
+   * "LocateFlow/1.2.3 (iOS; Expo)". Sent as a fallback identifier when a
+   * platform can override the default fetch UA. Ignored on platforms that
+   * forbid setting User-Agent (the X-Client-Platform header still works).
+   */
+  userAgent?: string;
   onUnauthorized?: () => void | Promise<void>;
   onError?: (error: Error) => void;
   timeoutMs?: number;
@@ -81,13 +97,31 @@ export class ApiClient {
     return new Error(String(error));
   }
 
+  /**
+   * Applies the client-identity headers (client type, native platform/version,
+   * and a descriptive User-Agent) that let the server label the session device.
+   * Used by both the JSON request path and the multipart upload path.
+   */
+  private applyClientHeaders(headers: Record<string, string>): void {
+    if (this.config.clientType) {
+      headers["x-client-type"] = this.config.clientType;
+    }
+    if (this.config.clientPlatform) {
+      headers["x-client-platform"] = this.config.clientPlatform;
+    }
+    if (this.config.clientVersion) {
+      headers["x-client-version"] = this.config.clientVersion;
+    }
+    if (this.config.userAgent) {
+      headers["User-Agent"] = this.config.userAgent;
+    }
+  }
+
   private async getHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (this.config.clientType) {
-      headers["x-client-type"] = this.config.clientType;
-    }
+    this.applyClientHeaders(headers);
     const token = await this.config.getToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -254,9 +288,7 @@ export class ApiClient {
       const url = new URL(path, this.config.baseUrl);
       const token = await this.config.getToken();
       const headers: Record<string, string> = {};
-      if (this.config.clientType) {
-        headers["x-client-type"] = this.config.clientType;
-      }
+      this.applyClientHeaders(headers);
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }

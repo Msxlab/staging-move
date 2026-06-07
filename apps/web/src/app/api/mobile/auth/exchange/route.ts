@@ -5,6 +5,7 @@ import {
   generateMobileFingerprint,
 } from "@/lib/user-auth";
 import { consumeMobileOAuthExchangeCode } from "@/lib/mobile-oauth";
+import { labelMobileSession } from "@/lib/password-login";
 import { resolveClientIP } from "@/lib/rate-limit";
 import { enforceRateLimitPolicy, stableRateLimitHash } from "@/lib/rate-limit-policy";
 
@@ -70,6 +71,10 @@ export async function POST(request: NextRequest) {
   const ua = request.headers.get("user-agent") || "";
   const ip = resolveClientIP(request);
   const fingerprint = await generateMobileFingerprint(ua);
+  // Label native sessions ("LocateFlow iOS app" / "LocateFlow Android app")
+  // instead of "Unknown browser". The native client sends no parseable UA, so
+  // we trust the X-Client-Platform header first and fall back to UA sniffing.
+  const mobileLabel = labelMobileSession(ua, request.headers.get("x-client-platform"));
   const token = await createUserSession({
     userId: exchanged.user.id,
     email: exchanged.user.email,
@@ -78,10 +83,8 @@ export async function POST(request: NextRequest) {
     ipAddress: ip,
     userAgent: ua,
     deviceType: "Mobile",
-    // Label native sessions so the session list shows "LocateFlow app / iOS"
-    // instead of "Unknown browser" (the native client sends no parseable UA).
-    browser: "LocateFlow app",
-    os: /iPhone|iPad|iPod|Darwin/i.test(ua) ? "iOS" : /Android/i.test(ua) ? "Android" : "Mobile",
+    browser: mobileLabel.browser,
+    os: mobileLabel.os,
   });
 
   const hasPasswordLogin = Boolean(exchanged.user.passwordHash);

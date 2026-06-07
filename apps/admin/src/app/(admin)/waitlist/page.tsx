@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 type Target =
   | "MOBILE_IOS"
@@ -90,6 +91,9 @@ export default function WaitlistPage() {
   >("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -137,40 +141,45 @@ export default function WaitlistPage() {
     load();
   }
 
-  const exportCSV = () => {
-    const header = [
-      "email",
-      "target",
-      "source",
-      "userId",
-      "note",
-      "notifiedAt",
-      "convertedAt",
-      "createdAt",
-    ].join(",");
-    const rows = signups.map((signup) =>
-      [
-        signup.email,
-        signup.target,
-        signup.source || "",
-        signup.userId || "",
-        (signup.note || "").replace(/"/g, '""'),
-        signup.notifiedAt || "",
-        signup.convertedAt || "",
-        signup.createdAt,
-      ]
-        .map((value) => `"${value}"`)
-        .join(","),
-    );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
+  function openExport() {
+    setExportError(null);
+    setExportOpen(true);
+  }
+
+  async function confirmExport(_password: string, stepUp: StepUpValues) {
+    // Server-side export at /api/waitlist/export — handles permission,
+    // step-up password confirm, email masking (full email only for
+    // SUPER_ADMIN), CSV-injection escaping, audit logging, and the row
+    // cap. The previous in-page Blob path serialized raw signup emails
+    // with no masking and no audit trail.
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      const res = await fetch("/api/waitlist/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stepUp),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setExportError(data?.error || `Export failed (${res.status})`);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+      setExportOpen(false);
+    } catch {
+      setExportError("Export failed");
+    } finally {
+      setExportBusy(false);
+    }
+  }
 
   const activeSourceCount = useMemo(
     () => sources.filter((source) => source.count > 0).length,
@@ -185,7 +194,7 @@ export default function WaitlistPage() {
         subtitle="Historical mobile and legacy waitlist tracking. These entries do not create launch promises."
         actions={
           <button
-            onClick={exportCSV}
+            onClick={openExport}
             className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
           >
             <Download className="h-4 w-4" /> Export CSV
@@ -389,6 +398,23 @@ export default function WaitlistPage() {
           </table>
         )}
       </div>
+
+      <PasswordConfirmModal
+        open={exportOpen}
+        title="Export waitlist CSV"
+        description="The export contains signup PII (emails). Enter your admin password and MFA code to continue. This action is audit-logged."
+        confirmLabel="Export"
+        busy={exportBusy}
+        error={exportError}
+        requiresMfa
+        onClose={() => {
+          if (!exportBusy) {
+            setExportOpen(false);
+            setExportError(null);
+          }
+        }}
+        onConfirm={confirmExport}
+      />
     </div>
   );
 }
