@@ -35,27 +35,27 @@
   --orange-800: #3D7AB8;
   --orange-900: #1F5FA0;
 
-  --bg:        #0C0E13;
-  --surface:   #10131A;
-  --surface-2: #161A22;
-  --surface-3: #1E2330;
+  --bg:        #171E2B;
+  --surface:   #1C2535;
+  --surface-2: #232D40;
+  --surface-3: #2A364C;
 
-  --line:        rgba(255, 255, 255, 0.06);
-  --line-2:      rgba(255, 255, 255, 0.10);
+  --line:        rgba(255, 255, 255, 0.10);
+  --line-2:      rgba(255, 255, 255, 0.16);
   --line-foil:   rgba(180, 155, 255, 0.22);
   --border-focus: rgba(127, 182, 232, 0.55);
 
-  --tone-rose-bg: rgba(127, 182, 232, 0.10); --tone-rose-br: rgba(127, 182, 232, 0.22); --tone-rose-fg: #7FB6E8;
-  --tone-foil-bg: rgba(180, 155, 255, 0.10); --tone-foil-br: rgba(180, 155, 255, 0.22); --tone-foil-fg: #B49BFF;
-  --tone-sage-bg: rgba(135, 221, 192, 0.10); --tone-sage-br: rgba(135, 221, 192, 0.22); --tone-sage-fg: #87DDC0;
-  --tone-honey-bg: rgba(242, 196, 108, 0.10); --tone-honey-br: rgba(242, 196, 108, 0.22); --tone-honey-fg: #F2C46C;
-  --tone-umber-bg: rgba(180, 155, 255, 0.10); --tone-umber-br: rgba(180, 155, 255, 0.22); --tone-umber-fg: #B49BFF;
-  --tone-slate-bg: rgba(168, 181, 201, 0.10); --tone-slate-br: rgba(168, 181, 201, 0.22); --tone-slate-fg: #A8B5C9;
-  --tone-orange-bg: rgba(127, 182, 232, 0.10); --tone-orange-br: rgba(127, 182, 232, 0.22); --tone-orange-fg: #7FB6E8;
-  --tone-emerald-bg: rgba(135, 221, 192, 0.10); --tone-emerald-br: rgba(135, 221, 192, 0.22); --tone-emerald-fg: #87DDC0;
-  --tone-amber-bg: rgba(242, 196, 108, 0.10); --tone-amber-br: rgba(242, 196, 108, 0.22); --tone-amber-fg: #F2C46C;
-  --tone-sky-bg: rgba(127, 182, 232, 0.10); --tone-sky-br: rgba(127, 182, 232, 0.22); --tone-sky-fg: #7FB6E8;
-  --tone-cyan-bg: rgba(127, 182, 232, 0.10); --tone-cyan-br: rgba(127, 182, 232, 0.22); --tone-cyan-fg: #7FB6E8;
+  --tone-rose-bg: rgba(127, 182, 232, 0.16); --tone-rose-br: rgba(127, 182, 232, 0.32); --tone-rose-fg: #9CC6F0;
+  --tone-foil-bg: rgba(180, 155, 255, 0.16); --tone-foil-br: rgba(180, 155, 255, 0.32); --tone-foil-fg: #C7B6FF;
+  --tone-sage-bg: rgba(135, 221, 192, 0.16); --tone-sage-br: rgba(135, 221, 192, 0.32); --tone-sage-fg: #A0EAD2;
+  --tone-honey-bg: rgba(242, 196, 108, 0.16); --tone-honey-br: rgba(242, 196, 108, 0.32); --tone-honey-fg: #F5CE82;
+  --tone-umber-bg: rgba(180, 155, 255, 0.16); --tone-umber-br: rgba(180, 155, 255, 0.32); --tone-umber-fg: #C7B6FF;
+  --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
+  --tone-orange-bg: rgba(127, 182, 232, 0.16); --tone-orange-br: rgba(127, 182, 232, 0.32); --tone-orange-fg: #9CC6F0;
+  --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.32); --tone-emerald-fg: #A0EAD2;
+  --tone-amber-bg: rgba(242, 196, 108, 0.16); --tone-amber-br: rgba(242, 196, 108, 0.32); --tone-amber-fg: #F5CE82;
+  --tone-sky-bg: rgba(127, 182, 232, 0.16); --tone-sky-br: rgba(127, 182, 232, 0.32); --tone-sky-fg: #9CC6F0;
+  --tone-cyan-bg: rgba(127, 182, 232, 0.16); --tone-cyan-br: rgba(127, 182, 232, 0.32); --tone-cyan-fg: #9CC6F0;
 
   --shadow-glow: 0 0 10px rgba(127, 182, 232, 0.12);
   --shadow-rose: 0 0 10px rgba(127, 182, 232, 0.12);
@@ -161,24 +161,24 @@
     /* Dark mode — Linear-style graphite canvas: near-black neutral surfaces
        (faint cool tint, not navy), hairline borders, one restrained blue
        accent. Lower saturation + tighter contrast steps read calmer + sharper. */
-    --background: 222 16% 11%;
-    --foreground: 220 16% 97%;
-    --card: 222 14% 15%;
-    --card-foreground: 220 16% 97%;
-    --popover: 222 15% 16%;
-    --popover-foreground: 220 16% 97%;
+    --background: 218 26% 14%;
+    --foreground: 220 16% 98%;
+    --card: 218 22% 19%;
+    --card-foreground: 220 16% 98%;
+    --popover: 218 22% 19%;
+    --popover-foreground: 220 16% 98%;
     --primary: 208 85% 64%;
     --primary-foreground: 222 40% 8%;
-    --secondary: 220 10% 78%;
+    --secondary: 220 10% 82%;
     --secondary-foreground: 222 40% 8%;
-    --muted: 222 12% 18%;
-    --muted-foreground: 220 11% 72%;
-    --accent: 222 12% 21%;
-    --accent-foreground: 220 16% 97%;
+    --muted: 218 18% 24%;
+    --muted-foreground: 215 22% 78%;
+    --accent: 218 18% 27%;
+    --accent-foreground: 220 16% 98%;
     --destructive: 359 68% 70%;
     --destructive-foreground: 222 40% 8%;
-    --border: 222 12% 24%;
-    --input: 222 12% 24%;
+    --border: 217 20% 30%;
+    --input: 217 20% 30%;
     --ring: 208 85% 64%;
   }
 }
