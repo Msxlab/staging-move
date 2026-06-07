@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEffectiveEntitlement } from "@locateflow/shared";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
-import { hashInvitationToken, seatLimitForPlan } from "@/lib/workspace-invitations";
-import { createInAppNotification } from "@/lib/in-app-notifications";
-import {
-  WORKSPACE_AUDIT_ACTIONS,
-  maskTargetEmail,
-  notifyWorkspaceOwnerOfRosterChange,
-  workspaceDisplayName,
-  writeWorkspaceAudit,
-} from "@/lib/workspace-audit";
+import { hashInvitationToken } from "@/lib/workspace-invitations";
+import { AcceptInviteError, acceptWorkspaceInvitation } from "@/lib/workspace-invite-accept";
 
 export const runtime = "nodejs";
 
@@ -37,122 +28,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "This invitation is for a different email address." }, { status: 403 });
   }
 
-  const workspace = await prisma.workspace.findUnique({ where: { id: inv.workspaceId }, select: { id: true, ownerUserId: true } });
-  if (!workspace) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
-
-  const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
-  const seatLimit = seatLimitForPlan(String(getEffectiveEntitlement(ownerSub).effectivePlan));
-
+  let result: { workspaceId: string; role: string };
   try {
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.workspaceMember.findFirst({ where: { workspaceId: inv.workspaceId, userId: session.userId } });
-      if (!existing) {
-        // Match countUsedSeats(): a used seat is a non-suspended member OR a
-        // still-outstanding (non-expired) PENDING invite. Exclude the invite
-        // being accepted right now — it's about to become a member, so counting
-        // it here would double-charge the household for this single join.
-        const now = new Date();
-        const [memberCount, pendingCount] = await Promise.all([
-          tx.workspaceMember.count({
-            where: { workspaceId: inv.workspaceId, status: { not: "SUSPENDED" } },
-          }),
-          tx.workspaceInvitation.count({
-            where: {
-              workspaceId: inv.workspaceId,
-              status: "PENDING",
-              expiresAt: { gte: now },
-              id: { not: inv.id },
-            },
-          }),
-        ]);
-        if (memberCount + pendingCount >= seatLimit) throw new Error("SEAT_FULL");
-        await tx.workspaceMember.create({
-          data: {
-            workspaceId: inv.workspaceId,
-            userId: session.userId,
-            role: inv.role,
-            status: "ACTIVE",
-            invitedByUserId: inv.invitedByUserId,
-            invitationId: inv.id,
-          },
-        });
-        // Stamp the joining member's existing shared resources into the
-        // workspace so they don't vanish from scoped reads and they count toward
-        // the pooled limit. Budgets are intentionally NOT merged — a member's
-        // personal budget stays private; the household uses the owner-keyed one.
-        const backfill = { userId: session.userId, workspaceId: null };
-        await Promise.all([
-          tx.address.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
-          tx.service.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
-          tx.movingPlan.updateMany({ where: backfill, data: { workspaceId: inv.workspaceId } }),
-        ]);
-      }
-      await tx.workspaceInvitation.update({
-        where: { id: inv.id },
-        data: { status: "ACCEPTED", acceptedAt: new Date(), acceptedByUserId: session.userId },
-      });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    result = await acceptWorkspaceInvitation({ invite: inv, userId: session.userId, request });
   } catch (e) {
-    if (e instanceof Error && e.message === "SEAT_FULL") {
-      return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
-    }
-    // Serializable write-conflict (P2034): two accepts raced for the last seat.
-    // Ask the loser to retry — the re-check then sees the seat is taken, so the
-    // member count can never exceed the limit under concurrency.
-    if ((e as { code?: string })?.code === "P2034") {
-      return NextResponse.json({ error: "Please try again." }, { status: 409 });
-    }
-    if ((e as { code?: string })?.code === "P2002") {
-      return NextResponse.json({ error: "You are already a member of this workspace." }, { status: 409 });
+    if (e instanceof AcceptInviteError) {
+      switch (e.code) {
+        case "WORKSPACE_NOT_FOUND":
+          return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+        case "SEAT_FULL":
+          return NextResponse.json({ error: "Workspace is at its seat limit." }, { status: 409 });
+        case "RETRY":
+          return NextResponse.json({ error: "Please try again." }, { status: 409 });
+        case "ALREADY_MEMBER":
+          return NextResponse.json({ error: "You are already a member of this workspace." }, { status: 409 });
+      }
     }
     throw e;
   }
 
-  // Audit the join (user-actor: the joining member). Best-effort.
-  await writeWorkspaceAudit({
-    request,
-    actorUserId: session.userId,
-    action: WORKSPACE_AUDIT_ACTIONS.INVITATION_ACCEPTED,
-    workspaceId: inv.workspaceId,
-    entityType: "workspace_invitation",
-    entityId: inv.id,
-    metadata: {
-      invitationId: inv.id,
-      role: inv.role,
-      invitedByUserId: inv.invitedByUserId ?? undefined,
-      targetEmail: maskTargetEmail(inv.invitedEmail),
-    },
-  });
-
-  // Notify the inviter that their invite was accepted (best-effort, deduped).
-  if (inv.invitedByUserId) {
-    const ws = await prisma.workspace.findUnique({ where: { id: inv.workspaceId }, select: { name: true } });
-    await createInAppNotification({
-      userId: inv.invitedByUserId,
-      type: "WORKSPACE_MEMBERSHIP",
-      title: "Invitation accepted",
-      body: `${inv.invitedEmail} joined ${ws?.name ?? "your workspace"}.`,
-      href: "/settings/workspace",
-      dedupeKey: `ws-invite-accepted:${inv.id}`,
-    }).catch(() => {});
-  }
-
-  // Notify the OWNER that a new member joined (suppressed when the owner is the
-  // one joining, or when the owner was the inviter — they're already covered by
-  // the inviter notice above). Mirrors the transfer route's owner-aware notice.
-  if (inv.invitedByUserId !== workspace.ownerUserId) {
-    const wsName = await workspaceDisplayName(inv.workspaceId);
-    await notifyWorkspaceOwnerOfRosterChange({
-      workspaceId: inv.workspaceId,
-      actorUserId: session.userId,
-      title: "A new member joined",
-      body: `${maskTargetEmail(inv.invitedEmail) ?? "A new member"} joined ${wsName}.`,
-      dedupeSuffix: `joined:${inv.id}`,
-    });
-  }
-
-  const response = NextResponse.json({ workspaceId: inv.workspaceId, role: inv.role });
-  response.cookies.set("lf_workspace_id", inv.workspaceId, {
+  const response = NextResponse.json({ workspaceId: result.workspaceId, role: result.role });
+  response.cookies.set("lf_workspace_id", result.workspaceId, {
     path: "/",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,

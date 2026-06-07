@@ -155,3 +155,74 @@ export async function acceptInvite(rawToken: string): Promise<AcceptInviteResult
   const planTier = await refreshPlanTierFromProfile();
   return { ok: true, workspaceId: res.data.workspaceId, role: res.data.role, planTier };
 }
+
+/* ------------------------------------------------------------------------- *
+ * In-app pending-invitation prompt (dashboard banner)
+ *
+ * Unlike the token/paste flows above, these helpers talk to the id-based
+ * endpoints the backend exposes for invites the user can act on WITHOUT a raw
+ * token (the email-match on the server is the authorization boundary):
+ *   GET  /api/invitations/pending                  → bare array of invites
+ *   POST /api/invitations/pending/<id>/accept      → { workspaceId, role }
+ *   POST /api/invitations/pending/<id>/decline     → { ok: true }
+ * ------------------------------------------------------------------------- */
+
+/** One actionable invitation as returned by GET /api/invitations/pending. */
+export interface PendingInvitation {
+  id: string;
+  /** Workspace display name, or null when unavailable. */
+  workspaceName: string | null;
+  /** Inviter's display name, or null when unavailable. */
+  inviterName: string | null;
+  /** Workspace role the invite grants (e.g. "MEMBER"). */
+  role: string;
+  /** ISO-8601 expiry timestamp. */
+  expiresAt: string;
+}
+
+/**
+ * Fetch the caller's actionable (PENDING, non-expired, email-matched) invites.
+ *
+ * The endpoint returns a BARE JSON array. Best-effort: any error (feature gate
+ * 404, network, unauth) yields an empty list so the dashboard simply hides the
+ * banner rather than surfacing an error.
+ */
+export async function fetchPendingInvitations(): Promise<PendingInvitation[]> {
+  try {
+    const res = await api.get<PendingInvitation[]>("/api/invitations/pending");
+    if (res.error || !Array.isArray(res.data)) return [];
+    return res.data;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Accept a pending invitation by id and, on success, refresh the in-app
+ * entitlement so the new plan theme + mascots apply immediately (same mechanism
+ * as the token flow — writes the resolved tier into the auth store, which
+ * ThemeProvider observes).
+ */
+export async function acceptPendingInvitation(id: string): Promise<AcceptInviteResult> {
+  const res = await api.post<{ workspaceId: string; role: string }>(
+    `/api/invitations/pending/${encodeURIComponent(id)}/accept`,
+    {},
+  );
+  if (res.error || !res.data) {
+    return { ok: false, code: classifyError(res.error, res.code), message: res.error ?? null };
+  }
+  const planTier = await refreshPlanTierFromProfile();
+  return { ok: true, workspaceId: res.data.workspaceId, role: res.data.role, planTier };
+}
+
+/**
+ * Decline a pending invitation by id. Idempotent server-side. Returns true on
+ * success so the caller can drop it from the list.
+ */
+export async function declinePendingInvitation(id: string): Promise<boolean> {
+  const res = await api.post<{ ok: boolean }>(
+    `/api/invitations/pending/${encodeURIComponent(id)}/decline`,
+    {},
+  );
+  return !res.error && !!res.data?.ok;
+}

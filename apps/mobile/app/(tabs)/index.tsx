@@ -6,6 +6,8 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,11 +20,18 @@ import {
   Bell,
   AlertTriangle,
   Users,
+  Mail,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import {
+  fetchPendingInvitations,
+  acceptPendingInvitation,
+  declinePendingInvitation,
+  type PendingInvitation,
+} from "@/lib/workspace-invite";
 import { Card } from "@/components/ui/Card";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -62,13 +71,22 @@ export default function DashboardScreen() {
     memberCount: number;
     seatLimit: number;
   } | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
+  // id of the invite currently being accepted/declined (disables its buttons).
+  const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
 
   const fetchDashboard = useCallback(async () => {
-    const [res, addrRes, movingRes] = await Promise.all([
+    const [res, addrRes, movingRes, invites] = await Promise.all([
       api.get<any>("/api/profile"),
       api.get<any>("/api/addresses", { limit: "200" }),
       api.get<any>("/api/moving"),
+      // Best-effort: never blocks the dashboard. Empty when the feature gate is
+      // off or the user has no actionable invites, in which case the banner hides.
+      fetchPendingInvitations(),
     ]);
+    // Pending invites are independent of the core dashboard payload, so surface
+    // them even when the rest of the dashboard errors out.
+    setPendingInvites(invites);
     if (res.error || addrRes.error || movingRes.error) {
       setError(t("dashboard.loadFailed"));
       return false;
@@ -202,6 +220,48 @@ export default function DashboardScreen() {
     load();
   }, [load]);
 
+  const handleAcceptInvite = useCallback(
+    async (invite: PendingInvitation) => {
+      if (inviteBusyId) return;
+      setInviteBusyId(invite.id);
+      try {
+        const result = await acceptPendingInvitation(invite.id);
+        if (result.ok) {
+          // Drop the accepted invite immediately, then refresh the dashboard.
+          // acceptPendingInvitation already wrote the resolved plan tier into the
+          // auth store (via refreshPlanTierFromProfile) so ThemeProvider repaints
+          // the Family/Pro accent + raccoon mascots app-wide; the refresh also
+          // surfaces the new Household/Workspace card.
+          setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
+          await fetchDashboard();
+        } else {
+          Alert.alert(t("dashboard.inviteHeading"), t("dashboard.inviteAcceptFailed"));
+        }
+      } finally {
+        setInviteBusyId(null);
+      }
+    },
+    [inviteBusyId, fetchDashboard, t],
+  );
+
+  const handleDeclineInvite = useCallback(
+    async (invite: PendingInvitation) => {
+      if (inviteBusyId) return;
+      setInviteBusyId(invite.id);
+      try {
+        const ok = await declinePendingInvitation(invite.id);
+        if (ok) {
+          setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
+        } else {
+          Alert.alert(t("dashboard.inviteHeading"), t("dashboard.inviteDeclineFailed"));
+        }
+      } finally {
+        setInviteBusyId(null);
+      }
+    },
+    [inviteBusyId, t],
+  );
+
   if (loading) return <LoadingScreen />;
 
   const statCards: Array<{
@@ -281,6 +341,63 @@ export default function DashboardScreen() {
           />
         }
       >
+        {/* Pending workspace invitations — rendered near the top, even if the
+            rest of the dashboard payload failed, so the user can always act. */}
+        {pendingInvites.map((invite) => {
+          const busy = inviteBusyId === invite.id;
+          const inviter = invite.inviterName?.trim() || null;
+          const ws = invite.workspaceName?.trim() || null;
+          const body =
+            inviter && ws
+              ? t("dashboard.inviteBody", { inviter, workspace: ws })
+              : inviter
+                ? t("dashboard.inviteBodyNoWorkspace", { inviter })
+                : ws
+                  ? t("dashboard.inviteBodyNoInviter", { workspace: ws })
+                  : t("dashboard.inviteBodyGeneric");
+          return (
+            <Card key={invite.id} variant="glow" style={{ marginBottom: 16 }}>
+              <View style={styles.inviteRow}>
+                <View style={styles.inviteIcon}>
+                  <Mail size={18} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inviteHeading}>{t("dashboard.inviteHeading")}</Text>
+                  <Text style={styles.inviteBody} numberOfLines={3}>
+                    {body}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.inviteActions}>
+                <TouchableOpacity
+                  style={[styles.inviteBtn, styles.inviteDeclineBtn, busy && styles.inviteBtnDisabled]}
+                  onPress={() => handleDeclineInvite(invite)}
+                  disabled={busy}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.inviteDecline")}
+                >
+                  <Text style={styles.inviteDeclineText}>{t("dashboard.inviteDecline")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.inviteBtn, styles.inviteAcceptBtn, busy && styles.inviteBtnDisabled]}
+                  onPress={() => handleAcceptInvite(invite)}
+                  disabled={busy}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.inviteAccept")}
+                >
+                  {busy ? (
+                    <ActivityIndicator size="small" color={theme.colors.background} />
+                  ) : (
+                    <Text style={styles.inviteAcceptText}>{t("dashboard.inviteAccept")}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </Card>
+          );
+        })}
+
         {error ? (
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
         ) : (
@@ -545,4 +662,38 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
   },
   quickActionLabel: { flex: 1, fontSize: 15, fontWeight: "600", color: theme.colors.text },
+  inviteRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  inviteIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryFaded,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inviteHeading: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.colors.primary,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  inviteBody: { fontSize: 15, fontWeight: "600", color: theme.colors.text, marginTop: 2 },
+  inviteActions: { flexDirection: "row", gap: 10, marginTop: 14 },
+  inviteBtn: {
+    flex: 1,
+    height: 42,
+    borderRadius: theme.radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inviteBtnDisabled: { opacity: 0.6 },
+  inviteDeclineBtn: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  inviteDeclineText: { fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary },
+  inviteAcceptBtn: { backgroundColor: theme.colors.primary },
+  inviteAcceptText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
 });
