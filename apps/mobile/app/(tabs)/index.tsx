@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   MapPin,
   Zap,
@@ -18,14 +19,20 @@ import {
   Truck,
   ArrowRight,
   Bell,
+  BellRing,
   AlertTriangle,
   Users,
   Mail,
+  X,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import {
+  getPushSoftPromptDecision,
+  registerForPushNotifications,
+} from "@/lib/push";
 import {
   fetchPendingInvitations,
   acceptPendingInvitation,
@@ -46,6 +53,11 @@ import {
   type RelocationChecklist,
   type ChecklistStateRuleContext,
 } from "@locateflow/shared";
+
+// Once the user dismisses the in-app push re-prompt card we don't nag again.
+// The soft-prompt decision ("accepted"/"deferred"/"declined"/null) lives in
+// push.ts; this flag is purely about whether the *card* was waved away.
+const PUSH_PROMPT_CARD_DISMISSED_KEY = "locateflow.pushPromptCardDismissed";
 
 export default function DashboardScreen() {
 
@@ -74,6 +86,10 @@ export default function DashboardScreen() {
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
   // id of the invite currently being accepted/declined (disables its buttons).
   const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
+  // Push re-prompt card: shown only to users who never accepted push and
+  // haven't dismissed the card. `null` = still deciding (render nothing).
+  const [showPushPrompt, setShowPushPrompt] = useState<boolean | null>(null);
+  const [pushPromptBusy, setPushPromptBusy] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes, invites] = await Promise.all([
@@ -219,6 +235,54 @@ export default function DashboardScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Decide whether to surface the push re-prompt card. The onboarding
+  // soft-prompt (maybeOfferPushSoftPrompt) only runs at onboarding completion,
+  // so users who onboarded earlier — or deferred then — never see a prompt.
+  // Show the card when the decision is null ("never asked") or "deferred",
+  // and the user hasn't already dismissed the card this install.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const dismissed = await AsyncStorage.getItem(PUSH_PROMPT_CARD_DISMISSED_KEY);
+        if (cancelled) return;
+        if (dismissed === "true") {
+          setShowPushPrompt(false);
+          return;
+        }
+        const decision = await getPushSoftPromptDecision();
+        if (cancelled) return;
+        setShowPushPrompt(decision === null || decision === "deferred");
+      } catch {
+        if (!cancelled) setShowPushPrompt(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleEnablePush = useCallback(async () => {
+    if (pushPromptBusy) return;
+    setPushPromptBusy(true);
+    try {
+      // requireSoftPrompt:false → this card IS the soft prompt, so go straight
+      // to the OS permission dialog + token registration.
+      await registerForPushNotifications({ requireSoftPrompt: false });
+    } finally {
+      // Either way, retire the card: granted → no longer needed; denied →
+      // don't nag (the OS prompt is one-shot anyway).
+      setPushPromptBusy(false);
+      setShowPushPrompt(false);
+      void AsyncStorage.setItem(PUSH_PROMPT_CARD_DISMISSED_KEY, "true").catch(() => {});
+    }
+  }, [pushPromptBusy]);
+
+  const handleDismissPushPrompt = useCallback(() => {
+    setShowPushPrompt(false);
+    void AsyncStorage.setItem(PUSH_PROMPT_CARD_DISMISSED_KEY, "true").catch(() => {});
+  }, []);
 
   const handleAcceptInvite = useCallback(
     async (invite: PendingInvitation) => {
@@ -397,6 +461,47 @@ export default function DashboardScreen() {
             </Card>
           );
         })}
+
+        {/* Push re-prompt: dismissible card for users who never enabled push.
+            Onboarding's soft-prompt only fires at completion, so this is the
+            only nudge already-onboarded users get. */}
+        {showPushPrompt === true && (
+          <Card variant="default" style={{ marginBottom: 16 }}>
+            <View style={styles.pushPromptRow}>
+              <View style={styles.pushPromptIcon}>
+                <BellRing size={18} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pushPromptTitle}>{t("dashboard.pushPromptTitle")}</Text>
+                <Text style={styles.pushPromptBody} numberOfLines={3}>
+                  {t("dashboard.pushPromptBody")}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleDismissPushPrompt}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={t("dashboard.pushPromptDismiss")}
+              >
+                <X size={18} color={theme.colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.pushPromptBtn, pushPromptBusy && styles.pushPromptBtnDisabled]}
+              onPress={handleEnablePush}
+              disabled={pushPromptBusy}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t("dashboard.pushPromptEnable")}
+            >
+              {pushPromptBusy ? (
+                <ActivityIndicator size="small" color={theme.colors.background} />
+              ) : (
+                <Text style={styles.pushPromptBtnText}>{t("dashboard.pushPromptEnable")}</Text>
+              )}
+            </TouchableOpacity>
+          </Card>
+        )}
 
         {error ? (
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
@@ -696,4 +801,30 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   inviteDeclineText: { fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary },
   inviteAcceptBtn: { backgroundColor: theme.colors.primary },
   inviteAcceptText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
+  pushPromptRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  pushPromptIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryFaded,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pushPromptTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  pushPromptBody: {
+    fontSize: 13,
+    color: theme.colors.textTertiary,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  pushPromptBtn: {
+    height: 42,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+  },
+  pushPromptBtnDisabled: { opacity: 0.6 },
+  pushPromptBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
 });

@@ -76,6 +76,59 @@ async function handleCron(request: NextRequest) {
     });
     results.notifications = deletedNotifications.count;
 
+    // ----- Audit / login / queue tables -----
+    // These grow unbounded without pruning. Audit trails get a GENEROUS 730-day
+    // (2-year) window so investigations and compliance lookbacks aren't starved;
+    // login telemetry and the (already-sent) notification queue get shorter
+    // windows. None of these models are soft-delete models, so deleteMany on the
+    // default `prisma` client is a real hard delete — exactly what we want here.
+
+    // AuditLog — user-facing audit trail. Keep 730 days.
+    const auditCutoff = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+    const deletedAuditLogs = await prisma.auditLog.deleteMany({
+      where: { createdAt: { lt: auditCutoff } },
+    });
+    results.auditLogs = deletedAuditLogs.count;
+
+    // AdminAuditLog — admin action trail. Keep 730 days.
+    const adminAuditCutoff = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+    const deletedAdminAuditLogs = await prisma.adminAuditLog.deleteMany({
+      where: { createdAt: { lt: adminAuditCutoff } },
+    });
+    results.adminAuditLogs = deletedAdminAuditLogs.count;
+
+    // AdminLoginLog — admin auth telemetry. Keep 365 days.
+    const adminLoginCutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const deletedAdminLoginLogs = await prisma.adminLoginLog.deleteMany({
+      where: { createdAt: { lt: adminLoginCutoff } },
+    });
+    results.adminLoginLogs = deletedAdminLoginLogs.count;
+
+    // UserLoginSession — server-side session/impersonation records. Prune rows
+    // that are stale on BOTH timestamps (created AND last seen > 180 days ago)
+    // so a long-lived but recently-active session is never pruned out from
+    // under the user.
+    const userLoginSessionCutoff = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+    const deletedUserLoginSessions = await prisma.userLoginSession.deleteMany({
+      where: {
+        createdAt: { lt: userLoginSessionCutoff },
+        lastActivity: { lt: userLoginSessionCutoff },
+      },
+    });
+    results.userLoginSessions = deletedUserLoginSessions.count;
+
+    // NotificationQueue — only purge rows that have already been delivered
+    // (sent = true) and are older than 90 days. Unsent/pending rows are left
+    // alone regardless of age so a stuck job is never silently dropped.
+    const notificationQueueCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const deletedNotificationQueue = await prisma.notificationQueue.deleteMany({
+      where: {
+        sent: true,
+        createdAt: { lt: notificationQueueCutoff },
+      },
+    });
+    results.notificationQueue = deletedNotificationQueue.count;
+
     const deletionResults = await processPendingAccountDeletionRequests(25);
     results.accountDeletionRequestsProcessed = deletionResults.length;
     results.accountDeletionRequestsCompleted = deletionResults.filter((result) => result.status === "COMPLETED").length;
