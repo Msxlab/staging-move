@@ -1,0 +1,86 @@
+name: Scheduled cron jobs
+
+# Triggers the app's /api/cron/* endpoints on the production deployment.
+#
+# WHY: production runs on DigitalOcean App Platform, which does NOT run the
+# self-hosted ofelia scheduler (docker-compose.prod.yml + docker/ofelia.ini are
+# for a self-hosted Docker host only). Without this, trial expiry, seat/billing
+# reconciliation, reminders, purges, etc. never run. This workflow replaces the
+# ofelia scheduler from a free, version-controlled GitHub Actions cron.
+#
+# SETUP (one-time): add a repository secret named CRON_SECRET whose value equals
+# the CRON_SECRET in the DigitalOcean app env (Settings → Secrets and variables →
+# Actions → New repository secret). The /api/cron/* routes reject requests whose
+# Bearer token does not match.
+#
+# Times are UTC. GitHub cron has ~5 min granularity and may be delayed a few
+# minutes under load — fine for these jobs.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch (10m); blog-publish (hourly)
+    - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup
+    - cron: "0 6 * * *" # daily 06:00: trial-check + the daily reminder batch
+    - cron: "0 9 * * 1" # Mondays: weekly-digest
+    - cron: "0 10 1 * *" # 1st of month: monthly-report
+    - cron: "0 4 * * 0" # Sundays: data-retention
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    env:
+      WEB: https://locateflow.com
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SCHED: ${{ github.event.schedule }}
+    steps:
+      - name: Trigger cron endpoints
+        run: |
+          set -uo pipefail
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET repo secret is not set — cron endpoints will 401. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          fail=0
+          hit() {
+            url="$1"; method="${2:-GET}"
+            code=$(curl -sS -X "$method" -m 60 \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              -o /dev/null -w "%{http_code}" "$url" || echo "000")
+            echo "  $method $url -> $code"
+            case "$code" in 2*) ;; *) fail=1 ;; esac
+          }
+          echo "Schedule: ${SCHED:-manual}"
+          case "${SCHED:-manual}" in
+            "*/5 * * * *")
+              hit "$WEB/api/cron/checkout-cleanup"
+              if [ $(( 10#$(date -u +%M) % 10 )) -eq 0 ]; then hit "$WEB/api/cron/connector-dispatch"; fi
+              if [ "$(date -u +%M)" = "00" ]; then hit "$WEB/api/cron/blog-publish"; fi
+              ;;
+            "15 3 * * *")
+              hit "$WEB/api/cron/stripe-reconcile"
+              hit "$WEB/api/cron/workspace-purge"
+              hit "$WEB/api/cron/provider-stats" POST
+              hit "$WEB/api/cron/blog-cleanup"
+              ;;
+            "0 6 * * *")
+              hit "$WEB/api/cron/trial-check"
+              hit "$WEB/api/cron/bill-reminders"
+              hit "$WEB/api/cron/bill-overdue"
+              hit "$WEB/api/cron/task-reminders"
+              hit "$WEB/api/cron/move-reminders"
+              hit "$WEB/api/cron/contract-reminders"
+              hit "$WEB/api/cron/admin-daily-digest"
+              ;;
+            "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
+            "0 10 1 * *") hit "$WEB/api/cron/monthly-report" ;;
+            "0 4 * * 0") hit "$WEB/api/cron/data-retention" ;;
+            *)
+              echo "Manual/dispatch run — smoke-testing the critical jobs:"
+              hit "$WEB/api/cron/trial-check"
+              hit "$WEB/api/cron/stripe-reconcile"
+              ;;
+          esac
+          if [ "$fail" -ne 0 ]; then echo "::error::one or more cron endpoints returned a non-2xx status"; exit 1; fi
