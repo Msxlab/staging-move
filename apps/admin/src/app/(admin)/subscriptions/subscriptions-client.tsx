@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Search, ChevronLeft, ChevronRight, CreditCard, Users, Calendar,
-  TrendingUp, Filter, X, Eye, Clock, XCircle, CheckCircle2, AlertTriangle,
-  Ban, RefreshCw, ShieldCheck, Undo2,
+  TrendingUp, TrendingDown, Filter, X, Eye, Clock, XCircle, CheckCircle2, AlertTriangle,
+  Ban, RefreshCw, ShieldCheck, Undo2, Receipt, ExternalLink, FileText,
+  DollarSign, BarChart3, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
@@ -44,6 +45,71 @@ function formatMinorAmount(amount: number, currency: string): string {
     return `${code} ${(amount / 100).toFixed(2)}`;
   }
 }
+
+/** One Stripe invoice as returned by the read-only invoices route. */
+interface InvoiceEntry {
+  maskedInvoiceId: string;
+  number: string | null;
+  status: string | null;
+  created: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  paid: boolean;
+  refunded: boolean;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+  receiptUrl: string | null;
+}
+
+interface PlanArpuRow {
+  plan: string;
+  activeCount: number;
+  payingCount: number;
+  mrr: number;
+  arpu: number;
+}
+interface MrrMovement {
+  newMrr: number;
+  churnedMrr: number;
+  netMrr: number;
+}
+interface TrialConversion {
+  trialsStarted: number;
+  converted: number;
+  conversionRatePct: number;
+}
+interface MrrTrendPoint {
+  month: string;
+  mrr: number;
+}
+interface AnalyticsData {
+  generatedAt: string;
+  totals: {
+    mrr: number;
+    arr: number;
+    totalSubscriptions: number;
+    activeSubscriptions: number;
+    payingSubscriptions: number;
+    churnRate: number;
+    lastMonthChurn: number;
+  };
+  mrrMovement: { thisMonth: MrrMovement; lastMonth: MrrMovement };
+  arpuByPlan: PlanArpuRow[];
+  trialConversion: { thisMonth: TrialConversion; lastMonth: TrialConversion };
+  mrrTrend: MrrTrendPoint[];
+}
+
+/** Status pill colors for invoice rows. */
+const INVOICE_STATUS_COLORS: Record<string, string> = {
+  paid: "bg-tone-sage-bg text-tone-sage-fg",
+  open: "bg-tone-honey-bg text-tone-honey-fg",
+  draft: "bg-tone-slate-bg text-muted-foreground",
+  uncollectible: "bg-destructive/10 text-destructive",
+  void: "bg-tone-slate-bg text-muted-foreground",
+};
 
 interface Sub {
   id: string;
@@ -108,6 +174,18 @@ export default function SubscriptionsClient() {
   const [filters, setFilters] = useState({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" });
   const perPage = 20;
 
+  // ── Top-level view: the subscriptions LIST vs the MRR/churn ANALYTICS tab ──
+  const [view, setView] = useState<"list" | "analytics">("list");
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
+  // ── Per-subscription invoice / payment history (read-only) ────────────────
+  const [invoices, setInvoices] = useState<InvoiceEntry[] | null>(null);
+  const [invoicesSupported, setInvoicesSupported] = useState(true);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
+
   // ── Lifecycle action step-up state ───────────────────────────────────────
   // `pendingAction` drives the PasswordConfirmModal; null means closed.
   const [pendingAction, setPendingAction] = useState<LifecycleAction | null>(null);
@@ -150,6 +228,77 @@ export default function SubscriptionsClient() {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDetail(null); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [detail]);
+
+  // Load the MRR/churn drill-down the first time the analytics tab is opened.
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const res = await fetch("/api/subscriptions/analytics");
+      if (!res.ok) {
+        const { message } = await readAdminApiError(res, "Failed to load analytics.");
+        setAnalyticsError(message);
+        return;
+      }
+      setAnalytics(await res.json());
+    } catch {
+      setAnalyticsError("Failed to load analytics.");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === "analytics" && !analytics && !analyticsLoading && !analyticsError) {
+      fetchAnalytics();
+    }
+  }, [view, analytics, analyticsLoading, analyticsError, fetchAnalytics]);
+
+  // Load invoice history whenever a (Stripe) detail modal opens. Store/trial
+  // subscriptions short-circuit to an unsupported empty state without a fetch.
+  useEffect(() => {
+    if (!detail) {
+      setInvoices(null);
+      setInvoicesError(null);
+      setInvoicesSupported(true);
+      return;
+    }
+    if (detail.provider !== "STRIPE" || !detail.stripeSubscriptionId) {
+      setInvoices([]);
+      setInvoicesSupported(false);
+      setInvoicesError(null);
+      return;
+    }
+    let cancelled = false;
+    setInvoicesLoading(true);
+    setInvoicesError(null);
+    setInvoices(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/subscriptions/${detail.id}/invoices`);
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (!res.ok) {
+          const { message } = await readAdminApiError(res, "Failed to load invoices.");
+          setInvoicesError(message);
+          setInvoices([]);
+          return;
+        }
+        setInvoicesSupported(Boolean(data?.supported));
+        setInvoices(Array.isArray(data?.invoices) ? data.invoices : []);
+      } catch {
+        if (!cancelled) {
+          setInvoicesError("Failed to load invoices.");
+          setInvoices([]);
+        }
+      } finally {
+        if (!cancelled) setInvoicesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [detail]);
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -348,6 +497,28 @@ export default function SubscriptionsClient() {
         subtitle={`${total} subscription${total !== 1 ? "s" : ""} found`}
       />
 
+      {/* Top-level tabs: the day-to-day LIST vs the MRR/churn drill-down. */}
+      <div className="flex gap-2 border-b border-border">
+        {([["list", "Subscriptions"], ["analytics", "MRR & Churn"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${view === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "analytics" ? (
+        <AnalyticsPanel
+          data={analytics}
+          loading={analyticsLoading}
+          error={analyticsError}
+          onRetry={() => { setAnalyticsError(null); fetchAnalytics(); }}
+        />
+      ) : (
+      <>
       {/* KPI Cards — Active / Trialing / Canceled cards double as status filters. */}
       {stats && (
         <>
@@ -590,6 +761,8 @@ export default function SubscriptionsClient() {
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* Detail Modal */}
       {detail && (
@@ -630,6 +803,14 @@ export default function SubscriptionsClient() {
                   <p className="text-xs text-foreground font-mono break-all">{maskProviderIdentifier(detail.stripeSubscriptionId)}</p>
                 </div>
               )}
+
+              {/* ── Invoice / payment history (read-only) ── */}
+              <InvoiceHistory
+                supported={invoicesSupported}
+                loading={invoicesLoading}
+                error={invoicesError}
+                invoices={invoices}
+              />
 
               {/* ── Lifecycle actions — each opens the step-up confirm modal ── */}
               {(isStripe || isStore) && (
@@ -738,6 +919,335 @@ function DetailItem({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg bg-muted/50 p-3">
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+/** Format a USD dollar number (already in dollars, not minor units). */
+function formatUsd(amount: number): string {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(amount);
+  } catch {
+    return `$${amount.toFixed(2)}`;
+  }
+}
+
+/**
+ * Per-subscription INVOICE / PAYMENT history. Read-only: it lists Stripe
+ * invoices (amount, date, status) with links to the canonical hosted invoice,
+ * PDF, and charge receipt. No raw provider IDs or card data are shown.
+ */
+function InvoiceHistory({
+  supported,
+  loading,
+  error,
+  invoices,
+}: {
+  supported: boolean;
+  loading: boolean;
+  error: string | null;
+  invoices: InvoiceEntry[] | null;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="mb-2 flex items-center gap-1.5">
+        <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Invoice &amp; payment history</p>
+      </div>
+
+      {loading ? (
+        <p className="py-3 text-center text-xs text-muted-foreground">Loading invoices…</p>
+      ) : error ? (
+        <p className="py-3 text-center text-xs text-destructive">{error}</p>
+      ) : !supported ? (
+        <p className="py-3 text-center text-xs text-muted-foreground">
+          Invoice history is only available for Stripe subscriptions.
+        </p>
+      ) : !invoices || invoices.length === 0 ? (
+        <p className="py-3 text-center text-xs text-muted-foreground">No invoices found for this subscription.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {invoices.map((inv) => {
+            const statusCls = INVOICE_STATUS_COLORS[inv.status || ""] || "bg-muted text-muted-foreground";
+            const displayAmount = inv.paid ? inv.amountPaid : inv.amountDue;
+            return (
+              <li key={inv.maskedInvoiceId + (inv.number || "")} className="flex items-center justify-between gap-2 py-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {formatMinorAmount(displayAmount, inv.currency)}
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCls}`}>
+                      {inv.status || "unknown"}
+                    </span>
+                    {inv.refunded && (
+                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">refunded</span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {inv.number ? `${inv.number} · ` : ""}
+                    {inv.created ? new Date(inv.created).toLocaleDateString() : "—"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {inv.hostedInvoiceUrl && (
+                    <a href={inv.hostedInvoiceUrl} target="_blank" rel="noopener noreferrer"
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="Open hosted invoice" aria-label="Open hosted invoice">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                  {inv.invoicePdfUrl && (
+                    <a href={inv.invoicePdfUrl} target="_blank" rel="noopener noreferrer"
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="Download invoice PDF" aria-label="Download invoice PDF">
+                      <FileText className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                  {inv.receiptUrl && (
+                    <a href={inv.receiptUrl} target="_blank" rel="noopener noreferrer"
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="View payment receipt" aria-label="View payment receipt">
+                      <Receipt className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Read-only — sourced live from Stripe. Links open the canonical hosted invoice, PDF, or receipt.
+      </p>
+    </div>
+  );
+}
+
+/** Small labeled-delta helper for a month-over-month figure. */
+function TrendDelta({ current, previous, invert }: { current: number; previous: number; invert?: boolean }) {
+  if (previous === 0) return null;
+  const pct = ((current - previous) / Math.abs(previous)) * 100;
+  if (!Number.isFinite(pct) || Math.round(pct) === 0) return null;
+  // For "good when down" metrics (churn), invert the color sense.
+  const good = invert ? pct < 0 : pct > 0;
+  const Icon = pct > 0 ? ArrowUpRight : ArrowDownRight;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${good ? "text-tone-sage-fg" : "text-destructive"}`}>
+      <Icon className="h-3 w-3" />
+      {pct > 0 ? "+" : ""}{Math.round(pct)}%
+    </span>
+  );
+}
+
+/**
+ * MRR / CHURN drill-down. Renders the read-only analytics computed from local
+ * Subscription data: MRR trend sparkline, new-vs-churned MRR, ARPU by plan, and
+ * trial → paid conversion. Matches the dashboard's KPI-card + bar-chart idioms.
+ */
+function AnalyticsPanel({
+  data,
+  loading,
+  error,
+  onRetry,
+}: {
+  data: AnalyticsData | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (loading) {
+    return <div className="flex items-center justify-center py-20 text-muted-foreground">Loading MRR &amp; churn analytics…</div>;
+  }
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <p className="text-sm text-destructive">{error}</p>
+        <button onClick={onRetry} className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+          Retry
+        </button>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  const { totals, mrrMovement, arpuByPlan, trialConversion, mrrTrend } = data;
+  const maxTrend = Math.max(...mrrTrend.map((p) => p.mrr), 1);
+  const maxPlanMrr = Math.max(...arpuByPlan.map((p) => p.mrr), 1);
+
+  const kpis = [
+    { label: "MRR", value: formatUsd(totals.mrr), icon: DollarSign, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg", sub: `ARR ${formatUsd(totals.arr)}` },
+    { label: "Paying Subs", value: totals.payingSubscriptions.toLocaleString(), icon: Users, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg", sub: `of ${totals.activeSubscriptions} active` },
+    { label: "Churn Rate", value: `${totals.churnRate}%`, icon: totals.churnRate > totals.lastMonthChurn ? TrendingDown : TrendingUp, color: totals.churnRate > 5 ? "text-destructive" : "text-tone-sage-fg", bg: totals.churnRate > 5 ? "bg-destructive/10" : "bg-tone-sage-bg", sub: `Last month ${totals.lastMonthChurn}%` },
+    { label: "Net New MRR", value: formatUsd(mrrMovement.thisMonth.netMrr), icon: mrrMovement.thisMonth.netMrr >= 0 ? ArrowUpRight : ArrowDownRight, color: mrrMovement.thisMonth.netMrr >= 0 ? "text-tone-sage-fg" : "text-destructive", bg: mrrMovement.thisMonth.netMrr >= 0 ? "bg-tone-sage-bg" : "bg-destructive/10", sub: "This month" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">{k.label}</p>
+                <p className="mt-1 text-2xl font-bold text-foreground">{k.value}</p>
+                {k.sub && <p className="mt-0.5 text-xs text-muted-foreground">{k.sub}</p>}
+              </div>
+              <div className={`rounded-lg p-2.5 ${k.bg}`}><k.icon className={`h-5 w-5 ${k.color}`} /></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* MRR trend (trailing 12 months) */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">MRR Trend</h3>
+          <span className="text-[11px] text-muted-foreground">Trailing 12 months · estimated</span>
+        </div>
+        <div className="flex h-40 items-end gap-1.5">
+          {mrrTrend.map((p) => (
+            <div key={p.month} className="group flex flex-1 flex-col items-center justify-end gap-1">
+              <div
+                className="w-full rounded-t bg-tone-sage-fg/70 transition-all group-hover:bg-tone-sage-fg"
+                style={{ height: `${Math.max((p.mrr / maxTrend) * 100, 2)}%` }}
+                title={`${p.month}: ${formatUsd(p.mrr)}`}
+              />
+              <span className="text-[9px] text-muted-foreground">{p.month.slice(5)}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Each month is priced with subscriptions&apos; current plan/interval (no historical price snapshot) — a trend estimate, not a ledger.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* New vs churned MRR */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">New vs Churned MRR</h3>
+          <div className="space-y-4">
+            {(
+              [
+                ["This month", mrrMovement.thisMonth, mrrMovement.lastMonth],
+                ["Last month", mrrMovement.lastMonth, null],
+              ] as const
+            ).map(([label, m, prev]) => (
+              <div key={label}>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="inline-flex items-center gap-2 text-xs">
+                    <span className={`font-medium ${m.netMrr >= 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
+                      net {formatUsd(m.netMrr)}
+                    </span>
+                    {prev && <TrendDelta current={m.netMrr} previous={prev.netMrr} />}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className="inline-flex items-center gap-1 text-tone-sage-fg">
+                    <ArrowUpRight className="h-3 w-3" /> +{formatUsd(m.newMrr)} new
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-destructive">
+                    <ArrowDownRight className="h-3 w-3" /> −{formatUsd(m.churnedMrr)} churned
+                  </span>
+                </div>
+                {/* Stacked proportion bar */}
+                <div className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-muted">
+                  {(() => {
+                    const denom = m.newMrr + m.churnedMrr || 1;
+                    return (
+                      <>
+                        <div className="bg-tone-sage-fg" style={{ width: `${(m.newMrr / denom) * 100}%` }} />
+                        <div className="bg-destructive" style={{ width: `${(m.churnedMrr / denom) * 100}%` }} />
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Trial → paid conversion */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">Trial → Paid Conversion</h3>
+          <div className="space-y-4">
+            {(
+              [
+                ["This month", trialConversion.thisMonth, trialConversion.lastMonth],
+                ["Last month", trialConversion.lastMonth, null],
+              ] as const
+            ).map(([label, c, prev]) => (
+              <div key={label}>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                    {c.conversionRatePct}%
+                    {prev && <TrendDelta current={c.conversionRatePct} previous={prev.conversionRatePct} />}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {c.converted} of {c.trialsStarted} trial{c.trialsStarted === 1 ? "" : "s"} converted to a paying plan
+                </p>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-tone-cyan-fg" style={{ width: `${Math.min(c.conversionRatePct, 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Cohorted by trial start (subs created in the window with a trial). Subs still inside their trial stay in the denominator until they convert or lapse.
+          </p>
+        </div>
+      </div>
+
+      {/* ARPU by plan */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">ARPU by Plan</h3>
+        {arpuByPlan.length === 0 ? (
+          <p className="py-3 text-center text-xs text-muted-foreground">No active subscriptions to break down.</p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase text-muted-foreground">Plan</th>
+                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">Active</th>
+                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">Paying</th>
+                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">MRR</th>
+                  <th className="px-4 py-2 text-right text-[11px] font-medium uppercase text-muted-foreground">ARPU</th>
+                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase text-muted-foreground">Share</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {arpuByPlan.map((row) => (
+                  <tr key={row.plan} className="bg-card">
+                    <td className="px-4 py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[row.plan] || "bg-muted text-muted-foreground"}`}>
+                        {row.plan.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right text-xs text-foreground">{row.activeCount}</td>
+                    <td className="px-4 py-2 text-right text-xs text-foreground">{row.payingCount}</td>
+                    <td className="px-4 py-2 text-right text-xs font-medium text-foreground">{formatUsd(row.mrr)}</td>
+                    <td className="px-4 py-2 text-right text-xs font-medium text-foreground">{formatUsd(row.arpu)}</td>
+                    <td className="px-4 py-2">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-full bg-tone-sky-fg" style={{ width: `${(row.mrr / maxPlanMrr) * 100}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          ARPU divides realized plan MRR by paying active subs (non-zero monthly equivalent); trials and free grants are excluded so they don&apos;t dilute the figure.
+        </p>
+      </div>
     </div>
   );
 }

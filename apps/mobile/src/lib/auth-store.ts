@@ -11,10 +11,41 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { create } from "zustand";
 import { tokenCache } from "@/lib/auth";
 
 const TOKEN_KEY = "locateflow.session";
+
+/**
+ * Client-identity headers that MUST accompany every authenticated mobile
+ * request. The server derives the session fingerprint from the User-Agent
+ * (see generateMobileFingerprint in apps/web/src/lib/user-auth.ts), so a
+ * request that omits this descriptive UA gets the raw React Native fetch UA
+ * (okhttp / CFNetwork) instead, the recomputed fingerprint no longer matches
+ * the `fp` claim minted at login, and getUserSession returns 401 + marks the
+ * DB session inactive.
+ *
+ * The shared ApiClient (apps/mobile/src/lib/api.ts) sends these on every call,
+ * but the cold-start /api/auth/me hydration in `refreshUser` uses a bare
+ * `fetch`, so it MUST set them too — otherwise the first request after every
+ * app restart 401s and logs the user out. Keep these values byte-for-byte in
+ * sync with api.ts's CLIENT_* constants.
+ */
+const CLIENT_VERSION =
+  Constants.expoConfig?.version ??
+  (Constants as { nativeAppVersion?: string }).nativeAppVersion ??
+  "0.0.0";
+
+const CLIENT_IDENTITY_HEADERS: Record<string, string> = {
+  "x-client-type": "mobile",
+  "x-client-platform": Platform.OS,
+  "x-client-version": CLIENT_VERSION,
+  "User-Agent": `LocateFlow/${CLIENT_VERSION} (${
+    Platform.OS === "ios" ? "iOS" : Platform.OS === "android" ? "Android" : "Mobile"
+  }; Expo)`,
+};
 // planTier lives in AsyncStorage (NOT SecureStore) alongside the other
 // non-secret UI prefs (theme, app-lock). Persisting it lets ThemeProvider
 // derive the correct Family/Pro palette on the FIRST render after a cold
@@ -149,8 +180,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
         headers: {
+          ...CLIENT_IDENTITY_HEADERS,
           Authorization: `Bearer ${token}`,
-          "x-client-type": "mobile",
         },
         signal: controller.signal,
       });
