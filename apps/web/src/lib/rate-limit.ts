@@ -265,10 +265,41 @@ export function resolveClientIP(request: Request): string {
 }
 
 /**
- * Extracts a rate-limit key from the request.
- * Uses the most reliable IP source available on the platform.
+ * Identity hints for `getRateLimitKey`. When `userId` is present the key is
+ * scoped to the user instead of the IP, so an authenticated caller cannot
+ * reset a per-user write limit by rotating their source IP.
  */
-export function getRateLimitKey(request: Request, prefix: string = "api"): string {
+export interface RateLimitKeyIdentity {
+  userId?: string | null;
+}
+
+/**
+ * Extracts a rate-limit key from the request.
+ *
+ * Key derivation:
+ *   - Authenticated callers (a non-empty `identity.userId` is supplied) are
+ *     keyed on `${prefix}:user:${userId}`. This is the fix for the IP-only
+ *     evasion: because the counter is bound to the user, rotating IPs (or
+ *     spoofing forwarded-for headers) no longer resets a per-user write limit.
+ *   - Anonymous callers (no userId) fall back to the IP-keyed
+ *     `${prefix}:${ip}` form, preserving anonymous-endpoint protection.
+ *
+ * The `identity` argument is optional and defaults to anonymous, so existing
+ * IP-only call sites and the limiter API remain unchanged.
+ *
+ * NOTE: This helper backs the *legacy* limiter used by per-user write routes.
+ * Auth / login-lockout limits live in `rate-limit-policy.ts` and are keyed by
+ * `email_ip` / IP deliberately — do NOT route those through here.
+ */
+export function getRateLimitKey(
+  request: Request,
+  prefix: string = "api",
+  identity: RateLimitKeyIdentity = {},
+): string {
+  const userId = identity.userId?.trim();
+  if (userId) {
+    return `${prefix}:user:${userId}`;
+  }
   const ip = resolveClientIP(request);
   return `${prefix}:${ip}`;
 }

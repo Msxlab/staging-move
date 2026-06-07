@@ -64,7 +64,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireAppMutationUser();
-    const rlKey = getRateLimitKey(request, "custom-provider:update");
+    const rlKey = getRateLimitKey(request, "custom-provider:update", { userId });
     const rl = await rateLimit(rlKey, { limit: 60, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
@@ -163,7 +163,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireAppMutationUser();
-    const rlKey = getRateLimitKey(request, "custom-provider:delete");
+    const rlKey = getRateLimitKey(request, "custom-provider:delete", { userId });
     const rl = await rateLimit(rlKey, { limit: 30, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

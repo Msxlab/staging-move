@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import {
   INDIVIDUAL_ANNUAL_PRICE_LABEL,
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
 import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
 import { canSeeRawBillingIds, maskEmail } from "@/lib/privacy";
+
+/**
+ * Step-up credential fields are carried in the same JSON body as the
+ * campaign payload (the client merges them in before submit). Pull them
+ * out here so `campaignData` never sees them as campaign columns, and so
+ * `requirePasswordConfirm` gets exactly what it expects.
+ */
+function extractStepUp(body: any) {
+  return {
+    confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
+    mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
+    backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+  };
+}
 
 /**
  * Mask the user/admin email fields carried by a campaign's `redemptions`
@@ -183,6 +198,27 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("acquisition_campaigns", "canCreate", { minimumRole: "ADMIN" });
     const body = await request.json().catch(() => ({}));
+    const requestMeta = getAuditRequestMeta(request);
+
+    // Creating a campaign binds a LIVE Stripe price ID and feeds the public
+    // pricing surfaces — gate it behind admin password + MFA step-up, the
+    // same bar every other billing mutation clears.
+    const { confirmPassword, mfaCode, backupCode } = extractStepUp(body);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "acquisition_campaign_create",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
+    }
+
     const data = campaignData(body, session.adminId);
     if (!data.name || !data.code) {
       return NextResponse.json({ error: "Campaign name and code are required." }, { status: 400 });
@@ -221,21 +257,19 @@ export async function POST(request: NextRequest) {
       const conflict = await findActiveCampaignConflict(tx, data);
       if (conflict) return { conflict };
       const campaign = await tx.acquisitionCampaign.create({ data });
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "CREATE",
-          entityType: "AcquisitionCampaign",
-          entityId: campaign.id,
-          changes: JSON.stringify({ code: campaign.code, accessType: campaign.accessType }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
-      });
       return { campaign };
     });
     if (result.conflict) {
       return NextResponse.json(ACTIVE_CAMPAIGN_CONFLICT_RESPONSE, { status: 409 });
     }
+    await writeAdminAudit(session, {
+      action: "ACQUISITION_CAMPAIGN_CREATE",
+      entityType: "AcquisitionCampaign",
+      entityId: result.campaign.id,
+      after: { code: result.campaign.code, accessType: result.campaign.accessType, status: result.campaign.status },
+      metadata: { operation: "acquisition_campaign_create" },
+      request: requestMeta,
+    });
     return NextResponse.json({ campaign: result.campaign, priceValidation }, { status: 201 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

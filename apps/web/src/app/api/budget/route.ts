@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limit: 20 writes per minute
-    const rlKey = getRateLimitKey(request, "budget:create");
+    const rlKey = getRateLimitKey(request, "budget:create", { userId });
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

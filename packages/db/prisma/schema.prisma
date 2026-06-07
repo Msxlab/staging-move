@@ -875,6 +875,12 @@ model MoveTask {
   idempotencyKey String? @db.VarChar(191)
   notes          String? @db.Text
 
+  // Optional link to the relocation-checklist template item this task was
+  // generated for (e.g. "P1_ELECTRIC"). Lets the checklist mark a template item
+  // DONE when its linked MoveTask is COMPLETED. Nullable: classifier tasks that
+  // don't map to a template item leave this null and behave exactly as before.
+  templateId String? @db.VarChar(191)
+
   deletedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -891,6 +897,7 @@ model MoveTask {
   @@index([customProviderId])
   @@index([destinationProviderId])
   @@index([deletedAt])
+  @@index([templateId])
 }
 
 // ==================== USER CUSTOM PROVIDERS ====================

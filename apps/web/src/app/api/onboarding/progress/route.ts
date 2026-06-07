@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(request, "onboarding:progress"), {
+  const rl = await rateLimit(getRateLimitKey(request, "onboarding:progress", { userId }), {
     limit: 20,
     windowSeconds: 60,
   });

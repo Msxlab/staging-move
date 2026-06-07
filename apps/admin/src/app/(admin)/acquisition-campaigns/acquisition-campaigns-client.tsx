@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 type Campaign = {
   id: string;
@@ -57,6 +57,17 @@ type PriceValidationFeedback = {
 } | null;
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+
+// Every campaign mutation (create/edit/activate-status-change/duplicate/delete)
+// binds or rewrites a LIVE Stripe price + public pricing copy, so each is gated
+// behind admin password + MFA step-up. `PendingMutation` captures everything the
+// confirm handler needs to replay the request with the step-up credentials
+// merged in once the operator confirms in the PasswordConfirmModal.
+type PendingMutation =
+  | { kind: "save"; method: "POST" | "PATCH"; url: string; payload: Record<string, unknown>; title: string; description: string; confirmLabel: string }
+  | { kind: "status"; url: string; payload: Record<string, unknown>; title: string; description: string; confirmLabel: string }
+  | { kind: "duplicate"; url: string; payload: Record<string, unknown>; title: string; description: string; confirmLabel: string }
+  | { kind: "delete"; url: string; payload: Record<string, unknown>; title: string; description: string; confirmLabel: string };
 
 const emptyForm = {
   name: "",
@@ -272,14 +283,18 @@ export default function AcquisitionCampaignsClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [validatingPrice, setValidatingPrice] = useState(false);
   const [priceValidation, setPriceValidation] = useState<PriceValidationFeedback>(null);
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<"hidden" | "create" | "edit">("hidden");
   const [redemptionsFor, setRedemptionsFor] = useState<{ campaign: Campaign; rows: RedemptionRow[]; loading: boolean } | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Campaign | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  // Step-up confirm modal state — `pendingMutation` drives the
+  // PasswordConfirmModal; null means closed. `mutationRequiresMfa` is the
+  // server handshake: the 403 sets it true so the modal flags the MFA field.
+  const [pendingMutation, setPendingMutation] = useState<PendingMutation | null>(null);
+  const [mutationBusy, setMutationBusy] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [mutationRequiresMfa, setMutationRequiresMfa] = useState(false);
   const editingCampaign = campaigns.find((campaign) => campaign.id === editingCampaignId) || null;
 
   const slots = useMemo(() => {
@@ -358,25 +373,88 @@ export default function AcquisitionCampaignsClient() {
       toast.error("Cannot delete a campaign with redemptions. End it instead.");
       return;
     }
-    setPendingDelete(campaign);
+    openMutation({
+      kind: "delete",
+      url: `/api/acquisition-campaigns/${campaign.id}`,
+      payload: {},
+      title: "Delete campaign",
+      description: `Campaign "${campaign.name}" (${campaign.code}) will be permanently deleted. This cannot be undone. Enter your admin password and MFA code or backup code to confirm.`,
+      confirmLabel: "Delete campaign",
+    });
   }
 
-  async function confirmDeleteCampaign() {
-    if (!pendingDelete) return;
-    setDeleting(true);
+  // Open the step-up modal for a mutation, resetting any prior error/MFA hint.
+  function openMutation(mutation: PendingMutation) {
+    setMutationError(null);
+    setMutationRequiresMfa(false);
+    setPendingMutation(mutation);
+  }
+
+  function closeMutation() {
+    if (mutationBusy) return;
+    setPendingMutation(null);
+    setMutationError(null);
+    setMutationRequiresMfa(false);
+  }
+
+  // Replay the captured mutation with the step-up credentials merged into the
+  // body. The server gates every mutating route with requirePasswordConfirm
+  // ({ requireMfa: true }); a 403 with requiresMfa drives the modal handshake.
+  async function confirmMutation(_password: string, stepUp: StepUpValues) {
+    if (!pendingMutation) return;
+    const mutation = pendingMutation;
+    const method = mutation.kind === "save" ? mutation.method : mutation.kind === "delete" ? "DELETE" : "POST";
+    setMutationBusy(true);
+    setMutationError(null);
     try {
-      const response = await fetch(`/api/acquisition-campaigns/${pendingDelete.id}`, {
-        method: "DELETE",
+      const response = await fetch(mutation.url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...mutation.payload, ...stepUp }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Failed to delete campaign.");
-      toast.success("Campaign deleted");
-      setPendingDelete(null);
+      if (!response.ok) {
+        const requiresMfa = Boolean(data?.requiresMfa);
+        // Surface Stripe price-validation feedback in the inline banner the
+        // same way the non-stepped-up paths used to.
+        if (mutation.kind === "save" || mutation.kind === "status") {
+          showPriceValidation(data.priceValidation || (data.code === "PRICE_VALIDATION_FAILED"
+            ? { ok: false, error: data.error || "Stripe price validation failed." }
+            : null));
+        }
+        const message = data.error || "Action failed.";
+        setMutationError(message);
+        setMutationRequiresMfa(requiresMfa);
+        // Step-up failures stay in the modal so the operator can fix the
+        // password/MFA; non-auth failures (e.g. price validation) close it.
+        if (response.status !== 403 || !data?.requiresPassword) {
+          toast.error(message);
+          setPendingMutation(null);
+        }
+        return;
+      }
+      // Success — apply per-kind side effects, then close + refresh.
+      if (mutation.kind === "save") {
+        showPriceValidation(data.priceValidation || null);
+        toast.success(mutation.method === "PATCH" ? "Campaign updated" : "Campaign created");
+        resetForm();
+        if (data.priceValidation?.warning) toast.warning(data.priceValidation.warning);
+      } else if (mutation.kind === "status") {
+        showPriceValidation(data.priceValidation || null);
+        toast.success("Campaign updated");
+      } else if (mutation.kind === "duplicate") {
+        toast.success("Campaign duplicated as draft");
+      } else {
+        toast.success("Campaign deleted");
+      }
+      setPendingMutation(null);
+      setMutationRequiresMfa(false);
       await load();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to delete campaign.");
+      setMutationError(error?.message || "Action failed.");
+      toast.error(error?.message || "Action failed.");
     } finally {
-      setDeleting(false);
+      setMutationBusy(false);
     }
   }
 
@@ -497,76 +575,50 @@ export default function AcquisitionCampaignsClient() {
     }
   }
 
-  async function submitCampaignForm() {
-    setSaving(true);
-    try {
-      const isEditing = Boolean(editingCampaignId);
-      const response = await fetch(
-        isEditing ? `/api/acquisition-campaigns/${editingCampaignId}` : "/api/acquisition-campaigns",
-        {
-          method: isEditing ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildCampaignPayload(form)),
-        },
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        showPriceValidation(data.priceValidation || (data.code === "PRICE_VALIDATION_FAILED"
-          ? { ok: false, error: data.error || "Stripe price validation failed." }
-          : null));
-        throw new Error(data.error || (isEditing ? "Failed to update campaign." : "Failed to create campaign."));
-      }
-      showPriceValidation(data.priceValidation || null);
-      toast.success(isEditing ? "Campaign updated" : "Campaign created");
-      resetForm();
-      await load();
-      if (data.priceValidation?.warning) {
-        toast.warning(data.priceValidation.warning);
-      }
-    } catch (error: any) {
-      toast.error(error?.message || (editingCampaignId ? "Failed to update campaign." : "Failed to create campaign."));
-    } finally {
-      setSaving(false);
-    }
+  // Create / edit no longer writes directly — it opens the step-up modal,
+  // which replays the request with the password + MFA merged in.
+  function submitCampaignForm() {
+    const isEditing = Boolean(editingCampaignId);
+    openMutation({
+      kind: "save",
+      method: isEditing ? "PATCH" : "POST",
+      url: isEditing ? `/api/acquisition-campaigns/${editingCampaignId}` : "/api/acquisition-campaigns",
+      payload: buildCampaignPayload(form),
+      title: isEditing ? "Save campaign changes" : "Create campaign",
+      description: isEditing
+        ? "Saving rewrites the live campaign, including its bound Stripe price and public pricing copy. Enter your admin password and MFA code or backup code to confirm."
+        : "Creating a campaign binds a live Stripe price and can publish to a public pricing slot. Enter your admin password and MFA code or backup code to confirm.",
+      confirmLabel: isEditing ? "Save Changes" : "Create Draft",
+    });
   }
 
-  async function patchCampaign(id: string, patch: Record<string, unknown>) {
-    try {
-      const response = await fetch(`/api/acquisition-campaigns/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        showPriceValidation(data.priceValidation || (data.code === "PRICE_VALIDATION_FAILED"
-          ? { ok: false, error: data.error || "Stripe price validation failed." }
-          : null));
-        throw new Error(data.error || "Failed to update campaign.");
-      }
-      showPriceValidation(data.priceValidation || null);
-      toast.success("Campaign updated");
-      await load();
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update campaign.");
-    }
+  // Status changes (Activate / Pause / End) all flow through PATCH and are
+  // gated the same way — activation in particular publishes to the public site.
+  function changeCampaignStatus(campaign: Campaign, status: "ACTIVE" | "PAUSED" | "ENDED") {
+    const verb = status === "ACTIVE" ? "Activate" : status === "PAUSED" ? "Pause" : "End";
+    const impact = status === "ACTIVE"
+      ? `Activating "${campaign.name}" (${campaign.code}) publishes it to its public pricing slot within ~60 seconds.`
+      : `Setting "${campaign.name}" (${campaign.code}) to ${status} removes it from its public pricing slot.`;
+    openMutation({
+      kind: "status",
+      url: `/api/acquisition-campaigns/${campaign.id}`,
+      payload: { status },
+      title: `${verb} campaign`,
+      description: `${impact} Enter your admin password and MFA code or backup code to confirm.`,
+      confirmLabel: verb,
+    });
   }
 
-  async function duplicateCampaign(campaign: Campaign) {
+  function duplicateCampaign(campaign: Campaign) {
     const code = `${campaign.code}_COPY`;
-    try {
-      const response = await fetch(`/api/acquisition-campaigns/${campaign.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "duplicate", code }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to duplicate campaign.");
-      toast.success("Campaign duplicated as draft");
-      await load();
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to duplicate campaign.");
-    }
+    openMutation({
+      kind: "duplicate",
+      url: `/api/acquisition-campaigns/${campaign.id}`,
+      payload: { action: "duplicate", code },
+      title: "Duplicate campaign",
+      description: `Clone "${campaign.name}" into a new draft (${code}), copying its Stripe price and pricing copy. Enter your admin password and MFA code or backup code to confirm.`,
+      confirmLabel: "Duplicate",
+    });
   }
 
   const formVisible = formMode !== "hidden";
@@ -817,18 +869,18 @@ export default function AcquisitionCampaignsClient() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => void submitCampaignForm()}
-            disabled={saving}
+            onClick={() => submitCampaignForm()}
+            disabled={mutationBusy}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
             {editingCampaign ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {saving ? (editingCampaign ? "Saving..." : "Creating...") : editingCampaign ? "Save Changes" : "Create Draft"}
+            {editingCampaign ? "Save Changes" : "Create Draft"}
           </button>
           {form.accessType !== "FREE_ACCESS" ? (
             <button
               type="button"
               onClick={() => void validatePriceOnly()}
-              disabled={validatingPrice || saving || !form.stripePriceId.trim()}
+              disabled={validatingPrice || mutationBusy || !form.stripePriceId.trim()}
               className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-60"
               title={!form.stripePriceId.trim() ? "Enter a Stripe Price ID first" : "Validate against Stripe without saving"}
             >
@@ -839,7 +891,7 @@ export default function AcquisitionCampaignsClient() {
           <button
             type="button"
             onClick={resetForm}
-            disabled={saving}
+            disabled={mutationBusy}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-60"
           >
             <X className="h-4 w-4" />
@@ -948,18 +1000,18 @@ export default function AcquisitionCampaignsClient() {
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </button>
                     {campaign.status !== "ACTIVE" ? (
-                      <button onClick={() => void patchCampaign(campaign.id, { status: "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <button onClick={() => changeCampaignStatus(campaign, "ACTIVE")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
                         <Play className="h-3.5 w-3.5" /> Activate
                       </button>
                     ) : (
-                      <button onClick={() => void patchCampaign(campaign.id, { status: "PAUSED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <button onClick={() => changeCampaignStatus(campaign, "PAUSED")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
                         <Pause className="h-3.5 w-3.5" /> Pause
                       </button>
                     )}
-                    <button onClick={() => void patchCampaign(campaign.id, { status: "ENDED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => changeCampaignStatus(campaign, "ENDED")} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
                       <Square className="h-3.5 w-3.5" /> End
                     </button>
-                    <button onClick={() => void duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <button onClick={() => duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
                       <Copy className="h-3.5 w-3.5" /> Duplicate
                     </button>
                     <button onClick={() => void loadRedemptions(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
@@ -1073,14 +1125,19 @@ export default function AcquisitionCampaignsClient() {
         </div>
       ) : null}
 
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title="Delete campaign"
-        description={pendingDelete ? `Campaign "${pendingDelete.name}" will be permanently deleted. This cannot be undone.` : ""}
-        confirmLabel="Delete campaign"
-        busy={deleting}
-        onClose={() => { if (!deleting) setPendingDelete(null); }}
-        onConfirm={confirmDeleteCampaign}
+      {/* Step-up confirm modal — gates EVERY campaign mutation
+          (create / edit / activate-status-change / duplicate / delete).
+          Each replays through confirmMutation with password + MFA merged in. */}
+      <PasswordConfirmModal
+        open={pendingMutation !== null}
+        title={pendingMutation?.title || "Confirm action"}
+        description={pendingMutation?.description || ""}
+        confirmLabel={pendingMutation?.confirmLabel || "Confirm"}
+        busy={mutationBusy}
+        error={mutationError}
+        requiresMfa={mutationRequiresMfa}
+        onClose={closeMutation}
+        onConfirm={confirmMutation}
       />
     </div>
   );

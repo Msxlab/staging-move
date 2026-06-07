@@ -68,6 +68,32 @@ describe("getRateLimitKey", () => {
     const req = makeRequest({});
     expect(getRateLimitKey(req)).toBe("api:anonymous");
   });
+
+  it("keys on the userId when an authenticated identity is supplied", () => {
+    // The IP rotates but the userId is stable, so the key must not change —
+    // this is what blocks the IP-rotation evasion of per-user write limits.
+    const reqA = makeRequest({ "x-real-ip": "3.3.3.3" });
+    const reqB = makeRequest({ "x-real-ip": "9.9.9.9" });
+    const keyA = getRateLimitKey(reqA, "addr:create", { userId: "user-1" });
+    const keyB = getRateLimitKey(reqB, "addr:create", { userId: "user-1" });
+    expect(keyA).toBe("addr:create:user:user-1");
+    expect(keyB).toBe("addr:create:user:user-1");
+    expect(keyA).toBe(keyB);
+  });
+
+  it("separates distinct users on the same IP", () => {
+    const req = makeRequest({ "x-real-ip": "3.3.3.3" });
+    expect(getRateLimitKey(req, "addr:create", { userId: "user-1" })).not.toBe(
+      getRateLimitKey(req, "addr:create", { userId: "user-2" }),
+    );
+  });
+
+  it("falls back to IP keying for anonymous callers (no userId)", () => {
+    const req = makeRequest({ "x-real-ip": "3.3.3.3" });
+    expect(getRateLimitKey(req, "addr:create", {})).toBe("addr:create:3.3.3.3");
+    expect(getRateLimitKey(req, "addr:create", { userId: null })).toBe("addr:create:3.3.3.3");
+    expect(getRateLimitKey(req, "addr:create", { userId: "  " })).toBe("addr:create:3.3.3.3");
+  });
 });
 
 describe("rateLimit (in-memory fallback)", () => {

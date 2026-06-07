@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(request, "user:prefs:patch"), {
+  const rl = await rateLimit(getRateLimitKey(request, "user:prefs:patch", { userId }), {
     limit: 30,
     windowSeconds: 60,
   });
@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(request, "user:prefs"), { limit: 30, windowSeconds: 60 });
+  const rl = await rateLimit(getRateLimitKey(request, "user:prefs", { userId }), { limit: 30, windowSeconds: 60 });
   if (!rl.success) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

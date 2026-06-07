@@ -55,7 +55,7 @@ function fireAndLogEmail(promise: Promise<unknown>, context: string) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
-    const rlKey = getRateLimitKey(request, "subscription:action");
+    const rlKey = getRateLimitKey(request, "subscription:action", { userId });
     const rl = await rateLimit(rlKey, { limit: 8, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

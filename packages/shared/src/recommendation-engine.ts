@@ -798,25 +798,86 @@ export function scoreProviders(
       if (existingServiceNames && existingServiceNames.has(p.name.toLowerCase())) return false;
       return true;
     })
-    .sort((a, b) => {
-      // Primary sort: urgency tier
-      const tierOrder: Record<UrgencyTier, number> = { CRITICAL: 0, IMPORTANT: 1, RECOMMENDED: 2, OPTIONAL: 3 };
-      const tierDiff = tierOrder[a.urgencyTier] - tierOrder[b.urgencyTier];
-      if (tierDiff !== 0) return tierDiff;
-      if (isCoverageAddressSensitive(a.category) || isCoverageAddressSensitive(b.category)) {
-        const coverageDiff =
-          getCoverageConfidencePresentation(getProviderCoverageConfidence(b)).rank -
-          getCoverageConfidencePresentation(getProviderCoverageConfidence(a)).rank;
-        if (coverageDiff !== 0) return coverageDiff;
-      }
-      // Secondary sort: score within tier
-      const scoreDiff = b.recommendationScore - a.recommendationScore;
-      if (scoreDiff !== 0) return scoreDiff;
-      const displayA = typeof a.displayOrder === "number" && a.displayOrder > 0 ? a.displayOrder : Number.MAX_SAFE_INTEGER;
-      const displayB = typeof b.displayOrder === "number" && b.displayOrder > 0 ? b.displayOrder : Number.MAX_SAFE_INTEGER;
-      if (displayA !== displayB) return displayA - displayB;
-      return (b.popularityScore || 0) - (a.popularityScore || 0);
-    });
+    .sort(compareScoredProviders);
+}
+
+// ── Deterministic Ranking Key ────────────────────────────────
+// The ranking comparator MUST be a strict total order. A previous version
+// applied the coverage-rank tiebreaker only when EITHER operand was
+// address-sensitive and compared both operands' coverage rank regardless of
+// whether each was itself sensitive. That made the relation a property of the
+// *pair* rather than of each element, so it was not provably transitive and
+// V8's sort produced order-dependent (unstable) rankings.
+//
+// The fix computes ONE deterministic composite key per provider and compares
+// those keys field by field. Coverage rank is folded in as a *per-element*
+// component (address-sensitive providers carry their coverage rank; others
+// carry a fixed sentinel so they rank purely on score, exactly as before),
+// and a stable `id` terminal tiebreaker guarantees a strict total order so the
+// result is independent of operand/input order.
+
+const TIER_SORT_ORDER: Record<UrgencyTier, number> = {
+  CRITICAL: 0,
+  IMPORTANT: 1,
+  RECOMMENDED: 2,
+  OPTIONAL: 3,
+};
+
+interface ProviderSortKey {
+  /** Ascending — lower tier index is more urgent. */
+  tier: number;
+  /**
+   * Descending coverage rank for address-sensitive providers; a fixed sentinel
+   * (-1, sorts after every real rank) for non-address-sensitive providers so
+   * they are ordered purely by score within the tier — matching the prior
+   * behaviour where the coverage branch never affected a pair of
+   * non-address-sensitive providers.
+   */
+  coverageRank: number;
+  /** Descending — higher score first. */
+  score: number;
+  /** Ascending — explicit positive displayOrder first, else MAX_SAFE_INTEGER. */
+  displayOrder: number;
+  /** Descending — higher popularity first. */
+  popularity: number;
+  /** Ascending stable tiebreaker — guarantees a strict total order. */
+  id: string;
+}
+
+function getProviderSortKey(p: ScoredProvider): ProviderSortKey {
+  const addressSensitive = isCoverageAddressSensitive(p.category);
+  return {
+    tier: TIER_SORT_ORDER[p.urgencyTier],
+    coverageRank: addressSensitive
+      ? getCoverageConfidencePresentation(getProviderCoverageConfidence(p)).rank
+      : -1,
+    score: p.recommendationScore,
+    displayOrder:
+      typeof p.displayOrder === "number" && p.displayOrder > 0
+        ? p.displayOrder
+        : Number.MAX_SAFE_INTEGER,
+    popularity: p.popularityScore || 0,
+    id: p.id,
+  };
+}
+
+function compareScoredProviders(a: ScoredProvider, b: ScoredProvider): number {
+  const ka = getProviderSortKey(a);
+  const kb = getProviderSortKey(b);
+  // Primary: urgency tier (ascending).
+  if (ka.tier !== kb.tier) return ka.tier - kb.tier;
+  // Coverage rank (descending) — per-element, so transitive.
+  if (ka.coverageRank !== kb.coverageRank) return kb.coverageRank - ka.coverageRank;
+  // Score within tier (descending).
+  if (ka.score !== kb.score) return kb.score - ka.score;
+  // Explicit display order (ascending).
+  if (ka.displayOrder !== kb.displayOrder) return ka.displayOrder - kb.displayOrder;
+  // Popularity (descending).
+  if (ka.popularity !== kb.popularity) return kb.popularity - ka.popularity;
+  // Stable id tiebreaker (ascending) — makes the order strict & total.
+  if (ka.id < kb.id) return -1;
+  if (ka.id > kb.id) return 1;
+  return 0;
 }
 
 // ── Cluster Builder ──────────────────────────────────────────

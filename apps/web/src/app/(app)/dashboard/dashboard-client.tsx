@@ -264,7 +264,18 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               isBusinessOwner: profile.isBusinessOwner ?? false,
               moveType: profile.moveType || "PERSONAL",
             };
+            // A generated MoveTask now persists `templateId` (the checklist item
+            // it maps to). A COMPLETED task with a non-null templateId marks that
+            // checklist item DONE; tasks without a templateId are skipped.
             const completedTemplates: Set<string> = new Set<string>();
+            try {
+              const moveTasksRes = await fetch(
+                `/api/move-tasks?movingPlanId=${inProgressPlan.id}&status=COMPLETED`,
+              ).then((r) => r.json());
+              for (const t of moveTasksRes?.tasks || []) {
+                if (t?.templateId && t?.status === "COMPLETED") completedTemplates.add(t.templateId);
+              }
+            } catch { /* non-blocking: fall back to empty set */ }
             const toState = (inProgressPlan as any).toAddress?.state || "";
             let stateRule: ChecklistStateRuleContext | null = null;
             if (toState) {
