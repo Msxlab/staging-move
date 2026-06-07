@@ -192,6 +192,10 @@ type PlanAccentSet = {
   primaryDark: string;
   primaryFaded: string;
   accent: string;
+  surface: string;
+  card: string;
+  cardHover: string;
+  background: string;
   gradPrimary: readonly [string, string];
   gradGlow: readonly [string, string];
 };
@@ -205,6 +209,10 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       primaryDark: "#1FB98A",
       primaryFaded: "rgba(52, 216, 166, 0.12)",
       accent: "#87DDC0",
+      surface: "#0D1A15",
+      card: "#11211A",
+      cardHover: "#193227",
+      background: "#091310",
       gradPrimary: ["#5FE7BE", "#34D8A6"],
       gradGlow: ["rgba(52, 216, 166, 0.40)", "rgba(135, 221, 192, 0.10)"],
     },
@@ -214,6 +222,10 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       primaryDark: "#0A7D57",
       primaryFaded: "rgba(14, 159, 110, 0.10)",
       accent: "#0E9F6E",
+      surface: "#FFFFFF",
+      card: "#E4F1EA",
+      cardHover: "#D8EADF",
+      background: "#ECF6F0",
       gradPrimary: ["#34D8A6", "#0E9F6E"],
       gradGlow: ["rgba(14, 159, 110, 0.30)", "rgba(52, 216, 166, 0.10)"],
     },
@@ -226,6 +238,10 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       primaryDark: "#6F5CF0",
       primaryFaded: "rgba(139, 124, 255, 0.12)",
       accent: "#E9C46A",
+      surface: "#120F1F",
+      card: "#171426",
+      cardHover: "#211C38",
+      background: "#0B0916",
       gradPrimary: ["#A99BFF", "#8B7CFF"],
       gradGlow: ["rgba(139, 124, 255, 0.40)", "rgba(233, 196, 106, 0.12)"],
     },
@@ -235,6 +251,10 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       primaryDark: "#5B21B6",
       primaryFaded: "rgba(109, 40, 217, 0.10)",
       accent: "#B8860B",
+      surface: "#FFFFFF",
+      card: "#E9E7F4",
+      cardHover: "#DDD9EF",
+      background: "#F0EEF9",
       gradPrimary: ["#8B7CFF", "#6D28D9"],
       gradGlow: ["rgba(109, 40, 217, 0.30)", "rgba(233, 196, 106, 0.12)"],
     },
@@ -266,6 +286,10 @@ export function applyPlanPalette(
       primaryDark: p.primaryDark,
       primaryFaded: p.primaryFaded,
       accent: p.accent,
+      surface: p.surface,
+      card: p.card,
+      cardHover: p.cardHover,
+      background: p.background,
       gradient: {
         ...base.colors.gradient,
         primary: p.gradPrimary,

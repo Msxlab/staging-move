@@ -151,7 +151,11 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
     provider: inferredProvider,
   });
 
-  const plan = (subscription.plan || DEFAULT_BILLING_PLAN) as BillingPlan;
+  // Use the EFFECTIVE plan (accounts for admin grants + inherited workspace
+  // tier), consistent with isActive/accessType below which already derive from
+  // `effective`. Returning raw subscription.plan here surfaced the wrong tier
+  // for admin-granted/inherited members (e.g. mobile planTier theming). (find-006)
+  const plan = (effective.effectivePlan || subscription.plan || DEFAULT_BILLING_PLAN) as BillingPlan;
   const status = subscription.status || DEFAULT_SUBSCRIPTION_STATUS;
   const provider = inferredProvider as BillingProvider;
   const accessType =
