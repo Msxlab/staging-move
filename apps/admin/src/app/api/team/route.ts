@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { issueSetPasswordToken } from "@/lib/admin-invite";
+import { sendAdminInviteEmail } from "@/lib/email";
+import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
 import {
   ADMIN_ROLE_VALUES,
   buildDefaultPermissionMatrix,
@@ -13,10 +17,16 @@ import {
 // strings (typos, deprecated roles, attacker-supplied junk) get a 400
 // instead of being silently coerced into a permission matrix that may
 // not have a valid hierarchy entry.
+//
+// `password` is now OPTIONAL: when omitted the route runs the INVITE flow
+// (account seeded in a must-change-password state + emailed a single-use
+// set-password link), so a SUPER_ADMIN never has to know the new admin's
+// permanent password. When provided, the legacy explicit-password path is
+// preserved for back-compat (e.g. scripted seeding).
 const createAdminSchema = z
   .object({
     email: z.string().trim().min(3).max(254).email(),
-    password: z.string().min(12).max(256),
+    password: z.string().min(12).max(256).optional(),
     firstName: z.string().trim().min(1).max(100),
     lastName: z.string().trim().min(1).max(100),
     role: z.enum(ADMIN_ROLE_VALUES).default("MODERATOR"),
@@ -27,6 +37,26 @@ const createAdminSchema = z
     backupCode: z.string().trim().max(64).optional(),
   })
   .strict();
+
+const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: "Super Admin",
+  ADMIN: "Admin",
+  MODERATOR: "Moderator",
+  VIEWER: "Viewer",
+};
+
+async function resolveAdminAppUrl(): Promise<string> {
+  const values = await getAdminRuntimeConfigValues(["ADMIN_APP_URL", "NEXT_PUBLIC_ADMIN_URL"]);
+  const configured =
+    values.ADMIN_APP_URL ||
+    values.NEXT_PUBLIC_ADMIN_URL ||
+    process.env.ADMIN_APP_URL ||
+    process.env.NEXT_PUBLIC_ADMIN_URL ||
+    "";
+  const trimmed = configured.trim().replace(/\/+$/, "");
+  if (trimmed) return trimmed;
+  return process.env.NODE_ENV === "production" ? "https://admin.locateflow.com" : "http://localhost:3001";
+}
 
 export async function GET() {
   try {
@@ -156,10 +186,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
+    // INVITE flow when no explicit password is supplied: seed an unguessable
+    // random password the operator never learns, flag the account so the
+    // login route + page-guard force a password set on first sign-in, and
+    // email a single-use set-password link. Explicit-password path (legacy)
+    // is preserved when `password` is present.
+    const isInvite = !body.password;
+
     // SEC-009: complexity requirement is separate from zod min(12) so we
-    // can surface it as a discrete error.
-    if (!/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/[0-9]/.test(body.password)) {
-      return NextResponse.json({ error: "Password must contain uppercase, lowercase, and a number" }, { status: 400 });
+    // can surface it as a discrete error. Only enforced on the explicit
+    // path — invites generate their own high-entropy seed password.
+    if (!isInvite) {
+      const pw = body.password as string;
+      if (!/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/[0-9]/.test(pw)) {
+        return NextResponse.json({ error: "Password must contain uppercase, lowercase, and a number" }, { status: 400 });
+      }
     }
 
     const existing = await prisma.adminUser.findUnique({ where: { email: body.email } });
@@ -167,7 +208,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(body.password, 12);
+    // For invites, the seed password is a random 48-byte secret that is
+    // immediately bcrypt-hashed and never returned anywhere — the account is
+    // effectively un-loginable until the invitee redeems their token.
+    const plaintextPassword = isInvite
+      ? randomBytes(48).toString("base64url")
+      : (body.password as string);
+    const hashedPassword = await bcrypt.hash(plaintextPassword, 12);
 
     const admin = await prisma.adminUser.create({
       data: {
@@ -177,6 +224,7 @@ export async function POST(request: NextRequest) {
         lastName: body.lastName,
         role: body.role,
         isActive: true,
+        mustChangePassword: isInvite,
         createdBy: session.adminId,
       },
     });
@@ -195,21 +243,64 @@ export async function POST(request: NextRequest) {
       })),
     });
 
+    // Issue + email the single-use set-password link for invited admins.
+    let inviteEmailSent: boolean | undefined;
+    let inviteExpiresAt: Date | undefined;
+    let inviteSetPasswordUrl: string | undefined;
+    if (isInvite) {
+      const { token, expiresAt } = await issueSetPasswordToken({
+        adminUserId: admin.id,
+        purpose: "INVITE",
+        createdBy: session.adminId,
+      });
+      inviteExpiresAt = expiresAt;
+      const appUrl = await resolveAdminAppUrl();
+      const setPasswordUrl = `${appUrl}/set-password?token=${encodeURIComponent(token)}`;
+      inviteEmailSent = await sendAdminInviteEmail({
+        to: admin.email,
+        inviterName: `${session.email}`,
+        roleLabel: ROLE_LABELS[admin.role] || admin.role,
+        setPasswordUrl,
+        expiresAt,
+      });
+      // In non-production runtimes where email is unconfigured, surface the
+      // link so a developer can complete the flow locally. NEVER returned in
+      // production (real invitees get the email).
+      if (process.env.NODE_ENV !== "production") {
+        inviteSetPasswordUrl = setPasswordUrl;
+      }
+    }
+
     await writeAdminAudit(session, {
-      action: "ADMIN_CREATED",
+      action: isInvite ? "ADMIN_INVITED" : "ADMIN_CREATED",
       entityType: "AdminUser",
       entityId: admin.id,
       metadata: {
-        operation: "admin_user_create",
+        operation: isInvite ? "admin_user_invite" : "admin_user_create",
         status: "success",
+        method: isInvite ? "invite" : "explicit_password",
         targetRole: admin.role,
         emailDomain: admin.email.split("@")[1] || null,
+        ...(isInvite
+          ? {
+              inviteEmailDispatched: inviteEmailSent,
+              inviteExpiresAt: inviteExpiresAt?.toISOString() || null,
+            }
+          : {}),
       },
       request: requestMeta,
     });
 
     return NextResponse.json({
       admin: { id: admin.id, email: admin.email, firstName: admin.firstName, lastName: admin.lastName, role: admin.role },
+      invited: isInvite,
+      ...(isInvite
+        ? {
+            inviteEmailSent: Boolean(inviteEmailSent),
+            inviteExpiresAt: inviteExpiresAt?.toISOString(),
+            ...(inviteSetPasswordUrl ? { setPasswordUrl: inviteSetPasswordUrl } : {}),
+          }
+        : {}),
     }, { status: 201 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED" || error?.message === "FORBIDDEN") {

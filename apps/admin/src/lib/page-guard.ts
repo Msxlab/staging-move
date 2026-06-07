@@ -127,6 +127,7 @@ function normalizeRole(value: string): AdminRoleString {
 async function loadActiveAdmin(session: AdminSession): Promise<{
   role: AdminRoleString;
   permissions: AdminPermissionsMap;
+  mustChangePassword: boolean;
 } | null> {
   const admin = await prisma.adminUser.findUnique({
     where: { id: session.adminId },
@@ -134,6 +135,7 @@ async function loadActiveAdmin(session: AdminSession): Promise<{
       id: true,
       isActive: true,
       role: true,
+      mustChangePassword: true,
       permissions: {
         select: {
           resource: true,
@@ -150,6 +152,8 @@ async function loadActiveAdmin(session: AdminSession): Promise<{
   return {
     role,
     permissions: buildPermissionsMap(role, admin.permissions),
+    // Null (legacy rows / unset) is treated as "no rotation required".
+    mustChangePassword: admin.mustChangePassword === true,
   };
 }
 
@@ -185,6 +189,13 @@ export async function requirePageRole(
     redirect("/login");
   }
 
+  // Fail-closed forced rotation: an invited / flagged admin cannot reach any
+  // privileged page until they own their password. Authoritative DB check —
+  // independent of the (possibly stale) JWT `mcp` claim the middleware uses.
+  if (admin.mustChangePassword) {
+    redirect("/set-password/change");
+  }
+
   if (!meetsRole(admin.role, minimumRole)) {
     redirect("/forbidden");
   }
@@ -216,6 +227,10 @@ export async function requirePagePermission(
   const admin = await loadActiveAdmin(session);
   if (!admin) {
     redirect("/login");
+  }
+
+  if (admin.mustChangePassword) {
+    redirect("/set-password/change");
   }
 
   const minimumRole = options.minimumRole || "VIEWER";
@@ -252,6 +267,10 @@ export async function requirePageAdmin(): Promise<PageGuardContext> {
   const admin = await loadActiveAdmin(session);
   if (!admin) {
     redirect("/login");
+  }
+
+  if (admin.mustChangePassword) {
+    redirect("/set-password/change");
   }
 
   return {

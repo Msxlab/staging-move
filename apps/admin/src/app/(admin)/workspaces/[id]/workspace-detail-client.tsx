@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Users, MapPin, Zap, DollarSign, Crown, Clock, Pencil, Trash2, Check, X, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Zap, DollarSign, Crown, Clock, Pencil, Trash2, Check, X, Send, Loader2, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
@@ -63,8 +63,9 @@ const ROLE_LABEL: Record<string, string> = {
   CHILD: "Child",
   VIEW_ONLY: "View only",
 };
-// Roles an admin may assign — never OWNER (ownership moves via transfer, which
-// this surface intentionally does not expose). Mirrors the API's assignable set.
+// Roles an admin may assign in the per-row dropdown — never OWNER. Ownership
+// moves via the dedicated "Transfer ownership" action (heir picker + step-up),
+// not a role change. Mirrors the API's assignable set.
 const ASSIGNABLE_ROLES = ["ADMIN", "MEMBER", "CHILD", "VIEW_ONLY"] as const;
 
 const inputCls =
@@ -111,7 +112,7 @@ function pill(map: Record<string, string>, key: string, label?: string) {
 // patch local state on success. Drives the single shared PasswordConfirmModal so
 // every mutation reuses the exact same 403/requiresMfa re-prompt flow.
 type PendingAction = {
-  kind: "rename" | "removeMember" | "changeRole" | "revokeInvite" | "resendInvite";
+  kind: "rename" | "removeMember" | "changeRole" | "revokeInvite" | "resendInvite" | "transferOwnership";
   title: string;
   description: string;
   confirmLabel: string;
@@ -138,6 +139,11 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
   // Per-row busy flags so only the acted-on control spins.
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
   const [busyInviteId, setBusyInviteId] = useState<string | null>(null);
+
+  // Transfer-ownership heir picker (a small modal that gates the step-up flow:
+  // pick an ACTIVE member to promote, then confirm with password + MFA).
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [heirMemberId, setHeirMemberId] = useState("");
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
@@ -334,6 +340,43 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
     });
   }
 
+  // Members eligible to receive ownership: ACTIVE, not already the owner, and a
+  // live (non-deleted) user. Repairing an orphaned-owner household means picking
+  // a healthy member, so deleted/suspended/overflow members are excluded.
+  const transferCandidates = (ws?.members ?? []).filter(
+    (m) => m.role !== "OWNER" && m.status === "ACTIVE" && !m.deleted,
+  );
+
+  function confirmTransfer() {
+    if (!ws) return;
+    const heir = ws.members.find((m) => m.id === heirMemberId);
+    if (!heir) {
+      toast.error("Choose a member to promote to owner.");
+      return;
+    }
+    const who = heir.name || heir.email || heir.userId;
+    const oldOwnerName = ws.owner.deleted ? "the deleted owner" : ws.owner.name || ws.owner.email || "the current owner";
+    setTransferOpen(false);
+    startAction({
+      kind: "transferOwnership",
+      title: "Transfer ownership",
+      description: `Make ${who} the new owner of "${ws.name}". ${oldOwnerName} is demoted to Admin and the new owner becomes the billing anchor (seats are re-checked against their plan). This is the repair path for households whose owner is gone.`,
+      confirmLabel: "Transfer ownership",
+      run: (stepUp) =>
+        fetch(`/api/workspaces/${id}/transfer-ownership`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId: heir.id, ...stepUp }),
+        }),
+      onSuccess: () => {
+        setHeirMemberId("");
+        // Owner, member roles, and seat statuses all shift — refetch for truth.
+        fetchDetail();
+      },
+      successMessage: "Ownership transferred",
+    });
+  }
+
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (notFound || !ws) {
     return (
@@ -396,16 +439,36 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
               subtitle={`Owner: ${ws.owner.deleted ? "(deleted)" : ws.owner.name || ws.owner.email || "—"}`}
               actions={
                 isDeleted ? undefined : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNameDraft(ws.name);
-                      setEditingName(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <Pencil className="h-4 w-4" /> Rename
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Default the picker to the first eligible heir so the
+                        // common case is one click + confirm.
+                        setHeirMemberId(transferCandidates[0]?.id ?? "");
+                        setTransferOpen(true);
+                      }}
+                      disabled={transferCandidates.length === 0}
+                      title={
+                        transferCandidates.length === 0
+                          ? "No active member is eligible to become owner."
+                          : undefined
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    >
+                      <ArrowRightLeft className="h-4 w-4" /> Transfer ownership
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNameDraft(ws.name);
+                        setEditingName(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <Pencil className="h-4 w-4" /> Rename
+                    </button>
+                  </div>
                 )
               }
             />
@@ -562,6 +625,88 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Heir picker — choose which ACTIVE member inherits ownership. Confirming
+          here hands off to the shared step-up modal (password + MFA). */}
+      {transferOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setTransferOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="transfer-owner-title"
+            className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="transfer-owner-title" className="text-base font-semibold text-foreground">
+                  Transfer ownership
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Promote an active member to OWNER of &quot;{ws.name}&quot;. The current owner
+                  {ws.owner.deleted ? " (deleted)" : ""} is demoted to Admin. You&apos;ll confirm with your
+                  password and MFA next.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setTransferOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="transfer-heir" className="mb-1 block text-xs font-medium text-muted-foreground">
+                New owner
+              </label>
+              <select
+                id="transfer-heir"
+                className={`${inputCls} w-full`}
+                value={heirMemberId}
+                onChange={(e) => setHeirMemberId(e.target.value)}
+              >
+                <option value="">Select a member…</option>
+                {transferCandidates.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {(m.name || m.email || m.userId)} · {ROLE_LABEL[m.role] || m.role}
+                  </option>
+                ))}
+              </select>
+              {transferCandidates.length === 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No active, non-deleted member is eligible to become owner.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTransferOpen(false)}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmTransfer}
+                disabled={!heirMemberId}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                <ArrowRightLeft className="h-4 w-4" /> Continue
+              </button>
+            </div>
           </div>
         </div>
       )}

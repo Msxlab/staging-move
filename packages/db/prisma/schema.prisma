@@ -1103,6 +1103,15 @@ model AdminUser {
   lastLoginAt DateTime?
   createdBy   String?   @db.VarChar(30)
 
+  // Forced first-login password rotation. When an admin is INVITED (rather
+  // than created with an explicit password), they are seeded with an
+  // unguessable random password and this flag is set true. The login route
+  // and the page-guard force them through /set-password/change before any
+  // admin surface is reachable. Cleared once they set their own password.
+  // Additive + NULLABLE in the migration so existing rows are unaffected
+  // (treated as false at the application layer when null).
+  mustChangePassword Boolean? @default(false)
+
   permissions                 AdminPermission[]
   auditLogs                   AdminAuditLog[]
   sessions                    AdminSession[]
@@ -1236,6 +1245,31 @@ model AdminActionOtp {
   createdAt   DateTime  @default(now())
 
   @@index([adminUserId, operation, targetId])
+  @@index([expiresAt])
+}
+
+// Single-use, expiring set-password token for the admin INVITE flow.
+// When a SUPER_ADMIN invites a new admin, the account is created in a
+// "must set password" state (AdminUser.mustChangePassword = true, seeded
+// with an unguessable random password) and a token is minted here. ONLY
+// sha256(token) is stored — the plaintext is embedded in the invite email
+// link and never persisted. The token is consumed (consumedAt set) the
+// moment it is redeemed, and superseded tokens for the same admin are
+// marked consumed so only the newest link works. Deliberately has NO
+// foreign key to AdminUser (mirrors AdminActionOtp): verification matches
+// on tokenHash and re-checks the admin row at redeem time.
+model AdminSetPasswordToken {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30) // the invited/target admin
+  purpose     String    @default("INVITE") @db.VarChar(20) // INVITE | RESET
+  tokenHash   String    @unique @db.VarChar(64) // sha256(token) hex — plaintext only in the email link
+  attempts    Int       @default(0)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdBy   String?   @db.VarChar(30) // acting admin who issued the invite
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId, purpose])
   @@index([expiresAt])
 }
 

@@ -5,7 +5,7 @@ import {
   Search, ChevronLeft, ChevronRight, CreditCard, Users, Calendar,
   TrendingUp, TrendingDown, Filter, X, Eye, Clock, XCircle, CheckCircle2, AlertTriangle,
   Ban, RefreshCw, ShieldCheck, Undo2, Receipt, ExternalLink, FileText,
-  DollarSign, BarChart3, ArrowUpRight, ArrowDownRight,
+  DollarSign, BarChart3, ArrowUpRight, ArrowDownRight, Repeat,
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
@@ -15,7 +15,20 @@ import { PasswordConfirmModal, type StepUpValues } from "@/components/password-c
 
 // Lifecycle action identifiers — one per server route under
 // /api/subscriptions/[id]/<action>. Each is gated by the step-up modal.
-type LifecycleAction = "cancel_now" | "cancel_period_end" | "refund" | "resync" | "revalidate";
+type LifecycleAction =
+  | "cancel_now"
+  | "cancel_period_end"
+  | "refund"
+  | "change_plan"
+  | "resync"
+  | "revalidate";
+
+// Paid plans an operator can move a subscription to, and the billing intervals.
+// The server resolves the actual Stripe price id from runtime config — these
+// are just the (plan, interval) pair the operator selects.
+const CHANGE_PLAN_OPTIONS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
+type ChangePlanTarget = (typeof CHANGE_PLAN_OPTIONS)[number];
+type ChangePlanInterval = "MONTH" | "YEAR";
 
 interface AdminApiError {
   message: string;
@@ -44,6 +57,31 @@ function formatMinorAmount(amount: number, currency: string): string {
   } catch {
     return `${code} ${(amount / 100).toFixed(2)}`;
   }
+}
+
+/**
+ * Parse a dollar-amount string (e.g. "12.50") into integer minor units (cents).
+ * Returns null for empty/invalid input so the caller falls back to a full
+ * refund. Anything that isn't a non-negative number with ≤2 decimals is
+ * rejected rather than silently rounded.
+ */
+function parseDollarsToMinor(input: string): number | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
+  const minor = Math.round(Number(trimmed) * 100);
+  return Number.isFinite(minor) && minor >= 0 ? minor : null;
+}
+
+function planLabel(plan: string | null | undefined): string {
+  if (!plan) return "—";
+  return plan.replace(/_/g, " ");
+}
+
+function intervalLabel(interval: string | null | undefined): string {
+  if (interval === "YEAR") return "yearly";
+  if (interval === "MONTH") return "monthly";
+  return "monthly";
 }
 
 /** One Stripe invoice as returned by the read-only invoices route. */
@@ -195,9 +233,42 @@ export default function SubscriptionsClient() {
   // Refund preview (amount + currency) fetched read-only before the operator
   // steps up, so the confirm dialog can state the EXACT amount + user.
   const [refundPreview, setRefundPreview] = useState<
-    { refundable: boolean; amount?: number; currency?: string; reason?: string } | null
+    {
+      refundable: boolean;
+      amount?: number;
+      remainingRefundable?: number;
+      alreadyRefunded?: number;
+      currency?: string;
+      invoiceNumber?: string | null;
+      reason?: string;
+    } | null
   >(null);
   const [refundPreviewLoading, setRefundPreviewLoading] = useState(false);
+  // Operator's refund selection (made in the detail panel BEFORE step-up):
+  //  - `refundInvoiceNumber` null → latest paid invoice; else a specific one.
+  //  - `refundPartialAmount` "" → full refund; else a partial dollar string.
+  const [refundInvoiceNumber, setRefundInvoiceNumber] = useState<string | null>(null);
+  const [refundPartialAmount, setRefundPartialAmount] = useState("");
+
+  // Change-plan selection (made in the detail panel) + its read-only preview
+  // (resolves the target price + proration server-side) so the confirm dialog
+  // can state the exact plan move and immediate proration charge/credit.
+  const [planTarget, setPlanTarget] = useState<ChangePlanTarget>("INDIVIDUAL");
+  const [planInterval, setPlanInterval] = useState<ChangePlanInterval>("MONTH");
+  const [planPreview, setPlanPreview] = useState<
+    {
+      changeable: boolean;
+      reason?: string;
+      currentPlan?: string;
+      currentInterval?: string;
+      targetPlan?: string;
+      targetInterval?: string;
+      direction?: string;
+      prorationAmount?: number | null;
+      currency?: string | null;
+    } | null
+  >(null);
+  const [planPreviewLoading, setPlanPreviewLoading] = useState(false);
 
   const fetchSubs = useCallback(async () => {
     setLoading(true);
@@ -257,6 +328,21 @@ export default function SubscriptionsClient() {
 
   // Load invoice history whenever a (Stripe) detail modal opens. Store/trial
   // subscriptions short-circuit to an unsupported empty state without a fetch.
+  // Reset the per-subscription refund/plan SELECTION whenever the open detail
+  // changes, and seed the change-plan target to the current plan/interval so
+  // the operator starts from a sane default.
+  useEffect(() => {
+    setRefundInvoiceNumber(null);
+    setRefundPartialAmount("");
+    if (detail) {
+      const currentPlan = (CHANGE_PLAN_OPTIONS as readonly string[]).includes(detail.plan)
+        ? (detail.plan as ChangePlanTarget)
+        : "INDIVIDUAL";
+      setPlanTarget(currentPlan);
+      setPlanInterval(detail.billingInterval === "YEAR" ? "YEAR" : "MONTH");
+    }
+  }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!detail) {
       setInvoices(null);
@@ -352,18 +438,61 @@ export default function SubscriptionsClient() {
           description: `Cancel renewal for ${who} (${maskEmail(sub.user.email)}). Access continues until the current period ends, then the subscription will not renew. Enter your admin password and MFA code or backup code to confirm.`,
         };
       case "refund": {
+        const currency = refundPreview?.currency || "usd";
+        // Partial amount the operator typed (dollars) → minor units, when valid.
+        const partialMinor = parseDollarsToMinor(refundPartialAmount);
+        const isPartial = partialMinor !== null && partialMinor > 0;
+        const refundMinor = isPartial
+          ? partialMinor
+          : typeof refundPreview?.remainingRefundable === "number"
+            ? refundPreview.remainingRefundable
+            : refundPreview?.amount;
         const amountText =
-          refundPreview?.refundable && typeof refundPreview.amount === "number"
-            ? formatMinorAmount(refundPreview.amount, refundPreview.currency || "usd")
+          refundPreview?.refundable && typeof refundMinor === "number"
+            ? formatMinorAmount(refundMinor, currency)
             : null;
+        const invoiceText = refundPreview?.invoiceNumber
+          ? `invoice ${refundPreview.invoiceNumber}`
+          : refundInvoiceNumber
+            ? `invoice ${refundInvoiceNumber}`
+            : "their latest paid invoice";
+        // The server-side guards re-validate everything; we send the operator's
+        // selection so the route refunds EXACTLY the previewed invoice/amount.
+        const body: Record<string, unknown> = {};
+        if (typeof refundPreview?.amount === "number") body.expectedAmount = refundPreview.amount;
+        if (refundInvoiceNumber) body.invoiceNumber = refundInvoiceNumber;
+        if (isPartial) body.amount = partialMinor;
         return {
           path: `/api/subscriptions/${sub.id}/refund`,
-          body: typeof refundPreview?.amount === "number" ? { expectedAmount: refundPreview.amount } : {},
-          title: "Refund last invoice",
+          body,
+          title: isPartial ? "Refund a partial amount" : "Refund invoice",
           confirmLabel: amountText ? `Refund ${amountText}` : "Refund",
           description: amountText
-            ? `Refund ${amountText} to ${who} (${maskEmail(sub.user.email)}) for their latest paid invoice. This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`
-            : `Refund the latest paid invoice for ${who} (${maskEmail(sub.user.email)}). This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`,
+            ? `Refund ${amountText}${isPartial ? " (partial)" : ""} to ${who} (${maskEmail(sub.user.email)}) for ${invoiceText}. This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`
+            : `Refund ${invoiceText} for ${who} (${maskEmail(sub.user.email)}). This moves money and cannot be undone. Enter your admin password and MFA code or backup code to confirm.`,
+        };
+      }
+      case "change_plan": {
+        const fromText = planPreview?.currentPlan
+          ? `${planLabel(planPreview.currentPlan)} (${intervalLabel(planPreview.currentInterval)})`
+          : `${planLabel(sub.plan)} (${intervalLabel(sub.billingInterval)})`;
+        const toText = `${planLabel(planTarget)} (${intervalLabel(planInterval)})`;
+        const proration =
+          planPreview?.changeable && typeof planPreview.prorationAmount === "number"
+            ? formatMinorAmount(planPreview.prorationAmount, planPreview.currency || "usd")
+            : null;
+        const prorationSentence =
+          proration !== null
+            ? planPreview && typeof planPreview.prorationAmount === "number" && planPreview.prorationAmount < 0
+              ? ` Stripe will credit about ${formatMinorAmount(Math.abs(planPreview.prorationAmount), planPreview.currency || "usd")} as proration.`
+              : ` Stripe will charge about ${proration} now as proration.`
+            : "";
+        return {
+          path: `/api/subscriptions/${sub.id}/change-plan`,
+          body: { targetPlan: planTarget, targetInterval: planInterval },
+          title: "Change plan",
+          confirmLabel: `Change to ${planLabel(planTarget)}`,
+          description: `Change the Stripe subscription for ${who} (${maskEmail(sub.user.email)}) from ${fromText} to ${toText}, effective immediately with proration.${prorationSentence} The exact price is resolved server-side from billing config. Enter your admin password and MFA code or backup code to confirm.`,
         };
       }
       case "resync":
@@ -385,8 +514,8 @@ export default function SubscriptionsClient() {
     }
   }
 
-  // Open the step-up modal for an action. For refunds, fetch the read-only
-  // amount preview first so the dialog can name the exact amount.
+  // Open the step-up modal for an action. For refunds and plan changes, fetch
+  // the read-only preview first so the dialog can name the exact amount/change.
   async function openAction(action: LifecycleAction) {
     if (!detail) return;
     setActionError(null);
@@ -396,7 +525,12 @@ export default function SubscriptionsClient() {
       setRefundPreviewLoading(true);
       setPendingAction(action);
       try {
-        const res = await fetch(`/api/subscriptions/${detail.id}/refund`);
+        // Scope the preview to the operator's selected invoice (if any) so the
+        // dialog states the amount for EXACTLY the invoice being refunded.
+        const qs = refundInvoiceNumber
+          ? `?invoiceNumber=${encodeURIComponent(refundInvoiceNumber)}`
+          : "";
+        const res = await fetch(`/api/subscriptions/${detail.id}/refund${qs}`);
         const data = await res.json().catch(() => null);
         if (!res.ok) {
           const { message } = await readAdminApiError(res, "Failed to load refund preview.");
@@ -405,11 +539,31 @@ export default function SubscriptionsClient() {
         } else {
           setRefundPreview(data);
           if (!data?.refundable) {
-            setActionError(
+            const reasonMessage =
               data?.reason === "no_paid_invoice"
                 ? "No paid invoice is available to refund for this subscription."
-                : "This subscription has no Stripe invoice to refund.",
-            );
+                : data?.reason === "invoice_not_refundable"
+                  ? "That invoice is not available to refund for this subscription."
+                  : data?.reason === "already_fully_refunded"
+                    ? "This invoice has already been fully refunded."
+                    : "This subscription has no Stripe invoice to refund.";
+            setActionError(reasonMessage);
+          } else {
+            // Validate any partial amount the operator typed against the
+            // remaining refundable amount before they step up.
+            const partial = parseDollarsToMinor(refundPartialAmount);
+            const remaining =
+              typeof data?.remainingRefundable === "number" ? data.remainingRefundable : data?.amount;
+            if (
+              refundPartialAmount.trim() &&
+              (partial === null || partial <= 0)
+            ) {
+              setActionError("Enter a valid refund amount (e.g. 12.50), or clear it for a full refund.");
+            } else if (partial !== null && typeof remaining === "number" && partial > remaining) {
+              setActionError(
+                `The partial amount exceeds the ${formatMinorAmount(remaining, data?.currency || "usd")} still refundable on this invoice.`,
+              );
+            }
           }
         }
       } catch {
@@ -417,6 +571,42 @@ export default function SubscriptionsClient() {
         setRefundPreview({ refundable: false });
       } finally {
         setRefundPreviewLoading(false);
+      }
+      return;
+    }
+    if (action === "change_plan") {
+      setPlanPreview(null);
+      setPlanPreviewLoading(true);
+      setPendingAction(action);
+      try {
+        const qs = `?targetPlan=${encodeURIComponent(planTarget)}&targetInterval=${encodeURIComponent(planInterval)}`;
+        const res = await fetch(`/api/subscriptions/${detail.id}/change-plan${qs}`);
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const { message } = await readAdminApiError(res, "Failed to load plan-change preview.");
+          setActionError(message);
+          setPlanPreview({ changeable: false });
+        } else {
+          setPlanPreview(data);
+          if (!data?.changeable) {
+            const reasonMessage =
+              data?.reason === "already_on_plan"
+                ? "This subscription is already on the selected plan and interval."
+                : data?.reason === "price_not_configured"
+                  ? "No Stripe price is configured for the selected plan/interval. Configure it in Runtime Config first."
+                  : data?.reason === "inactive_subscription"
+                    ? "Plan changes are only available on an active subscription."
+                    : data?.reason === "no_billable_item"
+                      ? "This subscription has no billable item to re-price."
+                      : "This subscription cannot change plan.";
+            setActionError(reasonMessage);
+          }
+        }
+      } catch {
+        setActionError("Failed to load plan-change preview.");
+        setPlanPreview({ changeable: false });
+      } finally {
+        setPlanPreviewLoading(false);
       }
       return;
     }
@@ -429,6 +619,7 @@ export default function SubscriptionsClient() {
     setActionError(null);
     setActionRequiresMfa(false);
     setRefundPreview(null);
+    setPlanPreview(null);
   }
 
   async function confirmAction(_password: string, stepUp: StepUpValues) {
@@ -438,6 +629,11 @@ export default function SubscriptionsClient() {
     // Block the refund submit if there is nothing refundable.
     if (pendingAction === "refund" && !refundPreview?.refundable) {
       setActionError("There is no refundable invoice for this subscription.");
+      return;
+    }
+    // Block the plan-change submit if the previewed change isn't applicable.
+    if (pendingAction === "change_plan" && !planPreview?.changeable) {
+      setActionError("This plan change cannot be applied. Review the selection.");
       return;
     }
     setActionBusy(true);
@@ -460,8 +656,14 @@ export default function SubscriptionsClient() {
       if (pendingAction === "refund") {
         toast.success(
           typeof data?.amount === "number"
-            ? `Refunded ${formatMinorAmount(data.amount, data.currency || "usd")}.`
+            ? `Refunded ${formatMinorAmount(data.amount, data.currency || "usd")}${data?.refundKind === "partial" ? " (partial)" : ""}.`
             : "Refund issued.",
+        );
+      } else if (pendingAction === "change_plan") {
+        toast.success(
+          data?.plan
+            ? `Plan changed to ${planLabel(data.plan)} (${intervalLabel(data.billingInterval)}).`
+            : "Plan changed.",
         );
       } else if (pendingAction === "revalidate" && data?.revalidated === false) {
         toast.error(data?.error || "Stored receipt credential is missing.");
@@ -477,6 +679,7 @@ export default function SubscriptionsClient() {
       setPendingAction(null);
       setActionRequiresMfa(false);
       setRefundPreview(null);
+      setPlanPreview(null);
       // Refresh stats/counts after a mutation.
       fetchSubs();
     } catch {
@@ -836,22 +1039,13 @@ export default function SubscriptionsClient() {
                       </>
                     )}
                     {isStripe && (
-                      <>
-                        <button
-                          onClick={() => openAction("refund")}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
-                          title="Refund the latest paid invoice"
-                        >
-                          <Undo2 className="h-3.5 w-3.5" /> Refund last invoice
-                        </button>
-                        <button
-                          onClick={() => openAction("resync")}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-                          title="Re-fetch from Stripe and overwrite local status/plan/period"
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" /> Force re-sync
-                        </button>
-                      </>
+                      <button
+                        onClick={() => openAction("resync")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                        title="Re-fetch from Stripe and overwrite local status/plan/period"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" /> Force re-sync
+                      </button>
                     )}
                     {isStore && (
                       <button
@@ -863,8 +1057,108 @@ export default function SubscriptionsClient() {
                       </button>
                     )}
                   </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Each action requires admin password + MFA step-up and is written to the audit log. Money-moving actions (cancel now, refund) state the exact impact before you confirm.
+
+                  {/* ── Change plan (Stripe only) ── */}
+                  {isStripe && stripeCancellable && (
+                    <div className="mt-3 rounded-lg border border-border/70 bg-muted/30 p-3">
+                      <div className="mb-2 flex items-center gap-1.5">
+                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Change plan</p>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <div>
+                          <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Plan</label>
+                          <select
+                            value={planTarget}
+                            onChange={(e) => setPlanTarget(e.target.value as ChangePlanTarget)}
+                            className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          >
+                            {CHANGE_PLAN_OPTIONS.map((p) => (
+                              <option key={p} value={p}>{planLabel(p)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Interval</label>
+                          <select
+                            value={planInterval}
+                            onChange={(e) => setPlanInterval(e.target.value as ChangePlanInterval)}
+                            className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          >
+                            <option value="MONTH">Monthly</option>
+                            <option value="YEAR">Yearly</option>
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => openAction("change_plan")}
+                          disabled={
+                            planTarget === ((CHANGE_PLAN_OPTIONS as readonly string[]).includes(detail.plan) ? detail.plan : "") &&
+                            planInterval === (detail.billingInterval === "YEAR" ? "YEAR" : "MONTH")
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-40"
+                          title="Move this subscription to the selected plan/interval with proration"
+                        >
+                          <Repeat className="h-3.5 w-3.5" /> Change to {planLabel(planTarget)}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">
+                        The exact Stripe price is resolved server-side from billing config. Upgrades charge proration immediately; the confirm dialog states the exact change and amount.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ── Refund (Stripe only) — latest or a picked invoice, full or partial ── */}
+                  {isStripe && (
+                    <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                      <div className="mb-2 flex items-center gap-1.5">
+                        <Undo2 className="h-3.5 w-3.5 text-destructive" />
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">Refund</p>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <div>
+                          <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Invoice</label>
+                          <select
+                            value={refundInvoiceNumber ?? ""}
+                            onChange={(e) => setRefundInvoiceNumber(e.target.value || null)}
+                            className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          >
+                            <option value="">Latest paid invoice</option>
+                            {(invoices || [])
+                              .filter((inv) => inv.paid && inv.number)
+                              .map((inv) => (
+                                <option key={inv.number} value={inv.number as string}>
+                                  {inv.number} · {formatMinorAmount(inv.amountPaid, inv.currency)}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Amount (blank = full)</label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="e.g. 12.50"
+                            value={refundPartialAmount}
+                            onChange={(e) => setRefundPartialAmount(e.target.value)}
+                            className="w-28 rounded-lg border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <button
+                          onClick={() => openAction("refund")}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          title="Refund the selected invoice (full or partial)"
+                        >
+                          <Undo2 className="h-3.5 w-3.5" /> Refund{refundPartialAmount.trim() ? " partial" : ""}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">
+                        Leave the amount blank for a full refund of the selected invoice. The confirm dialog states the exact amount and invoice before money moves.
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-[11px] text-muted-foreground">
+                    Each action requires admin password + MFA step-up and is written to the audit log. Money-moving actions (cancel now, refund, plan change) state the exact impact before you confirm.
                   </p>
                 </div>
               )}
@@ -901,7 +1195,9 @@ export default function SubscriptionsClient() {
         description={
           pendingAction === "refund" && refundPreviewLoading
             ? "Loading the refundable amount…"
-            : pendingCfg?.description || ""
+            : pendingAction === "change_plan" && planPreviewLoading
+              ? "Resolving the target price and proration…"
+              : pendingCfg?.description || ""
         }
         confirmLabel={pendingCfg?.confirmLabel || "Confirm"}
         busy={actionBusy}
