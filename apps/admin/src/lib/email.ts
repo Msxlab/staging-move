@@ -279,6 +279,46 @@ export async function sendWorkspaceInvitationEmail(opts: {
   });
 }
 
+/**
+ * Email the 6-digit confirmation code for an irreversible user HARD DELETE
+ * to the ACTING ADMIN's own address (never the target user). The code itself
+ * is the second factor: it is generated server-side, only sha256(code) is
+ * stored, and it is shown to the operator solely here. `targetMaskedEmail`
+ * lets the operator confirm they are about to erase the right account without
+ * exposing the full target address in the operator's inbox.
+ */
+export async function sendHardDeleteOtpEmail(opts: {
+  to: string;
+  code: string;
+  targetMaskedEmail: string;
+}): Promise<boolean> {
+  const html = renderSupportEmail({
+    title: "Confirm permanent user deletion",
+    preheader: "Your confirmation code for permanently deleting a user.",
+    userName: "Admin",
+    bodyLines: [
+      "You requested to PERMANENTLY delete a user account. This action is irreversible — the account and its data are erased as if they never existed.",
+      `Enter the code below in the admin panel within 10 minutes to confirm deleting ${opts.targetMaskedEmail}.`,
+      `Confirmation code: ${opts.code}`,
+      "If you did not start this deletion, do not enter the code and rotate your admin credentials immediately.",
+    ],
+    details: [
+      ["Action", "Permanent user deletion"],
+      ["Target", opts.targetMaskedEmail],
+      ["Code", opts.code],
+      ["Expires in", "10 minutes"],
+    ],
+    // Codes are single-use and entered in-app; there is no link to follow.
+    ctaHref: "#",
+    ctaLabel: "Enter this code in the admin panel",
+  });
+  return sendEmail({
+    to: opts.to,
+    subject: "LocateFlow: confirm permanent user deletion",
+    html,
+  });
+}
+
 export async function sendSupportTicketStatusEmail(opts: {
   userEmail: string;
   userName: string;

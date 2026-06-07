@@ -108,6 +108,19 @@ export default function UserDetailClient() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Hard delete (irreversible, SUPER_ADMIN only) is a two-phase flow:
+  //   phase "password" → PasswordConfirmModal (password + MFA) → POST .../otp
+  //   phase "otp"      → 6-digit code (emailed to the acting admin) → POST .../hard-delete
+  const [hardDeletePhase, setHardDeletePhase] = useState<null | "password" | "otp">(null);
+  const [hardDeleteBusy, setHardDeleteBusy] = useState(false);
+  const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
+  const [hardDeleteRequiresMfa, setHardDeleteRequiresMfa] = useState(false);
+  // The step-up credentials captured in phase 1, replayed (with the code) in
+  // phase 2. requirePasswordConfirm's grace window means the same password/MFA
+  // is accepted again without re-prompting, but we resend them so the second
+  // call is self-contained even if the grace window lapses.
+  const [hardDeleteStepUp, setHardDeleteStepUp] = useState<StepUpValues | null>(null);
+  const [hardDeleteOtpCode, setHardDeleteOtpCode] = useState("");
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
@@ -227,6 +240,108 @@ export default function UserDetailClient() {
       toast.error("Failed to delete user");
     } finally {
       setDeleteBusy(false);
+    }
+  }
+
+  function handleHardDelete() {
+    if (!user) return;
+    setHardDeleteError(null);
+    setHardDeleteRequiresMfa(false);
+    setHardDeleteStepUp(null);
+    setHardDeleteOtpCode("");
+    setHardDeletePhase("password");
+  }
+
+  function closeHardDelete() {
+    if (hardDeleteBusy) return;
+    setHardDeletePhase(null);
+    setHardDeleteError(null);
+    setHardDeleteRequiresMfa(false);
+    setHardDeleteStepUp(null);
+    setHardDeleteOtpCode("");
+  }
+
+  // Phase 1: password + MFA → request an emailed code. On success, swap to the
+  // 6-digit code-entry phase (we keep the modal open and change its body).
+  async function requestHardDeleteOtp(_confirmPassword: string, stepUp: StepUpValues) {
+    if (!user) return;
+    setHardDeleteBusy(true);
+    setHardDeleteError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}/hard-delete/otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stepUp),
+      });
+      if (!res.ok) {
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to send confirmation code.");
+        setHardDeleteError(res.status === 429 ? "Too many attempts. Please wait and try again." : message);
+        setHardDeleteRequiresMfa(requiresMfa);
+        toast.error(message);
+        return;
+      }
+      // Remember the step-up so phase 2 can resend it alongside the code.
+      setHardDeleteStepUp(stepUp);
+      setHardDeleteRequiresMfa(false);
+      setHardDeleteOtpCode("");
+      setHardDeletePhase("otp");
+      toast.success("We emailed a 6-digit code to your admin address.");
+    } catch {
+      setHardDeleteError("Failed to send confirmation code.");
+      toast.error("Failed to send confirmation code.");
+    } finally {
+      setHardDeleteBusy(false);
+    }
+  }
+
+  // Phase 2: submit the 6-digit code (with the captured step-up) → erase.
+  async function submitHardDelete() {
+    if (!user || !hardDeleteStepUp) return;
+    if (!/^\d{6}$/.test(hardDeleteOtpCode.trim())) {
+      setHardDeleteError("Enter the 6-digit code from your email.");
+      return;
+    }
+    setHardDeleteBusy(true);
+    setHardDeleteError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}/hard-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmPassword: hardDeleteStepUp.confirmPassword,
+          mfaCode: hardDeleteStepUp.mfaCode,
+          backupCode: hardDeleteStepUp.backupCode,
+          otpCode: hardDeleteOtpCode.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const requiresMfa = Boolean(data?.requiresMfa);
+        const reason = typeof data?.reason === "string" ? data.reason : null;
+        const message =
+          res.status === 429
+            ? "Too many attempts. Please wait and try again."
+            : typeof data?.error === "string"
+              ? data.error
+              : "Failed to permanently delete user.";
+        // If the password/MFA step-up itself failed (grace window lapsed),
+        // bounce back to phase 1 so the operator can re-enter credentials.
+        if (data?.requiresPassword && reason !== "invalid_otp") {
+          setHardDeletePhase("password");
+          setHardDeleteRequiresMfa(requiresMfa);
+        }
+        setHardDeleteError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success("User permanently deleted.");
+      setHardDeletePhase(null);
+      window.location.assign("/users");
+    } catch {
+      setHardDeleteError("Failed to permanently delete user.");
+      toast.error("Failed to permanently delete user.");
+    } finally {
+      setHardDeleteBusy(false);
     }
   }
 
@@ -805,9 +920,20 @@ export default function UserDetailClient() {
               </span>
             )
           ) : (
-            <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-4 w-4" /> Delete
-            </button>
+            <>
+              <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4" /> Delete
+              </button>
+              {currentAdminRole === "SUPER_ADMIN" && (
+                <button
+                  onClick={handleHardDelete}
+                  title="Permanently erase this user and all their data. Irreversible. Requires an emailed confirmation code."
+                  className="flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <AlertTriangle className="h-4 w-4" /> Hard delete (permanent)
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -2050,6 +2176,29 @@ export default function UserDetailClient() {
         }}
         onConfirm={confirmDelete}
       />
+      {/* Hard delete — phase 1: password + MFA, then we email a 6-digit code. */}
+      <PasswordConfirmModal
+        open={hardDeletePhase === "password"}
+        title="Permanently delete user"
+        description={`This PERMANENTLY erases ${maskEmail(user.email)} and all of their data — it cannot be undone. Confirm your admin password and MFA; we'll then email a 6-digit code to your admin address to finish.`}
+        confirmLabel="Email me a code"
+        busy={hardDeleteBusy}
+        error={hardDeleteError}
+        requiresMfa={hardDeleteRequiresMfa}
+        onClose={closeHardDelete}
+        onConfirm={requestHardDeleteOtp}
+      />
+      {/* Hard delete — phase 2: enter the emailed 6-digit code to erase. */}
+      <HardDeleteOtpModal
+        open={hardDeletePhase === "otp"}
+        targetMaskedEmail={maskEmail(user.email)}
+        code={hardDeleteOtpCode}
+        onCodeChange={setHardDeleteOtpCode}
+        busy={hardDeleteBusy}
+        error={hardDeleteError}
+        onClose={closeHardDelete}
+        onSubmit={submitHardDelete}
+      />
       <PasswordConfirmModal
         open={showRestoreConfirm}
         title="Restore / unblock user"
@@ -2151,6 +2300,120 @@ export default function UserDetailClient() {
         }}
         onConfirm={confirmPremiumUpdate}
       />
+    </div>
+  );
+}
+
+// Phase-2 modal for the irreversible hard delete: the operator types the
+// 6-digit code we emailed to their OWN admin address. Deliberately separate
+// from PasswordConfirmModal (which is fixed to password + MFA fields) so the
+// code is the only input here and the copy makes the finality unmistakable.
+function HardDeleteOtpModal({
+  open,
+  targetMaskedEmail,
+  code,
+  onCodeChange,
+  busy,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  targetMaskedEmail: string;
+  code: string;
+  onCodeChange: (value: string) => void;
+  busy: boolean;
+  error?: string | null;
+  onClose: () => void;
+  onSubmit: () => void | Promise<void>;
+}) {
+  if (!open) return null;
+  const submitDisabled = busy || !/^\d{6}$/.test(code.trim());
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !busy) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hard-delete-otp-title"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="hard-delete-otp-title" className="text-base font-semibold text-foreground">
+              Enter confirmation code
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              We emailed a 6-digit code to your admin address. Enter it to PERMANENTLY delete {targetMaskedEmail}. This cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close"
+            disabled={busy}
+            onClick={onClose}
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form
+          className="mt-5 space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (submitDisabled) return;
+            await onSubmit();
+          }}
+        >
+          <div>
+            <label htmlFor="hard-delete-otp-code" className="mb-1 block text-xs font-medium text-muted-foreground">
+              6-digit code
+            </label>
+            <input
+              id="hard-delete-otp-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={code}
+              onChange={(event) => onCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              disabled={busy}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-center text-lg tracking-[0.5em] text-foreground focus:border-destructive focus:outline-none focus:ring-2 focus:ring-destructive/20 disabled:opacity-50"
+              autoFocus
+            />
+          </div>
+
+          {error ? (
+            <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onClose}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitDisabled}
+              className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              {busy ? "Deleting..." : "Permanently delete"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
