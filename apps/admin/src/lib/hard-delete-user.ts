@@ -230,9 +230,11 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
     // 4b. No-FK residue tables keyed by userId/email — the User cascade has no
     //     relation to these, so purge them explicitly to truly leave no trace:
     //     WaitlistSignup retains the user's PLAINTEXT email (a GDPR-erasure leak);
-    //     NotificationQueue keeps queued/sent notification bodies for the user.
+    //     NotificationQueue keeps queued/sent notification bodies for the user;
+    //     EmailLog (keyed by the recipient `to`) retains the PLAINTEXT email too.
     await tx.waitlistSignup.deleteMany({ where: { OR: [{ userId }, { email: user.email }] } });
     await tx.notificationQueue.deleteMany({ where: { userId } });
+    await tx.emailLog.deleteMany({ where: { to: user.email } });
 
     // 5. Delete the user — cascades all remaining direct children.
     await tx.user.delete({ where: { id: userId } });
