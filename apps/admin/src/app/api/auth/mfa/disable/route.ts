@@ -7,7 +7,11 @@ import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdmin();
-    const body = await request.json();
+    // An empty / malformed body must not 500 — treat it as "no credentials
+    // supplied" so requirePasswordConfirm returns the 403 step-up prompt
+    // (the front-end opens the password/MFA modal on that response) instead
+    // of an opaque server error.
+    const body = await request.json().catch(() => ({}));
     const requestMeta = getAuditRequestMeta(request);
 
     const confirm = await requirePasswordConfirm(session, body.confirmPassword, {

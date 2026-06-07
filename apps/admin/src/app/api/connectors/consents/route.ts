@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 const CONNECTOR_STEP_UP_GRACE_MS = 60 * 60 * 1000;
 const KEY_RE = /^[a-z][a-z0-9-]*$/;
@@ -85,12 +86,15 @@ export async function POST(req: NextRequest) {
     }
     const revocationReason = ADMIN_REVOKE_REASONS.includes(reason) ? reason : "ADMIN_REVOKED";
 
+    const requestMeta = getAuditRequestMeta(req);
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: "connector_consent_bulk_revoke",
       maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
       requireMfa: true,
       mfaCode,
       backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
@@ -108,15 +112,12 @@ export async function POST(req: NextRequest) {
       where: { connectorKey, status: { in: ["QUEUED", "DISPATCHING"] } },
       data: { status: "NEEDS_USER", lastErrorCode: "REVOKED" },
     });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "BULK_REVOKE_CONNECTOR_CONSENTS",
-        entityType: "PartnerConsent",
-        entityId: connectorKey,
-        changes: JSON.stringify({ connectorKey, reason: revocationReason, revokedCount: result.count }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "BULK_REVOKE_CONNECTOR_CONSENTS",
+      entityType: "PartnerConsent",
+      entityId: connectorKey,
+      metadata: { connectorKey, reason: revocationReason, revokedCount: result.count },
+      request: requestMeta,
     });
     return NextResponse.json({ revokedCount: result.count });
   } catch (e: any) {

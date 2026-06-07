@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { resolveConnectorMode, uspsConnector, type AddressConnector } from "@locateflow/connectors";
 import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 /**
  * The two facts that gate API_SYNC, read from runtime-config (operator-set, no
@@ -192,12 +193,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "version is required" }, { status: 400 });
     }
 
+    const requestMeta = getAuditRequestMeta(req);
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: "connector_config_write",
       maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
       requireMfa: true,
       mfaCode,
       backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
@@ -216,15 +220,12 @@ export async function POST(req: NextRequest) {
         notes: typeof notes === "string" ? notes : null,
       },
     });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE_CONNECTOR_CONFIG",
-        entityType: "ConnectorConfig",
-        entityId: connector.id,
-        changes: JSON.stringify({ connectorKey, version, enabled: connector.enabled, stage: connector.stage }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "CREATE_CONNECTOR_CONFIG",
+      entityType: "ConnectorConfig",
+      entityId: connector.id,
+      after: { connectorKey, version, enabled: connector.enabled, stage: connector.stage },
+      request: requestMeta,
     });
     return NextResponse.json(connector);
   } catch (e: any) {
@@ -243,12 +244,15 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "connectorKey is required" }, { status: 400 });
     }
 
+    const requestMeta = getAuditRequestMeta(req);
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: "connector_config_write",
       maxAgeMs: CONNECTOR_STEP_UP_GRACE_MS,
       requireMfa: true,
       mfaCode,
       backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
@@ -268,19 +272,14 @@ export async function PUT(req: NextRequest) {
         notes: typeof notes === "string" ? notes : undefined,
       },
     });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "UPDATE_CONNECTOR_CONFIG",
-        entityType: "ConnectorConfig",
-        entityId: connector.id,
-        changes: JSON.stringify({
-          connectorKey,
-          before: { enabled: existing.enabled, rolloutPercent: existing.rolloutPercent, stage: existing.stage, circuitState: existing.circuitState },
-          after: { enabled: connector.enabled, rolloutPercent: connector.rolloutPercent, stage: connector.stage, circuitState: connector.circuitState },
-        }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "UPDATE_CONNECTOR_CONFIG",
+      entityType: "ConnectorConfig",
+      entityId: connector.id,
+      before: { enabled: existing.enabled, rolloutPercent: existing.rolloutPercent, stage: existing.stage, circuitState: existing.circuitState },
+      after: { enabled: connector.enabled, rolloutPercent: connector.rolloutPercent, stage: connector.stage, circuitState: connector.circuitState },
+      metadata: { connectorKey },
+      request: requestMeta,
     });
     return NextResponse.json(connector);
   } catch (e: any) {

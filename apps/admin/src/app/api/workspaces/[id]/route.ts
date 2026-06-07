@@ -19,10 +19,11 @@ function planLabel(plan: string): string {
  * role" view. Pending invitations included. users:canRead (VIEWER floor).
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
-  const { id } = await params;
+  try {
+    await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
+    const { id } = await params;
 
-  const ws = await prisma.workspace.findUnique({
+    const ws = await prisma.workspace.findUnique({
     where: { id },
     select: {
       id: true,
@@ -125,4 +126,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     },
     { headers: { "Cache-Control": "no-store" } },
   );
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    console.error("Failed to load workspace detail:", error);
+    return NextResponse.json({ error: "Failed to load workspace" }, { status: 500 });
+  }
 }
