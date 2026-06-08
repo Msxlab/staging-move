@@ -386,3 +386,192 @@ describe("injectable scoring weights", () => {
     expect(bumped - base).toBe(10);
   });
 });
+
+describe("true geo-local ranking", () => {
+  function baseProfile(overrides: Partial<UserProfile> = {}): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 1,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+      ...overrides,
+    };
+  }
+
+  function provider(overrides: Partial<Provider>): Provider {
+    return {
+      id: overrides.id || "p",
+      name: overrides.name || overrides.id || "Provider",
+      slug: overrides.slug || overrides.id || "p",
+      category: overrides.category || "HOUSING_HOME_SERVICE",
+      description: null,
+      website: null,
+      phone: null,
+      scope: overrides.scope || "STATE",
+      states: overrides.states || ["TX"],
+      tags: overrides.tags || [],
+      popularityScore: overrides.popularityScore ?? 50,
+      displayOrder: overrides.displayOrder ?? 0,
+      userCount: overrides.userCount ?? 0,
+      coverageModel: overrides.coverageModel,
+      coverageMatchLevel: overrides.coverageMatchLevel,
+      latitude: overrides.latitude,
+      longitude: overrides.longitude,
+    };
+  }
+
+  // Austin, TX as the user's destination.
+  const userLat = 30.2672;
+  const userLng = -97.7431;
+
+  it("ranks the nearer geo-bearing provider higher when both have coordinates", () => {
+    const near = provider({ id: "near", latitude: 30.27, longitude: -97.74 }); // ~0.5km
+    const far = provider({ id: "far", latitude: 32.7767, longitude: -96.797 }); // Dallas, ~300km
+    const scored = scoreProviders(
+      [far, near],
+      baseProfile({ latitude: userLat, longitude: userLng }),
+      "TX",
+    );
+    expect(scored.map((p) => p.id)).toEqual(["near", "far"]);
+    // The nearer provider should also carry the larger proximity bonus in score.
+    const nearScore = scored.find((p) => p.id === "near")!.recommendationScore;
+    const farScore = scored.find((p) => p.id === "far")!.recommendationScore;
+    expect(nearScore).toBeGreaterThan(farScore);
+  });
+
+  it("ignores geo when the user has no coordinates (no crash, no reorder by distance)", () => {
+    const a = provider({ id: "a", latitude: 30.27, longitude: -97.74, popularityScore: 10 });
+    const b = provider({ id: "b", latitude: 40.0, longitude: -80.0, popularityScore: 90 });
+    const scored = scoreProviders([a, b], baseProfile(), "TX");
+    // Without user coordinates the geo bonus is 0 for both, so the higher-
+    // popularity provider wins as it did before the geo feature existed.
+    expect(scored[0].id).toBe("b");
+  });
+
+  it("leaves a provider without coordinates unaffected by the geo component", () => {
+    const geoless = provider({ id: "geoless", popularityScore: 50 });
+    const withProfile = baseProfile({ latitude: userLat, longitude: userLng });
+    const a = scoreProviders([geoless], withProfile, "TX")[0].recommendationScore;
+    const b = scoreProviders([geoless], baseProfile(), "TX")[0].recommendationScore;
+    expect(a).toBe(b);
+  });
+
+  it("keeps the comparator a transitive strict total order with mixed geo/non-geo providers", () => {
+    // Build a deliberately adversarial set: same category/tier, varying score,
+    // coverage, displayOrder, popularity, and geo distance — including ties on
+    // several fields and providers with/without coordinates.
+    const providers: Provider[] = [];
+    const coords: Array<[number, number] | null> = [
+      [30.27, -97.74], [31.0, -97.0], [32.77, -96.8], null, [30.3, -97.7], null, [29.4, -98.5], [30.27, -97.74],
+    ];
+    for (let i = 0; i < coords.length; i++) {
+      const c = coords[i];
+      providers.push(
+        provider({
+          id: `g${i}`,
+          popularityScore: (i * 37) % 100,
+          displayOrder: i % 3,
+          coverageMatchLevel: i % 2 === 0 ? "state" : "prefix",
+          coverageModel: i % 2 === 0 ? "state" : "zip_prefix",
+          latitude: c ? c[0] : undefined,
+          longitude: c ? c[1] : undefined,
+        }),
+      );
+    }
+    const profile = baseProfile({ latitude: userLat, longitude: userLng });
+    const scored = scoreProviders(providers, profile, "TX");
+
+    // Recover the comparator by re-scoring single providers and reading the
+    // public ordering: the result of scoreProviders is the sorted output, so a
+    // transitive comparator means the order is independent of input permutation.
+    // Verify by shuffling the input several ways and asserting identical output.
+    const permute = (arr: Provider[], seed: number) => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = (i * 7 + seed * 13 + 5) % (i + 1);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+    const baseline = scored.map((p) => p.id);
+    for (let seed = 1; seed <= 6; seed++) {
+      const reordered = scoreProviders(permute(providers, seed), profile, "TX").map((p) => p.id);
+      expect(reordered).toEqual(baseline);
+    }
+  });
+});
+
+describe("robust communityPopular keying", () => {
+  function profile(): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 1,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+    };
+  }
+
+  function provider(overrides: Partial<Provider>): Provider {
+    return {
+      id: overrides.id || "p",
+      name: overrides.name || overrides.id || "Provider",
+      slug: overrides.slug ?? (overrides.id || "p"),
+      category: overrides.category || "HOUSING_HOME_SERVICE",
+      description: null,
+      website: null,
+      phone: null,
+      scope: "STATE",
+      states: ["TX"],
+      tags: [],
+      popularityScore: overrides.popularityScore ?? 0,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  it("keys community popularity by provider id (the canonical aggregate key)", () => {
+    const p = provider({ id: "prov-id-1", slug: "prov-slug-1" });
+    const withSignal = scoreProviders([p], profile(), "TX", { "prov-id-1": 20 })[0].recommendationScore;
+    const without = scoreProviders([p], profile(), "TX", {})[0].recommendationScore;
+    expect(withSignal - without).toBe(20);
+  });
+
+  it("does NOT read the slug namespace at all (id-only contract)", () => {
+    // The upstream producer keys strictly by providerId, so a slug-keyed value
+    // must be ignored — there is no slug fallback to silently borrow from.
+    const p = provider({ id: "prov-id-2", slug: "prov-slug-2" });
+    const bySlug = scoreProviders([p], profile(), "TX", { "prov-slug-2": 15 })[0].recommendationScore;
+    const without = scoreProviders([p], profile(), "TX", {})[0].recommendationScore;
+    expect(bySlug).toBe(without);
+  });
+
+  it("does NOT cross-read another namespace: a slug equal to a different provider's id is not borrowed", () => {
+    // map is keyed by id only; provider A's slug collides with provider B's id.
+    const a = provider({ id: "A", slug: "B" });
+    const community = { B: 18 }; // belongs to provider B's id, not A
+    const aScore = scoreProviders([a], profile(), "TX", community)[0].recommendationScore;
+    const aBaseline = scoreProviders([a], profile(), "TX", {})[0].recommendationScore;
+    // A has no id "A" entry; its slug "B" must NOT borrow B's id-keyed value.
+    expect(aScore).toBe(aBaseline);
+  });
+
+  it("treats an explicit zero id-value as no signal (no truthy short-circuit bug)", () => {
+    const p = provider({ id: "z", slug: "z-slug" });
+    const community = { z: 0 };
+    const score = scoreProviders([p], profile(), "TX", community)[0].recommendationScore;
+    const baseline = scoreProviders([p], profile(), "TX", {})[0].recommendationScore;
+    expect(score).toBe(baseline);
+  });
+});

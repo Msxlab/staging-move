@@ -4,7 +4,12 @@ vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
 
-import { buildMoveTaskDueDate, buildMoveTaskIdempotencyKey } from "./move-task-generation";
+import {
+  buildMoveTaskDueDate,
+  buildMoveTaskIdempotencyKey,
+  buildChecklistTaskIdempotencyKey,
+  buildChecklistProfile,
+} from "./move-task-generation";
 
 const basePlan = {
   serviceId: "service-1",
@@ -59,5 +64,32 @@ describe("move task due dates", () => {
 
   it("keeps near-term pre-move tasks due today instead of in the past", () => {
     expect(buildMoveTaskDueDate(moveDate, "START_SERVICE", new Date("2026-06-28T12:00:00Z"))?.toISOString().slice(0, 10)).toBe("2026-06-28");
+  });
+});
+
+describe("checklist task idempotency keys", () => {
+  it("is stable per (plan, template, route) and distinct from classifier keys", () => {
+    const a = buildChecklistTaskIdempotencyKey("plan-1", "P2_USCIS", { fromState: "nj", toState: "tx" });
+    const b = buildChecklistTaskIdempotencyKey("plan-1", "P2_USCIS", { fromState: "NJ", toState: "TX" });
+    const other = buildChecklistTaskIdempotencyKey("plan-1", "P3_DRIVERS_LICENSE", { fromState: "NJ", toState: "TX" });
+    expect(a).toBe(b);
+    expect(a).toContain("checklist-task:plan-1:P2_USCIS:NJ:TX");
+    expect(a).not.toBe(other);
+  });
+});
+
+describe("buildChecklistProfile", () => {
+  it("promotes to MILITARY when isMilitary is set, regardless of moveType", () => {
+    const profile = buildChecklistProfile({ isMilitary: true, moveType: "PERSONAL" });
+    expect(profile.moveType).toBe("MILITARY");
+  });
+
+  it("defaults a null/unknown move type to PERSONAL", () => {
+    expect(buildChecklistProfile(null).moveType).toBe("PERSONAL");
+    expect(buildChecklistProfile({ moveType: "weird" }).moveType).toBe("PERSONAL");
+  });
+
+  it("preserves an explicit BUSINESS move type", () => {
+    expect(buildChecklistProfile({ moveType: "BUSINESS" }).moveType).toBe("BUSINESS");
   });
 });

@@ -206,6 +206,11 @@ export default function OnboardingScreen() {
 
   // Step 2 – Providers
   const [providers, setProviders] = useState<ScoredProvider[]>([]);
+  // Essential categories the engine flagged as having NO matching provider /
+  // service for this user (e.g. Electric, Insurance). The engine computes this
+  // as stats.missingCritical; the web surfaces it but the mobile screen used to
+  // drop it. We capture it here to show a gentle "you still need…" nudge.
+  const [missingCritical, setMissingCritical] = useState<string[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
   const [createdServiceIds, setCreatedServiceIds] = useState<Record<string, string>>({});
@@ -354,8 +359,11 @@ export default function OnboardingScreen() {
       if (address.longitude != null) params.lng = String(address.longitude);
       const res = await api.get<any>("/api/providers/recommendations", params);
       setProviders(res.data?.allProviders || []);
+      const missing = res.data?.stats?.missingCritical;
+      setMissingCritical(Array.isArray(missing) ? missing : []);
     } catch {
       setProviders([]);
+      setMissingCritical([]);
     } finally {
       setLoadingProviders(false);
     }
@@ -825,6 +833,27 @@ export default function OnboardingScreen() {
     [t],
   );
 
+  // Essential categories the user still has no provider for — gentle nudge.
+  // Drop any the user has just picked a provider for in this step so the hint
+  // stays current as they select, and de-duplicate by readable label (several
+  // raw categories merge into one display label, e.g. the insurance family).
+  const selectedCategories = useMemo(
+    () => new Set(Array.from(selectedProviders.values()).map((p) => p.category)),
+    [selectedProviders],
+  );
+  const missingCriticalLabels = useMemo(() => {
+    const labels: string[] = [];
+    const seen = new Set<string>();
+    for (const category of missingCritical) {
+      if (selectedCategories.has(category)) continue;
+      const label = categoryLabel(category);
+      if (seen.has(label)) continue;
+      seen.add(label);
+      labels.push(label);
+    }
+    return labels;
+  }, [missingCritical, selectedCategories, categoryLabel]);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -1135,6 +1164,23 @@ export default function OnboardingScreen() {
                   onChangeText={setProviderSearch}
                   containerStyle={{ flex: 1, marginBottom: 0 }} />
               </View>
+
+              {/* Missing-essentials nudge. The engine flags essential
+                  categories the user has no provider for (stats.missingCritical);
+                  surface a gentle reminder so they don't leave step 2 without
+                  the must-haves (e.g. Electric, Insurance). Hidden while
+                  searching and once every flagged category is covered. */}
+              {!loadingProviders && !providerSearch && missingCriticalLabels.length > 0 && (
+                <View style={styles.missingNudge} accessibilityRole="summary">
+                  <Sparkles size={16} color={theme.colors.amber.text} />
+                  <Text style={styles.missingNudgeText}>
+                    {t("onboarding.providers_missingCritical", {
+                      defaultValue: "You still need: {{categories}}",
+                      categories: missingCriticalLabels.join(", "),
+                    })}
+                  </Text>
+                </View>
+              )}
 
               {/* Recommended Section */}
               {!loadingProviders && !providerSearch && recommended.length > 0 && (
@@ -1574,6 +1620,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border,
     backgroundColor: theme.colors.card, padding: 14, width: "100%",
   },
+  missingNudge: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    marginTop: 12, padding: 12, borderRadius: 14, width: "100%",
+    borderWidth: 1, borderColor: theme.colors.amber.border,
+    backgroundColor: theme.colors.amber.bg,
+  },
+  missingNudgeText: { flex: 1, fontSize: 12, lineHeight: 17, color: theme.colors.amber.text, fontWeight: "600" },
   recoHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   recoTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
   recoCard: {

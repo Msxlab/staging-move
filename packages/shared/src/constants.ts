@@ -597,6 +597,60 @@ export const SERVICE_PRIORITY_MAP: ServicePriorityItem[] = [
     moveTypes: ["VACATION"], conditions: [],
     estimatedMinutes: 60, icon: "🏡",
   },
+
+  // ── MILITARY / PCS-SPECIFIC ITEMS ──
+  // These supplement (do NOT replace) the standard PERSONAL relocation tasks:
+  // a PCS mover still gets USPS forwarding, DMV transfer, school enrollment, etc.
+  // (the checklist folds MILITARY into PERSONAL for those). The items below add
+  // the PCS-only obligations a civilian move never has.
+  {
+    id: "M0_PCS_ORDERS", category: "GOVERNMENT_OTHER", title: "Review PCS Orders & Entitlements",
+    description: "Read your PCS orders carefully and confirm authorized travel, dependents, and HHG (household goods) weight allowance.",
+    phase: 0, daysRelativeToMove: -21, deadlineDays: null, priority: "URGENT", isRequired: true,
+    moveTypes: ["MILITARY"], conditions: [],
+    estimatedMinutes: 30, icon: "🎖️",
+    tips: "Your weight allowance and entitlements depend on rank and dependent status. Errors here cost money out of pocket.",
+  },
+  {
+    id: "M0_DITY_PPM", category: "GOVERNMENT_OTHER", title: "Decide PPM/DITY vs. Government Move",
+    description: "Choose between a government-arranged HHG move or a Personally Procured Move (PPM/DITY) for reimbursement.",
+    phase: 0, daysRelativeToMove: -21, deadlineDays: null, priority: "HIGH", isRequired: true,
+    moveTypes: ["MILITARY"], conditions: [],
+    estimatedMinutes: 45, icon: "🚛",
+    tips: "PPM/DITY can reimburse up to 100% of the government's cost. Keep every weight ticket and receipt.",
+  },
+  {
+    id: "M0_TMO_SCHEDULE", category: "GOVERNMENT_OTHER", title: "Schedule Move with TMO/Transportation Office",
+    description: "Contact your installation Transportation Management Office (TMO) to schedule HHG pickup and delivery via move.mil.",
+    phase: 0, daysRelativeToMove: -14, deadlineDays: null, priority: "URGENT", isRequired: true,
+    moveTypes: ["MILITARY"], conditions: [],
+    estimatedMinutes: 30, icon: "🪖", actionUrl: "https://www.militaryonesource.mil/moving-pcs/",
+    tips: "Book early — peak PCS season (May–Aug) fills fast. Start at the Defense Personal Property System (DPS).",
+  },
+  {
+    id: "M2_DEERS_UPDATE", category: "GOVERNMENT_BENEFITS", title: "Update DEERS / Address with Military",
+    description: "Update your address in DEERS and with your branch so pay, TRICARE, and records follow you.",
+    phase: 2, daysRelativeToMove: 3, deadlineDays: null, priority: "HIGH", isRequired: true,
+    moveTypes: ["MILITARY"], conditions: [],
+    estimatedMinutes: 20, icon: "🪪", actionUrl: "https://milconnect.dmdc.osd.mil",
+    tips: "Outdated DEERS info can interrupt TRICARE coverage and BAH payments.",
+  },
+  {
+    id: "M3_TRICARE_TRANSFER", category: "FINANCIAL_INSURANCE_HEALTH", title: "Transfer TRICARE Region/Plan",
+    description: "Update your TRICARE region and primary care manager for the new duty station within the move window.",
+    phase: 3, daysRelativeToMove: 7, deadlineDays: 60, priority: "URGENT", isRequired: true,
+    moveTypes: ["MILITARY"], conditions: [],
+    estimatedMinutes: 30, icon: "🏥", actionUrl: "https://www.tricare.mil/moving",
+    tips: "Moving to a new TRICARE region may require re-enrolling and selecting a new PCM. Don't let coverage lapse.",
+  },
+  {
+    id: "M3_DL_MIL_EXEMPT", category: "GOVERNMENT_DMV", title: "Confirm Military License/Registration Rules",
+    description: "Many states let active-duty members keep their home-of-record license/registration. Confirm the destination state's military exemption.",
+    phase: 3, daysRelativeToMove: 14, deadlineDays: 90, priority: "MEDIUM", isRequired: false,
+    moveTypes: ["MILITARY"], conditions: ["carCount>0"],
+    estimatedMinutes: 20, icon: "🚗",
+    tips: "Under the SCRA/MSRRA you often aren't forced to retitle/register in the new state. Verify before paying fees.",
+  },
 ];
 
 // ==================== STATE-SPECIFIC DEADLINE OVERRIDES ====================
