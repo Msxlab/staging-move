@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
-import { createPublicPageMetadata } from "@/lib/seo";
+import { JsonLd, howToSchema } from "@/components/seo/json-ld";
+import { absoluteUrl, createPublicPageMetadata } from "@/lib/seo";
 
 export const metadata = createPublicPageMetadata({
   title: "How It Works",
@@ -73,18 +74,34 @@ const pillars = [
 ] as const;
 
 export default function HowItWorksPage() {
+  // HowTo structured data, built from the SAME `steps` array rendered below so
+  // the rich result can never describe a procedure the reader can't see. Each
+  // step deep-links to the page so a HowToStep `url` resolves to real content.
+  const howTo = howToSchema({
+    name: "How to organize your providers, addresses, and moving tasks with LocateFlow",
+    description:
+      "Four steps to set up LocateFlow: add your addresses, log every service, stay ahead of renewals, and turn a move into a checklist.",
+    steps: steps.map((s) => ({
+      name: s.title,
+      text: s.body,
+      url: `${absoluteUrl("/how-it-works")}#step-${s.step}`,
+    })),
+  });
+
   return (
     <PublicPageShell
       eyebrow="How it works"
       title="Providers, addresses, and moving tasks in one place."
       description="Most people keep their service list in memory, email threads, and three browser tabs. LocateFlow gives you one place to organize the records and reminders you need to verify."
     >
+      <JsonLd id="ld-howto" data={howTo} />
       <PublicSection title="The four things you'll do">
         <div className="grid gap-6 md:grid-cols-2">
           {steps.map(({ step, icon: Icon, title, body, detail }) => (
             <div
               key={step}
-              className="rounded-xl border bg-background/60 p-5 space-y-3"
+              id={`step-${step}`}
+              className="scroll-mt-24 rounded-xl border bg-background/60 p-5 space-y-3"
             >
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold">

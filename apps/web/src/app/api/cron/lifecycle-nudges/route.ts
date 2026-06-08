@@ -9,7 +9,7 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
-import { epochDayInTimeZone, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { epochDayInTimeZone, resolveReminderTimeZone, daysUntilDateOnly } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -320,6 +320,12 @@ async function handleCron(request: NextRequest) {
 
       const openTasks = plan._count.moveTasks;
       if (openTasks <= 0) continue; // defensive — the query already requires some
+
+      // Avoid same-morning double-notify: if the move is imminent, the move-reminder
+      // cron (fires at <=7 days out with more specific copy) already covers this user.
+      // Win-back is for the dormant-but-NOT-imminent case.
+      const daysUntilMove = daysUntilDateOnly(plan.moveDate, now, tz);
+      if (daysUntilMove >= 0 && daysUntilMove <= 7) continue;
 
       const dedupeKey = `cron:lifecycle:inactive-winback:${userId}:${daysSinceSeen}`;
       // moveDate is date-only at UTC midnight — format in UTC so the day is

@@ -257,12 +257,28 @@ export default function DashboardScreen() {
               stateRule = null;
             }
           }
+          // A generated MoveTask persists `templateId` (the checklist item it maps
+          // to). A COMPLETED task with a non-null templateId marks that item DONE.
+          // Without this, the readiness ring + checklist % are permanently 0% on
+          // mobile (parity break with web dashboard-client.tsx).
+          const completedTemplates = new Set<string>();
+          try {
+            const moveTasksRes = await api.get<any>("/api/move-tasks", {
+              movingPlanId: activePlan.id,
+              status: "COMPLETED",
+            });
+            for (const tk of moveTasksRes.data?.tasks || []) {
+              if (tk?.templateId && tk?.status === "COMPLETED") completedTemplates.add(tk.templateId);
+            }
+          } catch {
+            /* non-blocking: fall back to empty set */
+          }
           const cl = generateChecklist(
             checklistProfile,
             new Date(activePlan.moveDate),
             activePlan.fromAddress?.state || "",
             toState,
-            new Set<string>(),
+            completedTemplates,
             stateRule,
           );
           setChecklist(cl);

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   collectionPageSchema,
   faqPageSchema,
+  howToSchema,
+  organizationSchema,
   softwareApplicationSchema,
   webSiteSchema,
 } from "./json-ld";
@@ -17,6 +19,22 @@ describe("JSON-LD schema builders", () => {
     const schema = webSiteSchema(ctx);
 
     expect(schema).not.toHaveProperty("potentialAction");
+  });
+
+  it("declares the site language as en-US only (no dangling es-US claim)", () => {
+    // The marketing surface has no distinct /es/ alternate URLs, so the
+    // sitewide WebSite node must not advertise Spanish pages that don't exist.
+    const schema = webSiteSchema(ctx);
+
+    expect(schema.inLanguage).toBe("en-US");
+    expect(JSON.stringify(schema)).not.toContain("es-US");
+  });
+
+  it("leaves Organization.sameAs empty until real official URLs exist", () => {
+    // Honest default: we never fabricate social profile URLs.
+    const schema = organizationSchema(ctx);
+
+    expect(schema.sameAs).toEqual([]);
   });
 
   it("omits offers unless a page passes visible, safe pricing data", () => {
@@ -61,5 +79,40 @@ describe("JSON-LD schema builders", () => {
         },
       ],
     });
+  });
+
+  it("builds HowTo schema with positioned steps from supplied visible content", () => {
+    const schema = howToSchema({
+      name: "How to set up LocateFlow",
+      description: "Two real steps.",
+      steps: [
+        { name: "Add your addresses", text: "Start with the home you live in today." },
+        { name: "Log every service", text: "Add the provider details you want to track.", url: "https://locateflow.com/how-it-works#step-02" },
+      ],
+    });
+
+    expect(schema).toMatchObject({
+      "@type": "HowTo",
+      name: "How to set up LocateFlow",
+      inLanguage: "en-US",
+      step: [
+        { "@type": "HowToStep", position: 1, name: "Add your addresses" },
+        { "@type": "HowToStep", position: 2, name: "Log every service", url: "https://locateflow.com/how-it-works#step-02" },
+      ],
+    });
+  });
+
+  it("drops empty HowTo steps so the rich result never describes missing content", () => {
+    const schema = howToSchema({
+      name: "Sparse procedure",
+      description: "One real step, one blank.",
+      steps: [
+        { name: "Real step", text: "Do the real thing." },
+        { name: "  ", text: "" },
+      ],
+    });
+
+    expect(schema.step).toHaveLength(1);
+    expect(schema.step[0]).toMatchObject({ position: 1, name: "Real step" });
   });
 });
