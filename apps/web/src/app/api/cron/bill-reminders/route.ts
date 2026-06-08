@@ -10,7 +10,7 @@ import {
   isPushTypeEnabled,
   MAX_WEB_NOTIFICATION_REMINDER_DAYS,
 } from "@/lib/notification-preferences";
-import { nextBillingOccurrence, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isReminderDeliveryHour, nextBillingOccurrence, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 
 /**
  * GET /api/cron/bill-reminders
@@ -92,6 +92,10 @@ export async function GET(req: Request) {
       if (!emailAllowed && !pushAllowed) continue;
 
       const userTimeZone = resolveReminderTimeZone(svc.user.profile?.timezone);
+      // Local ~8am delivery gate (see reminder-timezone.ts). The batch fires at
+      // several UTC hours covering 8am across US zones; only the run that matches
+      // this user's zone acts. Per-day dedupe keys keep any overlap idempotent.
+      if (!isReminderDeliveryHour(now, userTimeZone)) continue;
       const { date: dueDate, daysUntil: daysUntilDue } = nextBillingOccurrence(
         svc.billingDay || currentDay,
         now,

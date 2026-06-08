@@ -175,6 +175,8 @@
     "upNext_noDate": "Sin fecha límite",
     "upNext_completeLabel": "Marcar \"{{title}}\" como completada",
     "upNext_completeFailed": "No se pudo completar esa tarea. Inténtalo de nuevo.",
+    "upNext_completed": "Completada \"{{title}}\"",
+    "upNext_undo": "Deshacer",
     "briefingTitle": "Tu resumen de mudanza",
     "briefingAiLabel": "Generado por IA",
     "briefingDismiss": "Descartar resumen"

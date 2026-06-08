@@ -59,6 +59,46 @@ export function localDayOfMonth(now: Date, timeZone: string): number {
   return Number(d);
 }
 
+/**
+ * Hour-of-day (0–23) of an instant as seen in `timeZone`. Uses the 24-hour
+ * "hourCycle h23" so midnight reads as 0 (not 24) and there's no 12/24 quirk.
+ */
+export function localHourInTimeZone(now: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = parts.find((p) => p.type === "hour")?.value;
+  return Number(hour);
+}
+
+/**
+ * Local-time-of-day delivery gate for the daily user-facing reminder batch.
+ *
+ * The daily reminder/digest crons run at SEVERAL fixed UTC hours that each line
+ * up with ~8am in one US zone (Eastern 12:00, Central 13:00, Mountain 14:00,
+ * Pacific 15:00, Alaska 16:00, Hawaii 18:00 UTC). On every run we still scan all
+ * candidates, but only ACT on users whose resolved local hour is the target
+ * (default 8). A user in Pacific is skipped by the 12:00-UTC (Eastern) run and
+ * only sent by the 15:00-UTC (Pacific) run.
+ *
+ * This is purely a send-time gate; it does not replace the per-day dedupe keys.
+ * If two runs ever both saw a user as "hour 8" (e.g. a DST seam, or a far-zone
+ * user whose tz isn't on the US grid), the existing per-(entity, day) dedupe key
+ * still makes the second send a no-op — so the gate can be loose without ever
+ * double-sending.
+ */
+export const REMINDER_DELIVERY_LOCAL_HOUR = 8;
+
+export function isReminderDeliveryHour(
+  now: Date,
+  timeZone: string,
+  targetHour: number = REMINDER_DELIVERY_LOCAL_HOUR,
+): boolean {
+  return localHourInTimeZone(now, timeZone) === targetHour;
+}
+
 function clampDayToMonth(year: number, monthIndex: number, day: number): number {
   const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
   return Math.min(day, lastDay);

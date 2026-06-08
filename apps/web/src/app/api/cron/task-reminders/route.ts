@@ -9,7 +9,7 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
-import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
@@ -137,6 +137,9 @@ export async function GET(req: Request) {
     for (const task of allTaskRows) {
       if (!task.user || !task.dueDate) continue;
       const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
+      // Local ~8am delivery gate (see reminder-timezone.ts). Dedupe keys keep
+      // any cross-run overlap idempotent.
+      if (!isReminderDeliveryHour(now, userTimeZone)) continue;
       const daysUntilDue = daysUntilDateOnly(task.dueDate, now, userTimeZone);
       if (!TASK_REMINDER_DAYS.includes(daysUntilDue)) continue;
 
@@ -225,6 +228,8 @@ export async function GET(req: Request) {
       if (!deadlineDate) continue;
 
       const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
+      // Same local ~8am delivery gate as the soft-due loop above.
+      if (!isReminderDeliveryHour(now, userTimeZone)) continue;
       const daysUntilDeadline = daysUntilDateOnly(deadlineDate, now, userTimeZone);
       if (!DEADLINE_ESCALATION_DAYS.includes(daysUntilDeadline)) continue;
 

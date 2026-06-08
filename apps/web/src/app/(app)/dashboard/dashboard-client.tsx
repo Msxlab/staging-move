@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   MapPin, Zap, DollarSign, Truck, ArrowRight,
@@ -11,6 +11,7 @@ import {
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
 import { MoveCommandCenter, type CommandCenterAction } from "./move-command-center";
+import { UpNext } from "./up-next";
 import { formatCurrency } from "@/lib/utils";
 import { DashboardSkeleton } from "@/components/shared/loading-state";
 import { toast } from "sonner";
@@ -153,6 +154,15 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
     missing: 0,
     completed: 0,
   });
+  // Inputs captured during the main load so the readiness ring can be re-derived
+  // after an inline task completion (UpNext) without re-running the whole
+  // dashboard load. Holds the active plan, the checklist profile, and the
+  // resolved destination state-rule context used by generateChecklist.
+  const checklistInputsRef = useRef<{
+    plan: any;
+    profile: UserChecklistProfile;
+    stateRule: ChecklistStateRuleContext | null;
+  } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -311,6 +321,13 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               stateRule,
             );
             setChecklist(cl);
+            // Capture the inputs so UpNext can re-derive the ring after a
+            // completion without re-running the whole dashboard load.
+            checklistInputsRef.current = {
+              plan: inProgressPlan,
+              profile: checklistProfile,
+              stateRule,
+            };
           } catch { /* non-blocking */ }
         }
       })
@@ -318,42 +335,78 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       .finally(() => setLoading(false));
   }, []);
 
-  // Fetch the recommendations payload once. It powers BOTH the always-on Move
-  // Command Center (countdown readiness needs missingCritical / completed) and
-  // the optional "Next Critical Actions" widget — so it runs regardless of the
-  // widget toggle (the widget just hides its own render when disabled).
-  useEffect(() => {
-    fetch("/api/providers/recommendations")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return;
-        if (data.nextCriticalActions) {
-          setCriticalActions(
-            data.nextCriticalActions.slice(0, 3).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              category: p.category,
-              reason: p.explanation?.reason || p.explanation?.headline || "",
-              deadline: p.explanation?.deadline,
-            }))
-          );
-        }
-        // Readiness signal: count of CRITICAL provider categories still missing
-        // vs. set up. Both come straight from the engine's stats: `missingCritical`
-        // is the list of pending CRITICAL categories, and `completedCritical` is
-        // the count of satisfied CRITICAL categories (CRITICAL cluster's
-        // completedCount). Using completedCritical avoids inflating the ring with
-        // optional categories (gym/streaming) the way the old heuristic did.
-        const missingCritical: string[] = Array.isArray(data.stats?.missingCritical)
-          ? data.stats.missingCritical
-          : [];
-        const missingSet = new Set(missingCritical);
-        const completedCriticalCount =
-          typeof data.stats?.completedCritical === "number" ? data.stats.completedCritical : 0;
-        setCriticalReadiness({ missing: missingSet.size, completed: completedCriticalCount });
-      })
-      .catch(() => {});
+  // Fetch the recommendations payload. It powers BOTH the always-on Move Command
+  // Center (countdown readiness needs missingCritical / completed) and the
+  // optional "Next Critical Actions" widget — so it runs regardless of the widget
+  // toggle (the widget just hides its own render when disabled). Extracted as a
+  // callback so UpNext can re-sync the readiness ring after a completion.
+  const fetchRecommendations = useCallback(async () => {
+    try {
+      const r = await fetch("/api/providers/recommendations");
+      const data = r.ok ? await r.json() : null;
+      if (!data) return;
+      if (data.nextCriticalActions) {
+        setCriticalActions(
+          data.nextCriticalActions.slice(0, 3).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            reason: p.explanation?.reason || p.explanation?.headline || "",
+            deadline: p.explanation?.deadline,
+          }))
+        );
+      }
+      // Readiness signal: count of CRITICAL provider categories still missing
+      // vs. set up. Both come straight from the engine's stats: `missingCritical`
+      // is the list of pending CRITICAL categories, and `completedCritical` is
+      // the count of satisfied CRITICAL categories (CRITICAL cluster's
+      // completedCount). Using completedCritical avoids inflating the ring with
+      // optional categories (gym/streaming) the way the old heuristic did.
+      const missingCritical: string[] = Array.isArray(data.stats?.missingCritical)
+        ? data.stats.missingCritical
+        : [];
+      const missingSet = new Set(missingCritical);
+      const completedCriticalCount =
+        typeof data.stats?.completedCritical === "number" ? data.stats.completedCritical : 0;
+      setCriticalReadiness({ missing: missingSet.size, completed: completedCriticalCount });
+    } catch {
+      /* non-blocking */
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchRecommendations();
+  }, [fetchRecommendations]);
+
+  // Re-derive the readiness ring after an inline task completion (UpNext): the
+  // checklist's completed-count and the providers signal may both have changed.
+  // Re-fetches recommendations and regenerates the checklist from the inputs
+  // captured during the main load. Best-effort + non-blocking.
+  const refreshReadiness = useCallback(async () => {
+    await fetchRecommendations();
+    const inputs = checklistInputsRef.current;
+    if (!inputs?.plan) return;
+    try {
+      const completedTemplates = new Set<string>();
+      try {
+        const moveTasksRes = await fetch(
+          `/api/move-tasks?movingPlanId=${inputs.plan.id}&status=COMPLETED`,
+        ).then((r) => r.json());
+        for (const tk of moveTasksRes?.tasks || []) {
+          if (tk?.templateId && tk?.status === "COMPLETED") completedTemplates.add(tk.templateId);
+        }
+      } catch { /* non-blocking: fall back to empty set */ }
+      const cl = generateChecklist(
+        inputs.profile,
+        new Date(inputs.plan.moveDate),
+        inputs.plan.fromAddress?.state || "",
+        inputs.plan.toAddress?.state || "",
+        completedTemplates,
+        inputs.stateRule,
+      );
+      setChecklist(cl);
+    } catch { /* non-blocking */ }
+  }, [fetchRecommendations]);
 
   const progress = checklist && checklist.totalItems > 0
     ? Math.round((checklist.completedItems / checklist.totalItems) * 100) : 0;
@@ -393,6 +446,14 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       }
     : null;
 
+  // Real setup signal for the cold-start ring floor: the active plan has both a
+  // genuine origin and destination city (not the "Origin"/"Destination"
+  // placeholders). No fabrication — only reflects setup the user actually did.
+  const hasOriginDestination =
+    !!stats.activePlan &&
+    stats.activePlan.fromCity !== "Origin" &&
+    stats.activePlan.toCity !== "Destination";
+
   return (
     <div className="space-y-6">
       {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next action.
@@ -405,6 +466,19 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
         missingCriticalCount={criticalReadiness.missing}
         completedCriticalCount={criticalReadiness.completed}
         state={primaryState}
+        hasOriginDestination={hasOriginDestination}
+        t={td}
+      />
+
+      {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each with
+          a one-tap inline checkbox that completes via the same
+          PATCH /api/move-tasks { event: "COMPLETE" } the plan screen uses (with
+          Undo). Self-hides with no active plan / no open tasks. onCompleted
+          re-syncs the readiness ring. Parity with the mobile UpNext strip. */}
+      <UpNext
+        planId={stats.activePlan?.id ?? null}
+        locale="en-US"
+        onCompleted={refreshReadiness}
         t={td}
       />
 

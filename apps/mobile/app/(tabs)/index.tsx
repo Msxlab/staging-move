@@ -105,6 +105,11 @@ export default function DashboardScreen() {
   });
   // Primary address state → tz-correct move countdown (US-only zone mapping).
   const [primaryState, setPrimaryState] = useState<string | null>(null);
+  // COLD-START momentum: true when the active plan has BOTH a real origin and a
+  // real destination address. That is genuine, user-completed setup, so the
+  // Move Command Center readiness ring starts at a low non-zero instead of 0%.
+  // Credits ONLY setup the user actually did — never a fabricated task.
+  const [hasOriginDestination, setHasOriginDestination] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [planTier, setPlanTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -238,6 +243,13 @@ export default function DashboardScreen() {
       );
       const activePlan = plans.find(
         (p: any) => p.status === "PLANNING" || p.status === "IN_PROGRESS"
+      );
+
+      // Real setup signal for the cold-start ring floor: both endpoints exist
+      // with an actual city (not a placeholder). No fabrication — this only
+      // reflects that the user genuinely set an origin and a destination.
+      setHasOriginDestination(
+        !!activePlan?.fromAddress?.city && !!activePlan?.toAddress?.city,
       );
 
       setStats({
@@ -739,6 +751,7 @@ export default function DashboardScreen() {
             missingCriticalCount={criticalReadiness.missing}
             completedCriticalCount={criticalReadiness.completed}
             state={primaryState}
+            hasOriginDestination={hasOriginDestination}
             onOpenPlan={() => router.push("/(tabs)/moving")}
             onOpenAction={(action) => router.push(`/providers/${action.id}` as Href)}
             onStartMove={() => router.push("/moving/new")}

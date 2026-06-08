@@ -24,6 +24,42 @@ export type MoveStage =
   | "in_progress"
   | "recently_completed";
 
+/**
+ * COARSE days-to-move bucket. We never send the exact move date to the LLM — only
+ * one of these honest, fuzzy buckets. `unknown` = no dated plan on file. This lets
+ * the briefing acknowledge timing ("in the next few weeks") without inventing a
+ * specific date or a legal deadline.
+ */
+export type DaysToMoveBucket =
+  | "unknown"
+  | "past"
+  | "this_week"
+  | "two_weeks"
+  | "this_month"
+  | "one_to_three_months"
+  | "three_plus_months";
+
+/**
+ * A typed deep-link the client maps to a real in-app destination. Display-only:
+ * the server never navigates — it just labels where the action should go.
+ *   - category:    set up a still-pending essential (carries the catalog category key)
+ *   - services:    the user's tracked-services list
+ *   - state-rules: the move plan's state-specific guidance (DMV, voter, tax, ...)
+ *   - plan:        the move plan (create or open)
+ */
+export type BriefingDeeplink =
+  | { type: "category"; category: string }
+  | { type: "services" }
+  | { type: "state-rules" }
+  | { type: "plan" };
+
+/** A single structured, tappable next action. `title`/`why` are display strings. */
+export interface BriefingAction {
+  title: string;
+  why: string;
+  deeplink: BriefingDeeplink;
+}
+
 export interface BriefingSignals {
   hasKids: boolean;
   hasPets: boolean;
@@ -39,10 +75,23 @@ export interface BriefingSignals {
   /** PERSONAL | BUSINESS | VACATION | MILITARY — coarse move category. */
   moveType: string;
   moveStage: MoveStage;
+  /**
+   * True when the active plan carries a real move date. Drives the fallback so it
+   * never contradicts a known date (e.g. it won't say "pick a move date").
+   */
+  hasMoveDate: boolean;
+  /** COARSE timing bucket derived from the move date — never the exact date. */
+  daysToMoveBucket: DaysToMoveBucket;
   /** Coarse count of still-missing critical setup categories (not their identity). */
   missingCriticalCount: number;
   /** Human-readable critical category labels still pending (catalog labels, not PII). */
   missingCriticalLabels: string[];
+  /**
+   * Catalog category KEYS for the still-pending essentials, index-aligned with
+   * `missingCriticalLabels`. Catalog enum values (e.g. "UTILITY_INTERNET") — never
+   * PII. Used to attach a `{type:'category'}` deep-link to each generated action.
+   */
+  missingCriticalCategories: string[];
 }
 
 export interface ProfileLike {
@@ -90,6 +139,27 @@ function resolveMoveStage(plan: MovePlanLike | null): MoveStage {
 }
 
 /**
+ * Derives the COARSE timing bucket from a move date. We deliberately collapse the
+ * exact date into a fuzzy band so the LLM can speak to timing honestly without
+ * ever receiving (or echoing) the precise date. Returns "unknown" when no date.
+ */
+function resolveDaysToMoveBucket(
+  moveDate?: Date | string | null,
+  now: Date = new Date(),
+): DaysToMoveBucket {
+  if (!moveDate) return "unknown";
+  const ts = moveDate instanceof Date ? moveDate.getTime() : Date.parse(String(moveDate));
+  if (!Number.isFinite(ts)) return "unknown";
+  const days = Math.floor((ts - now.getTime()) / (24 * 60 * 60 * 1000));
+  if (days < 0) return "past";
+  if (days <= 7) return "this_week";
+  if (days <= 14) return "two_weeks";
+  if (days <= 30) return "this_month";
+  if (days <= 90) return "one_to_three_months";
+  return "three_plus_months";
+}
+
+/**
  * Builds the coarse, non-PII signal set. This is the ONLY data that may be
  * forwarded to the LLM. By construction it contains no name, address, email,
  * ZIP, phone, or account identifier.
@@ -98,11 +168,13 @@ export function buildBriefingSignals(input: {
   profile: ProfileLike | null;
   primaryAddress: PrimaryAddressLike | null;
   activePlan: MovePlanLike | null;
-  missingCriticalLabels: string[];
+  /** Still-pending essentials as { category, label } pairs (catalog values, not PII). */
+  missingCritical: Array<{ category: string; label: string }>;
 }): BriefingSignals {
-  const { profile, primaryAddress, activePlan, missingCriticalLabels } = input;
+  const { profile, primaryAddress, activePlan, missingCritical } = input;
   const planState = coarseState(activePlan?.toState);
   const homeState = coarseState(primaryAddress?.state);
+  const pending = missingCritical.slice(0, 6);
 
   return {
     hasKids: Boolean(profile?.hasChildren),
@@ -120,8 +192,11 @@ export function buildBriefingSignals(input: {
     state: planState || homeState,
     moveType: (profile?.moveType || "PERSONAL").toUpperCase(),
     moveStage: resolveMoveStage(activePlan),
-    missingCriticalCount: missingCriticalLabels.length,
-    missingCriticalLabels: missingCriticalLabels.slice(0, 6),
+    hasMoveDate: Boolean(activePlan?.moveDate),
+    daysToMoveBucket: resolveDaysToMoveBucket(activePlan?.moveDate ?? null),
+    missingCriticalCount: pending.length,
+    missingCriticalLabels: pending.map((p) => p.label),
+    missingCriticalCategories: pending.map((p) => p.category),
   };
 }
 
@@ -134,18 +209,34 @@ const MOVE_STAGE_LABEL: Record<MoveStage, string> = {
   recently_completed: "just completed their move",
 };
 
+/**
+ * COARSE, human-readable timing phrase for each bucket. These are intentionally
+ * fuzzy ("in the next couple of weeks"), never a specific date or deadline. The
+ * LLM may echo this phrasing but is forbidden from inventing a precise date.
+ */
+const DAYS_TO_MOVE_PHRASE: Record<DaysToMoveBucket, string | null> = {
+  unknown: null,
+  past: "the move date has just passed",
+  this_week: "moving within about a week",
+  two_weeks: "moving in the next couple of weeks",
+  this_month: "moving within about a month",
+  one_to_three_months: "moving in the next one to three months",
+  three_plus_months: "moving more than three months out",
+};
+
 export const BRIEFING_SYSTEM_PROMPT = [
   "You write a short, warm, plain-English 'move briefing' for a US-based user of a relocation-organizer app.",
   "Audience: everyday US movers. Tone: calm, encouraging, concrete. Reading level: 8th grade.",
   "",
   "HARD RULES — follow all of them:",
   "- US-only context. Do not reference other countries' rules or providers.",
-  "- Be honest. Never invent specific company names, prices, dates, deadlines, discounts, or statistics.",
+  "- Be honest. Never invent specific company names, prices, discounts, or statistics.",
+  "- TIMING: You MAY reflect the coarse timing phrase you are given (e.g. 'in the next couple of weeks') to make the briefing feel current. But NEVER state a specific calendar date, and NEVER invent a legal/registration deadline (e.g. 'you have 30 days to register your car'). For anything time-bound by law, say to 'check your state's official site for the exact window.'",
   "- Do NOT name specific providers, brands, carriers, or retailers. Speak in categories (e.g. 'your internet provider', 'the DMV', 'your utilities').",
   "- Do NOT give legal, tax, immigration, or financial advice. If something sounds legal/financial, say to 'check your state's official site' rather than advising.",
   "- Only reference the user's actual move stage and the signals provided. Do not assume facts you were not given.",
   "- No PII is provided to you and you must not ask for or fabricate any.",
-  "- Output plain text only: a 2-3 sentence situation summary, then exactly 3 numbered actions, each with a one-line WHY. No markdown headers, no preamble, no sign-off.",
+  "- Output ONLY a 2-3 sentence, plain-text situation summary written directly to the user ('you'). The app renders the tappable next-actions itself, so do NOT add a numbered list, bullets, headers, preamble, or sign-off — just the summary sentences.",
 ].join("\n");
 
 /**
@@ -155,6 +246,10 @@ export const BRIEFING_SYSTEM_PROMPT = [
 export function buildLlmPrompt(signals: BriefingSignals): string {
   const lines: string[] = [];
   lines.push(`Move stage: ${MOVE_STAGE_LABEL[signals.moveStage]}.`);
+  const timingPhrase = DAYS_TO_MOVE_PHRASE[signals.daysToMoveBucket];
+  if (timingPhrase) {
+    lines.push(`Timing (coarse, no exact date): ${timingPhrase}.`);
+  }
   lines.push(
     `Move category: ${signals.moveType.toLowerCase()}${
       signals.isBusiness ? " (business)" : ""
@@ -174,7 +269,7 @@ export function buildLlmPrompt(signals: BriefingSignals): string {
   }
   lines.push("");
   lines.push(
-    "Write the move briefing now: a 2-3 sentence summary of their situation, then exactly 3 numbered next actions, each with a short WHY.",
+    "Write ONLY the 2-3 sentence situation summary now (no action list — the app shows the actions). Speak directly to the user as 'you'.",
   );
   return lines.join("\n");
 }
@@ -188,9 +283,11 @@ const DEFAULT_TIMEOUT_MS = 12_000;
 const MAX_TOKENS = 600;
 
 /**
- * Calls the Anthropic Messages API and returns the briefing text, or null on
- * any failure (timeout, non-2xx, unexpected shape). The caller treats null as
- * "fall back to the rule-based briefing" — this function never throws.
+ * Calls the Anthropic Messages API and returns the AI-written situation SUMMARY
+ * (prose only — the structured, tappable actions are assembled separately by
+ * `buildBriefingActions`), or null on any failure (timeout, non-2xx, unexpected
+ * shape). The caller treats null as "fall back to the rule-based briefing" — this
+ * function never throws.
  */
 export async function generateLlmBriefing(
   apiKey: string,
@@ -243,7 +340,7 @@ export async function generateLlmBriefing(
   }
 }
 
-// ── Deterministic rule-based fallback ─────────────────────────
+// ── Structured, deep-linked actions (shared by AI + fallback) ──
 
 function stageSummary(signals: BriefingSignals): string {
   switch (signals.moveStage) {
@@ -259,15 +356,106 @@ function stageSummary(signals: BriefingSignals): string {
 }
 
 /**
- * A deterministic, honest briefing assembled purely from the user's own
- * signals + pending checklist. No network, no LLM — this is what the UI shows
- * when ANTHROPIC_API_KEY is unset or the API fails. It must read sensibly on
- * its own (it is also a regression baseline for the LLM output).
+ * Builds up to 3 honest, deep-linked next actions purely from the user's own
+ * signals + pending checklist. Each action carries a typed `deeplink` the client
+ * maps to a real destination. This is the single source of structured actions for
+ * BOTH paths: the AI path returns these alongside its prose, and the rule-based
+ * fallback renders them inline. Never fabricates specifics.
  */
-export function buildFallbackBriefing(signals: BriefingSignals): string {
+export function buildBriefingActions(signals: BriefingSignals): BriefingAction[] {
+  const actions: BriefingAction[] = [];
+
+  // 1) Still-pending essentials → set-up-this-category deep-links (most actionable).
+  for (let i = 0; i < signals.missingCriticalLabels.length; i++) {
+    if (actions.length >= 3) break;
+    const label = signals.missingCriticalLabels[i];
+    const category = signals.missingCriticalCategories[i];
+    actions.push({
+      title: `Set up ${label.toLowerCase()}`,
+      why: "It's one of the essentials most people need in place around a move.",
+      deeplink: category ? { type: "category", category } : { type: "services" },
+    });
+  }
+
+  // 2) Vehicles + a known state → state-specific guidance (DMV rules live there).
+  if (actions.length < 3 && signals.carCount > 0 && signals.state) {
+    actions.push({
+      title: `Check vehicle registration rules for ${signals.state}`,
+      why: "States set their own window to register after a move — your state's official guide has the exact rules.",
+      deeplink: { type: "state-rules" },
+    });
+  }
+  // 3) Renters → lock move dates with the plan.
+  if (actions.length < 3 && signals.housing === "rent") {
+    actions.push({
+      title: "Confirm move-in and move-out dates with your landlords",
+      why: "Locking the dates early keeps your utilities, deposit, and overlap from becoming a scramble.",
+      deeplink: { type: "plan" },
+    });
+  }
+  // 4) Kids/pets → records transfer (these belong in your tracked services).
+  if (actions.length < 3 && (signals.hasPets || signals.hasKids)) {
+    actions.push({
+      title: signals.hasKids
+        ? "Sort out school records and any new enrollment"
+        : "Update your pet's records and find a local vet",
+      why: "These take time to transfer, so starting now avoids a last-minute gap.",
+      deeplink: { type: "services" },
+    });
+  }
+
+  // Honest defaults to always reach 3 actions. The "pick a move date" default is
+  // SUPPRESSED when a dated plan already exists, so we never contradict the user's
+  // own signals.
+  const defaults: BriefingAction[] = [
+    {
+      title: "List the services tied to your address",
+      why: "Internet, utilities, insurance, and subscriptions are easy to forget until something lapses.",
+      deeplink: { type: "services" },
+    },
+    {
+      title: "Set a simple change-of-address checklist",
+      why: "Updating your address in one pass prevents missed mail and billing surprises.",
+      deeplink: { type: "services" },
+    },
+    ...(signals.hasMoveDate
+      ? [
+          {
+            title: "Work backward from your move date",
+            why: "Your date anchors everything else — bookings, notices, and transfers all key off it.",
+            deeplink: { type: "plan" } as BriefingDeeplink,
+          },
+        ]
+      : [
+          {
+            title: "Pick your target move date and work backward",
+            why: "A date anchors everything else — bookings, notices, and transfers all key off it.",
+            deeplink: { type: "plan" } as BriefingDeeplink,
+          },
+        ]),
+  ];
+  for (const d of defaults) {
+    if (actions.length >= 3) break;
+    if (!actions.some((a) => a.title === d.title)) actions.push(d);
+  }
+
+  return actions.slice(0, 3);
+}
+
+/**
+ * The honest, deterministic situation summary (prose, 2-3 sentences). Shared by
+ * the rule-based fallback. Reflects the coarse timing bucket but never a date.
+ */
+export function buildFallbackSummary(signals: BriefingSignals): string {
   const summaryBits: string[] = [stageSummary(signals)];
   if (signals.state) summaryBits.push(`in ${signals.state}`);
   let summary = summaryBits.join(" ") + ".";
+
+  // Coarse timing — only when we actually have a dated plan (never invented).
+  const timingPhrase = DAYS_TO_MOVE_PHRASE[signals.daysToMoveBucket];
+  if (signals.hasMoveDate && timingPhrase && signals.daysToMoveBucket !== "past") {
+    summary += ` You're ${timingPhrase}, so a little lead time helps.`;
+  }
 
   const context: string[] = [];
   if (signals.hasKids) context.push("kids");
@@ -281,63 +469,53 @@ export function buildFallbackBriefing(signals: BriefingSignals): string {
   } else {
     summary += " Keeping everything in one place makes the next steps easier.";
   }
+  return summary;
+}
 
-  // Build up to 3 concrete actions from the pending critical categories first,
-  // then fall back to sensible, honest defaults — never fabricated specifics.
-  const actions: Array<{ title: string; why: string }> = [];
-
-  for (const label of signals.missingCriticalLabels) {
-    if (actions.length >= 3) break;
-    actions.push({
-      title: `Set up ${label.toLowerCase()}`,
-      why: "It's one of the essentials most people need in place around a move.",
-    });
-  }
-
-  if (actions.length < 3 && signals.carCount > 0 && signals.state) {
-    actions.push({
-      title: `Plan your vehicle registration in ${signals.state}`,
-      why: "Most states give you a limited window to register after you move — check your state's DMV site for the exact rules.",
-    });
-  }
-  if (actions.length < 3 && signals.housing === "rent") {
-    actions.push({
-      title: "Confirm move-in and move-out dates with your landlords",
-      why: "Locking the dates early keeps your utilities, deposit, and overlap from becoming a scramble.",
-    });
-  }
-  if (actions.length < 3 && (signals.hasPets || signals.hasKids)) {
-    actions.push({
-      title: signals.hasKids
-        ? "Sort out school records and any new enrollment"
-        : "Update your pet's records and find a local vet",
-      why: "These take time to transfer, so starting now avoids a last-minute gap.",
-    });
-  }
-  // Honest defaults to always reach 3 actions.
-  const defaults: Array<{ title: string; why: string }> = [
-    {
-      title: "List the services tied to your address",
-      why: "Internet, utilities, insurance, and subscriptions are easy to forget until something lapses.",
-    },
-    {
-      title: "Set a simple change-of-address checklist",
-      why: "Updating your address in one pass prevents missed mail and billing surprises.",
-    },
-    {
-      title: "Pick your target move date and work backward",
-      why: "A date anchors everything else — bookings, notices, and transfers all key off it.",
-    },
-  ];
-  for (const d of defaults) {
-    if (actions.length >= 3) break;
-    if (!actions.some((a) => a.title === d.title)) actions.push(d);
-  }
-
-  const body = actions
-    .slice(0, 3)
+/**
+ * A deterministic, honest briefing assembled purely from the user's own
+ * signals + pending checklist. No network, no LLM — this is what the UI shows
+ * when ANTHROPIC_API_KEY is unset or the API fails. It must read sensibly on
+ * its own (it is also a regression baseline for the LLM output).
+ */
+export function buildFallbackBriefing(signals: BriefingSignals): string {
+  const summary = buildFallbackSummary(signals);
+  const body = buildBriefingActions(signals)
     .map((a, i) => `${i + 1}. ${a.title} — ${a.why}`)
     .join("\n");
-
   return `${summary}\n\n${body}`;
+}
+
+// ── Structured payload + client-readable serialization ─────────
+
+export interface BriefingPayload {
+  /** Prose for display (AI prose, or the rule-based prose). */
+  briefing: string;
+  /** Structured, deep-linked actions (always present, always honest). */
+  actions: BriefingAction[];
+  moveStage: MoveStage;
+  daysToMoveBucket: DaysToMoveBucket;
+}
+
+/**
+ * Sentinel that separates the human-readable prose from a machine-readable JSON
+ * tail appended to the `briefing` string. The client splits on this, renders the
+ * prose, parses the tail for structured actions + stage, and never shows the tail.
+ * This keeps the existing { briefing: string } transport (and its consumers /
+ * cache fingerprint) unchanged while carrying structure end-to-end.
+ */
+export const BRIEFING_META_SENTINEL = "<<<LF_BRIEFING_META>>>";
+
+/**
+ * Encodes a payload into the single `briefing` string: prose, then the sentinel,
+ * then compact JSON of { actions, moveStage, daysToMoveBucket }. The prose remains
+ * the leading, fully-readable content for any consumer that ignores the tail.
+ */
+export function encodeBriefingString(payload: BriefingPayload): string {
+  const meta = JSON.stringify({
+    actions: payload.actions,
+    moveStage: payload.moveStage,
+    daysToMoveBucket: payload.daysToMoveBucket,
+  });
+  return `${payload.briefing}\n${BRIEFING_META_SENTINEL}\n${meta}`;
 }

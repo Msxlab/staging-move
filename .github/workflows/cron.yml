@@ -20,7 +20,23 @@ on:
   schedule:
     - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch + scheduled-delivery (10m); blog-publish (hourly)
     - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup
-    - cron: "0 6 * * *" # daily 06:00: trial-check + the daily reminder batch
+    - cron: "0 6 * * *" # daily 06:00: non-user-facing daily jobs (trial-check, admin digest, admin backup, data-retention)
+    # ── Daily user-facing reminder batch, fired once per US-zone-hour so each
+    # user is reminded at ~8am LOCAL instead of 1–3am. Each run scans all
+    # candidates but only ACTS on users whose resolved local hour is exactly 8
+    # (gate in the routes); the per-day dedupe keys make any cross-run overlap a
+    # no-op. The strict local-hour=8 gate is DST-correct on its own: as zones
+    # shift offset twice a year the matching UTC run just changes (e.g. Eastern
+    # is 12:00 UTC in EDT, 13:00 UTC in EST). We therefore schedule EVERY whole
+    # UTC hour that can be local-8am for a US zone in EITHER DST or standard time
+    # (offsets -4 EDT … -10 HST → UTC hours 12…18), so no zone is ever dropped.
+    - cron: "0 12 * * *" # local 8am at UTC-4 (Eastern, EDT)
+    - cron: "0 13 * * *" # local 8am at UTC-5 (Eastern EST / Central CDT)
+    - cron: "0 14 * * *" # local 8am at UTC-6 (Central CST / Mountain MDT)
+    - cron: "0 15 * * *" # local 8am at UTC-7 (Mountain MST / Pacific PDT)
+    - cron: "0 16 * * *" # local 8am at UTC-8 (Pacific PST / Alaska AKDT)
+    - cron: "0 17 * * *" # local 8am at UTC-9 (Alaska AKST)
+    - cron: "0 18 * * *" # local 8am at UTC-10 (Hawaii HST, no DST)
     - cron: "0 9 * * 1" # Mondays: weekly-digest
     - cron: "0 10 1 * *" # 1st of month: monthly-report
     - cron: "0 4 * * 0" # Sundays: data-retention
@@ -68,19 +84,33 @@ jobs:
               hit "$WEB/api/cron/blog-cleanup"
               ;;
             "0 6 * * *")
+              # Non-user-facing daily jobs. These are NOT time-of-day sensitive
+              # for the end user (trial-check is a subscription state machine +
+              # seat reconcile; admin digest/backup go to the operator), so they
+              # stay on one fixed slot. The user-facing reminder batch moved to
+              # the per-zone 12–18 UTC slots below.
               hit "$WEB/api/cron/trial-check"
-              hit "$WEB/api/cron/bill-reminders"
-              hit "$WEB/api/cron/bill-overdue"
-              hit "$WEB/api/cron/task-reminders"
-              hit "$WEB/api/cron/move-reminders"
-              hit "$WEB/api/cron/contract-reminders"
-              hit "$WEB/api/cron/lifecycle-nudges"
               hit "$WEB/api/cron/admin-daily-digest"
               # Admin DB backup (admin host) + web data-retention sweep run with
               # the daily batch so they don't depend on the weekly Sunday slot
               # alone — backup is daily, and data-retention is safe to run daily.
               hit "$ADMIN/api/cron/backup" POST
               hit "$WEB/api/cron/data-retention"
+              ;;
+            "0 12 * * *"|"0 13 * * *"|"0 14 * * *"|"0 15 * * *"|"0 16 * * *"|"0 17 * * *"|"0 18 * * *")
+              # Daily user-facing reminder batch, fired once per US zone so each
+              # user is reminded at ~8am LOCAL. The routes self-gate to users
+              # whose resolved local hour is ~8, so it's safe to hit every
+              # endpoint on every one of these runs — a user in another zone is
+              # simply skipped this run and picked up by their zone's run. The
+              # existing per-day dedupe keys guarantee at-most-once even if a
+              # user matched two runs (DST seam / off-grid tz).
+              hit "$WEB/api/cron/bill-reminders"
+              hit "$WEB/api/cron/bill-overdue"
+              hit "$WEB/api/cron/task-reminders"
+              hit "$WEB/api/cron/move-reminders"
+              hit "$WEB/api/cron/contract-reminders"
+              hit "$WEB/api/cron/lifecycle-nudges"
               ;;
             "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
             "0 10 1 * *") hit "$WEB/api/cron/monthly-report" ;;

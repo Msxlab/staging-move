@@ -6,7 +6,7 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
-import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -63,6 +63,9 @@ async function handleCron(request: NextRequest) {
       for (const service of services) {
         if (!service.user?.email || !service.contractEndDate) continue;
         const userTimeZone = resolveReminderTimeZone(service.user.profile?.timezone);
+        // Local ~8am delivery gate (see reminder-timezone.ts). Per-day dedupe
+        // keys keep any cross-run overlap idempotent.
+        if (!isReminderDeliveryHour(now, userTimeZone)) continue;
         const days = daysUntilDateOnly(service.contractEndDate, now, userTimeZone);
         if (!reminderDays.includes(days)) continue;
 

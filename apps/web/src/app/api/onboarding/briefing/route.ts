@@ -9,7 +9,9 @@ import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
 import {
   buildBriefingSignals,
+  buildBriefingActions,
   buildFallbackBriefing,
+  encodeBriefingString,
   generateLlmBriefing,
   type BriefingSignals,
 } from "@/lib/onboarding-briefing";
@@ -58,7 +60,10 @@ function signalFingerprint(signals: BriefingSignals): string {
     signals.state,
     signals.moveType,
     signals.moveStage,
+    signals.hasMoveDate,
+    signals.daysToMoveBucket,
     signals.missingCriticalLabels,
+    signals.missingCriticalCategories,
   ]);
 }
 
@@ -146,10 +151,19 @@ export async function POST(request: NextRequest) {
   if (housing === "OWNER") essentials.push("FINANCIAL_INSURANCE_HOME");
   else if (housing === "RENTER") essentials.push("FINANCIAL_INSURANCE_RENTERS");
 
-  const missingCriticalLabels = essentials
-    .filter((cat) => !ownedCategories.has(cat))
-    .map((cat) => getMergedDisplayCategoryLabel(cat))
-    .filter((label, i, arr) => arr.indexOf(label) === i); // de-dupe merged labels
+  // { category, label } pairs for still-pending essentials, de-duped by the
+  // merged display label (so two raw categories that render to the same label
+  // don't double up). The category KEY rides along so each generated action can
+  // carry a `{type:'category'}` deep-link. Catalog enum values — never PII.
+  const seenLabels = new Set<string>();
+  const missingCritical: Array<{ category: string; label: string }> = [];
+  for (const cat of essentials) {
+    if (ownedCategories.has(cat)) continue;
+    const label = getMergedDisplayCategoryLabel(cat);
+    if (seenLabels.has(label)) continue;
+    seenLabels.add(label);
+    missingCritical.push({ category: cat, label });
+  }
 
   const signals = buildBriefingSignals({
     profile: user?.profile ?? null,
@@ -161,7 +175,7 @@ export async function POST(request: NextRequest) {
           toState: activePlan.toAddress?.state ?? null,
         }
       : null,
-    missingCriticalLabels,
+    missingCritical,
   });
 
   const fingerprint = signalFingerprint(signals);
@@ -179,6 +193,9 @@ export async function POST(request: NextRequest) {
       source: cached.source,
       aiGenerated: cached.source === "ai",
       briefing: cached.briefing,
+      // moveStage drives the client's per-stage re-show; cheap to recompute and
+      // always returned so a cache hit doesn't strand the client without it.
+      moveStage: signals.moveStage,
       cached: true,
     });
   }
@@ -192,13 +209,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ configured: false });
   }
 
-  // ── Try the LLM; degrade to the rule-based fallback on any failure ──
-  let briefing = await generateLlmBriefing(apiKey, signals);
+  // Structured, deep-linked actions are deterministic and honest — assembled the
+  // same way regardless of whether the prose summary is AI-written or rule-based.
+  const actions = buildBriefingActions(signals);
+
+  // ── Try the LLM for the situation SUMMARY; degrade to the rule-based summary ──
+  const aiSummary = await generateLlmBriefing(apiKey, signals);
   let source: "ai" | "rule_based" = "ai";
-  if (!briefing) {
-    briefing = buildFallbackBriefing(signals);
+  let prose: string;
+  if (aiSummary) {
+    prose = aiSummary;
+  } else {
+    // Full rule-based briefing (summary + inline actions) keeps a sensible read
+    // even if a non-parsing consumer ignores the structured tail.
+    prose = buildFallbackBriefing(signals);
     source = "rule_based";
   }
+
+  // Encode prose + structured tail into the single `briefing` string so the
+  // existing { briefing: string } transport carries structure to clients that
+  // only forward the text (the mobile card parses the tail; web reads `actions`).
+  const briefing = encodeBriefingString({
+    briefing: prose,
+    actions,
+    moveStage: signals.moveStage,
+    daysToMoveBucket: signals.daysToMoveBucket,
+  });
 
   briefingCache.set(cacheKey, {
     fingerprint,
@@ -212,6 +248,9 @@ export async function POST(request: NextRequest) {
     source,
     aiGenerated: source === "ai",
     briefing,
+    actions,
+    moveStage: signals.moveStage,
+    daysToMoveBucket: signals.daysToMoveBucket,
     cached: false,
   });
 }

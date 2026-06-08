@@ -57,20 +57,36 @@ export interface MoveCommandCenterProps {
   /** User's resolved timezone signals for a tz-correct countdown. */
   timezone?: string | null;
   state?: string | null;
+  /**
+   * COLD-START momentum floor (parity with mobile). True when the user has
+   * genuinely completed the first real setup steps — origin AND destination are
+   * set. It is the ONLY thing that lifts the ring off a hard 0% before any
+   * task/provider progress; we credit only setup the user actually did (never a
+   * fabricated completion). Defaults false → ring behaves exactly as before.
+   */
+  hasOriginDestination?: boolean;
   /** Localised copy. Keyed access keeps this component i18n-agnostic. */
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
+
+// Cold-start momentum floor (%). Mirrors mobile: an active plan WITH origin +
+// destination set is real, user-completed setup, so the ring starts here instead
+// of a demotivating 0%. Floor only — any genuine higher progress always wins.
+const COLD_START_FLOOR = 6;
 
 /**
  * Readiness % = the mean of two normalised signals when both exist:
  *   - checklist progress (completed / total), and
  *   - critical providers set up (completed / (completed + missing)).
- * Falls back to whichever single signal is available; 0 when neither is.
+ * Falls back to whichever single signal is available; 0 when neither is. When
+ * `hasOriginDestination` is true the result is floored at COLD_START_FLOOR — a
+ * low, honest non-zero that reflects real setup the user did.
  */
 function computeReadiness(
   checklist: RelocationChecklist | null,
   completedCritical: number,
   missingCritical: number,
+  hasOriginDestination = false,
 ): number {
   const signals: number[] = [];
   if (checklist && checklist.totalItems > 0) {
@@ -80,9 +96,12 @@ function computeReadiness(
   if (criticalTotal > 0) {
     signals.push(completedCritical / criticalTotal);
   }
-  if (signals.length === 0) return 0;
-  const mean = signals.reduce((a, b) => a + b, 0) / signals.length;
-  return Math.max(0, Math.min(100, Math.round(mean * 100)));
+  const computed =
+    signals.length === 0
+      ? 0
+      : Math.round((signals.reduce((a, b) => a + b, 0) / signals.length) * 100);
+  const floored = hasOriginDestination ? Math.max(computed, COLD_START_FLOOR) : computed;
+  return Math.max(0, Math.min(100, floored));
 }
 
 /** SVG readiness ring. Pure presentation; size + stroke are fixed. */
@@ -167,6 +186,7 @@ export function MoveCommandCenter({
   completedCriticalCount,
   timezone,
   state,
+  hasOriginDestination,
   t,
 }: MoveCommandCenterProps) {
   // ── NO-PLAN: warm "start your move" hero ──────────────────────────────────
@@ -200,7 +220,12 @@ export function MoveCommandCenter({
 
   // ── ACTIVE MOVE: countdown + readiness + next action ──────────────────────
   const countdown = getMoveCountdown(activePlan.moveDate, { timezone, state });
-  const readiness = computeReadiness(checklist, completedCriticalCount, missingCriticalCount);
+  const readiness = computeReadiness(
+    checklist,
+    completedCriticalCount,
+    missingCriticalCount,
+    hasOriginDestination,
+  );
   const moveDateLabel = formatDateOnlyUtc(activePlan.moveDate);
 
   // Milestone latch: fire the one-shot burst when fully ready OR the move day

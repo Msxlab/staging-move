@@ -645,7 +645,16 @@
     "commandCenter_allSet": "You're all set — nice work!",
     "commandCenter_noPlanTitle": "Start your move",
     "commandCenter_noPlanBody": "Plan a move and we'll build your personalized checklist, surface the providers you need, and count down to the big day.",
-    "commandCenter_noPlanCta": "Plan a Move"
+    "commandCenter_noPlanCta": "Plan a Move",
+    "upNext_title": "Up next",
+    "upNext_viewAll": "View all",
+    "upNext_due": "Due {date}",
+    "upNext_noDate": "No deadline",
+    "upNext_completeLabel": "Mark \"{title}\" complete",
+    "upNext_completeFailed": "Couldn't complete that task. Please try again.",
+    "upNext_completed": "Completed \"{title}\"",
+    "upNext_undo": "Undo",
+    "upNext_undoFailed": "Couldn't undo that. Please try again."
   },
   "addresses": {
     "title": "Addresses",
