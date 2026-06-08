@@ -44,6 +44,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
+import { UpNext } from "@/components/ui/UpNext";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import type { ServiceLike } from "@/lib/service-insights";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -623,6 +624,24 @@ export default function DashboardScreen() {
             onStartMove={() => router.push("/moving/new")}
           />
         </View>
+
+        {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each
+            with a one-tap inline checkbox that completes via the same
+            PATCH /api/move-tasks { event: "COMPLETE" } the plan screen uses.
+            Self-hides with no active plan / no open tasks. onCompleted refreshes
+            the dashboard so the readiness ring bumps. */}
+        <UpNext
+          planId={stats?.activePlan?.id ?? null}
+          locale={(i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US"}
+          onViewAll={() => {
+            const pid = stats?.activePlan?.id;
+            if (pid) router.push(`/moving/${pid}` as Href);
+            else router.push("/(tabs)/moving");
+          }}
+          onCompleted={async () => {
+            await fetchDashboard();
+          }}
+        />
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>

@@ -168,7 +168,13 @@
     "commandCenter_allSet": "¡Todo listo, buen trabajo!",
     "commandCenter_noPlanTitle": "Inicia tu mudanza",
     "commandCenter_noPlanBody": "Planifica una mudanza y crearemos tu lista, mostraremos los proveedores que necesitas y contaremos los días hasta el gran día.",
-    "commandCenter_noPlanCta": "Planificar mudanza"
+    "commandCenter_noPlanCta": "Planificar mudanza",
+    "upNext_title": "A continuación",
+    "upNext_viewAll": "Ver todo",
+    "upNext_due": "Vence {{date}}",
+    "upNext_noDate": "Sin fecha límite",
+    "upNext_completeLabel": "Marcar \"{{title}}\" como completada",
+    "upNext_completeFailed": "No se pudo completar esa tarea. Inténtalo de nuevo."
   },
   "addresses": {
     "title": "Direcciones",
@@ -524,6 +530,8 @@
     "confidence_LOW": "Confianza baja",
     "confidence_UNVERIFIED": "Confianza no verificada",
     "dueDate": "Vence {{date}}",
+    "swipeDone": "Listo",
+    "swipeCompleteHint": "Desliza a la izquierda para completar",
     "accept": "Aceptar",
     "complete": "Completar",
     "dismiss": "Descartar",
