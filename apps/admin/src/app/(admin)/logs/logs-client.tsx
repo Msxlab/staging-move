@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
-  Search, ChevronLeft, ChevronRight, Filter, X, Download, Shield, Users,
-  ChevronDown, ChevronUp, Clock, FileText, ExternalLink, BarChart3,
+  ChevronDown, ChevronUp, Download, Shield, Users, FileText, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
-import { AdminPageHeader } from "@/components/admin-page-header";
-import { EmptyState } from "@/components/empty-state";
-
-const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+import {
+  DataTablePage,
+  type DataTableColumn,
+  type FilterControl,
+} from "@/components/data-table-page";
 
 function relativeTime(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -37,52 +37,166 @@ function actionColor(action: string) {
   return "bg-primary/10 text-primary";
 }
 
+function tryParseJSON(str: string | null) {
+  if (!str) return null;
+  try { return JSON.parse(str); } catch { return str; }
+}
+
+interface LogRow {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  ipAddress: string | null;
+  createdAt: string;
+  changes: string | null;
+  userId?: string | null;
+  adminUserId?: string | null;
+  user?: { firstName: string | null; lastName: string | null; email: string } | null;
+  adminUser?: { firstName: string | null; lastName: string | null; email: string } | null;
+}
+
+interface FilterOptions {
+  actions: { value: string; count: number }[];
+  entityTypes: { value: string; count: number }[];
+  admins: { id: string; label: string }[];
+}
+
 export default function LogsClient() {
   const [tab, setTab] = useState<"admin" | "user">("admin");
-  const [logs, setLogs] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [expandedLog, setExpandedLog] = useState<string | null>(null);
-  const [filterOptions, setFilterOptions] = useState<any>({ actions: [], entityTypes: [], admins: [] });
-  const [filters, setFilters] = useState({ action: "", entityType: "", adminId: "", dateFrom: "", dateTo: "" });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    actions: [],
+    entityTypes: [],
+    admins: [],
+  });
+  const [expandedLog, setExpandedLog] = useState<{ id: string; changes: string | null; action: string; entityType: string } | null>(null);
   const [exportStepUpOpen, setExportStepUpOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const perPage = 30;
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), perPage: String(perPage), tab, search });
-      if (filters.action) params.set("action", filters.action);
-      if (filters.entityType) params.set("entityType", filters.entityType);
-      if (filters.adminId) params.set("adminId", filters.adminId);
-      if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
-      if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  // The filter bar's option lists are server-driven (returned in the fetch
+  // response). Build the FilterControl[] from the latest options. The Admin
+  // filter only exists on the admin tab.
+  const filters = useMemo<FilterControl[]>(() => {
+    const base: FilterControl[] = [
+      {
+        key: "action",
+        label: "Action",
+        type: "select",
+        options: [
+          { value: "", label: "All Actions" },
+          ...filterOptions.actions.map((a) => ({ value: a.value, label: `${a.value} (${a.count})` })),
+        ],
+      },
+      {
+        key: "entityType",
+        label: "Entity Type",
+        type: "select",
+        options: [
+          { value: "", label: "All Types" },
+          ...filterOptions.entityTypes.map((e) => ({ value: e.value, label: `${e.value} (${e.count})` })),
+        ],
+      },
+    ];
+    if (tab === "admin") {
+      base.push({
+        key: "adminId",
+        label: "Admin",
+        type: "select",
+        options: [
+          { value: "", label: "All Admins" },
+          ...filterOptions.admins.map((a) => ({ value: a.id, label: a.label })),
+        ],
+      });
+    }
+    base.push(
+      { key: "dateFrom", label: "From Date", type: "date" },
+      { key: "dateTo", label: "To Date", type: "date" },
+    );
+    return base;
+  }, [filterOptions, tab]);
 
-      const res = await fetch(`/api/logs?${params}`);
-      const data = await res.json();
-      setLogs(data.logs || []);
-      setTotal(data.total || 0);
-      if (data.filters) setFilterOptions(data.filters);
-    } catch { toast.error("Failed to fetch logs"); }
-    finally { setLoading(false); }
-  }, [page, tab, search, filters]);
+  const columns: DataTableColumn<LogRow>[] = [
+    {
+      key: "who",
+      label: tab === "admin" ? "Admin" : "User",
+      alwaysOn: true,
+      header: tab === "admin" ? "Admin" : "User",
+      cell: (log) => {
+        const who = tab === "admin" ? log.adminUser : log.user;
+        return who ? (
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{who.firstName} {who.lastName}</p>
+            <p className="text-xs text-muted-foreground truncate">{who.email}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground font-mono">
+            {(log.userId || log.adminUserId || "").slice(0, 12)}...
+          </p>
+        );
+      },
+    },
+    {
+      key: "action",
+      label: "Action",
+      cell: (log) => (
+        <span className={`rounded px-2 py-0.5 text-xs font-medium ${actionColor(log.action)}`}>{log.action}</span>
+      ),
+    },
+    {
+      key: "entity",
+      label: "Entity",
+      cell: (log) => (
+        <>
+          <span className="text-sm text-foreground">{log.entityType}</span>
+          <p className="text-xs text-muted-foreground font-mono">{log.entityId.slice(0, 10)}...</p>
+        </>
+      ),
+    },
+    {
+      key: "ip",
+      label: "IP",
+      cell: (log) => <span className="text-xs text-muted-foreground">{log.ipAddress || "—"}</span>,
+    },
+    {
+      key: "time",
+      label: "Time",
+      cell: (log) => (
+        <>
+          <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
+          <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
+        </>
+      ),
+    },
+    {
+      key: "details",
+      label: "Details",
+      align: "center",
+      cell: (log) => {
+        const changes = tryParseJSON(log.changes);
+        if (!changes) return <span className="text-xs text-muted-foreground">—</span>;
+        const isExpanded = expandedLog?.id === log.id;
+        return (
+          <button
+            onClick={() =>
+              setExpandedLog(
+                isExpanded
+                  ? null
+                  : { id: log.id, changes: log.changes, action: log.action, entityType: log.entityType },
+              )
+            }
+            aria-label={isExpanded ? "Collapse log details" : "Expand log details"}
+            aria-pressed={isExpanded}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        );
+      },
+    },
+  ];
 
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
-
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
-  const totalPages = Math.ceil(total / perPage);
-
-  function clearFilters() {
-    setFilters({ action: "", entityType: "", adminId: "", dateFrom: "", dateTo: "" });
-    setPage(1);
-  }
-
-  async function exportCSV(values: StepUpValues) {
+  async function exportCSV(values: StepUpValues, query: Record<string, string>) {
     setExportBusy(true);
     setExportError(null);
     try {
@@ -94,12 +208,12 @@ export default function LogsClient() {
           confirmPassword: values.confirmPassword,
           mfaCode: values.mfaCode,
           backupCode: values.backupCode,
-          search,
-          action: filters.action || undefined,
-          entityType: filters.entityType || undefined,
-          adminId: filters.adminId || undefined,
-          dateFrom: filters.dateFrom || undefined,
-          dateTo: filters.dateTo || undefined,
+          search: query.search || undefined,
+          action: query.action || undefined,
+          entityType: query.entityType || undefined,
+          adminId: query.adminId || undefined,
+          dateFrom: query.dateFrom || undefined,
+          dateTo: query.dateTo || undefined,
         }),
       });
       if (!res.ok) {
@@ -128,13 +242,12 @@ export default function LogsClient() {
     }
   }
 
-  function tryParseJSON(str: string | null) {
-    if (!str) return null;
-    try { return JSON.parse(str); } catch { return str; }
-  }
+  // Snapshot of the table's current query so the step-up export can forward
+  // the same filters the operator is viewing. Updated by the fetcher.
+  const [exportQuery, setExportQuery] = useState<Record<string, string>>({});
 
   return (
-    <div className="space-y-5">
+    <>
       <PasswordConfirmModal
         open={exportStepUpOpen}
         title="Confirm audit export"
@@ -147,187 +260,106 @@ export default function LogsClient() {
           setExportStepUpOpen(false);
           setExportError(null);
         }}
-        onConfirm={(_password, values) => exportCSV(values)}
+        onConfirm={(_password, values) => exportCSV(values, exportQuery)}
       />
-      <AdminPageHeader
+
+      {/* key={tab} resets the table's URL-synced state (search/filters/page)
+          when the operator switches tabs — matching the old behavior that
+          cleared search + filters + page on tab change. */}
+      <DataTablePage<LogRow>
+        key={tab}
         eyebrow="Security"
         title="Audit <em>Logs</em>"
-        subtitle={`${total} log entries`}
-        actions={
+        subtitle={(total) => `${total} log entries`}
+        storageKey={`admin.logs.${tab}`}
+        columnsVersion={1}
+        columns={columns}
+        filters={filters}
+        defaultSortBy="createdAt"
+        defaultSortDir="desc"
+        perPage={30}
+        searchPlaceholder={
+          tab === "admin"
+            ? "Search admin email, entity ID, action..."
+            : "Search user ID, entity, action..."
+        }
+        emptyIcon={FileText}
+        emptyTitle="No logs found"
+        emptyDescription={() => "No audit log entries match your current search or filters."}
+        fetcher={async ({ params, signal }) => {
+          params.set("tab", tab);
+          // The logs API derives sort server-side (createdAt desc); it does
+          // not read sortBy/sortDir, so leaving them in the params is inert.
+          const res = await fetch(`/api/logs?${params}`, { signal });
+          const data = await res.json();
+          if (data.filters) setFilterOptions(data.filters);
+          // Capture the non-pagination query for the export step-up.
+          const snap: Record<string, string> = {};
+          ["search", "action", "entityType", "adminId", "dateFrom", "dateTo"].forEach((k) => {
+            const v = params.get(k);
+            if (v) snap[k] = v;
+          });
+          setExportQuery(snap);
+          return { rows: data.logs || [], total: data.total || 0 };
+        }}
+        headerActions={() => (
           <>
-            <a href="/logs/activity" className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+            <a
+              href="/logs/activity"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
               <BarChart3 className="h-3.5 w-3.5" /> Activity Analytics
             </a>
-            <button onClick={() => setExportStepUpOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+            <button
+              onClick={() => setExportStepUpOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+            >
               <Download className="h-3.5 w-3.5" /> Export CSV
             </button>
           </>
+        )}
+        beforeTable={() => (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTab("admin")}
+              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "admin" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}
+            >
+              <Shield className="h-4 w-4" /> Admin Actions
+            </button>
+            <button
+              onClick={() => setTab("user")}
+              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "user" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}
+            >
+              <Users className="h-4 w-4" /> User Activity
+            </button>
+          </div>
+        )}
+        afterTable={() =>
+          expandedLog
+            ? (() => {
+                const changes = tryParseJSON(expandedLog.changes);
+                return (
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-foreground">
+                        Changes — {expandedLog.action} on {expandedLog.entityType}
+                      </p>
+                      <button
+                        onClick={() => setExpandedLog(null)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <pre className="text-xs text-muted-foreground bg-card rounded-lg p-3 overflow-x-auto max-h-64 border border-border">
+                      {typeof changes === "string" ? changes : JSON.stringify(changes, null, 2)}
+                    </pre>
+                  </div>
+                );
+              })()
+            : null
         }
       />
-
-      {/* Tabs */}
-      <div className="flex gap-2">
-        <button onClick={() => { setTab("admin"); setPage(1); setSearch(""); clearFilters(); }}
-          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "admin" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}>
-          <Shield className="h-4 w-4" /> Admin Actions
-        </button>
-        <button onClick={() => { setTab("user"); setPage(1); setSearch(""); clearFilters(); }}
-          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "user" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}>
-          <Users className="h-4 w-4" /> User Activity
-        </button>
-      </div>
-
-      {/* Search + Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input type="text" placeholder={tab === "admin" ? "Search admin email, entity ID, action..." : "Search user ID, entity, action..."}
-            value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-lg border border-input bg-background pl-10 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-        </div>
-        <button onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${showFilters ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}>
-          <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilterCount}</span>}
-        </button>
-        {activeFilterCount > 0 && (
-          <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
-            <X className="h-3 w-3" /> Clear
-          </button>
-        )}
-      </div>
-
-      {showFilters && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className={`grid gap-3 ${tab === "admin" ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"}`}>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Action</label>
-              <select value={filters.action} onChange={(e) => { setFilters({ ...filters, action: e.target.value }); setPage(1); }} className={inputCls}>
-                <option value="">All Actions</option>
-                {(filterOptions.actions || []).map((a: any) => <option key={a.value} value={a.value}>{a.value} ({a.count})</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Entity Type</label>
-              <select value={filters.entityType} onChange={(e) => { setFilters({ ...filters, entityType: e.target.value }); setPage(1); }} className={inputCls}>
-                <option value="">All Types</option>
-                {(filterOptions.entityTypes || []).map((e: any) => <option key={e.value} value={e.value}>{e.value} ({e.count})</option>)}
-              </select>
-            </div>
-            {tab === "admin" && (
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Admin</label>
-                <select value={filters.adminId} onChange={(e) => { setFilters({ ...filters, adminId: e.target.value }); setPage(1); }} className={inputCls}>
-                  <option value="">All Admins</option>
-                  {(filterOptions.admins || []).map((a: any) => <option key={a.id} value={a.id}>{a.label}</option>)}
-                </select>
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">From Date</label>
-              <input type="date" value={filters.dateFrom} onChange={(e) => { setFilters({ ...filters, dateFrom: e.target.value }); setPage(1); }} className={inputCls} />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">To Date</label>
-              <input type="date" value={filters.dateTo} onChange={(e) => { setFilters({ ...filters, dateTo: e.target.value }); setPage(1); }} className={inputCls} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">{tab === "admin" ? "Admin" : "User"}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Action</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Entity</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">IP</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Time</th>
-              <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Details</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {loading ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
-            ) : logs.length === 0 ? (
-              <tr><td colSpan={6} className="px-4"><EmptyState icon={FileText} title="No logs found" description="No audit log entries match your current search or filters." /></td></tr>
-            ) : logs.map((log: any) => {
-              const who = tab === "admin" ? log.adminUser : log.user;
-              const changes = tryParseJSON(log.changes);
-              const isExpanded = expandedLog === log.id;
-              return (
-                <tr key={log.id} className="bg-card group">
-                  <td className="px-4 py-3">
-                    {who ? (
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{who.firstName} {who.lastName}</p>
-                        <p className="text-xs text-muted-foreground truncate">{who.email}</p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground font-mono">{(log.userId || log.adminUserId || "").slice(0, 12)}...</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${actionColor(log.action)}`}>{log.action}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-foreground">{log.entityType}</span>
-                    <p className="text-xs text-muted-foreground font-mono">{log.entityId.slice(0, 10)}...</p>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{log.ipAddress || "—"}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
-                    <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {changes ? (
-                      <button onClick={() => setExpandedLog(isExpanded ? null : log.id)}
-                        aria-label={isExpanded ? "Collapse log details" : "Expand log details"}
-                        aria-pressed={isExpanded}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Expanded Changes Viewer */}
-      {expandedLog && (() => {
-        const log = logs.find((l: any) => l.id === expandedLog);
-        if (!log) return null;
-        const changes = tryParseJSON(log.changes);
-        return (
-          <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-foreground">Changes — {log.action} on {log.entityType}</p>
-              <button onClick={() => setExpandedLog(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
-            </div>
-            <pre className="text-xs text-muted-foreground bg-card rounded-lg p-3 overflow-x-auto max-h-64 border border-border">
-              {typeof changes === "string" ? changes : JSON.stringify(changes, null, 2)}
-            </pre>
-          </div>
-        );
-      })()}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} aria-label="Previous page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
-            <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} aria-label="Next page" className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronRight className="h-4 w-4" /></button>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

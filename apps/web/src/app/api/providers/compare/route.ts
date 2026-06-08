@@ -2,6 +2,56 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderTrustSummary } from "@locateflow/shared";
+import {
+  getProviderCoverageConfidenceFromDb,
+  getProviderMatchLevelFromDb,
+  safeJsonArray,
+} from "@/lib/provider-matching";
+
+// GET /api/providers/compare?ids=a,b,c[&addressId=...]
+//
+// Side-by-side comparison over attributes that ACTUALLY EXIST on
+// ServiceProvider. There is no rating or price column on this model (and we
+// deliberately do NOT invent them — that would be fabricated data and an FTC
+// risk), so this compares the real, honest attributes a mover can use to
+// decide between listed providers:
+//
+//   - coverage confidence AT THE USER'S ADDRESS (computed from the indexed
+//     ServiceProviderCoverage rows + the provider's coverage model)
+//   - popularity rank within the compared set (relative, from popularityScore)
+//   - category / sub-category
+//   - tags / features
+//   - official-vs-affiliate (affiliateActive) and whether a website exists
+//   - community user count, phone, scope (national vs state)
+//
+// The previous version of this endpoint filtered on `minRating` / `maxPrice`
+// (columns that do not exist) and was never consumed by any UI. Those dead
+// filters are removed.
+const MAX_COMPARE = 4;
+
+type CompareProviderRow = {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  subCategory: string | null;
+  description: string | null;
+  website: string | null;
+  phone: string | null;
+  logoUrl: string | null;
+  scope: string;
+  states: string;
+  zipCodes: string;
+  coverageModel: string | null;
+  tags: string;
+  popularityScore: number;
+  displayOrder: number;
+  userCount: number;
+  affiliateActive: boolean;
+  coverages: Array<{ state: string | null; zipPrefix: string | null; zipExact: string | null }>;
+};
 
 export async function GET(req: NextRequest) {
   let userId: string;
@@ -11,7 +61,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = await rateLimit(getRateLimitKey(req, `providers:compare:${userId}`), { limit: 30, windowSeconds: 60 });
+  const rl = await rateLimit(getRateLimitKey(req, "providers:compare", { userId }), {
+    limit: 30,
+    windowSeconds: 60,
+  });
   if (!rl.success) {
     return NextResponse.json(
       { error: "Too many requests" },
@@ -20,90 +73,165 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(req.url);
-  const category = url.searchParams.get("category") || "";
-  const state = url.searchParams.get("state") || "";
-  const minRating = parseFloat(url.searchParams.get("minRating") || "0");
-  const maxPrice = url.searchParams.get("maxPrice") || "";
-  const sortBy = url.searchParams.get("sortBy") || "popularityScore";
-  const tags = url.searchParams.get("tags") || "";
-  const search = url.searchParams.get("search") || "";
-  const scope = url.searchParams.get("scope") || "";
-  const ids = url.searchParams.get("ids") || "";
+  const idsParam = url.searchParams.get("ids") || "";
+  const addressId = url.searchParams.get("addressId") || "";
 
-  const where: any = { isActive: true };
-  if (category) where.category = category;
-  if (scope) where.scope = scope;
-  if (search) where.name = { contains: search };
+  // Dedupe + cap. Preserve the caller's requested order so the comparison
+  // columns stay where the user placed them.
+  const requestedIds: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of idsParam.split(",")) {
+    const id = raw.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    requestedIds.push(id);
+    if (requestedIds.length >= MAX_COMPARE) break;
+  }
 
-  let providers = await prisma.serviceProvider.findMany({
-    where,
-    orderBy: { popularityScore: "desc" },
+  if (requestedIds.length < 2) {
+    return NextResponse.json(
+      { error: "Provide between 2 and 4 provider ids to compare.", providers: [] },
+      { status: 400 }
+    );
+  }
+
+  // Resolve the address the comparison is anchored to: the explicitly chosen
+  // one (scoped to this user) or the user's primary. deletedAt:null is set
+  // explicitly because the soft-delete extension only filters top-level reads.
+  const address = addressId
+    ? await prisma.address.findFirst({
+        where: { id: addressId, userId, deletedAt: null },
+        select: { id: true, state: true, zip: true, city: true, nickname: true, latitude: true, longitude: true },
+      })
+    : await prisma.address.findFirst({
+        where: { userId, deletedAt: null, isPrimary: true },
+        select: { id: true, state: true, zip: true, city: true, nickname: true, latitude: true, longitude: true },
+      });
+
+  const rows = (await prisma.serviceProvider.findMany({
+    where: { id: { in: requestedIds }, isActive: true },
+    include: { coverages: true },
+  })) as unknown as CompareProviderRow[];
+
+  const byId = new Map(rows.map((r) => [r.id, r] as const));
+
+  const matchOptions = {
+    state: address?.state ?? null,
+    zip: address?.zip ?? null,
+    latitude: address?.latitude ?? null,
+    longitude: address?.longitude ?? null,
+  };
+
+  // Popularity rank is relative WITHIN the compared set so the label is honest
+  // ("most popular of the 3 you picked"), not a global claim. Ties share a rank.
+  const present = requestedIds.map((id) => byId.get(id)).filter((r): r is CompareProviderRow => Boolean(r));
+  const byPopularity = [...present].sort((a, b) => b.popularityScore - a.popularityScore);
+  const popularityRank = new Map<string, number>();
+  let rank = 0;
+  let prevScore: number | null = null;
+  byPopularity.forEach((r, index) => {
+    if (prevScore === null || r.popularityScore !== prevScore) {
+      rank = index + 1;
+      prevScore = r.popularityScore;
+    }
+    popularityRank.set(r.id, rank);
   });
 
-  if (state) {
-    providers = providers.filter((p) => {
-      if (p.scope === "FEDERAL") return true;
-      try {
-        const states = JSON.parse(p.states || "[]");
-        return states.includes(state);
-      } catch { return false; }
-    });
-  }
+  const providers = requestedIds
+    .map((id) => byId.get(id))
+    .filter((r): r is CompareProviderRow => Boolean(r))
+    .map((p) => {
+      const states = safeJsonArray(p.states);
+      const zipCodes = safeJsonArray(p.zipCodes);
+      const tags = safeJsonArray(p.tags);
+      const metadata = getProviderCoverageMetadata(p.slug);
+      const coverageModel: ProviderCoverageModel =
+        (p.coverageModel as ProviderCoverageModel | null | undefined) ||
+        metadata?.coverageModel ||
+        (zipCodes.length > 0 ? "zip_prefix" : "state");
 
-  if (tags) {
-    const tagList = tags.split(",").map((t) => t.trim().toLowerCase());
-    providers = providers.filter((p) => {
-      try {
-        const pTags = JSON.parse(p.tags || "[]").map((t: string) => t.toLowerCase());
-        return tagList.some((t) => pTags.includes(t));
-      } catch { return false; }
-    });
-  }
+      const matchInput = {
+        id: p.id,
+        slug: p.slug,
+        scope: p.scope,
+        coverageModel,
+        coverages: p.coverages || [],
+      };
+      const coverageMatchLevel = getProviderMatchLevelFromDb(matchInput, matchOptions);
+      const coverageConfidence = getProviderCoverageConfidenceFromDb(matchInput, matchOptions);
+      const requiresAddressCheck = coverageModel === "live_address";
+      const requiresPolygonCheck = coverageModel === "polygon";
 
-  // Compare mode: return specific providers by IDs
-  if (ids) {
-    const idList = ids.split(",");
-    const compareProviders = providers.filter((p) => idList.includes(p.id));
-
-    return NextResponse.json({ providers: compareProviders, mode: "compare" });
-  }
-
-  // Categories for filter
-  const categories = [...new Set(providers.map((p) => p.category))].sort();
-  const allTags = [...new Set(providers.flatMap((p) => { try { return JSON.parse(p.tags || "[]"); } catch { return []; } }))].sort();
-
-  // State listing check based on the user's state. This is not an address-level
-  // serviceability or official availability check.
-  // NOTE: the withSoftDelete extension only filters TOP-LEVEL reads, not nested
-  // relation includes — so deletedAt:null must be set explicitly here, otherwise
-  // a user who deleted their primary address would still resolve its stale state.
-  const user = await prisma.user.findUnique({ where: { id: userId }, include: { addresses: { where: { isPrimary: true, deletedAt: null }, take: 1 } } });
-  const userState = user?.addresses?.[0]?.state || "";
-
-  if (userState) {
-    providers = providers.map((p) => {
-      let listed = false;
-      if (p.scope === "FEDERAL") listed = true;
-      else {
-        try {
-          const states = JSON.parse(p.states || "[]");
-          listed = states.includes(userState);
-        } catch {}
-      }
-      return {
+      const trust = getProviderTrustSummary({
         ...p,
-        listedInUserState: listed,
-        availabilityCaveat:
-          "Listed provider only. Confirm address-level availability with the official provider.",
+        states,
+        zipCodes,
+        tags,
+        coverageModel,
+        coverageMatchLevel,
+        coverageNote: metadata?.note || null,
+        coverageSourceUrl: metadata?.officialUrl || null,
+        requiresAddressCheck,
+        requiresPolygonCheck,
+      });
+
+      let websiteHost: string | null = null;
+      if (p.website) {
+        try {
+          websiteHost = new URL(p.website).hostname.replace(/^www\./, "");
+        } catch {
+          websiteHost = null;
+        }
+      }
+
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        category: p.category,
+        subCategory: p.subCategory,
+        description: p.description,
+        website: p.website,
+        websiteHost,
+        phone: p.phone,
+        logoUrl: p.logoUrl,
+        scope: p.scope,
+        states,
+        zipCodes,
+        tags,
+        popularityScore: p.popularityScore,
+        popularityRank: popularityRank.get(p.id) ?? null,
+        userCount: p.userCount || 0,
+        // "Official link" = the provider exposes an outbound affiliate/official
+        // link we surface; otherwise it's a directory listing only.
+        affiliateActive: Boolean(p.affiliateActive),
+        hasWebsite: Boolean(p.website),
+        hasPhone: Boolean(p.phone),
+        coverageModel,
+        coverageMatchLevel,
+        coverageConfidence: trust.coverageConfidence,
+        coverageNote: metadata?.note || null,
+        coverageSourceUrl: metadata?.officialUrl || null,
+        requiresAddressCheck,
+        requiresPolygonCheck,
+        trust,
       };
     });
-  }
+
+  // Compare rows are defined by the union of attributes across the picked
+  // providers so the UI can render an aligned table without re-deriving it.
+  const allTags = [...new Set(providers.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
+  const categories = [...new Set(providers.map((p) => p.category))];
 
   return NextResponse.json({
-    providers: providers.slice(0, 100),
-    total: providers.length,
+    mode: "compare",
+    providers,
+    comparedCount: providers.length,
+    sameCategory: categories.length === 1,
     categories,
     allTags,
-    userState,
+    address: address
+      ? { id: address.id, state: address.state, zip: address.zip, city: address.city, nickname: address.nickname ?? null }
+      : null,
   });
 }
