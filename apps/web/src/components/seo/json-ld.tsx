@@ -77,6 +77,12 @@ export function organizationSchema(ctx: SiteContext) {
       "@type": "ImageObject",
       url: ctx.logoUrl,
     },
+    // OWNER ACTION: `sameAs` is intentionally left empty. It must list the
+    // brand's REAL, official profile URLs (e.g. the company's own LinkedIn,
+    // X/Twitter, Facebook, Instagram, YouTube, GitHub pages) so crawlers can
+    // reconcile the entity. Do NOT invent or guess these — none exist in the
+    // codebase/config today, so an empty array is the honest value. Fill it in
+    // once the owner confirms the actual handles.
     sameAs: [],
   };
 }
@@ -88,7 +94,14 @@ export function webSiteSchema(ctx: SiteContext) {
     "@id": `${ctx.siteUrl}#website`,
     url: ctx.siteUrl,
     name: ctx.siteName,
-    inLanguage: ["en-US", "es-US"],
+    // English (US) only. The marketing surface is served from a single set of
+    // URLs whose `<html lang>` is en for crawlers; there are NO distinct
+    // `/es/` alternate URLs, so claiming site-wide `es-US` here advertised
+    // Spanish pages that don't exist. The blog still emits a per-post `es-US`
+    // hreflang *conditionally* (only when a real Spanish post exists at
+    // `?locale=es`) via `blogHreflangUrls`, which is the honest, URL-backed
+    // place for that claim.
+    inLanguage: "en-US",
     publisher: { "@id": `${ctx.siteUrl}#organization` },
   };
 }
@@ -228,5 +241,54 @@ export function faqPageSchema(items: FAQItem[]) {
       name: q.question,
       acceptedAnswer: { "@type": "Answer", text: q.answer },
     })),
+  };
+}
+
+export interface HowToStep {
+  /** Short imperative step name (the visible heading on the page). */
+  name: string;
+  /** The step's body copy, verbatim from the page. */
+  text: string;
+  /** Optional deep link to the step's anchor / section URL. */
+  url?: string;
+}
+
+export interface HowToSchemaInput {
+  name: string;
+  description: string;
+  steps: HowToStep[];
+  inLanguage?: string;
+}
+
+/**
+ * HowTo structured data for genuinely procedural pages.
+ *
+ * Every `step` MUST mirror a step that is actually rendered on the page —
+ * Google requires the structured data to match visible content, and we never
+ * want the rich result to describe a procedure the reader can't see. Empty /
+ * whitespace-only steps are dropped so a partially-populated list can't emit a
+ * malformed `HowToStep`.
+ */
+export function howToSchema(input: HowToSchemaInput) {
+  const steps = input.steps
+    .filter((s) => s.name.trim() && s.text.trim())
+    .map((s, i) => {
+      const step: Record<string, unknown> = {
+        "@type": "HowToStep",
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      };
+      if (s.url) step.url = s.url;
+      return step;
+    });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: input.name,
+    description: input.description,
+    inLanguage: input.inLanguage || "en-US",
+    step: steps,
   };
 }

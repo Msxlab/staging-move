@@ -39,6 +39,7 @@ import {
   articleSchema,
   breadcrumbSchema,
   faqPageSchema,
+  howToSchema,
 } from "@/components/seo/json-ld";
 import { SITE_URL, absoluteUrl, publicMetadataTitle, SITE_NAME } from "@/lib/seo";
 import {
@@ -245,6 +246,20 @@ export default async function MovingStatePage({
         })}
       />
       <JsonLd id="ld-faq" data={faqPageSchema(faq)} />
+      {/* HowTo built from the SAME ordered CHECKLIST the page renders below, so
+          the rich result mirrors the visible step-by-step list exactly. */}
+      <JsonLd
+        id="ld-howto"
+        data={howToSchema({
+          name: `${guide.name} relocation checklist: what to do after you move`,
+          description: `A step-by-step relocation checklist for moving to ${guide.name}: change your address, set up utilities, get your license, register your vehicle and to vote, and review insurance and taxes.`,
+          inLanguage: "en-US",
+          steps: CHECKLIST.map((item) => ({
+            name: item.label,
+            text: item.detail,
+          })),
+        })}
+      />
       <JsonLd
         id="ld-breadcrumb"
         data={breadcrumbSchema([
