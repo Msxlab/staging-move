@@ -1726,3 +1726,72 @@ export async function sendSecurityNoticeEmail(opts: {
   });
   return result.success;
 }
+
+/**
+ * Lifecycle / win-back emails. Behavior-triggered (sent by
+ * api/cron/lifecycle-nudges), NOT data-deadline-triggered. Two kinds:
+ *   - "abandoned-setup": signed up but never built a moving plan / added
+ *     services. Nudge them to finish onboarding.
+ *   - "inactive-winback": went quiet (no login activity for a while) but still
+ *     has an upcoming move with open tasks. Gentle "your move is coming up".
+ *
+ * Both gate on the lifecycle EMAIL opt-out (isEmailTypeOptedOut "LIFECYCLE" —
+ * the cron also pre-checks the same preference) and carry the standard
+ * one-click unsubscribe footer/headers. Copy is honest US-only: no fabricated
+ * urgency, no false claims, no invented counts.
+ */
+export async function sendLifecycleNudgeEmail(opts: {
+  userEmail: string;
+  userName: string;
+  kind: "abandoned-setup" | "inactive-winback";
+  /** Headline shown in the email + subject. */
+  subject: string;
+  /** Short preheader line. */
+  preheader: string;
+  /** One or two honest body paragraphs. */
+  bodyLines: string[];
+  /** Optional labeled detail rows (e.g. ["Move date", "Aug 21, 2026"]). */
+  details?: Array<[string, string | null | undefined]>;
+  cta: { href: string; label: string };
+  userId?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  // Lifecycle nudges are opt-out-able. The cron pre-filters on the same
+  // preference, but re-check here so any other caller can't bypass it.
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "LIFECYCLE"))) {
+    return false;
+  }
+  const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
+  // Unsubscribe lands on the "reminder" category page — lifecycle is a
+  // reminder-class (not marketing) email, matching task/move/bill reminders.
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const baseContent = buildSimpleContent({
+    subject: opts.subject,
+    title: opts.subject,
+    preheader: opts.preheader,
+    userName: opts.userName,
+    bodyLines: opts.bodyLines,
+    details: opts.details,
+    cta: opts.cta,
+    locale,
+  });
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
+    templateSlug: `lifecycle-${opts.kind}`,
+    dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    metadata: {
+      kind: `lifecycle-${opts.kind}`,
+      userId: opts.userId || null,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}

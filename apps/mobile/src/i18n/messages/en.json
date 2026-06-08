@@ -153,7 +153,22 @@
     "pushPromptDismiss": "Dismiss",
     "firstRunTitle": "Welcome to LocateFlow",
     "firstRunBody": "Add your first address and we'll help you keep every service, bill, and move in one calm place.",
-    "firstRunCta": "Set up your first address"
+    "firstRunCta": "Set up your first address",
+    "commandCenter_eyebrow": "Move Command Center",
+    "commandCenter_daysToGo": "{{count}} days to go",
+    "commandCenter_oneDay": "1 day to go",
+    "commandCenter_movingDay": "It's moving day!",
+    "commandCenter_daysAgo": "Moved {{count}} days ago",
+    "commandCenter_nextAction": "Next critical action",
+    "commandCenter_readiness": "Move readiness",
+    "commandCenter_readinessLabel": "Move readiness {{percent}} percent",
+    "commandCenter_readinessDetail": "{{done}}/{{total}} checklist done",
+    "commandCenter_readinessProviders": "{{count}} key providers to set up",
+    "commandCenter_viewPlan": "View your plan",
+    "commandCenter_allSet": "You're all set — nice work!",
+    "commandCenter_noPlanTitle": "Start your move",
+    "commandCenter_noPlanBody": "Plan a move and we'll build your checklist, surface the providers you need, and count down to the big day.",
+    "commandCenter_noPlanCta": "Plan a Move"
   },
   "addresses": {
     "title": "Addresses",

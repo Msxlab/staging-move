@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bell, Loader2, Receipt, Calendar, Mail, Users } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Receipt, Calendar, Mail, Users, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { WEB_NOTIFICATION_PREFERENCE_DEFINITIONS } from "@/lib/notification-preferences";
@@ -49,6 +49,14 @@ const notifGroups: NotifGroup[] = [
     items: [
       { key: "connectorActionNeeded", label: "Connection action needed", description: "When a connected service needs you to reconnect or finish a sync" },
       { key: "workspaceMembership", label: "Workspace updates", description: "When you're invited, your role changes, or you're added to or removed from a shared workspace" },
+    ],
+  },
+  {
+    title: "Helpful Nudges",
+    icon: Sparkles,
+    iconColor: "text-tone-orange-fg",
+    items: [
+      { key: "lifecycleNudge", label: "Setup & move reminders", description: "Occasional nudges to finish setting up your move, or a heads-up when your move is coming up and tasks are still open" },
     ],
   },
 ];

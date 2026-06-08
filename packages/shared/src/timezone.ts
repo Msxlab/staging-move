@@ -175,3 +175,81 @@ export function formatDateOnlyUtc(
   if (!date) return "";
   return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(date);
 }
+
+/** ms in a whole calendar day. */
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * The calendar-day ordinal (days since the Unix epoch) of an instant *as seen in
+ * `timeZone`*. Two instants share an ordinal iff they fall on the same wall-clock
+ * date in that zone. Implemented via the `en-CA` ISO formatter (YYYY-MM-DD),
+ * which renders the local date in the target zone without any DST/offset math.
+ */
+function calendarDayOrdinalInZone(date: Date, timeZone: string): number {
+  // en-CA yields a stable "2026-06-21" shape we can split deterministically.
+  const iso = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+  const [y, m, d] = iso.split("-").map((n) => parseInt(n, 10));
+  // Date.UTC of the rendered Y-M-D, divided by a day, is the calendar ordinal.
+  return Math.floor(Date.UTC(y, m - 1, d) / MS_PER_DAY);
+}
+
+/**
+ * Whole calendar days from "today" until a move/due date, computed tz-correctly.
+ *
+ * `moveDate` is a DATE-ONLY value stored at UTC midnight, so its calendar day is
+ * its UTC day (never shift it into a US zone — that lands the prior evening).
+ * "Today" is the user's wall-clock day in their resolved US timezone, so the
+ * countdown flips at the user's local midnight, not the server's. The two days
+ * are then differenced as plain integers.
+ *
+ * Returns: positive = days remaining, 0 = the move is today, negative = days
+ * since the move (past). Returns `null` for an unparseable date.
+ */
+export function daysUntilMove(
+  moveDate: Date | string | number,
+  opts?: { timezone?: string | null; state?: string | null; now?: Date },
+): number | null {
+  const move = toDate(moveDate);
+  if (!move) return null;
+  const now = opts?.now ?? new Date();
+  const userZone = resolveUserTimeZone({ timezone: opts?.timezone, state: opts?.state });
+  // Move day is read in UTC (date-only convention); "today" is read in the
+  // user's zone. Subtracting the two calendar ordinals yields whole days.
+  const moveOrdinal = calendarDayOrdinalInZone(move, "UTC");
+  const todayOrdinal = calendarDayOrdinalInZone(now, userZone);
+  return moveOrdinal - todayOrdinal;
+}
+
+/** A move's countdown phase — drives copy + celebration state. */
+export type MoveCountdownPhase = "upcoming" | "today" | "past";
+
+export interface MoveCountdown {
+  /** Whole calendar days until the move (>0), 0 today, <0 after. null if unknown. */
+  days: number | null;
+  /** Absolute day count for display ("N days to go" / "N days ago"). */
+  absDays: number;
+  phase: MoveCountdownPhase;
+  /** true when the move is today — the celebration / "moving day!" trigger. */
+  isMovingDay: boolean;
+}
+
+/**
+ * Resolve a full move-countdown descriptor (days + phase + moving-day flag) for
+ * a date-only UTC-midnight move date, tz-correct via {@link daysUntilMove}.
+ */
+export function getMoveCountdown(
+  moveDate: Date | string | number,
+  opts?: { timezone?: string | null; state?: string | null; now?: Date },
+): MoveCountdown {
+  const days = daysUntilMove(moveDate, opts);
+  if (days === null) {
+    return { days: null, absDays: 0, phase: "upcoming", isMovingDay: false };
+  }
+  const phase: MoveCountdownPhase = days > 0 ? "upcoming" : days === 0 ? "today" : "past";
+  return { days, absDays: Math.abs(days), phase, isMovingDay: days === 0 };
+}

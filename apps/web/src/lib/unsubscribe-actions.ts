@@ -95,7 +95,7 @@ export async function loadEmailOptOutState(userId: string): Promise<{
  * preference row exists, matching the existing cron behavior where the
  * absence of a row means the user has not changed defaults.
  */
-export async function isEmailTypeOptedOut(userId: string, type: "MARKETING" | "REMINDER"): Promise<boolean> {
+export async function isEmailTypeOptedOut(userId: string, type: "MARKETING" | "REMINDER" | "LIFECYCLE"): Promise<boolean> {
   const pref = await prisma.notificationPreference.findUnique({
     where: { userId_channel_type: { userId, channel: EMAIL_CHANNEL, type } },
     select: { enabled: true },
