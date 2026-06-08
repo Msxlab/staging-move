@@ -239,9 +239,17 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
         const profile = profileData.profile || {};
         const sub = profileData.subscription || {};
-        const hasPremium = sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
+        // Prefer the EFFECTIVE entitlement (mirrors mobile): an inherited
+        // Family/Pro member has no own paid subscription row but inherits the
+        // owner's tier, so the raw own-subscription heuristic would wrongly read
+        // FREE_TRIAL and hide the premium badge. Fall back to the own-subscription
+        // heuristic only when the resolved entitlement is absent.
+        const ent = profileData.entitlement;
+        const hasPremium = ent
+          ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
+          : sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
         setIsPremium(!!hasPremium);
-        setPremiumPlan(sub.plan || "");
+        setPremiumPlan((ent?.plan ?? sub.plan) || "");
         setStats({
           addressCount: addrs.length, serviceCount: services.length, monthlyExpenses,
           activePlan,

@@ -1094,8 +1094,10 @@ export default function OnboardingScreen() {
                       >
                         <ServiceLogoMark
                           service={{
-                            provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+                            category: provider.category,
+                            providerName: provider.name,
                             website: provider.website,
+                            provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
                           }}
                           fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
                           size={36}
@@ -1157,8 +1159,10 @@ export default function OnboardingScreen() {
                                 onPress={() => { hapticLight(); toggleProvider(provider as any); }}>
                                 <ServiceLogoMark
                                   service={{
-                                    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+                                    category: provider.category,
+                                    providerName: provider.name,
                                     website: provider.website,
+                                    provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
                                   }}
                                   fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
                                   size={36}
