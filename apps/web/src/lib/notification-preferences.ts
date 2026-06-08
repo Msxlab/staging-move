@@ -37,6 +37,15 @@ export const WEB_NOTIFICATION_PREFERENCE_DEFINITIONS: WebNotificationDefinition[
   // change, removed) as those are built out.
   { key: "connectorActionNeeded", channel: "EMAIL", type: "CONNECTOR_ACTION_NEEDED", defaultEnabled: true, frequency: "IMMEDIATE" },
   { key: "workspaceMembership", channel: "EMAIL", type: "WORKSPACE_MEMBERSHIP", defaultEnabled: true, frequency: "IMMEDIATE" },
+  // Lifecycle / win-back nudges (api/cron/lifecycle-nudges). Behavior-triggered,
+  // NOT data-deadline-triggered: "finish setting up your move" for users who
+  // signed up but added nothing, and a gentle "your move is coming up — N tasks
+  // waiting" for users who've gone quiet but still have an upcoming move + open
+  // tasks. Default ON, but explicitly opt-out-able from the Notifications screen
+  // and honored by the cron (email gate + push type). Type "LIFECYCLE" is a NEW
+  // free-form NotificationPreference.type value — NotificationPreference.type is
+  // an unconstrained VarChar(30), so NO schema/enum migration is needed.
+  { key: "lifecycleNudge", channel: "EMAIL", type: "LIFECYCLE", defaultEnabled: true, frequency: "IMMEDIATE" },
 ];
 
 export const WEB_NOTIFICATION_CONFIG_DEFINITIONS: WebNotificationConfigDefinition[] = [

@@ -630,7 +630,22 @@
     "budget_monthlyTitle": "Presupuesto mensual",
     "budget_loading": "Cargando...",
     "budget_noData": "Sin datos de gastos",
-    "servicesCount": "{count} servicios"
+    "servicesCount": "{count} servicios",
+    "commandCenter_eyebrow": "Centro de mando de mudanza",
+    "commandCenter_daysToGo": "Faltan {count} días",
+    "commandCenter_oneDay": "Falta 1 día",
+    "commandCenter_movingDay": "¡Es el día de la mudanza!",
+    "commandCenter_daysAgo": "Te mudaste hace {count} días",
+    "commandCenter_nextAction": "Próxima acción crítica",
+    "commandCenter_readiness": "Preparación de la mudanza",
+    "commandCenter_readinessLabel": "Preparación de la mudanza {percent} por ciento",
+    "commandCenter_readinessDetail": "{done}/{total} de la lista hecha",
+    "commandCenter_readinessProviders": "{count} proveedores clave por configurar",
+    "commandCenter_viewPlan": "Ver tu plan",
+    "commandCenter_allSet": "¡Todo listo, buen trabajo!",
+    "commandCenter_noPlanTitle": "Inicia tu mudanza",
+    "commandCenter_noPlanBody": "Planifica una mudanza y crearemos tu lista personalizada, mostraremos los proveedores que necesitas y contaremos los días hasta el gran día.",
+    "commandCenter_noPlanCta": "Planificar mudanza"
   },
   "addresses": {
     "title": "Direcciones",

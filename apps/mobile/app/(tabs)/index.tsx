@@ -43,7 +43,7 @@ import {
 } from "@/lib/workspace-invite";
 import { Card } from "@/components/ui/Card";
 import { PlanHero } from "@/components/ui/PlanHero";
-import { FirstRunHero } from "@/components/ui/FirstRunHero";
+import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import type { ServiceLike } from "@/lib/service-insights";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -82,6 +82,16 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
+  // Move Command Center readiness signal: top next-critical action + how many
+  // CRITICAL provider categories are still missing vs. set up. Sourced from the
+  // recommendations engine (nextCriticalActions / stats.missingCritical).
+  const [topAction, setTopAction] = useState<CommandCenterAction | null>(null);
+  const [criticalReadiness, setCriticalReadiness] = useState<{ missing: number; completed: number }>({
+    missing: 0,
+    completed: 0,
+  });
+  // Primary address state → tz-correct move countdown (US-only zone mapping).
+  const [primaryState, setPrimaryState] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [planTier, setPlanTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +115,7 @@ export default function DashboardScreen() {
   const [pushPromptBusy, setPushPromptBusy] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
-    const [res, addrRes, movingRes, svcRes, invites] = await Promise.all([
+    const [res, addrRes, movingRes, svcRes, invites, recoRes] = await Promise.all([
       api.get<any>("/api/profile"),
       api.get<any>("/api/addresses", { limit: "200" }),
       api.get<any>("/api/moving"),
@@ -115,7 +125,35 @@ export default function DashboardScreen() {
       // Best-effort: never blocks the dashboard. Empty when the feature gate is
       // off or the user has no actionable invites, in which case the banner hides.
       fetchPendingInvitations(),
+      // Best-effort: powers the Move Command Center's readiness (missingCritical)
+      // + single next-critical action. An error just leaves those at their empty
+      // defaults; it never blocks the dashboard.
+      api.get<any>("/api/providers/recommendations").catch(() => ({ data: null, error: true })),
     ]);
+    // Move Command Center readiness — surfaced independently so it renders even
+    // if the core payload partially failed.
+    {
+      const reco = (recoRes as any)?.data;
+      const next = Array.isArray(reco?.nextCriticalActions) ? reco.nextCriticalActions[0] : null;
+      setTopAction(
+        next
+          ? {
+              id: next.id,
+              name: next.name,
+              category: next.category,
+              reason: next.explanation?.reason || next.explanation?.headline || "",
+              deadline: next.explanation?.deadline,
+            }
+          : null,
+      );
+      const missing: string[] = Array.isArray(reco?.stats?.missingCritical) ? reco.stats.missingCritical : [];
+      const completedCats: string[] = Array.isArray(reco?.stats?.completedCategories)
+        ? reco.stats.completedCategories
+        : [];
+      const missingSet = new Set(missing);
+      const completedCritical = completedCats.filter((c) => !missingSet.has(c)).length;
+      setCriticalReadiness({ missing: missingSet.size, completed: completedCritical });
+    }
     // Surface services independently of the core payload so the insights card
     // still renders even if profile/addresses errored (and vice-versa).
     setServices(svcRes.data?.services || []);
@@ -156,6 +194,9 @@ export default function DashboardScreen() {
       setWorkspace(primaryWs ?? null);
 
       const addresses = addrRes.data?.addresses || [];
+      setPrimaryState(
+        addresses.find((a: any) => a.isPrimary)?.state || addresses[0]?.state || null,
+      );
       const plans = movingRes.data?.plans || [];
       const totalServices = addresses.reduce(
         (sum: number, a: any) => sum + (a.services?.length || 0),
@@ -405,20 +446,6 @@ export default function DashboardScreen() {
     },
   ];
 
-  // Free / no-data users get a friendly first-run hero instead of a cold
-  // "0 / 0 / $0" grid. PlanHero only renders for Family/Pro, so this fills the
-  // gap for everyone else who hasn't added anything yet.
-  const isEmptyAccount =
-    !!stats &&
-    (stats.addressCount || 0) === 0 &&
-    (stats.serviceCount || 0) === 0;
-  const showFirstRunHero =
-    isEmptyAccount &&
-    !workspace &&
-    !stats?.activePlan &&
-    (planTier ?? "").toUpperCase() !== "FAMILY" &&
-    (planTier ?? "").toUpperCase() !== "PRO";
-
   // Plan-aware header badge: Family = crystal green, Pro = premium gold, else generic Premium.
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
@@ -564,6 +591,23 @@ export default function DashboardScreen() {
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
         ) : (
           <>
+        {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next
+            action. Its no-plan state is the warm "start your move" hero, so it
+            replaces the old cold empty path for users without an active move. */}
+        <View style={{ marginBottom: 16 }}>
+          <MoveCommandCenter
+            activePlan={stats?.activePlan ?? null}
+            checklist={checklist}
+            topAction={topAction}
+            missingCriticalCount={criticalReadiness.missing}
+            completedCriticalCount={criticalReadiness.completed}
+            state={primaryState}
+            onOpenPlan={() => router.push("/(tabs)/moving")}
+            onOpenAction={(action) => router.push(`/providers/${action.id}` as Href)}
+            onStartMove={() => router.push("/moving/new")}
+          />
+        </View>
+
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {statCards.map((card) => {
@@ -596,12 +640,6 @@ export default function DashboardScreen() {
         {/* Plan welcome hero — mascots + plan identity (Family/Pro only).
             celebrateTick fires a one-shot bounce when an invite is accepted. */}
         <PlanHero celebrateTick={celebrateTick} />
-
-        {/* Free / first-run hero — friendly raccoon + setup CTA for users who
-            have nothing yet. Mutually exclusive with PlanHero (Family/Pro). */}
-        {showFirstRunHero && (
-          <FirstRunHero onSetup={() => router.push("/addresses/new")} />
-        )}
 
         {/* Savings / insights — computed client-side from tracked services.
             Self-hides when there are no active services to summarize. */}

@@ -153,7 +153,22 @@
     "pushPromptDismiss": "Descartar",
     "firstRunTitle": "Bienvenido a LocateFlow",
     "firstRunBody": "Agrega tu primera dirección y te ayudaremos a tener cada servicio, factura y mudanza en un solo lugar tranquilo.",
-    "firstRunCta": "Configura tu primera dirección"
+    "firstRunCta": "Configura tu primera dirección",
+    "commandCenter_eyebrow": "Centro de mando de mudanza",
+    "commandCenter_daysToGo": "Faltan {{count}} días",
+    "commandCenter_oneDay": "Falta 1 día",
+    "commandCenter_movingDay": "¡Es el día de la mudanza!",
+    "commandCenter_daysAgo": "Te mudaste hace {{count}} días",
+    "commandCenter_nextAction": "Próxima acción crítica",
+    "commandCenter_readiness": "Preparación de la mudanza",
+    "commandCenter_readinessLabel": "Preparación de la mudanza {{percent}} por ciento",
+    "commandCenter_readinessDetail": "{{done}}/{{total}} de la lista hecha",
+    "commandCenter_readinessProviders": "{{count}} proveedores clave por configurar",
+    "commandCenter_viewPlan": "Ver tu plan",
+    "commandCenter_allSet": "¡Todo listo, buen trabajo!",
+    "commandCenter_noPlanTitle": "Inicia tu mudanza",
+    "commandCenter_noPlanBody": "Planifica una mudanza y crearemos tu lista, mostraremos los proveedores que necesitas y contaremos los días hasta el gran día.",
+    "commandCenter_noPlanCta": "Planificar mudanza"
   },
   "addresses": {
     "title": "Direcciones",

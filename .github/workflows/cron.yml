@@ -74,6 +74,7 @@ jobs:
               hit "$WEB/api/cron/task-reminders"
               hit "$WEB/api/cron/move-reminders"
               hit "$WEB/api/cron/contract-reminders"
+              hit "$WEB/api/cron/lifecycle-nudges"
               hit "$WEB/api/cron/admin-daily-digest"
               # Admin DB backup (admin host) + web data-retention sweep run with
               # the daily batch so they don't depend on the weekly Sunday slot
