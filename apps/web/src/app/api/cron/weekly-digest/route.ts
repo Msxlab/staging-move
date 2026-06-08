@@ -8,6 +8,16 @@ import {
   getNextBillingDate,
   groupNotificationPreferencesByUser,
 } from "@/lib/notification-preferences";
+import { DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone } from "@locateflow/shared";
+
+// A local-midnight date (new Date(y, m, d)) reprojected onto its UTC calendar
+// day so it formats in a tz-stable way (never leaks the server's process tz).
+function formatLocalCalendarDay(date: Date, options: Intl.DateTimeFormatOptions) {
+  return formatDateOnlyUtc(
+    new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())),
+    options,
+  );
+}
 
 /**
  * GET /api/cron/weekly-digest
@@ -29,9 +39,13 @@ export async function GET(req: Request) {
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const weekStart = weekAgo.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    const weekEnd = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    const weekdayName = now.toLocaleDateString("en-US", { weekday: "long" });
+    // US-only product: render the run-global digest span + weekday in Eastern
+    // (the app default) rather than the server's process tz, so "today" and the
+    // window read as a US day even when the cron host is abroad. weekdayName
+    // also gates digest-day eligibility — it must be a US weekday, not Turkey's.
+    const weekStart = formatInUserTimeZone(weekAgo, DEFAULT_US_TIME_ZONE, { month: "short", day: "numeric" });
+    const weekEnd = formatInUserTimeZone(now, DEFAULT_US_TIME_ZONE, { month: "short", day: "numeric" });
+    const weekdayName = formatInUserTimeZone(now, DEFAULT_US_TIME_ZONE, { weekday: "long" });
 
     // ── STEP 1: Fetch all users + their preferences in 2 queries ──
     const users = await prisma.user.findMany({
@@ -108,7 +122,7 @@ export async function GET(req: Request) {
             .map((s) => ({
               name: s.providerName,
               amount: s.monthlyCost || 0,
-              dueDate: getNextBillingDate(s.billingDay!, now).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+              dueDate: formatLocalCalendarDay(getNextBillingDate(s.billingDay!, now), { month: "short", day: "numeric" }),
             }))
             .slice(0, 5);
 

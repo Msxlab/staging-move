@@ -10,6 +10,7 @@ import { emitSecurityEvent } from "@/lib/security-events";
 import { markWebhookEventProcessed, releaseProcessedWebhookEvent } from "@/lib/webhook-idempotency";
 import { isMissingDbColumnError, warnSchemaCompatibilityFallback } from "@/lib/db-schema-compat";
 import { formatPlanLabel, fireAndLogEmail as fireAndLogBillingEmail } from "@/lib/billing-email-utils";
+import { formatInUserTimeZone } from "@locateflow/shared";
 import {
   getStripeSubscriptionCurrentPeriodEndDate,
   getStripeSubscriptionCurrentPeriodEndUnix,
@@ -62,13 +63,12 @@ async function lookupUserByStripeCustomer(stripeCustomerId: string | null | unde
 function formatDateInLocale(unixSeconds: number | null | undefined, locale: string | null | undefined): string | null {
   if (!unixSeconds) return null;
   const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  try {
-    return new Date(unixSeconds * 1000).toLocaleDateString(lang, {
-      year: "numeric", month: "long", day: "numeric",
-    });
-  } catch {
-    return null;
-  }
+  // Stripe period-end is a true instant — render in a US zone (default Eastern),
+  // never the server-local TZ. formatInUserTimeZone returns "" on a bad value.
+  const out = formatInUserTimeZone(new Date(unixSeconds * 1000), "America/New_York", {
+    year: "numeric", month: "long", day: "numeric",
+  }, lang);
+  return out || null;
 }
 
 function formatCurrency(amountMinor: number | null | undefined, currency: string | null | undefined): string | null {

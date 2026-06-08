@@ -1,4 +1,5 @@
 import { captureMessage } from "@/lib/sentry";
+import { formatInUserTimeZone } from "@locateflow/shared";
 
 export function formatPlanLabel(plan: string | null | undefined): string {
   return (plan || "subscription")
@@ -10,10 +11,19 @@ export function formatPlanLabel(plan: string | null | undefined): string {
 export function formatDateForEmail(
   date: Date | null | undefined,
   locale: string | null | undefined,
+  tzOrUser?: string | { timezone?: string | null; state?: string | null },
 ): string | null {
   if (!date) return null;
   const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  return date.toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+  // Billing "Access ends on…" / "next attempt on…" are true Stripe period
+  // instants — render in the recipient's resolved US zone (default Eastern),
+  // never the server-local TZ. Callers may pass the user's timezone/state.
+  return formatInUserTimeZone(
+    date,
+    tzOrUser ?? "America/New_York",
+    { year: "numeric", month: "long", day: "numeric" },
+    lang,
+  );
 }
 
 // Best-effort email dispatch: a failure must never break webhook idempotency

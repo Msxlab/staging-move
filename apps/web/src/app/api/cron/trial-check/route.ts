@@ -4,6 +4,7 @@ import { sendTrialExpiringEmail } from "@/lib/email-service";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { INDIVIDUAL_ANNUAL_PRICE_LABEL } from "@/lib/shared-billing";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
+import { DEFAULT_US_TIME_ZONE, formatInUserTimeZone } from "@locateflow/shared";
 import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -118,12 +119,22 @@ async function handleCron(request: NextRequest) {
         currentPeriodEndsAt: true,
         stripeCurrentPeriodEnd: true,
         firstChargeAmount: true,
+        user: { select: { profile: { select: { timezone: true } } } },
       },
     });
 
     for (const sub of renewingSubscriptions) {
       const renewalDate = sub.currentPeriodEndsAt || sub.stripeCurrentPeriodEnd;
-      const renewalDateText = renewalDate?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) || "the renewal date";
+      // renewalDate is a true Stripe period-end instant — render it in the
+      // user's resolved US zone (profile timezone, else Eastern) so the
+      // displayed renewal day never inherits the server's process tz.
+      const renewalDateText = renewalDate
+        ? formatInUserTimeZone(
+            renewalDate,
+            { timezone: sub.user?.profile?.timezone, state: null },
+            { month: "short", day: "numeric", year: "numeric" },
+          )
+        : "the renewal date";
       const amount = sub.firstChargeAmount
         ? `$${sub.firstChargeAmount.toFixed(0)}/year`
         : INDIVIDUAL_ANNUAL_PRICE_LABEL;

@@ -9,6 +9,7 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
+import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -37,9 +38,17 @@ function daysBetween(a: Date, b: Date) {
   return Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / DAY_MS);
 }
 
+// `date` is a billing date constructed at LOCAL midnight (new Date(y, m, d)),
+// matching the local-time day math used by startOfDay/daysBetween here. Format
+// from its local calendar components in a tz-independent way (reproject the
+// Y/M/D onto a UTC instant, then format in UTC) so the displayed day never
+// shifts to the server's process tz — e.g. an owner testing from Turkey.
 function formatDate(date: Date, locale?: string | null) {
   const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  return date.toLocaleDateString(lang, { month: "short", day: "numeric", year: "numeric" });
+  const utcCalendarDay = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
+  return formatDateOnlyUtc(utcCalendarDay, { month: "short", day: "numeric", year: "numeric" }, lang);
 }
 
 export async function GET(req: Request) {

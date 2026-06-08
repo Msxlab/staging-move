@@ -10,6 +10,7 @@ import {
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -18,9 +19,11 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+// dueDate / moveDate are date-only values stored at UTC midnight — format in
+// UTC so the displayed day never shifts to the server's local tz.
 function formatDate(date: Date, locale?: string | null) {
   const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
-  return date.toLocaleDateString(lang, { month: "short", day: "numeric", year: "numeric" });
+  return formatDateOnlyUtc(date, { month: "short", day: "numeric", year: "numeric" }, lang);
 }
 
 function movingPlanLabel(plan: {

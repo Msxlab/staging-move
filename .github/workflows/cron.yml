@@ -78,7 +78,7 @@ jobs:
               # Admin DB backup (admin host) + web data-retention sweep run with
               # the daily batch so they don't depend on the weekly Sunday slot
               # alone — backup is daily, and data-retention is safe to run daily.
-              hit "$ADMIN/api/cron/backup"
+              hit "$ADMIN/api/cron/backup" POST
               hit "$WEB/api/cron/data-retention"
               ;;
             "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
