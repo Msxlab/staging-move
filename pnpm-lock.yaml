@@ -311,6 +311,9 @@ importers:
       react-native:
         specifier: 0.83.6
         version: 0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10)
+      react-native-android-widget:
+        specifier: ^0.20.3
+        version: 0.20.3(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)
       react-native-gesture-handler:
         specifier: ~2.30.1
         version: 2.30.1(patch_hash=tkbf6fogv4lhwzclrkbxy4o5oy)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)
@@ -342,6 +345,9 @@ importers:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7
+      '@bacons/apple-targets':
+        specifier: ^4.0.7
+        version: 4.0.7(expo@55.0.26)
       '@types/react':
         specifier: ~19.2.15
         version: 19.2.15
@@ -1247,6 +1253,14 @@ packages:
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
+  '@bacons/apple-targets@4.0.7':
+    resolution: {integrity: sha512-DwD8gbz2vjbmLatR5qlWjrTocG/Ku4d2Kz/rIF4yzREPZtVBHMepVPCH7gEEgZw4PBTtWQe3XMGrPkomNp7QUg==}
+    peerDependencies:
+      expo: '>=52'
+
+  '@bacons/xcode@1.0.0-alpha.32':
+    resolution: {integrity: sha512-OGpH7+yMbWC2cgYZon5B+VVadH9HsB2V/abtEiplA65XnSuV4GAYAVixOCDc5k182WkfoakfdM0zW6U9cbcsbw==}
+
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
@@ -1813,6 +1827,9 @@ packages:
 
   '@expo/pkcs12@0.1.3':
     resolution: {integrity: sha512-96MePEGppKi08vawrTPw8kMCRdsbrDbV900MlI8rrP9F57DfDl/y1P52bwIDBYCEHE3XtPMo7s1xkG0BKOLCVg==}
+
+  '@expo/plist@0.0.18':
+    resolution: {integrity: sha512-+48gRqUiz65R21CZ/IXa7RNBXgAI/uPSdvJqoN9x1hfL44DNbUoWHgHiEXTx7XelcATpDwNTz6sHLfy0iNqf+w==}
 
   '@expo/plist@0.2.0':
     resolution: {integrity: sha512-F/IZJQaf8OIVnVA6XWUeMPC3OH6MV00Wxf0WC0JhTQht2QgjyHUa3U5Gs3vRtDq8tXNsZneOQRDVwpaOnd4zTQ==}
@@ -2930,6 +2947,9 @@ packages:
 
   '@react-native/normalize-colors@0.76.2':
     resolution: {integrity: sha512-ICoOpaTLPsFQjNLSM00NgQr6wal300cZZonHVSDXKntX+BfkLeuCHRtr/Mn+klTtW+/1v2/2FRm9dXjvyGf9Dw==}
+
+  '@react-native/normalize-colors@0.79.7':
+    resolution: {integrity: sha512-RrvewhdanEWhlyrHNWGXGZCc6MY0JGpNgRzA8y6OomDz0JmlnlIsbBHbNpPnIrt9Jh2KaV10KTscD1Ry8xU9gQ==}
 
   '@react-native/normalize-colors@0.83.6':
     resolution: {integrity: sha512-bTM24b5v4qN3h52oflnv+OujFORn/kVi06WaWhnQQw14/ycilPqIsqsa+DpIBqdBrXxvLa9fXtCRrQtGATZCEw==}
@@ -7653,6 +7673,16 @@ packages:
   react-is@19.2.6:
     resolution: {integrity: sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==}
 
+  react-native-android-widget@0.20.3:
+    resolution: {integrity: sha512-/HZpZda3h4xACK5anrdSuPsL3shqMZ/m5wxL/sk+DTjEI24Yj5/kROUJAQ0uwG4evjPoaLi4x++fuLC9a7qYnw==}
+    peerDependencies:
+      expo: '>=54.0.0'
+      react: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+
   react-native-css-interop@0.2.4:
     resolution: {integrity: sha512-ATP3BACxGM4h/l8cisFauGMGxnXpu8Bcp4Bc3O7iNZpq7j0VJjc1RRRBUSBY4C4WuI7VA/xvp3puijVS9d95rg==}
     engines: {node: '>=18'}
@@ -9840,6 +9870,24 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@bacons/apple-targets@4.0.7(expo@55.0.26)':
+    dependencies:
+      '@bacons/xcode': 1.0.0-alpha.32
+      '@react-native/normalize-colors': 0.79.7
+      debug: 4.4.3(supports-color@8.1.1)
+      expo: 55.0.26(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.11)(bufferutil@4.1.0)(expo-router@55.0.16)(react-dom@19.2.0(react@19.2.0))(react-native-worklets@0.7.4(@babel/core@7.29.7)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      glob: 10.5.0
+    transitivePeerDependencies:
+      - supports-color
+
+  '@bacons/xcode@1.0.0-alpha.32':
+    dependencies:
+      '@expo/plist': 0.0.18
+      debug: 4.4.3(supports-color@8.1.1)
+      uuid: 8.3.2
+    transitivePeerDependencies:
+      - supports-color
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -10517,6 +10565,12 @@ snapshots:
   '@expo/pkcs12@0.1.3':
     dependencies:
       node-forge: 1.3.3
+
+  '@expo/plist@0.0.18':
+    dependencies:
+      '@xmldom/xmldom': 0.7.13
+      base64-js: 1.5.1
+      xmlbuilder: 14.0.0
 
   '@expo/plist@0.2.0':
     dependencies:
@@ -11860,6 +11914,8 @@ snapshots:
   '@react-native/normalize-colors@0.74.89': {}
 
   '@react-native/normalize-colors@0.76.2': {}
+
+  '@react-native/normalize-colors@0.79.7': {}
 
   '@react-native/normalize-colors@0.83.6': {}
 
@@ -15362,7 +15418,7 @@ snapshots:
       foreground-child: 3.3.1
       jackspeak: 3.4.3
       minimatch: 9.0.9
-      minipass: 7.1.2
+      minipass: 7.1.3
       package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
 
@@ -17358,6 +17414,13 @@ snapshots:
   react-is@18.3.1: {}
 
   react-is@19.2.6: {}
+
+  react-native-android-widget@0.20.3(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      react-native: 0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10)
+    optionalDependencies:
+      expo: 55.0.26(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.11)(bufferutil@4.1.0)(expo-router@55.0.16)(react-dom@19.2.0(react@19.2.0))(react-native-worklets@0.7.4(@babel/core@7.29.7)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@5.0.10))(@types/react@19.2.15)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
 
   react-native-css-interop@0.2.4(6k4h6ebmthqtaqw2gdviltfek4):
     dependencies:
