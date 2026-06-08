@@ -111,34 +111,78 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
     {
       heading: "10. Warranty disclaimer",
       paragraphs: [
-        "LocateFlow is provided on an 'as is' and 'as available' basis to the fullest extent permitted by law. No warranty is made that the platform is complete, current, accurate, legally sufficient, uninterrupted, secure, error-free, or fit for a particular compliance, provider, billing, relocation, or financial outcome.",
+        "To the fullest extent permitted by applicable law, the service is provided on an \"as is\" and \"as available\" basis, with all faults and without warranty of any kind. LocateFlow expressly disclaims all warranties, whether express, implied, statutory, or otherwise, including any implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement, and any warranties arising from course of dealing or usage of trade.",
+        "LocateFlow does not warrant that: (i) the service will be uninterrupted, timely, secure, or error-free; (ii) any provider listing, directory entry, score, recommendation, ranking, state rule, deadline, budget estimate, checklist, or other information is accurate, complete, current, or fit for any purpose; or (iii) any result obtained from the service will meet your requirements.",
+        "LocateFlow is an organizational software product, not professional advice. Nothing in the service constitutes legal, tax, financial, insurance, real estate, immigration, healthcare, government, or moving-professional advice, and LocateFlow does not act as your broker, agent, or representative with any provider or agency. You must independently verify provider details, pricing, licensing, insurance, eligibility, timing, cancellation requirements, and government deadlines directly with the relevant provider, agency, or a qualified licensed professional before acting. Completing a task in LocateFlow does not change or update any external provider or government account unless a product screen expressly states that a supported integration performed that action.",
+        "Some jurisdictions do not allow the exclusion of certain implied warranties, so some of the above exclusions may not apply to you.",
       ],
     },
     {
       heading: "11. Limitation of liability",
       paragraphs: [
-        "To the fullest extent permitted by law, LocateFlow will not be liable for indirect, incidental, consequential, exemplary, punitive, or special damages, or for penalties, missed filings, service interruptions, denied applications, identity issues, billing disputes, provider conduct, stale public information, migration losses, or reliance on product suggestions.",
-        "Any liability cap, mandatory carve-outs, venue, governing law, arbitration, class-waiver, and consumer-law terms must be finalized by legal counsel before full public paid launch.",
+        "To the fullest extent permitted by applicable law, in no event will LocateFlow, or its officers, directors, employees, agents, suppliers, or licensors, be liable to you for any indirect, incidental, consequential, exemplary, punitive, or special damages, or for any lost profits, lost revenue, lost data, lost goodwill, business interruption, or cost of substitute services, arising out of or relating to your use of, or inability to use, the service — even if LocateFlow has been advised of the possibility of such damages, and regardless of the theory of liability (contract, tort including negligence, strict liability, or otherwise). This includes, without limitation, damages arising from missed filings or deadlines, denied or delayed applications, service lapses or lockouts, identity or account issues, billing disputes, provider conduct or pricing, stale or inaccurate public or provider information, data-entry errors, migration losses, or your reliance on any recommendation, ranking, estimate, checklist, reminder, or other product output.",
+        "LocateFlow's total cumulative liability for all claims arising out of or relating to the service or these Terms will not exceed the greater of (i) the total fees you actually paid to LocateFlow for the service in the twelve (12) months immediately preceding the event giving rise to the claim, or (ii) one hundred U.S. dollars (US$100).",
+        "These limitations apply to the maximum extent permitted by law and survive termination. Some jurisdictions do not allow the exclusion or limitation of certain damages, so some of the above may not apply to you; in that case, LocateFlow's liability is limited to the smallest amount permitted by law.",
       ],
     },
     {
-      heading: "12. Indemnity",
+      heading: "12. Indemnification",
       paragraphs: [
-        "To the extent permitted by law, you agree to defend and hold LocateFlow harmless from claims arising from your unlawful use, unauthorized data, user content, support messages, payment abuse, provider-data misuse, breach of these Terms, or violation of another person's rights. This clause requires attorney review before full public paid launch.",
+        "To the fullest extent permitted by applicable law, you agree to defend, indemnify, and hold harmless LocateFlow and its officers, directors, employees, agents, suppliers, and licensors from and against any and all claims, demands, actions, liabilities, damages, losses, penalties, and expenses (including reasonable attorneys' fees and costs) arising out of or related to: (i) your use or misuse of the service; (ii) your violation of these Terms, the Acceptable Use Policy, or any applicable law or regulation; (iii) any content or data you enter, upload, or transmit through the service, including data you lacked the right or authority to use; (iv) your infringement or violation of any third party's rights, including privacy, publicity, or intellectual-property rights; and (v) your interactions with, applications to, or reliance on any provider, agency, or third party.",
+        "LocateFlow reserves the right, at your expense, to assume the exclusive defense and control of any matter subject to indemnification by you, in which case you agree to cooperate with LocateFlow's defense of that claim. You will not settle any matter that imposes liability or admissions on LocateFlow without LocateFlow's prior written consent. This section survives termination of these Terms.",
       ],
     },
     {
-      heading: "13. Changes to the service or Terms",
+      heading: "13. Binding arbitration and class-action waiver",
+      paragraphs: [
+        "Please read this section carefully — it affects your legal rights, including your right to a jury trial and to participate in a class action.",
+        "Agreement to arbitrate. You and LocateFlow agree that any dispute, claim, or controversy arising out of or relating to the service or these Terms (a \"Dispute\") will be resolved by final and binding individual arbitration, rather than in court, except as set out in this section. The arbitration will be administered by the American Arbitration Association (AAA) under its Consumer Arbitration Rules, and may be conducted by telephone, video, written submissions, or in person in the county and state of your residence, at your election where the rules allow.",
+        "Small-claims carve-out. Either party may instead bring an individual claim in small-claims court if the claim qualifies and stays in that court. Either party may also seek injunctive or other equitable relief in court to protect intellectual-property or unauthorized-access rights.",
+        "Class-action waiver. You and LocateFlow each agree that you may bring claims against the other only in your individual capacity, and not as a plaintiff or class member in any purported class, collective, consolidated, or representative proceeding. In plain terms: you are giving up the right to participate in a class action, and disputes between you and LocateFlow will be handled one-on-one. The arbitrator may not consolidate more than one person's claims and may not preside over any form of representative or class proceeding.",
+        "30-day opt-out. You may opt out of this arbitration agreement within thirty (30) days of first accepting these Terms (or of the date this section first applies to you) by sending written notice to legal@locateflow.com stating your name, the email associated with your account, and a clear statement that you wish to opt out of arbitration. Opting out does not affect any other part of these Terms.",
+        "Severability of this section. If the class-action waiver above is found unenforceable as to a particular claim, that claim (and only that claim) will proceed in court; the remainder of this arbitration agreement survives.",
+      ],
+    },
+    {
+      heading: "14. Governing law and venue",
+      paragraphs: [
+        "These Terms and any Dispute are governed by the laws of the State of Delaware, United States, without regard to its conflict-of-laws rules, and by applicable U.S. federal law (including the Federal Arbitration Act for the arbitration section). The United Nations Convention on Contracts for the International Sale of Goods does not apply.",
+        "Subject to the Binding Arbitration section above, any Dispute not subject to arbitration will be brought exclusively in the state or federal courts located in the State of Delaware, United States, and you and LocateFlow consent to the personal jurisdiction of, and venue in, those courts. Nothing in this section limits either party's right to bring a qualifying claim in small-claims court.",
+      ],
+    },
+    {
+      heading: "15. Force majeure",
+      paragraphs: [
+        "LocateFlow will not be liable or in breach for any delay or failure to perform resulting from causes beyond its reasonable control, including acts of God, natural disasters, fire, flood, epidemic or pandemic, war, terrorism, civil unrest, government action or order, labor disputes, power or telecommunications failures, internet or hosting-provider outages, third-party service or payment-processor failures, cyberattacks, or denial-of-service events. During a force-majeure event, LocateFlow's affected obligations are suspended for the duration of the event, and LocateFlow will use commercially reasonable efforts to resume performance. A force-majeure event does not excuse your obligation to pay amounts already due.",
+      ],
+    },
+    {
+      heading: "16. Severability and entire agreement",
+      paragraphs: [
+        "Severability. If any provision of these Terms is held invalid, illegal, or unenforceable by a court or arbitrator of competent jurisdiction, that provision will be enforced to the maximum extent permissible and, to the extent it cannot be, will be severed; the remaining provisions will remain in full force and effect. The class-action waiver in the Binding Arbitration section is governed by its own severability rule and is not subject to this general provision.",
+        "Entire agreement. These Terms, together with the Privacy Policy, Disclaimer, Billing Policy, Refund Policy, Acceptable Use Policy, and (where applicable) the Data Processing Addendum and any order or checkout terms, constitute the entire agreement between you and LocateFlow regarding the service and supersede all prior or contemporaneous understandings, agreements, representations, and warranties, whether written or oral, on that subject. Where these documents conflict, the more specific policy controls its subject matter, except as a court or arbitrator finalizes a different order. No waiver of any term is a continuing waiver, and LocateFlow's failure to enforce a provision is not a waiver of its right to do so later. You may not assign these Terms without LocateFlow's consent; LocateFlow may assign them in connection with a merger, acquisition, or sale of assets.",
+      ],
+    },
+    {
+      heading: "17. Copyright complaints (DMCA)",
+      paragraphs: [
+        "LocateFlow respects intellectual-property rights and responds to clear notices of alleged copyright infringement under the U.S. Digital Millennium Copyright Act (DMCA). If you believe content available through the service infringes a copyright you own or control, send a written notice to LocateFlow's Designated Copyright Agent that includes: (i) your physical or electronic signature; (ii) identification of the copyrighted work claimed to be infringed; (iii) identification of the allegedly infringing material and information reasonably sufficient to locate it; (iv) your contact information (name, address, telephone, email); (v) a statement that you have a good-faith belief the use is not authorized by the copyright owner, its agent, or the law; and (vi) a statement, under penalty of perjury, that the information in the notice is accurate and that you are authorized to act on the owner's behalf.",
+        "Send DMCA notices to LocateFlow's Designated Copyright Agent at legal@locateflow.com. Mailing-address details for the Designated Copyright Agent are available on the public Contact page.",
+        "LocateFlow may remove or disable access to allegedly infringing material and, in appropriate circumstances, terminate the accounts of repeat infringers. A user whose content was removed may submit a counter-notice as permitted by the DMCA.",
+      ],
+    },
+    {
+      heading: "18. Changes to the service or Terms",
       paragraphs: [
         "LocateFlow may change the service, features, policies, pricing, and these Terms. When changes are material, LocateFlow will use reasonable efforts to provide notice through the product, email, checkout, or public policy pages.",
         "Continued use after an effective update means you accept the updated Terms to the extent permitted by law.",
       ],
     },
     {
-      heading: "14. Order of precedence and contact",
+      heading: "19. Order of precedence and contact",
       paragraphs: [
         "These Terms govern general use of LocateFlow. The Privacy Policy governs personal data practices; the Billing Policy governs subscription billing; the Refund Policy governs refund requests; the DPA governs applicable business-customer processing terms; and the Acceptable Use Policy governs prohibited conduct. If documents conflict, the more specific policy controls its subject matter unless legal counsel finalizes a different order.",
-        "Legal entity details, mailing address, support, privacy, billing, legal notice, security, and DPA contact channels are listed on the public Contact page. Governing law and venue must be finalized by legal counsel before full public paid launch.",
+        "Legal entity details, mailing address, support, privacy, billing, legal notice, security, and DPA contact channels are listed on the public Contact page.",
       ],
     },
   ],

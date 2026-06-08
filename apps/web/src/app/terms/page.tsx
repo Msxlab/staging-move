@@ -49,8 +49,16 @@ export default function TermsPage() {
       title={LEGAL_TERMS_DOCUMENT.title}
       description={LEGAL_TERMS_DOCUMENT.summary}
     >
+      {/*
+        Governing law / venue for these Terms is set to the State of Delaware, United States
+        (sections 14, 16, and the arbitration section). Delaware is used as a common, defensible
+        US-SaaS default. Owner action: confirm this jurisdiction (and the AAA Consumer Arbitration
+        Rules choice) with licensed counsel, along with the legal entity name, mailing address,
+        and registered DMCA Designated Copyright Agent, before relying on these clauses.
+      */}
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
+        <p>Terms effective date: June 7, 2026</p>
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
