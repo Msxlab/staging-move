@@ -231,6 +231,103 @@ describe("profile-aware urgency tiers", () => {
   });
 });
 
+describe("onboarding-signal wiring", () => {
+  function baseProfile(overrides: Partial<UserProfile> = {}): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 0,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+      ...overrides,
+    };
+  }
+
+  function provider(overrides: Partial<Provider>): Provider {
+    return {
+      id: overrides.id || "p",
+      name: overrides.name || "Provider",
+      slug: overrides.slug || (overrides.id || "p"),
+      category: overrides.category || "GOVERNMENT_OTHER",
+      description: null,
+      website: null,
+      phone: null,
+      scope: overrides.scope || "FEDERAL",
+      states: overrides.states || [],
+      tags: overrides.tags || [],
+      popularityScore: overrides.popularityScore ?? 50,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  function scoreOf(p: Provider, profile: UserProfile): number {
+    return scoreProviders([p], profile, "TX")[0].recommendationScore;
+  }
+
+  it("boosts military/veteran benefits for a military profile and deprioritizes for others", () => {
+    const va = provider({ id: "va", category: "GOVERNMENT_BENEFITS", tags: ["veterans", "government", "military"] });
+    const military = scoreOf(va, baseProfile({ isMilitary: true }));
+    const civilian = scoreOf(va, baseProfile({ isMilitary: false }));
+    expect(military).toBeGreaterThan(civilian);
+  });
+
+  it("derives military steering even when only moveType=MILITARY is supplied via isMilitary fold (route-level), tag matcher fires on isMilitary", () => {
+    const sss = provider({ id: "sss", category: "GOVERNMENT_OTHER", tags: ["military", "government"] });
+    expect(scoreOf(sss, baseProfile({ isMilitary: true }))).toBeGreaterThan(
+      scoreOf(sss, baseProfile({ isMilitary: false })),
+    );
+  });
+
+  it("boosts immigration services for immigrants and deprioritizes immigration LEGAL services for non-immigrants", () => {
+    const uscis = provider({ id: "uscis", category: "GOVERNMENT_IMMIGRATION", tags: ["immigration", "government", "essential"] });
+    expect(scoreOf(uscis, baseProfile({ isImmigrant: true }))).toBeGreaterThan(
+      scoreOf(uscis, baseProfile({ isImmigrant: false })),
+    );
+
+    const immigrationLawyer = provider({ id: "imm-law", category: "LEGAL_SERVICES", tags: ["immigration", "legal"] });
+    expect(scoreOf(immigrationLawyer, baseProfile({ isImmigrant: true }))).toBeGreaterThan(
+      scoreOf(immigrationLawyer, baseProfile({ isImmigrant: false })),
+    );
+  });
+
+  it("never penalizes the federal GOVERNMENT_IMMIGRATION AR-11 task for non-immigrants", () => {
+    // USCIS carries the immigration tag but is the legally-required AR-11 task —
+    // a non-immigrant (or non-disclosing) profile must not see it negatively scored.
+    const uscis = provider({ id: "uscis", category: "GOVERNMENT_IMMIGRATION", tags: ["immigration", "government", "essential"] });
+    const nonImmigrantOnImmigrationLegal = scoreOf(
+      provider({ id: "imm-law", category: "LEGAL_SERVICES", tags: ["immigration", "legal"] }),
+      baseProfile({ isImmigrant: false }),
+    );
+    const legalBaseline = scoreOf(
+      provider({ id: "plain-law", category: "LEGAL_SERVICES", tags: ["legal"] }),
+      baseProfile({ isImmigrant: false }),
+    );
+    // The immigration-tagged legal service is penalized (−10) vs a plain legal service…
+    expect(nonImmigrantOnImmigrationLegal).toBeLessThan(legalBaseline);
+    // …but the federal immigration task is NOT penalized below an equivalent
+    // non-immigration federal service of the same urgency.
+    const uscisNonImmigrant = scoreOf(uscis, baseProfile({ isImmigrant: false }));
+    const otherFederal = scoreOf(
+      provider({ id: "other-imm", category: "GOVERNMENT_IMMIGRATION", tags: ["government"] }),
+      baseProfile({ isImmigrant: false }),
+    );
+    expect(uscisNonImmigrant).toBeGreaterThanOrEqual(otherFederal);
+  });
+
+  it("boosts business-relocation services for business owners and deprioritizes for others", () => {
+    const sba = provider({ id: "sba", category: "GOVERNMENT_OTHER", tags: ["business", "government", "loan"] });
+    expect(scoreOf(sba, baseProfile({ isBusinessOwner: true }))).toBeGreaterThan(
+      scoreOf(sba, baseProfile({ isBusinessOwner: false })),
+    );
+  });
+});
+
 describe("injectable scoring weights", () => {
   function profile(): UserProfile {
     return {

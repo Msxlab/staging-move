@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
+  requirePasswordConfirm: vi.fn(),
   transaction: vi.fn(),
   campaignFindMany: vi.fn(),
   campaignCreate: vi.fn(),
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: mocks.requirePermission,
+  requirePasswordConfirm: mocks.requirePasswordConfirm,
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -44,6 +46,10 @@ describe("admin acquisition campaigns create route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    // F1 step-up: every mutating route now clears requirePasswordConfirm
+    // before writing. Default to confirmed so the existing assertions exercise
+    // the post-step-up logic; individual tests can override to assert the 403.
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.validateStripeCampaignPrice.mockResolvedValue({
       ok: true,
       displayPriceLabel: "$79/year",

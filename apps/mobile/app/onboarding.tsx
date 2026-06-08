@@ -64,6 +64,11 @@ import {
 } from "@/lib/legal";
 import { detectStateZipMismatch } from "@locateflow/shared";
 import { consumePendingInviteJoin } from "@/lib/workspace-invite";
+import {
+  StepTransition,
+  StaggerItem,
+  OnboardingProgressBar,
+} from "@/components/onboarding/onboarding-motion";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -150,6 +155,10 @@ export default function OnboardingScreen() {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState(0);
+  // Bumped whenever a step is successfully completed (validation passed + saved).
+  // Drives the progress-bar's one-shot confirmation shimmer; paired with a
+  // success haptic. Purely cosmetic — never gates navigation.
+  const [pulseTick, setPulseTick] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [legalConsents, setLegalConsents] = useState(() => getPendingLegalConsents() || getDefaultLegalConsents());
@@ -723,6 +732,14 @@ export default function OnboardingScreen() {
     }
   };
 
+  // Gentle confirmation when a step is genuinely completed: a soft success
+  // haptic + a progress-bar shimmer. Both no-op safely (haptics are platform
+  // guarded; the shimmer honours reduce-motion inside the progress bar).
+  const celebrateStepComplete = () => {
+    hapticSuccess();
+    setPulseTick((tick) => tick + 1);
+  };
+
   const next = async () => {
     hapticLight();
     let ok = true;
@@ -731,7 +748,11 @@ export default function OnboardingScreen() {
     else if (step === 2) ok = await saveServices();
     if (!ok) { hapticError(); return; }
     if (step === 2 && await routeIfOnboardingCompleted()) return;
-    if (step < 3) { setStep(step + 1); setError(""); }
+    if (step < 3) {
+      celebrateStepComplete();
+      setStep(step + 1);
+      setError("");
+    }
     else {
       const completed = await handleComplete();
       if (!completed) hapticError();
@@ -746,6 +767,7 @@ export default function OnboardingScreen() {
       return;
     }
     if (await routeIfOnboardingCompleted()) return;
+    celebrateStepComplete();
     setStep(3);
     setError("");
   };
@@ -775,11 +797,10 @@ export default function OnboardingScreen() {
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
-        {/* Progress */}
+        {/* Progress — a continuous animated fill (springs between steps) plus a
+            one-shot shimmer on step-complete. Replaces the old hard-swap dots. */}
         <View style={styles.progressRow}>
-          {STEP_KEYS.map((key, i) => (
-            <View key={key} style={[styles.progressDot, i <= step && styles.progressDotActive, i < step && styles.progressDotDone]} />
-          ))}
+          <OnboardingProgressBar step={step} total={STEP_KEYS.length} pulseTick={pulseTick} />
         </View>
         <Text style={styles.stepLabel}>
           {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
@@ -794,6 +815,10 @@ export default function OnboardingScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Each step's content cross-fades + lifts 8px on entry. Keyed on
+              `step` so it remounts per step, which also re-triggers the
+              staggered option lists inside. Reduce-motion settles instantly. */}
+          <StepTransition stepKey={step}>
           {/* Step 0: Profile */}
           {step === 0 && (
             <View style={styles.stepContent}>
@@ -1077,7 +1102,7 @@ export default function OnboardingScreen() {
                     <Sparkles size={16} color={theme.colors.amber.text} />
                     <Text style={styles.recoTitle}>{t("onboarding.providers_recommended")}</Text>
                   </View>
-                  {recommended.map((provider: ScoredProvider) => {
+                  {recommended.map((provider: ScoredProvider, recoIndex: number) => {
                     const isSelected = selectedProviders.has(provider.id);
                     const reason = getLocalizedProviderReason(
                       t,
@@ -1086,8 +1111,8 @@ export default function OnboardingScreen() {
                       categoryLabel(provider.category),
                     );
                     return (
+                      <StaggerItem key={`rec-${provider.id}`} index={recoIndex}>
                       <TouchableOpacity
-                        key={`rec-${provider.id}`}
                         style={[styles.recoCard, isSelected && styles.recoCardActive]}
                         onPress={() => { hapticLight(); toggleProvider(provider as any); }}
                         activeOpacity={0.7}
@@ -1115,6 +1140,7 @@ export default function OnboardingScreen() {
                         </View>
                         {isSelected && <Check size={16} color={theme.colors.primary} />}
                       </TouchableOpacity>
+                      </StaggerItem>
                     );
                   })}
                 </View>
@@ -1129,12 +1155,12 @@ export default function OnboardingScreen() {
                 <Text style={styles.emptyText}>{t("onboarding.providers_empty")}</Text>
               ) : (
                 <View style={{ marginTop: 12, width: "100%" }}>
-                  {sortedCats.map((cat) => {
+                  {sortedCats.map((cat, catIndex) => {
                     const items = grouped[cat];
                     const isOpen = expandedCats.has(cat);
                     const selectedCount = items.filter((p: ScoredProvider) => selectedProviders.has(p.id)).length;
                     return (
-                      <View key={cat} style={styles.catSection}>
+                      <StaggerItem key={cat} index={catIndex} style={styles.catSection}>
                         <TouchableOpacity style={styles.catHeader} onPress={() => toggleCat(cat)}>
                           <Text style={styles.catIcon}>{getMergedDisplayCategoryIcon(cat)}</Text>
                           <Text style={styles.catTitle} numberOfLines={1}>{categoryLabel(cat)}</Text>
@@ -1220,7 +1246,7 @@ export default function OnboardingScreen() {
                             </View>
                           );
                         })}
-                      </View>
+                      </StaggerItem>
                     );
                   })}
                 </View>
@@ -1357,6 +1383,7 @@ export default function OnboardingScreen() {
               )}
             </View>
           )}
+          </StepTransition>
         </ScrollView>
 
         {/* Bottom Actions */}
@@ -1386,10 +1413,7 @@ export default function OnboardingScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  progressRow: { flexDirection: "row", justifyContent: "center", gap: 8, paddingTop: 16, paddingHorizontal: 20 },
-  progressDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.08)" },
-  progressDotActive: { backgroundColor: theme.colors.primary },
-  progressDotDone: { backgroundColor: "rgba(16,185,129,0.5)" },
+  progressRow: { paddingTop: 16, paddingHorizontal: 20 },
   stepLabel: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", marginTop: 12 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 140 },
   stepContent: { alignItems: "center" },
