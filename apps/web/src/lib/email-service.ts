@@ -1,4 +1,4 @@
-import { sharedSanitizeEmailHtml, sharedSanitizeEmailSubject } from "@locateflow/shared";
+import { formatInUserTimeZone, sharedSanitizeEmailHtml, sharedSanitizeEmailSubject } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import {
   appendUnsubscribeFooter,
@@ -1679,13 +1679,34 @@ export async function sendSecurityNoticeEmail(opts: {
   kind: SecurityNoticeKind;
   detail?: string | null;
   occurredAt?: Date | null;
+  /** User's stored timezone, if known; falls back to the US-state map then Eastern. */
+  timezone?: string | null;
+  /** User's primary-address state (2-letter), used when no timezone is stored. */
+  state?: string | null;
   locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   const locale = resolveEmailLocale(opts.locale);
-  const occurredAt = opts.occurredAt ? opts.occurredAt.toISOString() : null;
+  // occurredAt is a true instant. Render it in the user's resolved US zone with
+  // an explicit timeZone + label so it reads as a friendly US time and never
+  // inherits the server's process tz (previously a raw UTC ISO string).
+  const occurredAt = opts.occurredAt
+    ? formatInUserTimeZone(
+        opts.occurredAt,
+        { timezone: opts.timezone, state: opts.state },
+        {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZoneName: "short",
+        },
+        locale === "es" ? "es-US" : "en-US",
+      )
+    : null;
   const content = securityNoticeContent({
     userName: opts.userName,
     kind: opts.kind,

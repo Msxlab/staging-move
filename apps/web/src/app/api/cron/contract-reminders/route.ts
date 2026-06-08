@@ -7,6 +7,7 @@ import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
 
@@ -74,7 +75,9 @@ async function handleCron(request: NextRequest) {
         const pushAllowed = isPushTypeEnabled(userPreferences, "CONTRACT_EXPIRY");
         if (!emailAllowed && !pushAllowed) continue;
 
-        const contractEndDateText = service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        // contractEndDate is a date-only value stored at UTC midnight — format
+        // in UTC so the displayed day is stable across server timezones.
+        const contractEndDateText = formatDateOnlyUtc(service.contractEndDate!, { month: "long", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`;
         const notificationTitle = `${service.providerName} contract ends soon`;
         const notificationBody = `${service.providerName} ends in ${days} day${days === 1 ? "" : "s"} on ${contractEndDateText}.`;

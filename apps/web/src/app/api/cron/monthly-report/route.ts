@@ -6,12 +6,18 @@ import {
   buildWebNotificationSettings,
   groupNotificationPreferencesByUser,
 } from "@/lib/notification-preferences";
+import { formatDateOnlyUtc } from "@locateflow/shared";
 
 function previousMonthWindow(now: Date) {
   const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const end = new Date(now.getFullYear(), now.getMonth(), 1);
   const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
-  const label = start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // Format from the local calendar components reprojected to UTC so the month
+  // label is stable regardless of the server's process tz (US-only product).
+  const label = formatDateOnlyUtc(
+    new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())),
+    { month: "long", year: "numeric" },
+  );
   return { start, end, key, label };
 }
 

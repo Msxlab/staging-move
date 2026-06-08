@@ -6,6 +6,7 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
 
@@ -73,7 +74,10 @@ async function handleCron(request: NextRequest) {
 
         const fromCity = `${plan.fromAddress.city}, ${plan.fromAddress.state}`;
         const toCity = `${plan.toAddress.city}, ${plan.toAddress.state}`;
-        const moveDateText = plan.moveDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        // moveDate is a date-only value stored at UTC midnight — format in UTC
+        // so the displayed day is stable regardless of the server's local tz
+        // (e.g. an owner testing from Turkey must not see a shifted/abroad time).
+        const moveDateText = formatDateOnlyUtc(plan.moveDate, { month: "long", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`;
         let emailSent = false;
         if (emailAllowed) {
