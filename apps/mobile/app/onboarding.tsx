@@ -817,7 +817,82 @@ export default function OnboardingScreen() {
 
   const back = () => { if (step > 0) { setStep(step - 1); setError(""); } };
 
-  const recommended = getRecommendedProviders(providers, 8);
+  // Top recommendation per category (best provider, deduped, sorted by urgency).
+  // We split it into two clearly-separated buckets so the user leads with the
+  // must-haves and isn't asked to weigh "set up electricity" against "add a gym":
+  //   • essentials  → CRITICAL/IMPORTANT tiers (electric, gas, water, internet,
+  //                   DMV, insurance, bank…) — the "Recommended for your move" set.
+  //   • extras      → RECOMMENDED/OPTIONAL tiers (gym, streaming, shopping…).
+  // Both come straight from the engine's already-tier-sorted output, so we never
+  // fabricate providers — we only partition what the API returned.
+  const recommended = useMemo(() => getRecommendedProviders(providers, 12), [providers]);
+  const essentialRecommended = useMemo(
+    () => recommended.filter((p) => p.urgencyTier === "CRITICAL" || p.urgencyTier === "IMPORTANT"),
+    [recommended],
+  );
+  const extraRecommended = useMemo(
+    () => recommended.filter((p) => p.urgencyTier !== "CRITICAL" && p.urgencyTier !== "IMPORTANT"),
+    [recommended],
+  );
+  // How many of the essential picks aren't selected yet — drives the one-tap
+  // "Add all" button (and lets us flip it to a "done" state once they're all in).
+  const unselectedEssentialCount = useMemo(
+    () => essentialRecommended.reduce((n, p) => (selectedProviders.has(p.id) ? n : n + 1), 0),
+    [essentialRecommended, selectedProviders],
+  );
+
+  // One-tap: select every essential pick the user hasn't already added. Purely
+  // additive — it never deselects, so a user who tapped one extra keeps it, and
+  // they can still deselect any single card afterward.
+  const addAllEssentials = useCallback(() => {
+    hapticSuccess();
+    setSelectedProviders((prev) => {
+      const next = new Map(prev);
+      for (const provider of essentialRecommended) {
+        if (!next.has(provider.id)) next.set(provider.id, provider);
+      }
+      return next;
+    });
+  }, [essentialRecommended]);
+
+  // Shared compact recommendation card (used by both the essentials and the
+  // optional-extras lists so they stay visually identical and there's no
+  // duplicated JSX). `keyId` keeps the two lists' React keys distinct.
+  const renderRecoCard = (provider: ScoredProvider, index: number, keyId: string) => {
+    const isSelected = selectedProviders.has(provider.id);
+    const reason = getLocalizedProviderReason(t, i18n.language, provider, categoryLabel(provider.category));
+    return (
+      <StaggerItem key={keyId} index={index}>
+        <PressableScale
+          style={[styles.recoCard, isSelected && styles.recoCardActive]}
+          onPress={() => { hapticLight(); toggleProvider(provider as any); }}
+          min={0.97}
+          accessibilityLabel={provider.name}
+        >
+          <ServiceLogoMark
+            service={{
+              category: provider.category,
+              providerName: provider.name,
+              website: provider.website,
+              provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
+            }}
+            fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
+            size={36}
+            logoSize={30}
+            borderRadius={10}
+            backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
+            borderColor="rgba(127, 182, 232,0.2)"
+            fallbackFontSize={16}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
+            <Text style={styles.recoReason} numberOfLines={1}>{reason}</Text>
+          </View>
+          {isSelected && <Check size={16} color={theme.colors.primary} />}
+        </PressableScale>
+      </StaggerItem>
+    );
+  };
 
   const filteredProviders = providers.filter((p: ScoredProvider) => {
     if (!providerSearch) return true;
@@ -1182,55 +1257,58 @@ export default function OnboardingScreen() {
                 </View>
               )}
 
-              {/* Recommended Section */}
-              {!loadingProviders && !providerSearch && recommended.length > 0 && (
+              {/* Essentials — lead with the must-haves for a move (utilities,
+                  DMV, insurance, bank…). Clearly labelled "Recommended for your
+                  move" and visually set apart from the optional extras below so
+                  the decision load is "add these few" rather than "scan a list".
+                  The one-tap "Add all" selects every essential pick at once. */}
+              {!loadingProviders && !providerSearch && essentialRecommended.length > 0 && (
                 <View style={styles.recoSection}>
-                  <View style={styles.recoHeader}>
-                    <Sparkles size={16} color={theme.colors.amber.text} />
-                    <Text style={styles.recoTitle}>{t("onboarding.providers_recommended")}</Text>
-                  </View>
-                  {recommended.map((provider: ScoredProvider, recoIndex: number) => {
-                    const isSelected = selectedProviders.has(provider.id);
-                    const reason = getLocalizedProviderReason(
-                      t,
-                      i18n.language,
-                      provider,
-                      categoryLabel(provider.category),
-                    );
-                    return (
-                      <StaggerItem key={`rec-${provider.id}`} index={recoIndex}>
-                      <PressableScale
-                        style={[styles.recoCard, isSelected && styles.recoCardActive]}
-                        onPress={() => { hapticLight(); toggleProvider(provider as any); }}
-                        min={0.97}
-                        accessibilityLabel={provider.name}
+                  <View style={styles.recoHeaderRow}>
+                    <View style={styles.recoHeader}>
+                      <Sparkles size={16} color={theme.colors.amber.text} />
+                      <Text style={styles.recoTitle}>{t("onboarding.providers_essentialsTitle", { defaultValue: "Recommended for your move" })}</Text>
+                    </View>
+                    {unselectedEssentialCount > 0 ? (
+                      <TouchableOpacity
+                        style={styles.addAllBtn}
+                        onPress={addAllEssentials}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("onboarding.providers_addAllA11y", { defaultValue: "Add all recommended essentials", count: unselectedEssentialCount })}
                       >
-                        <ServiceLogoMark
-                          service={{
-                            category: provider.category,
-                            providerName: provider.name,
-                            website: provider.website,
-                            provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },
-                          }}
-                          fallbackIcon={getMergedDisplayCategoryIcon(provider.category)}
-                          size={36}
-                          logoSize={30}
-                          borderRadius={10}
-                          backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
-                          borderColor="rgba(127, 182, 232,0.2)"
-                          fallbackFontSize={16}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
-                          <Text style={styles.recoReason} numberOfLines={1}>
-                            {reason}
-                          </Text>
-                        </View>
-                        {isSelected && <Check size={16} color={theme.colors.primary} />}
-                      </PressableScale>
-                      </StaggerItem>
-                    );
-                  })}
+                        <Check size={13} color={theme.colors.primary} />
+                        <Text style={styles.addAllBtnText}>
+                          {t("onboarding.providers_addAll", { defaultValue: "Add all", count: unselectedEssentialCount })}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.addAllDone} accessibilityRole="text">
+                        <Check size={13} color={theme.colors.success} />
+                        <Text style={styles.addAllDoneText}>{t("onboarding.providers_allAdded", { defaultValue: "All added" })}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.recoSubtle}>
+                    {t("onboarding.providers_essentialsHint", { defaultValue: "Tap one to deselect — you're in control." })}
+                  </Text>
+                  {essentialRecommended.map((provider: ScoredProvider, recoIndex: number) =>
+                    renderRecoCard(provider, recoIndex, `ess-${provider.id}`),
+                  )}
+                </View>
+              )}
+
+              {/* Optional extras — clearly separated, lower-stakes picks the
+                  engine surfaced for this profile (gym, streaming, shopping…).
+                  Same card UI, but framed as "nice to have" so nobody feels they
+                  must tap through them. Hidden while searching. */}
+              {!loadingProviders && !providerSearch && extraRecommended.length > 0 && (
+                <View style={[styles.recoSection, styles.recoSectionExtras]}>
+                  <View style={styles.recoHeader}>
+                    <Text style={styles.recoTitleMuted}>{t("onboarding.providers_extrasTitle", { defaultValue: "Optional extras" })}</Text>
+                  </View>
+                  {extraRecommended.map((provider: ScoredProvider, recoIndex: number) =>
+                    renderRecoCard(provider, recoIndex, `extra-${provider.id}`),
+                  )}
                 </View>
               )}
 
@@ -1351,6 +1429,18 @@ export default function OnboardingScreen() {
                     );
                   })}
                 </View>
+              )}
+
+              {/* Reassure that skipping isn't a dead-end. The bottom-bar
+                  "Add later" button records SERVICES_SKIPPED (not a hard skip) —
+                  the dashboard checklist and the win-back reminders surface
+                  these essentials again, so nobody loses them by moving on. */}
+              {!loadingProviders && (
+                <Text style={styles.skipReassure}>
+                  {t("onboarding.providers_skipReassure", {
+                    defaultValue: "Not ready? Tap “Add later” — we'll keep these on your move checklist and remind you.",
+                  })}
+                </Text>
               )}
             </View>
           )}
@@ -1497,7 +1587,12 @@ export default function OnboardingScreen() {
             ) : <View />}
             <View style={styles.bottomRight}>
               {step === 2 && (
-                <Button title={t("common.skip")} onPress={skipServices} variant="ghost" loading={saving} />
+                <Button
+                  title={t("onboarding.providers_addLater", { defaultValue: "Add later" })}
+                  onPress={skipServices}
+                  variant="ghost"
+                  loading={saving}
+                />
               )}
               <Button
                 title={saving ? t("common.loading") : t("common.continue")}
@@ -1627,8 +1722,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.amber.bg,
   },
   missingNudgeText: { flex: 1, fontSize: 12, lineHeight: 17, color: theme.colors.amber.text, fontWeight: "600" },
-  recoHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  recoHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  recoHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 },
   recoTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  recoTitleMuted: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, marginBottom: 8 },
+  recoSubtle: { fontSize: 11, color: theme.colors.textTertiary, marginBottom: 12 },
+  recoSectionExtras: { marginTop: 10, backgroundColor: "transparent" },
+  addAllBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.4)",
+  },
+  addAllBtnText: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
+  addAllDone: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
+  addAllDoneText: { fontSize: 12, fontWeight: "600", color: theme.colors.success },
+  skipReassure: { fontSize: 12, lineHeight: 17, color: theme.colors.textTertiary, textAlign: "center", marginTop: 16, paddingHorizontal: 8 },
   recoCard: {
     flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: 12,
     borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",

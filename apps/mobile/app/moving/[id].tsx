@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -26,6 +27,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Check,
 } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -152,6 +154,40 @@ export default function MovingDetailScreen() {
       ],
     );
   };
+
+  // SWIPE-TO-COMPLETE — fires the SAME complete event the buttons use
+  // (PATCH /api/move-tasks { id, event: "COMPLETE" }) but optimistically:
+  // the row flips to COMPLETED immediately so the swipe feels instant, then
+  // we reconcile with the server. On API error we revert the row to its prior
+  // state + error haptic. Non-blocking — never gates the screen.
+  const completeMoveTaskOptimistic = useCallback(
+    async (taskId: string) => {
+      let prevStatus: string | undefined;
+      setMoveTasks((curr) =>
+        curr.map((tk) => {
+          if (tk.id === taskId) {
+            prevStatus = tk.status;
+            return { ...tk, status: "COMPLETED" };
+          }
+          return tk;
+        }),
+      );
+      const res = await api.patch<any>("/api/move-tasks", { id: taskId, event: "COMPLETE" });
+      if (res.error) {
+        hapticError();
+        // Revert to the captured prior status.
+        setMoveTasks((curr) =>
+          curr.map((tk) => (tk.id === taskId && prevStatus ? { ...tk, status: prevStatus } : tk)),
+        );
+        Alert.alert(t("moving.moveTasksAlert"), res.error);
+        return;
+      }
+      hapticSuccess();
+      // Best-effort reconcile so dueDate/templateId-driven state is authoritative.
+      if (plan) await fetchMoveTasks(plan.id);
+    },
+    [plan, fetchMoveTasks, t],
+  );
 
   const formatTaskDueDate = (value?: string | Date | null) => {
     if (!value) return null;
@@ -420,55 +456,91 @@ export default function MovingDetailScreen() {
           {moveTasks.length === 0 ? (
             <Text style={styles.emptyText}>{t("moving.noMoveTasks")}</Text>
           ) : (
-            moveTasks.map((task, index) => {
-              const done = task.status === "COMPLETED";
-              const dismissed = task.status === "DISMISSED";
-              return (
-                <View key={task.id} style={[styles.taskRow, index > 0 && styles.migRowDivider]}>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.taskBadges}>
-                      <UiBadge label={t(`moving.taskStatus_${task.status}`, { defaultValue: task.status.replace(/_/g, " ") })} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
-                      <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
+            <GestureHandlerRootView>
+              {moveTasks.map((task, index) => {
+                const done = task.status === "COMPLETED";
+                const dismissed = task.status === "DISMISSED";
+                const open = !done && !dismissed;
+                const rowInner = (
+                  <View
+                    style={[styles.taskRow, index > 0 && styles.migRowDivider]}
+                    accessibilityHint={open ? t("moving.swipeCompleteHint") : undefined}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.taskBadges}>
+                        <UiBadge label={t(`moving.taskStatus_${task.status}`, { defaultValue: task.status.replace(/_/g, " ") })} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
+                        <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
+                      </View>
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
+                      {formatTaskDueDate(task.dueDate) && (
+                        <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
+                      )}
+                      <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
                     </View>
-                    <Text style={styles.taskTitle}>{task.title}</Text>
-                    {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
-                    {formatTaskDueDate(task.dueDate) && (
-                      <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
-                    )}
-                    <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
+                    <View style={styles.taskActions}>
+                      {open && (
+                        <TouchableOpacity
+                          style={styles.migBtnPrimary}
+                          disabled={taskBusy === task.id}
+                          onPress={() => confirmCompleteMoveTask(task.id)}
+                        >
+                          <Text style={styles.migBtnPrimaryText}>{t("moving.complete")}</Text>
+                        </TouchableOpacity>
+                      )}
+                      {open && (
+                        <TouchableOpacity
+                          style={styles.migBtn}
+                          disabled={taskBusy === task.id}
+                          onPress={() => updateMoveTask(task.id, "DISMISS")}
+                        >
+                          <Text style={styles.migBtnText}>{t("moving.dismiss")}</Text>
+                        </TouchableOpacity>
+                      )}
+                      {(done || dismissed) && (
+                        <TouchableOpacity
+                          style={styles.migBtn}
+                          disabled={taskBusy === task.id}
+                          onPress={() => updateMoveTask(task.id, "REOPEN")}
+                        >
+                          <Text style={styles.migBtnText}>{t("moving.reopen")}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
-                  <View style={styles.taskActions}>
-                    {!done && !dismissed && (
-                      <TouchableOpacity
-                        style={styles.migBtnPrimary}
-                        disabled={taskBusy === task.id}
-                        onPress={() => confirmCompleteMoveTask(task.id)}
-                      >
-                        <Text style={styles.migBtnPrimaryText}>{t("moving.complete")}</Text>
-                      </TouchableOpacity>
+                );
+
+                // Open tasks get swipe-to-complete: swipe left to reveal a
+                // "Done" action firing the SAME COMPLETE event the button uses
+                // (optimistic + revert on error). Tap behavior is untouched.
+                // Completed/dismissed rows render plain (no swipe).
+                if (!open) {
+                  return <View key={task.id}>{rowInner}</View>;
+                }
+                return (
+                  <Swipeable
+                    key={task.id}
+                    friction={2}
+                    rightThreshold={48}
+                    overshootRight={false}
+                    renderRightActions={() => (
+                      <View style={styles.swipeAction}>
+                        <Check size={18} color="#fff" />
+                        <Text style={styles.swipeActionText}>{t("moving.swipeDone")}</Text>
+                      </View>
                     )}
-                    {!done && !dismissed && (
-                      <TouchableOpacity
-                        style={styles.migBtn}
-                        disabled={taskBusy === task.id}
-                        onPress={() => updateMoveTask(task.id, "DISMISS")}
-                      >
-                        <Text style={styles.migBtnText}>{t("moving.dismiss")}</Text>
-                      </TouchableOpacity>
-                    )}
-                    {(done || dismissed) && (
-                      <TouchableOpacity
-                        style={styles.migBtn}
-                        disabled={taskBusy === task.id}
-                        onPress={() => updateMoveTask(task.id, "REOPEN")}
-                      >
-                        <Text style={styles.migBtnText}>{t("moving.reopen")}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              );
-            })
+                    onSwipeableOpen={(direction, swipeable) => {
+                      if (direction === "right") {
+                        swipeable.close();
+                        void completeMoveTaskOptimistic(task.id);
+                      }
+                    }}
+                  >
+                    {rowInner}
+                  </Swipeable>
+                );
+              })}
+            </GestureHandlerRootView>
           )}
         </Card>
 
@@ -955,6 +1027,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 6,
     maxWidth: 92,
   },
+  swipeAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    marginVertical: 6,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.emerald.text,
+  },
+  swipeActionText: { fontSize: 13, fontWeight: "800", color: "#fff" },
   stateGuideCard: {
     marginTop: 16,
     backgroundColor: theme.colors.card,
