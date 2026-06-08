@@ -71,6 +71,7 @@ export const serviceSchema = z.strictObject({
   phone: z.string().max(20).optional(),
   email: z.string().email().optional().or(z.literal("")),
   monthlyCost: z.number().min(0).optional(),
+  actualMonthlyCost: z.number().min(0).nullable().optional(),
   billingDay: z.number().min(1).max(31).optional(),
   billingCycle: z.enum(["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"]).optional(),
   autoRenewal: z.boolean().default(false),

@@ -1,0 +1,24 @@
+-- SERVICE ACTUAL MONTHLY COST (MONEY LAYER — actual-vs-projected loop)
+--
+-- Additive & backward-compatible. ONE change, which alters/drops no existing
+-- column or data:
+--
+--   1. Service.actualMonthlyCost — a NULLABLE DOUBLE holding the ACTUAL per-cycle
+--      amount the user logged for this service line (same cycle semantics as the
+--      existing `monthlyCost`, which is the PROJECTED/estimated amount). Until
+--      now the budget engine could only ever show a projection, and the
+--      derived total was (incorrectly) written back into Budget.actualExpenses.
+--      This column lets a user log what each service ACTUALLY cost — either by
+--      typing the real number or one-tap confirming the projection ("looks
+--      right" copies monthlyCost into this field). The budget engine then
+--      computes estimate-vs-actual variance per category and a substantiated
+--      savings figure (Budget.savingsRate), comparing ONLY over lines that have
+--      a confirmed actual so the savings number can never be inflated by
+--      un-logged services.
+--
+--      Existing rows get NULL, which means "not yet logged" — behavior is
+--      identical to before for every current service (projection-only). No data
+--      migration is required.
+
+-- AlterTable (additive, nullable — existing rows backfill to NULL = estimate-only)
+ALTER TABLE `Service` ADD COLUMN `actualMonthlyCost` DOUBLE NULL;

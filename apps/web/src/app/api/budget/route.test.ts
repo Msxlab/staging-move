@@ -98,7 +98,7 @@ describe("budget route", () => {
     ]);
   });
 
-  it("calculates projected actual expenses from service costs when saving budget limits", async () => {
+  it("writes ZERO realized actuals (not the projection) when no service has a logged actual", async () => {
     const response = await POST(
       new Request("http://localhost/api/budget", {
         method: "POST",
@@ -116,7 +116,10 @@ describe("budget route", () => {
     expect(response.status).toBe(201);
     expect(requireAppMutationUserMock).toHaveBeenCalledWith();
     expect(getPlanForLimitScopeMock).toHaveBeenCalledWith("user-1", {});
-    expect(body.budget.actualExpenses).toBe(250);
+    // The projection (250) must NOT leak into actualExpenses anymore — nothing
+    // has been logged, so the real actual is 0 and savingsRate stays null.
+    expect(body.budget.actualExpenses).toBe(0);
+    expect(body.budget.savingsRate).toBeNull();
     expect(budgetMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
@@ -128,12 +131,53 @@ describe("budget route", () => {
         },
         create: expect.objectContaining({
           plannedExpenses: 300,
-          actualExpenses: 250,
+          actualExpenses: 0,
+          savingsRate: null,
           categoryBreakdown: JSON.stringify({ Utilities: 150 }),
           scopeKey: "__global__",
         }),
       }),
     );
+  });
+
+  it("writes the realized actual total and a substantiated savings rate from logged actuals", async () => {
+    serviceMock.findMany.mockResolvedValue([
+      {
+        id: "electric",
+        providerName: "Electric Co",
+        category: "UTILITY_ELECTRIC",
+        addressId: "addr-1",
+        monthlyCost: 100,
+        actualMonthlyCost: 80, // logged: paid 80 vs projected 100 → 20 saved
+        billingCycle: "MONTHLY",
+        isActive: true,
+        createdAt: new Date("2026-04-02T00:00:00.000Z"),
+      },
+      {
+        id: "internet",
+        providerName: "Internet Co",
+        category: "UTILITY_INTERNET",
+        addressId: "addr-1",
+        monthlyCost: 60,
+        actualMonthlyCost: null, // estimate only → excluded from savings math
+        billingCycle: "MONTHLY",
+        isActive: true,
+        createdAt: new Date("2026-04-02T00:00:00.000Z"),
+      },
+    ]);
+
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: "2026-04-01", year: 2026, plannedExpenses: 300 }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.budget.actualExpenses).toBe(80);
+    expect(body.budget.savingsRate).toBeCloseTo(0.2, 5);
   });
 
   it.each([

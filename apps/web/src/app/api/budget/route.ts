@@ -5,7 +5,7 @@ import { ApiGateError, apiGateErrorResponse, requireAppMutationUser } from "@/li
 import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { calculateBudgetPlan } from "@/lib/budget-planning";
+import { calculateBudgetActuals, calculateBudgetPlan } from "@/lib/budget-planning";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import {
   assertWorkspaceAction,
@@ -31,28 +31,44 @@ function budgetScopeKey(addressId: string | null | undefined, workspaceId?: stri
   return workspaceId ? `workspace:${workspaceId}:global` : GLOBAL_BUDGET_SCOPE_KEY;
 }
 
-async function calculateProjectedExpenses(
+const BUDGET_SERVICE_SELECT = {
+  id: true,
+  providerName: true,
+  category: true,
+  addressId: true,
+  monthlyCost: true,
+  actualMonthlyCost: true,
+  billingCycle: true,
+  isActive: true,
+  activatedAt: true,
+  createdAt: true,
+} as const;
+
+/**
+ * Resolve what we should persist on a Budget for a month + scope: the user's
+ * REAL realized cost this month (sum of per-line ACTUALS that were logged) and a
+ * substantiated savingsRate (estimate-vs-actual over only those logged lines).
+ * Crucially this is NOT the projection — Budget.actualExpenses used to be
+ * overwritten with the projected figure, which made "actuals" a lie and left
+ * savingsRate permanently null. We now store the realized actual; when nothing
+ * has been logged yet, actualExpenses is 0 (an honest "no real costs captured").
+ */
+async function resolveBudgetActuals(
   userId: string,
   month: Date,
   addressId?: string | null,
   workspaceId?: string | null,
-): Promise<number> {
+): Promise<{ actualExpenses: number; savingsRate: number | null }> {
   const services = await prisma.service.findMany({
     where: activeTrackedServiceWhereForScope({ userId, workspaceId }, addressId ? { addressId } : {}),
-    select: {
-      id: true,
-      providerName: true,
-      category: true,
-      addressId: true,
-      monthlyCost: true,
-      billingCycle: true,
-      isActive: true,
-      activatedAt: true,
-      createdAt: true,
-    },
+    select: BUDGET_SERVICE_SELECT,
   });
 
-  return calculateBudgetPlan(services, { month, addressId }).projectedThisMonth;
+  const actuals = calculateBudgetActuals(services, { month, addressId });
+  return {
+    actualExpenses: Math.round(actuals.actualThisMonth * 100) / 100,
+    savingsRate: actuals.savingsRate,
+  };
 }
 
 // GET /api/budget
@@ -98,19 +114,10 @@ export async function GET(request: NextRequest) {
         { userId, workspaceId: scope.workspaceId },
         summaryAddressId ? { addressId: summaryAddressId } : {},
       ),
-      select: {
-        id: true,
-        providerName: true,
-        category: true,
-        addressId: true,
-        monthlyCost: true,
-        billingCycle: true,
-        isActive: true,
-        activatedAt: true,
-        createdAt: true,
-      },
+      select: BUDGET_SERVICE_SELECT,
     });
     const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId: summaryAddressId });
+    const actuals = calculateBudgetActuals(services, { month: summaryMonth, addressId: summaryAddressId });
     // Match the limit to the same scope+month the projection is computed for.
     // budgets[0] is merely the most-recently-saved row, which can belong to a
     // different month/scope than the summary when no month filter is supplied.
@@ -131,6 +138,15 @@ export async function GET(request: NextRequest) {
         overUnderBudget: monthlyBudgetLimit > 0 ? monthlyBudgetLimit - serviceBudget.projectedThisMonth : null,
         oneTimeThisMonth: serviceBudget.oneTimeThisMonth,
         missingCostCount: serviceBudget.missingCostServices.length,
+        // Money layer: estimate-vs-actual reconciliation for the same scope+month.
+        actualThisMonth: actuals.actualThisMonth,
+        projectedForLoggedServices: actuals.projectedForLoggedServices,
+        monthlySavings: actuals.monthlySavings,
+        annualSavings: actuals.annualSavings,
+        savingsRate: actuals.savingsRate,
+        loggedServiceCount: actuals.loggedServiceCount,
+        pendingServiceCount: actuals.pendingServiceCount,
+        variance: actuals.perCategory,
       },
     });
   } catch (error) {
@@ -191,8 +207,14 @@ export async function POST(request: NextRequest) {
         : validated.categoryBreakdown
           ? JSON.stringify(validated.categoryBreakdown)
           : undefined;
-    const projectedExpenses =
-      validated.actualExpenses ?? (await calculateProjectedExpenses(userId, budgetMonth, addressId, scope.workspaceId));
+    // Money layer: persist the REAL realized cost + a substantiated savings rate
+    // from the per-line actuals — NOT the projection (which used to overwrite
+    // actualExpenses and made the figure meaningless). An explicit client-supplied
+    // actualExpenses still wins (manual override / tests). savingsRate is only
+    // written when there is a logged-actual baseline to substantiate it.
+    const { actualExpenses: realActualExpenses, savingsRate: realSavingsRate } =
+      await resolveBudgetActuals(userId, budgetMonth, addressId, scope.workspaceId);
+    const actualExpenses = validated.actualExpenses ?? realActualExpenses;
     const budgetOwnerUserId = scope.workspaceId ? scope.ownerUserId : userId;
 
     const budgetData = {
@@ -206,7 +228,8 @@ export async function POST(request: NextRequest) {
       plannedIncome: validated.plannedIncome ?? null,
       actualIncome: validated.actualIncome ?? null,
       plannedExpenses: validated.plannedExpenses ?? null,
-      actualExpenses: projectedExpenses,
+      actualExpenses,
+      savingsRate: realSavingsRate,
       categoryBreakdown: categoryBreakdown ?? null,
       notes: validated.notes ?? null,
       deletedAt: null,

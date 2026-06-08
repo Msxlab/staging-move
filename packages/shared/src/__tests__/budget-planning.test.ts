@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateBudgetActuals,
   calculateBudgetPlan,
   getBudgetCategoryForService,
   getFriendlyServiceCategoryLabel,
+  normalizeActualServiceCost,
   normalizeServiceCost,
   type ServiceCostInput,
-} from "./budget-planning";
+} from "../budget-planning";
 
 const month = new Date("2026-04-01T00:00:00.000Z");
 
@@ -125,5 +127,103 @@ describe("calculateBudgetPlan", () => {
 
     expect(summary.byBudgetCategory.map((row) => row.category)).toEqual(["Insurance", "Internet & Phone"]);
     expect(summary.byBudgetCategory.map((row) => row.category)).not.toContain("UTILITY_INTERNET");
+  });
+});
+
+describe("normalizeActualServiceCost", () => {
+  it("returns null when no actual has been logged", () => {
+    expect(normalizeActualServiceCost(service({ actualMonthlyCost: null }), month)).toBeNull();
+    expect(normalizeActualServiceCost(service({ actualMonthlyCost: undefined }), month)).toBeNull();
+  });
+
+  it("normalizes a logged annual actual to a monthly figure", () => {
+    const result = normalizeActualServiceCost(
+      service({ actualMonthlyCost: 1200, billingCycle: "YEARLY" }),
+      month,
+    );
+    expect(result).toEqual({ monthly: 100, oneTimeThisMonth: 0 });
+  });
+
+  it("counts a logged one-time actual only in its service month", () => {
+    expect(
+      normalizeActualServiceCost(service({ actualMonthlyCost: 250, billingCycle: "ONE_TIME" }), month),
+    ).toEqual({ monthly: 0, oneTimeThisMonth: 250 });
+    expect(
+      normalizeActualServiceCost(
+        service({ actualMonthlyCost: 250, billingCycle: "ONE_TIME", createdAt: "2026-03-01T00:00:00.000Z" }),
+        month,
+      ),
+    ).toEqual({ monthly: 0, oneTimeThisMonth: 0 });
+  });
+
+  it("ignores inactive services and negative actuals", () => {
+    expect(normalizeActualServiceCost(service({ actualMonthlyCost: 50, isActive: false }), month)).toBeNull();
+    expect(normalizeActualServiceCost(service({ actualMonthlyCost: -5 }), month)).toBeNull();
+  });
+});
+
+describe("calculateBudgetActuals", () => {
+  it("substantiates savings only over services with a logged actual", () => {
+    const summary = calculateBudgetActuals(
+      [
+        // Projected 100, actually paid 80 → 20 saved.
+        service({ id: "electric", category: "UTILITY_ELECTRIC", monthlyCost: 100, actualMonthlyCost: 80 }),
+        // Estimate only — projected 60, no actual → excluded from the savings math.
+        service({ id: "internet", category: "UTILITY_INTERNET", monthlyCost: 60 }),
+      ],
+      { month },
+    );
+
+    expect(summary.projectedForLoggedServices).toBe(100);
+    expect(summary.actualThisMonth).toBe(80);
+    expect(summary.monthlySavings).toBe(20);
+    expect(summary.annualSavings).toBe(240);
+    expect(summary.savingsRate).toBeCloseTo(0.2, 5);
+    expect(summary.loggedServiceCount).toBe(1);
+    expect(summary.pendingServiceCount).toBe(1);
+  });
+
+  it("returns a null savings rate when nothing has been reconciled", () => {
+    const summary = calculateBudgetActuals([service({ id: "x", monthlyCost: 100 })], { month });
+    expect(summary.savingsRate).toBeNull();
+    expect(summary.monthlySavings).toBe(0);
+    expect(summary.loggedServiceCount).toBe(0);
+    expect(summary.pendingServiceCount).toBe(1);
+  });
+
+  it("reports negative variance when the user paid more than estimated", () => {
+    const summary = calculateBudgetActuals(
+      [service({ id: "gas", category: "UTILITY_GAS", monthlyCost: 50, actualMonthlyCost: 70 })],
+      { month },
+    );
+    expect(summary.monthlySavings).toBe(-20);
+    expect(summary.savingsRate).toBeCloseTo(-0.4, 5);
+  });
+
+  it("computes per-category variance and ranks reconciled categories first", () => {
+    const summary = calculateBudgetActuals(
+      [
+        service({ id: "electric", category: "UTILITY_ELECTRIC", monthlyCost: 100, actualMonthlyCost: 90 }),
+        service({ id: "internet", category: "UTILITY_INTERNET", monthlyCost: 60 }),
+      ],
+      { month },
+    );
+
+    const utilities = summary.perCategory.find((row) => row.category === "Utilities");
+    expect(utilities).toMatchObject({ projected: 100, actual: 90, variance: 10, loggedCount: 1, totalCount: 1 });
+    // Reconciled category (Utilities) ranks ahead of estimate-only (Internet & Phone).
+    expect(summary.perCategory[0].category).toBe("Utilities");
+  });
+
+  it("respects address filtering for actuals", () => {
+    const summary = calculateBudgetActuals(
+      [
+        service({ id: "a", addressId: "addr-1", monthlyCost: 100, actualMonthlyCost: 80 }),
+        service({ id: "b", addressId: "addr-2", monthlyCost: 200, actualMonthlyCost: 100 }),
+      ],
+      { month, addressId: "addr-1" },
+    );
+    expect(summary.actualThisMonth).toBe(80);
+    expect(summary.loggedServiceCount).toBe(1);
   });
 });
