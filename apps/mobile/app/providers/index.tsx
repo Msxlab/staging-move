@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
+import { ListEntrance } from "@/components/ui/ListEntrance";
 import { CategoryChipRow, type CategoryChip } from "@/components/provider/CategoryChipRow";
 import { RecommendedRow, type RecommendedRowItem } from "@/components/provider/RecommendedRow";
 import { getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
@@ -351,15 +352,26 @@ export default function ProvidersScreen() {
           keyExtractor={(p) => p.id}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
+          renderItem={({ item, index }) => {
+            const card = (
               <ProviderCard
                 provider={item}
                 variant="full"
                 onPress={() => router.push({ pathname: "/providers/[id]", params: { id: item.id } })}
               />
-            </View>
-          )}
+            );
+            // Only cascade the first screenful. Beyond that, FlatList virtualizes
+            // rows in/out as you scroll — replaying the entrance on every
+            // scroll-mount would read as busy, so later rows render plainly.
+            if (index >= PAGE_SIZE) {
+              return <View style={styles.listItem}>{card}</View>;
+            }
+            return (
+              <ListEntrance index={index} style={styles.listItem}>
+                {card}
+              </ListEntrance>
+            );
+          }}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           ListFooterComponent={

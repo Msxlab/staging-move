@@ -39,6 +39,7 @@ const CLUSTERS: SubNavTab[][] = [
   ],
   [
     { nameKey: "providers", href: "/providers", show: ({ permissions }) => permissions.providers.canRead },
+    { nameKey: "coverage", href: "/providers/coverage", show: ({ permissions }) => permissions.providers.canRead },
     { nameKey: "governance", href: "/provider-governance", show: ({ permissions }) => permissions.providers.canRead },
     { nameKey: "needsLogo", href: "/providers/needs-logo", show: ({ permissions }) => permissions.providers.canRead },
   ],

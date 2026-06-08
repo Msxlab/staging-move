@@ -104,7 +104,13 @@ export async function GET(request: NextRequest) {
     const providersWithCoverageMetadata = providers.map((p) => {
       const metadata = getProviderCoverageMetadata(p.slug);
       const zipCodes = safeJsonArray(p.zipCodes);
-      const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+      // Prefer the admin-set per-provider override, then seed metadata, then
+      // the zip-vs-state heuristic. Override is null for un-edited providers.
+      const overrideModel = (p as { coverageModel?: string | null }).coverageModel;
+      const coverageModel: ProviderCoverageModel =
+        (overrideModel as ProviderCoverageModel | undefined) ||
+        metadata?.coverageModel ||
+        (zipCodes.length > 0 ? "zip_prefix" : "state");
 
       return {
         ...p,

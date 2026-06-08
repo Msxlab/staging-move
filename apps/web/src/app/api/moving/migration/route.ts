@@ -143,7 +143,9 @@ export async function GET(request: NextRequest) {
       const metadata = getProviderCoverageMetadata(p.slug);
       const zipCodes = safeJsonArray(p.zipCodes);
       const coverageModel: ProviderCoverageModel =
-        metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+        (p.coverageModel as ProviderCoverageModel | null | undefined) ||
+        metadata?.coverageModel ||
+        (zipCodes.length > 0 ? "zip_prefix" : "state");
       const coverageConfidence = getProviderCoverageConfidenceFromDb(
         {
           id: p.id,

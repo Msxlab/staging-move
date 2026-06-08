@@ -3,6 +3,7 @@ import { Alert, Linking, Platform, StatusBar as NativeStatusBar, View } from "re
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { useReducedMotion } from "react-native-reanimated";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as SystemUI from "expo-system-ui";
@@ -369,6 +370,7 @@ function RootNavigator() {
   // StyleSheet styles refresh in place rather than waiting for the next
   // app launch.
   const { resolvedScheme, colors } = useThemePreference();
+  const reduceMotion = useReducedMotion();
 
   // Keep the OS root view (visible behind navigators during transitions
   // and when the keyboard collapses) in sync with the active palette.
@@ -379,6 +381,16 @@ function RootNavigator() {
     }
   }, [colors.background]);
 
+  // Screen-to-screen transitions: a consistent, light push (~220ms) so
+  // navigation reads as a fluid page-turn rather than an abrupt cut. The two
+  // "container swap" boundaries (auth↔app, the onboarding modal) get a softer
+  // fade so the whole surface doesn't shove sideways. Under reduce-motion we
+  // drop to instant ("none") everywhere — the OS-level preference must win, and
+  // transitions are purely cosmetic, never gating navigation/readiness.
+  const pushAnimation = reduceMotion ? "none" : "slide_from_right";
+  const fadeAnimation = reduceMotion ? "none" : "fade";
+  const modalAnimation = reduceMotion ? "none" : "slide_from_bottom";
+
   return (
     <>
       <StatusBar style={resolvedScheme === "light" ? "dark" : "light"} />
@@ -387,13 +399,17 @@ function RootNavigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          animation: "slide_from_right",
+          animation: pushAnimation,
+          // Keep the push brisk; the default ~350ms can feel heavy on a deep
+          // nav stack. 220ms lands in the "fluid, not sluggish" band.
+          animationDuration: 220,
+          gestureEnabled: true,
         }}
       >
-        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-        <Stack.Screen name="onboarding" options={{ animation: "slide_from_bottom" }} />
-        <Stack.Screen name="setup-password" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="(auth)" options={{ animation: fadeAnimation }} />
+        <Stack.Screen name="(tabs)" options={{ animation: fadeAnimation }} />
+        <Stack.Screen name="onboarding" options={{ animation: modalAnimation }} />
+        <Stack.Screen name="setup-password" options={{ animation: pushAnimation }} />
       </Stack>
     </>
   );

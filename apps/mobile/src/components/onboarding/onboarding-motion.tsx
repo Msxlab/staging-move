@@ -13,6 +13,45 @@ import Animated, {
 import { useAppTheme } from "@/lib/theme";
 
 /**
+ * useShake — a tiny imperative shake for inline validation feedback. Returns an
+ * `animatedStyle` (a horizontal translateX) plus a `shake()` trigger. Call
+ * `shake()` when a field/step fails validation: the content does a short, small
+ * left-right wobble (±5px, ~70ms per leg, 4 legs that decay) — a gentle "no"
+ * gesture, not a violent rattle. Pair with a coral border + hapticError on the
+ * caller side for the full "invalid" read.
+ *
+ * Reduce-motion: `shake()` is a no-op and the offset stays pinned at 0, so the
+ * only invalid feedback is the colour/haptic the caller applies. Cancels on
+ * unmount.
+ */
+export function useShake() {
+  const reduceMotion = useReducedMotion();
+  const tx = useSharedValue(0);
+
+  const shake = React.useCallback(() => {
+    if (reduceMotion) return;
+    tx.value = withSequence(
+      withTiming(-5, { duration: 60, easing: Easing.out(Easing.quad) }),
+      withTiming(5, { duration: 70, easing: Easing.inOut(Easing.quad) }),
+      withTiming(-3, { duration: 70, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration: 60, easing: Easing.in(Easing.quad) }),
+    );
+  }, [reduceMotion, tx]);
+
+  React.useEffect(() => {
+    return () => {
+      cancelAnimation(tx);
+    };
+  }, [tx]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }],
+  }));
+
+  return { animatedStyle, shake };
+}
+
+/**
  * Onboarding motion primitives — deliberately tiny, all on the Reanimated UI
  * thread (no setInterval / JS re-render loops), and every one settles instantly
  * under reduce-motion. Amplitudes stay at or under PlanHero's ±1px idle ceiling

@@ -33,6 +33,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { ListEntrance } from "@/components/ui/ListEntrance";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import type { Address } from "@locateflow/shared";
 
@@ -170,13 +172,13 @@ export default function AddressesScreen() {
             }
           </Text>
         </View>
-        <TouchableOpacity
+        <PressableScale
           style={styles.addButton}
           onPress={() => router.push("/addresses/new")}
-          activeOpacity={0.7}
+          accessibilityLabel={t("addresses.newTitle")}
         >
           <Plus size={20} color="#fff" />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <ScrollView
@@ -208,7 +210,7 @@ export default function AddressesScreen() {
           />
         ) : (
           <View style={styles.list}>
-            {addresses.map((address) => {
+            {addresses.map((address, index) => {
               const TypeIcon = typeIcons[address.type] || MapPin;
               const servicesCount = address.services?.length || 0;
               const monthlyCost =
@@ -218,8 +220,8 @@ export default function AddressesScreen() {
                 ) || 0;
 
               return (
+                <ListEntrance key={address.id} index={index}>
                 <Card
-                  key={address.id}
                   variant="default"
                   onPress={() =>
                     router.push({ pathname: "/addresses/[id]", params: { id: address.id } })
@@ -325,6 +327,7 @@ export default function AddressesScreen() {
                     </TouchableOpacity>
                   </View>
                 </Card>
+                </ListEntrance>
               );
             })}
           </View>

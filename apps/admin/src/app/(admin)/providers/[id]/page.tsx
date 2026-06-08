@@ -22,6 +22,7 @@ import {
 } from "@/lib/recommendation-engine";
 import { InfoHint } from "@/components/info-hint";
 import { PasswordConfirmModal, StepUpValues } from "@/components/password-confirm-modal";
+import { CoverageEditor } from "@/components/coverage-editor";
 
 interface Provider {
   id: string;
@@ -116,13 +117,9 @@ export default function ProviderDetailPage() {
     );
   }
 
-  const states: string[] = (() => {
-    try {
-      return JSON.parse(provider.states);
-    } catch {
-      return [];
-    }
-  })();
+  // Coverage states + ZIP rules are now viewed/edited inline via <CoverageEditor>,
+  // which fetches from /api/providers/[id]/coverage. Only the ZIP-rule count is
+  // still read here for the Details stat below.
   const zipCodes: string[] = (() => {
     try {
       return JSON.parse(provider.zipCodes);
@@ -316,41 +313,7 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
-      {provider.scope === "STATE" && states.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="mb-3 font-semibold text-foreground">
-            Coverage States ({states.length})
-          </h2>
-          <div className="flex flex-wrap gap-1.5">
-            {states.map((state) => (
-              <span
-                key={state}
-                className="rounded-lg bg-tone-orange-bg px-3 py-1 text-xs font-medium text-tone-orange-fg"
-              >
-                {state}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {provider.scope === "STATE" && zipCodes.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="mb-3 font-semibold text-foreground">
-            ZIP Coverage Rules ({zipCodes.length})
-          </h2>
-          <div className="flex flex-wrap gap-1.5">
-            {zipCodes.map((zip) => (
-              <span
-                key={zip}
-                className="rounded-lg bg-tone-sky-bg px-3 py-1 text-xs font-medium text-tone-sky-fg"
-              >
-                {zip}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <CoverageEditor providerId={String(id)} />
 
       {tags.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-6">

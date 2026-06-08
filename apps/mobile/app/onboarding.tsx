@@ -44,6 +44,8 @@ import { AddressAutocompleteField } from "@/components/address/address-autocompl
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
@@ -68,7 +70,9 @@ import {
   StepTransition,
   StaggerItem,
   OnboardingProgressBar,
+  useShake,
 } from "@/components/onboarding/onboarding-motion";
+import Animated from "react-native-reanimated";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -155,12 +159,22 @@ export default function OnboardingScreen() {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState(0);
+  // Inline validation feedback: a gentle horizontal wobble on the step content
+  // whenever a save fails its checks. Paired with the existing coral error box +
+  // hapticError for a clear "that didn't go through" read. Reduce-motion-safe
+  // (shake() no-ops; the colour + haptic still fire).
+  const { animatedStyle: shakeStyle, shake } = useShake();
   // Bumped whenever a step is successfully completed (validation passed + saved).
   // Drives the progress-bar's one-shot confirmation shimmer; paired with a
   // success haptic. Purely cosmetic — never gates navigation.
   const [pulseTick, setPulseTick] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Per-field validation errors (currently the required name fields). Surfacing
+  // the error ON the offending field — coral border + inline message via the
+  // shared Input — is clearer than the single top error box alone. Cleared as
+  // soon as the user edits the field.
+  const [fieldErrors, setFieldErrors] = useState<{ firstName?: string; lastName?: string }>({});
   const [legalConsents, setLegalConsents] = useState(() => getPendingLegalConsents() || getDefaultLegalConsents());
   // Set when this user reached onboarding straight after auto-joining a
   // workspace via an invite link. We show a "you've joined" banner and DON'T
@@ -353,6 +367,10 @@ export default function OnboardingScreen() {
 
   const updateProfile = (key: string, value: any) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
+    // Clear a field's inline error the moment the user starts fixing it.
+    if (key === "firstName" || key === "lastName") {
+      setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+    }
   };
   const updateAddress = (key: string, value: any) => {
     setAddress((prev) => {
@@ -417,8 +435,13 @@ export default function OnboardingScreen() {
   const saveProfile = async () => {
     if (!profile.firstName.trim() || !profile.lastName.trim()) {
       setError(t("onboarding.error_namesRequired"));
+      setFieldErrors({
+        firstName: profile.firstName.trim() ? undefined : t("onboarding.error_namesRequired"),
+        lastName: profile.lastName.trim() ? undefined : t("onboarding.error_namesRequired"),
+      });
       return false;
     }
+    setFieldErrors({});
     if (!hasRequiredLegalConsents(legalConsents)) {
       setError(t("onboarding.error_legalRequired"));
       return false;
@@ -655,7 +678,15 @@ export default function OnboardingScreen() {
 
   const handleComplete = async () => {
     const planId = await saveMovingPlan();
-    if (planId === false) return false;
+    if (planId === false) {
+      // saveMovingPlan already set the coral error message; mirror the inline
+      // shake + error haptic the other steps give so a failed destination
+      // validation reads the same whether it came via "Continue" or a direct
+      // "New plan" / "Go to dashboard" button on the final step.
+      hapticError();
+      shake();
+      return false;
+    }
 
     setSaving(true);
     setError("");
@@ -746,7 +777,7 @@ export default function OnboardingScreen() {
     if (step === 0) ok = await saveProfile();
     else if (step === 1) ok = await saveAddress();
     else if (step === 2) ok = await saveServices();
-    if (!ok) { hapticError(); return; }
+    if (!ok) { hapticError(); shake(); return; }
     if (step === 2 && await routeIfOnboardingCompleted()) return;
     if (step < 3) {
       celebrateStepComplete();
@@ -754,8 +785,11 @@ export default function OnboardingScreen() {
       setError("");
     }
     else {
-      const completed = await handleComplete();
-      if (!completed) hapticError();
+      // Unreachable in practice (the bottom "Continue" bar only renders for
+      // step < 3; the final step completes via its own buttons → handleComplete,
+      // which already shakes on failure). Kept defensive; handleComplete owns
+      // the failure feedback so we don't double-fire it here.
+      await handleComplete();
     }
   };
 
@@ -764,6 +798,7 @@ export default function OnboardingScreen() {
     const ok = await saveServices();
     if (!ok) {
       hapticError();
+      shake();
       return;
     }
     if (await routeIfOnboardingCompleted()) return;
@@ -817,7 +852,11 @@ export default function OnboardingScreen() {
         >
           {/* Each step's content cross-fades + lifts 8px on entry. Keyed on
               `step` so it remounts per step, which also re-triggers the
-              staggered option lists inside. Reduce-motion settles instantly. */}
+              staggered option lists inside. Reduce-motion settles instantly.
+              The outer shake view wobbles the whole step on a failed save —
+              its shared value lives outside StepTransition so a per-step
+              remount never resets a shake mid-play. */}
+          <Animated.View style={shakeStyle}>
           <StepTransition stepKey={step}>
           {/* Step 0: Profile */}
           {step === 0 && (
@@ -829,10 +868,12 @@ export default function OnboardingScreen() {
               <View style={[styles.row, { marginTop: 24 }]}>
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("auth.firstName")} *`} placeholder="John" value={profile.firstName}
+                    error={fieldErrors.firstName}
                     onChangeText={(v: string) => updateProfile("firstName", v)} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("auth.lastName")} *`} placeholder="Doe" value={profile.lastName}
+                    error={fieldErrors.lastName}
                     onChangeText={(v: string) => updateProfile("lastName", v)} />
                 </View>
               </View>
@@ -1112,10 +1153,11 @@ export default function OnboardingScreen() {
                     );
                     return (
                       <StaggerItem key={`rec-${provider.id}`} index={recoIndex}>
-                      <TouchableOpacity
+                      <PressableScale
                         style={[styles.recoCard, isSelected && styles.recoCardActive]}
                         onPress={() => { hapticLight(); toggleProvider(provider as any); }}
-                        activeOpacity={0.7}
+                        min={0.97}
+                        accessibilityLabel={provider.name}
                       >
                         <ServiceLogoMark
                           service={{
@@ -1139,7 +1181,7 @@ export default function OnboardingScreen() {
                           </Text>
                         </View>
                         {isSelected && <Check size={16} color={theme.colors.primary} />}
-                      </TouchableOpacity>
+                      </PressableScale>
                       </StaggerItem>
                     );
                   })}
@@ -1147,12 +1189,25 @@ export default function OnboardingScreen() {
               )}
 
               {loadingProviders ? (
-                <View style={styles.loadingBox}>
-                  <ActivityIndicator color={theme.colors.primary} />
-                  <Text style={styles.loadingText}>{t("onboarding.providers_loading")}</Text>
+                // Calmer load: a labelled spinner over a few placeholder cards so
+                // the list settles in place and fades to real content instead of
+                // popping from an empty spinner. Skeletons honour reduce-motion.
+                <View style={{ width: "100%", marginTop: 16 }}>
+                  <View style={styles.loadingBox}>
+                    <ActivityIndicator color={theme.colors.primary} />
+                    <Text style={styles.loadingText}>{t("onboarding.providers_loading")}</Text>
+                  </View>
+                  <View style={{ gap: 10, marginTop: 4 }}>
+                    {[0, 1, 2, 3].map((i) => (
+                      <SkeletonCard key={i} lines={2} />
+                    ))}
+                  </View>
                 </View>
               ) : sortedCats.length === 0 ? (
-                <Text style={styles.emptyText}>{t("onboarding.providers_empty")}</Text>
+                <View style={styles.emptyProviders}>
+                  <Search size={28} color={theme.colors.textMuted} />
+                  <Text style={styles.emptyText}>{t("onboarding.providers_empty")}</Text>
+                </View>
               ) : (
                 <View style={{ marginTop: 12, width: "100%" }}>
                   {sortedCats.map((cat, catIndex) => {
@@ -1384,6 +1439,7 @@ export default function OnboardingScreen() {
             </View>
           )}
           </StepTransition>
+          </Animated.View>
         </ScrollView>
 
         {/* Bottom Actions */}
@@ -1472,9 +1528,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   counterBtnText: { fontSize: 20, color: theme.colors.text, fontWeight: "600" },
   counterValue: { fontSize: 18, fontWeight: "700", color: theme.colors.text, minWidth: 24, textAlign: "center" },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 20, width: "100%" },
-  loadingBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 40, gap: 8 },
+  loadingBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 18, gap: 8 },
   loadingText: { fontSize: 14, color: theme.colors.textMuted },
-  emptyText: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center", paddingVertical: 40 },
+  emptyProviders: { alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 40, width: "100%" },
+  emptyText: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" },
   dateLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, marginBottom: 6 },
   dateButton: {
     flexDirection: "row",
