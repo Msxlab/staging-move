@@ -16,6 +16,7 @@ export * from "./relocation-checklist";
 export * from "./budget-planning";
 export * from "./migration-engine";
 export * from "./runtime-config";
+export * from "./env-catalog";
 export * from "./provider-coverage";
 export * from "./provider-integrity";
 export * from "./provider-move-domain";
