@@ -402,6 +402,10 @@ export default function ProvidersPage() {
             <button onClick={handleExport} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
               <Download className="h-4 w-4" /> Export
             </button>
+            <button onClick={() => window.location.assign("/providers/coverage")}
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+              <MapPin className="h-4 w-4" /> Coverage overview
+            </button>
             <button onClick={() => window.location.assign("/providers/needs-logo")}
               className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
               <ImageOff className="h-4 w-4" /> Logo backfill

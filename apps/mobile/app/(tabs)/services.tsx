@@ -39,6 +39,8 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
+import { ListEntrance } from "@/components/ui/ListEntrance";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -276,14 +278,14 @@ export default function ServicesScreen() {
             {t("services.summaryLine", { count: filtered.length, total: formatNumber(totalMonthly, i18n.language) })}
           </Text>
         </View>
-        <TouchableOpacity
+        <PressableScale
           style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
           onPress={() => router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new")}
           disabled={addresses.length === 0}
-          activeOpacity={0.7}
+          accessibilityLabel={t("services.newTitle")}
         >
           <Plus size={20} color="#fff" />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <View style={styles.summaryCard}>
@@ -486,9 +488,10 @@ export default function ServicesScreen() {
           );
         })() : (
           <View style={styles.list}>
-            {filtered.map((service: any) => {
+            {filtered.map((service: any, index: number) => {
               return (
-              <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
+              <ListEntrance key={service.id} index={index}>
+              <Card variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
                 <View style={styles.serviceTop}>
                   <ServiceLogoMark
                     service={service}
@@ -578,6 +581,7 @@ export default function ServicesScreen() {
                   )}
                 </View>
               </Card>
+              </ListEntrance>
               );
             })}
           </View>

@@ -94,7 +94,16 @@ export async function GET(request: NextRequest) {
     const withCoverages = providers.map((p) => {
       const metadata = getProviderCoverageMetadata(p.slug);
       const zipCodes = safeJsonArray(p.zipCodes);
-      const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+      // Resolution order: per-provider DB override (set by the admin coverage
+      // editor) → curated seed metadata → zip-vs-state heuristic. The override
+      // is what lets an admin change a provider's model without editing seed
+      // code; it's null for every provider that has never been edited, so this
+      // is a no-op for them.
+      const overrideModel = (p as { coverageModel?: string | null }).coverageModel;
+      const coverageModel: ProviderCoverageModel =
+        (overrideModel as ProviderCoverageModel | undefined) ||
+        metadata?.coverageModel ||
+        (zipCodes.length > 0 ? "zip_prefix" : "state");
 
       return {
         ...p,

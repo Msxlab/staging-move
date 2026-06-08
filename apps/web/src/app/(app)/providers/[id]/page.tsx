@@ -21,6 +21,7 @@ type ProviderRow = {
   scope: string;
   states: string;
   zipCodes: string;
+  coverageModel?: string | null;
   tags: string;
   popularityScore: number;
   displayOrder: number;
@@ -54,7 +55,10 @@ function shape(p: ProviderRow, address: CoverageAddress): ProviderDetail {
   const zipCodes = parseJsonArray(p.zipCodes);
   const tags = parseJsonArray(p.tags);
   const metadata = getProviderCoverageMetadata(p.slug);
-  const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+  const coverageModel: ProviderCoverageModel =
+    (p.coverageModel as ProviderCoverageModel | null | undefined) ||
+    metadata?.coverageModel ||
+    (zipCodes.length > 0 ? "zip_prefix" : "state");
   // Pass the full address (zip + coordinates when known) so ZIP- and
   // polygon-level coverage can resolve instead of always falling back to a
   // coarse state-level match.

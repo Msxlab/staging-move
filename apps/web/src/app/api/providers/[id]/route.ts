@@ -17,6 +17,7 @@ type ProviderRow = {
   scope: string;
   states: string;
   zipCodes: string;
+  coverageModel?: string | null;
   tags: string;
   popularityScore: number;
   displayOrder: number;
@@ -89,7 +90,10 @@ function shape(p: ProviderRow, state: string | null) {
   const zipCodes = safeJsonParse(p.zipCodes, []) as string[];
   const tags = safeJsonParse(p.tags, []) as string[];
   const metadata = getProviderCoverageMetadata(p.slug);
-  const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+  const coverageModel: ProviderCoverageModel =
+    (p.coverageModel as ProviderCoverageModel | null | undefined) ||
+    metadata?.coverageModel ||
+    (zipCodes.length > 0 ? "zip_prefix" : "state");
   const coverageMatchLevel = getProviderMatchLevelFromDb(
     {
       id: p.id,

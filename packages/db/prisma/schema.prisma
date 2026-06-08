@@ -708,6 +708,15 @@ model ServiceProvider {
   states   String @default("[]") @db.VarChar(2000)
   zipCodes String @default("[]") @db.VarChar(2000)
 
+  // Per-provider coverage MODEL override (state | zip_prefix | polygon |
+  // live_address). Historically the model lived ONLY in the curated seed
+  // metadata keyed by slug (packages/db/src/provider-coverage-metadata.ts),
+  // so admins could not change it without editing seed code. This nullable
+  // column lets the admin coverage editor persist an override; when null the
+  // matcher falls back to the seed metadata (then to a zip-vs-state heuristic),
+  // so existing behavior is unchanged for every provider that has no override.
+  coverageModel String? @db.VarChar(20)
+
   tags String @default("[]") @db.VarChar(2000)
 
   popularityScore Int     @default(0)

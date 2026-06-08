@@ -24,6 +24,8 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { ListEntrance } from "@/components/ui/ListEntrance";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
@@ -109,13 +111,13 @@ export default function MovingScreen() {
           <Text style={styles.title}>{t("moving.title")}</Text>
           <Text style={styles.subtitle}>{plans.length}</Text>
         </View>
-        <TouchableOpacity
+        <PressableScale
           style={styles.addButton}
           onPress={() => router.push("/moving/new")}
-          activeOpacity={0.7}
+          accessibilityLabel={t("moving.newPlan")}
         >
           <Plus size={20} color="#fff" />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <ScrollView
@@ -141,12 +143,13 @@ export default function MovingScreen() {
           />
         ) : (
           <View style={styles.list}>
-            {plans.map((plan: any) => {
+            {plans.map((plan: any, index: number) => {
               const normalizedStatus = normalizeMovingPlanStatus(plan.status);
               const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
               return (
-                <Card key={plan.id} variant="default" onPress={() => router.push({ pathname: "/moving/[id]", params: { id: plan.id } })}>
+                <ListEntrance key={plan.id} index={index}>
+                <Card variant="default" onPress={() => router.push({ pathname: "/moving/[id]", params: { id: plan.id } })}>
                   <View style={styles.planTop}>
                     <View style={styles.planIcon}>
                       <Truck size={20} color={theme.colors.primary} />
@@ -185,6 +188,7 @@ export default function MovingScreen() {
                     </View>
                   </View>
                 </Card>
+                </ListEntrance>
               );
             })}
           </View>
