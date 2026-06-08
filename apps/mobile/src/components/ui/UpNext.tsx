@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
-import { ArrowRight, Check, CalendarClock } from "lucide-react-native";
+import { ArrowRight, Check, CalendarClock, RotateCcw } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { hapticSuccess, hapticError, hapticLight } from "@/lib/haptics";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { Avatar } from "@/components/ui/Avatar";
@@ -25,6 +25,10 @@ import { Avatar } from "@/components/ui/Avatar";
  *     success haptic fires, and the parent's onCompleted() best-effort refreshes
  *     the dashboard so the readiness ring bumps. On API error we REVERT (re-add
  *     the row), fire an error haptic, and surface a quiet inline message.
+ *   - UNDO: after a successful completion a transient "Completed — Undo" bar
+ *     appears for ~5s. Tapping Undo PATCHes the SAME task with event:"REOPEN"
+ *     (no new endpoint), re-inserts the row in its sorted position, and re-syncs
+ *     readiness via onCompleted() so the ring falls back. The window auto-clears.
  *   - Self-hides when there is no active plan or no open tasks (renders null), so
  *     it never adds an empty card to the dashboard.
  *
@@ -44,8 +48,12 @@ interface MoveTaskLite {
   assignee?: { id: string; name: string | null; initials: string } | null;
 }
 
-const OPEN_STATUSES = new Set(["SUGGESTED", "ACCEPTED", "IN_PROGRESS"]);
+// REOPENED is an OPEN state too: undoing a completion via PATCH REOPEN lands the
+// task in REOPENED, so it must survive a subsequent refetch's status filter.
+const OPEN_STATUSES = new Set(["SUGGESTED", "ACCEPTED", "IN_PROGRESS", "REOPENED"]);
 const MAX_VISIBLE = 3;
+// How long the "Completed — Undo" affordance stays before it auto-dismisses.
+const UNDO_WINDOW_MS = 5000;
 
 function sortByDue(a: MoveTaskLite, b: MoveTaskLite): number {
   const at = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
@@ -85,6 +93,24 @@ export function UpNext({
   // id currently being completed → disables its row + shows a spinner.
   const [busyId, setBusyId] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
+  // The most-recently-completed task, held for the ~5s Undo window. Null hides
+  // the undo bar. We keep the full task object so REOPEN can re-insert it in its
+  // original sorted position without a refetch.
+  const [undoTask, setUndoTask] = useState<MoveTaskLite | null>(null);
+  // True while the REOPEN PATCH is in flight (disables the Undo button).
+  const [undoing, setUndoing] = useState(false);
+  // Auto-dismiss timer for the undo window; cleared on undo, re-complete, unmount.
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearUndoTimer = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  }, []);
+
+  // Clean up the pending timer on unmount.
+  useEffect(() => () => clearUndoTimer(), [clearUndoTimer]);
 
   const fetchOpen = useCallback(async () => {
     if (!planId) {
@@ -127,6 +153,17 @@ export function UpNext({
     };
   }, [planId, fetchOpen]);
 
+  // Re-insert a task into the list in its sorted position (idempotent on id).
+  const reinsertSorted = useCallback((task: MoveTaskLite) => {
+    setTasks((curr) => {
+      const base = curr ?? [];
+      if (base.some((tk) => tk.id === task.id)) return base;
+      const next = [...base, task];
+      next.sort(sortByDue);
+      return next;
+    });
+  }, []);
+
   const handleComplete = useCallback(
     async (task: MoveTaskLite) => {
       if (busyId) return;
@@ -141,18 +178,20 @@ export function UpNext({
         // Revert: re-insert the row in its original sorted position.
         hapticError();
         setErrorId(task.id);
-        setTasks((curr) => {
-          const base = curr ?? [];
-          if (base.some((tk) => tk.id === task.id)) return base;
-          const next = [...base, task];
-          next.sort(sortByDue);
-          return next;
-        });
+        reinsertSorted(task);
         setBusyId(null);
         return;
       }
       hapticSuccess();
       setBusyId(null);
+      // Open the transient Undo window for this task. A new completion replaces
+      // any prior undo target (only the latest is undoable) and resets the timer.
+      clearUndoTimer();
+      setUndoTask(task);
+      undoTimerRef.current = setTimeout(() => {
+        setUndoTask(null);
+        undoTimerRef.current = null;
+      }, UNDO_WINDOW_MS);
       // Best-effort dashboard refresh so the readiness ring bumps. Failures
       // here never undo the completion.
       try {
@@ -161,11 +200,44 @@ export function UpNext({
         /* non-blocking */
       }
     },
-    [busyId, tasks, onCompleted],
+    [busyId, tasks, onCompleted, reinsertSorted, clearUndoTimer],
   );
 
-  // Hide entirely: no plan, still loading, or no open tasks.
-  if (!planId || tasks === null || tasks.length === 0) return null;
+  const handleUndo = useCallback(async () => {
+    const task = undoTask;
+    if (!task || undoing) return;
+    setUndoing(true);
+    clearUndoTimer();
+    // REOPEN the just-completed task via the SAME endpoint (no new route). On
+    // success the task returns to an OPEN state, so we re-insert it and re-sync
+    // readiness so the ring falls back.
+    const res = await api.patch<any>("/api/move-tasks", { id: task.id, event: "REOPEN" });
+    if (res.error) {
+      // Couldn't undo: keep the completion (the task stays done) and drop the
+      // bar. The error haptic signals the failure; there is no row to attach an
+      // inline message to since the task was already removed on completion.
+      hapticError();
+      setUndoing(false);
+      setUndoTask(null);
+      return;
+    }
+    hapticLight();
+    // Re-insert in its original sorted slot (status now REOPENED, still OPEN).
+    reinsertSorted({ ...task, status: "REOPENED" });
+    setUndoTask(null);
+    setUndoing(false);
+    try {
+      await onCompleted?.();
+    } catch {
+      /* non-blocking */
+    }
+  }, [undoTask, undoing, clearUndoTimer, reinsertSorted, onCompleted]);
+
+  // Hide entirely: no plan, or still loading. When there are no open tasks we
+  // still render IF an undo bar is pending (so the user can reopen the task they
+  // just cleared) — otherwise hide.
+  if (!planId || tasks === null) return null;
+  if (tasks.length === 0 && !undoTask) return null;
 
   const visible = tasks.slice(0, MAX_VISIBLE);
 
@@ -244,6 +316,37 @@ export function UpNext({
           </ListEntrance>
         );
       })}
+
+      {/* Transient "Completed — Undo" affordance. Shown for ~5s after a
+          completion; tapping Undo REOPENs the task and re-syncs readiness. */}
+      {undoTask ? (
+        <View
+          style={[styles.undoBar, visible.length > 0 && styles.undoBarSpaced]}
+          accessibilityRole="summary"
+        >
+          <Check size={15} color={theme.colors.success} />
+          <Text style={styles.undoText} numberOfLines={1}>
+            {t("dashboard.upNext_completed", { title: undoTask.title })}
+          </Text>
+          <TouchableOpacity
+            onPress={handleUndo}
+            disabled={undoing}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t("dashboard.upNext_undo")}
+            style={styles.undoBtn}
+          >
+            {undoing ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <>
+                <RotateCcw size={13} color={theme.colors.primary} />
+                <Text style={styles.undoBtnText}>{t("dashboard.upNext_undo")}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -297,4 +400,19 @@ const makeStyles = (t: Theme) =>
     dueChip: { marginTop: 4, alignSelf: "flex-start" },
     dueText: { fontSize: 11, color: t.colors.textTertiary, fontWeight: "600" },
     errorText: { fontSize: 11, color: t.colors.error, fontWeight: "600", marginTop: 4 },
+    undoBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: t.colors.successFaded,
+      borderWidth: 1,
+      borderColor: `${t.colors.success}3D`,
+    },
+    undoBarSpaced: { marginTop: 10 },
+    undoText: { flex: 1, fontSize: 12.5, fontWeight: "600", color: t.colors.text },
+    undoBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+    undoBtnText: { fontSize: 12.5, fontWeight: "700", color: t.colors.primary },
   });

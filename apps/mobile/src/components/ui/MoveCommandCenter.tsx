@@ -6,6 +6,7 @@ import { ArrowRight, CalendarClock, PartyPopper, Rocket, Sparkles, Truck } from 
 import { useTranslation } from "react-i18next";
 import Animated, {
   Easing,
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -52,15 +53,30 @@ interface Props {
   missingCriticalCount: number;
   completedCriticalCount: number;
   state?: string | null;
+  /**
+   * COLD-START momentum floor. True when the user has genuinely completed the
+   * first real setup steps for this plan — origin AND destination are set. This
+   * is the ONLY thing that lifts the ring off a hard 0% before any task/provider
+   * progress: we credit only setup the user actually did (never a fabricated
+   * task completion). When false the ring behaves exactly as before.
+   */
+  hasOriginDestination?: boolean;
   onOpenPlan: () => void;
   onOpenAction: (action: CommandCenterAction) => void;
   onStartMove: () => void;
 }
 
+// Cold-start momentum floor (%). Having an active plan WITH origin + destination
+// set is real, user-completed setup — so the ring starts here instead of a
+// demotivating 0%. It is a floor only: any genuine task/provider progress that
+// computes higher always wins. Kept low + honest (not a fake "you're 15% done").
+const COLD_START_FLOOR = 6;
+
 function computeReadiness(
   checklist: RelocationChecklist | null,
   completedCritical: number,
   missingCritical: number,
+  hasOriginDestination = false,
 ): number {
   const signals: number[] = [];
   if (checklist && checklist.totalItems > 0) {
@@ -70,23 +86,59 @@ function computeReadiness(
   if (criticalTotal > 0) {
     signals.push(completedCritical / criticalTotal);
   }
-  if (signals.length === 0) return 0;
-  const mean = signals.reduce((a, b) => a + b, 0) / signals.length;
-  return Math.max(0, Math.min(100, Math.round(mean * 100)));
+  const computed =
+    signals.length === 0
+      ? 0
+      : Math.round((signals.reduce((a, b) => a + b, 0) / signals.length) * 100);
+  // Floor the ring at a low non-zero ONLY when real setup is done. Never lowers
+  // a genuinely higher score; never applies without origin+destination.
+  const floored = hasOriginDestination ? Math.max(computed, COLD_START_FLOOR) : computed;
+  return Math.max(0, Math.min(100, floored));
 }
 
-/** Static SVG readiness ring (no animated props — robust + reduce-motion-safe). */
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/**
+ * SVG readiness ring whose fill animates as `percent` changes, so clearing a
+ * task visibly sweeps the ring forward. Reduce-motion-safe: when reduce-motion
+ * is on we snap straight to the target (no timing). The numeric label is driven
+ * by the same `percent` prop so it stays in lockstep with the parent's state.
+ */
 function ReadinessRing({ percent, color, track, label }: { percent: number; color: string; track: string; label: string }) {
   const size = 84;
   const stroke = 8;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const dash = (Math.max(0, Math.min(100, percent)) / 100) * c;
+  const reduceMotion = useReducedMotion();
+
+  const clamped = Math.max(0, Math.min(100, percent));
+  // Shared progress fraction (0..1) animates toward the latest percent. Start at
+  // the first value (no entrance sweep from 0 on mount under reduce-motion).
+  const progress = useSharedValue(clamped / 100);
+
+  useEffect(() => {
+    const target = clamped / 100;
+    if (reduceMotion) {
+      progress.value = target;
+      return;
+    }
+    progress.value = withTiming(target, {
+      duration: 650,
+      easing: Easing.out(Easing.cubic),
+    });
+    return () => cancelAnimation(progress);
+  }, [clamped, reduceMotion, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    // Dash length grows with progress; the gap (c) keeps the rest of the ring empty.
+    strokeDasharray: `${progress.value * c}, ${c}`,
+  }));
+
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }} accessibilityLabel={label}>
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -94,7 +146,7 @@ function ReadinessRing({ percent, color, track, label }: { percent: number; colo
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"
-          strokeDasharray={`${dash}, ${c}`}
+          animatedProps={animatedProps}
         />
       </Svg>
       <Text style={{ fontSize: 19, fontWeight: "800", color }}>{percent}%</Text>
@@ -109,6 +161,7 @@ export function MoveCommandCenter({
   missingCriticalCount,
   completedCriticalCount,
   state,
+  hasOriginDestination,
   onOpenPlan,
   onOpenAction,
   onStartMove,
@@ -127,7 +180,7 @@ export function MoveCommandCenter({
     ? getMoveCountdown(activePlan.moveDate, { state })
     : null;
   const readiness = activePlan
-    ? computeReadiness(checklist, completedCriticalCount, missingCriticalCount)
+    ? computeReadiness(checklist, completedCriticalCount, missingCriticalCount, hasOriginDestination)
     : 0;
   const milestoneReached = !!activePlan && (readiness >= 100 || (countdown?.phase ?? "upcoming") !== "upcoming");
 

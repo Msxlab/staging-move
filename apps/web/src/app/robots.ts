@@ -35,8 +35,11 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     "/dashboard",
     "/settings",
     "/settings/",
-    "/moving",
-    "/moving/",
+    // NOTE: do NOT broadly disallow "/moving" — the public /moving/<state> SEO
+    // landing pages (51 of them) live there and must stay crawlable. Only the
+    // authenticated move dashboard + detail are private; the dashboard at
+    // "/moving" is already auth-gated + X-Robots-Tag noindex'd by middleware.
+    "/moving/plan", // authenticated move-detail route
     "/services",
     "/services/",
     "/addresses",

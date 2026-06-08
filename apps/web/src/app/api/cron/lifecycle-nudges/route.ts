@@ -9,7 +9,7 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
-import { epochDayInTimeZone, resolveReminderTimeZone, daysUntilDateOnly } from "@/lib/reminder-timezone";
+import { epochDayInTimeZone, isReminderDeliveryHour, resolveReminderTimeZone, daysUntilDateOnly } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -233,6 +233,9 @@ async function handleCron(request: NextRequest) {
     // ── Fan out: ABANDONED SETUP ──
     for (const user of abandonedUsers) {
       const tz = resolveReminderTimeZone(user.timezone);
+      // Local ~8am delivery gate (see reminder-timezone.ts). Per-(user, kind,
+      // window-day) dedupe keys keep any cross-run overlap idempotent.
+      if (!isReminderDeliveryHour(now, tz)) continue;
       const daysSinceSignup = epochDayInTimeZone(now, tz) - epochDayInTimeZone(user.createdAt, tz);
       if (!ABANDONED_SETUP_DAYS.includes(daysSinceSignup)) continue;
 
@@ -311,6 +314,8 @@ async function handleCron(request: NextRequest) {
       const plan = winbackByUser.get(userId)!;
       const planUser = plan.user!;
       const tz = resolveReminderTimeZone(planUser.profile?.timezone ?? null);
+      // Same local ~8am delivery gate as the abandoned-setup loop above.
+      if (!isReminderDeliveryHour(now, tz)) continue;
       const lastSeen = lastSeenByUser.get(userId) ?? planUser.createdAt;
       const daysSinceSeen = epochDayInTimeZone(now, tz) - epochDayInTimeZone(lastSeen, tz);
       if (!INACTIVE_WINBACK_DAYS.includes(daysSinceSeen)) continue;

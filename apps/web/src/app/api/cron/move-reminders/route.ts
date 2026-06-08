@@ -5,7 +5,7 @@ import { createInAppNotification } from "@/lib/in-app-notifications";
 import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
-import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -59,6 +59,11 @@ async function handleCron(request: NextRequest) {
     {
       for (const plan of plans) {
         const userTimeZone = resolveReminderTimeZone(plan.user.profile?.timezone);
+        // Local-time delivery gate: only act on users whose resolved local hour
+        // is ~8am this run. The batch fires at several UTC hours covering 8am
+        // across US zones; each user is sent by exactly the run that matches
+        // their zone. Per-day dedupe keys make any overlap a no-op.
+        if (!isReminderDeliveryHour(now, userTimeZone)) continue;
         const days = daysUntilDateOnly(plan.moveDate, now, userTimeZone);
         if (!reminderDays.includes(days)) continue;
 

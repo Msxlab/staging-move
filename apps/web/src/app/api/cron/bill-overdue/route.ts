@@ -9,6 +9,7 @@ import {
   groupNotificationPreferencesByUser,
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
+import { isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -72,7 +73,7 @@ export async function GET(req: Request) {
         category: true,
         monthlyCost: true,
         billingDay: true,
-        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true } },
+        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
       },
     });
 
@@ -92,6 +93,10 @@ export async function GET(req: Request) {
 
     for (const service of services) {
       if (!service.user?.email || !service.billingDay) continue;
+      // Local ~8am delivery gate (see reminder-timezone.ts). Per-day dedupe keys
+      // keep any cross-run overlap idempotent.
+      const userTimeZone = resolveReminderTimeZone(service.user.profile?.timezone);
+      if (!isReminderDeliveryHour(now, userTimeZone)) continue;
       const dueDate = mostRecentBillingDate(service.billingDay, now);
       const daysOverdue = daysBetween(now, dueDate);
       if (daysOverdue !== 1) continue;
