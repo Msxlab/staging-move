@@ -11,6 +11,7 @@ import {
   MAX_WEB_NOTIFICATION_REMINDER_DAYS,
 } from "@/lib/notification-preferences";
 import { isReminderDeliveryHour, nextBillingOccurrence, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 
 /**
  * GET /api/cron/bill-reminders
@@ -73,6 +74,11 @@ export async function GET(req: Request) {
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
+    // When the daily rollup owns the email/push send, suppress this cron's
+    // per-item email + push (the digest sends them once, bundled). The in-app
+    // feed entry is STILL written so the feed stays granular. Read once per run.
+    const digestOwnsSend = await isDailyDigestEnabled();
+
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
@@ -129,8 +135,9 @@ export async function GET(req: Request) {
           errors.push(`In-app mirror failed for ${svc.providerName}: ${mirrorError}`);
         }
 
-        // Email — only if the user allows email bill reminders.
-        if (emailAllowed) {
+        // Email — only if the user allows email bill reminders AND the daily
+        // rollup isn't the owner of the send.
+        if (emailAllowed && !digestOwnsSend) {
           const success = await sendBillReminderEmail({
             userEmail: svc.user.email,
             userName: [svc.user.firstName, svc.user.lastName].filter(Boolean).join(" ") || "User",
@@ -146,8 +153,9 @@ export async function GET(req: Request) {
           if (success) sentCount++;
         }
 
-        // Push — only if the user's push toggle allows it.
-        if (pushAllowed) {
+        // Push — only if the user's push toggle allows it AND the daily rollup
+        // isn't the owner of the send.
+        if (pushAllowed && !digestOwnsSend) {
           const pushed = await sendNotification({
             userId: svc.user.id,
             type: "PUSH",

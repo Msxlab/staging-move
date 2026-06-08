@@ -6,6 +6,7 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -51,6 +52,11 @@ async function handleCron(request: NextRequest) {
         })
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
+    // When the daily rollup owns the email/push send, suppress this cron's
+    // per-item email + push (the digest cron emails/pushes these same items
+    // once, bundled). The in-app feed entry below is STILL written so the feed
+    // stays granular. Read once per run so the whole batch agrees.
+    const digestOwnsSend = await isDailyDigestEnabled();
     let sent = 0;
     let mirrored = 0;
     let pushSent = 0;
@@ -85,7 +91,7 @@ async function handleCron(request: NextRequest) {
         const moveDateText = formatDateOnlyUtc(plan.moveDate, { month: "long", day: "numeric", year: "numeric" });
         const dedupeKey = `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`;
         let emailSent = false;
-        if (emailAllowed) {
+        if (emailAllowed && !digestOwnsSend) {
           emailSent = await sendMoveReminderEmail({
             userEmail: plan.user.email!,
             userName: plan.user.firstName || "",
@@ -118,12 +124,12 @@ async function handleCron(request: NextRequest) {
               kind: "move-reminder",
               movingPlanId: plan.id,
               daysRemaining: days,
-              channelMirror: emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
+              channelMirror: digestOwnsSend ? "DIGEST" : emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
             },
           });
           if (created) {
             mirrored++;
-            if (pushAllowed) {
+            if (pushAllowed && !digestOwnsSend) {
               const pushed = await sendNotification({
                 userId: plan.userId,
                 type: "PUSH",

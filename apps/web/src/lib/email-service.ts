@@ -1795,3 +1795,124 @@ export async function sendLifecycleNudgeEmail(opts: {
   });
   return result.success;
 }
+
+/**
+ * DAILY REMINDER ROLLUP email.
+ *
+ * One consolidated email that replaces the per-item move/task/bill/contract
+ * reminder emails when the digest is on. Each `section` is a group already
+ * gated by its per-type EMAIL preference upstream (a muted bill section never
+ * reaches here), so this function just renders what it's handed — it does not
+ * re-decide preferences, but DOES re-check the REMINDER opt-out as a final
+ * guard (mirrors the other reminder senders).
+ *
+ * Item `label`/`detail` are RAW user-controlled text (provider names, task
+ * titles, cities) and are escaped here. `href` is a relative app path and is
+ * resolved against the app URL into an absolute deep link.
+ */
+export async function sendDailyDigestEmail(opts: {
+  userEmail: string;
+  userName: string;
+  /** Local date label for the digest, e.g. "Friday, June 6". */
+  dateLabel: string;
+  /** Imminent move countdown in days, when a move matched today. */
+  moveCountdownDays?: number | null;
+  sections: Array<{
+    heading: string;
+    items: Array<{ label: string; detail?: string; href: string }>;
+  }>;
+  userId?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
+  // Defensive: never send an empty digest.
+  const sections = opts.sections.filter((s) => s.items.length > 0);
+  if (sections.length === 0) return false;
+
+  const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
+
+  const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0);
+  // Honest summary line — counts only what's actually in the digest.
+  const summaryBits = sections.map((s) => `${s.items.length} ${s.heading.toLowerCase()}`);
+  const subject =
+    opts.moveCountdownDays != null
+      ? `Today's move plan — ${opts.dateLabel}`
+      : `Your day at a glance — ${totalItems} reminder${totalItems === 1 ? "" : "s"}`;
+  const preheader = `${opts.dateLabel}: ${summaryBits.join(", ")}.`;
+
+  function absolute(href: string) {
+    if (/^https?:\/\//i.test(href)) return href;
+    return `${appUrl}${href.startsWith("/") ? "" : "/"}${href}`;
+  }
+
+  const sectionsHtml = sections
+    .map((section) => {
+      const rows = section.items
+        .map((item) => {
+          const detail = item.detail
+            ? `<span style="color:#5f6b7a;">&nbsp;·&nbsp;${escapeHtml(item.detail)}</span>`
+            : "";
+          return `
+            <tr>
+              <td style="padding:8px 0;border-bottom:1px solid #e4ebf2;font-size:14px;line-height:21px;color:#172033;">
+                <a href="${escapeHtml(absolute(item.href))}" style="color:#172033;text-decoration:none;font-weight:600;">${escapeHtml(item.label)}</a>${detail}
+              </td>
+            </tr>`;
+        })
+        .join("");
+      return `
+        <p style="margin:22px 0 4px;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#5f6b7a;">${escapeHtml(section.heading)}</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>`;
+    })
+    .join("");
+
+  const intro =
+    opts.moveCountdownDays != null
+      ? opts.moveCountdownDays === 0
+        ? "Moving day is today. Here's everything on your plate."
+        : opts.moveCountdownDays === 1
+          ? "Your move is tomorrow. Here's everything due before then."
+          : `Your move is in ${opts.moveCountdownDays} days. Here's what's due today.`
+      : "Here's everything that needs your attention today, in one place.";
+
+  const bodyHtml = [
+    `<p style="margin:0 0 14px;font-size:15px;line-height:24px;color:#172033;">Hi <strong>${escapeHtml(opts.userName || "there")}</strong>,</p>`,
+    `<p style="margin:0 0 4px;font-size:15px;line-height:24px;color:#172033;">${escapeHtml(intro)}</p>`,
+    sectionsHtml,
+  ].join("");
+
+  const html = renderLocateFlowEmail({
+    preheader,
+    title: subject,
+    bodyHtml,
+    cta: { href: absolute("/dashboard"), label: "Open your dashboard" },
+    locale,
+  });
+  const baseContent: EmailContent = { subject, html, text: htmlToPlainText(html) };
+
+  // Reminder-class email → "reminder" unsubscribe category (same as bill/task/
+  // move/contract reminders), so one unsubscribe silences the whole rollup.
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
+    templateSlug: "daily-digest",
+    dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    metadata: {
+      kind: "daily-digest",
+      userId: opts.userId || null,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}

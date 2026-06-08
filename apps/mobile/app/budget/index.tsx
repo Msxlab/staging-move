@@ -168,6 +168,10 @@ export default function BudgetScreen() {
   const [budgets, setBudgets] = useState<BudgetRow[]>([]);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [services, setServices] = useState<ServiceCostInput[]>([]);
+  // Logged actual per service for the VIEWED month (serviceId → amount). Refetched
+  // when the month/address filter changes so the month-stepper shows that month's
+  // real ServiceCostLog rows, never one overwriting scalar.
+  const [monthActuals, setMonthActuals] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -233,14 +237,53 @@ export default function BudgetScreen() {
   const selectedMonthDate = useMemo(() => monthDateFromKey(selectedMonth), [selectedMonth]);
   const selectedAddress = selectedAddressId || null;
 
+  // Fetch the VIEWED month's logged actuals (ServiceCostLog rows) whenever the
+  // month/address changes — this is what makes stepping months show real
+  // per-month numbers instead of one scalar.
+  const loadMonthActuals = useCallback(async () => {
+    const params: Record<string, string> = { month: `${selectedMonth}-01` };
+    if (selectedAddress) params.addressId = selectedAddress;
+    const res = await api.get<any>("/api/budget/actuals", params);
+    if (res.error || !res.data) {
+      setMonthActuals({});
+      return;
+    }
+    const next: Record<string, number> = {};
+    for (const service of res.data.services || []) {
+      if (service.loggedActual !== null && service.loggedActual !== undefined) {
+        next[service.id] = Number(service.loggedActual);
+      }
+    }
+    setMonthActuals(next);
+  }, [selectedMonth, selectedAddress]);
+
+  useEffect(() => {
+    loadMonthActuals();
+  }, [loadMonthActuals]);
+
+  // Engine input for the SELECTED month: attach each service's per-month log (or
+  // an empty array = estimate only) so the shared engine resolves actuals from
+  // the viewed month, not the legacy scalar.
+  const servicesForMonth = useMemo<ServiceCostInput[]>(
+    () =>
+      services.map((service) => ({
+        ...service,
+        costLogs:
+          monthActuals[service.id] !== undefined
+            ? [{ month: `${selectedMonth}-01`, amount: monthActuals[service.id] }]
+            : [],
+      })),
+    [services, monthActuals, selectedMonth],
+  );
+
   // ── Shared engine: projection plan + estimate-vs-actual reconciliation ──
   const plan = useMemo(
     () => calculateBudgetPlan(services, { month: selectedMonthDate, addressId: selectedAddress }),
     [services, selectedAddress, selectedMonthDate],
   );
   const actuals = useMemo(
-    () => calculateBudgetActuals(services, { month: selectedMonthDate, addressId: selectedAddress }),
-    [services, selectedAddress, selectedMonthDate],
+    () => calculateBudgetActuals(servicesForMonth, { month: selectedMonthDate, addressId: selectedAddress }),
+    [servicesForMonth, selectedAddress, selectedMonthDate],
   );
 
   const currentBudget = useMemo(
@@ -274,14 +317,22 @@ export default function BudgetScreen() {
       ),
     [services, selectedAddress],
   );
+  // "Logged" is per-VIEWED-month: a line counts as confirmed only if it has a log
+  // for this month, never because of a leftover scalar from another month.
   const loggedActualCount = trackableServices.filter(
-    (service) => service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined,
+    (service) => monthActuals[service.id] !== undefined,
   ).length;
 
   const persistServiceActual = useCallback(
-    async (serviceId: string, actualMonthlyCost: number | null) => {
+    async (serviceId: string, amount: number | null) => {
       setSavingActualId(serviceId);
-      const res = await api.patch<any>(`/api/services/${serviceId}`, { actualMonthlyCost });
+      // Write the actual for the VIEWED month's ServiceCostLog row (not the single
+      // scalar) so logging is scoped to the month on screen.
+      const res = await api.post<any>("/api/budget/actuals", {
+        serviceId,
+        month: `${selectedMonth}-01`,
+        amount,
+      });
       setSavingActualId(null);
       if (res.error) {
         hapticError();
@@ -289,19 +340,23 @@ export default function BudgetScreen() {
         return;
       }
       hapticSuccess();
-      // Reflect locally so variance/savings recompute immediately.
-      setServices((prev) =>
-        prev.map((service) =>
-          service.id === serviceId ? { ...service, actualMonthlyCost } : service,
-        ),
-      );
+      // Reflect locally so variance/savings recompute immediately for this month.
+      setMonthActuals((prev) => {
+        const next = { ...prev };
+        if (amount === null) delete next[serviceId];
+        else next[serviceId] = amount;
+        return next;
+      });
       setActualDrafts((prev) => {
         const next = { ...prev };
         delete next[serviceId];
         return next;
       });
+      // Refresh the saved budgets so "Budget History" reflects the new actual
+      // (the server recomputes the month's snapshot when an actual is logged).
+      fetchAll();
     },
-    [],
+    [selectedMonth, fetchAll],
   );
 
   const confirmProjectedActual = useCallback(
@@ -787,8 +842,9 @@ export default function BudgetScreen() {
             />
           </View>
           <Text style={styles.sectionSub}>
-            {t("budget.logActualHint", {
-              defaultValue: "Confirm the estimate or enter what each service actually cost. We compare it to our projection to prove your savings.",
+            {t("budget.logActualHintMonth", {
+              month: monthLabel(selectedMonth, locale),
+              defaultValue: `Logging ${monthLabel(selectedMonth, locale)}. Confirm the estimate or enter what each service actually cost that month. We compare it to our projection to prove your savings.`,
             })}
           </Text>
           {trackableServices.length === 0 ? (
@@ -799,9 +855,9 @@ export default function BudgetScreen() {
             <View style={styles.logList}>
               {trackableServices.map((service, i) => {
                 const projected = Number(service.monthlyCost || 0);
-                const hasActual =
-                  service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined;
-                const actual = hasActual ? Number(service.actualMonthlyCost) : null;
+                // hasActual is per the VIEWED month's log, not a single scalar.
+                const hasActual = monthActuals[service.id] !== undefined;
+                const actual = hasActual ? Number(monthActuals[service.id]) : null;
                 const draft = actualDrafts[service.id];
                 const isSaving = savingActualId === service.id;
                 const lineVariance =

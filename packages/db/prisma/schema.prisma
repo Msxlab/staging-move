@@ -517,6 +517,13 @@ model Service {
   // or confirmed → the projection (monthlyCost) is used as the estimate and the
   // line is excluded from realized-actual / savings totals. Same cycle semantics
   // as monthlyCost. Additive — see migration 20260607030000.
+  //
+  // LEGACY single scalar. As of ServiceCostLog (migration 20260608010000) this
+  // is no longer the source of truth for budget actuals — per-month rows in
+  // ServiceCostLog are. It is retained for backward compatibility (the backfill
+  // copied it into the current-month log) and may still mirror the current
+  // month's logged amount, but the budget engine resolves actuals per month from
+  // ServiceCostLog, not from this column.
   actualMonthlyCost Float?
   billingDay      Int?
   billingCycle    String?   @db.VarChar(20)
@@ -537,6 +544,7 @@ model Service {
 
   reminders Reminder[]
   moveTasks MoveTask[]
+  costLogs  ServiceCostLog[]
 
   deletedAt DateTime?
 
@@ -558,6 +566,37 @@ model Service {
   // users — index those hot paths so they don't full-scan the table.
   @@index([isActive, contractEndDate])
   @@index([isActive, billingDay])
+}
+
+// ==================== SERVICE COST LOG ====================
+
+// Per-MONTH realized actual for a service line (money layer). One row per
+// (service, month): `month` is the first day of the month at 00:00:00 UTC, and
+// `amount` is the ACTUAL per-cycle amount the user logged for THAT month (same
+// cycle semantics as Service.monthlyCost / Service.actualMonthlyCost).
+//
+// This replaces the single overwriting Service.actualMonthlyCost scalar as the
+// source of truth: with a row per month, stepping the budget month-stepper to a
+// past month shows that month's real logged amount instead of the one current
+// number. A line with NO row for the viewed month is "estimate only" and is
+// excluded from realized-actual / savings totals for that month, so savings can
+// never be fabricated for months the user hasn't reconciled.
+model ServiceCostLog {
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  serviceId String  @db.VarChar(30)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // First day of the month at 00:00:00 UTC — the bucket this actual belongs to.
+  month  DateTime
+  amount Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One actual per service per month — the upsert key for "Log Actual Costs".
+  @@unique([serviceId, month])
+  @@index([serviceId])
+  @@index([month])
 }
 
 // ==================== MOVING PLAN ====================

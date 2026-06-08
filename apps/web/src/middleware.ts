@@ -11,6 +11,7 @@ import { checkIPAccess } from "@/lib/ip-rules";
 import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 import { STATE_SLUGS } from "@/lib/states/data";
+import { METRO_SLUG_PAIRS } from "@/lib/states/metros";
 
 // Shadow userId-keyed counter is gated by an env flag so it can be turned
 // on once ops is ready to absorb the 2nd Redis round-trip per request.
@@ -51,10 +52,17 @@ const PUBLIC_PATHS = [
   "/opengraph-image",
 ];
 
-// Public per-state marketing pages (/moving/<state-slug>) must stay publicly
-// reachable + indexable even though the AUTHENTICATED dashboard also lives under
-// /moving (the exact /moving list + /moving/plan/<id> detail stay gated + noindex).
-const PUBLIC_MOVING_STATE_PATHS = new Set(STATE_SLUGS.map((s) => `/moving/${s}`));
+// Public marketing pages under /moving must stay publicly reachable + indexable
+// even though the AUTHENTICATED dashboard also lives under /moving:
+//   - /moving/<state>            per-state relocation guide (51 pages)
+//   - /moving/<state>/<city>     per-metro relocation guide (curated set)
+// The exact /moving list + /moving/plan/<id> detail stay gated + noindex; only
+// these exact, curated slugs are allow-listed (an unknown slug never matches,
+// so it stays auth-gated and the route itself hard-404s via dynamicParams).
+const PUBLIC_MOVING_STATE_PATHS = new Set([
+  ...STATE_SLUGS.map((s) => `/moving/${s}`),
+  ...METRO_SLUG_PAIRS.map(({ state, city }) => `/moving/${state}/${city}`),
+]);
 function isPublicStatePage(pathname: string): boolean {
   return PUBLIC_MOVING_STATE_PATHS.has(pathname);
 }
