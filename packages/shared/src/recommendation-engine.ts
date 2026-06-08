@@ -39,6 +39,10 @@ export interface UserProfile {
   hasMotorcycle: boolean;
   hasBoatRV: boolean;
   isMilitary?: boolean;
+  /** Has an active/pending immigration matter (non-citizen) — steers USCIS / immigration-legal. */
+  isImmigrant?: boolean;
+  /** Relocating a business or self-employed — steers SBA / business-services. */
+  isBusinessOwner?: boolean;
   currentPhase?: number;
   moveType?: string;
   daysUntilMove?: number;
@@ -572,6 +576,9 @@ const TAG_PROFILE_MAP: Record<string, (p: UserProfile) => { match: boolean; reas
   vet: (p) => ({ match: p.hasPets, reason: "Veterinary care for your pets", weight: 22 }),
   senior: (p) => ({ match: p.hasSenior, reason: "Senior in your household", weight: 20 }),
   medicare: (p) => ({ match: p.hasSenior, reason: "Medicare-related services", weight: 22 }),
+  immigration: (p) => ({ match: p.isImmigrant || false, reason: "Immigration services for your move", weight: 22 }),
+  visa: (p) => ({ match: p.isImmigrant || false, reason: "Visa / immigration status support", weight: 20 }),
+  business: (p) => ({ match: p.isBusinessOwner || false, reason: "Business relocation services", weight: 20 }),
   car: (p) => ({ match: p.carCount > 0, reason: `You have ${p.carCount} car${p.carCount !== 1 ? "s" : ""}`, weight: 15 }),
   auto: (p) => ({ match: p.carCount > 0, reason: "Auto-related service", weight: 15 }),
   driving: (p) => ({ match: p.carCount > 0, reason: "Driving-related service", weight: 12 }),
@@ -710,6 +717,36 @@ export function scoreProviders(
         }
       }
 
+      // 4c. Onboarding-signal category steering. Several rich onboarding signals
+      // map to whole provider categories rather than individual provider tags, so
+      // we boost the relevant categories here even when a specific provider in the
+      // category lacks the matching tag. Boost-on-presence mirrors the ownership
+      // block above; absence is handled by the negative-scoring pass below so a
+      // non-matching profile doesn't see these crowd the personalized tier.
+      if (profile.isMilitary) {
+        if (provider.category === "GOVERNMENT_BENEFITS" || provider.category === "GOVERNMENT_HEALTH") {
+          score += 18;
+          if (!reasons.includes("Military / veteran benefit")) reasons.unshift("Military / veteran benefit");
+        }
+      }
+      if (profile.isImmigrant) {
+        if (provider.category === "GOVERNMENT_IMMIGRATION") {
+          score += 22;
+          reasons.unshift("Immigration services for your move");
+        } else if (provider.category === "LEGAL_SERVICES") {
+          score += 12;
+          if (!reasons.includes("Immigration / legal support")) reasons.push("Immigration / legal support");
+        }
+      }
+      if (profile.isBusinessOwner && provider.category === "GOVERNMENT_OTHER" && tags.includes("business")) {
+        score += 16;
+        reasons.unshift("Business relocation services");
+      }
+      if (profile.hasSenior && provider.category === "GOVERNMENT_HEALTH" && tags.includes("senior")) {
+        score += 16;
+        if (!reasons.includes("Medicare-related services")) reasons.push("Medicare-related services");
+      }
+
       if (context?.stateRule && userState) {
         if (provider.category === "GOVERNMENT_DMV" && context.stateRule.dmvRules) {
           score += 18;
@@ -766,6 +803,22 @@ export function scoreProviders(
       if (tags.includes("storage") && !profile.needsStorage) score -= 10;
       if (tags.includes("motorcycle") && !profile.hasMotorcycle) score -= 10;
       if (tags.some((t) => ["boat", "rv"].includes(t)) && !profile.hasBoatRV) score -= 10;
+
+      // Military / veteran benefits are opt-in — deprioritize for non-military profiles.
+      const isMilitaryRelated = tags.some((t) => ["military", "veteran", "veterans"].includes(t));
+      if (isMilitaryRelated && !profile.isMilitary) score -= 10;
+
+      // Business-relocation services are only relevant to business movers.
+      if (tags.includes("business") && !profile.isBusinessOwner) score -= 10;
+
+      // Immigration/visa SERVICES (legal, consulting) are deprioritized for
+      // non-immigrants. The federal USCIS AR-11 address change is legally
+      // required for any non-citizen and absence of the signal may just mean the
+      // user did not disclose, so we never penalize GOVERNMENT_IMMIGRATION itself.
+      const isImmigrationRelated = tags.some((t) => ["immigration", "visa"].includes(t));
+      if (isImmigrationRelated && provider.category !== "GOVERNMENT_IMMIGRATION" && !profile.isImmigrant) {
+        score -= 10;
+      }
 
       // Build explanation
       const headline = URGENCY_HEADLINES[provider.category] || (urgencyTier === "CRITICAL" ? "⚠️ Required for your move" : "");

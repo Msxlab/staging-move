@@ -214,6 +214,34 @@ export async function PATCH(
     const existing = await (prisma as any).acquisitionCampaign.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     const merged = { ...existing, ...data };
+
+    // POST guards numeric fields with Number.isFinite, but PATCH previously
+    // wrote them straight through: an edit carrying trialDays:"abc" /
+    // freeAccessDays:"abc" / maxRedemptions:"abc" became Number("abc") = NaN
+    // and was persisted to an Int? column (and a NaN cap would make the
+    // campaign permanently un-redeemable). Validate the *merged* shape so a
+    // partial edit is checked against the resulting record, not just the diff.
+    if (data.trialDays !== undefined && merged.accessType === "FREE_TRIAL" &&
+        (!Number.isFinite(merged.trialDays) || merged.trialDays < 1)) {
+      return NextResponse.json({ error: "Trial days must be a number of at least 1." }, { status: 400 });
+    }
+    if (data.freeAccessDays !== undefined && merged.accessType === "FREE_ACCESS" &&
+        (!Number.isFinite(merged.freeAccessDays) || merged.freeAccessDays < 1)) {
+      return NextResponse.json({ error: "Free Access days must be a number of at least 1." }, { status: 400 });
+    }
+    if (data.maxRedemptions !== undefined && merged.maxRedemptions !== null &&
+        (!Number.isFinite(merged.maxRedemptions) || merged.maxRedemptions < 1)) {
+      return NextResponse.json(
+        { error: "Max redemptions must be a positive whole number, or left blank for unlimited." },
+        { status: 400 },
+      );
+    }
+    // Changing accessType to PAID must land on a valid billing interval —
+    // mirror the POST guard so a malformed interval can't reach the DB/Stripe.
+    if (data.accessType === "PAID" && merged.billingInterval !== "MONTH" && merged.billingInterval !== "YEAR") {
+      return NextResponse.json({ error: "Paid campaigns must use monthly or annual billing." }, { status: 400 });
+    }
+
     let priceValidation = null;
     if (requiresStripePriceValidation(existing, data)) {
       priceValidation = await validateStripeCampaignPrice(merged);

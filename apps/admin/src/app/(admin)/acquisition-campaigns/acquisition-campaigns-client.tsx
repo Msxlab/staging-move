@@ -186,7 +186,10 @@ function isCampaignLive(campaign: Campaign, now: Date) {
   const startsAt = campaign.startsAt ? new Date(campaign.startsAt) : null;
   const endsAt = campaign.endsAt ? new Date(campaign.endsAt) : null;
   if (startsAt && startsAt > now) return false;
-  if (endsAt && endsAt < now) return false;
+  // Match the public reader / redeem semantics: a campaign at exactly its
+  // endsAt instant is already ended (endsAt <= now), so the slot card must
+  // not advertise it as Live while redemption would be refused.
+  if (endsAt && endsAt <= now) return false;
   return true;
 }
 

@@ -120,6 +120,23 @@ export async function GET(request: NextRequest) {
         )
       : 0;
 
+    // A MILITARY/PCS move implies military affiliation even if the explicit
+    // isMilitary flag wasn't toggled — fold both onboarding signals together so
+    // VA / military benefits surface for either.
+    const isMilitary = Boolean(profile?.isMilitary) || profile?.moveType === "MILITARY";
+
+    // Addresses persist ownership as OWNER/RENTER/FAMILY/OTHER, but the scoring
+    // engine's ownership gates compare against OWN/RENT. Normalize here so the
+    // renters-vs-homeowners steering actually fires (it was previously a no-op
+    // because "RENTER" never matched "RENT").
+    const normalizeOwnership = (value?: string | null): string | undefined => {
+      if (!value) return undefined;
+      const upper = value.toUpperCase();
+      if (upper === "OWNER" || upper === "OWN") return "OWN";
+      if (upper === "RENTER" || upper === "RENT") return "RENT";
+      return "OTHER";
+    };
+
     const userProfile: UserProfile = {
       hasChildren: profile?.hasChildren || false,
       childrenCount: profile?.childrenCount || 0,
@@ -130,8 +147,12 @@ export async function GET(request: NextRequest) {
       needsStorage: profile?.needsStorage || false,
       hasMotorcycle: profile?.hasMotorcycle || false,
       hasBoatRV: profile?.hasBoatRV || false,
+      isMilitary,
+      isImmigrant: profile?.isImmigrant || false,
+      isBusinessOwner: profile?.isBusinessOwner || false,
+      moveType: profile?.moveType || undefined,
       currentPhase,
-      ownership: primaryAddr?.ownership || undefined,
+      ownership: normalizeOwnership(primaryAddr?.ownership),
     };
 
     const parsedProviders: Provider[] = tiered.providers.map((p) => ({
