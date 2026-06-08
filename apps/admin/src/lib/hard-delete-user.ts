@@ -123,9 +123,6 @@ export interface HardDeleteResult {
  * Physically erase a user and everything that references them.
  *
  * Cascade order (the ORDER MATTERS — FK constraints dictate it):
- *   0. (pre-tx) Cancel the Stripe subscription, if any — external side effect,
- *      kept OUT of the DB transaction so a Stripe timeout can't roll back the
- *      erasure and so we never hold a DB transaction open across a network call.
  *   --- inside a single $transaction (all-or-nothing on the DB side) ---
  *   1. Deactivate userLoginSession + userSession (kill live access immediately).
  *   2. For each owned Workspace (Workspace.owner = Restrict): pick an heir and
@@ -138,6 +135,12 @@ export interface HardDeleteResult {
  *   5. user.delete: cascades all remaining direct children (addresses, services,
  *      budgets, sessions, oauth, profile, consents, tokens, notifications,
  *      memberships, push devices, events, etc.) via onDelete: Cascade.
+ *   --- after DB erasure succeeds ---
+ *   6. Cancel the Stripe subscription, if any. This external side effect stays
+ *      OUT of the DB transaction, but it runs after the DB commit so a DB failure
+ *      cannot leave an otherwise-active local user with a canceled provider
+ *      subscription. Stripe failure is surfaced in audit metadata and does not
+ *      undo the already-authorized erasure.
  *
  * Returns details for the USER_HARD_DELETED audit entry. Throws if the user is
  * not found (caller maps to 404).
@@ -160,22 +163,7 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
   const maskedEmail = maskEmailLocal(user.email);
   const stripeSubscriptionId = user.subscription?.stripeSubscriptionId || null;
 
-  // 0. Cancel Stripe OUTSIDE the transaction. Best-effort: a billing failure
-  //    must not block an irreversible erasure the operator already authorized,
-  //    but we record whether it succeeded for the audit row.
   let stripeCanceled = !stripeSubscriptionId;
-  if (stripeSubscriptionId) {
-    try {
-      const stripe = new Stripe(
-        requireStripeSecretKey(await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY")),
-        { apiVersion: "2024-06-20" },
-      );
-      await stripe.subscriptions.cancel(stripeSubscriptionId);
-      stripeCanceled = true;
-    } catch {
-      // Leave stripeCanceled=false; surfaced in the audit metadata.
-    }
-  }
 
   let ownedWorkspacesTransferred = 0;
   let ownedWorkspacesDeleted = 0;
@@ -239,6 +227,22 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
     // 5. Delete the user — cascades all remaining direct children.
     await tx.user.delete({ where: { id: userId } });
   });
+
+  // 6. Cancel Stripe OUTSIDE the transaction, after DB commit. Best-effort:
+  //    a billing failure must not block an irreversible erasure the operator
+  //    already authorized, but we record whether it succeeded for the audit row.
+  if (stripeSubscriptionId) {
+    try {
+      const stripe = new Stripe(
+        requireStripeSecretKey(await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY")),
+        { apiVersion: "2024-06-20" },
+      );
+      await stripe.subscriptions.cancel(stripeSubscriptionId);
+      stripeCanceled = true;
+    } catch {
+      // Leave stripeCanceled=false; surfaced in the audit metadata.
+    }
+  }
 
   // Ownership moved to a new billing anchor whose plan may be smaller —
   // reconcile seats outside the tx, best-effort (never block on this).

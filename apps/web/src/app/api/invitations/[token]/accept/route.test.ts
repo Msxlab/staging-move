@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 vi.mock("@locateflow/shared", () => ({
@@ -5,7 +6,7 @@ vi.mock("@locateflow/shared", () => ({
 }));
 vi.mock("@/lib/db", () => ({
   prisma: {
-    workspaceInvitation: { findUnique: vi.fn(), update: vi.fn() },
+    workspaceInvitation: { findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
     user: { findUnique: vi.fn() },
     workspace: { findUnique: vi.fn() },
     subscription: { findUnique: vi.fn() },
@@ -18,7 +19,10 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 vi.mock("@/lib/user-auth", () => ({ getUserSession: vi.fn() }));
-vi.mock("@/lib/workspace-routes", () => ({ workspaceFeatureGate: vi.fn() }));
+vi.mock("@/lib/workspace-routes", () => ({
+  workspaceFeatureGate: vi.fn(),
+  maskEmail: vi.fn((email: string) => email.replace(/^(.{2}).*(@.*)$/, "$1***$2")),
+}));
 vi.mock("@/lib/workspace-invitations", () => ({
   hashInvitationToken: vi.fn(() => "hashed-token"),
   seatLimitForPlan: vi.fn(() => 6),
@@ -32,6 +36,7 @@ import { POST } from "./route";
 
 const invFind = prisma.workspaceInvitation.findUnique as unknown as Mock;
 const invUpdate = prisma.workspaceInvitation.update as unknown as Mock;
+const invCount = prisma.workspaceInvitation.count as unknown as Mock;
 const userFind = prisma.user.findUnique as unknown as Mock;
 const wsFind = prisma.workspace.findUnique as unknown as Mock;
 const subFind = prisma.subscription.findUnique as unknown as Mock;
@@ -43,7 +48,10 @@ const sessionMock = getUserSession as unknown as Mock;
 const gateMock = workspaceFeatureGate as unknown as Mock;
 
 const params = { params: Promise.resolve({ token: "tok-123" }) };
-const req = {} as any;
+const req = new NextRequest("https://locateflow.com/api/invitations/tok-123/accept", {
+  method: "POST",
+  headers: { "x-forwarded-for": "203.0.113.10", "user-agent": "vitest" },
+});
 
 const FUTURE = new Date("2999-01-01");
 const PAST = new Date("2000-01-01");
@@ -71,6 +79,7 @@ beforeEach(() => {
   subFind.mockResolvedValue({});
   memberFind.mockResolvedValue(null);
   memberCount.mockResolvedValue(1);
+  invCount.mockResolvedValue(0);
   memberCreate.mockResolvedValue({});
   invUpdate.mockResolvedValue({});
   // Run the transaction callback against the mocked prisma as the tx client.

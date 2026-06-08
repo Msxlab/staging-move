@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks, UserPlus, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
@@ -37,6 +37,18 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   FORWARD_MAIL: "Forward mail",
 };
 
+// Small circular initials badge for a task assignee.
+function AssigneeAvatar({ initials, title }: { initials: string; title?: string }) {
+  return (
+    <span
+      title={title}
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-tone-cyan-bg text-tone-cyan-fg border border-tone-cyan-br text-[10px] font-semibold"
+    >
+      {initials}
+    </span>
+  );
+}
+
 function formatActionTypeLabel(actionType?: string | null): string | null {
   if (!actionType) return null;
   return (
@@ -69,6 +81,13 @@ interface MoveTaskItem {
   localEffect?: MoveTaskLocalEffect | null;
   destinationProvider?: { name: string } | null;
   customProvider?: { name: string } | null;
+  assignee?: { id: string; name: string | null; initials: string } | null;
+}
+
+interface WorkspaceMemberOption {
+  userId: string;
+  name: string | null;
+  initials: string;
 }
 
 export default function MovingPlanDetailPage() {
@@ -87,6 +106,13 @@ export default function MovingPlanDetailPage() {
   const [moveTasks, setMoveTasks] = useState<MoveTaskItem[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
+  // Task assignment (Family/Pro). Members + flag come from the move-tasks GET;
+  // assignment UI only renders when assignmentEnabled (2+ active members).
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMemberOption[]>([]);
+  const [assignmentEnabled, setAssignmentEnabled] = useState(false);
+  // Task id whose assign picker is open, and the id mid-assign (for spinner).
+  const [assignOpen, setAssignOpen] = useState<string | null>(null);
+  const [assignBusy, setAssignBusy] = useState<string | null>(null);
 
   const fetchMigration = async (planId: string) => {
     setMigrationLoading(true);
@@ -105,10 +131,34 @@ export default function MovingPlanDetailPage() {
       const res = await fetch(`/api/move-tasks?movingPlanId=${planId}`);
       const data = await res.json();
       setMoveTasks(data.tasks || []);
+      setWorkspaceMembers(Array.isArray(data.workspaceMembers) ? data.workspaceMembers : []);
+      setAssignmentEnabled(Boolean(data.assignmentEnabled));
     } catch {
       toast.error("Failed to load move tasks");
     } finally {
       setTasksLoading(false);
+    }
+  };
+
+  // Assign (or unassign) a task to a workspace member. Pass null to clear.
+  // Any active member may assign within their workspace; the API validates the
+  // target is an active member before writing.
+  const assignMoveTask = async (taskId: string, assignedToUserId: string | null) => {
+    setAssignBusy(taskId);
+    try {
+      const res = await fetch("/api/move-tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId, assignedToUserId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to assign task");
+      if (plan) await fetchMoveTasks(plan.id);
+      setAssignOpen(null);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to assign task");
+    } finally {
+      setAssignBusy(null);
     }
   };
 
@@ -396,6 +446,16 @@ export default function MovingPlanDetailPage() {
                           LocateFlow only
                         </span>
                       )}
+                      {/* Assignee avatar — shown only in multi-member workspaces. */}
+                      {assignmentEnabled && task.assignee && (
+                        <span className="inline-flex items-center gap-1">
+                          <AssigneeAvatar
+                            initials={task.assignee.initials}
+                            title={task.assignee.name || "Assigned"}
+                          />
+                          <span className="text-[10px] text-muted-foreground">{task.assignee.name || "Assigned"}</span>
+                        </span>
+                      )}
                     </div>
                     <p className={`text-sm font-semibold mt-2 ${isDone ? "text-foreground/80 line-through" : "text-foreground"}`}>
                       {task.title}
@@ -417,6 +477,62 @@ export default function MovingPlanDetailPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5 shrink-0">
+                    {/* Assign picker — multi-member workspaces only. Any active
+                        member may assign within their workspace. */}
+                    {assignmentEnabled && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          disabled={assignBusy === task.id}
+                          onClick={() => setAssignOpen(assignOpen === task.id ? null : task.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-foreground/5 text-muted-foreground text-[11px] hover:bg-foreground/10 disabled:opacity-50"
+                          aria-haspopup="listbox"
+                          aria-expanded={assignOpen === task.id}
+                        >
+                          {assignBusy === task.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : task.assignee ? (
+                            <UserCircle2 className="h-3 w-3" />
+                          ) : (
+                            <UserPlus className="h-3 w-3" />
+                          )}
+                          {task.assignee ? "Reassign" : "Assign"}
+                        </button>
+                        {assignOpen === task.id && (
+                          <div
+                            role="listbox"
+                            className="absolute right-0 z-10 mt-1 w-44 rounded-xl border border-border bg-background shadow-lg overflow-hidden"
+                          >
+                            {workspaceMembers.map((m) => {
+                              const selected = task.assignee?.id === m.userId;
+                              return (
+                                <button
+                                  key={m.userId}
+                                  type="button"
+                                  onClick={() => assignMoveTask(task.id, m.userId)}
+                                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-foreground/5 ${
+                                    selected ? "bg-tone-cyan-bg/40" : ""
+                                  }`}
+                                >
+                                  <AssigneeAvatar initials={m.initials} />
+                                  <span className="truncate text-foreground">{m.name || "Member"}</span>
+                                  {selected && <CheckCircle2 className="ml-auto h-3 w-3 text-tone-cyan-fg" />}
+                                </button>
+                              );
+                            })}
+                            {task.assignee && (
+                              <button
+                                type="button"
+                                onClick={() => assignMoveTask(task.id, null)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-muted-foreground hover:bg-foreground/5 border-t border-border"
+                              >
+                                Unassign
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {!isDone && !isDismissed && (
                       <>
                         <button

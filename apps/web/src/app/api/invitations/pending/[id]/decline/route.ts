@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import {
@@ -15,10 +15,11 @@ export const runtime = "nodejs";
  * POST /api/invitations/pending/[id]/decline — decline an invitation in-app, by
  * its id.
  *
- * The email match is the authorization boundary: the invite is only declined if
- * its `invitedEmail` matches the CALLER's account email (case-insensitive). If
- * the invite doesn't exist OR is addressed to someone else, we return 404 so we
- * never confirm the existence of another user's invitation.
+ * The verified email match is the authorization boundary: the invite is only
+ * declined if its `invitedEmail` matches the CALLER's verified account email
+ * (case-insensitive). If the invite doesn't exist OR is addressed to someone
+ * else, we return 404 so we never confirm the existence of another user's
+ * invitation.
  *
  * The schema has no dedicated DECLINED status (status is a free String with
  * documented values PENDING|ACCEPTED|REVOKED|EXPIRED), so a decline is recorded
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const off = await workspaceFeatureGate();
   if (off) return off;
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireVerifiedUser();
     const { id } = await params;
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });

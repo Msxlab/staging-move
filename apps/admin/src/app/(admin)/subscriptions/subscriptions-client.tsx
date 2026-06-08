@@ -283,11 +283,18 @@ export default function SubscriptionsClient() {
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
 
       const res = await fetch(`/api/subscriptions?${params}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof data?.error === "string" ? data.error : "Failed to fetch subscriptions");
+      }
       setSubs(data.subscriptions || []);
       setTotal(data.total || 0);
       if (data.stats) setStats(data.stats);
-    } catch { toast.error("Failed to fetch subscriptions"); }
+    } catch (error) {
+      toast.error((error as Error)?.message || "Failed to fetch subscriptions");
+      setSubs([]);
+      setTotal(0);
+    }
     finally { setLoading(false); }
   }, [page, search, filters]);
 

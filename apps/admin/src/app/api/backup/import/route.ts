@@ -191,6 +191,18 @@ const IMPORT_MODEL_OPS = {
       prisma.acquisitionRedemption.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.acquisitionRedemption.create({ data }),
   },
+  affiliateClicks: {
+    count: () => prisma.affiliateClick.count(),
+    findUniqueById: (id: string) =>
+      prisma.affiliateClick.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.affiliateClick.create({ data }),
+  },
+  affiliateConversions: {
+    count: () => prisma.affiliateConversion.count(),
+    findUniqueById: (id: string) =>
+      prisma.affiliateConversion.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.affiliateConversion.create({ data }),
+  },
   blogCategories: {
     count: () => prisma.blogCategory.count(),
     findUniqueById: (id: string) =>

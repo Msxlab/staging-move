@@ -3,6 +3,7 @@ import {
   CATEGORY_META,
   PROVIDER_CATEGORY_VALUES,
   DEFAULT_SCORING_WEIGHTS,
+  buildRecommendationClusters,
   getRecommendedProviders,
   scoreProviders,
   type Provider,
@@ -573,5 +574,82 @@ describe("robust communityPopular keying", () => {
     const score = scoreProviders([p], profile(), "TX", community)[0].recommendationScore;
     const baseline = scoreProviders([p], profile(), "TX", {})[0].recommendationScore;
     expect(score).toBe(baseline);
+  });
+});
+
+describe("readiness stats — completedCritical (M1)", () => {
+  function profile(): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 1,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+    };
+  }
+
+  function provider(overrides: Partial<Provider>): Provider {
+    return {
+      id: overrides.id || "p",
+      name: overrides.name || overrides.id || "Provider",
+      slug: overrides.slug ?? (overrides.id || "p"),
+      category: overrides.category || "UTILITY_ELECTRIC",
+      description: null,
+      website: null,
+      phone: null,
+      scope: "STATE",
+      states: ["TX"],
+      tags: [],
+      popularityScore: 50,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  it("counts only completed CRITICAL categories, never optional ones (gym/streaming)", () => {
+    const scored = scoreProviders(
+      [
+        provider({ id: "elec", category: "UTILITY_ELECTRIC" }), // CRITICAL
+        provider({ id: "water", category: "UTILITY_WATER" }), // CRITICAL
+        provider({ id: "gym", category: "FITNESS_GYM" }), // OPTIONAL/RECOMMENDED — never critical
+        provider({ id: "stream", category: "SHOPPING_SUBSCRIPTION" }), // OPTIONAL
+      ],
+      profile(),
+      "TX",
+    );
+
+    // User has completed one CRITICAL category (electric) and two non-critical
+    // ones (gym, streaming). The old heuristic counted all 3; completedCritical
+    // must count ONLY the critical one.
+    const result = buildRecommendationClusters(scored, [
+      "UTILITY_ELECTRIC",
+      "FITNESS_GYM",
+      "SHOPPING_SUBSCRIPTION",
+    ]);
+
+    expect(result.stats.completedCritical).toBe(1);
+    // It equals the CRITICAL cluster's completedCount by construction.
+    const criticalCluster = result.clusters.find((c) => c.tier === "CRITICAL");
+    expect(result.stats.completedCritical).toBe(criticalCluster?.completedCount ?? -1);
+    // The still-missing critical category (water) is surfaced and not double-counted.
+    expect(result.stats.missingCritical).toContain("UTILITY_WATER");
+  });
+
+  it("is zero when no critical categories are completed even if optional ones are", () => {
+    const scored = scoreProviders(
+      [
+        provider({ id: "elec", category: "UTILITY_ELECTRIC" }), // CRITICAL, pending
+        provider({ id: "gym", category: "FITNESS_GYM" }), // OPTIONAL/RECOMMENDED, completed
+      ],
+      profile(),
+      "TX",
+    );
+    const result = buildRecommendationClusters(scored, ["FITNESS_GYM"]);
+    expect(result.stats.completedCritical).toBe(0);
   });
 });

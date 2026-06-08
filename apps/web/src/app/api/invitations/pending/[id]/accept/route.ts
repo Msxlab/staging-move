@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
 import { AcceptInviteError, acceptWorkspaceInvitation } from "@/lib/workspace-invite-accept";
@@ -11,18 +11,19 @@ export const runtime = "nodejs";
  * POST /api/invitations/pending/[id]/accept — accept an invitation in-app, by
  * its id, without the raw email token.
  *
- * The email match is the authorization boundary: the invite is only accepted if
- * its `invitedEmail` matches the CALLER's account email (case-insensitive). If
- * the invite doesn't exist OR is addressed to someone else, we return 404 so we
- * never confirm the existence of another user's invitation. PENDING/expiry
- * checks reuse the token route's semantics; the join itself runs through the
- * shared acceptWorkspaceInvitation helper for identical behavior.
+ * The verified email match is the authorization boundary: the invite is only
+ * accepted if its `invitedEmail` matches the CALLER's verified account email
+ * (case-insensitive). If the invite doesn't exist OR is addressed to someone
+ * else, we return 404 so we never confirm the existence of another user's
+ * invitation. PENDING/expiry checks reuse the token route's semantics; the join
+ * itself runs through the shared acceptWorkspaceInvitation helper for identical
+ * behavior.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const off = await workspaceFeatureGate();
   if (off) return off;
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireVerifiedUser();
     const { id } = await params;
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });

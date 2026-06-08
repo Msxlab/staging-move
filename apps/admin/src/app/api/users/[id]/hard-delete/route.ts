@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash, timingSafeEqual } from "node:crypto";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { hardDeleteUser } from "@/lib/hard-delete-user";
+import { verifyAdminActionOtpCode } from "@/lib/admin-action-otp";
 
 export const dynamic = "force-dynamic";
 
 const OTP_OPERATION = "user_hard_delete";
 const OTP_MAX_ATTEMPTS = 5;
-
-function sha256Hex(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-/** Constant-time hex-digest comparison (both sides are fixed-length sha256 hex). */
-function hashesEqual(a: string, b: string): boolean {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  if (left.length !== right.length) return false;
-  return timingSafeEqual(left, right);
-}
 
 /**
  * STEP 2 of the irreversible HARD DELETE flow — the actual erasure.
@@ -38,7 +26,7 @@ function hashesEqual(a: string, b: string): boolean {
  *   - time-limited: rejected if expiresAt has passed.
  *   - attempt-limited: rejected once attempts >= 5; a wrong code atomically
  *     increments attempts (so brute force burns the budget and is then locked).
- *   - constant-time: sha256(submitted) vs stored codeHash via timingSafeEqual.
+ *   - constant-time: HMAC(submitted) vs stored codeHash via timingSafeEqual.
  */
 export async function POST(
   request: NextRequest,
@@ -140,8 +128,12 @@ export async function POST(
       );
     }
 
-    // Constant-time compare of sha256(submitted) against the stored hash.
-    const match = hashesEqual(sha256Hex(otpCode!), otp!.codeHash);
+    // Constant-time compare of HMAC(submitted) against the stored hash.
+    const match = verifyAdminActionOtpCode(otpCode!, otp!.codeHash, {
+      adminUserId: session.adminId,
+      operation: OTP_OPERATION,
+      targetId: id,
+    });
     if (!match) {
       // Atomic increment-on-mismatch, guarded by the current attempts value so
       // concurrent wrong guesses can't both think they were "attempt N".

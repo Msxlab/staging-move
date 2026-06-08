@@ -359,7 +359,10 @@ export default function UsersPage() {
           // hides soft-deleted users by default — matching the old page.
           if (!params.get("status")) params.set("status", "active");
           const res = await fetch(`/api/users?${params}`, { signal });
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(typeof data?.error === "string" ? data.error : "Failed to fetch users");
+          }
           if (data.stats) setStats(data.stats);
           return { rows: data.users || [], total: data.total || 0 };
         }}

@@ -42,6 +42,7 @@ import {
   type PendingInvitation,
 } from "@/lib/workspace-invite";
 import { Card } from "@/components/ui/Card";
+import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { UpNext } from "@/components/ui/UpNext";
@@ -66,6 +67,16 @@ import {
 // The soft-prompt decision ("accepted"/"deferred"/"declined"/null) lives in
 // push.ts; this flag is purely about whether the *card* was waved away.
 const PUSH_PROMPT_CARD_DISMISSED_KEY = "locateflow.pushPromptCardDismissed";
+
+// Once the user dismisses the first-run AI move-briefing card we don't show it
+// again on this install. The briefing is a one-time welcome surface, not a
+// persistent dashboard widget.
+const BRIEFING_CARD_DISMISSED_KEY = "locateflow.moveBriefingDismissed";
+
+interface MoveBriefingState {
+  briefing: string;
+  aiGenerated: boolean;
+}
 
 export default function DashboardScreen() {
 
@@ -114,6 +125,10 @@ export default function DashboardScreen() {
   // haven't dismissed the card. `null` = still deciding (render nothing).
   const [showPushPrompt, setShowPushPrompt] = useState<boolean | null>(null);
   const [pushPromptBusy, setPushPromptBusy] = useState(false);
+  // First-run AI move briefing. `null` = not loaded / hidden (the feature gate
+  // is off server-side, the user dismissed it, or the fetch failed). Best-effort
+  // and fully decoupled from the core dashboard payload.
+  const [briefing, setBriefing] = useState<MoveBriefingState | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes, svcRes, invites, recoRes] = await Promise.all([
@@ -148,11 +163,12 @@ export default function DashboardScreen() {
           : null,
       );
       const missing: string[] = Array.isArray(reco?.stats?.missingCritical) ? reco.stats.missingCritical : [];
-      const completedCats: string[] = Array.isArray(reco?.stats?.completedCategories)
-        ? reco.stats.completedCategories
-        : [];
       const missingSet = new Set(missing);
-      const completedCritical = completedCats.filter((c) => !missingSet.has(c)).length;
+      // `completedCritical` comes straight from the engine (CRITICAL cluster's
+      // completedCount), so optional categories (gym/streaming) never inflate the
+      // readiness ring the way the old completedCategories heuristic did.
+      const completedCritical =
+        typeof reco?.stats?.completedCritical === "number" ? reco.stats.completedCritical : 0;
       setCriticalReadiness({ missing: missingSet.size, completed: completedCritical });
     }
     // Surface services independently of the core payload so the insights card
@@ -357,6 +373,45 @@ export default function DashboardScreen() {
   const handleDismissPushPrompt = useCallback(() => {
     setShowPushPrompt(false);
     void AsyncStorage.setItem(PUSH_PROMPT_CARD_DISMISSED_KEY, "true").catch(() => {});
+  }, []);
+
+  // First-run AI move briefing. Best-effort, gated, and graceful:
+  //   - Skip entirely once the user has dismissed the card on this install.
+  //   - POST /api/onboarding/briefing returns { configured: false } when the
+  //     server has no ANTHROPIC_API_KEY — in that case we render nothing.
+  //   - Any error (network, timeout, non-2xx) just leaves the card hidden; it
+  //     never blocks or disturbs the rest of the dashboard.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const dismissed = await AsyncStorage.getItem(BRIEFING_CARD_DISMISSED_KEY);
+        if (cancelled || dismissed === "true") return;
+        const res = await api.post<{
+          configured?: boolean;
+          briefing?: string;
+          aiGenerated?: boolean;
+        }>("/api/onboarding/briefing");
+        if (cancelled) return;
+        if (res.error || !res.data || res.data.configured === false || !res.data.briefing) {
+          return; // hide gracefully
+        }
+        setBriefing({
+          briefing: res.data.briefing,
+          aiGenerated: res.data.aiGenerated === true,
+        });
+      } catch {
+        // Non-blocking: leave the briefing hidden.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDismissBriefing = useCallback(() => {
+    setBriefing(null);
+    void AsyncStorage.setItem(BRIEFING_CARD_DISMISSED_KEY, "true").catch(() => {});
   }, []);
 
   const handleAcceptInvite = useCallback(
@@ -602,6 +657,19 @@ export default function DashboardScreen() {
               )}
             </TouchableOpacity>
           </Card>
+        )}
+
+        {/* First-run AI move briefing — a subtle, dismissible welcome card.
+            Rendered above the error gate so a returning user still sees it even
+            if the core dashboard payload errored. Hidden entirely when the
+            briefing feature is unconfigured server-side ({ configured:false }),
+            on fetch failure, or once dismissed. */}
+        {briefing && (
+          <MoveBriefingCard
+            briefing={briefing.briefing}
+            aiGenerated={briefing.aiGenerated}
+            onDismiss={handleDismissBriefing}
+          />
         )}
 
         {error ? (
