@@ -205,6 +205,11 @@ export function DataTablePage<Row extends { id: string }>(
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const fetcherRef = useRef(fetcher);
+
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  }, [fetcher]);
 
   // Bulk selection over the currently-selectable visible rows.
   const selectableRows = useMemo(
@@ -238,7 +243,7 @@ export function DataTablePage<Row extends { id: string }>(
     abortRef.current = controller;
     setLoading(true);
     try {
-      const result = await fetcher({
+      const result = await fetcherRef.current({
         state: query.state,
         params: buildParams(),
         signal: controller.signal,
@@ -252,7 +257,7 @@ export function DataTablePage<Row extends { id: string }>(
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [fetcher, query.state, buildParams]);
+  }, [query.state, buildParams]);
 
   useEffect(() => {
     runFetch();

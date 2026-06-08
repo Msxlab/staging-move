@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash, randomInt } from "node:crypto";
+import { randomInt } from "node:crypto";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { sendHardDeleteOtpEmail } from "@/lib/email";
 import { maskEmail } from "@/lib/privacy";
+import { hashAdminActionOtpCode } from "@/lib/admin-action-otp";
 
 export const dynamic = "force-dynamic";
 
 const OTP_OPERATION = "user_hard_delete";
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-function sha256Hex(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
 
 /**
  * STEP 1 of the irreversible HARD DELETE flow.
@@ -22,7 +19,7 @@ function sha256Hex(value: string): string {
  *   - requirePermission('users','canDelete',{ minimumRole: 'SUPER_ADMIN' })
  *   - requirePasswordConfirm(..., { requireMfa: true }) — admin password + MFA.
  *
- * Only after BOTH pass do we mint a 6-digit code, store ONLY sha256(code) in a
+ * Only after BOTH pass do we mint a 6-digit code, store ONLY HMAC(code) in a
  * fresh AdminActionOtp row bound to (acting admin, operation, target user), and
  * email the plaintext code to the ACTING ADMIN's OWN address (never the target).
  * Prior unconsumed codes for the same (admin, operation, target) are superseded
@@ -105,7 +102,11 @@ export async function POST(
 
     // 6-digit numeric code, cryptographically random, zero-padded.
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-    const codeHash = sha256Hex(code);
+    const codeHash = hashAdminActionOtpCode(code, {
+      adminUserId: session.adminId,
+      operation: OTP_OPERATION,
+      targetId: id,
+    });
     const now = new Date();
     const expiresAt = new Date(now.getTime() + OTP_TTL_MS);
 
@@ -143,6 +144,7 @@ export async function POST(
         status: "success",
         phase: "otp_request",
         targetMaskedEmail,
+        recipientMaskedEmail: maskEmail(admin.email),
         emailDispatched: sent,
         expiresAt: expiresAt.toISOString(),
       },
@@ -151,7 +153,7 @@ export async function POST(
 
     // Never return the code. `otpSent` is true even if the mail provider was
     // unconfigured in dev (sendEmail returns true and logs the code there).
-    return NextResponse.json({ otpSent: true });
+    return NextResponse.json({ otpSent: true, recipientMaskedEmail: maskEmail(admin.email) });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

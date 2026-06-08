@@ -23,7 +23,48 @@ function includeTaskContext() {
     destinationProvider: { select: { id: true, name: true, slug: true, category: true } },
     originAddress: { select: { id: true, nickname: true, city: true, state: true, zip: true } },
     destinationAddress: { select: { id: true, nickname: true, city: true, state: true, zip: true } },
+    // Assignee (Family/Pro). Only id + name fields — enough to render an
+    // avatar/initials; null when unassigned. The client derives initials.
+    assignedTo: { select: { id: true, firstName: true, lastName: true } },
   };
+}
+
+function assigneeSummary(
+  assignedTo: { id: string; firstName: string | null; lastName: string | null } | null | undefined,
+) {
+  if (!assignedTo) return null;
+  const name = [assignedTo.firstName, assignedTo.lastName].filter(Boolean).join(" ") || null;
+  const initials =
+    ((assignedTo.firstName?.charAt(0) || "") + (assignedTo.lastName?.charAt(0) || "")).toUpperCase() || "U";
+  return { id: assignedTo.id, name, initials };
+}
+
+/** Shape a task for the response: replace the raw `assignedTo` user with a compact summary. */
+function shapeTask<T extends { assignedTo?: { id: string; firstName: string | null; lastName: string | null } | null }>(
+  task: T,
+) {
+  const { assignedTo, ...rest } = task as any;
+  return { ...rest, assignee: assigneeSummary(assignedTo) };
+}
+
+/**
+ * The ACTIVE members of the workspace that owns `planWorkspaceId`, as a picker
+ * source. Empty for solo/legacy (no workspaceId) and for single-member
+ * workspaces — the UI uses `length > 1` to decide whether to show assignment at
+ * all. Names + initials only; emails are never exposed here.
+ */
+async function activeWorkspaceMembers(workspaceId: string | null) {
+  if (!workspaceId) return [] as { userId: string; name: string | null; initials: string }[];
+  const members = await prisma.workspaceMember.findMany({
+    where: { workspaceId, status: "ACTIVE" },
+    orderBy: { joinedAt: "asc" },
+    select: { userId: true, user: { select: { firstName: true, lastName: true } } },
+  });
+  return members.map((m) => {
+    const name = [m.user.firstName, m.user.lastName].filter(Boolean).join(" ") || null;
+    const initials = ((m.user.firstName?.charAt(0) || "") + (m.user.lastName?.charAt(0) || "")).toUpperCase() || "U";
+    return { userId: m.userId, name, initials };
+  });
 }
 
 async function recordMoveTaskEvent(userId: string, event: string, metadata: Record<string, unknown>) {
@@ -66,8 +107,18 @@ export async function GET(request: NextRequest) {
       take: 200,
     });
 
+    // Workspace member picker source. Only populated for a true multi-member
+    // workspace request — solo/Individual (no workspaceId) gets an empty list,
+    // so the UI never surfaces assignment there.
+    const workspaceMembers = await activeWorkspaceMembers(scope.workspaceId);
+    const assignmentEnabled = workspaceMembers.length > 1;
+
     return NextResponse.json({
-      tasks,
+      tasks: tasks.map(shapeTask),
+      // Member picker + a convenience flag the clients gate the Assign UI on.
+      // `assignmentEnabled` is true only when there are 2+ ACTIVE members.
+      workspaceMembers,
+      assignmentEnabled,
       metadata: {
         localOnly: true,
         noExternalAutomation: true,
@@ -150,7 +201,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      tasks,
+      tasks: tasks.map(shapeTask),
       generatedCount: result.generated.length,
       skippedCount: result.skipped.length,
       metadata: {
@@ -190,6 +241,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const id = typeof body?.id === "string" ? body.id : null;
     const event = typeof body?.event === "string" ? body.event.toUpperCase() : null;
+    const hasEvent = event !== null;
     const notes = typeof body?.notes === "string" ? body.notes.slice(0, 2000) : undefined;
     const selectedDestinationProviderId =
       typeof body?.selectedDestinationProviderId === "string"
@@ -199,60 +251,134 @@ export async function PATCH(request: NextRequest) {
       typeof body?.selectedCustomProviderId === "string"
         ? body.selectedCustomProviderId
         : undefined;
-    if (!id || !["ACCEPT", "START", "COMPLETE", "DISMISS", "REOPEN"].includes(event || "")) {
+
+    // Assignment is an independent, optional operation. We distinguish:
+    //   key absent          → leave the assignee untouched
+    //   value null/""       → unassign (set null)
+    //   value string        → assign to that user (validated below)
+    // `assignChanged` gates whether we run the assignment path at all.
+    const assignKeyPresent = Object.prototype.hasOwnProperty.call(body ?? {}, "assignedToUserId");
+    const rawAssignee = body?.assignedToUserId;
+    const wantsAssign =
+      assignKeyPresent && typeof rawAssignee === "string" && rawAssignee.length > 0
+        ? rawAssignee
+        : null;
+
+    if (!id) {
+      return NextResponse.json({ error: "id is required" }, { status: 400 });
+    }
+    if (hasEvent && !["ACCEPT", "START", "COMPLETE", "DISMISS", "REOPEN"].includes(event)) {
+      return NextResponse.json({ error: "valid event is required" }, { status: 400 });
+    }
+    // Must do SOMETHING: a lifecycle event or an assignment change.
+    if (!hasEvent && !assignKeyPresent) {
       return NextResponse.json({ error: "id and valid event are required" }, { status: 400 });
     }
 
     const existing = await prisma.moveTask.findFirst({
       where: moveTaskWhereForScope(scope, { id }),
+      include: { movingPlan: { select: { workspaceId: true } } },
     });
     if (!existing) {
       return NextResponse.json({ error: "Move task not found" }, { status: 404 });
     }
+    // Permission: any ACTIVE member may update/assign within their workspace.
+    // assertWorkspaceAction("address.edit") already encodes that — a SUSPENDED
+    // or VIEW_ONLY member is rejected, an ACTIVE OWNER/ADMIN/MEMBER passes.
     assertWorkspaceAction(scope, "address.edit", {
       resourceUserId: existing.userId,
       message: "No permission to update this move task.",
     });
 
-    const task =
-      event === "COMPLETE"
-        ? (
-            await completeMoveTaskWithLocalEffect(existing.userId, id, {
-              notes,
-              selectedDestinationProviderId,
-              selectedCustomProviderId,
-              workspaceId: scope.workspaceId,
-              completedByUserId: userId,
-            })
-          ).task
-        : await prisma.moveTask.update({
-            where: { id },
-            data: {
-              ...buildMoveTaskLifecyclePatch(existing as any, event as any),
-              ...(notes !== undefined ? { notes } : {}),
-            },
-            include: includeTaskContext(),
-          });
+    // Validate + resolve the assignment target before any write. The assignee
+    // must be an ACTIVE member of the SAME workspace that owns this task (the
+    // workspace is resolved via the task's movingPlan). null = unassign and is
+    // always allowed. A target outside the workspace is rejected (not silently
+    // dropped) so the caller learns the assignment failed.
+    let assigneeUpdate: { assignedToUserId: string | null } | null = null;
+    if (assignKeyPresent) {
+      if (wantsAssign === null) {
+        assigneeUpdate = { assignedToUserId: null };
+      } else {
+        const planWorkspaceId = existing.movingPlan?.workspaceId ?? null;
+        if (!planWorkspaceId) {
+          // Solo/Individual (no workspace) can't assign to anyone but the owner;
+          // there is no member list. Reject anything other than unassign.
+          return NextResponse.json(
+            { error: "Task assignment requires a shared workspace." },
+            { status: 400 },
+          );
+        }
+        const member = await prisma.workspaceMember.findFirst({
+          where: { workspaceId: planWorkspaceId, userId: wantsAssign, status: "ACTIVE" },
+          select: { userId: true },
+        });
+        if (!member) {
+          return NextResponse.json(
+            { error: "Assignee must be an active member of this workspace." },
+            { status: 400 },
+          );
+        }
+        assigneeUpdate = { assignedToUserId: member.userId };
+      }
+    }
+
+    let task;
+    if (event === "COMPLETE") {
+      // COMPLETE runs its own local-effect pipeline; fold the assignment in as a
+      // follow-up update so both land on one request.
+      const completed = (
+        await completeMoveTaskWithLocalEffect(existing.userId, id, {
+          notes,
+          selectedDestinationProviderId,
+          selectedCustomProviderId,
+          workspaceId: scope.workspaceId,
+          completedByUserId: userId,
+        })
+      ).task;
+      task = assigneeUpdate
+        ? await prisma.moveTask.update({ where: { id }, data: assigneeUpdate, include: includeTaskContext() })
+        : completed;
+    } else if (hasEvent) {
+      task = await prisma.moveTask.update({
+        where: { id },
+        data: {
+          ...buildMoveTaskLifecyclePatch(existing as any, event as any),
+          ...(notes !== undefined ? { notes } : {}),
+          ...(assigneeUpdate ?? {}),
+        },
+        include: includeTaskContext(),
+      });
+    } else {
+      // Assignment-only PATCH (no lifecycle event).
+      task = await prisma.moveTask.update({
+        where: { id },
+        data: { ...(assigneeUpdate ?? {}), ...(notes !== undefined ? { notes } : {}) },
+        include: includeTaskContext(),
+      });
+    }
 
     const meta = extractRequestMeta(request);
     await createAuditLog({
       userId,
-      action: "TASK_STATUS",
+      action: hasEvent ? "TASK_STATUS" : "TASK_ASSIGN",
       entityType: "MoveTask",
       entityId: id,
       changes: {
-        event,
+        ...(hasEvent ? { event } : {}),
         status: task.status,
+        ...(assigneeUpdate ? { assignedToUserId: assigneeUpdate.assignedToUserId } : {}),
         selectedDestinationProviderId: selectedDestinationProviderId || null,
         selectedCustomProviderId: selectedCustomProviderId || null,
         localOnly: true,
       },
       ...meta,
     });
-    await recordMoveTaskEvent(userId, `MOVE_TASK_${event}`, {
+    await recordMoveTaskEvent(userId, hasEvent ? `MOVE_TASK_${event}` : "MOVE_TASK_ASSIGN", {
       moveTaskId: id,
       status: task.status,
       actionType: task.actionType,
+      ...(assigneeUpdate ? { assignedToUserId: assigneeUpdate.assignedToUserId } : {}),
       selectedDestinationProviderId: selectedDestinationProviderId || null,
       selectedCustomProviderId: selectedCustomProviderId || null,
       localOnly: true,
@@ -260,7 +386,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json({
-      task,
+      task: shapeTask(task as any),
       metadata: {
         localOnly: true,
         noExternalAutomation: true,

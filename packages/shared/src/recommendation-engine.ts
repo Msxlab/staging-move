@@ -157,6 +157,14 @@ export interface RecommendationResult {
     recommended: number;
     optional: number;
     completedCategories: string[];
+    /**
+     * Count of distinct CRITICAL provider categories the user has already
+     * completed (i.e. dedup'd CRITICAL categories present in completedSet).
+     * This is exactly the CRITICAL cluster's completedCount and EXCLUDES
+     * optional/non-critical completed categories, so the dashboard readiness
+     * ring is not inflated by gym/streaming completions.
+     */
+    completedCritical: number;
     missingCritical: string[];
   };
 }
@@ -1150,7 +1158,8 @@ export function buildRecommendationClusters(
     };
   });
 
-  const allCritical = clusters.find((c) => c.tier === "CRITICAL")?.providers || [];
+  const criticalCluster = clusters.find((c) => c.tier === "CRITICAL");
+  const allCritical = criticalCluster?.providers || [];
   const missingCritical = allCritical
     .filter((p) => !completedSet.has(p.category))
     .map((p) => p.category);
@@ -1168,6 +1177,10 @@ export function buildRecommendationClusters(
       recommended: clusters[2]?.totalCount || 0,
       optional: clusters[3]?.totalCount || 0,
       completedCategories,
+      // The CRITICAL cluster's completedCount is the count of dedup'd CRITICAL
+      // categories already in completedSet — exactly the satisfied critical
+      // slots, with no optional categories counted.
+      completedCritical: criticalCluster?.completedCount || 0,
       missingCritical,
     },
   };

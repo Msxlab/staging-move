@@ -28,9 +28,11 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  UserPlus,
 } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { Avatar } from "@/components/ui/Avatar";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -67,6 +69,12 @@ export default function MovingDetailScreen() {
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Task assignment (Family/Pro). Members + flag come from the move-tasks GET;
+  // the Assign picker only shows when assignmentEnabled (2+ active members).
+  const [workspaceMembers, setWorkspaceMembers] = useState<
+    { userId: string; name: string | null; initials: string }[]
+  >([]);
+  const [assignmentEnabled, setAssignmentEnabled] = useState(false);
 
   const fetchMigration = useCallback(async (planId: string) => {
     const mRes = await api.get<any>("/api/moving/migration", { planId });
@@ -76,6 +84,8 @@ export default function MovingDetailScreen() {
   const fetchMoveTasks = useCallback(async (planId: string) => {
     const taskRes = await api.get<any>("/api/move-tasks", { movingPlanId: planId });
     if (taskRes.data?.tasks) setMoveTasks(taskRes.data.tasks);
+    setWorkspaceMembers(Array.isArray(taskRes.data?.workspaceMembers) ? taskRes.data.workspaceMembers : []);
+    setAssignmentEnabled(Boolean(taskRes.data?.assignmentEnabled));
   }, []);
 
   const fetch_ = useCallback(async () => {
@@ -142,6 +152,40 @@ export default function MovingDetailScreen() {
     }
     hapticSuccess();
     if (plan) await fetchMoveTasks(plan.id);
+  };
+
+  // Assign (or unassign) a task to a workspace member. Any active member may
+  // assign within their workspace; the API validates the target before writing.
+  const assignMoveTask = async (taskId: string, assignedToUserId: string | null) => {
+    setTaskBusy(taskId);
+    const res = await api.patch<any>("/api/move-tasks", { id: taskId, assignedToUserId });
+    setTaskBusy(null);
+    if (res.error) {
+      hapticError();
+      Alert.alert(t("moving.moveTasksAlert"), res.error);
+      return;
+    }
+    hapticSuccess();
+    if (plan) await fetchMoveTasks(plan.id);
+  };
+
+  // Native action sheet to pick an assignee. Multi-member only (the trigger is
+  // gated on assignmentEnabled). Includes an Unassign option when assigned.
+  const openAssignPicker = (task: any) => {
+    const buttons: { text: string; onPress?: () => void; style?: "cancel" | "destructive" }[] =
+      workspaceMembers.map((m) => ({
+        text: task.assignee?.id === m.userId ? `✓ ${m.name || "Member"}` : m.name || "Member",
+        onPress: () => assignMoveTask(task.id, m.userId),
+      }));
+    if (task.assignee) {
+      buttons.push({
+        text: t("moving.unassign", { defaultValue: "Unassign" }),
+        style: "destructive",
+        onPress: () => assignMoveTask(task.id, null),
+      });
+    }
+    buttons.push({ text: t("common.cancel"), style: "cancel" });
+    Alert.alert(t("moving.assignTo", { defaultValue: "Assign to" }), undefined, buttons);
   };
 
   const confirmCompleteMoveTask = (taskId: string) => {
@@ -471,7 +515,13 @@ export default function MovingDetailScreen() {
                         <UiBadge label={t(`moving.taskStatus_${task.status}`, { defaultValue: task.status.replace(/_/g, " ") })} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
                         <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
                       </View>
-                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <View style={styles.taskTitleRow}>
+                        <Text style={[styles.taskTitle, { flex: 1 }]}>{task.title}</Text>
+                        {/* Assignee avatar — multi-member workspaces only. */}
+                        {assignmentEnabled && task.assignee ? (
+                          <Avatar initials={task.assignee.initials} size={24} style={{ marginLeft: 8 }} />
+                        ) : null}
+                      </View>
                       {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
                       {formatTaskDueDate(task.dueDate) && (
                         <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
@@ -479,6 +529,21 @@ export default function MovingDetailScreen() {
                       <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
                     </View>
                     <View style={styles.taskActions}>
+                      {assignmentEnabled && open && (
+                        <TouchableOpacity
+                          style={styles.assignBtn}
+                          disabled={taskBusy === task.id}
+                          onPress={() => openAssignPicker(task)}
+                          accessibilityRole="button"
+                        >
+                          <UserPlus size={11} color={theme.colors.textSecondary} />
+                          <Text style={styles.migBtnText}>
+                            {task.assignee
+                              ? t("moving.reassign", { defaultValue: "Reassign" })
+                              : t("moving.assign", { defaultValue: "Assign" })}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                       {open && (
                         <TouchableOpacity
                           style={styles.migBtnPrimary}
@@ -999,10 +1064,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 6,
     marginBottom: 6,
   },
+  taskTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   taskTitle: {
     fontSize: 13,
     fontWeight: "800",
     color: theme.colors.text,
+  },
+  assignBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   taskDescription: {
     fontSize: 12,

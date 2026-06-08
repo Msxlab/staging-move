@@ -339,24 +339,17 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           );
         }
         // Readiness signal: count of CRITICAL provider categories still missing
-        // vs. set up. completedCategories may include non-critical categories, so
-        // intersect it with the critical set the engine surfaced (missing ∪ done)
-        // is approximated by counting distinct missing categories + how many of
-        // the user's completed categories overlap the critical universe.
+        // vs. set up. Both come straight from the engine's stats: `missingCritical`
+        // is the list of pending CRITICAL categories, and `completedCritical` is
+        // the count of satisfied CRITICAL categories (CRITICAL cluster's
+        // completedCount). Using completedCritical avoids inflating the ring with
+        // optional categories (gym/streaming) the way the old heuristic did.
         const missingCritical: string[] = Array.isArray(data.stats?.missingCritical)
           ? data.stats.missingCritical
           : [];
-        const completedCategories: string[] = Array.isArray(data.stats?.completedCategories)
-          ? data.stats.completedCategories
-          : [];
         const missingSet = new Set(missingCritical);
-        // A completed category counts toward critical-readiness only when it is a
-        // category the engine treats as critical. We don't have the full critical
-        // universe here, but completed categories that are NOT in the missing set
-        // and were surfaced as critical elsewhere are rare; conservatively treat
-        // every completed category that isn't already missing as a satisfied
-        // critical slot, capped so completed never inflates beyond a sane base.
-        const completedCriticalCount = completedCategories.filter((c) => !missingSet.has(c)).length;
+        const completedCriticalCount =
+          typeof data.stats?.completedCritical === "number" ? data.stats.completedCritical : 0;
         setCriticalReadiness({ missing: missingSet.size, completed: completedCriticalCount });
       })
       .catch(() => {});

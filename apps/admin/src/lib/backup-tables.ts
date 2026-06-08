@@ -122,6 +122,15 @@ export const BACKUP_TABLES = {
     model: "acquisitionRedemption",
     label: "Acquisition Redemptions",
   },
+  // Affiliate revenue attribution. Conversions are partner-reported payout
+  // events (Layer 1 revenue) and are worth recovering on restore; clicks are
+  // their originating context (a conversion echoes back its click id), so the
+  // click table is included as the conversion's dependency.
+  affiliateClicks: { model: "affiliateClick", label: "Affiliate Clicks" },
+  affiliateConversions: {
+    model: "affiliateConversion",
+    label: "Affiliate Conversions",
+  },
   blogCategories: { model: "blogCategory", label: "Blog Categories" },
   blogTags: { model: "blogTag", label: "Blog Tags" },
   blogPosts: { model: "blogPost", label: "Blog Posts" },
@@ -156,6 +165,8 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "adminAuditLogs",
   "acquisitionCampaigns",
   "acquisitionRedemptions",
+  "affiliateClicks",
+  "affiliateConversions",
   "blogCategories",
   "blogTags",
   "blogPosts",
@@ -198,6 +209,13 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
     "subscriptions",
     "acquisitionCampaigns",
   ],
+  // Click is FK'd to both the user and the provider (both Cascade), so its
+  // import needs those parents present.
+  affiliateClicks: ["users", "providers"],
+  // Conversion is FK'd to the provider (Cascade) and, optionally, to its
+  // originating click (SetNull). The click is therefore a soft dependency:
+  // importing conversions before clicks would null out the click linkage.
+  affiliateConversions: ["providers", "affiliateClicks"],
   blogPosts: ["adminUsers", "blogCategories"],
 };
 
@@ -218,6 +236,7 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "subscriptions",
     "notifications",
     "providerGovernanceIssues",
+    "affiliateClicks",
   ],
   providers: [
     "providerLogoCandidates",
@@ -225,6 +244,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "services",
     "moveTasks",
     "providerGovernanceIssues",
+    "affiliateClicks",
+    "affiliateConversions",
   ],
   providerLogoCandidates: ["providers"],
   providerCoverages: ["providers"],

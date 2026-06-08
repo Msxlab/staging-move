@@ -99,7 +99,7 @@ describe("admin subscription refund", () => {
     expect(res.status).toBe(200);
     expect(body).toMatchObject({ refunded: true, amount: 1499, currency: "usd" });
     expect(mocks.refundsCreate).toHaveBeenCalledWith(
-      { payment_intent: "pi_live_77" },
+      { payment_intent: "pi_live_77", amount: 1499 },
       expect.objectContaining({ idempotencyKey: expect.stringContaining("admin-subscription-refund:sub_1") }),
     );
     const serialized = JSON.stringify(mocks.auditCreate.mock.calls);

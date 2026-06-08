@@ -783,6 +783,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "ANTHROPIC_API_KEY",
+    label: "Anthropic API Key",
+    description:
+      "Server-side Anthropic Messages API key (x-api-key) used to generate the personalized AI move briefing on the onboarding-complete / dashboard first-run screen. Optional: when unset the briefing falls back to a deterministic rule-based summary built from the user's own checklist, and the mobile AI section hides gracefully. Get a key at https://console.anthropic.com/ (Settings -> API Keys). Only coarse, non-PII move signals are ever sent to the API.",
+    scope: "WEB",
+    category: "AI",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app onboarding briefing"],
+    note: "Optional. Only needed to enable the LLM-generated move briefing; never required. The briefing endpoint sends only coarse signals (hasKids/hasPets/carCount/state/moveType/own-vs-rent/senior/business) — never name, address, email, or account numbers.",
+  },
+  {
     key: "APP_URL",
     label: "Canonical App URL",
     description: "Server-side canonical public URL used for billing redirects and backend-generated links.",

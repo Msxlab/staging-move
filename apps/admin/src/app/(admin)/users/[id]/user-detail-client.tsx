@@ -280,12 +280,17 @@ export default function UserDetailClient() {
         toast.error(message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       // Remember the step-up so phase 2 can resend it alongside the code.
       setHardDeleteStepUp(stepUp);
       setHardDeleteRequiresMfa(false);
       setHardDeleteOtpCode("");
       setHardDeletePhase("otp");
-      toast.success("We emailed a 6-digit code to your admin address.");
+      toast.success(
+        typeof data?.recipientMaskedEmail === "string"
+          ? `We emailed a 6-digit code to your admin address (${data.recipientMaskedEmail}).`
+          : "We emailed a 6-digit code to your admin address.",
+      );
     } catch {
       setHardDeleteError("Failed to send confirmation code.");
       toast.error("Failed to send confirmation code.");

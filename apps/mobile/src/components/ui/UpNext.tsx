@@ -7,6 +7,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { Avatar } from "@/components/ui/Avatar";
 
 /**
  * UP NEXT — the dashboard's one-tap task-clearing strip.
@@ -38,6 +39,9 @@ interface MoveTaskLite {
   title: string;
   status: string;
   dueDate?: string | null;
+  // Assignee (Family/Pro), display-only here. Null = unassigned. UpNext NEVER
+  // edits assignment — it just shows whose task it is via an initials avatar.
+  assignee?: { id: string; name: string | null; initials: string } | null;
 }
 
 const OPEN_STATUSES = new Set(["SUGGESTED", "ACCEPTED", "IN_PROGRESS"]);
@@ -96,7 +100,13 @@ export function UpNext({
     }
     const open: MoveTaskLite[] = (res.data.tasks as any[])
       .filter((tk) => OPEN_STATUSES.has(tk.status))
-      .map((tk) => ({ id: tk.id, title: tk.title, status: tk.status, dueDate: tk.dueDate ?? null }));
+      .map((tk) => ({
+        id: tk.id,
+        title: tk.title,
+        status: tk.status,
+        dueDate: tk.dueDate ?? null,
+        assignee: tk.assignee ?? null,
+      }));
     open.sort(sortByDue);
     setTasks(open);
   }, [planId]);
@@ -222,6 +232,14 @@ export function UpNext({
                   </View>
                 )}
               </View>
+              {/* Assignee avatar — display only, no picker here. */}
+              {task.assignee ? (
+                <Avatar
+                  initials={task.assignee.initials}
+                  size={26}
+                  style={styles.assigneeAvatar}
+                />
+              ) : null}
             </View>
           </ListEntrance>
         );
@@ -275,6 +293,7 @@ const makeStyles = (t: Theme) =>
       justifyContent: "center",
     },
     title: { fontSize: 14, fontWeight: "600", color: t.colors.text },
+    assigneeAvatar: { marginLeft: 8 },
     dueChip: { marginTop: 4, alignSelf: "flex-start" },
     dueText: { fontSize: 11, color: t.colors.textTertiary, fontWeight: "600" },
     errorText: { fontSize: 11, color: t.colors.error, fontWeight: "600", marginTop: 4 },

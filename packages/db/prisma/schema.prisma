@@ -53,6 +53,7 @@ model User {
   budgets                 Budget[]
   movingPlans             MovingPlan[]
   moveTasks               MoveTask[]
+  assignedMoveTasks       MoveTask[]              @relation("MoveTaskAssignee")
   customProviders         UserCustomProvider[]
   loginSessions           UserLoginSession[]
   mobileOAuthCodes        MobileOAuthCode[]
@@ -860,6 +861,14 @@ model MoveTask {
   providerId String?          @db.VarChar(30)
   provider   ServiceProvider? @relation("MoveTaskProvider", fields: [providerId], references: [id], onDelete: SetNull)
 
+  // Optional task assignee (Family/Pro). Null = unassigned (the default for
+  // every solo/Individual task and for any task nobody has picked up yet). In a
+  // multi-member workspace any ACTIVE member can assign a task to any ACTIVE
+  // member of the same workspace; the API validates membership before writing.
+  // onDelete: SetNull so removing a member leaves their tasks intact (unassigned).
+  assignedToUserId String? @db.VarChar(30)
+  assignedTo       User?   @relation("MoveTaskAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
   customProviderId String?             @db.VarChar(30)
   customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: SetNull)
 
@@ -912,6 +921,7 @@ model MoveTask {
   @@index([destinationProviderId])
   @@index([deletedAt])
   @@index([templateId])
+  @@index([assignedToUserId])
 }
 
 // ==================== USER CUSTOM PROVIDERS ====================

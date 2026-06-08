@@ -174,7 +174,10 @@
     "upNext_due": "Due {{date}}",
     "upNext_noDate": "No deadline",
     "upNext_completeLabel": "Mark \"{{title}}\" complete",
-    "upNext_completeFailed": "Couldn't complete that task. Please try again."
+    "upNext_completeFailed": "Couldn't complete that task. Please try again.",
+    "briefingTitle": "Your move briefing",
+    "briefingAiLabel": "AI-generated",
+    "briefingDismiss": "Dismiss briefing"
   },
   "addresses": {
     "title": "Addresses",
