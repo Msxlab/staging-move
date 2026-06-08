@@ -13,7 +13,22 @@ import { daysUntilDateOnly, resolveReminderTimeZone } from "@/lib/reminder-timez
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
+// Hard-deadline escalation: deadline-bearing checklist tasks (USCIS AR-11, DMV
+// transfer, the 60-day health-insurance window) get an extra "deadline
+// approaching" nudge when the legal deadline is this many days out — separate
+// from the soft dueDate reminders, so a missed/edited due date doesn't silence
+// a legally-critical deadline. At-most-once per (task, deadline, tier) via a
+// distinct dedupe key.
+const DEADLINE_ESCALATION_DAYS = [7, 1];
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function parseDeadlineDate(metadata: unknown): Date | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const raw = (metadata as Record<string, unknown>).deadlineDate;
+  if (typeof raw !== "string") return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -50,6 +65,23 @@ export async function GET(req: Request) {
     const windowStart = new Date(start.getTime() - DAY_MS);
     const horizon = new Date(start.getTime() + (Math.max(...TASK_REMINDER_DAYS) + 2) * DAY_MS);
 
+    const taskSelect = {
+      id: true,
+      title: true,
+      dueDate: true,
+      userId: true,
+      metadata: true,
+      user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
+      movingPlan: {
+        select: {
+          id: true,
+          moveDate: true,
+          fromAddress: { select: { city: true, state: true } },
+          toAddress: { select: { city: true, state: true } },
+        },
+      },
+    } as const;
+
     const tasks = await prisma.moveTask.findMany({
       where: {
         deletedAt: null,
@@ -58,26 +90,36 @@ export async function GET(req: Request) {
         user: { deletedAt: null },
         movingPlan: { deletedAt: null },
       },
-      select: {
-        id: true,
-        title: true,
-        dueDate: true,
-        userId: true,
-        user: { select: { id: true, email: true, firstName: true, lastName: true, preferredLocale: true, profile: { select: { timezone: true } } } },
-        movingPlan: {
-          select: {
-            id: true,
-            moveDate: true,
-            fromAddress: { select: { city: true, state: true } },
-            toAddress: { select: { city: true, state: true } },
-          },
-        },
-      },
+      select: taskSelect,
       orderBy: { dueDate: "asc" },
       take: 500,
     });
 
-    const userIds = [...new Set(tasks.map((task) => task.userId))];
+    // Deadline-escalation candidates: open, deadline-bearing checklist tasks
+    // (templateId set) whose HARD deadline may fall outside the soft-due window.
+    // Scanned separately and de-duped against the soft-due batch by task id so a
+    // task never gets both reminders evaluated twice in one run.
+    const deadlineHorizon = new Date(
+      start.getTime() + (Math.max(...DEADLINE_ESCALATION_DAYS) + 2) * DAY_MS,
+    );
+    const seenTaskIds = new Set(tasks.map((task) => task.id));
+    const deadlineTasks = (
+      await prisma.moveTask.findMany({
+        where: {
+          deletedAt: null,
+          templateId: { not: null },
+          status: { notIn: ["COMPLETED", "DISMISSED"] },
+          user: { deletedAt: null },
+          movingPlan: { deletedAt: null, moveDate: { lt: deadlineHorizon } },
+        },
+        select: taskSelect,
+        orderBy: { dueDate: "asc" },
+        take: 500,
+      })
+    ).filter((task) => !seenTaskIds.has(task.id));
+
+    const allTaskRows = [...tasks, ...deadlineTasks];
+    const userIds = [...new Set(allTaskRows.map((task) => task.userId))];
     const preferences = userIds.length
       ? await prisma.notificationPreference.findMany({
           where: { userId: { in: userIds } },
@@ -89,9 +131,10 @@ export async function GET(req: Request) {
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
+    let escalatedCount = 0;
     const errors: string[] = [];
 
-    for (const task of tasks) {
+    for (const task of allTaskRows) {
       if (!task.user || !task.dueDate) continue;
       const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
       const daysUntilDue = daysUntilDateOnly(task.dueDate, now, userTimeZone);
@@ -170,12 +213,100 @@ export async function GET(req: Request) {
       }
     }
 
+    // ── Hard-deadline escalation tier ──
+    // For deadline-bearing checklist tasks, fire a distinct "deadline
+    // approaching" reminder when the legal deadline is exactly one of the
+    // escalation lead-days out (in the user's timezone). The dedupe key is keyed
+    // on the deadline date + lead-day, so it's at-most-once per tier and never
+    // collides with the soft-due reminder above — no spam.
+    for (const task of allTaskRows) {
+      if (!task.user) continue;
+      const deadlineDate = parseDeadlineDate(task.metadata);
+      if (!deadlineDate) continue;
+
+      const userTimeZone = resolveReminderTimeZone(task.user.profile?.timezone);
+      const daysUntilDeadline = daysUntilDateOnly(deadlineDate, now, userTimeZone);
+      if (!DEADLINE_ESCALATION_DAYS.includes(daysUntilDeadline)) continue;
+
+      const userPreferences = preferencesByUser.get(task.userId) || [];
+      const notificationSettings = buildWebNotificationSettings(userPreferences);
+      const emailAllowed = Boolean(
+        task.user.email &&
+        notificationSettings.config.emailEnabled &&
+        notificationSettings.prefs.taskReminder
+      );
+      const pushAllowed = isPushTypeEnabled(userPreferences, "TASK_REMINDER");
+      if (!emailAllowed && !pushAllowed) continue;
+
+      const deadlineText = formatDate(deadlineDate, task.user.preferredLocale);
+      const dedupeKey = `cron:task-deadline:${task.id}:${deadlineDate.toISOString().slice(0, 10)}:${daysUntilDeadline}`;
+      const userName = [task.user.firstName, task.user.lastName].filter(Boolean).join(" ") || "there";
+      const when = daysUntilDeadline === 1 ? "tomorrow" : `in ${daysUntilDeadline} days`;
+      const body = `Deadline approaching: ${task.title} must be done by ${deadlineText} (${when}).`;
+
+      try {
+        let emailSent = false;
+        if (emailAllowed) {
+          emailSent = await sendTaskReminderEmail({
+            userEmail: task.user.email!,
+            userName,
+            taskTitle: `⏳ Deadline: ${task.title}`,
+            dueDate: deadlineText,
+            daysUntilDue: daysUntilDeadline,
+            movingPlanLabel: movingPlanLabel(task.movingPlan),
+            movingPlanId: task.movingPlan.id,
+            taskId: task.id,
+            userId: task.userId,
+            locale: task.user.preferredLocale,
+            dedupeKey,
+            metadata: { userId: task.userId, taskId: task.id, movingPlanId: task.movingPlan.id, deadline: true },
+          });
+          if (emailSent) sentCount++;
+        }
+
+        const mirrored = await createInAppNotification({
+          userId: task.userId,
+          type: "TASK_DUE",
+          title: `Deadline approaching: ${task.title}`,
+          body,
+          href: `/moving/plan/${task.movingPlan.id}`,
+          icon: "AlertTriangle",
+          dedupeKey,
+          metadata: {
+            kind: "task-deadline",
+            taskId: task.id,
+            movingPlanId: task.movingPlan.id,
+            daysUntilDeadline,
+            channelMirror: emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
+          },
+        });
+        if (mirrored) {
+          mirroredCount++;
+          escalatedCount++;
+          if (pushAllowed) {
+            const pushed = await sendNotification({
+              userId: task.userId,
+              type: "PUSH",
+              subject: `Deadline approaching: ${task.title}`,
+              body,
+              dedupeKey: `${dedupeKey}:push`,
+              metadata: { kind: "task-deadline", taskId: task.id, movingPlanId: task.movingPlan.id },
+            });
+            if (pushed) pushSentCount++;
+          }
+        }
+      } catch (err) {
+        errors.push(`Deadline escalation failed for task ${task.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      processed: tasks.length,
+      processed: allTaskRows.length,
       sent: sentCount,
       mirrored: mirroredCount,
       pushSent: pushSentCount,
+      escalated: escalatedCount,
       errors: errors.length ? errors : undefined,
       timestamp: now.toISOString(),
     });

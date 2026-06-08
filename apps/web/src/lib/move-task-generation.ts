@@ -2,8 +2,13 @@ import { getProviderCoverageMetadata, type Prisma, type ProviderCoverageModel } 
 import {
   classifyMoveServiceTransition,
   safeJsonArray,
+  buildChecklistTaskTemplates,
+  composeChecklistTaskDescription,
   type MoveServiceTransitionPlan,
   type MoveTransitionProviderInput,
+  type UserChecklistProfile,
+  type ChecklistStateRuleContext,
+  type ChecklistTaskTemplate,
 } from "@locateflow/shared";
 import { resolveChecklistTemplateId } from "@/lib/checklist-template-map";
 import { prisma } from "@/lib/db";
@@ -270,6 +275,238 @@ export function buildMoveTaskIdempotencyKey(
   ].join(":");
 }
 
+// ── Checklist-task persistence ──────────────────────────────────────────────
+// The rich relocation checklist (USPS, IRS 8822, USCIS AR-11, DMV, school,
+// utilities, PCS) used to be client-display only and never persisted, so a
+// mover who skipped the optional services step got ZERO reminders even for
+// legally-required tasks. We now persist those checklist items as real MoveTask
+// rows (source = "CHECKLIST"), keyed by a STABLE templateId-based idempotency
+// key so re-syncs never duplicate and never clobber user edits / completion.
+
+const CHECKLIST_TASK_SOURCE = "CHECKLIST";
+// A generic, side-effect-free action type. The local-effects completer only
+// mutates services for the classifier action types (STOP/START/TRANSFER/...),
+// so a checklist task simply completes with no service side effects.
+const CHECKLIST_TASK_ACTION_TYPE = "CHECKLIST_ITEM";
+
+/** Stable idempotency key for a persisted checklist task — anchored on the
+ *  checklist template id (NOT a service/provider), so it survives re-syncs and
+ *  is unique per (plan, destination state, template item). */
+export function buildChecklistTaskIdempotencyKey(
+  movingPlanId: string,
+  templateId: string,
+  context: { fromState: string; toState: string },
+): string {
+  return [
+    "checklist-task",
+    movingPlanId,
+    templateId,
+    normalizeKeyState(context.fromState),
+    normalizeKeyState(context.toState),
+  ].join(":");
+}
+
+interface ChecklistProfileSource {
+  hasChildren?: boolean | null;
+  childrenCount?: number | null;
+  hasPets?: boolean | null;
+  hasSenior?: boolean | null;
+  carCount?: number | null;
+  hasDisability?: boolean | null;
+  needsStorage?: boolean | null;
+  hasMotorcycle?: boolean | null;
+  hasBoatRV?: boolean | null;
+  isImmigrant?: boolean | null;
+  isBusinessOwner?: boolean | null;
+  isMilitary?: boolean | null;
+  moveType?: string | null;
+}
+
+/** Map a stored Profile row to the shared UserChecklistProfile. A `isMilitary`
+ *  flag promotes the move type to MILITARY (PCS) so PCS-only items appear, even
+ *  if `moveType` itself was left as PERSONAL. */
+export function buildChecklistProfile(profile: ChecklistProfileSource | null): UserChecklistProfile {
+  const rawMoveType = (profile?.moveType || "").toUpperCase();
+  const moveType: UserChecklistProfile["moveType"] =
+    profile?.isMilitary
+      ? "MILITARY"
+      : rawMoveType === "BUSINESS" || rawMoveType === "VACATION" || rawMoveType === "MILITARY"
+        ? (rawMoveType as UserChecklistProfile["moveType"])
+        : "PERSONAL";
+  return {
+    hasChildren: profile?.hasChildren ?? false,
+    childrenCount: profile?.childrenCount ?? 0,
+    hasPets: profile?.hasPets ?? false,
+    hasSenior: profile?.hasSenior ?? false,
+    carCount: profile?.carCount ?? 0,
+    hasDisability: profile?.hasDisability ?? false,
+    needsStorage: profile?.needsStorage ?? false,
+    hasMotorcycle: profile?.hasMotorcycle ?? false,
+    hasBoatRV: profile?.hasBoatRV ?? false,
+    isImmigrant: profile?.isImmigrant ?? false,
+    isBusinessOwner: profile?.isBusinessOwner ?? false,
+    moveType,
+  };
+}
+
+const CHECKLIST_PRIORITY_TO_CONFIDENCE: Record<ChecklistTaskTemplate["priority"], string> = {
+  URGENT: "HIGH",
+  HIGH: "HIGH",
+  MEDIUM: "MEDIUM",
+  LOW: "LOW",
+};
+
+/** Clamp a checklist task's due date so a back-dated move plan doesn't bury
+ *  every reminder in the past (mirrors buildMoveTaskDueDate's behavior). */
+function clampChecklistDueDate(dueDate: Date, now: Date): Date {
+  const due = atLocalNoon(dueDate);
+  const today = atLocalNoon(now);
+  return due < today ? today : due;
+}
+
+/**
+ * Persist the personalized relocation checklist as MoveTask rows. IDEMPOTENT:
+ *  - keyed by a stable templateId-based idempotency key (no dup on re-sync),
+ *  - skips template ids already covered by a service-derived CLASSIFIER task,
+ *  - never clobbers COMPLETED/DISMISSED tasks or user-edited status/notes,
+ *  - QUICK-WIN fallback: if the user tracks ZERO services, the full checklist is
+ *    still persisted so the reminder pipeline is never empty.
+ */
+async function persistChecklistTasks(
+  userId: string,
+  movingPlanId: string,
+  context: MoveTransitionContext,
+  serviceCoveredTemplateIds: Set<string>,
+): Promise<{ generated: any[]; skipped: any[] }> {
+  const generated: any[] = [];
+  const skipped: any[] = [];
+
+  const moveDate = context.movingPlan.moveDate;
+  if (!moveDate) return { generated, skipped };
+
+  const [profileRow, stateRuleRow] = await Promise.all([
+    prisma.profile.findUnique({ where: { userId } }),
+    context.toState
+      ? prisma.stateRule.findUnique({ where: { stateCode: context.toState } })
+      : Promise.resolve(null),
+  ]);
+
+  const profile = buildChecklistProfile(profileRow as ChecklistProfileSource | null);
+  const stateRule: ChecklistStateRuleContext | null = stateRuleRow
+    ? {
+        dmvRules: stateRuleRow.dmvRules ?? null,
+        voterRegistration: stateRuleRow.voterRegistration ?? null,
+        taxInfo: stateRuleRow.taxInfo ?? null,
+      }
+    : null;
+
+  const templates = buildChecklistTaskTemplates(
+    profile,
+    moveDate instanceof Date ? moveDate : new Date(moveDate),
+    context.toState,
+    stateRule,
+  );
+
+  for (const template of templates) {
+    // Don't duplicate a checklist item that a tracked service already produced.
+    if (serviceCoveredTemplateIds.has(template.templateId)) continue;
+
+    const idempotencyKey = buildChecklistTaskIdempotencyKey(movingPlanId, template.templateId, context);
+    const now = new Date();
+
+    // Find any prior row for this template item in this plan: first by the
+    // stable idempotency key, then by (templateId, source) as a backstop so a
+    // re-key never spawns a second copy.
+    let existing = await prisma.moveTask.findUnique({
+      where: { userId_idempotencyKey: { userId, idempotencyKey } },
+    });
+    if (!existing) {
+      existing = await prisma.moveTask.findFirst({
+        where: {
+          userId,
+          movingPlanId,
+          templateId: template.templateId,
+          source: CHECKLIST_TASK_SOURCE,
+          deletedAt: null,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    const dueDate = clampChecklistDueDate(
+      template.dueDate instanceof Date ? template.dueDate : new Date(template.dueDate),
+      now,
+    );
+
+    const data = {
+      userId,
+      movingPlanId,
+      serviceId: null,
+      originAddressId: context.movingPlan.fromAddressId,
+      destinationAddressId: context.movingPlan.toAddressId,
+      providerId: null,
+      destinationProviderId: null,
+      actionType: CHECKLIST_TASK_ACTION_TYPE,
+      source: CHECKLIST_TASK_SOURCE,
+      templateId: template.templateId,
+      title: `${template.icon} ${template.title}`,
+      description: composeChecklistTaskDescription(template),
+      reason: template.isRequired
+        ? "Required relocation checklist item personalized to your move."
+        : "Recommended relocation checklist item personalized to your move.",
+      caveats: [
+        "Manual guidance only. LocateFlow does not update provider accounts or execute address changes.",
+      ] as unknown as Prisma.InputJsonArray,
+      confidence: CHECKLIST_PRIORITY_TO_CONFIDENCE[template.priority],
+      dueDate,
+      localEffect: {
+        effectType: "NO_LOCAL_STATE_CHANGE",
+        addressContext: "GENERAL",
+        localOnly: true,
+      } as unknown as Prisma.InputJsonObject,
+      metadata: {
+        checklistTemplateId: template.templateId,
+        category: template.category,
+        priority: template.priority,
+        phase: template.phase,
+        isRequired: template.isRequired,
+        deadlineDays: template.deadlineDays,
+        deadlineDate: template.deadlineDate ? template.deadlineDate.toISOString() : null,
+        stateNote: template.stateNote,
+        fromState: context.fromState,
+        toState: context.toState,
+        manualGuidanceOnly: true,
+      } as unknown as Prisma.InputJsonObject,
+      idempotencyKey,
+      lastStatusChangedAt: now,
+    };
+
+    // Never resurrect or rewrite a task the user already resolved.
+    if (existing && ["COMPLETED", "DISMISSED"].includes(existing.status)) {
+      skipped.push(existing);
+      continue;
+    }
+
+    const task = existing
+      ? await prisma.moveTask.update({
+          where: { id: existing.id },
+          data: {
+            ...data,
+            // Preserve user-driven lifecycle: don't reset status, completion
+            // timestamps, notes, or the original status-change time on re-sync.
+            status: existing.status,
+            lastStatusChangedAt: existing.lastStatusChangedAt,
+            notes: existing.notes ?? null,
+          },
+        })
+      : await prisma.moveTask.create({ data });
+
+    generated.push(task);
+  }
+
+  return { generated, skipped };
+}
+
 export async function syncSuggestedMoveTasks(userId: string, movingPlanId: string) {
   const context = await buildMoveTransitionContext(userId, movingPlanId);
   const entitlement = await canGenerateMoveTasks(userId, {
@@ -281,6 +518,11 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
   }
   const generated = [];
   const skipped = [];
+  // Template ids already represented by a service-derived (CLASSIFIER) task in
+  // this sync. The checklist-persistence pass below skips these so we never
+  // create a duplicate row for the same checklist item (e.g. a tracked electric
+  // service already yields a P1_ELECTRIC-linked task).
+  const serviceCoveredTemplateIds = new Set<string>();
 
   for (const plan of context.transitionPlans) {
     if (plan.actionType === "NO_ACTION") continue;
@@ -308,6 +550,11 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
       });
     }
     const now = new Date();
+    // Link back to the relocation-checklist template item (e.g. "P1_ELECTRIC")
+    // so a COMPLETED task can mark that checklist item DONE. Null when the
+    // service category has no corresponding checklist item — graceful no-op.
+    const classifierTemplateId = resolveChecklistTemplateId(plan.serviceCategory);
+    if (classifierTemplateId) serviceCoveredTemplateIds.add(classifierTemplateId);
     const data = {
       userId,
       movingPlanId,
@@ -321,10 +568,7 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
           : null,
       actionType: plan.actionType,
       source: "CLASSIFIER",
-      // Link back to the relocation-checklist template item (e.g. "P1_ELECTRIC")
-      // so a COMPLETED task can mark that checklist item DONE. Null when the
-      // service category has no corresponding checklist item — graceful no-op.
-      templateId: resolveChecklistTemplateId(plan.serviceCategory),
+      templateId: classifierTemplateId,
       title: buildTaskTitle(plan),
       description: plan.userFacingCopy,
       reason: plan.primaryReason,
@@ -365,6 +609,17 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
 
     generated.push(task);
   }
+
+  // Persist the rich, personalized relocation checklist as MoveTask rows so the
+  // reminder crons see it — including for movers who track zero services.
+  const checklistResult = await persistChecklistTasks(
+    userId,
+    movingPlanId,
+    context,
+    serviceCoveredTemplateIds,
+  );
+  generated.push(...checklistResult.generated);
+  skipped.push(...checklistResult.skipped);
 
   return {
     ...context,

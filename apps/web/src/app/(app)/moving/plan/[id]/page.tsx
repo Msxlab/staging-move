@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, Clock, Loader2, Repeat, ArrowRightLeft, PlusCircle, XCircle, Shield, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
@@ -23,6 +23,30 @@ const STATUS_LABEL_KEYS: Record<string, "status_planning" | "status_inProgress" 
   CANCELED: "status_canceled",
   CANCELLED: "status_canceled",
 };
+
+// Human-readable label for a task's migration action. Lets the unified
+// checklist convey the same Keep / Transfer / Switch / Cancel framing the
+// old separate "Service Migration Plan" buckets did, without a second list.
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  KEEP: "Keep",
+  TRANSFER: "Transfer",
+  SWITCH: "Switch",
+  CANCEL: "Cancel",
+  SET_UP_NEW: "Set up new",
+  UPDATE_ADDRESS: "Update address",
+  FORWARD_MAIL: "Forward mail",
+};
+
+function formatActionTypeLabel(actionType?: string | null): string | null {
+  if (!actionType) return null;
+  return (
+    ACTION_TYPE_LABELS[actionType] ||
+    actionType
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/^\w/, (c) => c.toUpperCase())
+  );
+}
 
 interface PlanDetail {
   id: string;
@@ -58,7 +82,6 @@ export default function MovingPlanDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [migration, setMigration] = useState<any>(null);
   const [migrationLoading, setMigrationLoading] = useState(false);
-  const [confirming, setConfirming] = useState<string | null>(null);
   const [stateRules, setStateRules] = useState<any>(null);
   const [stateGuideOpen, setStateGuideOpen] = useState(false);
   const [moveTasks, setMoveTasks] = useState<MoveTaskItem[]>([]);
@@ -205,27 +228,6 @@ export default function MovingPlanDetailPage() {
       .finally(() => setLoading(false));
   }, [id, router]);
 
-  const confirmAction = async (serviceId: string, action: "KEEP" | "TRANSFER" | "SWITCH" | "CANCEL") => {
-    setConfirming(serviceId);
-    try {
-      const res = await fetch(`/api/services/${serviceId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ migrationAction: action }),
-      });
-      if (res.ok) {
-        toast.success(`Marked as ${action.toLowerCase()}`);
-        if (plan) await fetchMigration(plan.id);
-      } else {
-        toast.error("Failed to save choice");
-      }
-    } catch {
-      toast.error("Failed to save choice");
-    } finally {
-      setConfirming(null);
-    }
-  };
-
   const handleDelete = async () => {
     setDeleting(true);
     const res = await fetch(`/api/moving/${id}`, {
@@ -262,7 +264,6 @@ export default function MovingPlanDetailPage() {
   const migrationSummaryLabel = migration
     ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : t("migrationGuidanceEmpty");
-  const hasTransitionPlans = Boolean(migration?.transitionPlans?.length);
 
   return (
     <div className="space-y-6 pb-8">
@@ -330,9 +331,13 @@ export default function MovingPlanDetailPage() {
       <div className="rounded-2xl border border-tone-emerald-br bg-tone-emerald-bg backdrop-blur-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Your move checklist</h2>
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-tone-emerald-fg" />
+              Your move checklist
+            </h2>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-              These items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
+              Your provider migration steps and new-service to-dos, all in one place.
+              Items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
             </p>
           </div>
           <button
@@ -381,6 +386,11 @@ export default function MovingPlanDetailPage() {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusCls}`}>
                         {statusLabel}
                       </span>
+                      {formatActionTypeLabel(task.actionType) && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-foreground/5 text-muted-foreground font-medium">
+                          {formatActionTypeLabel(task.actionType)}
+                        </span>
+                      )}
                       {task.localEffect?.localOnly && !isDone && !isDismissed && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                           LocateFlow only
@@ -441,6 +451,53 @@ export default function MovingPlanDetailPage() {
             );
           })}
         </div>
+
+        {migrationLoading && !migration && moveTasks.length > 0 && (
+          <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Checking for new services you'll need at your destination…
+          </p>
+        )}
+
+        {/* New services you'll need — the one piece of migration analysis the
+            generated tasks don't cover, since tasks come from services you
+            already have. Folded into the same checklist card so there's a
+            single place to act, instead of a duplicate "Service Migration
+            Plan" section. */}
+        {migration?.newNeeded?.length > 0 && (
+          <div className="mt-5 border-t border-tone-emerald-br/60 pt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <PlusCircle className="h-3.5 w-3.5 text-tone-orange-fg" />
+              <span className="text-[11px] font-medium text-tone-orange-fg uppercase tracking-wider">
+                New services you'll need ({migration.newNeeded.length})
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3 max-w-2xl">
+              You don't have these at your origin, but you'll likely need them after the move.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {migration.newNeeded.map((item: any, i: number) => {
+                const newHref = `/services/new?category=${encodeURIComponent(item.category)}${item.recommendedProvider ? `&providerId=${item.recommendedProvider.id}` : ""}`;
+                return (
+                  <div key={`new-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+                    <span className="text-base">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground/80 truncate">{item.categoryLabel}</p>
+                      {item.recommendedProvider && (
+                        <p className="text-[10px] text-tone-orange-fg truncate">Rec: {item.recommendedProvider.name}</p>
+                      )}
+                    </div>
+                    <Link href={newHref}>
+                      <button className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition">
+                        Browse
+                      </button>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Move Scope Summary */}
@@ -464,7 +521,7 @@ export default function MovingPlanDetailPage() {
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Service migration</p>
             <p className="text-sm font-medium text-foreground">{migrationSummaryLabel}</p>
-            <p className="text-xs text-foreground/35 mt-1">Provider guidance is listed and unverified until confirmed with the provider.</p>
+            <p className="text-xs text-foreground/35 mt-1">Tracked as steps in your move checklist above — unverified until confirmed with the provider.</p>
           </div>
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Checklist posture</p>
@@ -473,288 +530,6 @@ export default function MovingPlanDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Migration Panel */}
-      {(migration || migrationLoading) && (
-        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent backdrop-blur-xl overflow-hidden">
-          <div className="p-5 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <ArrowRightLeft className="h-4 w-4 text-tone-orange-fg" />
-              <h3 className="text-sm font-semibold text-foreground">Service Migration Plan</h3>
-              {migration && (
-                <span className="ml-auto text-[10px] text-foreground/40">
-                  {plan?.fromAddress?.state} → {plan?.toAddress?.state}
-                </span>
-              )}
-            </div>
-            {migration && (
-              <p className="text-xs text-muted-foreground">
-                {migration.summary.total} services analyzed · {migration.transitionPlans?.length || 0} manual transition guidance items
-              </p>
-            )}
-          </div>
-
-          {migrationLoading ? (
-            <div className="flex items-center justify-center gap-2 py-8">
-              <Loader2 className="h-4 w-4 animate-spin text-tone-orange-fg" />
-              <span className="text-xs text-muted-foreground">Analyzing your services...</span>
-            </div>
-          ) : migration ? (
-            <div className="px-5 pb-5 space-y-4">
-              {migration.transitionPlans?.length > 0 && (
-                <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Move Transition Plan</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
-                      </p>
-                    </div>
-                    <span className="text-[10px] px-2 py-1 rounded-full border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
-                      Manual tracking only
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {migration.transitionPlans.map((planItem: any, i: number) => (
-                      <div key={`transition-${planItem.serviceId || i}`} className="rounded-xl border border-border bg-black/10 p-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">
-                              {planItem.serviceProviderName
-                                ? `${planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")} · ${planItem.serviceProviderName}`
-                                : (planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " "))}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground mt-1">{planItem.primaryReason}</p>
-                          </div>
-                          <span className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground">
-                            {planItem.confidence} confidence
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">{planItem.suggestedNextStep}</p>
-                        {planItem.destinationProviderCandidates?.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {planItem.destinationProviderCandidates.slice(0, 3).map((candidate: any) => (
-                              <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-foreground/5 text-foreground/45 border border-border">
-                                {candidate.name} · {candidate.coverageLabel}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {planItem.caveats?.length > 0 && (
-                          <p className="text-[10px] text-foreground/40 mt-2">{planItem.caveats[0]}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {!hasTransitionPlans && (
-                <>
-              {/* KEEP */}
-              {migration.keeps.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-3.5 w-3.5 text-tone-emerald-fg" />
-                    <span className="text-[11px] font-medium text-tone-emerald-fg uppercase tracking-wider">Keep ({migration.keeps.length})</span>
-                    <span className="text-[10px] text-foreground/30">Update address only</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {migration.keeps.map((item: any, i: number) => {
-                      const sid = item.currentService?.id;
-                      const confirmed = item.currentService?.migrationAction === "KEEP";
-                      const busy = confirming === sid;
-                      return (
-                        <div key={`keep-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-emerald-bg border border-tone-emerald-br">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
-                          </div>
-                          {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-tone-emerald-fg font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
-                            </span>
-                          ) : sid ? (
-                            <button onClick={() => confirmAction(sid, "KEEP")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-tone-emerald-bg text-tone-emerald-fg text-[10px] font-medium hover:bg-tone-emerald-bg transition disabled:opacity-50">
-                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* TRANSFER */}
-              {migration.transfers.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Repeat className="h-3.5 w-3.5 text-tone-cyan-fg" />
-                    <span className="text-[11px] font-medium text-tone-cyan-fg uppercase tracking-wider">Transfer ({migration.transfers.length})</span>
-                    <span className="text-[10px] text-foreground/30">Same provider, new state</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {migration.transfers.map((item: any, i: number) => {
-                      const sid = item.currentService?.id;
-                      const confirmed = item.currentService?.migrationAction === "TRANSFER";
-                      const busy = confirming === sid;
-                      return (
-                        <div key={`transfer-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-cyan-bg border border-tone-cyan-br">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
-                          </div>
-                          {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-tone-cyan-fg font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
-                            </span>
-                          ) : sid ? (
-                            <button onClick={() => confirmAction(sid, "TRANSFER")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-tone-cyan-bg text-tone-cyan-fg text-[10px] font-medium hover:bg-tone-cyan-bg transition disabled:opacity-50">
-                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* SWITCH */}
-              {migration.switches.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowRightLeft className="h-3.5 w-3.5 text-tone-honey-fg" />
-                    <span className="text-[11px] font-medium text-tone-honey-fg uppercase tracking-wider">Switch ({migration.switches.length})</span>
-                    <span className="text-[10px] text-foreground/30">Provider change needed</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {migration.switches.map((item: any, i: number) => {
-                      const sid = item.currentService?.id;
-                      const confirmed = item.currentService?.migrationAction === "SWITCH";
-                      const busy = confirming === sid;
-                      const newHref = sid
-                        ? `/services/new?fromServiceId=${sid}&category=${encodeURIComponent(item.category)}${item.recommendedProvider ? `&providerId=${item.recommendedProvider.id}` : ""}`
-                        : `/services/new`;
-                      return (
-                        <div key={`switch-${i}`} className="flex items-center gap-2.5 p-3 rounded-xl bg-tone-honey-bg border border-tone-honey-br">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm text-muted-foreground line-through truncate">{item.currentService?.providerName}</p>
-                              <ArrowRight className="h-3 w-3 text-tone-honey-fg shrink-0" />
-                              <p className="text-sm font-medium text-tone-honey-fg truncate">{item.recommendedProvider?.name || "Find new"}</p>
-                            </div>
-                            <p className="text-[10px] text-foreground/35 truncate mt-0.5">{item.note}</p>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {confirmed ? (
-                              <span className="flex items-center gap-1 text-[10px] text-tone-honey-fg font-medium">
-                                <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
-                              </span>
-                            ) : sid ? (
-                              <button onClick={() => confirmAction(sid, "SWITCH")} disabled={busy}
-                                className="px-2 py-1 rounded-lg bg-foreground/5 text-muted-foreground text-[10px] font-medium hover:bg-foreground/10 transition disabled:opacity-50">
-                                {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
-                              </button>
-                            ) : null}
-                            <Link href={newHref}>
-                              <button className="px-2 py-1 rounded-lg bg-tone-honey-bg text-tone-honey-fg text-[10px] font-medium hover:bg-tone-honey-bg transition">
-                                Select
-                              </button>
-                            </Link>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* NEW */}
-              {migration.newNeeded.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <PlusCircle className="h-3.5 w-3.5 text-tone-orange-fg" />
-                    <span className="text-[11px] font-medium text-tone-orange-fg uppercase tracking-wider">New Needed ({migration.newNeeded.length})</span>
-                    <span className="text-[10px] text-foreground/30">Services you'll need</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {migration.newNeeded.map((item: any, i: number) => {
-                      const newHref = `/services/new?category=${encodeURIComponent(item.category)}${item.recommendedProvider ? `&providerId=${item.recommendedProvider.id}` : ""}`;
-                      return (
-                        <div key={`new-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-foreground/80 truncate">{item.categoryLabel}</p>
-                            {item.recommendedProvider && (
-                              <p className="text-[10px] text-tone-orange-fg truncate">Rec: {item.recommendedProvider.name}</p>
-                            )}
-                          </div>
-                          <Link href={newHref}>
-                            <button className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition">
-                              Browse
-                            </button>
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* CANCEL */}
-              {migration.cancels.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                    <span className="text-[11px] font-medium text-destructive uppercase tracking-wider">Cancel ({migration.cancels.length})</span>
-                    <span className="text-[10px] text-foreground/30">No longer needed</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {migration.cancels.map((item: any, i: number) => {
-                      const sid = item.currentService?.id;
-                      const confirmed = item.currentService?.migrationAction === "CANCEL";
-                      const busy = confirming === sid;
-                      return (
-                        <div key={`cancel-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-destructive/5 border border-destructive/10">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-muted-foreground truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
-                          </div>
-                          {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-destructive font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
-                            </span>
-                          ) : sid ? (
-                            <button onClick={() => confirmAction(sid, "CANCEL")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-destructive text-destructive text-[10px] font-medium hover:bg-destructive/30 transition disabled:opacity-50">
-                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-                </>
-              )}
-
-              {migration.summary.total === 0 && (
-                <p className="text-xs text-foreground/40 text-center py-4">No services to migrate. Add services to your origin address first.</p>
-              )}
-            </div>
-          ) : null}
-        </div>
-      )}
 
       {/* State Guide */}
       {stateRules && (

@@ -48,6 +48,14 @@ export interface UserProfile {
   daysUntilMove?: number;
   /** "RENT" | "OWN" | "OTHER" — drives renters vs home-insurance steering */
   ownership?: string;
+  /**
+   * The user's destination coordinates (from the selected/primary address).
+   * Optional. When present alongside a geo-bearing provider's coordinates,
+   * scoreProviders ranks nearer local providers higher via a deterministic
+   * distance fold. Undefined coordinates simply skip the geo component.
+   */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface Provider {
@@ -84,6 +92,18 @@ export interface Provider {
    * engine falls back to the existing catalog-based confidence — no crash.
    */
   fccServiceable?: boolean;
+  /**
+   * Representative geo coordinates for a GEO-BEARING local provider (e.g. the
+   * centroid of its mapped service-area polygon, or a single physical location).
+   * Optional: federal/national catalog providers and providers without mapped
+   * geometry leave these undefined. When BOTH the provider and the user carry
+   * finite coordinates, scoreProviders folds the great-circle distance into the
+   * ranking so a nearer local provider outranks a farther one of equal standing.
+   * The fold is deterministic and per-element, so it never breaks the
+   * provably-transitive comparator.
+   */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface RecommendationExplanation {
@@ -105,6 +125,14 @@ export interface ScoredProvider extends Provider {
   urgencyTier: UrgencyTier;
   matchReasons: string[];
   explanation: RecommendationExplanation;
+  /**
+   * Coarse, deterministic distance bucket (lower = nearer) for geo-bearing
+   * providers when the user has coordinates; a fixed sentinel otherwise. Stored
+   * on the scored provider so the per-element sort key can break score ties by
+   * proximity WITHOUT the comparator needing the user profile — keeping the
+   * comparator a pure per-element field comparison (transitive by construction).
+   */
+  geoDistanceBucket: number;
 }
 
 export interface RecommendationCluster {
@@ -637,6 +665,108 @@ const PHASE_CATEGORY_BOOST: Record<number, Record<string, number>> = {
   5: { HOUSING_HOME_SERVICE: 15, HOUSING_HOA: 10, HOUSING_LAWN_CARE: 8, HOUSING_PEST_CONTROL: 8, HOUSING_CLEANING: 10 },
 };
 
+// ── Geo Distance (true local ranking) ────────────────────────
+// "Local" relevance used to be binary (state membership / ZIP prefix). For a
+// geo-BEARING provider — one that carries representative coordinates (e.g. the
+// centroid of its mapped service-area polygon) — and a user with known
+// coordinates, we can do better: rank the genuinely-nearer provider higher.
+//
+// CRITICAL CONSTRAINT: the ranking comparator must stay a provably-transitive
+// strict total order. We therefore NEVER compare distance pairwise. Instead we
+// fold each provider's distance into a small, monotonic, per-element score
+// adjustment (and a coarse per-element distance bucket carried in the sort key).
+// Both are pure functions of the single provider, so the comparator remains a
+// per-element field comparison — transitivity is preserved by construction.
+
+const GEO_DISTANCE_MAX_BONUS = 12; // points added to a provider AT the user
+const GEO_DISTANCE_FALLOFF_KM = 80; // distance at which the bonus decays to ~0
+
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+/** Great-circle distance in km (haversine). Pure; deterministic. */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371; // mean Earth radius, km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/**
+ * Distance in km between a user and a geo-bearing provider, or null when either
+ * side lacks finite coordinates. A pure function of the two points.
+ */
+function providerDistanceKm(provider: Provider, profile: UserProfile): number | null {
+  if (
+    !isFiniteNumber(provider.latitude) ||
+    !isFiniteNumber(provider.longitude) ||
+    !isFiniteNumber(profile.latitude) ||
+    !isFiniteNumber(profile.longitude)
+  ) {
+    return null;
+  }
+  return haversineKm(profile.latitude, profile.longitude, provider.latitude, provider.longitude);
+}
+
+/**
+ * Monotonic, non-negative distance bonus: maxes out for a provider AT the
+ * user's location and decays smoothly toward 0 by GEO_DISTANCE_FALLOFF_KM.
+ * Returns 0 when distance is unknown so non-geo providers are unaffected.
+ * Folding this into the additive score is order-independent (the score is a
+ * per-element accumulator), so it does not affect comparator transitivity.
+ */
+function geoDistanceBonus(distanceKm: number | null): number {
+  if (distanceKm === null) return 0;
+  if (distanceKm <= 0) return GEO_DISTANCE_MAX_BONUS;
+  const decayed = GEO_DISTANCE_MAX_BONUS * (1 - distanceKm / GEO_DISTANCE_FALLOFF_KM);
+  return Math.max(0, decayed);
+}
+
+/**
+ * Coarse, deterministic distance bucket used as a per-element tiebreaker in the
+ * sort key (lower = nearer = ranks first). Providers without a known distance
+ * get a fixed sentinel so they sort AFTER geo-located ones only at equal score,
+ * never reordering non-geo providers among themselves. Buckets (rather than raw
+ * float distance) keep the key stable against tiny floating-point jitter.
+ */
+const GEO_BUCKET_KM = 5; // ~5km granularity
+const GEO_DISTANCE_BUCKET_SENTINEL = Number.MAX_SAFE_INTEGER;
+
+function geoDistanceBucket(distanceKm: number | null): number {
+  if (distanceKm === null) return GEO_DISTANCE_BUCKET_SENTINEL;
+  return Math.floor(Math.max(0, distanceKm) / GEO_BUCKET_KM);
+}
+
+// ── Community Popularity Keying (robust) ─────────────────────
+// The community-popularity map is produced upstream by aggregating adopted
+// providers (apps/web/src/lib/community-popularity.ts groups Service rows by
+// `providerId`), so the map is ALWAYS keyed by the provider's `id`. The previous
+// lookup used a `map[id] || map[slug] || 0` chain whose slug fallback is the
+// fragile part the audit flagged:
+//   • Cross-namespace borrow: when a provider's `id` is absent, the chain reads
+//     `map[slug]`. A slug that happens to equal a *different* provider's id then
+//     silently borrows that other provider's popularity — a key collision bug.
+//   • `|| 0` stops at the first *truthy* value, so a legitimate id-keyed 0 still
+//     falls through to the slug branch.
+// Since every real producer keys by id, the robust fix is to read the id key
+// ONLY (no slug fallback, so no foreign-namespace read), via an own-property
+// check so an explicit 0 is honoured, and to ignore non-finite/negative values.
+function lookupCommunityPopularity(
+  communityPopular: Record<string, number> | undefined,
+  provider: Provider,
+): number {
+  if (!communityPopular) return 0;
+  if (!Object.prototype.hasOwnProperty.call(communityPopular, provider.id)) return 0;
+  const raw = communityPopular[provider.id];
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) return 0;
+  return raw;
+}
+
 // ── Core Scoring Function ────────────────────────────────────
 
 export function scoreProviders(
@@ -797,13 +927,26 @@ export function scoreProviders(
       }
 
       // 6. Community popularity signal
-      if (communityPopular) {
-        const communityScore = communityPopular[provider.id] || communityPopular[provider.slug || ""] || 0;
-        if (communityScore > 0) {
-          score += Math.min(20, communityScore);
-          reasons.push("Popular in your area");
+      const communityScore = lookupCommunityPopularity(communityPopular, provider);
+      if (communityScore > 0) {
+        score += Math.min(20, communityScore);
+        reasons.push("Popular in your area");
+      }
+
+      // 6b. True geo-local ranking. For a provider that carries representative
+      // coordinates AND a user with known coordinates, add a monotonic proximity
+      // bonus (nearer → larger) and remember the distance bucket for the sort
+      // key's tiebreaker. Both are pure per-element functions of this provider,
+      // so they never make the comparator depend on a *pair* — transitivity holds.
+      const distanceKm = providerDistanceKm(provider, profile);
+      const geoBonus = geoDistanceBonus(distanceKm);
+      if (geoBonus > 0) {
+        score += geoBonus;
+        if (distanceKm !== null && distanceKm <= GEO_DISTANCE_FALLOFF_KM) {
+          reasons.push("Near your new address");
         }
       }
+      const geoBucket = geoDistanceBucket(distanceKm);
 
       if (typeof provider.displayOrder === "number" && provider.displayOrder > 0) {
         score += Math.max(0, 12 - Math.min(provider.displayOrder, 12));
@@ -866,6 +1009,7 @@ export function scoreProviders(
         urgencyTier,
         matchReasons: reasons,
         explanation,
+        geoDistanceBucket: geoBucket,
       };
     })
     .filter((p) => {
@@ -911,6 +1055,14 @@ interface ProviderSortKey {
   coverageRank: number;
   /** Descending — higher score first. */
   score: number;
+  /**
+   * Ascending — nearer geo-bucket first. A per-element value precomputed during
+   * scoring (sentinel MAX_SAFE_INTEGER when the user or provider lacks
+   * coordinates), so geo-less providers fall through to displayOrder/popularity
+   * exactly as before. Breaks score ties by proximity without ever comparing a
+   * pair pairwise, keeping the comparator a strict, transitive total order.
+   */
+  geoDistanceBucket: number;
   /** Ascending — explicit positive displayOrder first, else MAX_SAFE_INTEGER. */
   displayOrder: number;
   /** Descending — higher popularity first. */
@@ -927,6 +1079,10 @@ function getProviderSortKey(p: ScoredProvider): ProviderSortKey {
       ? getCoverageConfidencePresentation(getProviderCoverageConfidence(p)).rank
       : -1,
     score: p.recommendationScore,
+    geoDistanceBucket:
+      typeof p.geoDistanceBucket === "number" && Number.isFinite(p.geoDistanceBucket)
+        ? p.geoDistanceBucket
+        : Number.MAX_SAFE_INTEGER,
     displayOrder:
       typeof p.displayOrder === "number" && p.displayOrder > 0
         ? p.displayOrder
@@ -945,6 +1101,8 @@ function compareScoredProviders(a: ScoredProvider, b: ScoredProvider): number {
   if (ka.coverageRank !== kb.coverageRank) return kb.coverageRank - ka.coverageRank;
   // Score within tier (descending).
   if (ka.score !== kb.score) return kb.score - ka.score;
+  // Geo proximity bucket (ascending — nearer first) — per-element, so transitive.
+  if (ka.geoDistanceBucket !== kb.geoDistanceBucket) return ka.geoDistanceBucket - kb.geoDistanceBucket;
   // Explicit display order (ascending).
   if (ka.displayOrder !== kb.displayOrder) return ka.displayOrder - kb.displayOrder;
   // Popularity (descending).

@@ -17,6 +17,35 @@ import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { lookupFccIsps, isIspServiceable, type FccLookupResult } from "@/lib/fcc-isp";
+import type { ProviderCoverageMetadata } from "@locateflow/db";
+
+// Representative geo coordinate for a GEO-BEARING provider: the centroid of its
+// mapped service-area polygon(s). Returned only when the provider has polygon
+// metadata with points; otherwise null. This single point lets the shared
+// recommendation engine rank a nearer local provider above a farther one when
+// the user also has coordinates — without storing per-provider lat/lng in the
+// catalog (the ServiceProvider model has none). The fold is deterministic, so
+// it never affects the engine's provably-transitive comparator.
+function providerGeoCentroid(
+  metadata: ProviderCoverageMetadata | null | undefined,
+): { latitude: number; longitude: number } | null {
+  const polygons = metadata?.polygons;
+  if (!polygons || polygons.length === 0) return null;
+  let sumLat = 0;
+  let sumLng = 0;
+  let count = 0;
+  for (const poly of polygons) {
+    for (const point of poly.points) {
+      if (Number.isFinite(point.latitude) && Number.isFinite(point.longitude)) {
+        sumLat += point.latitude;
+        sumLng += point.longitude;
+        count += 1;
+      }
+    }
+  }
+  if (count === 0) return null;
+  return { latitude: sumLat / count, longitude: sumLng / count };
+}
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
 // Returns tiered clusters with "next critical actions" based on what user already has
@@ -105,12 +134,16 @@ export async function GET(request: NextRequest) {
         metadata?.coverageModel ||
         (zipCodes.length > 0 ? "zip_prefix" : "state");
 
+      const geoCentroid = providerGeoCentroid(metadata);
+
       return {
         ...p,
         zipCodes,
         coverageModel,
         coverageNote: metadata?.note || null,
         coverageSourceUrl: metadata?.officialUrl || null,
+        geoLatitude: geoCentroid?.latitude ?? null,
+        geoLongitude: geoCentroid?.longitude ?? null,
         coverages: "coverages" in p && Array.isArray((p as { coverages?: unknown }).coverages)
           ? (p as unknown as { coverages: { state: string | null; zipPrefix: string | null; zipExact: string | null }[] }).coverages
           : [],
@@ -163,6 +196,12 @@ export async function GET(request: NextRequest) {
       moveType: profile?.moveType || undefined,
       currentPhase,
       ownership: normalizeOwnership(primaryAddr?.ownership),
+      // Destination coordinates drive true geo-local provider ranking in the
+      // shared engine (nearer geo-bearing providers rank higher). Undefined
+      // coordinates simply skip the geo component, so this is safe when the
+      // address has no lat/lng.
+      latitude: fallbackLatitude,
+      longitude: fallbackLongitude,
     };
 
     const parsedProviders: Provider[] = tiered.providers.map((p) => ({
@@ -192,6 +231,11 @@ export async function GET(request: NextRequest) {
       }),
       coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
       coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
+      // Representative geo coordinates (service-area polygon centroid) for
+      // geo-bearing local providers. Null for federal/national/zip-only catalog
+      // providers — the engine then skips the geo component for them.
+      latitude: ("geoLatitude" in p ? (p as { geoLatitude?: number | null }).geoLatitude : null) ?? null,
+      longitude: ("geoLongitude" in p ? (p as { geoLongitude?: number | null }).geoLongitude : null) ?? null,
       requiresAddressCheck: p.coverageModel === "live_address",
       requiresPolygonCheck: p.coverageModel === "polygon",
     }));
