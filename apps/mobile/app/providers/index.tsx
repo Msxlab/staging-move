@@ -11,10 +11,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, ArrowLeft, X, AlertTriangle } from "lucide-react-native";
+import { Search, ArrowLeft, X, AlertTriangle, Scale } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { useCompareStore, MAX_COMPARE } from "@/lib/compare-store";
+import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -56,6 +58,9 @@ export default function ProvidersScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
+  const compareEntries = useCompareStore((s) => s.entries);
+  const toggleCompare = useCompareStore((s) => s.toggle);
+  const clearCompare = useCompareStore((s) => s.clear);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [recommended, setRecommended] = useState<RecommendedRowItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,6 +201,28 @@ export default function ProvidersScreen() {
     setSearchInput("");
     setSearch("");
   }, []);
+
+  const compareIds = useMemo(() => new Set(compareEntries.map((e) => e.id)), [compareEntries]);
+
+  const onToggleCompare = useCallback(
+    (provider: Provider) => {
+      const wasSelected = compareIds.has(provider.id);
+      const added = toggleCompare(provider);
+      // toggle returns false both when removing AND when the set is full and
+      // the add was rejected. Distinguish: a rejected add means it wasn't
+      // selected before and still isn't.
+      if (!added && !wasSelected) {
+        hapticWarning();
+      } else {
+        hapticLight();
+      }
+    },
+    [compareIds, toggleCompare],
+  );
+
+  const openCompare = useCallback(() => {
+    router.push("/providers/compare" as any);
+  }, [router]);
 
   const selectedLabel = selectedCat ? t(`categories.${selectedCat}`, { defaultValue: getCategoryLabel(selectedCat) }) : null;
 
@@ -357,7 +384,9 @@ export default function ProvidersScreen() {
               <ProviderCard
                 provider={item}
                 variant="full"
+                selectedForCompare={compareIds.has(item.id)}
                 onPress={() => router.push({ pathname: "/providers/[id]", params: { id: item.id } })}
+                onLongPress={() => onToggleCompare(item)}
               />
             );
             // Only cascade the first screenful. Beyond that, FlatList virtualizes
@@ -388,10 +417,49 @@ export default function ProvidersScreen() {
               tintColor={theme.colors.primary}
             />
           }
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, compareEntries.length > 0 ? styles.scrollContentWithTray : null]}
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {compareEntries.length > 0 ? (
+        <View style={styles.compareTray}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.compareTrayTitle}>
+              {t("providers.compareCount", {
+                count: compareEntries.length,
+                max: MAX_COMPARE,
+                defaultValue: "Compare ({{count}}/{{max}})",
+              })}
+            </Text>
+            <Text style={styles.compareTrayHint} numberOfLines={1}>
+              {compareEntries.map((e) => e.name).join(" · ")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={clearCompare}
+            style={styles.compareClearBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t("providers.compareClear", { defaultValue: "Clear comparison" })}
+          >
+            <X size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={openCompare}
+            disabled={compareEntries.length < 2}
+            style={[styles.compareGoBtn, compareEntries.length < 2 ? styles.compareGoBtnDisabled : null]}
+            accessibilityRole="button"
+            accessibilityLabel={t("providers.compareOpen", { defaultValue: "Open side-by-side comparison" })}
+          >
+            <Scale size={15} color="#fff" />
+            <Text style={styles.compareGoText}>
+              {compareEntries.length < 2
+                ? t("providers.comparePickMore", { defaultValue: "Pick 2+" })
+                : t("providers.compareGo", { defaultValue: "Compare" })}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -448,6 +516,46 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 17,
   },
   scrollContent: { paddingBottom: 32 },
+  scrollContentWithTray: { paddingBottom: 104 },
   listItem: { paddingHorizontal: 20, paddingBottom: 12 },
   footer: { paddingVertical: 16, alignItems: "center" },
+  compareTray: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadow.md,
+  },
+  compareTrayTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+  compareTrayHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
+  compareClearBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  compareGoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary,
+  },
+  compareGoBtnDisabled: { opacity: 0.5 },
+  compareGoText: { fontSize: 13, fontWeight: "700", color: "#fff" },
 });

@@ -14,6 +14,7 @@ import { usePressScale } from "@/lib/use-press-scale";
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: ViewStyle;
   variant?: "default" | "elevated" | "bordered" | "glow" | "glass";
   accessible?: boolean;
@@ -26,6 +27,7 @@ interface CardProps {
 export function Card({
   children,
   onPress,
+  onLongPress,
   style,
   variant = "default",
   accessible,
@@ -39,11 +41,12 @@ export function Card({
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
   const cardStyle = [styles.base, styles[variant], style];
 
-  if (onPress) {
+  if (onPress || onLongPress) {
     return (
       <Animated.View style={animatedStyle}>
         <TouchableOpacity
           onPress={onPress}
+          onLongPress={onLongPress}
           onPressIn={onPressIn}
           onPressOut={onPressOut}
           activeOpacity={0.7}

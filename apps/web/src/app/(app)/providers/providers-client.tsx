@@ -14,9 +14,12 @@ import {
   AlertTriangle,
   Loader2,
   X,
+  Scale,
+  Star,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { CompareView } from "./compare-view";
 import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryKey,
@@ -94,6 +97,8 @@ interface RecommendationsResponse {
     } | null;
   };
 }
+
+const MAX_COMPARE = 4;
 
 const TIER_BADGE: Record<UrgencyTier, { label: string; className: string }> = {
   CRITICAL: { label: "Critical", className: "bg-destructive text-destructive-foreground border-destructive" },
@@ -183,6 +188,57 @@ export function ProvidersClient({
   const [recsLoading, setRecsLoading] = useState(false);
   const lastTrackedSearchRef = useRef("");
 
+  // Compare tray: up to MAX_COMPARE providers picked for a side-by-side view.
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
+  // Shortlist: a cheap, client-only "saved for later" set persisted in
+  // localStorage. It does not hit the server — it's a convenience bookmark.
+  const [shortlist, setShortlist] = useState<string[]>([]);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("provider-shortlist");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setShortlist(parsed.filter((x): x is string => typeof x === "string"));
+      }
+    } catch {
+      // localStorage may be unavailable (private mode / SSR hydration) — the
+      // shortlist simply starts empty, which is a safe default.
+    }
+  }, []);
+
+  const persistShortlist = useCallback((next: string[]) => {
+    setShortlist(next);
+    try {
+      window.localStorage.setItem("provider-shortlist", JSON.stringify(next));
+    } catch {
+      // Non-fatal: the in-memory shortlist still works for this session.
+    }
+  }, []);
+
+  const toggleShortlist = useCallback(
+    (id: string) => {
+      persistShortlist(shortlist.includes(id) ? shortlist.filter((x) => x !== id) : [...shortlist, id]);
+    },
+    [shortlist, persistShortlist],
+  );
+
+  const toggleCompare = useCallback((id: string) => {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAX_COMPARE) return prev; // cap — tray surfaces the limit
+      return [...prev, id];
+    });
+  }, []);
+
+  const providerById = useMemo(() => {
+    const map = new Map<string, ProviderItem>();
+    for (const p of providers) map.set(p.id, p);
+    return map;
+  }, [providers]);
+
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
   const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
     setLoading(true);
@@ -265,9 +321,16 @@ export function ProvidersClient({
   }, [providers]);
 
   const visibleProviders = useMemo(() => {
-    if (!categoryFilter) return providers;
-    return providers.filter((provider) => getMergedDisplayCategoryKey(provider.category) === categoryFilter);
-  }, [providers, categoryFilter]);
+    let list = providers;
+    if (categoryFilter) {
+      list = list.filter((provider) => getMergedDisplayCategoryKey(provider.category) === categoryFilter);
+    }
+    if (showSavedOnly) {
+      const saved = new Set(shortlist);
+      list = list.filter((provider) => saved.has(provider.id));
+    }
+    return list;
+  }, [providers, categoryFilter, showSavedOnly, shortlist]);
 
   const criticalCluster = recs?.clusters.find((c) => c.tier === "CRITICAL");
   const importantCluster = recs?.clusters.find((c) => c.tier === "IMPORTANT");
@@ -431,6 +494,21 @@ export function ProvidersClient({
           >
             All · {providers.length}
           </button>
+          {shortlist.length > 0 && (
+            <button
+              onClick={() => setShowSavedOnly((v) => !v)}
+              aria-pressed={showSavedOnly}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition flex items-center gap-1.5 ${
+                showSavedOnly
+                  ? "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Star className={`h-3 w-3 ${showSavedOnly ? "fill-current" : ""}`} />
+              <span>Saved</span>
+              <span className="text-muted-foreground">· {shortlist.length}</span>
+            </button>
+          )}
           {categoryCounts.map(([cat, count]) => (
             <button
               key={cat}
@@ -479,11 +557,52 @@ export function ProvidersClient({
         />
       ) : (
         <div className="grid min-w-0 grid-cols-1 gap-2.5 lg:grid-cols-2">
-          {visibleProviders.map((p) => (
-            <Link
+          {visibleProviders.map((p) => {
+            const isComparing = compareIds.includes(p.id);
+            const isShortlisted = shortlist.includes(p.id);
+            const compareDisabled = !isComparing && compareIds.length >= MAX_COMPARE;
+            return (
+            <div
               key={p.id}
+              className={`group relative min-w-0 rounded-xl border bg-foreground/5 transition overflow-hidden ${
+                isComparing ? "border-tone-orange-br ring-1 ring-tone-orange-br/40" : "border-border hover:bg-foreground/[0.08]"
+              }`}
+            >
+              {/* Card controls (above the link so clicks don't navigate) */}
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => toggleShortlist(p.id)}
+                  aria-pressed={isShortlisted}
+                  aria-label={isShortlisted ? `Remove ${p.name} from shortlist` : `Save ${p.name} to shortlist`}
+                  title={isShortlisted ? "Saved" : "Save for later"}
+                  className={`rounded-lg border p-1.5 ${
+                    isShortlisted
+                      ? "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg"
+                      : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Star className={`h-3.5 w-3.5 ${isShortlisted ? "fill-current" : ""}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleCompare(p.id)}
+                  disabled={compareDisabled}
+                  aria-pressed={isComparing}
+                  aria-label={isComparing ? `Remove ${p.name} from comparison` : `Add ${p.name} to comparison`}
+                  title={compareDisabled ? `Compare up to ${MAX_COMPARE}` : isComparing ? "In comparison" : "Add to compare"}
+                  className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 text-[10px] font-medium disabled:opacity-40 ${
+                    isComparing
+                      ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
+                      : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Scale className="h-3.5 w-3.5" /> {isComparing ? "Added" : "Compare"}
+                </button>
+              </div>
+            <Link
               href={`/providers/${p.id}`}
-              className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/[0.08] transition p-3 flex gap-3 overflow-hidden"
+              className="flex gap-3 p-3 pr-24"
             >
               {(() => {
                 const trust = trustFor(p);
@@ -544,7 +663,9 @@ export function ProvidersClient({
                 );
               })()}
             </Link>
-          ))}
+            </div>
+            );
+          })}
         </div>
       )}
 
@@ -557,6 +678,71 @@ export function ProvidersClient({
             <p className="text-[11px] text-tone-honey-fg/80 mt-1">{recs.meta.stateRule.dmvRules}</p>
           </div>
         </div>
+      )}
+
+      {/* Floating compare tray */}
+      {compareIds.length > 0 && !showCompare && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4">
+          <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+              <Scale className="h-4 w-4 shrink-0 text-tone-orange-fg" />
+              <span className="shrink-0 text-xs font-semibold text-foreground">
+                Compare ({compareIds.length}/{MAX_COMPARE})
+              </span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                {compareIds.map((id) => {
+                  const p = providerById.get(id);
+                  return (
+                    <span
+                      key={id}
+                      className="flex shrink-0 items-center gap-1 rounded-full border border-border bg-foreground/5 py-0.5 pl-2 pr-1 text-[11px] text-foreground/80"
+                    >
+                      <span className="max-w-[120px] truncate">{p?.name || "Provider"}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleCompare(id)}
+                        aria-label={`Remove ${p?.name || "provider"} from comparison`}
+                        className="rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCompareIds([])}
+                className="rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCompare(true)}
+                disabled={compareIds.length < 2}
+                className="rounded-lg bg-gradient-to-r from-primary0 to-accent px-4 py-2 text-xs font-semibold text-white hover:from-primary hover:to-accent disabled:opacity-50"
+              >
+                {compareIds.length < 2 ? "Pick 2+ to compare" : "Compare side by side"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCompare && compareIds.length >= 2 && (
+        <CompareView
+          ids={compareIds}
+          addressId={selectedAddressId}
+          onClose={() => setShowCompare(false)}
+          onRemove={(id) => {
+            const next = compareIds.filter((x) => x !== id);
+            setCompareIds(next);
+            if (next.length < 2) setShowCompare(false);
+          }}
+        />
       )}
     </div>
   );

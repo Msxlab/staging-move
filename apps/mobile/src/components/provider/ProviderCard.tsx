@@ -1,6 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
-import { ChevronRight, MapPin, Users } from "lucide-react-native";
+import { ChevronRight, MapPin, Users, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
@@ -47,6 +47,9 @@ interface ProviderCardProps {
   provider: ProviderCardData;
   variant?: "full" | "compact";
   onPress?: () => void;
+  onLongPress?: () => void;
+  /** When true, the card shows it is selected for side-by-side comparison. */
+  selectedForCompare?: boolean;
   showCategory?: boolean;
   style?: ViewStyle;
   badge?: { label: string; variant?: "primary" | "success" | "warning" | "error" | "info" | "neutral" };
@@ -61,6 +64,8 @@ export function ProviderCard({
   provider,
   variant = "full",
   onPress,
+  onLongPress,
+  selectedForCompare = false,
   showCategory = true,
   style,
   badge,
@@ -84,15 +89,21 @@ export function ProviderCard({
   const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
   const coverageMessage = getLocalizedCoverageMessage(t, i18n.language, trust.coverageConfidence);
 
+  const selectedRing: ViewStyle = selectedForCompare
+    ? { borderColor: theme.colors.primary, borderWidth: 1.5 }
+    : {};
+
   if (variant === "compact") {
     return (
       <Card
         variant="default"
         onPress={onPress}
-        style={StyleSheet.flatten([compactStyles.card, style])}
+        onLongPress={onLongPress}
+        style={StyleSheet.flatten([compactStyles.card, selectedRing, style])}
         accessibilityRole="button"
         accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
         accessibilityHint={description || categoryLabel}
+        accessibilityState={{ selected: selectedForCompare }}
       >
         <View style={compactStyles.row}>
           <ServiceLogoMark
@@ -105,7 +116,13 @@ export function ProviderCard({
             borderColor="rgba(127, 182, 232,0.2)"
             fallbackFontSize={16}
           />
-          {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
+          {selectedForCompare ? (
+            <View style={compactStyles.compareDot}>
+              <Check size={12} color="#fff" />
+            </View>
+          ) : badge ? (
+            <UiBadge label={badge.label} variant={badge.variant ?? "primary"} />
+          ) : null}
         </View>
 
         <Text style={compactStyles.name} numberOfLines={1}>
@@ -139,10 +156,12 @@ export function ProviderCard({
     <Card
       variant="default"
       onPress={onPress}
-      style={style}
+      onLongPress={onLongPress}
+      style={StyleSheet.flatten([selectedRing, style])}
       accessibilityRole="button"
       accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
       accessibilityHint={description || categoryLabel}
+      accessibilityState={{ selected: selectedForCompare }}
     >
       <View style={fullStyles.top}>
         <ServiceLogoMark
@@ -269,6 +288,14 @@ const makeCompactStyles = (theme: Theme) => StyleSheet.create({
   usersText: {
     fontSize: 11,
     color: theme.colors.textTertiary,
+  },
+  compareDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

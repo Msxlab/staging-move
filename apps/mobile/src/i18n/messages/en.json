@@ -379,7 +379,27 @@
     "callProviderA11y": "Call {{provider}}",
     "alternativesIn": "Alternatives in {{category}}",
     "linkUnavailable": "This link could not be opened on your device.",
-    "phoneUnavailable": "Phone calls are not supported on this device."
+    "phoneUnavailable": "Phone calls are not supported on this device.",
+    "category": "Category",
+    "compareTitle": "Compare",
+    "compareCount": "Compare ({{count}}/{{max}})",
+    "compareClear": "Clear comparison",
+    "compareOpen": "Open side-by-side comparison",
+    "comparePickMore": "Pick 2+",
+    "compareGo": "Compare",
+    "compareLongPressHint": "Long-press to add to compare",
+    "comparePickTitle": "Pick providers to compare",
+    "comparePickDescription": "Long-press at least two providers in the list to compare them side by side.",
+    "compareUnavailable": "Couldn't load the comparison.",
+    "compareAtAddress": "Coverage shown for {{address}}",
+    "compareNoAddress": "Add a primary address for coverage at your address.",
+    "compareTruth": "Compared on real catalog data only — coverage confidence, relative popularity, category, and tags. No ratings or prices. Confirm with each provider.",
+    "comparePopularity": "Popularity",
+    "compareUsers": "Community users",
+    "compareOfficialLink": "Official link",
+    "compareWebsite": "Website",
+    "compareRemove": "Remove {{provider}}",
+    "compareTrack": "Track this"
   },
   "coverage": {
     "EXACT_ZIP": {
