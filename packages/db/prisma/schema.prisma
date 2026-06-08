@@ -512,6 +512,11 @@ model Service {
   email   String? @db.Text
 
   monthlyCost     Float?
+  // ACTUAL per-cycle amount the user paid (money layer). NULL = not yet logged
+  // or confirmed → the projection (monthlyCost) is used as the estimate and the
+  // line is excluded from realized-actual / savings totals. Same cycle semantics
+  // as monthlyCost. Additive — see migration 20260607030000.
+  actualMonthlyCost Float?
   billingDay      Int?
   billingCycle    String?   @db.VarChar(20)
   autoRenewal     Boolean   @default(false)

@@ -8,6 +8,7 @@ export * from "./address-autocomplete";
 export * from "./billing";
 export * from "./legal";
 export * from "./relocation-checklist";
+export * from "./budget-planning";
 export * from "./migration-engine";
 export * from "./runtime-config";
 export * from "./provider-coverage";

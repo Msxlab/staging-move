@@ -7,11 +7,16 @@ import {
   ArrowLeft,
   BarChart3,
   Calendar,
+  Check,
   DollarSign,
   Loader2,
   PiggyBank,
   Plus,
+  Receipt,
+  Sparkles,
   Target,
+  TrendingDown,
+  TrendingUp,
   WalletCards,
   X,
 } from "lucide-react";
@@ -20,7 +25,9 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CardSkeleton } from "@/components/shared/loading-state";
 import {
   BUDGET_CATEGORY_LABELS,
+  calculateBudgetActuals,
   calculateBudgetPlan,
+  monthlyAmountForCycle,
   parseBudgetCategoryLimits,
   type BudgetCategoryLabel,
   type ServiceCostInput,
@@ -38,6 +45,7 @@ interface Budget {
   actualIncome: number | null;
   plannedExpenses: number | null;
   actualExpenses: number;
+  savingsRate?: number | null;
   categoryBreakdown?: string | null;
   notes?: string | null;
   addressId?: string | null;
@@ -123,11 +131,24 @@ function toServices(rows: any[]): ServiceCostInput[] {
     category: service.category,
     addressId: service.addressId,
     monthlyCost: typeof service.monthlyCost === "number" ? service.monthlyCost : Number(service.monthlyCost || 0),
+    actualMonthlyCost:
+      service.actualMonthlyCost === null || service.actualMonthlyCost === undefined
+        ? null
+        : Number(service.actualMonthlyCost),
     billingCycle: service.billingCycle,
     isActive: service.isActive,
     activatedAt: service.activatedAt,
     createdAt: service.createdAt,
   }));
+}
+
+function cycleLabel(billingCycle?: string | null): string {
+  const cycle = (billingCycle || "MONTHLY").trim().toUpperCase();
+  if (cycle === "ONE_TIME") return "one-time";
+  if (cycle === "YEARLY" || cycle === "ANNUAL") return "/yr";
+  if (cycle === "QUARTERLY") return "/qtr";
+  if (cycle === "WEEKLY") return "/wk";
+  return "/mo";
 }
 
 export default function BudgetPage() {
@@ -179,6 +200,77 @@ export default function BudgetPage() {
     () => calculateBudgetPlan(services, { month: selectedMonthDate, addressId: selectedAddress }),
     [services, selectedAddress, selectedMonthDate],
   );
+
+  // Money layer: live estimate-vs-actual reconciliation for the current filter.
+  const budgetActuals = useMemo(
+    () => calculateBudgetActuals(services, { month: selectedMonthDate, addressId: selectedAddress }),
+    [services, selectedAddress, selectedMonthDate],
+  );
+
+  // Per-line actual inputs the user is editing (keyed by service id).
+  const [actualDrafts, setActualDrafts] = useState<Record<string, string>>({});
+  const [savingActualId, setSavingActualId] = useState<string | null>(null);
+
+  // Active, costed services in scope — the lines a user can log a real cost for.
+  const trackableServices = useMemo(
+    () =>
+      services.filter(
+        (service) =>
+          service.isActive !== false &&
+          (!selectedAddress || service.addressId === selectedAddress) &&
+          Number(service.monthlyCost || 0) > 0,
+      ),
+    [services, selectedAddress],
+  );
+
+  const loggedActualCount = trackableServices.filter(
+    (service) => service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined,
+  ).length;
+
+  const persistServiceActual = async (serviceId: string, actualMonthlyCost: number | null) => {
+    setSavingActualId(serviceId);
+    try {
+      const response = await fetch(`/api/services/${serviceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actualMonthlyCost }),
+      });
+      if (!response.ok) throw new Error("Failed");
+      // Reflect the change locally so variance/savings recompute immediately.
+      setServices((prev) =>
+        prev.map((service) => (service.id === serviceId ? { ...service, actualMonthlyCost } : service)),
+      );
+      setActualDrafts((prev) => {
+        const next = { ...prev };
+        delete next[serviceId];
+        return next;
+      });
+      toast.success(actualMonthlyCost === null ? "Cleared actual cost" : "Saved actual cost");
+    } catch {
+      toast.error("Failed to save actual cost");
+    } finally {
+      setSavingActualId(null);
+    }
+  };
+
+  const confirmProjectedActual = (service: ServiceCostInput) => {
+    // One-tap "looks right" — the projected per-cycle amount becomes the actual.
+    persistServiceActual(service.id, Number(service.monthlyCost || 0));
+  };
+
+  const saveActualDraft = (service: ServiceCostInput) => {
+    const raw = actualDrafts[service.id];
+    if (raw === undefined || raw.trim() === "") {
+      toast.error("Enter what you actually paid, or tap Looks right.");
+      return;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Enter a valid amount.");
+      return;
+    }
+    persistServiceActual(service.id, value);
+  };
 
   const budgetLimit = currentBudget?.plannedExpenses || 0;
   const categoryLimits = parseBudgetCategoryLimits(currentBudget?.categoryBreakdown || null);
@@ -522,6 +614,196 @@ export default function BudgetPage() {
         </section>
       </div>
 
+      {/* ==================== MONEY LAYER: REAL SAVINGS ==================== */}
+      <section className="rounded-2xl border border-tone-emerald-br bg-tone-emerald-bg/40 backdrop-blur-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-4 w-4 text-tone-emerald-fg" />
+          <h2 className="text-sm font-semibold text-foreground">Your Real Savings</h2>
+        </div>
+        {budgetActuals.loggedServiceCount === 0 ? (
+          <p className="text-xs text-foreground/50 text-center py-4">
+            Log what your services actually cost below to see substantiated savings vs. your estimates.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-xl bg-background/40 border border-border p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                {budgetActuals.monthlySavings >= 0 ? (
+                  <TrendingDown className="h-3.5 w-3.5 text-tone-emerald-fg" />
+                ) : (
+                  <TrendingUp className="h-3.5 w-3.5 text-destructive" />
+                )}
+                <p className="text-[10px] text-muted-foreground">Monthly {budgetActuals.monthlySavings >= 0 ? "savings" : "overage"}</p>
+              </div>
+              <p className={`text-lg font-bold ${budgetActuals.monthlySavings >= 0 ? "text-tone-emerald-fg" : "text-destructive"}`}>
+                {formatCurrency(Math.abs(budgetActuals.monthlySavings))}
+              </p>
+            </div>
+            <div className="rounded-xl bg-background/40 border border-border p-3">
+              <p className="text-[10px] text-muted-foreground mb-1">Annualized</p>
+              <p className={`text-lg font-bold ${budgetActuals.annualSavings >= 0 ? "text-tone-emerald-fg" : "text-destructive"}`}>
+                {formatCurrency(Math.abs(budgetActuals.annualSavings))}
+              </p>
+            </div>
+            <div className="rounded-xl bg-background/40 border border-border p-3">
+              <p className="text-[10px] text-muted-foreground mb-1">Savings rate</p>
+              <p className={`text-lg font-bold ${(budgetActuals.savingsRate ?? 0) >= 0 ? "text-tone-emerald-fg" : "text-destructive"}`}>
+                {budgetActuals.savingsRate === null ? "—" : `${(budgetActuals.savingsRate * 100).toFixed(0)}%`}
+              </p>
+            </div>
+            <div className="rounded-xl bg-background/40 border border-border p-3">
+              <p className="text-[10px] text-muted-foreground mb-1">Estimate vs actual</p>
+              <p className="text-sm font-semibold text-foreground">
+                {formatCurrency(budgetActuals.projectedForLoggedServices)} → {formatCurrency(budgetActuals.actualThisMonth)}
+              </p>
+              <p className="text-[10px] text-foreground/40 mt-0.5">{budgetActuals.loggedServiceCount} confirmed</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Per-line ACTUALS logging — capture what each service really cost. */}
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-tone-orange-fg" />
+              <h2 className="text-sm font-semibold text-foreground">Log Actual Costs</h2>
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {loggedActualCount}/{trackableServices.length} confirmed
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Confirm the estimate or enter what each service actually cost. We compare it to our projection to prove your savings.
+          </p>
+          {trackableServices.length === 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">No active costed services in this filter yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {trackableServices.map((service) => {
+                const projected = Number(service.monthlyCost || 0);
+                const hasActual = service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined;
+                const actual = hasActual ? Number(service.actualMonthlyCost) : null;
+                const draft = actualDrafts[service.id];
+                const isSaving = savingActualId === service.id;
+                const lineVariance =
+                  actual !== null
+                    ? monthlyAmountForCycle(projected, service.billingCycle) - monthlyAmountForCycle(actual, service.billingCycle)
+                    : null;
+                return (
+                  <div key={service.id} className="rounded-xl border border-border bg-background/30 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{service.providerName}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Est. {formatCurrency(projected)}{cycleLabel(service.billingCycle)}
+                          {hasActual ? ` · You paid ${formatCurrency(actual!)}${cycleLabel(service.billingCycle)}` : ""}
+                        </p>
+                      </div>
+                      {hasActual && lineVariance !== null && (
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${
+                            lineVariance >= 0
+                              ? "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"
+                              : "bg-destructive/10 text-destructive border-destructive"
+                          }`}
+                        >
+                          {lineVariance >= 0 ? "Saved " : "Over "}
+                          {formatCurrency(Math.abs(lineVariance))}/mo
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-foreground/30" />
+                        <input
+                          className="w-full rounded-lg border border-border bg-foreground/5 pl-7 pr-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder={hasActual ? String(actual) : "What you actually paid"}
+                          value={draft ?? (hasActual ? String(actual) : "")}
+                          onChange={(event) =>
+                            setActualDrafts((prev) => ({ ...prev, [service.id]: event.target.value }))
+                          }
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <button
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-tone-orange-fg text-white text-[11px] font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                        onClick={() => saveActualDraft(service)}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                      </button>
+                      <button
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg text-[11px] font-medium hover:opacity-80 transition disabled:opacity-50"
+                        onClick={() => confirmProjectedActual(service)}
+                        disabled={isSaving}
+                        title="Use our projected amount as the actual"
+                      >
+                        <Check className="h-3 w-3" />
+                        Looks right
+                      </button>
+                      {hasActual && (
+                        <button
+                          className="p-1.5 rounded-lg text-foreground/40 hover:text-destructive hover:bg-foreground/5 transition disabled:opacity-50"
+                          onClick={() => persistServiceActual(service.id, null)}
+                          disabled={isSaving}
+                          title="Clear actual (back to estimate)"
+                          aria-label="Clear actual cost"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Estimate vs actual VARIANCE by category. */}
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-tone-cyan-fg" />
+            <h2 className="text-sm font-semibold text-foreground">Estimate vs Actual by Category</h2>
+          </div>
+          {budgetActuals.loggedServiceCount === 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">
+              Confirm a service cost to see where you beat or missed your estimate.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {budgetActuals.perCategory
+                .filter((row) => row.loggedCount > 0)
+                .map((row) => {
+                  const saved = row.variance >= 0;
+                  return (
+                    <div key={row.category}>
+                      <div className="flex items-center justify-between mb-1 gap-3">
+                        <span className="text-xs text-muted-foreground">{row.category}</span>
+                        <span className={`text-xs font-semibold ${saved ? "text-tone-emerald-fg" : "text-destructive"}`}>
+                          {saved ? "Saved " : "Over "}
+                          {formatCurrency(Math.abs(row.variance))}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-foreground/50">
+                        <span>Est. {formatCurrency(row.projected)}</span>
+                        <span>→</span>
+                        <span>Actual {formatCurrency(row.actual)}</span>
+                        <span className="ml-auto">{row.loggedCount}/{row.totalCount} confirmed</span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </section>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -595,8 +877,11 @@ export default function BudgetPage() {
             {budgets.map((budget) => {
               const key = budgetMonthKey(budget.month);
               const limit = budget.plannedExpenses || 0;
-              const projectedSnapshot = budget.actualExpenses || 0;
-              const delta = limit > 0 ? limit - projectedSnapshot : null;
+              // actualExpenses is now the REAL realized cost captured from logged
+              // per-line actuals (0 when nothing has been confirmed yet) — no
+              // longer the projection. Compare the budget limit against it.
+              const actualSnapshot = budget.actualExpenses || 0;
+              const delta = limit > 0 && actualSnapshot > 0 ? limit - actualSnapshot : null;
               const limits = parseBudgetCategoryLimits(budget.categoryBreakdown || null);
               return (
                 <div key={budget.id} className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
@@ -621,18 +906,32 @@ export default function BudgetPage() {
                       <p className="font-semibold text-foreground">{limit > 0 ? formatCurrency(limit) : "Not set"}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Projected snapshot</p>
-                      <p className="font-semibold text-foreground">{formatCurrency(projectedSnapshot)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Over / under</p>
-                      <p className={`font-semibold ${delta !== null && delta < 0 ? "text-destructive" : "text-tone-emerald-fg"}`}>
-                        {delta === null ? "Not set" : formatCurrency(Math.abs(delta))}
+                      <p className="text-muted-foreground">Actual spent</p>
+                      <p className="font-semibold text-foreground">
+                        {actualSnapshot > 0 ? formatCurrency(actualSnapshot) : "Not logged"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Optional income</p>
-                      <p className="font-semibold text-foreground">{budget.plannedIncome ? formatCurrency(budget.plannedIncome) : "Not set"}</p>
+                      <p className="text-muted-foreground">Savings rate</p>
+                      <p
+                        className={`font-semibold ${
+                          budget.savingsRate === null || budget.savingsRate === undefined
+                            ? "text-foreground"
+                            : budget.savingsRate >= 0
+                              ? "text-tone-emerald-fg"
+                              : "text-destructive"
+                        }`}
+                      >
+                        {budget.savingsRate === null || budget.savingsRate === undefined
+                          ? "—"
+                          : `${(budget.savingsRate * 100).toFixed(0)}%`}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{delta !== null && delta < 0 ? "Over budget" : "Under budget"}</p>
+                      <p className={`font-semibold ${delta !== null && delta < 0 ? "text-destructive" : "text-tone-emerald-fg"}`}>
+                        {delta === null ? "—" : formatCurrency(Math.abs(delta))}
+                      </p>
                     </div>
                   </div>
                   {Object.keys(limits).length > 0 && (
