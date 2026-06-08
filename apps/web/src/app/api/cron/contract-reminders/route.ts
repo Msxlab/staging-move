@@ -7,6 +7,7 @@ import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -59,6 +60,11 @@ async function handleCron(request: NextRequest) {
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
 
+    // When the daily rollup owns the email/push send, suppress this cron's
+    // per-item email + push (the digest sends them once, bundled). The in-app
+    // feed entry is STILL written so the feed stays granular. Read once per run.
+    const digestOwnsSend = await isDailyDigestEnabled();
+
     {
       for (const service of services) {
         if (!service.user?.email || !service.contractEndDate) continue;
@@ -103,7 +109,7 @@ async function handleCron(request: NextRequest) {
             errors.push(`In-app mirror failed for ${service.providerName}: ${mirrorError}`);
           }
 
-          if (emailAllowed) {
+          if (emailAllowed && !digestOwnsSend) {
             const success = await sendContractReminderEmail({
               userEmail: service.user.email,
               userName: [service.user.firstName, service.user.lastName].filter(Boolean).join(" ") || "there",
@@ -118,7 +124,7 @@ async function handleCron(request: NextRequest) {
             if (success) sent++;
           }
 
-          if (pushAllowed) {
+          if (pushAllowed && !digestOwnsSend) {
             const pushed = await sendNotification({
               userId: service.user.id,
               type: "PUSH",

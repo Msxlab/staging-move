@@ -5,15 +5,22 @@ import { ApiGateError, apiGateErrorResponse, requireAppMutationUser } from "@/li
 import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { calculateBudgetActuals, calculateBudgetPlan } from "@/lib/budget-planning";
+import {
+  calculateBudgetActuals,
+  calculateBudgetPlan,
+} from "@/lib/budget-planning";
+import {
+  budgetScopeKey,
+  budgetServiceSelectForMonth,
+  resolveBudgetActualsForMonth,
+  toBudgetServiceInput,
+} from "@/lib/budget-actuals-snapshot";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import {
   assertWorkspaceAction,
   planLimitScopeForDataScope,
   resolveWorkspaceDataScope,
 } from "@/lib/workspace-data-scope";
-
-const GLOBAL_BUDGET_SCOPE_KEY = "__global__";
 
 function monthDateFromInput(month: string): Date | null {
   const parsed = new Date(month);
@@ -24,51 +31,6 @@ function monthDateFromInput(month: string): Date | null {
 function currentUtcMonth(): Date {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
-function budgetScopeKey(addressId: string | null | undefined, workspaceId?: string | null): string {
-  if (addressId) return addressId;
-  return workspaceId ? `workspace:${workspaceId}:global` : GLOBAL_BUDGET_SCOPE_KEY;
-}
-
-const BUDGET_SERVICE_SELECT = {
-  id: true,
-  providerName: true,
-  category: true,
-  addressId: true,
-  monthlyCost: true,
-  actualMonthlyCost: true,
-  billingCycle: true,
-  isActive: true,
-  activatedAt: true,
-  createdAt: true,
-} as const;
-
-/**
- * Resolve what we should persist on a Budget for a month + scope: the user's
- * REAL realized cost this month (sum of per-line ACTUALS that were logged) and a
- * substantiated savingsRate (estimate-vs-actual over only those logged lines).
- * Crucially this is NOT the projection — Budget.actualExpenses used to be
- * overwritten with the projected figure, which made "actuals" a lie and left
- * savingsRate permanently null. We now store the realized actual; when nothing
- * has been logged yet, actualExpenses is 0 (an honest "no real costs captured").
- */
-async function resolveBudgetActuals(
-  userId: string,
-  month: Date,
-  addressId?: string | null,
-  workspaceId?: string | null,
-): Promise<{ actualExpenses: number; savingsRate: number | null }> {
-  const services = await prisma.service.findMany({
-    where: activeTrackedServiceWhereForScope({ userId, workspaceId }, addressId ? { addressId } : {}),
-    select: BUDGET_SERVICE_SELECT,
-  });
-
-  const actuals = calculateBudgetActuals(services, { month, addressId });
-  return {
-    actualExpenses: Math.round(actuals.actualThisMonth * 100) / 100,
-    savingsRate: actuals.savingsRate,
-  };
 }
 
 // GET /api/budget
@@ -109,13 +71,16 @@ export async function GET(request: NextRequest) {
       ? monthDateFromInput(month)!
       : (selectedBudget?.month || currentUtcMonth());
     const summaryAddressId = addressId || selectedBudget?.addressId || null;
-    const services = await prisma.service.findMany({
+    const serviceRows = await prisma.service.findMany({
       where: activeTrackedServiceWhereForScope(
         { userId, workspaceId: scope.workspaceId },
         summaryAddressId ? { addressId: summaryAddressId } : {},
       ),
-      select: BUDGET_SERVICE_SELECT,
+      // Pull each service's cost log for the SUMMARY month so actuals reflect the
+      // viewed month (not the single legacy scalar) — the month-stepper is real.
+      select: budgetServiceSelectForMonth(summaryMonth),
     });
+    const services = serviceRows.map(toBudgetServiceInput);
     const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId: summaryAddressId });
     const actuals = calculateBudgetActuals(services, { month: summaryMonth, addressId: summaryAddressId });
     // Match the limit to the same scope+month the projection is computed for.
@@ -213,7 +178,7 @@ export async function POST(request: NextRequest) {
     // actualExpenses still wins (manual override / tests). savingsRate is only
     // written when there is a logged-actual baseline to substantiate it.
     const { actualExpenses: realActualExpenses, savingsRate: realSavingsRate } =
-      await resolveBudgetActuals(userId, budgetMonth, addressId, scope.workspaceId);
+      await resolveBudgetActualsForMonth(userId, budgetMonth, addressId, scope.workspaceId);
     const actualExpenses = validated.actualExpenses ?? realActualExpenses;
     const budgetOwnerUserId = scope.workspaceId ? scope.ownerUserId : userId;
 

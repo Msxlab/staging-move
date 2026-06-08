@@ -140,7 +140,7 @@ describe("budget route", () => {
     );
   });
 
-  it("writes the realized actual total and a substantiated savings rate from logged actuals", async () => {
+  it("writes the realized actual total and a substantiated savings rate from per-month cost logs", async () => {
     serviceMock.findMany.mockResolvedValue([
       {
         id: "electric",
@@ -148,7 +148,9 @@ describe("budget route", () => {
         category: "UTILITY_ELECTRIC",
         addressId: "addr-1",
         monthlyCost: 100,
-        actualMonthlyCost: 80, // logged: paid 80 vs projected 100 → 20 saved
+        actualMonthlyCost: 999, // legacy scalar must be IGNORED now logs are present
+        // Per-month log: paid 80 in April vs projected 100 → 20 saved.
+        costLogs: [{ month: new Date("2026-04-01T00:00:00.000Z"), amount: 80 }],
         billingCycle: "MONTHLY",
         isActive: true,
         createdAt: new Date("2026-04-02T00:00:00.000Z"),
@@ -159,7 +161,8 @@ describe("budget route", () => {
         category: "UTILITY_INTERNET",
         addressId: "addr-1",
         monthlyCost: 60,
-        actualMonthlyCost: null, // estimate only → excluded from savings math
+        actualMonthlyCost: null,
+        costLogs: [], // no log for this month → estimate only, excluded from savings
         billingCycle: "MONTHLY",
         isActive: true,
         createdAt: new Date("2026-04-02T00:00:00.000Z"),

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -155,6 +155,11 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [services, setServices] = useState<ServiceCostInput[]>([]);
+  // The logged actual for each service in the VIEWED month (serviceId → amount).
+  // Refetched whenever the month/address filter changes so the month-stepper +
+  // savings always reflect that month's real ServiceCostLog rows, never a single
+  // overwriting scalar. Absent key = no actual logged for that month.
+  const [monthActuals, setMonthActuals] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -186,6 +191,45 @@ export default function BudgetPage() {
   const selectedMonthDate = useMemo(() => monthDateFromKey(selectedMonth), [selectedMonth]);
   const selectedAddress = selectedAddressId || null;
 
+  // Fetch the VIEWED month's logged actuals (ServiceCostLog rows) whenever the
+  // month or address changes — this is what makes stepping months show real
+  // per-month numbers instead of one scalar.
+  const loadMonthActuals = useCallback(() => {
+    const params = new URLSearchParams({ month: `${selectedMonth}-01` });
+    if (selectedAddress) params.set("addressId", selectedAddress);
+    fetch(`/api/budget/actuals?${params.toString()}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(response)))
+      .then((data) => {
+        const next: Record<string, number> = {};
+        for (const service of data.services || []) {
+          if (service.loggedActual !== null && service.loggedActual !== undefined) {
+            next[service.id] = Number(service.loggedActual);
+          }
+        }
+        setMonthActuals(next);
+      })
+      .catch(() => setMonthActuals({}));
+  }, [selectedMonth, selectedAddress]);
+
+  useEffect(() => {
+    loadMonthActuals();
+  }, [loadMonthActuals]);
+
+  // Engine input for the SELECTED month: attach each service's per-month log (or
+  // an empty array = estimate only) so the shared engine resolves actuals from
+  // the viewed month, not the legacy scalar.
+  const servicesForMonth = useMemo<ServiceCostInput[]>(
+    () =>
+      services.map((service) => ({
+        ...service,
+        costLogs:
+          monthActuals[service.id] !== undefined
+            ? [{ month: `${selectedMonth}-01`, amount: monthActuals[service.id] }]
+            : [],
+      })),
+    [services, monthActuals, selectedMonth],
+  );
+
   const currentBudget = useMemo(
     () =>
       budgets.find(
@@ -201,10 +245,11 @@ export default function BudgetPage() {
     [services, selectedAddress, selectedMonthDate],
   );
 
-  // Money layer: live estimate-vs-actual reconciliation for the current filter.
+  // Money layer: live estimate-vs-actual reconciliation for the VIEWED month —
+  // computed over each service's per-month log, so it changes as you step months.
   const budgetActuals = useMemo(
-    () => calculateBudgetActuals(services, { month: selectedMonthDate, addressId: selectedAddress }),
-    [services, selectedAddress, selectedMonthDate],
+    () => calculateBudgetActuals(servicesForMonth, { month: selectedMonthDate, addressId: selectedAddress }),
+    [servicesForMonth, selectedAddress, selectedMonthDate],
   );
 
   // Per-line actual inputs the user is editing (keyed by service id).
@@ -223,29 +268,40 @@ export default function BudgetPage() {
     [services, selectedAddress],
   );
 
+  // "Logged" is per-VIEWED-month: a line counts as confirmed only if it has a log
+  // for this month, never because of a leftover scalar from another month.
   const loggedActualCount = trackableServices.filter(
-    (service) => service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined,
+    (service) => monthActuals[service.id] !== undefined,
   ).length;
 
-  const persistServiceActual = async (serviceId: string, actualMonthlyCost: number | null) => {
+  const persistServiceActual = async (serviceId: string, amount: number | null) => {
     setSavingActualId(serviceId);
     try {
-      const response = await fetch(`/api/services/${serviceId}`, {
-        method: "PATCH",
+      // Write the actual for the VIEWED month's ServiceCostLog row (not the single
+      // scalar) so logging is scoped to the month on screen.
+      const response = await fetch(`/api/budget/actuals`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actualMonthlyCost }),
+        body: JSON.stringify({ serviceId, month: `${selectedMonth}-01`, amount }),
       });
       if (!response.ok) throw new Error("Failed");
-      // Reflect the change locally so variance/savings recompute immediately.
-      setServices((prev) =>
-        prev.map((service) => (service.id === serviceId ? { ...service, actualMonthlyCost } : service)),
-      );
+      // Reflect the change locally so variance/savings recompute immediately for
+      // this month only.
+      setMonthActuals((prev) => {
+        const next = { ...prev };
+        if (amount === null) delete next[serviceId];
+        else next[serviceId] = amount;
+        return next;
+      });
       setActualDrafts((prev) => {
         const next = { ...prev };
         delete next[serviceId];
         return next;
       });
-      toast.success(actualMonthlyCost === null ? "Cleared actual cost" : "Saved actual cost");
+      // Refresh the saved Budget rows so "Budget History" reflects the new actual
+      // (the server recomputes the month's snapshot when an actual is logged).
+      loadBudgetData();
+      toast.success(amount === null ? "Cleared actual cost" : "Saved actual cost");
     } catch {
       toast.error("Failed to save actual cost");
     } finally {
@@ -675,7 +731,7 @@ export default function BudgetPage() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            Confirm the estimate or enter what each service actually cost. We compare it to our projection to prove your savings.
+            Logging {monthLabel(selectedMonth)}. Confirm the estimate or enter what each service actually cost that month. We compare it to our projection to prove your savings.
           </p>
           {trackableServices.length === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">No active costed services in this filter yet.</p>
@@ -683,8 +739,9 @@ export default function BudgetPage() {
             <div className="space-y-2">
               {trackableServices.map((service) => {
                 const projected = Number(service.monthlyCost || 0);
-                const hasActual = service.actualMonthlyCost !== null && service.actualMonthlyCost !== undefined;
-                const actual = hasActual ? Number(service.actualMonthlyCost) : null;
+                // hasActual is per the VIEWED month's log, not a single scalar.
+                const hasActual = monthActuals[service.id] !== undefined;
+                const actual = hasActual ? Number(monthActuals[service.id]) : null;
                 const draft = actualDrafts[service.id];
                 const isSaving = savingActualId === service.id;
                 const lineVariance =

@@ -1,16 +1,20 @@
 /**
- * Public /moving/<state> — per-state relocation guide (51 pages: 50 states
- * + DC). This is a programmatic-SEO / GEO surface: one statically generated,
- * genuinely useful page per state built from the same authoritative seed data
- * the product itself ships (packages/db/prisma/seed-data/state-rules.ts), so
- * the content never drifts from what the app knows.
+ * Public /moving/<state>/<city> — per-METRO relocation guide. Higher-intent
+ * than the state pages: someone searching "moving to Austin" is further down
+ * the funnel than "moving to Texas".
  *
- * Rendering: fully static. `generateStaticParams` enumerates all 51 slugs and
- * `dynamicParams = false` makes any other slug a hard 404 — no per-request DB
- * work, no Prisma in the build graph (the data module is hand-free generated
- * and Prisma-free on purpose). Each page emits Article + FAQPage +
- * BreadcrumbList JSON-LD via the shared factory, a self-canonical + en-US/
- * x-default hreflang, and OpenGraph/Twitter cards.
+ * Honesty constraints (see lib/states/metros.ts):
+ *   - Cities are REAL metros, curated by hand for the largest states only.
+ *   - We invent NO city-specific legal data. Each page INHERITS the parent
+ *     state's verbatim seed rules + provider list and presents them as
+ *     "statewide rules apply in {City}". The only city-level copy is neutral,
+ *     evergreen relocation framing (the metro blurb) — nothing fabricated.
+ *
+ * Rendering mirrors the state page: fully static, `generateStaticParams`
+ * enumerates every curated [state, city] pair and `dynamicParams = false`
+ * makes any other pair a hard 404. Each page emits Article + FAQPage +
+ * BreadcrumbList JSON-LD, a self-canonical + en-US/x-default hreflang, and
+ * OpenGraph/Twitter cards.
  */
 
 import type { Metadata } from "next";
@@ -24,6 +28,7 @@ import {
   ExternalLink,
   FileText,
   Landmark,
+  MapPin,
   ReceiptText,
   ShieldCheck,
   Truck,
@@ -39,64 +44,70 @@ import {
   articleSchema,
   breadcrumbSchema,
   faqPageSchema,
-  howToSchema,
 } from "@/components/seo/json-ld";
 import { SITE_URL, absoluteUrl, publicMetadataTitle, SITE_NAME } from "@/lib/seo";
+import type { StateGuide } from "@/lib/states/data";
 import {
-  STATE_GUIDES,
-  STATE_SLUGS,
-  getStateGuide,
-  type StateGuide,
-} from "@/lib/states/data";
-import { metrosForState } from "@/lib/states/metros";
+  METRO_SLUG_PAIRS,
+  getMetroGuide,
+  siblingMetros,
+  type MetroGuide,
+} from "@/lib/states/metros";
 
-// Fully static: prerender all 51 at build, 404 anything else, and re-validate
-// daily so a seed-data refresh (rules change between elections / DMV updates)
+// Fully static: prerender every curated metro at build, 404 anything else, and
+// re-validate daily so a seed-data refresh (inherited state rules change)
 // rolls out without a full redeploy.
 export const dynamic = "force-static";
 export const dynamicParams = false;
 export const revalidate = 86400;
 
-export function generateStaticParams(): Array<{ state: string }> {
-  return STATE_SLUGS.map((state) => ({ state }));
+export function generateStaticParams(): Array<{ state: string; city: string }> {
+  return METRO_SLUG_PAIRS;
 }
 
-function pagePath(slug: string): string {
-  return `/moving/${slug}`;
+function pagePath(stateSlug: string, citySlug: string): string {
+  return `/moving/${stateSlug}/${citySlug}`;
 }
 
-function metaDescription(guide: StateGuide): string {
-  const top = guide.providers
+function statePath(stateSlug: string): string {
+  return `/moving/${stateSlug}`;
+}
+
+function metaDescription(metro: MetroGuide): string {
+  const state = metro.state;
+  const top = state.providers
     .slice(0, 3)
     .map((p) => p.name)
     .join(", ");
-  return `Moving to ${guide.name}? A practical relocation guide: driver's license & vehicle deadlines, voter registration, top local utilities (${top}), taxes, auto-insurance minimums, and a step-by-step checklist.`;
+  return `Moving to ${metro.name}, ${state.name}? A practical relocation guide: the statewide driver's license & vehicle deadlines, voter registration, top local utilities (${top}), taxes, auto-insurance minimums, and a step-by-step checklist for your move.`;
 }
 
-/** The five FAQ entries are derived from the same seed rule fields the page
- *  renders, so the FAQPage rich result and the on-page copy never disagree. */
-function buildFaq(guide: StateGuide): Array<{ question: string; answer: string }> {
-  const providerNames = guide.providers.map((p) => p.name).join(", ");
+/** FAQ entries derived from the SAME inherited state seed fields the page
+ *  renders, framed for the city so copy and rich result never disagree. Every
+ *  rules answer is explicit that the requirement is statewide. */
+function buildFaq(metro: MetroGuide): Array<{ question: string; answer: string }> {
+  const state = metro.state;
+  const providerNames = state.providers.map((p) => p.name).join(", ");
   return [
     {
-      question: `How long do I have to get a ${guide.name} driver's license after moving?`,
-      answer: guide.dmvRules,
+      question: `How long do I have to get a driver's license after moving to ${metro.name}?`,
+      answer: `${metro.name} follows ${state.name} state rules: ${state.dmvRules}`,
     },
     {
-      question: `How do I register to vote in ${guide.name}?`,
-      answer: guide.voterRegistration,
+      question: `How do I register to vote in ${metro.name}, ${state.abbr}?`,
+      answer: `Voter registration in ${metro.name} is handled at the ${state.name} state level: ${state.voterRegistration}`,
     },
     {
-      question: `Which utility and internet providers serve ${guide.name}?`,
-      answer: `Common providers in ${guide.name} include ${providerNames}. ${guide.utilityInfo} Always confirm service availability at your exact address with the provider before relying on it.`,
+      question: `Which utility and internet providers serve ${metro.name}?`,
+      answer: `Common providers across ${state.name}, including the ${metro.name} area, are ${providerNames}. ${state.utilityInfo} Coverage varies block to block — always confirm service availability at your exact ${metro.name} address with the provider before relying on it.`,
     },
     {
-      question: `What are the taxes like in ${guide.name}?`,
-      answer: guide.taxInfo,
+      question: `What are the taxes like in ${metro.name}?`,
+      answer: `${metro.name} is subject to ${state.name} state taxes: ${state.taxInfo} Some metros add local sales or wage taxes, so confirm the rate for your specific address.`,
     },
     {
-      question: `What is the minimum auto insurance in ${guide.name}?`,
-      answer: `${guide.insuranceRules} These are statutory minimums and may not be enough coverage — confirm current requirements with your insurer or the state.`,
+      question: `What is the minimum auto insurance for ${metro.name} drivers?`,
+      answer: `${metro.name} drivers follow the ${state.name} statewide minimum: ${state.insuranceRules} These are statutory minimums and may not be enough coverage — confirm current requirements with your insurer or the state.`,
     },
   ];
 }
@@ -115,7 +126,7 @@ const CHECKLIST: Array<{ label: string; detail: string }> = [
   {
     label: "Get your new driver's license",
     detail:
-      "Visit the state licensing office within the deadline below. Bring proof of residency, identity, and your current license.",
+      "Visit a state licensing office within the statewide deadline below. Bring proof of residency, identity, and your current license.",
   },
   {
     label: "Register your vehicle",
@@ -130,25 +141,25 @@ const CHECKLIST: Array<{ label: string; detail: string }> = [
   {
     label: "Review insurance & taxes",
     detail:
-      "Update auto and renters/home insurance to meet the state minimums, and note any state income, sales, or property tax differences.",
+      "Update auto and renters/home insurance to meet the state minimums, and note any state or local income, sales, or property tax differences.",
   },
 ];
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ state: string }>;
+  params: Promise<{ state: string; city: string }>;
 }): Promise<Metadata> {
-  const { state } = await params;
-  const guide = getStateGuide(state);
-  if (!guide) {
-    return { title: "State not found", robots: { index: false, follow: false } };
+  const { state, city } = await params;
+  const metro = getMetroGuide(state, city);
+  if (!metro) {
+    return { title: "City not found", robots: { index: false, follow: false } };
   }
 
-  const path = pagePath(guide.slug);
+  const path = pagePath(metro.state.slug, metro.slug);
   const canonicalUrl = absoluteUrl(path);
-  const title = `Moving to ${guide.name}: Relocation Guide & Checklist`;
-  const description = metaDescription(guide);
+  const title = `Moving to ${metro.name}, ${metro.state.abbr}: Relocation Guide & Checklist`;
+  const description = metaDescription(metro);
   const socialTitle = publicMetadataTitle(title);
   const ogImage = absoluteUrl("/opengraph-image");
 
@@ -168,7 +179,9 @@ export async function generateMetadata({
       siteName: SITE_NAME,
       title: socialTitle,
       description,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `Moving to ${guide.name}` }],
+      images: [
+        { url: ogImage, width: 1200, height: 630, alt: `Moving to ${metro.name}, ${metro.state.name}` },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -179,34 +192,21 @@ export async function generateMetadata({
   };
 }
 
-/** Three nearby states (alphabetical neighbors) for an internal-link rail —
- *  cheap, deterministic, and keeps each page from dead-ending. */
-function relatedStates(guide: StateGuide): StateGuide[] {
-  const idx = STATE_GUIDES.findIndex((s) => s.slug === guide.slug);
-  const out: StateGuide[] = [];
-  for (let offset = 1; out.length < 4 && offset < STATE_GUIDES.length; offset++) {
-    const before = STATE_GUIDES[idx - offset];
-    const after = STATE_GUIDES[idx + offset];
-    if (after) out.push(after);
-    if (before && out.length < 4) out.push(before);
-  }
-  return out.slice(0, 4);
-}
-
-export default async function MovingStatePage({
+export default async function MovingCityPage({
   params,
 }: {
-  params: Promise<{ state: string }>;
+  params: Promise<{ state: string; city: string }>;
 }) {
-  const { state } = await params;
-  const guide = getStateGuide(state);
-  if (!guide) notFound();
+  const { state, city } = await params;
+  const metro = getMetroGuide(state, city);
+  if (!metro) notFound();
 
-  const path = pagePath(guide.slug);
+  const guide: StateGuide = metro.state;
+  const path = pagePath(guide.slug, metro.slug);
   const url = absoluteUrl(path);
-  const faq = buildFaq(guide);
-  const related = relatedStates(guide);
-  const metros = metrosForState(guide.slug);
+  const stateUrl = absoluteUrl(statePath(guide.slug));
+  const faq = buildFaq(metro);
+  const siblings = siblingMetros(guide.slug, metro.slug);
   const ctx = {
     siteUrl: SITE_URL,
     siteName: SITE_NAME,
@@ -230,44 +230,32 @@ export default async function MovingStatePage({
         id="ld-article"
         data={articleSchema(ctx, {
           url,
-          headline: `Moving to ${guide.name}: Relocation Guide & Checklist`,
-          description: metaDescription(guide),
+          headline: `Moving to ${metro.name}, ${guide.name}: Relocation Guide & Checklist`,
+          description: metaDescription(metro),
           image: absoluteUrl("/opengraph-image"),
           datePublished: lastModified,
           dateModified: lastModified,
           authorName: SITE_NAME,
           inLanguage: "en-US",
           keywords: [
-            `moving to ${guide.name}`,
-            `${guide.name} DMV`,
-            `${guide.name} utilities`,
-            `${guide.name} relocation checklist`,
+            `moving to ${metro.name}`,
+            `moving to ${metro.name} ${guide.abbr}`,
+            `${metro.name} DMV`,
+            `${metro.name} utilities`,
+            `${metro.name} relocation checklist`,
             "change of address",
           ],
           articleSection: "Moving Guides",
         })}
       />
       <JsonLd id="ld-faq" data={faqPageSchema(faq)} />
-      {/* HowTo built from the SAME ordered CHECKLIST the page renders below, so
-          the rich result mirrors the visible step-by-step list exactly. */}
-      <JsonLd
-        id="ld-howto"
-        data={howToSchema({
-          name: `${guide.name} relocation checklist: what to do after you move`,
-          description: `A step-by-step relocation checklist for moving to ${guide.name}: change your address, set up utilities, get your license, register your vehicle and to vote, and review insurance and taxes.`,
-          inLanguage: "en-US",
-          steps: CHECKLIST.map((item) => ({
-            name: item.label,
-            text: item.detail,
-          })),
-        })}
-      />
       <JsonLd
         id="ld-breadcrumb"
         data={breadcrumbSchema([
           { name: "Home", url: SITE_URL },
           { name: "Moving Guides", url: `${SITE_URL}/moving` },
-          { name: guide.name, url },
+          { name: guide.name, url: stateUrl },
+          { name: metro.name, url },
         ])}
       />
 
@@ -276,7 +264,7 @@ export default async function MovingStatePage({
           {/* Hero */}
           <section className="relative overflow-hidden rounded-3xl border bg-card/80 p-8 shadow-sm backdrop-blur sm:p-10">
             <nav
-              className="mb-6 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+              className="mb-6 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
               aria-label="Breadcrumb"
             >
               <Link href="/" className="transition hover:text-primary">
@@ -285,33 +273,40 @@ export default async function MovingStatePage({
               <span aria-hidden="true">·</span>
               <span className="text-foreground/80">Moving guides</span>
               <span aria-hidden="true">·</span>
-              <span className="text-primary/80">{guide.name}</span>
+              <Link href={statePath(guide.slug)} className="transition hover:text-primary">
+                {guide.name}
+              </Link>
+              <span aria-hidden="true">·</span>
+              <span className="text-primary/80">{metro.name}</span>
             </nav>
 
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-2xl">
-                <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-primary">
-                  Moving to {guide.abbr}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-primary">
+                  <MapPin className="h-3 w-3" aria-hidden="true" />
+                  {metro.name}, {guide.abbr}
                 </span>
                 <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                  Moving to {guide.name}
+                  Moving to {metro.name}, {guide.name}
                 </h1>
                 <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-                  A practical, plain-English relocation guide for {guide.name}. Here are the
-                  deadlines that actually matter on arrival — driver&apos;s license, vehicle
-                  registration, and voter registration — plus the top local utilities, the tax
-                  and insurance landscape, and a checklist you can work through in order.
+                  {metro.blurb} This is a practical, plain-English relocation guide for {metro.name}.
+                  The deadlines that matter on arrival — driver&apos;s license, vehicle registration,
+                  and voter registration — are set at the {guide.name} state level and apply
+                  statewide in {metro.name}. Below you&apos;ll find those rules, the top local
+                  utilities, the tax and insurance landscape, and a checklist you can work through in
+                  order.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link href="/sign-up">
                     <Button size="lg">
-                      Build my {guide.name} move plan
+                      Build my {metro.name} move plan
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href="/how-it-works">
+                  <Link href={statePath(guide.slug)}>
                     <Button variant="outline" size="lg">
-                      How it works
+                      See the {guide.name} guide
                     </Button>
                   </Link>
                 </div>
@@ -322,17 +317,19 @@ export default async function MovingStatePage({
             </div>
           </section>
 
-          {/* Key state rules */}
+          {/* Statewide rules — clearly labeled as inherited */}
           <section className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <Landmark className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">
-                Key {guide.name} rules &amp; deadlines
+                {guide.name} rules &amp; deadlines that apply in {metro.name}
               </h2>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Pulled from our state-rules reference. Requirements change — confirm with the state
-              agency or provider before acting.
+              These requirements are set statewide in {guide.name} and apply in {metro.name}. Pulled
+              from our state-rules reference — requirements change, so confirm with the state agency
+              or provider before acting. {metro.name} or its county may add local steps (for example,
+              emissions testing or a local wage tax) on top of these.
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {ruleCards.map(({ icon: Icon, title, body }) => (
@@ -347,17 +344,18 @@ export default async function MovingStatePage({
             </div>
           </section>
 
-          {/* Top local providers */}
+          {/* Top local providers (inherited from state) */}
           <section className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <Zap className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">
-                Top utilities &amp; providers in {guide.name}
+                Top utilities &amp; providers near {metro.name}
               </h2>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              The major utilities, internet, and service providers serving {guide.name}. Coverage
-              varies by address — confirm availability at your new home before you sign up.
+              The major utilities, internet, and service providers operating across {guide.name},
+              including the {metro.name} area. Coverage varies by address — confirm availability at
+              your new {metro.name} home before you sign up.
             </p>
             <ul className="mt-5 grid gap-3 sm:grid-cols-2">
               {guide.providers.map((provider) => (
@@ -390,7 +388,7 @@ export default async function MovingStatePage({
             <div className="flex items-center gap-3">
               <Truck className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">
-                Your {guide.name} relocation checklist
+                Your {metro.name} relocation checklist
               </h2>
             </div>
             <ol className="mt-5 space-y-4">
@@ -421,7 +419,7 @@ export default async function MovingStatePage({
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">
-                Moving to {guide.name}: FAQ
+                Moving to {metro.name}: FAQ
               </h2>
             </div>
             <dl className="mt-5 divide-y divide-border">
@@ -434,36 +432,35 @@ export default async function MovingStatePage({
             </dl>
           </section>
 
-          {/* Popular metros — only for states with curated city pages. */}
-          {metros.length > 0 ? (
-            <section className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
-              <h2 className="text-xl font-semibold text-foreground">
-                Moving to a {guide.name} city?
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Metro-specific guides for the biggest {guide.name} cities. Each one inherits the
-                statewide rules above and adds local relocation context.
-              </p>
-              <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                {metros.map((m) => (
-                  <li key={m.slug}>
-                    <Link
-                      href={`${pagePath(guide.slug)}/${m.slug}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium text-foreground transition hover:border-primary/40"
-                    >
-                      Moving to {m.name}
-                      <ArrowRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {/* Internal links: blog + neighbor states */}
+          {/* Internal links: state page + sibling metros */}
           <section className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             <h2 className="text-xl font-semibold text-foreground">Keep planning your move</h2>
             <div className="mt-5 grid gap-6 md:grid-cols-2">
+              <div>
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {guide.name} guides
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li>
+                    <Link
+                      href={statePath(guide.slug)}
+                      className="text-primary transition hover:underline"
+                    >
+                      Moving to {guide.name} (statewide guide)
+                    </Link>
+                  </li>
+                  {siblings.map((s) => (
+                    <li key={s.slug}>
+                      <Link
+                        href={pagePath(guide.slug, s.slug)}
+                        className="text-primary transition hover:underline"
+                      >
+                        Moving to {s.name}, {guide.abbr}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div>
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                   Guides &amp; resources
@@ -494,23 +491,6 @@ export default async function MovingStatePage({
                   </li>
                 </ul>
               </div>
-              <div>
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Other state guides
-                </h3>
-                <ul className="mt-3 space-y-2 text-sm">
-                  {related.map((s) => (
-                    <li key={s.slug}>
-                      <Link
-                        href={pagePath(s.slug)}
-                        className="text-primary transition hover:underline"
-                      >
-                        Moving to {s.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </div>
           </section>
 
@@ -520,11 +500,11 @@ export default async function MovingStatePage({
               Try LocateFlow
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Keep every {guide.name} move task, provider, and deadline in one place.
+              Keep every {metro.name} move task, provider, and deadline in one place.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              LocateFlow turns this guide into a checklist tied to your address, with reminders
-              before each deadline. Trial length, renewal date, and price are shown before
+              LocateFlow turns this guide into a checklist tied to your {metro.name} address, with
+              reminders before each deadline. Trial length, renewal date, and price are shown before
               checkout.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -543,8 +523,9 @@ export default async function MovingStatePage({
             <p className="mx-auto mt-5 flex max-w-xl items-start justify-center gap-2 text-xs text-muted-foreground">
               <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
               <span>
-                Guidance includes US state and DC context but requirements and provider processes
-                change. Verify each task with the provider or agency before acting. See the{" "}
+                Guidance reflects {guide.name} statewide context but requirements, local rules, and
+                provider processes change. Verify each task with the provider or agency before
+                acting. See the{" "}
                 <Link href="/disclaimer" className="underline">
                   Disclaimer
                 </Link>

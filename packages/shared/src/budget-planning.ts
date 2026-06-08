@@ -13,6 +13,16 @@ export const BUDGET_CATEGORY_LABELS = [
 
 export type BudgetCategoryLabel = (typeof BUDGET_CATEGORY_LABELS)[number];
 
+/**
+ * A per-MONTH realized actual for a service line (one ServiceCostLog row). The
+ * source of truth for budget actuals — see the `costLogs` field on
+ * ServiceCostInput. `month` is the first day of the month at 00:00:00 UTC.
+ */
+export interface ServiceCostLogInput {
+  month: Date | string;
+  amount: number;
+}
+
 export interface ServiceCostInput {
   id: string;
   providerName: string;
@@ -20,13 +30,24 @@ export interface ServiceCostInput {
   addressId?: string | null;
   monthlyCost?: number | null;
   /**
-   * The ACTUAL per-cycle amount the user paid for this service line (same cycle
-   * semantics as `monthlyCost` — see `monthlyAmountForCycle`). `null`/undefined
-   * means "not yet logged or confirmed", so the projection is used as the
-   * estimate and the line is excluded from realized-actual totals. A one-tap
-   * "looks right" confirm copies `monthlyCost` into this field.
+   * LEGACY single scalar for the actual per-cycle amount the user paid (same
+   * cycle semantics as `monthlyCost`). This is the FALLBACK only: when
+   * `costLogs` is undefined the engine still reads this so old call-sites keep
+   * working. When `costLogs` IS supplied, the per-month log for the selected
+   * month wins and this field is ignored — making the budget month-stepper show
+   * each month's real actual instead of one overwriting number. `null`/undefined
+   * (with no matching log) means "not yet logged" → the line is excluded from
+   * realized-actual / savings totals for that month.
    */
   actualMonthlyCost?: number | null;
+  /**
+   * Per-MONTH realized actuals (ServiceCostLog rows) for this service. When
+   * present, the actual for the SELECTED month is resolved from the row whose
+   * `month` matches that month; no row → "estimate only" for that month. This is
+   * the real source of truth; `actualMonthlyCost` is the legacy fallback used
+   * only when this is undefined.
+   */
+  costLogs?: ServiceCostLogInput[];
   billingCycle?: string | null;
   isActive?: boolean | null;
   activatedAt?: Date | string | null;
@@ -228,20 +249,49 @@ export function parseBudgetCategoryLimits(value: unknown): Partial<Record<Budget
 // ==================== ACTUAL vs PROJECTED ====================
 
 /**
+ * Resolve the ACTUAL per-cycle amount a service line was logged at for a SPECIFIC
+ * month. Per-month `costLogs` (ServiceCostLog rows) are the source of truth: when
+ * present, the row whose `month` matches the selected month wins, and no matching
+ * row means "not logged this month" (→ `null`). Only when `costLogs` is undefined
+ * does the legacy single `actualMonthlyCost` scalar apply, so existing call-sites
+ * that haven't been wired to per-month logs keep their old behavior. Returns
+ * `null` for "no logged actual for this month".
+ */
+export function resolveActualAmountForMonth(service: ServiceCostInput, month: Date): number | null {
+  if (service.costLogs !== undefined) {
+    // Per-month source of truth: match the selected month's bucket exactly.
+    for (const log of service.costLogs) {
+      if (log === null || log === undefined) continue;
+      if (!isDateInMonth(log.month, month)) continue;
+      const amount = Number(log.amount);
+      if (!Number.isFinite(amount) || amount < 0) return null;
+      return amount;
+    }
+    return null;
+  }
+  // Legacy fallback (no per-month logs supplied): the single scalar.
+  const raw = service.actualMonthlyCost;
+  if (raw === null || raw === undefined) return null;
+  const amount = Number(raw);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return amount;
+}
+
+/**
  * Normalize a per-line ACTUAL amount into the same monthly-vs-one-time shape the
  * projection uses, so estimate and actual are always compared on equal footing.
- * Returns `null` when the line has no logged actual (caller treats that line as
- * "estimate only" — it counts toward projected but NOT toward realized actuals).
+ * The amount is resolved for the SELECTED month from the service's per-month
+ * `costLogs` (falling back to the legacy scalar — see `resolveActualAmountForMonth`).
+ * Returns `null` when the line has no logged actual for that month (caller treats
+ * it as "estimate only" — it counts toward projected but NOT realized actuals).
  */
 export function normalizeActualServiceCost(
   service: ServiceCostInput,
   month: Date,
 ): { monthly: number; oneTimeThisMonth: number } | null {
   if (service.isActive === false) return null;
-  const raw = service.actualMonthlyCost;
-  if (raw === null || raw === undefined) return null;
-  const amount = Number(raw);
-  if (!Number.isFinite(amount) || amount < 0) return null;
+  const amount = resolveActualAmountForMonth(service, month);
+  if (amount === null) return null;
 
   const billingCycle = (service.billingCycle || "MONTHLY").trim().toUpperCase();
   if (billingCycle === "ONE_TIME") {

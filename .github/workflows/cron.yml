@@ -30,6 +30,7 @@ on:
     # is 12:00 UTC in EDT, 13:00 UTC in EST). We therefore schedule EVERY whole
     # UTC hour that can be local-8am for a US zone in EITHER DST or standard time
     # (offsets -4 EDT … -10 HST → UTC hours 12…18), so no zone is ever dropped.
+    # (These same slots also fire the daily-digest ROLLUP — see the hit block.)
     - cron: "0 12 * * *" # local 8am at UTC-4 (Eastern, EDT)
     - cron: "0 13 * * *" # local 8am at UTC-5 (Eastern EST / Central CDT)
     - cron: "0 14 * * *" # local 8am at UTC-6 (Central CST / Mountain MDT)
@@ -111,6 +112,15 @@ jobs:
               hit "$WEB/api/cron/move-reminders"
               hit "$WEB/api/cron/contract-reminders"
               hit "$WEB/api/cron/lifecycle-nudges"
+              # Daily reminder ROLLUP. Same per-zone local-8am slots as the
+              # per-item reminders above. When DAILY_DIGEST_ENABLED is on, the
+              # five crons above write only their in-app feed entries and
+              # SUPPRESS their per-item email/push; this digest then sends ONE
+              # rollup email + ONE rollup push per user covering the same items.
+              # When the flag is off it's a no-op. Hit it LAST so the per-item
+              # in-app entries already exist; the per-user-per-day dedupe key
+              # keeps it at-most-once across the multiple zone runs.
+              hit "$WEB/api/cron/daily-digest"
               ;;
             "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
             "0 10 1 * *") hit "$WEB/api/cron/monthly-report" ;;

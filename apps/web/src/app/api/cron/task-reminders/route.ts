@@ -10,6 +10,7 @@ import {
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const TASK_REMINDER_DAYS = [3, 1, 0];
@@ -128,6 +129,15 @@ export async function GET(req: Request) {
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
+    // When the daily rollup owns the email/push send, suppress this cron's
+    // per-item SOFT-DUE email + push (the digest emails/pushes them once,
+    // bundled). The in-app feed entry is STILL written so the feed stays
+    // granular. The HARD-DEADLINE escalation tier below is NOT suppressed: it's
+    // a distinct legally-critical nudge that the digest deliberately does not
+    // model, so dropping its email/push would drop a reminder. It keeps sending
+    // per-item. Read once per run so the batch agrees.
+    const digestOwnsSend = await isDailyDigestEnabled();
+
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
@@ -159,7 +169,7 @@ export async function GET(req: Request) {
 
       try {
         let emailSent = false;
-        if (emailAllowed) {
+        if (emailAllowed && !digestOwnsSend) {
           emailSent = await sendTaskReminderEmail({
             userEmail: task.user.email!,
             userName,
@@ -194,12 +204,12 @@ export async function GET(req: Request) {
             taskId: task.id,
             movingPlanId: task.movingPlan.id,
             daysUntilDue,
-            channelMirror: emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
+            channelMirror: digestOwnsSend ? "DIGEST" : emailSent ? "EMAIL" : pushAllowed ? "PUSH" : "IN_APP",
           },
         });
         if (mirrored) {
           mirroredCount++;
-          if (pushAllowed) {
+          if (pushAllowed && !digestOwnsSend) {
             const pushed = await sendNotification({
               userId: task.userId,
               type: "PUSH",

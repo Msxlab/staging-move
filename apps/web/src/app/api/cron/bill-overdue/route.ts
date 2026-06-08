@@ -10,6 +10,7 @@ import {
   isPushTypeEnabled,
 } from "@/lib/notification-preferences";
 import { isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
+import { isDailyDigestEnabled } from "@/lib/daily-digest-config";
 import { formatDateOnlyUtc } from "@locateflow/shared";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -86,6 +87,11 @@ export async function GET(req: Request) {
       : [];
     const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
+    // When the daily rollup owns the email/push send, suppress this cron's
+    // per-item email + push (the digest sends them once, bundled). The in-app
+    // feed entry is STILL written so the feed stays granular. Read once per run.
+    const digestOwnsSend = await isDailyDigestEnabled();
+
     let sentCount = 0;
     let mirroredCount = 0;
     let pushSentCount = 0;
@@ -133,7 +139,7 @@ export async function GET(req: Request) {
           errors.push(`In-app mirror failed for service ${service.id}: ${mirrorError}`);
         }
 
-        if (emailAllowed) {
+        if (emailAllowed && !digestOwnsSend) {
           const success = await sendBillOverdueEmail({
             userEmail: service.user.email,
             userName,
@@ -151,7 +157,7 @@ export async function GET(req: Request) {
           if (success) sentCount++;
         }
 
-        if (pushAllowed) {
+        if (pushAllowed && !digestOwnsSend) {
           const pushed = await sendNotification({
             userId: service.userId,
             type: "PUSH",

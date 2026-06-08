@@ -160,6 +160,44 @@ describe("normalizeActualServiceCost", () => {
     expect(normalizeActualServiceCost(service({ actualMonthlyCost: 50, isActive: false }), month)).toBeNull();
     expect(normalizeActualServiceCost(service({ actualMonthlyCost: -5 }), month)).toBeNull();
   });
+
+  it("resolves the actual from the per-month cost log for the SELECTED month, not the scalar", () => {
+    // The legacy scalar (999) must be ignored once per-month logs are supplied.
+    const withLogs = service({
+      actualMonthlyCost: 999,
+      costLogs: [
+        { month: "2026-04-01T00:00:00.000Z", amount: 80 },
+        { month: "2026-03-01T00:00:00.000Z", amount: 110 },
+      ],
+    });
+    expect(normalizeActualServiceCost(withLogs, month)).toEqual({ monthly: 80, oneTimeThisMonth: 0 });
+    // Stepping to March shows March's real logged amount — the month-stepper is real.
+    expect(
+      normalizeActualServiceCost(withLogs, new Date("2026-03-01T00:00:00.000Z")),
+    ).toEqual({ monthly: 110, oneTimeThisMonth: 0 });
+  });
+
+  it("treats a month with no cost log as estimate-only even when other months are logged", () => {
+    const withLogs = service({
+      actualMonthlyCost: 999, // legacy scalar must NOT leak in for an unlogged month
+      costLogs: [{ month: "2026-03-01T00:00:00.000Z", amount: 110 }],
+    });
+    // April has no log → null (estimate only), so savings can't be fabricated.
+    expect(normalizeActualServiceCost(withLogs, month)).toBeNull();
+  });
+
+  it("treats an empty cost-log array as no actual (per-month source of truth wins over the scalar)", () => {
+    expect(
+      normalizeActualServiceCost(service({ actualMonthlyCost: 50, costLogs: [] }), month),
+    ).toBeNull();
+  });
+
+  it("still falls back to the legacy scalar when no cost logs are supplied", () => {
+    expect(normalizeActualServiceCost(service({ actualMonthlyCost: 50 }), month)).toEqual({
+      monthly: 50,
+      oneTimeThisMonth: 0,
+    });
+  });
 });
 
 describe("calculateBudgetActuals", () => {
@@ -225,5 +263,36 @@ describe("calculateBudgetActuals", () => {
     );
     expect(summary.actualThisMonth).toBe(80);
     expect(summary.loggedServiceCount).toBe(1);
+  });
+
+  it("computes DIFFERENT actuals + savings per month from per-month cost logs", () => {
+    const services = [
+      service({
+        id: "electric",
+        category: "UTILITY_ELECTRIC",
+        monthlyCost: 100,
+        // Logged differently across two months; no log for any other month.
+        costLogs: [
+          { month: "2026-04-01T00:00:00.000Z", amount: 80 }, // saved 20 in April
+          { month: "2026-03-01T00:00:00.000Z", amount: 130 }, // over by 30 in March
+        ],
+      }),
+    ];
+
+    const april = calculateBudgetActuals(services, { month });
+    expect(april.actualThisMonth).toBe(80);
+    expect(april.monthlySavings).toBe(20);
+    expect(april.savingsRate).toBeCloseTo(0.2, 5);
+
+    const march = calculateBudgetActuals(services, { month: new Date("2026-03-01T00:00:00.000Z") });
+    expect(march.actualThisMonth).toBe(130);
+    expect(march.monthlySavings).toBe(-30);
+
+    // A month with no log for this line → nothing reconciled, savings stays honest.
+    const may = calculateBudgetActuals(services, { month: new Date("2026-05-01T00:00:00.000Z") });
+    expect(may.loggedServiceCount).toBe(0);
+    expect(may.actualThisMonth).toBe(0);
+    expect(may.monthlySavings).toBe(0);
+    expect(may.savingsRate).toBeNull();
   });
 });

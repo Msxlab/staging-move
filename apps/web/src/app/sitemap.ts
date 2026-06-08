@@ -4,6 +4,7 @@ import { listPublicCategories } from "@/lib/blog/queries";
 import { blogCategoryUrl, blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
 import { SITE_URL, isNoIndexEnvironment, staticLastModified } from "@/lib/seo";
 import { STATE_SLUGS } from "@/lib/states/data";
+import { METRO_SLUG_PAIRS } from "@/lib/states/metros";
 
 // Generate at request time so the blog query always runs against the live
 // DB. Previously this was ISR (`revalidate: 600`), which meant the route
@@ -68,6 +69,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Per-metro moving guides — /moving/<state>/<city> for the curated, real
+  // top-metro set in the largest states. Higher-intent than the state pages, so
+  // a slightly higher priority hint. Statically generated; one canonical URL each.
+  const metroEntries: MetadataRoute.Sitemap = METRO_SLUG_PAIRS.map(({ state, city }) => ({
+    url: `${SITE_URL}/moving/${state}/${city}`,
+    lastModified: staticLastmod,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
+
   // Blog posts — only PUBLISHED, non-noIndex, soft-delete-respecting.
   // We hard-cap at 5,000 here; once we cross that we'll switch to a
   // sitemap index with paged children. (Google's per-file limit is
@@ -127,5 +138,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     categoryEntries = [];
   }
 
-  return [...staticEntries, ...stateEntries, ...blogEntries, ...categoryEntries];
+  return [
+    ...staticEntries,
+    ...stateEntries,
+    ...metroEntries,
+    ...blogEntries,
+    ...categoryEntries,
+  ];
 }
