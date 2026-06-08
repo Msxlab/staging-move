@@ -2,7 +2,7 @@
   "name": "@locateflow/mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "scripts": {
     "dev": "expo start",
     "dev:client": "expo start --dev-client",
@@ -79,6 +79,7 @@
     "react-hook-form": "^7.76.1",
     "react-i18next": "^17.0.8",
     "react-native": "0.83.6",
+    "react-native-android-widget": "^0.20.3",
     "react-native-gesture-handler": "~2.30.1",
     "react-native-reanimated": "~4.2.1",
     "react-native-safe-area-context": "~5.6.2",
@@ -91,6 +92,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@bacons/apple-targets": "^4.0.7",
     "@types/react": "~19.2.15",
     "eas-cli": "^16.24.1",
     "tailwindcss": "^3.4.16",

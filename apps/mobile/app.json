@@ -61,7 +61,12 @@
       },
       "associatedDomains": [
         "applinks:locateflow.com"
-      ]
+      ],
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.locateflow.mobile.widget"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -157,7 +162,26 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-localization"
+      "expo-localization",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "MoveWidget",
+              "label": "LocateFlow Move",
+              "description": "Your move countdown, next task, and readiness at a glance.",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
+      ],
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true

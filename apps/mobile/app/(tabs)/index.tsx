@@ -41,6 +41,7 @@ import {
   declinePendingInvitation,
   type PendingInvitation,
 } from "@/lib/workspace-invite";
+import { computeAndPersistWidgetSnapshot } from "@/lib/widget-data";
 import { Card } from "@/components/ui/Card";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { PlanHero } from "@/components/ui/PlanHero";
@@ -131,6 +132,11 @@ export default function DashboardScreen() {
   const [briefing, setBriefing] = useState<MoveBriefingState | null>(null);
 
   const fetchDashboard = useCallback(async () => {
+    // Captured during this load so the home-screen widget snapshot (computed at
+    // the end, best-effort) can read the same critical-readiness counts the
+    // command center uses without depending on async React state updates.
+    let widgetCompletedCritical = 0;
+    let widgetMissingCritical = 0;
     const [res, addrRes, movingRes, svcRes, invites, recoRes] = await Promise.all([
       api.get<any>("/api/profile"),
       api.get<any>("/api/addresses", { limit: "200" }),
@@ -170,6 +176,8 @@ export default function DashboardScreen() {
       const completedCritical =
         typeof reco?.stats?.completedCritical === "number" ? reco.stats.completedCritical : 0;
       setCriticalReadiness({ missing: missingSet.size, completed: completedCritical });
+      widgetCompletedCritical = completedCritical;
+      widgetMissingCritical = missingSet.size;
     }
     // Surface services independently of the core payload so the insights card
     // still renders even if profile/addresses errored (and vice-versa).
@@ -247,7 +255,10 @@ export default function DashboardScreen() {
           : null,
       });
 
-      // Generate relocation checklist for active plan
+      // Generate relocation checklist for active plan.
+      // Captured here (outside the try) so the home-screen widget snapshot — a
+      // best-effort step at the end of this load — can blend it into readiness.
+      let widgetChecklist: RelocationChecklist | null = null;
       if (activePlan) {
         try {
           const checklistProfile: UserChecklistProfile = {
@@ -299,8 +310,49 @@ export default function DashboardScreen() {
             stateRule,
           );
           setChecklist(cl);
+          widgetChecklist = cl;
         } catch { /* non-blocking */ }
       }
+
+      // HOME-SCREEN WIDGET SNAPSHOT — additive, best-effort, NEVER blocking.
+      // Computes the glanceable { daysToGo, nextTaskTitle, readinessPercent, … }
+      // from the data this load already produced and persists it to the shared
+      // store the native widget reads. Wrapped + fire-and-forget so any failure
+      // (storage, missing native dep) can't disturb the dashboard. We fetch the
+      // OPEN tasks here only to surface the single next-task title; an error
+      // just leaves nextTaskTitle null. The actual on-device widget render still
+      // requires the owner's native EAS build (see apps/mobile/WIDGET-SETUP.md).
+      void (async () => {
+        try {
+          let openTasks: { id: string; title: string; status: string; dueDate?: string | null }[] = [];
+          if (activePlan?.id) {
+            try {
+              const openRes = await api.get<any>("/api/move-tasks", {
+                movingPlanId: activePlan.id,
+              });
+              openTasks = (openRes.data?.tasks || []).map((tk: any) => ({
+                id: tk.id,
+                title: tk.title,
+                status: tk.status,
+                dueDate: tk.dueDate ?? null,
+              }));
+            } catch {
+              /* non-blocking: leave nextTaskTitle to the checklist fallback */
+            }
+          }
+          await computeAndPersistWidgetSnapshot({
+            moveDate: activePlan?.moveDate ?? null,
+            state:
+              addresses.find((a: any) => a.isPrimary)?.state || addresses[0]?.state || null,
+            tasks: openTasks,
+            checklist: widgetChecklist,
+            completedCritical: widgetCompletedCritical,
+            missingCritical: widgetMissingCritical,
+          });
+        } catch {
+          /* non-blocking: the widget snapshot is purely additive */
+        }
+      })();
     }
     return true;
   }, [t]);
