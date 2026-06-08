@@ -222,6 +222,7 @@ const COVERAGE_CONFIDENCE_LEVEL: Record<
   CoverageConfidence,
   ProviderCoverageConfidenceLevel
 > = {
+  AVAILABLE_AT_ADDRESS: "high",
   EXACT_ZIP: "high",
   ZIP_PREFIX: "medium",
   MAPPED_SERVICE_AREA: "medium",

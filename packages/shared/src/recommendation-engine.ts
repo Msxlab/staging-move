@@ -69,11 +69,21 @@ export interface Provider {
   /** Whether this provider has an active affiliate offer (boolean only — the URL never leaves the click endpoint). */
   affiliateActive?: boolean;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
-  coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address";
+  coverageMatchLevel?: "available_at_address" | "exact" | "prefix" | "polygon" | "state" | "live_address";
   coverageNote?: string | null;
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean;
   requiresPolygonCheck?: boolean;
+  /**
+   * Set by an upstream authoritative address-level serviceability lookup
+   * (e.g. the FCC National Broadband Map — see apps/web/src/lib/fcc-isp.ts).
+   * When true, this provider is treated as AVAILABLE_AT_ADDRESS regardless of
+   * the catalog-derived coverageMatchLevel, so confirmed-serviceable ISPs
+   * surface with high confidence instead of "check availability". When the
+   * FCC source is unavailable/unconfigured the field stays undefined and the
+   * engine falls back to the existing catalog-based confidence — no crash.
+   */
+  fccServiceable?: boolean;
 }
 
 export interface RecommendationExplanation {
@@ -140,6 +150,7 @@ export interface RecommendationContext {
 }
 
 const COVERAGE_SCORE_WEIGHT: Record<CoverageConfidence, number> = {
+  AVAILABLE_AT_ADDRESS: 44,
   EXACT_ZIP: 36,
   ZIP_PREFIX: 28,
   MAPPED_SERVICE_AREA: 22,
@@ -158,6 +169,7 @@ const ADDRESS_SENSITIVE_COVERAGE_PENALTY: Partial<Record<CoverageConfidence, num
 
 const MIN_RECOMMENDATION_SCORE = 20;
 const ADDRESS_SENSITIVE_RECOMMENDABLE_COVERAGE = new Set<CoverageConfidence>([
+  "AVAILABLE_AT_ADDRESS",
   "EXACT_ZIP",
   "ZIP_PREFIX",
   "MAPPED_SERVICE_AREA",
@@ -166,6 +178,14 @@ const ADDRESS_SENSITIVE_RECOMMENDABLE_COVERAGE = new Set<CoverageConfidence>([
 ]);
 
 function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
+  // An authoritative per-address serviceability confirmation (set by an
+  // upstream FCC National Broadband Map lookup) wins over the catalog-derived
+  // coverage tier. This is the only place the engine reads `fccServiceable`,
+  // so when the FCC source is unavailable the field is simply undefined and
+  // confidence falls back to the existing catalog logic.
+  if (provider.fccServiceable === true) {
+    return mapCoverageMatchToConfidence("available_at_address");
+  }
   return mapCoverageMatchToConfidence(provider.coverageMatchLevel, {
     scope: provider.scope,
     coverageModel: provider.coverageModel,
@@ -678,7 +698,9 @@ export function scoreProviders(
         (addressSensitive ? weights.addressSensitivePenalty[coverageConfidence] || 0 : 0);
       score += coverageScore;
 
-      if (coverageConfidence === "EXACT_ZIP") {
+      if (coverageConfidence === "AVAILABLE_AT_ADDRESS") {
+        reasons.unshift("Available at your address");
+      } else if (coverageConfidence === "EXACT_ZIP") {
         reasons.push("Exact ZIP match");
       } else if (coverageConfidence === "ZIP_PREFIX") {
         reasons.push("Local ZIP-area match");

@@ -10,6 +10,7 @@ import {
 import { checkIPAccess } from "@/lib/ip-rules";
 import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
+import { STATE_SLUGS } from "@/lib/states/data";
 
 // Shadow userId-keyed counter is gated by an env flag so it can be turned
 // on once ops is ready to absorb the 2nd Redis round-trip per request.
@@ -49,6 +50,15 @@ const PUBLIC_PATHS = [
   "/invitations", // workspace invite landing (flag-gated API returns 404 when off)
   "/opengraph-image",
 ];
+
+// Public per-state marketing pages (/moving/<state-slug>) must stay publicly
+// reachable + indexable even though the AUTHENTICATED dashboard also lives under
+// /moving (the exact /moving list + /moving/plan/<id> detail stay gated + noindex).
+const PUBLIC_MOVING_STATE_PATHS = new Set(STATE_SLUGS.map((s) => `/moving/${s}`));
+function isPublicStatePage(pathname: string): boolean {
+  return PUBLIC_MOVING_STATE_PATHS.has(pathname);
+}
+
 const PUBLIC_API_PREFIXES = [
   "/api/internal/",
   "/api/cron/",
@@ -99,6 +109,7 @@ function matchesPathOrChild(pathname: string, path: string): boolean {
 }
 
 function isPublicPath(pathname: string): boolean {
+  if (isPublicStatePage(pathname)) return true;
   for (const p of PUBLIC_PATHS) {
     if (matchesPathOrChild(pathname, p)) return true;
   }
@@ -583,7 +594,7 @@ function pathShouldNoIndex(pathname: string): boolean {
     pathname.startsWith("/api/") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/moving") ||
+    (pathname.startsWith("/moving") && !isPublicStatePage(pathname)) ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/addresses") ||
     pathname.startsWith("/budget") ||

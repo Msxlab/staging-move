@@ -176,11 +176,11 @@ export default async function LandingPage() {
       <section className="relative overflow-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/15 blur-3xl"
+          className="aurora-blob pointer-events-none absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/15 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-honey-bg blur-3xl"
+          className="aurora-blob-2 pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-honey-bg blur-3xl"
         />
         <div className="container relative grid items-center gap-14 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
           <div className="space-y-7">
@@ -188,15 +188,15 @@ export default async function LandingPage() {
               <Zap className="h-3.5 w-3.5" />
               {t("hero_eyebrow")}
             </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.98]">
+            <h1 className="display-tight text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[0.98]">
               {t("heroPrefix")}{" "}
               <span className="text-primary">{t("heroAccent")}</span>{" "}
               {t("heroSuffix")}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-[36ch] leading-relaxed">
+            <p className="measure text-lg md:text-xl text-foreground/90 leading-relaxed">
               {t("heroDescription")}
             </p>
-            <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground/90 md:text-base">
+            <p className="measure text-sm leading-6 text-recessive md:text-base">
               {t("productDefinition")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -283,8 +283,8 @@ export default async function LandingPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
             {t("risk_eyebrow")}
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("risk_title")}</h2>
-          <p className="text-muted-foreground text-lg">{t("risk_subtitle")}</p>
+          <h2 className="display-tight text-3xl md:text-4xl font-bold">{t("risk_title")}</h2>
+          <p className="text-recessive text-lg">{t("risk_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
           {[
@@ -314,8 +314,8 @@ export default async function LandingPage() {
       {/* Features Grid — the full product reveal */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">{t("section_features_title")}</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <h2 className="display-tight text-3xl font-bold mb-4">{t("section_features_title")}</h2>
+          <p className="text-recessive text-lg max-w-2xl mx-auto">
             {t("section_features_subtitle")}
           </p>
         </div>
@@ -354,7 +354,7 @@ export default async function LandingPage() {
               size={104}
               className="mx-auto mb-4 text-foreground/35"
             />
-            <h2 className="text-3xl font-bold mb-4">{t("section_how_title")}</h2>
+            <h2 className="display-tight text-3xl font-bold mb-4">{t("section_how_title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
@@ -467,8 +467,8 @@ export default async function LandingPage() {
       {/* Current workflow coverage */}
       <section className="container py-20 border-t">
         <div className="text-center mb-12 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold mb-4">{t("scope_title")}</h2>
-          <p className="text-muted-foreground text-lg">{t("scope_subtitle")}</p>
+          <h2 className="display-tight text-3xl font-bold mb-4">{t("scope_title")}</h2>
+          <p className="text-recessive text-lg">{t("scope_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[

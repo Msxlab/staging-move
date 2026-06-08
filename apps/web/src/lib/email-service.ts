@@ -1379,7 +1379,7 @@ export async function sendTaskReminderEmail(opts: {
       ["Moving plan", opts.movingPlanLabel],
     ],
     cta: {
-      href: opts.movingPlanId ? `${appUrl}/moving/${opts.movingPlanId}` : `${appUrl}/moving`,
+      href: opts.movingPlanId ? `${appUrl}/moving/plan/${opts.movingPlanId}` : `${appUrl}/moving`,
       label: "View Moving Plan",
     },
     locale,

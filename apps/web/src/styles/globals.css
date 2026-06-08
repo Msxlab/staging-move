@@ -570,6 +570,29 @@
     font-family: var(--font-mono);
     letter-spacing: 0;
   }
+
+  /* ── Premium display typography ──────────────────────────────────────
+     Confident, tightened tracking on the marketing display headings.
+     Tailwind's `tracking-tight` is only -0.025em on the largest size; the
+     hero wants a touch more optical tightening at scale. `-0.022em` reads
+     crisp without crushing the letterforms. */
+  .display-tight {
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  /* Cap a body paragraph to a comfortable ~65-character measure so long
+     marketing copy never runs to an unreadable line length on wide
+     viewports. Pairs with the recessive secondary-text token below. */
+  .measure {
+    max-width: 65ch;
+  }
+  /* Genuinely recessive secondary text — steps body copy down to the
+     `--fg-2` ink (≈66% on dark, ≈72% on paper) instead of a flat grey, so
+     the primary/secondary hierarchy reads with intent rather than as a
+     uniform wash. */
+  .text-recessive {
+    color: var(--fg-2);
+  }
 }
 
 /* Hide gradient blobs in light mode (kept from previous direction). */
@@ -714,6 +737,38 @@
 .light .bg-orange-500 { color: rgb(255, 255, 255); }
 .light .bg-orange-500.text-white,
 .light span.bg-orange-500 { color: rgb(255, 255, 255); }
+
+/* =========================================================================
+   Hero aurora drift — the one premium hero motion.
+   The two soft gradient blobs behind the hero copy breathe and drift on a
+   long, slow loop (28s / 34s, offset) so the background feels alive without
+   ever pulling focus. Pure transform + opacity (GPU-cheap, no layout), and
+   fully disabled under prefers-reduced-motion — the blobs then sit in their
+   settled position. Applied via `.aurora-blob` / `.aurora-blob-2` on the
+   existing decorative blob divs in the marketing hero.
+   ========================================================================= */
+.aurora-blob {
+  animation: aurora-drift-a 28s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.aurora-blob-2 {
+  animation: aurora-drift-b 34s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes aurora-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+  50%      { transform: translate3d(-32px, 26px, 0) scale(1.12); opacity: 1; }
+}
+@keyframes aurora-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); opacity: 0.9; }
+  50%      { transform: translate3d(30px, -22px, 0) scale(0.92); opacity: 0.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .aurora-blob-2 {
+    animation: none;
+  }
+}
 
 /* =========================================================================
    Brand mark animations (LocateFlow logo)

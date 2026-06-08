@@ -125,6 +125,23 @@ describe("production SEO launch surfaces", () => {
     expect(urls).not.toContain("https://admin.locateflow.com");
   });
 
+  it("lists all 51 per-state moving guides in the sitemap", async () => {
+    productionEnv();
+    mockBlogPosts([]);
+    const { default: sitemap } = await import("./sitemap");
+    const { STATE_SLUGS } = await import("@/lib/states/data");
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+
+    expect(STATE_SLUGS).toHaveLength(51);
+    for (const slug of STATE_SLUGS) {
+      expect(urls).toContain(`https://locateflow.com/moving/${slug}`);
+    }
+    // Spot-check a couple of canonical state slugs.
+    expect(urls).toContain("https://locateflow.com/moving/california");
+    expect(urls).toContain("https://locateflow.com/moving/district-of-columbia");
+  });
+
   it("includes published, non-noIndex blog posts with lastmod from updatedAt", async () => {
     productionEnv();
     const updatedAt = new Date("2026-04-15T10:30:00.000Z");

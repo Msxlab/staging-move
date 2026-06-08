@@ -137,7 +137,7 @@ export async function GET(req: Request) {
           type: "TASK_DUE",
           title: `Task reminder: ${task.title}`,
           body,
-          href: `/moving/${task.movingPlan.id}`,
+          href: `/moving/plan/${task.movingPlan.id}`,
           icon: "CalendarCheck",
           dedupeKey,
           metadata: {

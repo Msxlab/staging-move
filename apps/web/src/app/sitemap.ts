@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { listPublicCategories } from "@/lib/blog/queries";
 import { blogCategoryUrl, blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
 import { SITE_URL, isNoIndexEnvironment, staticLastModified } from "@/lib/seo";
+import { STATE_SLUGS } from "@/lib/states/data";
 
 // Generate at request time so the blog query always runs against the live
 // DB. Previously this was ISR (`revalidate: 600`), which meant the route
@@ -56,6 +57,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: staticLastmod,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
+  }));
+
+  // Per-state moving guides — /moving/<state> for all 50 states + DC. These are
+  // statically generated programmatic-SEO pages; one canonical URL each.
+  const stateEntries: MetadataRoute.Sitemap = STATE_SLUGS.map((slug) => ({
+    url: `${SITE_URL}/moving/${slug}`,
+    lastModified: staticLastmod,
+    changeFrequency: "monthly",
+    priority: 0.7,
   }));
 
   // Blog posts — only PUBLISHED, non-noIndex, soft-delete-respecting.
@@ -117,5 +127,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     categoryEntries = [];
   }
 
-  return [...staticEntries, ...blogEntries, ...categoryEntries];
+  return [...staticEntries, ...stateEntries, ...blogEntries, ...categoryEntries];
 }

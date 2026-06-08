@@ -70,7 +70,7 @@ export default async function MovingPage() {
             const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
             return (
-              <Link key={plan.id} href={`/moving/${plan.id}`}>
+              <Link key={plan.id} href={`/moving/plan/${plan.id}`}>
                 <div className="glass-card p-5 hover:bg-foreground/[0.07] transition-all cursor-pointer mb-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
