@@ -635,7 +635,7 @@ export default function OnboardingPage() {
         await recordOnboardingProgress("COMPLETED");
         await ensureOnboardingCompleted();
         trackEvent("onboarding_completed", { created_moving_plan: true });
-        router.push(`/moving/${planId}`);
+        router.push(`/moving/plan/${planId}`);
         return;
       }
       await recordOnboardingProgress("MOVING_SKIPPED");

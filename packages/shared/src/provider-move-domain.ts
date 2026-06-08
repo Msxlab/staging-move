@@ -10,6 +10,11 @@ export const PROVIDER_TRUST_STATUSES = [
 export type ProviderTrustStatus = (typeof PROVIDER_TRUST_STATUSES)[number];
 
 export const COVERAGE_CONFIDENCE_LEVELS = [
+  // AVAILABLE_AT_ADDRESS is the strongest confidence: an authoritative
+  // address-level serviceability source (e.g. the FCC National Broadband Map)
+  // confirmed the provider serves this exact location. It outranks EXACT_ZIP,
+  // which is only catalog coverage for the ZIP, not a per-address confirmation.
+  "AVAILABLE_AT_ADDRESS",
   "EXACT_ZIP",
   "ZIP_PREFIX",
   "MAPPED_SERVICE_AREA",
@@ -215,6 +220,17 @@ const COVERAGE_CONFIDENCE_COPY: Record<
   CoverageConfidence,
   CoverageConfidencePresentation
 > = {
+  AVAILABLE_AT_ADDRESS: {
+    confidence: "AVAILABLE_AT_ADDRESS",
+    // Distinct, confident wording — this is the "available at your address"
+    // copy the recommendation UI surfaces instead of "check availability"
+    // when an authoritative serviceability source confirms the provider.
+    label: "Available at your address",
+    description:
+      "An authoritative broadband-availability source (e.g. the FCC National Broadband Map) confirms this provider reports service at this address. Final plans and pricing are still set by the provider.",
+    rank: 700,
+    requiresCaveat: false,
+  },
   EXACT_ZIP: {
     confidence: "EXACT_ZIP",
     label: "Exact ZIP match",
@@ -532,6 +548,10 @@ export function mapCoverageMatchToConfidence(
     requiresPolygonCheck?: boolean | null;
   },
 ): CoverageConfidence {
+  // An authoritative per-address serviceability confirmation (e.g. an FCC
+  // National Broadband Map BDC match) is the strongest signal and overrides
+  // every weaker tier, including an explicit address-check requirement.
+  if (matchLevel === "available_at_address") return "AVAILABLE_AT_ADDRESS";
   if (options?.requiresAddressCheck) return "ADDRESS_CHECK_REQUIRED";
   if (matchLevel === "exact") return "EXACT_ZIP";
   if (matchLevel === "prefix") return "ZIP_PREFIX";

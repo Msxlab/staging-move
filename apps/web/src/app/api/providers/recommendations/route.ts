@@ -16,6 +16,7 @@ import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
 import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { lookupFccIsps, isIspServiceable, type FccLookupResult } from "@/lib/fcc-isp";
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
 // Returns tiered clusters with "next critical actions" based on what user already has
@@ -186,6 +187,41 @@ export async function GET(request: NextRequest) {
       requiresPolygonCheck: p.coverageModel === "polygon",
     }));
 
+    // ── FCC ISP serviceability enrichment (internet providers) ───────────────
+    // Internet providers are `live_address` coverage, so the catalog can only
+    // ever say "check availability". When the FCC National Broadband Map is
+    // configured (see apps/web/src/lib/fcc-isp.ts) and we have address
+    // coordinates, confirm which ISPs actually serve this address and flag them
+    // `fccServiceable` so the recommendation engine surfaces them with an
+    // "available at your address" confidence instead of "check availability".
+    //
+    // GRACEFUL DEGRADATION: a single lookup is attempted only if there is at
+    // least one internet provider in the candidate set. Any non-"ok" status
+    // (FCC unconfigured / no coordinates / network error) leaves every provider
+    // untouched, so recommendations behave exactly as before — no crash.
+    let fccLookup: FccLookupResult | null = null;
+    const hasInternetCandidates = parsedProviders.some((p) => p.category === "UTILITY_INTERNET");
+    if (hasInternetCandidates) {
+      try {
+        fccLookup = await lookupFccIsps({
+          latitude: fallbackLatitude,
+          longitude: fallbackLongitude,
+        });
+        if (fccLookup.status === "ok") {
+          for (const provider of parsedProviders) {
+            if (provider.category !== "UTILITY_INTERNET") continue;
+            if (isIspServiceable(fccLookup, provider.name)) {
+              provider.fccServiceable = true;
+            }
+          }
+        }
+      } catch {
+        // Defensive: lookupFccIsps already swallows FCC/network errors, but make
+        // the route bullet-proof so a malformed response can never break recs.
+        fccLookup = null;
+      }
+    }
+
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
     const completedCategories = [...new Set(services.map((s) => s.category).filter(Boolean))];
 
@@ -226,6 +262,16 @@ export async function GET(request: NextRequest) {
           polygon: parsedProviders.filter((provider) => provider.coverageModel === "polygon").length,
           liveAddress: parsedProviders.filter((provider) => provider.coverageModel === "live_address").length,
           zipPrefix: parsedProviders.filter((provider) => provider.coverageModel === "zip_prefix").length,
+        },
+        // FCC ISP serviceability telemetry. `status` is one of the
+        // FccLookupStatus values; "not_configured" is the default until the
+        // owner sets FCC_BDC_ENABLED + FCC_BDC_API_KEY (see lib/fcc-isp.ts).
+        // `confirmedCount` is how many internet providers FCC confirmed at the
+        // address. Never user-facing copy — for dashboards / debugging only.
+        fcc: {
+          status: fccLookup?.status || (hasInternetCandidates ? "not_configured" : "skipped"),
+          confirmedCount: parsedProviders.filter((p) => p.fccServiceable === true).length,
+          blockGeoid: fccLookup?.blockGeoid || null,
         },
         addressId: primaryAddr?.id || null,
         currentPhase,

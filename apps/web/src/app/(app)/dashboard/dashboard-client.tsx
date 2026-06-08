@@ -621,7 +621,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     )}
 
                     <div className="flex gap-2">
-                      <Link href={`/moving/${stats.activePlan.id}`} className="flex-1">
+                      <Link href={`/moving/plan/${stats.activePlan.id}`} className="flex-1">
                         <button className="w-full py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">{td("moving_viewPlan")}</button>
                       </Link>
                       <Link href="/services" className="flex-1">

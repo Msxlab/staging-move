@@ -102,7 +102,7 @@ async function handleCron(request: NextRequest) {
             type: "MOVE_REMINDER",
             title: notificationTitle,
             body: notificationBody,
-            href: `/moving/${plan.id}`,
+            href: `/moving/plan/${plan.id}`,
             icon: "Calendar",
             dedupeKey,
             metadata: {

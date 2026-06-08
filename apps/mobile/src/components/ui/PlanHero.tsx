@@ -92,6 +92,9 @@ function AnimatedMascot({
         withSpring(0, { mass: 0.5, damping: 9, stiffness: 160 }),
       ),
     );
+    // Cancel any in-flight pop if the crew unmounts (or celebrateTick changes)
+    // mid-animation, so a queued worklet never lands on a torn-down node.
+    return () => cancelAnimation(pop);
   }, [celebrateTick, reduceMotion, index, pop]);
 
   const style = useAnimatedStyle(() => {

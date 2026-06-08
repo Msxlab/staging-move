@@ -88,6 +88,7 @@ export interface MoveServiceTransitionPlan {
 }
 
 const HIGH_CONFIDENCE_COVERAGE = new Set<CoverageConfidence>([
+  "AVAILABLE_AT_ADDRESS",
   "EXACT_ZIP",
   "ZIP_PREFIX",
   "MAPPED_SERVICE_AREA",

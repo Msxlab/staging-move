@@ -34,6 +34,7 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { formatCurrency } from "@/lib/format";
 import { getCategoryLabel, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
 import { resolveServiceRenewal, RENEWAL_SOON_DAYS } from "@/lib/service-insights";
 
@@ -139,7 +140,7 @@ export default function ServiceDetailScreen() {
     service.monthlyCost > 0 && {
       icon: DollarSign,
       label: t("services.monthlyCost"),
-      value: `$${service.monthlyCost.toLocaleString()}`,
+      value: formatCurrency(service.monthlyCost, i18n.language),
       color: theme.colors.emerald.text,
     },
     service.billingCycle && {

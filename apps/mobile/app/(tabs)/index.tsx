@@ -27,7 +27,7 @@ import {
   CalendarClock,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import * as Haptics from "expo-haptics";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -51,6 +51,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
 import { CountUp } from "@/components/ui/CountUp";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { formatCurrency } from "@/lib/format";
 import type { DashboardStats } from "@locateflow/shared";
 import {
   generateChecklist,
@@ -308,8 +309,10 @@ export default function DashboardScreen() {
         const result = await acceptPendingInvitation(invite.id);
         if (result.ok) {
           // Celebrate: success haptic + bump the tick so the PlanHero crew does a
-          // one-shot bounce. Haptics are best-effort (unsupported on some devices).
-          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          // one-shot bounce. Haptics are best-effort (no-op on web / unsupported
+          // devices) and reduce-motion-safe (notification haptics are tactile,
+          // not motion, so they're appropriate even when animations are off).
+          hapticSuccess();
           setCelebrateTick((n) => n + 1);
           // Drop the accepted invite immediately, then refresh the dashboard.
           // acceptPendingInvitation already wrote the resolved plan tier into the
@@ -367,12 +370,7 @@ export default function DashboardScreen() {
     );
   }
 
-  const currencyFmt = (n: number) =>
-    new Intl.NumberFormat(i18n.language || "en", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
+  const currencyFmt = (n: number) => formatCurrency(n, i18n.language);
 
   const statCards: Array<{
     icon: typeof MapPin;
@@ -752,7 +750,13 @@ export default function DashboardScreen() {
               <TouchableOpacity
                 key={action.label}
                 style={styles.quickAction}
-                onPress={() => router.push(action.route)}
+                onPress={() => {
+                  // Light tactile confirmation on the primary "create" entry
+                  // points. Best-effort + reduce-motion-safe (impact haptics
+                  // are tactile, not visual motion); no-op on web.
+                  hapticLight();
+                  router.push(action.route);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.quickActionIcon}>
@@ -799,6 +803,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     gap: 6,
+    // A touch more depth on the dashboard's hero stat tiles so they lift
+    // off the canvas as the primary surface. Subtle (sm) — not a drop card.
+    ...theme.shadow.sm,
   },
   statValue: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
   statLabel: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },

@@ -41,6 +41,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   SERVICE_CATEGORIES,
   generateChecklist,
@@ -96,7 +97,7 @@ export default function ServicesScreen() {
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
   const [services, setServices] = useState<any[]>([]);
@@ -272,7 +273,7 @@ export default function ServicesScreen() {
           <Text style={styles.title}>{t("services.title")}</Text>
           <Text style={styles.subtitle}>
             {selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}
-            {t("services.summaryLine", { count: filtered.length, total: totalMonthly.toLocaleString() })}
+            {t("services.summaryLine", { count: filtered.length, total: formatNumber(totalMonthly, i18n.language) })}
           </Text>
         </View>
         <TouchableOpacity
@@ -300,7 +301,7 @@ export default function ServicesScreen() {
             <Wallet size={15} color={theme.colors.emerald.text} />
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryLabel}>{t("services.budgetTracked")}</Text>
-              <Text style={styles.summaryValue}>{t("services.monthlyAmount", { amount: totalMonthly.toLocaleString() })}</Text>
+              <Text style={styles.summaryValue}>{t("services.monthlyAmount", { amount: formatNumber(totalMonthly, i18n.language) })}</Text>
             </View>
           </View>
         </View>
@@ -516,7 +517,7 @@ export default function ServicesScreen() {
                     activeOpacity={0.6}
                   >
                     {service.monthlyCost > 0 ? (
-                      <Text style={styles.cost}>${service.monthlyCost.toLocaleString()}<Text style={styles.costPer}>/mo</Text></Text>
+                      <Text style={styles.cost}>{formatCurrency(service.monthlyCost, i18n.language)}<Text style={styles.costPer}>/mo</Text></Text>
                     ) : (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(242, 196, 108,0.1)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)" }}>
                         <DollarSign size={10} color="#B49BFF" />

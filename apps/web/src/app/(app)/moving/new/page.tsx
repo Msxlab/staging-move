@@ -245,7 +245,7 @@ export default function NewMovingPlanPage() {
         throw new Error(t("errorPlanNotCreated"));
       }
 
-      router.push(`/moving/${planId}`);
+      router.push(`/moving/plan/${planId}`);
     } catch (err: any) {
       setError(err.message || t("errorCreateFailed"));
     } finally {
