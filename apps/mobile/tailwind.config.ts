@@ -50,10 +50,10 @@ export default {
           dark: brandColors.roseDark,         // cool-deep #3D7AB8
         },
         foil: {
-          DEFAULT: brandColors.foil,          // Aurora violet #B49BFF
-          highlight: brandColors.foilHighlight, // cool ink-1 #DDE7F5
-          shadow: brandColors.foilShadow,     // cool-2 #5C9DDC
-          ink: brandColors.foilInk,           // cool deep #1F5FA0
+          DEFAULT: brandColors.foil,          // honey/champagne #F2C46C
+          highlight: brandColors.foilHighlight, // champagne #FBE7BD
+          shadow: brandColors.foilShadow,     // champagne shadow #D99A4E
+          ink: brandColors.foilInk,           // honey ink #7A5418
         },
         sage: {
           DEFAULT: brandColors.sage,          // Aurora mint #87DDC0
@@ -65,9 +65,9 @@ export default {
           card: surfaceDark.card,             // au-base-3 #131C2C
           hover: surfaceDark.cardHover,       // #1A2438
         },
-        // `accent` historically meant "amber/yellow callout" — flipped to
-        // Aurora violet so highlight pills match web.
-        accent: brandColors.foil,             // Aurora violet #B49BFF
+        // `accent` historically meant "amber/yellow callout" — now the
+        // honey/champagne foil so highlight pills match web.
+        accent: brandColors.foil,             // honey/champagne #F2C46C
         // Semantic shorthands.
         success: semanticColors.success,      // Aurora mint #87DDC0
         warning: semanticColors.warning,      // Aurora amber #F2C46C

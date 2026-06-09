@@ -279,6 +279,18 @@
     "summaryHint": "Monthly total updates from the services listed for the selected address.",
     "addCost": "Add cost",
     "addNext": "Add next service",
+    "mood": {
+      "emptyTitle": "No services tracked yet",
+      "emptySubtitle": "Add your first utility, bank, or subscription and the raccoon perks up.",
+      "firstTitle": "First service tracked!",
+      "firstSubtitle": "Great start — your move tracking is officially underway.",
+      "buildingTitle_one": "{{count}} service tracked",
+      "buildingTitle_other": "{{count}} services tracked",
+      "buildingSubtitle": "Nice momentum — keep adding what's tied to your home.",
+      "healthyTitle_one": "{{count}} service tracked",
+      "healthyTitle_other": "{{count}} services tracked",
+      "healthySubtitle": "Your move tracking is looking healthy."
+    },
     "removeProviderA11y": "Remove {{provider}}",
     "removeProviderHint": "Removes this provider from the selected list",
     "searchAvailableProviders": "Search available providers",

@@ -1,8 +1,4 @@
-"use client";
-
-import { useState } from "react";
-import { X } from "lucide-react";
-import { WaitlistForm } from "./waitlist-form";
+import { IOS_APP_STORE_URL, ANDROID_PLAY_STORE_URL } from "@/lib/store-links";
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -51,97 +47,48 @@ function GooglePlayLogo({ className }: { className?: string }) {
 }
 
 /**
- * Mobile app install CTA. The apps are in closed beta, so both buttons open
- * a waitlist modal that captures the user's email. When the apps ship,
- * replace the `onClick` with real store URLs and drop the modal.
+ * Mobile app install CTA. LocateFlow is live on both stores — these deep-link
+ * straight to the App Store / Google Play listings. (Store URLs are centralized
+ * in lib/store-links so the marketing CTA, the install banner, and structured
+ * data all agree.)
  */
 export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
-  const [open, setOpen] = useState<null | "ios" | "android">(null);
   const base =
-    "group inline-flex min-w-[15rem] items-center gap-3 rounded-xl border border-border bg-foreground text-background text-left shadow-sm transition-all dark:bg-foreground/95";
+    "group inline-flex min-w-[15rem] items-center gap-3 rounded-xl border border-border bg-foreground text-background text-left shadow-sm transition-all hover:opacity-90 hover:scale-[1.02] dark:bg-foreground/95";
   const size = compact ? "px-4 py-2" : "px-5 py-3";
 
-  const target = open === "ios" ? "MOBILE_IOS" : "MOBILE_ANDROID";
-  const storeLabel = open === "ios" ? "App Store" : "Google Play";
-
   return (
-    <>
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => setOpen("ios")}
-          aria-label="Join the App Store waitlist"
-          className={`${base} ${size} hover:opacity-90 hover:scale-[1.02] cursor-pointer`}
-        >
-          <AppleLogo className="h-8 w-8" />
-          <div className="leading-tight">
-            <p className="text-[10px] uppercase tracking-wider opacity-70">
-              Coming soon on
-            </p>
-            <p className="text-lg font-semibold tracking-tight">App Store</p>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen("android")}
-          aria-label="Join the Google Play waitlist"
-          className={`${base} ${size} hover:opacity-90 hover:scale-[1.02] cursor-pointer`}
-        >
-          <GooglePlayLogo className="h-8 w-8" />
-          <div className="leading-tight">
-            <p className="text-[10px] uppercase tracking-wider opacity-70">
-              Coming soon on
-            </p>
-            <p className="text-lg font-semibold tracking-tight">Google Play</p>
-          </div>
-        </button>
-      </div>
-
-      {open ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="waitlist-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-          onClick={() => setOpen(null)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setOpen(null)}
-              aria-label="Close"
-              className="absolute top-3 right-3 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Closed beta
-                </p>
-                <h2
-                  id="waitlist-modal-title"
-                  className="mt-1 text-xl font-semibold text-foreground"
-                >
-                  Join the {storeLabel} waitlist
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  We're inviting users in small batches. Leave your email and we'll send the TestFlight / Play closed-beta link when your turn comes up.
-                </p>
-              </div>
-              <WaitlistForm
-                target={target}
-                source={`app-store-cta-${open}`}
-                submitLabel="Join the beta waitlist"
-                successMessage="You're on the waitlist. We'll send the invite when your turn comes up."
-              />
-            </div>
-          </div>
+    <div className="flex flex-wrap gap-3">
+      <a
+        href={IOS_APP_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Download LocateFlow on the App Store"
+        className={`${base} ${size}`}
+      >
+        <AppleLogo className="h-8 w-8" />
+        <div className="leading-tight">
+          <p className="text-[10px] uppercase tracking-wider opacity-70">
+            Download on the
+          </p>
+          <p className="text-lg font-semibold tracking-tight">App Store</p>
         </div>
-      ) : null}
-    </>
+      </a>
+      <a
+        href={ANDROID_PLAY_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Get LocateFlow on Google Play"
+        className={`${base} ${size}`}
+      >
+        <GooglePlayLogo className="h-8 w-8" />
+        <div className="leading-tight">
+          <p className="text-[10px] uppercase tracking-wider opacity-70">
+            Get it on
+          </p>
+          <p className="text-lg font-semibold tracking-tight">Google Play</p>
+        </div>
+      </a>
+    </div>
   );
 }

@@ -279,6 +279,18 @@
     "summaryHint": "El total mensual se actualiza con los servicios de la dirección seleccionada.",
     "addCost": "Agregar costo",
     "addNext": "Agregar siguiente servicio",
+    "mood": {
+      "emptyTitle": "Aún no hay servicios",
+      "emptySubtitle": "Agrega tu primer servicio, banco o suscripción y el mapache se animará.",
+      "firstTitle": "¡Primer servicio agregado!",
+      "firstSubtitle": "Buen comienzo: tu seguimiento de mudanza ya está en marcha.",
+      "buildingTitle_one": "{{count}} servicio registrado",
+      "buildingTitle_other": "{{count}} servicios registrados",
+      "buildingSubtitle": "Buen ritmo: sigue agregando lo que esté vinculado a tu hogar.",
+      "healthyTitle_one": "{{count}} servicio registrado",
+      "healthyTitle_other": "{{count}} servicios registrados",
+      "healthySubtitle": "Tu seguimiento de mudanza luce saludable."
+    },
     "removeProviderA11y": "Quitar {{provider}}",
     "removeProviderHint": "Quita este proveedor de la lista seleccionada",
     "searchAvailableProviders": "Buscar proveedores disponibles",
