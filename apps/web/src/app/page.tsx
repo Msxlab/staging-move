@@ -43,8 +43,7 @@ import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { LatestBlogPosts } from "@/components/marketing/latest-blog-posts";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
-import { HeroPhoneMock } from "@/components/marketing/hero-phone-mock";
-import { RaccoonHero } from "@/components/illustrations/RaccoonHero";
+import { HeroMoveAnimation } from "@/components/marketing/hero-move-animation";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-storm";
 import { HardStats } from "@/components/marketing/hard-stats";
@@ -228,18 +227,14 @@ export default async function LandingPage() {
             </div>
           </div>
 
+          {/* Animated "move" scene — services flow from the old address pin to
+              the new one, bounce + check on arrival, a counter ticks 0→6 and the
+              welcoming raccoon hops as each lands. Replaces the static phone mock.
+              Decorative (aria-hidden inside); the headline + CTAs above carry the
+              accessible meaning. Reduced-motion renders the static end state. The
+              scene scales down on small screens via its aspect-ratio box. */}
           <div className="relative">
-            <HeroPhoneMock />
-            {/* Mover raccoon — the site mascot, hugging a moving box, peeking in
-                beside the phone. Decorative (aria-hidden) and absolutely
-                positioned so it never reflows the CTA. Hidden below lg so it
-                can't crowd the phone or the buttons on narrow screens; the box
-                picks up --primary, the fur the muted token, so it tracks both
-                themes and the per-plan accent. */}
-            <RaccoonHero
-              size={168}
-              className="pointer-events-none absolute -bottom-10 -left-6 hidden text-foreground/40 drop-shadow-sm lg:block xl:-left-16"
-            />
+            <HeroMoveAnimation />
           </div>
         </div>
 
