@@ -106,6 +106,14 @@ const darkColors = {
 const lightColors = {
   ...darkColors,
 
+  // Brand accents darkened on paper for AA contrast — mirrors web `.light`
+  // (--rose #2D7BC4 / --foil #B0781E) and the design bundle's light scope.
+  // Without these, light mode inherited the dark-mode bright blue/honey, which
+  // fail contrast on the soft-sky paper surface.
+  primary: "#2D7BC4", // paper cool blue
+  primaryLight: "#4D8FCE",
+  primaryDark: "#1F5FA0",
+  accent: "#B0781E", // paper honey/champagne foil
   primaryFaded: "rgba(45, 123, 196, 0.10)",
 
   background: surfaceLight.background,
