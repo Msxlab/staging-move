@@ -72,6 +72,8 @@ export default async function ProvidersPage() {
     state: a.state,
     zip: a.zip,
     isPrimary: a.isPrimary,
+    latitude: a.latitude ?? null,
+    longitude: a.longitude ?? null,
   }));
 
   const initialProviders: ProviderItem[] = providerRows.map((p) => ({

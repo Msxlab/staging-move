@@ -121,4 +121,33 @@ describe("provider trust helpers", () => {
       ]),
     );
   });
+
+  it("flags a stale record only when last review is older than the freshness window", () => {
+    const now = Date.UTC(2026, 0, 1);
+    const base = {
+      name: "Acme Water",
+      category: "UTILITY_WATER",
+      scope: "STATE",
+      states: ["CA"],
+      description: "Acme Water provides residential water service across California.",
+      website: "https://acme-water.example.com",
+      phone: "+1-555-0100",
+      logoUrl: "https://acme-water.example.com/logo.png",
+    };
+
+    const stale = getProviderQualityWarnings(
+      { ...base, updatedAt: new Date(now - 200 * 24 * 60 * 60 * 1000) },
+      now,
+    );
+    expect(stale.map((w) => w.code)).toContain("stale_record");
+
+    const fresh = getProviderQualityWarnings(
+      { ...base, updatedAt: new Date(now - 10 * 24 * 60 * 60 * 1000) },
+      now,
+    );
+    expect(fresh.map((w) => w.code)).not.toContain("stale_record");
+
+    // No updatedAt → no freshness claim (don't fabricate staleness).
+    expect(getProviderQualityWarnings({ ...base }, now).map((w) => w.code)).not.toContain("stale_record");
+  });
 });

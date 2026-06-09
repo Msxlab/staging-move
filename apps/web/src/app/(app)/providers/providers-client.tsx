@@ -45,6 +45,8 @@ export interface AddressOption {
   state: string;
   zip: string;
   isPrimary: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ProviderItem {
@@ -239,8 +241,19 @@ export function ProvidersClient({
     return map;
   }, [providers]);
 
+  // Coordinates of the currently selected address (if any) — passed to the
+  // providers API so the server applies coverage matching + distance-aware
+  // ranking to the full catalog rather than the client filtering a single page.
+  const selectedCoords = useMemo(() => {
+    const a = addresses.find((x) => x.id === selectedAddressId);
+    return {
+      lat: typeof a?.latitude === "number" ? a.latitude : null,
+      lng: typeof a?.longitude === "number" ? a.longitude : null,
+    };
+  }, [addresses, selectedAddressId]);
+
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
-  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
+  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string, lat?: number | null, lng?: number | null) => {
     setLoading(true);
     setLoadError(false);
     try {
@@ -248,6 +261,10 @@ export function ProvidersClient({
       if (state) params.set("state", state);
       if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
+      // Destination coordinates unlock the server's coverage-match + distance
+      // ranking ("providers near your new place") over the whole catalog.
+      if (typeof lat === "number" && Number.isFinite(lat)) params.set("lat", String(lat));
+      if (typeof lng === "number" && Number.isFinite(lng)) params.set("lng", String(lng));
       const res = await fetch(`/api/providers?${params.toString()}`);
       if (!res.ok) throw new Error(`Providers request failed (${res.status})`);
       const data = await res.json();
@@ -289,9 +306,9 @@ export function ProvidersClient({
 
   // Debounced server-side search when q or category or state/zip change
   useEffect(() => {
-    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim()), 250);
+    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim(), selectedCoords.lat, selectedCoords.lng), 250);
     return () => clearTimeout(t);
-  }, [selectedState, selectedZip, search, fetchProviders]);
+  }, [selectedState, selectedZip, search, selectedCoords, fetchProviders]);
 
   useEffect(() => {
     const normalized = search.trim().toLowerCase();
@@ -332,12 +349,32 @@ export function ProvidersClient({
     return list;
   }, [providers, categoryFilter, showSavedOnly, shortlist]);
 
-  const criticalCluster = recs?.clusters.find((c) => c.tier === "CRITICAL");
-  const importantCluster = recs?.clusters.find((c) => c.tier === "IMPORTANT");
-  const highlightProviders = [
-    ...(criticalCluster?.providers || []).slice(0, 3),
-    ...(importantCluster?.providers || []).slice(0, 3),
-  ].slice(0, 6);
+  const highlightProviders = useMemo(() => {
+    const critical = recs?.clusters.find((c) => c.tier === "CRITICAL");
+    const important = recs?.clusters.find((c) => c.tier === "IMPORTANT");
+    return [
+      ...(critical?.providers || []).slice(0, 3),
+      ...(important?.providers || []).slice(0, 3),
+    ].slice(0, 6);
+  }, [recs]);
+
+  // Fire one impression per recommended provider so the recommendation engine's
+  // runtime-tunable scoring weights become measurable via CTR. Deduped by id
+  // across re-renders so scrolling/typing doesn't double-count.
+  const trackedRecImpressionsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const p of highlightProviders) {
+      if (trackedRecImpressionsRef.current.has(p.id)) continue;
+      trackedRecImpressionsRef.current.add(p.id);
+      trackEvent("recommendation_impression", {
+        provider_id: p.id,
+        tier: p.urgencyTier,
+        category: p.category,
+        score: Math.round(p.recommendationScore),
+        surface: "providers_strip",
+      });
+    }
+  }, [highlightProviders]);
   const emptyStateCopy = getProviderEmptyStateCopy({
     state: selectedState,
     search,
@@ -417,6 +454,15 @@ export function ProvidersClient({
               <Link
                 key={p.id}
                 href={`/providers/${p.id}`}
+                onClick={() =>
+                  trackEvent("recommendation_click", {
+                    provider_id: p.id,
+                    tier: p.urgencyTier,
+                    category: p.category,
+                    score: Math.round(p.recommendationScore),
+                    surface: "providers_strip",
+                  })
+                }
                 className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3 overflow-hidden"
               >
                 <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
@@ -538,7 +584,7 @@ export function ProvidersClient({
           title="Couldn't load providers"
           description="Something went wrong loading providers. Check your connection and try again."
           actionLabel="Try again"
-          onAction={() => fetchProviders(selectedState, selectedZip, search.trim())}
+          onAction={() => fetchProviders(selectedState, selectedZip, search.trim(), selectedCoords.lat, selectedCoords.lng)}
         />
       ) : visibleProviders.length === 0 ? (
         <EmptyState

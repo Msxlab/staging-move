@@ -37,6 +37,7 @@ import {
   formatDateOnlyUtc,
   type RelocationChecklist,
 } from "@locateflow/shared";
+import { trackEvent } from "@/lib/analytics";
 
 export interface CommandCenterAction {
   id: string;
@@ -273,6 +274,19 @@ export function MoveCommandCenter({
   const milestoneReached = readiness >= 100 || countdown.phase !== "upcoming";
   const [burst, setBurst] = useState(false);
   const firedRef = useRef(false);
+
+  // Count the next-critical-action CTA as a recommendation impression (deduped
+  // by provider id) so its CTR is measurable alongside the providers strip.
+  const trackedTopActionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!topAction || trackedTopActionRef.current === topAction.id) return;
+    trackedTopActionRef.current = topAction.id;
+    trackEvent("recommendation_impression", {
+      provider_id: topAction.id,
+      category: topAction.category,
+      surface: "command_center",
+    });
+  }, [topAction]);
   useEffect(() => {
     if (milestoneReached && !firedRef.current) {
       firedRef.current = true;
@@ -319,6 +333,13 @@ export function MoveCommandCenter({
           {topAction ? (
             <Link
               href={`/providers/${topAction.id}`}
+              onClick={() =>
+                trackEvent("recommendation_click", {
+                  provider_id: topAction.id,
+                  category: topAction.category,
+                  surface: "command_center",
+                })
+              }
               className="mt-4 inline-flex items-center gap-3 max-w-full rounded-2xl border border-border bg-foreground/[0.04] hover:bg-foreground/[0.07] transition group px-4 py-3"
             >
               <div className="h-9 w-9 rounded-lg bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center shrink-0">
