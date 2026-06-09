@@ -46,10 +46,10 @@
   --border-focus: rgba(242, 196, 108, 0.55);
 
   --tone-rose-bg: rgba(127, 182, 232, 0.16); --tone-rose-br: rgba(127, 182, 232, 0.32); --tone-rose-fg: #9CC6F0;
-  --tone-foil-bg: rgba(180, 155, 255, 0.16); --tone-foil-br: rgba(180, 155, 255, 0.32); --tone-foil-fg: #C7B6FF;
+  --tone-foil-bg: rgba(242, 196, 108, 0.16); --tone-foil-br: rgba(242, 196, 108, 0.32); --tone-foil-fg: #F5CE82;
   --tone-sage-bg: rgba(135, 221, 192, 0.16); --tone-sage-br: rgba(135, 221, 192, 0.32); --tone-sage-fg: #A0EAD2;
   --tone-honey-bg: rgba(242, 196, 108, 0.16); --tone-honey-br: rgba(242, 196, 108, 0.32); --tone-honey-fg: #F5CE82;
-  --tone-umber-bg: rgba(180, 155, 255, 0.16); --tone-umber-br: rgba(180, 155, 255, 0.32); --tone-umber-fg: #C7B6FF;
+  --tone-umber-bg: rgba(217, 154, 78, 0.16); --tone-umber-br: rgba(217, 154, 78, 0.32); --tone-umber-fg: #E2B873;
   --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
   --tone-orange-bg: rgba(127, 182, 232, 0.16); --tone-orange-br: rgba(127, 182, 232, 0.32); --tone-orange-fg: #9CC6F0;
   --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.32); --tone-emerald-fg: #A0EAD2;
@@ -110,10 +110,10 @@
   --border-focus: rgba(176, 120, 30, 0.55);
 
   --tone-rose-bg: rgba(45, 123, 196, 0.10); --tone-rose-br: rgba(45, 123, 196, 0.22); --tone-rose-fg: #2D7BC4;
-  --tone-foil-bg: rgba(111, 88, 199, 0.10); --tone-foil-br: rgba(111, 88, 199, 0.22); --tone-foil-fg: #6F58C7;
+  --tone-foil-bg: rgba(176, 120, 30, 0.10); --tone-foil-br: rgba(176, 120, 30, 0.22); --tone-foil-fg: #B0781E;
   --tone-sage-bg: rgba(46, 155, 121, 0.10); --tone-sage-br: rgba(46, 155, 121, 0.22); --tone-sage-fg: #2E9B79;
   --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #B98318;
-  --tone-umber-bg: rgba(111, 88, 199, 0.10); --tone-umber-br: rgba(111, 88, 199, 0.22); --tone-umber-fg: #6F58C7;
+  --tone-umber-bg: rgba(176, 120, 30, 0.10); --tone-umber-br: rgba(176, 120, 30, 0.22); --tone-umber-fg: #B0781E;
   --tone-slate-bg: rgba(74, 92, 117, 0.10); --tone-slate-br: rgba(74, 92, 117, 0.22); --tone-slate-fg: #4A5C75;
   --tone-orange-bg: rgba(45, 123, 196, 0.10); --tone-orange-br: rgba(45, 123, 196, 0.22); --tone-orange-fg: #2D7BC4;
   --tone-emerald-bg: rgba(46, 155, 121, 0.10); --tone-emerald-br: rgba(46, 155, 121, 0.22); --tone-emerald-fg: #2E9B79;
@@ -355,9 +355,9 @@
   color: #7FB6E8;
 }
 .tier-stamp.tier-family {
-  background: rgba(180, 155, 255, 0.10);
-  border-color: rgba(180, 155, 255, 0.32);
-  color: #B49BFF;
+  background: rgba(52, 216, 166, 0.10);
+  border-color: rgba(52, 216, 166, 0.32);
+  color: #34D8A6;
 }
 .tier-stamp.tier-pro {
   background: linear-gradient(
@@ -479,7 +479,7 @@
 }
 .light .tier-bar { background: rgba(20, 32, 47, 0.06); }
 .tier-bar-seg-individual { background: linear-gradient(90deg, #7FB6E8, #5C9DDC); }
-.tier-bar-seg-family     { background: linear-gradient(90deg, #B49BFF, #8B73E0); }
+.tier-bar-seg-family     { background: linear-gradient(90deg, #34D8A6, #1FB98A); }
 .tier-bar-seg-pro {
   background: linear-gradient(90deg, #FBE7BD 0%, #F2C46C 60%, #D99A4E 100%);
   box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
