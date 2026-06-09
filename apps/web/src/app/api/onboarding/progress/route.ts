@@ -5,8 +5,11 @@ import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import {
+  ONBOARDING_FUNNEL_STEPS,
   ONBOARDING_MOVING_SKIPPED_EVENT,
   ONBOARDING_SERVICES_SKIPPED_EVENT,
+  ONBOARDING_STARTED_EVENT,
+  onboardingStepViewedEvent,
 } from "@/lib/onboarding-progress";
 
 const eventMap = {
@@ -16,7 +19,8 @@ const eventMap = {
 } as const;
 
 const bodySchema = z.object({
-  event: z.enum(["SERVICES_SKIPPED", "MOVING_SKIPPED", "COMPLETED"]),
+  event: z.enum(["SERVICES_SKIPPED", "MOVING_SKIPPED", "COMPLETED", "STARTED", "STEP_VIEWED"]),
+  step: z.enum(ONBOARDING_FUNNEL_STEPS).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,7 +44,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid onboarding progress event" }, { status: 400 });
   }
 
-  const event = eventMap[parsed.data.event];
+  // Resolve the stored event name. Funnel events (STARTED / STEP_VIEWED) sit
+  // alongside the original skip/complete events; STEP_VIEWED requires a step so
+  // each step gets its own deduped row, exposing per-step drop-off.
+  let event: string;
+  if (parsed.data.event === "STARTED") {
+    event = ONBOARDING_STARTED_EVENT;
+  } else if (parsed.data.event === "STEP_VIEWED") {
+    if (!parsed.data.step) {
+      return NextResponse.json({ error: "step is required for STEP_VIEWED" }, { status: 400 });
+    }
+    event = onboardingStepViewedEvent(parsed.data.step);
+  } else {
+    event = eventMap[parsed.data.event];
+  }
+
   const existing = await prisma.userEvent.findFirst({
     where: { userId, event },
     select: { id: true },
@@ -52,7 +70,7 @@ export async function POST(request: NextRequest) {
         userId,
         event,
         page: request.nextUrl.pathname,
-        metadata: JSON.stringify({ source: "onboarding" }),
+        metadata: JSON.stringify({ source: "onboarding", ...(parsed.data.step ? { step: parsed.data.step } : {}) }),
       },
     });
   }

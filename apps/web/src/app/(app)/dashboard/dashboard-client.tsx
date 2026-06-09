@@ -11,8 +11,10 @@ import {
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
 import { MoveCommandCenter, type CommandCenterAction } from "./move-command-center";
+import { MoveBriefingCard } from "@/components/dashboard/move-briefing-card";
 import { UpNext } from "./up-next";
 import { formatCurrency } from "@/lib/utils";
+import { monthlyAmountForCycle, cycleLabel } from "@/lib/budget-planning";
 import { DashboardSkeleton } from "@/components/shared/loading-state";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -37,7 +39,7 @@ const CATEGORY_KEYS = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHC
 
 interface AddressInfo {
   id: string; type: string; nickname?: string; street: string; city: string; state: string; isPrimary: boolean;
-  services?: { id: string; providerName: string; category: string; monthlyCost: number; createdAt?: string; website?: string }[];
+  services?: { id: string; providerName: string; category: string; monthlyCost: number; billingCycle?: string | null; createdAt?: string; website?: string }[];
 }
 
 interface DashboardStats {
@@ -138,6 +140,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [premiumPlan, setPremiumPlan] = useState("");
+  // Resume nudge for users who bounced out of onboarding before finishing.
+  const [onboarding, setOnboarding] = useState<{ completed: boolean; stepIndex: number } | null>(null);
+  const [resumeDismissed, setResumeDismissed] = useState(false);
   const [widgets, setWidgets] = useState<Record<WidgetKey, boolean>>(() => normaliseVisibility(initialPrefs?.visibility));
   const [widgetOrder, setWidgetOrder] = useState<WidgetKey[]>(() => normaliseOrder(initialPrefs?.order));
   const [criticalActions, setCriticalActions] = useState<Array<{
@@ -233,7 +238,10 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
         setAddresses(addrs);
         setAllServices(services);
 
-        const monthlyExpenses = services.reduce((sum: number, s: any) => sum + (s.monthlyCost || 0), 0);
+        // Normalize each per-cycle cost to its true monthly value (yearly/12,
+        // quarterly/3, ONE_TIME → 0) so a yearly service doesn't inflate
+        // "Monthly Expenses" ~12x and this matches the /budget figure.
+        const monthlyExpenses = services.reduce((sum: number, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle), 0);
 
         let activePlan: DashboardStats["activePlan"] = null;
 
@@ -268,6 +276,10 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           : sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
         setIsPremium(!!hasPremium);
         setPremiumPlan((ent?.plan ?? sub.plan) || "");
+        setOnboarding({
+          completed: profileData.onboardingCompleted === true,
+          stepIndex: typeof profileData.onboardingStepIndex === "number" ? profileData.onboardingStepIndex : 0,
+        });
         setStats({
           addressCount: addrs.length, serviceCount: services.length, monthlyExpenses,
           activePlan,
@@ -415,14 +427,15 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const catBreakdown: Record<string, number> = {};
   allServices.forEach((s: any) => {
     const prefix = (s.category || "OTHER").split("_")[0];
-    catBreakdown[prefix] = (catBreakdown[prefix] || 0) + (s.monthlyCost || 0);
+    catBreakdown[prefix] = (catBreakdown[prefix] || 0) + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle);
   });
   const sortedCats = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);
   const maxCatAmount = sortedCats.length > 0 ? sortedCats[0][1] : 1;
 
-  // Top spending services
+  // Top spending services — rank by true monthly-equivalent so a yearly bill
+  // doesn't outrank a higher monthly one purely because its raw figure is bigger.
   const topServices = [...allServices]
-    .sort((a: any, b: any) => (b.monthlyCost || 0) - (a.monthlyCost || 0))
+    .sort((a: any, b: any) => monthlyAmountForCycle(b.monthlyCost || 0, b.billingCycle) - monthlyAmountForCycle(a.monthlyCost || 0, a.billingCycle))
     .slice(0, 5);
 
   // Recent services
@@ -456,6 +469,37 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
   return (
     <div className="space-y-6">
+      {/* Resume nudge: the lifecycle-nudge cron only re-engages users with NO plan
+          and NO services, so someone who added an address then bounced out of the
+          wizard gets no prompt. This closes that gap using onboardingStepIndex. */}
+      {onboarding && !onboarding.completed && !resumeDismissed && (
+        <div className="rounded-2xl border border-tone-orange-br bg-tone-orange-bg/40 p-4 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">Finish setting up your move</p>
+            <p className="text-xs text-muted-foreground">
+              You&apos;re on step {Math.min(onboarding.stepIndex + 1, 4)} of 4 — pick up where you left off.
+            </p>
+          </div>
+          <Link
+            href="/onboarding"
+            className="shrink-0 rounded-lg border border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg text-xs font-semibold px-3 py-2 hover:opacity-90 transition"
+          >
+            Resume
+          </Link>
+          <button
+            type="button"
+            onClick={() => setResumeDismissed(true)}
+            aria-label="Dismiss"
+            className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {/* AI move briefing — plain-English situation summary + top next actions.
+          Parity with mobile; renders nothing when not configured or already seen
+          for this move stage. */}
+      <MoveBriefingCard />
       {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next action.
           When there's no active move it renders a warm "start your move" hero
           instead of a cold empty grid. */}
@@ -636,7 +680,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                       {addresses.map((addr) => {
                         const TypeIcon = typeIcons[addr.type] || MapPin;
                         const svcCount = addr.services?.length || 0;
-                        const addrCost = addr.services?.reduce((sum: number, s: any) => sum + (s.monthlyCost || 0), 0) || 0;
+                        const addrCost = addr.services?.reduce((sum: number, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle), 0) || 0;
                         const pct = stats.monthlyExpenses > 0 ? (addrCost / stats.monthlyExpenses) * 100 : 0;
                         return (
                           <Link key={addr.id} href={`/addresses/${addr.id}`}>
@@ -792,7 +836,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             {(svc.monthlyCost || 0) > 0 && (
-                              <span className="text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}/mo</span>
+                              <span className="text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
                             )}
                             <Link href={`/services/${svc.id}`}>
                               <button className="p-1 rounded-md text-muted-foreground hover:text-tone-orange-fg hover:bg-tone-orange-bg transition opacity-0 group-hover:opacity-100" aria-label={td("recent_editService")}>
@@ -858,7 +902,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-foreground/80 truncate">{svc.providerName}</p>
                           </div>
-                          <span className="text-xs font-semibold text-tone-emerald-fg shrink-0">{formatCurrency(svc.monthlyCost)}</span>
+                          <span className="text-xs font-semibold text-tone-emerald-fg shrink-0">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
                         </div>
                       ))}
                     </div>
