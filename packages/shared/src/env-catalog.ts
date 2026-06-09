@@ -383,6 +383,48 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     note: "Set to 'true' to enable.",
   },
 
+  // Admin operator digest (admin-daily-digest cron) — operator-tunable controls.
+  {
+    key: "ADMIN_DIGEST_ENABLED",
+    classification: "optional",
+    label: "Admin Digest Enabled",
+    description: "Operator morning briefing email. Enabled by default; set 'false' to disable.",
+    apps: ["web"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "Set to 'false' to turn the admin daily digest off.",
+  },
+  {
+    key: "ADMIN_DIGEST_SKIP_IF_EMPTY",
+    classification: "optional",
+    label: "Admin Digest — Skip Empty",
+    description: "When 'true', suppress the admin digest on quiet days (no activity in the window).",
+    apps: ["web"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "Set to 'true' to skip all-zero digests.",
+  },
+  {
+    key: "ADMIN_DIGEST_MIN_CHURN_ALERT",
+    classification: "optional",
+    label: "Admin Digest — Churn Alert %",
+    description: "Monthly churn % above which an immediate anomaly alert (Slack + email) fires. Default 5.",
+    apps: ["web"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "A number, e.g. '5'.",
+  },
+  {
+    key: "ADMIN_DIGEST_EXCLUDE_EMAILS",
+    classification: "optional",
+    label: "Admin Digest — Excluded Recipients",
+    description: "Comma-separated admin emails to omit from the per-admin digest fan-out (no-migration opt-out).",
+    apps: ["web"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "e.g. 'a@x.com,b@y.com'.",
+  },
+
   // FCC ISP serviceability
   {
     key: "FCC_BDC_ENABLED",
