@@ -67,23 +67,40 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const [tickets, total, stats] = await Promise.all([
-      prisma.supportTicket.findMany({
-        where,
-        include: {
-          user: { select: { id: true, firstName: true, lastName: true, email: true } },
-          messages: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: { content: true, senderType: true, createdAt: true },
-          },
-          _count: { select: { messages: true } },
-        },
-        orderBy: [{ priority: "desc" }, { updatedAt: "desc" }],
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.supportTicket.count({ where }),
+    // Priority is a VarChar, so ordering by `priority: "desc"` sorts it
+    // ALPHABETICALLY (URGENT > MEDIUM > LOW > HIGH) — burying HIGH below LOW in
+    // the triage queue. Order by an explicit severity rank instead. Prisma's
+    // `orderBy` can't express a custom value order, so resolve the correctly
+    // ordered page of IDs from a lightweight (id/priority/updatedAt) scan, then
+    // hydrate only that page with its relations.
+    const PRIORITY_RANK: Record<string, number> = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const ordering = await prisma.supportTicket.findMany({
+      where,
+      select: { id: true, priority: true, updatedAt: true },
+    });
+    ordering.sort((a, b) => {
+      const byRank = (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0);
+      if (byRank !== 0) return byRank;
+      return b.updatedAt.getTime() - a.updatedAt.getTime();
+    });
+    const total = ordering.length;
+    const pageIds = ordering.slice((page - 1) * limit, (page - 1) * limit + limit).map((t) => t.id);
+
+    const [pageTickets, stats] = await Promise.all([
+      pageIds.length
+        ? prisma.supportTicket.findMany({
+            where: { id: { in: pageIds } },
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true, email: true } },
+              messages: {
+                orderBy: { createdAt: "desc" },
+                take: 1,
+                select: { content: true, senderType: true, createdAt: true },
+              },
+              _count: { select: { messages: true } },
+            },
+          })
+        : Promise.resolve([] as any[]),
       // Quick stats
       Promise.all([
         prisma.supportTicket.count({ where: { status: "OPEN" } }),
@@ -93,6 +110,10 @@ export async function GET(request: NextRequest) {
         prisma.supportTicket.count({ where: { assignedTo: session.adminId, status: { notIn: ["CLOSED", "RESOLVED"] } } }),
       ]),
     ]);
+
+    // `findMany({ id: { in } })` doesn't preserve order — re-apply the ranked page order.
+    const ticketById = new Map(pageTickets.map((t: { id: string }) => [t.id, t]));
+    const tickets = pageIds.map((id) => ticketById.get(id)).filter((t): t is any => Boolean(t));
 
     const assignedIds = Array.from(
       new Set(
