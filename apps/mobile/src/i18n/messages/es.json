@@ -143,6 +143,8 @@
     "quickActions": "Acciones rápidas",
     "premiumBadge": "Premium",
     "loadFailed": "Panel no disponible",
+    "offlineUpdated": "Sin conexión · actualizado {{age}}",
+    "offlineGeneric": "Sin conexión · mostrando la última información guardada",
     "inviteHeading": "Invitación al espacio",
     "inviteBody": "{{inviter}} te invitó a unirte a {{workspace}}",
     "inviteBodyNoInviter": "Te invitaron a unirte a {{workspace}}",
@@ -400,7 +402,16 @@
     "recommendedBecause": "Recomendado porque",
     "stillNeeded": "Aún necesitas",
     "stillNeededHint": "Esenciales para los que aún no tienes proveedor. Toca para filtrar.",
-    "stillNeededChipA11y": "Filtrar por {{category}} — aún lo necesitas"
+    "stillNeededChipA11y": "Filtrar por {{category}} — aún lo necesitas",
+    "checkAvailabilityTitle": "Verifica la disponibilidad en tu dirección",
+    "checkAvailabilityBody": "{{provider}} confirma el servicio en tu dirección exacta en su sitio. LocateFlow no puede verificarlo por ti.",
+    "checkAvailabilityCta": "Verificar disponibilidad en el sitio de {{provider}}",
+    "checkAvailabilityA11y": "Verificar la disponibilidad de {{provider}} en tu dirección en su sitio",
+    "checkAvailabilityHint": "Abre el sitio de {{provider}} donde puedes confirmar el servicio en tu dirección",
+    "stateGuideTitle": "Guía del estado de {{state}}",
+    "stateGuideSubtitle": "Reglas estatales para gestionar después de mudarte",
+    "stateGuideBadge": "Estatal",
+    "stateGuideDisclaimer": "Solo orientación estatal — tu ciudad o condado puede agregar pasos. Confirma con la agencia estatal oficial."
   },
   "coverage": {
     "EXACT_ZIP": {

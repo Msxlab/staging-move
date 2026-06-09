@@ -24,9 +24,6 @@ import {
   PlusCircle,
   XCircle,
   Shield,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
   Check,
   UserPlus,
 } from "lucide-react-native";
@@ -36,6 +33,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
+import { StateRulesCard } from "@/components/provider/StateRulesCard";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -65,8 +63,6 @@ export default function MovingDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [migration, setMigration] = useState<any>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
-  const [stateRules, setStateRules] = useState<any>(null);
-  const [stateGuideOpen, setStateGuideOpen] = useState(false);
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -102,10 +98,6 @@ export default function MovingDetailScreen() {
       if (normalizedPlan && (normalizedPlan.status === "PLANNING" || normalizedPlan.status === "IN_PROGRESS")) {
         await fetchMigration(normalizedPlan.id);
         await fetchMoveTasks(normalizedPlan.id);
-      }
-      if (normalizedPlan?.toAddress?.state) {
-        const srRes = await api.get<any>("/api/state-rules", { state: normalizedPlan.toAddress.state });
-        if (srRes.data?.stateRule) setStateRules(srRes.data.stateRule);
       }
       setError(null);
     }
@@ -846,59 +838,10 @@ export default function MovingDetailScreen() {
           </CollapsibleCard>
         )}
 
-        {/* State Guide */}
-        {stateRules && (
-          <View style={styles.stateGuideCard}>
-            <TouchableOpacity
-              style={styles.stateGuideHeader}
-              activeOpacity={0.7}
-              onPress={() => setStateGuideOpen(!stateGuideOpen)}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <BookOpen size={16} color={theme.colors.primary} />
-                <Text style={styles.stateGuideTitle}>{t("moving.stateGuide", { state: plan.toAddress?.state })}</Text>
-              </View>
-              {stateGuideOpen
-                ? <ChevronUp size={16} color={theme.colors.textMuted} />
-                : <ChevronDown size={16} color={theme.colors.textMuted} />
-              }
-            </TouchableOpacity>
-            {stateGuideOpen && (
-              <View style={styles.stateGuideBody}>
-                {stateRules.dmvRules && (
-                  <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>{t("moving.dmvVehicle")}</Text>
-                    <Text style={styles.stateGuideSectionText}>{stateRules.dmvRules}</Text>
-                  </View>
-                )}
-                {stateRules.voterRegistration && (
-                  <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>{t("moving.voterRegistration")}</Text>
-                    <Text style={styles.stateGuideSectionText}>{stateRules.voterRegistration}</Text>
-                  </View>
-                )}
-                {stateRules.taxInfo && (
-                  <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>{t("moving.stateTax")}</Text>
-                    <Text style={styles.stateGuideSectionText}>{stateRules.taxInfo}</Text>
-                  </View>
-                )}
-                {stateRules.utilityInfo && (
-                  <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>{t("moving.utilities")}</Text>
-                    <Text style={styles.stateGuideSectionText}>{stateRules.utilityInfo}</Text>
-                  </View>
-                )}
-                {stateRules.insuranceRules && (
-                  <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>{t("moving.insurance")}</Text>
-                    <Text style={styles.stateGuideSectionText}>{stateRules.insuranceRules}</Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
-        )}
+        {/* State Guide — shared StateRulesCard, keyed on the destination state.
+            Self-fetches /api/state-rules and renders nothing if no rule exists.
+            Same component the providers browse header uses, so both stay in sync. */}
+        <StateRulesCard state={plan.toAddress?.state} />
 
         {/* Delete */}
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
@@ -1121,21 +1064,4 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.emerald.text,
   },
   swipeActionText: { fontSize: 13, fontWeight: "800", color: "#fff" },
-  stateGuideCard: {
-    marginTop: 16,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
-  },
-  stateGuideHeader: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  stateGuideTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  stateGuideBody: { paddingHorizontal: 16, paddingBottom: 16, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  stateGuideSection: { marginTop: 12 },
-  stateGuideSectionLabel: { fontSize: 10, fontWeight: "700", color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
-  stateGuideSectionText: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 20 },
 });

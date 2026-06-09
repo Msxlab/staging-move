@@ -12,6 +12,13 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
   // signs in on this device doesn't inherit the previous user's onboarding
   // status (which would silently bypass /onboarding for them).
   "locateflow.onboardingCompleted",
+  // Offline cold-start dashboard snapshot — echoes the last signed-in user's
+  // move route, task titles, saved addresses and providers. Device-keyed, so
+  // wipe it on logout/delete or the next account would briefly see the prior
+  // user's last-known dashboard on a no-signal cold start.
+  "locateflow.dashboard.snapshot.v1",
+  // Home-screen widget snapshot (move countdown / next task). Same rationale.
+  "locateflow.widget.snapshot.v1",
 ];
 
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {

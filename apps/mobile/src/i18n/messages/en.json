@@ -143,6 +143,8 @@
     "quickActions": "Quick actions",
     "premiumBadge": "Premium",
     "loadFailed": "Dashboard unavailable",
+    "offlineUpdated": "Offline · updated {{age}}",
+    "offlineGeneric": "Offline · showing last saved info",
     "inviteHeading": "Workspace invitation",
     "inviteBody": "{{inviter}} invited you to join {{workspace}}",
     "inviteBodyNoInviter": "You've been invited to join {{workspace}}",
@@ -420,7 +422,16 @@
     "recommendedBecause": "Recommended because",
     "stillNeeded": "Still needed",
     "stillNeededHint": "Essentials you don't have a provider for yet. Tap to filter.",
-    "stillNeededChipA11y": "Filter to {{category}} — you still need this"
+    "stillNeededChipA11y": "Filter to {{category}} — you still need this",
+    "checkAvailabilityTitle": "Check availability at your address",
+    "checkAvailabilityBody": "{{provider}} confirms service at your exact address on their site. LocateFlow can't verify it for you.",
+    "checkAvailabilityCta": "Check availability on {{provider}}'s site",
+    "checkAvailabilityA11y": "Check availability for {{provider}} at your address on their site",
+    "checkAvailabilityHint": "Opens {{provider}}'s website where you can confirm service at your address",
+    "stateGuideTitle": "{{state}} state guide",
+    "stateGuideSubtitle": "Statewide rules to handle after you move",
+    "stateGuideBadge": "Statewide",
+    "stateGuideDisclaimer": "Statewide guidance only — your city or county may add steps. Confirm with the official state agency."
   },
   "coverage": {
     "EXACT_ZIP": {

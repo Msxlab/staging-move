@@ -26,6 +26,7 @@ import { CategoryChipRow, type CategoryChip } from "@/components/provider/Catego
 import { RecommendedRow, type RecommendedRowItem } from "@/components/provider/RecommendedRow";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { StateRulesCard } from "@/components/provider/StateRulesCard";
 import { getCategoryIcon, getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
 
 const PAGE_SIZE = 20;
@@ -308,6 +309,17 @@ export default function ProvidersScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        ) : null}
+        {/* "YOUR STATE" guide — first-class surface for the statewide rules a
+            mover must handle (DMV, voter registration, taxes), keyed on the
+            user's primary-address state. Self-fetches /api/state-rules and
+            renders nothing if there's no state or no rule. The SAME component
+            renders inside moving/[id], so both stay in sync. Hidden while
+            searching, like the other contextual header sections. */}
+        {!search && primaryAddress?.state ? (
+          <View style={styles.stateGuideWrap}>
+            <StateRulesCard state={primaryAddress.state} />
           </View>
         ) : null}
         {/* "Still needed" gap chips — engine-flagged essentials the user has no
@@ -596,6 +608,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     lineHeight: 17,
+  },
+  stateGuideWrap: {
+    paddingHorizontal: 20,
+    marginBottom: 4,
   },
   gapWrap: {
     marginBottom: 16,
