@@ -1169,13 +1169,21 @@ function compareScoredProviders(a: ScoredProvider, b: ScoredProvider): number {
 export function buildRecommendationClusters(
   scoredProviders: ScoredProvider[],
   completedCategories: string[] = [],
+  excludeProviderIds: Set<string> = new Set(),
 ): RecommendationResult {
   const tiers: UrgencyTier[] = ["CRITICAL", "IMPORTANT", "RECOMMENDED", "OPTIONAL"];
   const completedSet = new Set(completedCategories.map((c) => c.toUpperCase()));
+  // Providers the user has dismissed / snoozed are removed from the RECOMMENDATION
+  // clusters (and nextCriticalActions derived from them) so the engine stops
+  // re-surfacing rejected picks. They remain in `allProviders` so the user can
+  // still find them by browsing the full directory.
+  const recommendable = excludeProviderIds.size
+    ? scoredProviders.filter((p) => !excludeProviderIds.has(p.id))
+    : scoredProviders;
 
   const clusters: RecommendationCluster[] = tiers.map((tier) => {
     const meta = URGENCY_TIER_META[tier];
-    const tierProviders = scoredProviders.filter((p) => p.urgencyTier === tier);
+    const tierProviders = recommendable.filter((p) => p.urgencyTier === tier);
 
     // Deduplicate by category — show best provider per category in each tier
     const seenCategories = new Set<string>();

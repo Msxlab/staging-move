@@ -71,6 +71,7 @@ model User {
   connectorDispatches     ConnectorDispatch[]
   addressChangeEvents     AddressChangeEvent[]
   affiliateClicks         AffiliateClick[]
+  recommendationFeedback  RecommendationFeedback[]
   ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
@@ -780,6 +781,7 @@ model ServiceProvider {
   logoCandidates        ProviderLogoCandidate[]
   affiliateClicks       AffiliateClick[]
   affiliateConversions  AffiliateConversion[]
+  recommendationFeedback RecommendationFeedback[]
 
   deletedAt DateTime?
 
@@ -817,6 +819,25 @@ model AffiliateClick {
   @@index([userId])
   @@index([createdAt])
   @@index([providerId, createdAt]) // windowed click-rate aggregation in the admin dashboard
+}
+
+// Per-user recommendation feedback. A NOT_RELEVANT / DISMISS (permanent) or a
+// SNOOZE (until `until`) on a recommended provider, so the engine stops
+// re-surfacing what the user rejected. One active row per (user, provider) —
+// upserted, so re-acting just updates it.
+model RecommendationFeedback {
+  id         String          @id @default(cuid()) @db.VarChar(30)
+  userId     String          @db.VarChar(30)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String          @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  action     String          @db.VarChar(20) // DISMISS | NOT_RELEVANT | SNOOZE
+  until      DateTime? // SNOOZE expiry; null = permanent
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@unique([userId, providerId])
+  @@index([userId])
 }
 
 // Affiliate conversion (Layer 1 revenue). One row per partner-reported payout

@@ -132,6 +132,23 @@ describe("provider recommendation safety", () => {
     expect(soon.recommendationScore).toBeLessThan(later.recommendationScore);
   });
 
+  it("excludes dismissed providers from clusters but keeps them browseable", () => {
+    const scored = scoreProviders(
+      [
+        provider({ id: "elec", category: "UTILITY_ELECTRIC" }),
+        provider({ id: "water", category: "UTILITY_WATER" }),
+      ],
+      baseProfile,
+      "TX",
+    );
+    const result = buildRecommendationClusters(scored, [], new Set(["elec"]));
+    const clusterIds = result.clusters.flatMap((c) => c.providers.map((p) => p.id));
+
+    expect(clusterIds).not.toContain("elec"); // dismissed → out of the recommendation clusters
+    expect(clusterIds).toContain("water");
+    expect(result.allProviders.map((p) => p.id)).toContain("elec"); // still in the full directory
+  });
+
   it("returns caveats and manual confirmation language for weak coverage", () => {
     const [scored] = scoreProviders(
       [

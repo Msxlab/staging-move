@@ -349,14 +349,27 @@ export function ProvidersClient({
     return list;
   }, [providers, categoryFilter, showSavedOnly, shortlist]);
 
+  // Per-user "not relevant" dismissals — optimistically hidden here and persisted
+  // server-side so the engine stops re-surfacing them on future loads.
+  const [dismissedRecIds, setDismissedRecIds] = useState<Set<string>>(new Set());
+  const dismissRecommendation = useCallback((providerId: string) => {
+    setDismissedRecIds((prev) => new Set(prev).add(providerId));
+    trackEvent("recommendation_dismiss", { provider_id: providerId, surface: "providers_strip" });
+    void fetch("/api/providers/recommendations/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ providerId, action: "NOT_RELEVANT" }),
+    }).catch(() => {});
+  }, []);
+
   const highlightProviders = useMemo(() => {
     const critical = recs?.clusters.find((c) => c.tier === "CRITICAL");
     const important = recs?.clusters.find((c) => c.tier === "IMPORTANT");
-    return [
-      ...(critical?.providers || []).slice(0, 3),
-      ...(important?.providers || []).slice(0, 3),
-    ].slice(0, 6);
-  }, [recs]);
+    // Filter dismissed BEFORE slicing so a dismissal promotes the next pick in.
+    const crit = (critical?.providers || []).filter((p) => !dismissedRecIds.has(p.id)).slice(0, 3);
+    const imp = (important?.providers || []).filter((p) => !dismissedRecIds.has(p.id)).slice(0, 3);
+    return [...crit, ...imp].slice(0, 6);
+  }, [recs, dismissedRecIds]);
 
   // Fire one impression per recommended provider so the recommendation engine's
   // runtime-tunable scoring weights become measurable via CTR. Deduped by id
@@ -463,8 +476,22 @@ export function ProvidersClient({
                     surface: "providers_strip",
                   })
                 }
-                className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3 overflow-hidden"
+                className="group relative min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 pr-7 flex items-start gap-3 overflow-hidden"
               >
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Not relevant"
+                  title="Not relevant — hide this recommendation"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dismissRecommendation(p.id);
+                  }}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/10 transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </span>
                 <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
                 <div className="min-w-0 flex-1">
                   {(() => {
