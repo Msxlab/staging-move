@@ -1254,6 +1254,71 @@
   }
 }
 
+/* ----------------------------------------------------------------------
+ * Homepage hero "move" animation (HeroMoveAnimation).
+ * Only the two purely-decorative loops live in CSS — the breathing aura
+ * behind the new-home pin and the traveling pulse dots on the guide lines.
+ * The orchestrated chip travel / bounce / counter / raccoon are driven in
+ * the component via framer-motion. All of it is gated off under
+ * prefers-reduced-motion, where the component renders the static end state.
+ * Colors use the token ramp (--primary cool-blue, --success sage mint) so
+ * the scene tracks light/dark and the per-plan accent automatically.
+ * -------------------------------------------------------------------- */
+.lf-hero-aura {
+  background: radial-gradient(
+    circle,
+    hsl(var(--primary) / 0.34),
+    transparent 68%
+  );
+  animation: lf-hero-aura 3.4s ease-in-out infinite;
+}
+@keyframes lf-hero-aura {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+.lf-hero-flowdot {
+  fill: hsl(var(--primary));
+  filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.8));
+  offset-rotate: 0deg;
+  animation-name: lf-hero-flow;
+  animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  animation-iteration-count: infinite;
+}
+@keyframes lf-hero-flow {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-hero-aura,
+  .lf-hero-flowdot {
+    animation: none !important;
+  }
+  .lf-hero-flowdot {
+    display: none;
+  }
+}
+
 /* ===== Mobile in-app browser embed mode =====
    The mobile app opens locateflow.com URLs with `?embed=mobile`. The
    inline script in app/layout.tsx latches that flag onto <html data-embed>.
