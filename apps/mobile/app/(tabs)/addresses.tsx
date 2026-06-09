@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MapPin, Plus, Check, AlertTriangle } from "lucide-react-native";
+import { MapPin, Plus, Check, AlertTriangle, List, Map as MapIcon } from "lucide-react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { monthlyAmountForCycle } from "@locateflow/shared";
@@ -20,6 +20,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { AddressesMap } from "@/components/addresses/AddressesMap";
 import type { Address } from "@locateflow/shared";
 
 // ── Addresses "Hub" recreation of the Aurora design (explore/Mobile Addresses) ──
@@ -154,6 +155,7 @@ export default function AddressesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [seg, setSeg] = useState<"all" | "active" | "past">("all");
+  const [viewMode, setViewMode] = useState<"hub" | "map">("hub");
 
   const fetchAddresses = useCallback(async () => {
     // limit=200 (the route max): these are small per-user collections shown as
@@ -297,13 +299,31 @@ export default function AddressesScreen() {
             {addresses.length} · {totalServices} {t("services.title").toLowerCase()} · {fmtUsd(totalMonthly)}
           </Text>
         </View>
-        <PressableScale
-          style={styles.addButton}
-          onPress={() => router.push("/addresses/new")}
-          accessibilityLabel={t("addresses.newTitle")}
-        >
-          <Plus size={20} color="#fff" />
-        </PressableScale>
+        <View style={styles.headerRight}>
+          <View style={styles.viewToggle}>
+            <TouchableOpacity
+              style={[styles.viewToggleBtn, viewMode === "hub" && styles.viewToggleBtnOn]}
+              onPress={() => setViewMode("hub")}
+              accessibilityLabel="List view"
+            >
+              <List size={18} color={viewMode === "hub" ? theme.colors.primary : theme.colors.textTertiary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewToggleBtn, viewMode === "map" && styles.viewToggleBtnOn]}
+              onPress={() => setViewMode("map")}
+              accessibilityLabel="Map view"
+            >
+              <MapIcon size={18} color={viewMode === "map" ? theme.colors.primary : theme.colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
+          <PressableScale
+            style={styles.addButton}
+            onPress={() => router.push("/addresses/new")}
+            accessibilityLabel={t("addresses.newTitle")}
+          >
+            <Plus size={20} color="#fff" />
+          </PressableScale>
+        </View>
       </View>
 
       <ScrollView
@@ -328,6 +348,11 @@ export default function AddressesScreen() {
             description={t("addresses.emptyDescription")}
             actionLabel={t("addresses.newTitle")}
             onAction={() => router.push("/addresses/new")}
+          />
+        ) : viewMode === "map" ? (
+          <AddressesMap
+            addresses={addresses}
+            onOpen={(id) => router.push({ pathname: "/addresses/[id]", params: { id } })}
           />
         ) : (
           <>
@@ -402,6 +427,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   list: { gap: 12 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  viewToggle: {
+    flexDirection: "row",
+    padding: 3,
+    borderRadius: 11,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  viewToggleBtn: { width: 36, height: 36, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  viewToggleBtnOn: { backgroundColor: theme.colors.primaryFaded },
   // ── Hub (Aurora design recreation) ──
   seg: {
     flexDirection: "row",
