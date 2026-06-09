@@ -101,4 +101,23 @@ describe("moving mutation gates", () => {
     expect(body.code).toBe("SUBSCRIPTION_REQUIRED");
     expect(body.entitlementCode).toBe("SUBSCRIPTION_INACTIVE");
   });
+
+  it("passes the freemium MOVING_PLAN_UPGRADE_REQUIRED code through verbatim with upgradeRequired", async () => {
+    // The move plan is the paid unlock — a free user trying to create one must
+    // get the upgrade signal (not a generic subscription-required), so the
+    // client can show the teaser/Unlock CTA rather than a dead-end error.
+    canCreateMovingPlanMock.mockResolvedValueOnce({
+      allowed: false,
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      reason: "Upgrade to Individual to unlock your full move plan.",
+      upgradeRequired: true,
+    });
+
+    const response = await movingRequest();
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("MOVING_PLAN_UPGRADE_REQUIRED");
+    expect(body.upgradeRequired).toBe(true);
+  });
 });

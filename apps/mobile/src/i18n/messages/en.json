@@ -602,7 +602,12 @@
     "voterRegistration": "Voter Registration",
     "stateTax": "State Tax",
     "utilities": "Utilities",
-    "insurance": "Insurance"
+    "insurance": "Insurance",
+    "upgradeRequiredBody": "The full moving plan — personalized checklist, countdown, and tracking — unlocks with Individual."
+  },
+  "subscription": {
+    "upgradeTitle": "Unlock your move plan",
+    "upgrade": "Upgrade"
   },
   "budget": {
     "title": "Budget",
@@ -823,6 +828,28 @@
     "privacyPolicy": "Privacy Policy",
     "privacyPolicy_description": "Open LocateFlow's privacy policy."
   },
+  "teaser": {
+    "eyebrow": "Your move preview",
+    "planReadyRoute": "Your {{count}}-step {{route}} plan is ready",
+    "planReady": "Your {{count}}-step personalized plan is ready",
+    "planReadyGeneric": "Your personalized move plan is ready",
+    "topSteps": "Your top critical steps",
+    "moreSteps": "+{{count}} more steps in your full plan",
+    "daysToGo": "{{count}} days to go",
+    "oneDay": "1 day to go",
+    "movingDay": "It's moving day!",
+    "daysAgo": "Moved {{count}} days ago",
+    "unlockHint": "Unlock your full plan: a personalized checklist, deadline countdown, and move tracking.",
+    "unlockCta": "Unlock with Individual",
+    "dashboardEyebrow": "Unlock the move",
+    "dashboardTitle": "Ready to plan your move?",
+    "dashboardBody": "Free keeps your home organized — addresses, providers, bills, and reminders. The full moving plan (personalized checklist, countdown, and tracking) unlocks with Individual.",
+    "dashboardCta": "Unlock your move plan",
+    "freeIncluded": "Included free",
+    "freeAddresses": "Up to 3 homes & addresses",
+    "freeProviders": "Unlimited providers & services",
+    "freeReminders": "Bill & renewal reminders"
+  },
   "onboarding": {
     "step1_title": "Let's set up your profile",
     "step2_title": "Add your first address",
@@ -873,7 +900,10 @@
     "providers_loading": "Loading providers...",
     "providers_empty": "No providers found.",
     "moving_title": "Do you have a move planned?",
-    "moving_description": "If yes, we'll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.",
+    "moving_description": "If yes, we'll build a personalized preview of your move — your countdown and top critical steps. If not, you can add one any time from the Moving tab.",
+    "teaser_preview": "See my plan preview",
+    "teaser_continueFree": "Continue with the free plan",
+    "teaser_editMove": "Edit move details",
     "invitedMemberMovingNote": "You've joined a household. A move plan is optional — your household's owner manages the shared move. You can add your own any time.",
     "moving_yes": "Yes, plan my move",
     "moving_no": "Not right now",

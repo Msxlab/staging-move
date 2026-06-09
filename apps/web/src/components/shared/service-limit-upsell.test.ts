@@ -100,4 +100,15 @@ describe("buildServiceLimitCopy", () => {
     expect(copy.body).not.toContain("after trial");
     expect(copy.primary).toBe("Subscribe monthly");
   });
+
+  it("uses move-plan upsell copy for MOVING_PLAN_UPGRADE_REQUIRED (not a service-limit message)", () => {
+    // Reused as the move paywall: the free tier has unlimited services, so this
+    // branch must NOT talk about a service-count limit and must steer to the
+    // Individual move-plan unlock.
+    const copy = buildServiceLimitCopy({ code: "MOVING_PLAN_UPGRADE_REQUIRED" });
+    expect(copy.title).not.toContain("service limit");
+    expect(copy.body).not.toContain("active services");
+    expect(copy.body).toMatch(/Individual/);
+    expect(copy.primary).toContain("Individual");
+  });
 });

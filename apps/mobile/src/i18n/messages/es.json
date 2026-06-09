@@ -582,7 +582,12 @@
     "voterRegistration": "Registro electoral",
     "stateTax": "Impuestos estatales",
     "utilities": "Servicios públicos",
-    "insurance": "Seguro"
+    "insurance": "Seguro",
+    "upgradeRequiredBody": "El plan de mudanza completo — lista personalizada, cuenta regresiva y seguimiento — se desbloquea con Individual."
+  },
+  "subscription": {
+    "upgradeTitle": "Desbloquea tu plan de mudanza",
+    "upgrade": "Mejorar plan"
   },
   "budget": {
     "title": "Presupuesto",
@@ -803,6 +808,28 @@
     "privacyPolicy": "Politica de privacidad",
     "privacyPolicy_description": "Abre la politica de privacidad de LocateFlow."
   },
+  "teaser": {
+    "eyebrow": "Vista previa de tu mudanza",
+    "planReadyRoute": "Tu plan {{route}} de {{count}} pasos está listo",
+    "planReady": "Tu plan personalizado de {{count}} pasos está listo",
+    "planReadyGeneric": "Tu plan de mudanza personalizado está listo",
+    "topSteps": "Tus pasos críticos principales",
+    "moreSteps": "+{{count}} pasos más en tu plan completo",
+    "daysToGo": "Faltan {{count}} días",
+    "oneDay": "Falta 1 día",
+    "movingDay": "¡Es el día de la mudanza!",
+    "daysAgo": "Te mudaste hace {{count}} días",
+    "unlockHint": "Desbloquea tu plan completo: lista personalizada, cuenta regresiva de plazos y seguimiento de la mudanza.",
+    "unlockCta": "Desbloquear con Individual",
+    "dashboardEyebrow": "Desbloquea la mudanza",
+    "dashboardTitle": "¿Listo para planear tu mudanza?",
+    "dashboardBody": "El plan gratuito mantiene tu hogar organizado: direcciones, proveedores, facturas y recordatorios. El plan de mudanza completo (lista personalizada, cuenta regresiva y seguimiento) se desbloquea con Individual.",
+    "dashboardCta": "Desbloquear tu plan de mudanza",
+    "freeIncluded": "Incluido gratis",
+    "freeAddresses": "Hasta 3 hogares y direcciones",
+    "freeProviders": "Proveedores y servicios ilimitados",
+    "freeReminders": "Recordatorios de facturas y renovaciones"
+  },
   "onboarding": {
     "step1_title": "Configuremos tu perfil",
     "step2_title": "Agrega tu primera dirección",
@@ -845,7 +872,10 @@
     "providers_loading": "Cargando proveedores...",
     "providers_empty": "No se encontraron proveedores.",
     "moving_title": "¿Tienes una mudanza planeada?",
-    "moving_description": "Si sí, generaremos una lista personalizada con tareas y plazos. Si no, puedes agregar una en cualquier momento desde la pestaña Mudanza.",
+    "moving_description": "Si sí, crearemos una vista previa personalizada de tu mudanza: tu cuenta regresiva y tus pasos críticos principales. Si no, puedes agregar una en cualquier momento desde la pestaña Mudanza.",
+    "teaser_preview": "Ver la vista previa de mi plan",
+    "teaser_continueFree": "Continuar con el plan gratuito",
+    "teaser_editMove": "Editar detalles de la mudanza",
     "invitedMemberMovingNote": "Te has unido a un hogar. El plan de mudanza es opcional: el propietario del hogar gestiona la mudanza compartida. Puedes agregar el tuyo en cualquier momento.",
     "moving_yes": "Sí, planear mi mudanza",
     "moving_no": "Ahora no",

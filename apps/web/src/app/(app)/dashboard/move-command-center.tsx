@@ -30,6 +30,7 @@ import {
   Sparkles,
   Truck,
   PackageCheck,
+  Lock,
 } from "lucide-react";
 import {
   getMoveCountdown,
@@ -65,6 +66,13 @@ export interface MoveCommandCenterProps {
    * fabricated completion). Defaults false → ring behaves exactly as before.
    */
   hasOriginDestination?: boolean;
+  /**
+   * Freemium gate: free (non-paid) users cannot create a MovingPlan. When false
+   * and there is no active plan, the no-plan hero becomes an UPGRADE teaser
+   * card (Unlock with Individual) instead of the "Start your move" CTA that
+   * deep-links to /moving/new (which would 403 for them).
+   */
+  isPremium?: boolean;
   /** Localised copy. Keyed access keeps this component i18n-agnostic. */
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
@@ -187,9 +195,41 @@ export function MoveCommandCenter({
   timezone,
   state,
   hasOriginDestination,
+  isPremium = true,
   t,
 }: MoveCommandCenterProps) {
-  // ── NO-PLAN: warm "start your move" hero ──────────────────────────────────
+  // ── NO-PLAN + FREE: upgrade teaser hero ───────────────────────────────────
+  // Free users can't create a MovingPlan, so the full Command Center is gated.
+  // Show an honest "unlock the move" card instead of a CTA that would 403.
+  if (!activePlan && !isPremium) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+          <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
+            <Lock className="h-7 w-7 text-tone-orange-fg" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-tone-orange-fg">
+              {t("commandCenter_eyebrow")}
+            </p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mt-1">
+              {t("commandCenter_freeTitle")}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+              {t("commandCenter_freeBody")}
+            </p>
+          </div>
+          <Link href="/settings/subscription?returnTo=%2Fdashboard" className="shrink-0">
+            <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
+              <Sparkles className="h-4 w-4" /> {t("commandCenter_freeCta")}
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ── NO-PLAN: warm "start your move" hero (paid users) ─────────────────────
   if (!activePlan) {
     return (
       <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6 sm:p-8">

@@ -467,6 +467,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
         completedCriticalCount={criticalReadiness.completed}
         state={primaryState}
         hasOriginDestination={hasOriginDestination}
+        isPremium={isPremium}
         t={td}
       />
 
@@ -510,9 +511,11 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
             </button>
           </Link>
-          <Link href="/moving/new">
+          {/* Free users can't create a MovingPlan — route the move CTA to the
+              upgrade path instead of /moving/new (which 403s for them). */}
+          <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
-              <Truck className="h-4 w-4" /> {td("planMoveBtn")}
+              <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}
             </button>
           </Link>
         </div>
@@ -759,7 +762,11 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-6 text-center">
                     <Truck className="h-10 w-10 mx-auto text-foreground/40 mb-2" />
                     <p className="text-sm text-foreground/40 mb-3">{td("moving_noPlan")}</p>
-                    <Link href="/moving/new"><button className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">{td("moving_planMove")}</button></Link>
+                    <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
+                      <button className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">
+                        {isPremium ? td("moving_planMove") : td("commandCenter_freeCta")}
+                      </button>
+                    </Link>
                   </div>
                 ) : null;
               }

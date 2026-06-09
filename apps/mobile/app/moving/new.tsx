@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 
 type DestinationMode = "existing" | "new";
 
@@ -257,6 +258,23 @@ export default function NewMovingPlanScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
+      // FREEMIUM: the moving plan is a paid unlock. A FREE user reaching this
+      // screen (e.g. via Quick Actions) gets MOVING_PLAN_UPGRADE_REQUIRED — show
+      // the Upgrade affordance instead of a confusing generic "Retry" alert.
+      if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
+        Alert.alert(
+          t("subscription.upgradeTitle", { defaultValue: "Unlock your move plan" }),
+          t("moving.upgradeRequiredBody", {
+            defaultValue:
+              "The full moving plan — personalized checklist, countdown, and tracking — unlocks with Individual.",
+          }),
+          [
+            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+          ],
+        );
+        return;
+      }
       Alert.alert(t("common.retry"), res.error);
       return;
     }

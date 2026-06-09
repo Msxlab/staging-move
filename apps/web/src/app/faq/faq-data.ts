@@ -24,6 +24,11 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
         plain:
           "No. LocateFlow provides informational organization tools and suggestions only. Users should consult authoritative sources or licensed professionals.",
       },
+      {
+        q: "What is included in the free plan?",
+        plain:
+          "The free plan organizes your home: up to 3 addresses, unlimited providers and services, and bill and renewal reminders. When you have a move planned, the free plan shows a preview of your personalized plan — your countdown and top critical steps. Creating and tracking the full move plan (checklist, state guide, provider migration, and move tasks) requires the Individual, Family, or Pro plan.",
+      },
     ],
   },
   {

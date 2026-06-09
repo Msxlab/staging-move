@@ -15,13 +15,26 @@ export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
  * Seat ceilings live in workspace-entitlements.ts; these are the per-owner
  * address/service caps enforced on write.
  */
+/**
+ * Sentinel for an "unlimited" cap. Deliberately a large finite integer rather
+ * than `Infinity`: the count check (`count >= limit`) can never trip, and if a
+ * limit is ever JSON-serialized to a client it stays a real number instead of
+ * collapsing to `null` (which `JSON.stringify(Infinity)` would produce). Any
+ * user-facing reason string that interpolates a cap must guard on this so we
+ * never print a giant number — see `canCreateService`, where the
+ * `SERVICE_LIMIT_REACHED` branch is unreachable for unlimited plans.
+ */
+export const UNLIMITED = Number.MAX_SAFE_INTEGER;
+
 const PLAN_LIMITS: Record<string, {
   maxAddresses: number;
   maxServices: number;
 }> = {
+  // FREE = "organize your home": 3 addresses, UNLIMITED providers/services.
+  // The move plan itself is gated separately (see canCreateMovingPlan).
   FREE_TRIAL: {
-    maxAddresses: 2,
-    maxServices: 10,
+    maxAddresses: 3,
+    maxServices: UNLIMITED,
   },
   INDIVIDUAL: {
     maxAddresses: 10,
@@ -37,11 +50,14 @@ const PLAN_LIMITS: Record<string, {
   },
 };
 
+// Pre-completion (setup) caps. Free now mirrors the active FREE_TRIAL floor:
+// 3 addresses + unlimited services. The moving-plan allowance is removed
+// entirely — free users never create a plan, they get the value-first teaser
+// and an upgrade CTA instead (see canCreateMovingPlan).
 const SETUP_GRACE_LIMITS = {
-  maxAddresses: 2,
-  maxServices: 10,
+  maxAddresses: 3,
+  maxServices: UNLIMITED,
   maxCustomProviders: 10,
-  maxMovingPlans: 1,
 };
 
 export type PlanName = keyof typeof PLAN_LIMITS;
@@ -231,8 +247,14 @@ export async function canCreateService(userId: string, scope: PlanLimitScope = {
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {
+      // Setup services are unlimited (mirrors the FREE_TRIAL floor), so the
+      // SETUP_SERVICE_LIMIT_REACHED branch is unreachable and we never emit the
+      // UNLIMITED sentinel as a user-facing `limit`. Guard kept defensively in
+      // case the setup cap is ever lowered to a real number again.
       if (count < SETUP_GRACE_LIMITS.maxServices) {
-        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxServices };
+        return SETUP_GRACE_LIMITS.maxServices >= UNLIMITED
+          ? { allowed: true, setupGrace: true, current: count }
+          : { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxServices };
       }
       return {
         allowed: false,
@@ -261,64 +283,79 @@ export async function canCreateService(userId: string, scope: PlanLimitScope = {
 }
 
 /**
- * Check if user can create a new moving plan.
+ * Check if the user can create a moving plan.
+ *
+ * FREEMIUM CONTRACT: the moving plan is the paid unlock. Only paid tiers
+ * (Individual/Family/Pro — i.e. `hasPremium`) may create one. Everyone else,
+ * including a FREE *active* user (FREE_TRIAL limits, `isActive:true`,
+ * `hasPremium:false`) and a setup-grace user, is blocked with a single
+ * upgrade-required signal. The onboarding/dashboard clients render the
+ * value-first teaser + "Unlock with Individual" CTA off this code rather than
+ * persisting a plan, so the gate must key on **paid tier**, never `isActive`.
+ *
+ * The prior setup-grace "1 free moving plan" allowance is removed entirely —
+ * free never creates a plan.
  */
 export async function canCreateMovingPlan(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
   const userPlan = await getPlanForLimitScope(userId, scope);
 
-  if (!userPlan.isActive) {
-    if (await isInSetupGrace(userId)) {
-      const count = await prisma.movingPlan.count({ where: { ...recordScopeWhere(userId, scope), deletedAt: null } });
-      if (count < SETUP_GRACE_LIMITS.maxMovingPlans) {
-        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
-      }
-      // Setup user hit their first-plan allowance. Surface the setup-specific
-      // code rather than falling through to inactivePlanBlock, which would
-      // (incorrectly) tell the user their trial has ended.
-      return {
-        allowed: false,
-        code: "SETUP_MOVING_PLAN_LIMIT_REACHED",
-        reason: `You can plan up to ${SETUP_GRACE_LIMITS.maxMovingPlans} move during setup. Upgrade to plan additional moves.`,
-        upgradeRequired: true,
-        current: count,
-        limit: SETUP_GRACE_LIMITS.maxMovingPlans,
-      };
-    }
-    return inactivePlanBlock(userPlan, "movingPlan");
+  if (userPlan.hasPremium) {
+    return { allowed: true };
   }
 
-  return { allowed: true };
+  return {
+    allowed: false,
+    code: "MOVING_PLAN_UPGRADE_REQUIRED",
+    reason: "Upgrade to Individual to unlock your full move plan.",
+    upgradeRequired: true,
+  };
 }
 
+/**
+ * Destination-address check for the moving-plan create flow. Since free users
+ * can no longer create a moving plan at all (canCreateMovingPlan blocks them
+ * first), this is only reached by paid users, and it simply applies their
+ * normal per-tier address cap. The old setup-grace bypass (which granted a free
+ * destination address for the first move) is gone with the moving-plan
+ * allowance.
+ */
 export async function canCreateMovingDestinationAddress(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
-  const existingMovingPlanCount = await prisma.movingPlan.count({ where: { ...recordScopeWhere(userId, scope), deletedAt: null } });
-  if (existingMovingPlanCount === 0 && await isInSetupGrace(userId)) {
-    return { allowed: true, setupGrace: true, current: existingMovingPlanCount, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
-  }
   return canCreateAddress(userId, scope);
 }
 
 /**
- * Check if user can create new paid-workflow artifacts.
- * Existing data remains readable, and completing already-created move tasks
- * stays available so users are not blocked from finishing local tracking.
+ * Check if the user can GENERATE move tasks (a paid-workflow artifact).
+ *
+ * Move-task generation is part of the paid move plan, so only paid tiers may
+ * generate. A FREE user (active, post-setup, or in setup) is blocked with the
+ * same MOVING_PLAN_UPGRADE_REQUIRED signal as plan creation — they have no
+ * plan to generate tasks for in the first place.
+ *
+ * Read stays open: this gate fires only on POST /api/move-tasks (generation)
+ * and syncSuggestedMoveTasks. GET /api/move-tasks is ungated, so a former paid
+ * user who lapsed (or a free user) keeps any existing move tasks readable, and
+ * completing already-created tasks stays available.
  */
 export async function canGenerateMoveTasks(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
   const userPlan = await getPlanForLimitScope(userId, scope);
 
+  if (userPlan.hasPremium) {
+    return { allowed: true };
+  }
+
+  // Lapsed paid users (trial expired / inactive) keep their tier-specific
+  // copy so the messaging matches their actual state. Everyone else — free
+  // active and setup users — gets the upgrade-required teaser signal.
   if (!userPlan.isActive) {
-    // Setup users have already been allowed to create their first moving
-    // plan; gating /api/move-tasks for them would let the plan exist but
-    // refuse the very tasks the onboarding flow asks the user to act on.
-    // canCreateMovingPlan caps the *count* of plans, so there is no abuse
-    // delta in mirroring that allowance here.
-    if (await isInSetupGrace(userId)) {
-      return { allowed: true, setupGrace: true };
-    }
     return inactivePlanBlock(userPlan, "moveTasks");
   }
 
-  return { allowed: true };
+  return {
+    allowed: false,
+    code: "MOVING_PLAN_UPGRADE_REQUIRED",
+    reason: "Upgrade to Individual to unlock your full move plan.",
+    upgradeRequired: true,
+  };
 }
 
 export async function canCreateCustomProvider(userId: string): Promise<PlanLimitCheck> {
