@@ -9,20 +9,20 @@
    ========================================================================= */
 :root,
 .dark {
-  --rose:        #7FB6E8;
-  --rose-light:  #A5C9F0;
-  --rose-deep:   #5C9DDC;
-  --foil-a:      #DDE7F5;
-  --foil-b:      #B49BFF;
-  --foil-c:      #5C9DDC;
-  --foil:        #B49BFF;
-  --foil-ink:    #1F5FA0;
+  --rose:        #F2C46C;
+  --rose-light:  #FBE7BD;
+  --rose-deep:   #D99A4E;
+  --foil-a:      #FBE7BD;
+  --foil-b:      #F2C46C;
+  --foil-c:      #D99A4E;
+  --foil:        #F2C46C;
+  --foil-ink:    #B0781E;
   --sage:        #87DDC0;
 
-  --brand-orange:       #7FB6E8;
-  --brand-orange-light: #A5C9F0;
-  --brand-orange-dark:  #5C9DDC;
-  --brand-amber:        #B49BFF;
+  --brand-orange:       #F2C46C;
+  --brand-orange-light: #FBE7BD;
+  --brand-orange-dark:  #D99A4E;
+  --brand-amber:        #F2C46C;
 
   --orange-50:  #EFF5FB;
   --orange-100: #DDE7F5;
@@ -42,14 +42,14 @@
 
   --line:        rgba(255, 255, 255, 0.10);
   --line-2:      rgba(255, 255, 255, 0.16);
-  --line-foil:   rgba(180, 155, 255, 0.22);
-  --border-focus: rgba(127, 182, 232, 0.55);
+  --line-foil:   rgba(242, 196, 108, 0.22);
+  --border-focus: rgba(242, 196, 108, 0.55);
 
   --tone-rose-bg: rgba(127, 182, 232, 0.16); --tone-rose-br: rgba(127, 182, 232, 0.32); --tone-rose-fg: #9CC6F0;
-  --tone-foil-bg: rgba(180, 155, 255, 0.16); --tone-foil-br: rgba(180, 155, 255, 0.32); --tone-foil-fg: #C7B6FF;
+  --tone-foil-bg: rgba(242, 196, 108, 0.16); --tone-foil-br: rgba(242, 196, 108, 0.32); --tone-foil-fg: #F5CE82;
   --tone-sage-bg: rgba(135, 221, 192, 0.16); --tone-sage-br: rgba(135, 221, 192, 0.32); --tone-sage-fg: #A0EAD2;
   --tone-honey-bg: rgba(242, 196, 108, 0.16); --tone-honey-br: rgba(242, 196, 108, 0.32); --tone-honey-fg: #F5CE82;
-  --tone-umber-bg: rgba(180, 155, 255, 0.16); --tone-umber-br: rgba(180, 155, 255, 0.32); --tone-umber-fg: #C7B6FF;
+  --tone-umber-bg: rgba(217, 154, 78, 0.16); --tone-umber-br: rgba(217, 154, 78, 0.32); --tone-umber-fg: #E2B873;
   --tone-slate-bg: rgba(168, 181, 201, 0.16); --tone-slate-br: rgba(168, 181, 201, 0.32); --tone-slate-fg: #C3CEDD;
   --tone-orange-bg: rgba(127, 182, 232, 0.16); --tone-orange-br: rgba(127, 182, 232, 0.32); --tone-orange-fg: #9CC6F0;
   --tone-emerald-bg: rgba(135, 221, 192, 0.16); --tone-emerald-br: rgba(135, 221, 192, 0.32); --tone-emerald-fg: #A0EAD2;
@@ -57,9 +57,9 @@
   --tone-sky-bg: rgba(127, 182, 232, 0.16); --tone-sky-br: rgba(127, 182, 232, 0.32); --tone-sky-fg: #9CC6F0;
   --tone-cyan-bg: rgba(127, 182, 232, 0.16); --tone-cyan-br: rgba(127, 182, 232, 0.32); --tone-cyan-fg: #9CC6F0;
 
-  --shadow-glow: 0 0 10px rgba(127, 182, 232, 0.12);
-  --shadow-rose: 0 0 10px rgba(127, 182, 232, 0.12);
-  --shadow-foil: 0 0 14px rgba(180, 155, 255, 0.07);
+  --shadow-glow: 0 0 10px rgba(242, 196, 108, 0.12);
+  --shadow-rose: 0 0 10px rgba(242, 196, 108, 0.12);
+  --shadow-foil: 0 0 14px rgba(242, 196, 108, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
   --success:       #87DDC0;
@@ -74,16 +74,19 @@
 
 /* ─────────────── Light mode — Aurora soft sky paper ─────────────── */
 .light {
-  --rose:        #2D7BC4;
-  --rose-light:  #4D8FCE;
-  --rose-deep:   #1F5FA0;
-  --foil:        #6F58C7;
-  --foil-ink:    #1F5FA0;
+  --rose:        #B0781E;
+  --rose-light:  #D99A4E;
+  --rose-deep:   #8A5E14;
+  --foil-a:      #FBE7BD;
+  --foil-b:      #B0781E;
+  --foil-c:      #D99A4E;
+  --foil:        #B0781E;
+  --foil-ink:    #B0781E;
   --sage:        #2E9B79;
 
-  --brand-orange:       #2D7BC4;
-  --brand-orange-light: #4D8FCE;
-  --brand-orange-dark:  #1F5FA0;
+  --brand-orange:       #B0781E;
+  --brand-orange-light: #D99A4E;
+  --brand-orange-dark:  #8A5E14;
 
   --orange-50:  #EFF5FB;
   --orange-100: #DDE7F5;
@@ -103,14 +106,14 @@
 
   --line:        rgba(20, 32, 47, 0.06);
   --line-2:      rgba(20, 32, 47, 0.14);
-  --line-foil:   rgba(111, 88, 199, 0.30);
-  --border-focus: rgba(45, 123, 196, 0.55);
+  --line-foil:   rgba(176, 120, 30, 0.30);
+  --border-focus: rgba(176, 120, 30, 0.55);
 
   --tone-rose-bg: rgba(45, 123, 196, 0.10); --tone-rose-br: rgba(45, 123, 196, 0.22); --tone-rose-fg: #2D7BC4;
-  --tone-foil-bg: rgba(111, 88, 199, 0.10); --tone-foil-br: rgba(111, 88, 199, 0.22); --tone-foil-fg: #6F58C7;
+  --tone-foil-bg: rgba(176, 120, 30, 0.10); --tone-foil-br: rgba(176, 120, 30, 0.22); --tone-foil-fg: #B0781E;
   --tone-sage-bg: rgba(46, 155, 121, 0.10); --tone-sage-br: rgba(46, 155, 121, 0.22); --tone-sage-fg: #2E9B79;
   --tone-honey-bg: rgba(185, 131, 24, 0.10); --tone-honey-br: rgba(185, 131, 24, 0.22); --tone-honey-fg: #B98318;
-  --tone-umber-bg: rgba(111, 88, 199, 0.10); --tone-umber-br: rgba(111, 88, 199, 0.22); --tone-umber-fg: #6F58C7;
+  --tone-umber-bg: rgba(176, 120, 30, 0.10); --tone-umber-br: rgba(176, 120, 30, 0.22); --tone-umber-fg: #B0781E;
   --tone-slate-bg: rgba(74, 92, 117, 0.10); --tone-slate-br: rgba(74, 92, 117, 0.22); --tone-slate-fg: #4A5C75;
   --tone-orange-bg: rgba(45, 123, 196, 0.10); --tone-orange-br: rgba(45, 123, 196, 0.22); --tone-orange-fg: #2D7BC4;
   --tone-emerald-bg: rgba(46, 155, 121, 0.10); --tone-emerald-br: rgba(46, 155, 121, 0.22); --tone-emerald-fg: #2E9B79;
@@ -118,9 +121,9 @@
   --tone-sky-bg: rgba(45, 123, 196, 0.10); --tone-sky-br: rgba(45, 123, 196, 0.22); --tone-sky-fg: #2D7BC4;
   --tone-cyan-bg: rgba(45, 123, 196, 0.10); --tone-cyan-br: rgba(45, 123, 196, 0.22); --tone-cyan-fg: #2D7BC4;
 
-  --shadow-glow: 0 0 20px rgba(45, 123, 196, 0.20);
-  --shadow-rose: 0 0 20px rgba(45, 123, 196, 0.20);
-  --shadow-foil: 0 0 30px rgba(111, 88, 199, 0.14);
+  --shadow-glow: 0 0 20px rgba(176, 120, 30, 0.20);
+  --shadow-rose: 0 0 20px rgba(176, 120, 30, 0.20);
+  --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.14);
 
   --success:       #2E9B79;
   --success-soft:  rgba(46, 155, 121, 0.10);
@@ -141,7 +144,7 @@
     --card-foreground: 213 39% 13%;
     --popover: 218 21% 96%;
     --popover-foreground: 213 39% 13%;
-    --primary: 209 63% 47%;
+    --primary: 38 71% 40%;
     --primary-foreground: 0 0% 100%;
     --secondary: 214 22% 38%;
     --secondary-foreground: 0 0% 100%;
@@ -153,7 +156,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 213 18% 82%;
     --input: 213 18% 82%;
-    --ring: 209 63% 47%;
+    --ring: 38 71% 40%;
     --radius: 0.5rem;
   }
 
@@ -167,7 +170,7 @@
     --card-foreground: 220 16% 98%;
     --popover: 218 22% 19%;
     --popover-foreground: 220 16% 98%;
-    --primary: 208 85% 64%;
+    --primary: 41 85% 68%;
     --primary-foreground: 222 40% 8%;
     --secondary: 220 10% 82%;
     --secondary-foreground: 222 40% 8%;
@@ -179,7 +182,7 @@
     --destructive-foreground: 222 40% 8%;
     --border: 217 20% 30%;
     --input: 217 20% 30%;
-    --ring: 208 85% 64%;
+    --ring: 41 85% 68%;
   }
 }
 
@@ -352,19 +355,19 @@
   color: #7FB6E8;
 }
 .tier-stamp.tier-family {
-  background: rgba(180, 155, 255, 0.10);
-  border-color: rgba(180, 155, 255, 0.32);
-  color: #B49BFF;
+  background: rgba(52, 216, 166, 0.10);
+  border-color: rgba(52, 216, 166, 0.32);
+  color: #34D8A6;
 }
 .tier-stamp.tier-pro {
   background: linear-gradient(
     135deg,
-    rgba(180, 155, 255, 0.18),
-    rgba(127, 182, 232, 0.20)
+    rgba(251, 231, 189, 0.18),
+    rgba(242, 196, 108, 0.22)
   );
-  border-color: rgba(127, 182, 232, 0.40);
-  color: #ECF1F8;
-  box-shadow: 0 0 0 1px rgba(127, 182, 232, 0.14) inset;
+  border-color: rgba(242, 196, 108, 0.40);
+  color: #F5CE82;
+  box-shadow: 0 0 0 1px rgba(242, 196, 108, 0.14) inset;
 }
 .tier-stamp.tier-trial {
   background: rgba(242, 196, 108, 0.10);
@@ -379,7 +382,7 @@
 .foil-text {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(135deg, #DDE7F5 0%, #7FB6E8 50%, #5C9DDC 100%);
+  background: linear-gradient(135deg, #FBE7BD 0%, #F2C46C 50%, #D99A4E 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -402,7 +405,7 @@
     box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .admin-panel:hover {
-  border-color: rgba(127, 182, 232, 0.32);
+  border-color: rgba(242, 196, 108, 0.32);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-head {
@@ -415,9 +418,9 @@
 }
 
 .admin-panel-flagship {
-  border-color: rgba(127, 182, 232, 0.30);
+  border-color: rgba(242, 196, 108, 0.30);
   box-shadow:
-    0 0 0 1px rgba(127, 182, 232, 0.10) inset,
+    0 0 0 1px rgba(242, 196, 108, 0.10) inset,
     0 8px 24px rgba(0, 0, 0, 0.30);
 }
 .admin-panel-flagship::before {
@@ -426,7 +429,7 @@
   inset: 0;
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(127, 182, 232, 0.08),
+    rgba(242, 196, 108, 0.08),
     transparent 60%
   );
   pointer-events: none;
@@ -444,7 +447,7 @@
     transform 200ms ease;
 }
 .kpi-foil:hover {
-  border-color: rgba(127, 182, 232, 0.34);
+  border-color: rgba(242, 196, 108, 0.34);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.30);
   transform: translateY(-1px);
 }
@@ -476,8 +479,8 @@
 }
 .light .tier-bar { background: rgba(20, 32, 47, 0.06); }
 .tier-bar-seg-individual { background: linear-gradient(90deg, #7FB6E8, #5C9DDC); }
-.tier-bar-seg-family     { background: linear-gradient(90deg, #B49BFF, #8B73E0); }
+.tier-bar-seg-family     { background: linear-gradient(90deg, #34D8A6, #1FB98A); }
 .tier-bar-seg-pro {
-  background: linear-gradient(90deg, #7FB6E8 0%, #B49BFF 100%);
-  box-shadow: 0 0 8px rgba(127, 182, 232, 0.4);
+  background: linear-gradient(90deg, #FBE7BD 0%, #F2C46C 60%, #D99A4E 100%);
+  box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
 }
