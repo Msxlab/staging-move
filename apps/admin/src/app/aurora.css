@@ -220,13 +220,13 @@ html:not(.dark) .adm-aurora .au-card {
 html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
   background: radial-gradient(
     400px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(45, 123, 196, 0.10),
+    rgba(176, 120, 30, 0.10),
     transparent 45%
   );
 }
 .adm-aurora .au-card.au-card--reflex:hover::before { opacity: 1; }
 .adm-aurora .au-card.au-card--reflex:hover {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(242, 196, 108, 0.22);
   transform: translateY(-1px);
 }
 
@@ -249,14 +249,14 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
 }
 .adm-aurora .au-display em {
   font-style: italic;
-  background-image: linear-gradient(180deg, #DDE7F5 0%, #7FB6E8 60%, #5C9DDC 100%);
+  background-image: linear-gradient(180deg, #FBE7BD 0%, #F2C46C 60%, #D99A4E 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
   font-variation-settings: "opsz" 96, "SOFT" 60;
 }
 html:not(.dark) .adm-aurora .au-display em {
-  background-image: linear-gradient(180deg, #2D7BC4 0%, #1F5FA0 100%);
+  background-image: linear-gradient(180deg, #B0781E 0%, #8A5E14 100%);
 }
 
 .adm-aurora .au-pill {
@@ -288,21 +288,21 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
 }
-.adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-cool); }
+.adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-violet); }
 .adm-aurora .au-btn:active { transform: translateY(1px); }
 .adm-aurora .au-btn.primary {
-  background: linear-gradient(180deg, rgba(127,182,232,0.30), rgba(127,182,232,0.18));
-  border-color: rgba(127, 182, 232, 0.40);
+  background: linear-gradient(180deg, rgba(242,196,108,0.30), rgba(242,196,108,0.18));
+  border-color: rgba(242, 196, 108, 0.40);
   color: var(--au-ink);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
-              0 6px 18px -8px rgba(127,182,232,0.50);
+              0 6px 18px -8px rgba(242,196,108,0.50);
 }
 html:not(.dark) .adm-aurora .au-btn.primary {
-  background: linear-gradient(180deg, #4D8FCE, #2D7BC4);
+  background: linear-gradient(180deg, #D99A4E, #B0781E);
   color: white;
-  border-color: rgba(45,123,196,0.40);
+  border-color: rgba(176,120,30,0.40);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
-              0 6px 18px -8px rgba(45,123,196,0.50);
+              0 6px 18px -8px rgba(176,120,30,0.50);
 }
 .adm-aurora .au-btn.icon   { width: 34px; padding: 0; justify-content: center; }
 .adm-aurora .au-btn.sm     { height: 28px; padding: 0 10px; font-size: 12px; }
@@ -320,7 +320,7 @@ html:not(.dark) .adm-aurora .au-btn.primary {
   transition: border-color 160ms ease, background 160ms ease;
   box-sizing: border-box;
 }
-.adm-aurora .au-input:focus { border-color: var(--au-cool); background: var(--au-pane-2); }
+.adm-aurora .au-input:focus { border-color: var(--au-violet); background: var(--au-pane-2); }
 .adm-aurora .au-input::placeholder { color: var(--au-ink-3); }
 
 /* === Sparkline draw animation ====================================== */
@@ -355,12 +355,12 @@ html:not(.dark) .adm-aurora .au-btn.primary {
   color: var(--au-ink);
 }
 .adm-aurora .au-nav-item.active {
-  background: var(--au-cool-soft);
+  background: var(--au-violet-soft);
   color: var(--au-ink);
-  border-color: rgba(127,182,232,0.22);
+  border-color: rgba(242,196,108,0.22);
   font-weight: 500;
 }
-.adm-aurora .au-nav-item.active svg { color: var(--au-cool); }
+.adm-aurora .au-nav-item.active svg { color: var(--au-violet); }
 
 /* === Pulse dot ===================================================== */
 @keyframes au-pulse {
@@ -397,7 +397,7 @@ html:not(.dark) .adm-aurora .admin-panel {
     0 12px 28px -16px rgba(20, 32, 47, 0.18);
 }
 .adm-aurora .admin-panel:hover {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(242, 196, 108, 0.22);
   box-shadow:
     inset 0 1px 0 var(--au-edge),
     0 1px 0 rgba(0, 0, 0, 0.30),
@@ -407,12 +407,12 @@ html:not(.dark) .adm-aurora .admin-panel {
   border-bottom: 1px solid var(--au-rule);
 }
 .adm-aurora .admin-panel-flagship {
-  border-color: rgba(127, 182, 232, 0.22);
+  border-color: rgba(242, 196, 108, 0.22);
 }
 .adm-aurora .admin-panel-flagship::before {
   background: radial-gradient(
     600px 140px at 50% 0%,
-    rgba(127, 182, 232, 0.10),
+    rgba(242, 196, 108, 0.10),
     transparent 60%
   );
 }
@@ -436,7 +436,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  --primary:              207 67% 70%;
+  --primary:              41 85% 68%;
   --primary-foreground:   218 43% 6%;
   --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
@@ -448,24 +448,24 @@ html:not(.dark) .adm-aurora .admin-panel {
   --destructive-foreground: 218 43% 6%;
   --border:               217 20% 30%;
   --input:                217 20% 30%;
-  --ring:                 207 67% 70%;
+  --ring:                 41 85% 68%;
   --radius:               0.625rem;
 
   /* Brand-token redirect — anything still calling --rose / --foil-* gets
      the Aurora cool / violet palette. The SVG sidebar logo sets its own
      gradients via inline `<defs>`, so it's not affected. */
-  --rose:        var(--au-cool);
-  --rose-light:  var(--au-cool);
-  --rose-deep:   var(--au-cool-2);
-  --foil-a:      #DDE7F5;
-  --foil-b:      var(--au-cool);
-  --foil-c:      var(--au-cool-2);
-  --foil:        var(--au-cool);
-  --foil-ink:    var(--au-cool-2);
+  --rose:        var(--au-violet);
+  --rose-light:  #FBE7BD;
+  --rose-deep:   #D99A4E;
+  --foil-a:      #FBE7BD;
+  --foil-b:      var(--au-violet);
+  --foil-c:      #D99A4E;
+  --foil:        var(--au-violet);
+  --foil-ink:    #B0781E;
   --sage:        var(--au-mint);
-  --brand-orange:       var(--au-cool);
-  --brand-orange-light: var(--au-cool);
-  --brand-orange-dark:  var(--au-cool-2);
+  --brand-orange:       var(--au-violet);
+  --brand-orange-light: #FBE7BD;
+  --brand-orange-dark:  #D99A4E;
   --brand-amber:        var(--au-violet);
 
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
@@ -485,10 +485,10 @@ html:not(.dark) .adm-aurora .admin-panel {
 
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
-  --line-foil: rgba(127, 182, 232, 0.22);
-  --border-focus: rgba(127, 182, 232, 0.55);
-  --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
+  --line-foil: rgba(242, 196, 108, 0.22);
+  --border-focus: rgba(242, 196, 108, 0.55);
+  --shadow-glow: 0 0 20px rgba(242, 196, 108, 0.28);
+  --shadow-rose: 0 0 20px rgba(242, 196, 108, 0.28);
   --shadow-foil: 0 0 30px rgba(242, 196, 108, 0.20);
 }
 
@@ -500,7 +500,7 @@ html:not(.dark) .adm-aurora {
   --card-foreground:      213 39% 13%;
   --popover:              218 21% 96%;
   --popover-foreground:   213 39% 13%;
-  --primary:              209 63% 47%;
+  --primary:              38 71% 40%;
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
@@ -512,7 +512,33 @@ html:not(.dark) .adm-aurora {
   --destructive-foreground: 0 0% 100%;
   --border:               213 18% 82%;
   --input:                213 18% 82%;
-  --ring:                 209 63% 47%;
+  --ring:                 38 71% 40%;
+
+  /* Brand-token redirect (light) — mirror the dark scope so the foil /
+     premium accent reads honey/champagne in light admin too. Without this
+     the --foil-* vars would otherwise inherit a non-honey base value when a
+     `.light` ancestor class is present. */
+  --rose:        var(--au-violet);
+  --rose-light:  #D99A4E;
+  --rose-deep:   #8A5E14;
+  --foil-a:      #FBE7BD;
+  --foil-b:      var(--au-violet);
+  --foil-c:      #D99A4E;
+  --foil:        var(--au-violet);
+  --foil-ink:    #B0781E;
+  --sage:        var(--au-mint);
+  --brand-orange:       var(--au-violet);
+  --brand-orange-light: #D99A4E;
+  --brand-orange-dark:  #8A5E14;
+  --brand-amber:        var(--au-violet);
+
+  --line:      var(--au-rule);
+  --line-2:    var(--au-rule-2);
+  --line-foil: rgba(176, 120, 30, 0.30);
+  --border-focus: rgba(176, 120, 30, 0.55);
+  --shadow-glow: 0 0 20px rgba(176, 120, 30, 0.20);
+  --shadow-rose: 0 0 20px rgba(176, 120, 30, 0.20);
+  --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.14);
 }
 
 /* --- Aurora-flavored chrome upgrades for legacy classes ------------- */
@@ -541,7 +567,7 @@ html:not(.dark) .adm-aurora aside.bg-card {
 .adm-aurora h2 em,
 .adm-aurora h3 em {
   font-style: italic;
-  background: linear-gradient(180deg, #DDE7F5 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(180deg, #FBE7BD 0%, var(--au-violet) 60%, #D99A4E 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -551,7 +577,7 @@ html:not(.dark) .adm-aurora .foil-text,
 html:not(.dark) .adm-aurora h1 em,
 html:not(.dark) .adm-aurora h2 em,
 html:not(.dark) .adm-aurora h3 em {
-  background: linear-gradient(180deg, var(--au-cool) 0%, var(--au-cool-2) 100%);
+  background: linear-gradient(180deg, var(--au-violet) 0%, #8A5E14 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -580,7 +606,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
     0 12px 28px -16px rgba(20, 32, 47, 0.18);
 }
 .adm-aurora .kpi-foil:hover {
-  border-color: rgba(127, 182, 232, 0.34);
+  border-color: rgba(242, 196, 108, 0.34);
   box-shadow:
     inset 0 1px 0 var(--au-edge),
     0 1px 0 rgba(0, 0, 0, 0.30),
@@ -634,10 +660,10 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-violet);
 }
 .adm-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(242, 196, 108, 0.18), rgba(127, 182, 232, 0.20));
-  border-color: rgba(127, 182, 232, 0.40);
+  background: linear-gradient(135deg, rgba(251, 231, 189, 0.18), rgba(242, 196, 108, 0.22));
+  border-color: rgba(242, 196, 108, 0.40);
   color: var(--au-ink);
-  box-shadow: 0 0 0 1px rgba(127, 182, 232, 0.14) inset;
+  box-shadow: 0 0 0 1px rgba(242, 196, 108, 0.14) inset;
 }
 .adm-aurora .tier-stamp.tier-trial {
   background: var(--au-amber-soft);
@@ -650,8 +676,8 @@ html:not(.dark) .adm-aurora .kpi-foil {
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #D99A4E); }
 .adm-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, var(--au-cool) 0%, var(--au-violet) 100%);
-  box-shadow: 0 0 8px rgba(127, 182, 232, 0.4);
+  background: linear-gradient(90deg, #FBE7BD 0%, var(--au-violet) 60%, #D99A4E 100%);
+  box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
 }
 
 /* Inputs / search fields — anything using `bg-background` + `border-input`
@@ -659,9 +685,9 @@ html:not(.dark) .adm-aurora .kpi-foil {
 .adm-aurora input:focus-visible,
 .adm-aurora textarea:focus-visible,
 .adm-aurora select:focus-visible {
-  border-color: var(--au-cool);
+  border-color: var(--au-violet);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(127, 182, 232, 0.20);
+  box-shadow: 0 0 0 2px rgba(242, 196, 108, 0.20);
 }
 
 /* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
@@ -674,7 +700,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   background: rgba(20, 32, 47, 0.03);
 }
 .adm-aurora .admin-panel table tbody tr:hover {
-  background: var(--au-cool-soft);
+  background: var(--au-violet-soft);
 }
 .adm-aurora .admin-panel thead th {
   background: var(--au-pane-2);
@@ -702,7 +728,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
    Touch up the rounded-lg ghost border style. */
 .adm-aurora button.border-primary,
 .adm-aurora a.border-primary {
-  border-color: var(--au-cool) !important;
+  border-color: var(--au-violet) !important;
 }
 
 /* Card hover lift — apply to everything matching `bg-card` so generic
@@ -711,21 +737,20 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-/* Foil-text inside the sidebar wordmark — keep the cool gradient
-   regardless of theme so the brand mark always reads Aurora. */
+/* Foil-text inside the sidebar wordmark — keep the champagne/honey gradient
+   regardless of theme so the brand mark always reads premium Pro. */
 .adm-aurora aside .foil-text {
-  background: linear-gradient(135deg, #DDE7F5 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
+  background: linear-gradient(135deg, #FBE7BD 0%, var(--au-violet) 60%, #D99A4E 100%);
   -webkit-background-clip: text;
           background-clip: text;
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   Aurora cool. Add a subtle inner border ring like the prototype. */
+   honey. Add a subtle inner border ring like the prototype. */
 .adm-aurora aside a.bg-primary\/10 {
-  border: 1px solid rgba(127, 182, 232, 0.22);
+  border: 1px solid rgba(242, 196, 108, 0.22);
 }
 
-/* The shared sidebar logo SVG keeps its champagne-and-rose gradient
-   (defined inline in the SVG `<defs>`) — that's intentional, it's the
-   brand mark. Everything else cascades through the variable overrides
-   above. */
+/* The shared sidebar logo SVG carries its champagne/honey gradient inline
+   in the SVG `<defs>` so the brand mark matches the honey Pro chrome.
+   Everything else cascades through the variable overrides above. */
