@@ -37,6 +37,7 @@ export default async function ServicesPage() {
     website: s.website ?? null,
     phone: null,
     monthlyCost: s.monthlyCost ? Number(s.monthlyCost) : 0,
+    billingCycle: s.billingCycle ?? null,
     billingDay: s.billingDay ?? null,
     isActive: s.isActive,
     addressId: s.addressId,

@@ -153,6 +153,29 @@ export function monthlyAmountForCycle(amount: number, billingCycle: string | nul
   return amount;
 }
 
+/**
+ * Short suffix for a billing cycle ("/mo", "/yr", "/qtr", "/wk", "one-time").
+ * Use whenever a RAW per-cycle `monthlyCost` is displayed so the figure isn't
+ * mislabeled as monthly. Single source of truth shared by the dashboard,
+ * services, addresses and budget surfaces (keep in step with monthlyAmountForCycle).
+ */
+export function cycleLabel(billingCycle?: string | null): string {
+  const cycle = (billingCycle || "MONTHLY").trim().toUpperCase();
+  if (cycle === "ONE_TIME") return "one-time";
+  if (cycle === "YEARLY" || cycle === "ANNUAL") return "/yr";
+  if (cycle === "QUARTERLY") return "/qtr";
+  if (cycle === "WEEKLY") return "/wk";
+  return "/mo";
+}
+
+/** True for recurring cycles whose charge falls on a day-of-month (so it can be
+ *  surfaced as a billingDay-based "upcoming bill"). Non-monthly cycles can't be
+ *  placed in a month from billingDay alone, and ONE_TIME isn't recurring. */
+export function isMonthlyBillableCycle(billingCycle?: string | null): boolean {
+  const cycle = (billingCycle || "MONTHLY").trim().toUpperCase();
+  return cycle === "MONTHLY" || cycle === "";
+}
+
 export function normalizeServiceCost(service: ServiceCostInput, month: Date): NormalizedServiceCost {
   const amount = Number(service.monthlyCost || 0);
   const hasCost = Number.isFinite(amount) && amount > 0;

@@ -27,6 +27,7 @@ import {
   BUDGET_CATEGORY_LABELS,
   calculateBudgetActuals,
   calculateBudgetPlan,
+  cycleLabel,
   monthlyAmountForCycle,
   parseBudgetCategoryLimits,
   type BudgetCategoryLabel,
@@ -140,15 +141,6 @@ function toServices(rows: any[]): ServiceCostInput[] {
     activatedAt: service.activatedAt,
     createdAt: service.createdAt,
   }));
-}
-
-function cycleLabel(billingCycle?: string | null): string {
-  const cycle = (billingCycle || "MONTHLY").trim().toUpperCase();
-  if (cycle === "ONE_TIME") return "one-time";
-  if (cycle === "YEARLY" || cycle === "ANNUAL") return "/yr";
-  if (cycle === "QUARTERLY") return "/qtr";
-  if (cycle === "WEEKLY") return "/wk";
-  return "/mo";
 }
 
 export default function BudgetPage() {

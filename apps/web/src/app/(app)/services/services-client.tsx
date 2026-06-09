@@ -18,6 +18,7 @@ import {
   type ChecklistStateRuleContext,
 } from "@/lib/shared-relocation";
 import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { monthlyAmountForCycle, cycleLabel } from "@/lib/budget-planning";
 import {
   ServiceLogoMark,
   resolveServiceLogoUrl,
@@ -69,7 +70,7 @@ export interface ServicesAddress {
 export interface ServicesItem {
   id: string; category: string; providerName: string;
   website?: string | null; phone?: string | null;
-  monthlyCost: number; billingDay?: number | null; isActive?: boolean;
+  monthlyCost: number; billingCycle?: string | null; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
   provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null; affiliateActive?: boolean } | null;
@@ -185,7 +186,10 @@ export function ServicesClient({
       }
     });
 
-  const totalMonthlyCost = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
+  // Normalize each per-cycle cost to its true monthly value (yearly/12, quarterly/3,
+  // ONE_TIME → 0) so the "/mo" total isn't inflated by non-monthly services and
+  // matches the budget page. The per-card amount below keeps its own cycle label.
+  const totalMonthlyCost = filtered.reduce((sum, s) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle), 0);
 
   const grouped: Record<string, ServicesItem[]> = {};
   for (const s of filtered) {
@@ -436,7 +440,7 @@ export function ServicesClient({
                                   </span>
                                 )}
                                 {service.monthlyCost > 0 && (
-                                  <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}/mo</span>
+                                  <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}{cycleLabel(service.billingCycle)}</span>
                                 )}
                               </div>
                               {service.provider?.affiliateActive && service.provider.id && (
