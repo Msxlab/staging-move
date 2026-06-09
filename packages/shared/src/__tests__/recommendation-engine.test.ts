@@ -104,6 +104,34 @@ describe("provider recommendation safety", () => {
     expect(scored[0].explanation.recommendationUse).toBe("MANUAL_TRACKING_CANDIDATE");
   });
 
+  it("boosts time-sensitive setups as the move date nears (proximity signal)", () => {
+    const electric = provider({ id: "electric", category: "UTILITY_ELECTRIC", popularityScore: 50 });
+
+    const soon = scoreProviders([electric], { ...baseProfile, daysUntilMove: 3 }, "TX")[0];
+    const later = scoreProviders([electric], { ...baseProfile, daysUntilMove: 60 }, "TX")[0];
+    const noDate = scoreProviders([electric], { ...baseProfile, daysUntilMove: undefined }, "TX")[0];
+
+    // A move 3 days out ranks the same utility higher than one 60 days out / no date.
+    expect(soon.recommendationScore).toBeGreaterThan(later.recommendationScore);
+    expect(soon.recommendationScore).toBeGreaterThan(noDate.recommendationScore);
+    // Deadline-aware reason surfaces inside the 14-day window.
+    expect(soon.matchReasons.join(" ")).toContain("Move in 3 days");
+    // 60 days out is past the proximity window → no proximity reason.
+    expect(later.matchReasons.join(" ")).not.toContain("set this up now");
+  });
+
+  it("damps optional extras in the final week before the move", () => {
+    // HEALTHCARE_VET with no pets resolves to OPTIONAL.
+    const vet = provider({ id: "vet", category: "HEALTHCARE_VET", popularityScore: 80 });
+    const noPets = { ...baseProfile, hasPets: false };
+
+    const soon = scoreProviders([vet], { ...noPets, daysUntilMove: 3 }, "TX")[0];
+    const later = scoreProviders([vet], { ...noPets, daysUntilMove: 60 }, "TX")[0];
+
+    expect(soon.urgencyTier).toBe("OPTIONAL");
+    expect(soon.recommendationScore).toBeLessThan(later.recommendationScore);
+  });
+
   it("returns caveats and manual confirmation language for weak coverage", () => {
     const [scored] = scoreProviders(
       [

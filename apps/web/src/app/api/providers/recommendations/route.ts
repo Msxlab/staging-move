@@ -163,6 +163,13 @@ export async function GET(request: NextRequest) {
         )
       : 0;
 
+    // Days until the move (positive = upcoming, negative = past). Drives the
+    // proximity scoring signal so time-sensitive setups rank higher as the move
+    // nears. Undefined when there's no active move date.
+    const daysUntilMove = movingPlan?.moveDate
+      ? Math.ceil((new Date(movingPlan.moveDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+      : undefined;
+
     // A MILITARY/PCS move implies military affiliation even if the explicit
     // isMilitary flag wasn't toggled — fold both onboarding signals together so
     // VA / military benefits surface for either.
@@ -195,6 +202,7 @@ export async function GET(request: NextRequest) {
       isBusinessOwner: profile?.isBusinessOwner || false,
       moveType: profile?.moveType || undefined,
       currentPhase,
+      daysUntilMove,
       ownership: normalizeOwnership(primaryAddr?.ownership),
       // Destination coordinates drive true geo-local provider ranking in the
       // shared engine (nearer geo-bearing providers rank higher). Undefined

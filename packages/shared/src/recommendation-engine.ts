@@ -554,6 +554,25 @@ const CATEGORY_DEADLINES: Record<string, string> = {
   KIDS_SCHOOL: "Enroll before school year starts",
 };
 
+// ── Move-date proximity ──────────────────────────────────────
+// As the move nears, sharply prioritize the time-sensitive setups (utilities,
+// USPS, insurance, DMV — anything with a real deadline or CRITICAL/IMPORTANT
+// urgency) and damp the optional extras in the final week. A continuous signal
+// that complements the coarse, bucketed phase boost — without it, a user 60 days
+// out and one 3 days out get the same ranking. Only fires when a FUTURE move date
+// is known (daysUntilMove >= 0 and within the window).
+const PROXIMITY_WINDOW_DAYS = 30;
+const PROXIMITY_MAX_BOOST = 30;
+const PROXIMITY_OPTIONAL_DAMP = 10;
+
+function isTimeSensitiveForMove(category: string, urgencyTier: UrgencyTier): boolean {
+  return (
+    urgencyTier === "CRITICAL" ||
+    urgencyTier === "IMPORTANT" ||
+    Object.prototype.hasOwnProperty.call(CATEGORY_DEADLINES, category)
+  );
+}
+
 // ── Urgency Headlines ────────────────────────────────────────
 
 const URGENCY_HEADLINES: Record<string, string> = {
@@ -798,6 +817,30 @@ export function scoreProviders(
       // 0. Urgency tier (primary sort signal)
       const urgencyTier = getUrgencyTier(provider.category, profile);
       score += weights.urgencyTier[urgencyTier];
+
+      // 0b. Move-date proximity: a continuous boost that grows as the move nears,
+      //     prioritizing time-sensitive setups (utilities, USPS, insurance, DMV)
+      //     and damping optional extras in the final week. Only fires when a
+      //     FUTURE move date is known.
+      const daysUntilMove = profile.daysUntilMove;
+      if (typeof daysUntilMove === "number" && daysUntilMove >= 0 && daysUntilMove <= PROXIMITY_WINDOW_DAYS) {
+        const closeness = 1 - daysUntilMove / PROXIMITY_WINDOW_DAYS; // 0 at window edge … 1 on move day
+        if (isTimeSensitiveForMove(provider.category, urgencyTier)) {
+          const boost = Math.round(closeness * PROXIMITY_MAX_BOOST);
+          if (boost > 0) {
+            score += boost;
+            if (daysUntilMove <= 14) {
+              reasons.unshift(
+                daysUntilMove <= 1
+                  ? "Moving now — set this up today"
+                  : `Move in ${daysUntilMove} days — set this up now`,
+              );
+            }
+          }
+        } else if (urgencyTier === "OPTIONAL" && daysUntilMove <= 7) {
+          score -= PROXIMITY_OPTIONAL_DAMP;
+        }
+      }
 
       // 1. Base popularity (0-100 → 0-30 points)
       score += ((provider.popularityScore || 0) / 100) * 30;
