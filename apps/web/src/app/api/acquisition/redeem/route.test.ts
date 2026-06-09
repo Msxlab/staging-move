@@ -10,10 +10,12 @@ const mocks = vi.hoisted(() => ({
   campaignToSnapshotText: vi.fn(),
   getRequestHashSnapshot: vi.fn(),
   redemptionFindFirst: vi.fn(),
+  subscriptionFindUnique: vi.fn(),
   transaction: vi.fn(),
   subscriptionUpsert: vi.fn(),
   redemptionCreate: vi.fn(),
   campaignUpdateMany: vi.fn(),
+  reconcileSeatsForOwner: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ requireDbUserId: mocks.requireDbUserId }));
@@ -31,8 +33,12 @@ vi.mock("@/lib/acquisition-campaigns", () => ({
 vi.mock("@/lib/db", () => ({
   prisma: {
     acquisitionRedemption: { findFirst: (...args: unknown[]) => mocks.redemptionFindFirst(...args) },
+    subscription: { findUnique: (...args: unknown[]) => mocks.subscriptionFindUnique(...args) },
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
   },
+}));
+vi.mock("@/lib/workspace-ownership", () => ({
+  reconcileSeatsForOwner: (...args: unknown[]) => mocks.reconcileSeatsForOwner(...args),
 }));
 
 import { POST } from "./route";
@@ -61,6 +67,8 @@ describe("Free Access redemption route", () => {
       newUsersOnly: true,
     });
     mocks.redemptionFindFirst.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue(null);
+    mocks.reconcileSeatsForOwner.mockResolvedValue(undefined);
     mocks.buildSignupSnapshot.mockReturnValue({ campaignCode: "FREE30", accessType: "FREE_ACCESS" });
     mocks.campaignToSnapshotText.mockReturnValue("{\"campaignCode\":\"FREE30\"}");
     mocks.getRequestHashSnapshot.mockReturnValue({ consentIpHash: "ip_hash", consentUserAgentHash: "ua_hash" });
@@ -99,6 +107,58 @@ describe("Free Access redemption route", () => {
         }),
       }),
     );
+  });
+
+  it("blocks redemption when an active paid Stripe subscription already exists (would orphan billing)", async () => {
+    // A paying Stripe customer must not be able to overwrite their billing row
+    // with an ADMIN/FREE_ACCESS grant — Stripe would keep charging while their
+    // entitlement silently collapses to FREE_TRIAL limits.
+    mocks.subscriptionFindUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      provider: "STRIPE",
+      accessType: "FULL",
+      stripeSubscriptionId: "sub_live_123",
+    });
+
+    const response = await POST(redeemRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "SUBSCRIPTION_MANAGED_ELSEWHERE" });
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  it("blocks redemption when an active app-store subscription already exists", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      accessType: "FULL",
+      stripeSubscriptionId: null,
+    });
+
+    const response = await POST(redeemRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "SUBSCRIPTION_MANAGED_ELSEWHERE" });
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  it("allows redemption for a lapsed paid subscription and reconciles seats", async () => {
+    // EXPIRED is not a blocking status → redeem proceeds, and because the plan is
+    // forced to INDIVIDUAL the owner's workspace seats must be reconciled.
+    mocks.subscriptionFindUnique.mockResolvedValueOnce({
+      status: "EXPIRED",
+      provider: "STRIPE",
+      accessType: "FULL",
+      stripeSubscriptionId: "sub_live_999",
+    });
+
+    const response = await POST(redeemRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.transaction).toHaveBeenCalled();
+    expect(mocks.reconcileSeatsForOwner).toHaveBeenCalledWith("user_1");
   });
 
   it("does not redeem paused or ended campaigns", async () => {

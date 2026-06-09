@@ -14,6 +14,19 @@ import {
   SUBSCRIPTION_POLICY_VERSION,
   TERMS_VERSION,
 } from "@/lib/shared-billing";
+import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
+
+// Statuses that mean "a paid subscription is live / mid-lifecycle". Kept in sync
+// with MANAGED_SUBSCRIPTION_BLOCKING_STATUSES in /api/stripe/checkout — a user
+// in any of these must not be able to overwrite their billing row via a redeem.
+const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -85,6 +98,38 @@ export async function POST(request: NextRequest) {
           { status: 409 },
         );
       }
+    }
+
+    // Block redemption when the user already has a REAL, non-FREE_ACCESS paid
+    // subscription managed by Stripe or an app store. The upsert below would
+    // otherwise rewrite that billing row to provider=ADMIN / accessType=FREE_ACCESS,
+    // silently collapsing the customer's entitlement to FREE_TRIAL limits while
+    // the external provider keeps charging them — and neither the reconcile cron
+    // nor the Stripe webhooks repair an ADMIN-provider row, so the corruption
+    // persists until the next renewal. Mirrors the guard in /api/stripe/checkout
+    // (hasRealStripeSubscription) and the IAP path (ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE).
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId },
+      select: { status: true, provider: true, accessType: true, stripeSubscriptionId: true },
+    });
+    const hasRealStripeSubscription =
+      existingSubscription?.provider === "STRIPE" &&
+      Boolean(existingSubscription?.stripeSubscriptionId) &&
+      existingSubscription?.accessType !== "FREE_ACCESS" &&
+      MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(existingSubscription?.status || "");
+    const hasActiveStoreSubscription =
+      (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
+      existingSubscription?.accessType !== "FREE_ACCESS" &&
+      MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(existingSubscription?.status || "");
+    if (hasRealStripeSubscription || hasActiveStoreSubscription) {
+      return NextResponse.json(
+        {
+          code: "SUBSCRIPTION_MANAGED_ELSEWHERE",
+          error:
+            "You already have an active paid subscription. Manage it from billing settings before redeeming an offer.",
+        },
+        { status: 409 },
+      );
     }
 
     const now = new Date();
@@ -191,6 +236,12 @@ export async function POST(request: NextRequest) {
 
       return { subscription, redemption };
     });
+
+    // The redeem forces plan=INDIVIDUAL. If the user previously owned a Family/Pro
+    // workspace (e.g. their paid sub had lapsed, so it wasn't blocked above),
+    // their seats must collapse to the new plan — reconcile best-effort, never
+    // blocking the redemption response. Mirrors the IAP path's reconcile call.
+    await reconcileSeatsForOwner(userId).catch(() => {});
 
     return NextResponse.json({
       accessType: "FREE_ACCESS",
