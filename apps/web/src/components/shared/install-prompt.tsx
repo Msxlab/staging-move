@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { WaitlistForm } from "@/components/marketing/waitlist-form";
+import { IOS_APP_STORE_URL, ANDROID_PLAY_STORE_URL } from "@/lib/store-links";
 
 /**
  * Smart app install banner.
@@ -116,9 +117,9 @@ export function InstallPrompt() {
 
   const storeUrl =
     platform === "ios"
-      ? process.env.NEXT_PUBLIC_IOS_APP_STORE_URL
+      ? IOS_APP_STORE_URL
       : platform === "android"
-        ? process.env.NEXT_PUBLIC_ANDROID_PLAY_STORE_URL
+        ? ANDROID_PLAY_STORE_URL
         : undefined;
 
   const dismiss = () => {

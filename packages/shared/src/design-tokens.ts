@@ -5,9 +5,10 @@
  * shadows across web, admin, and mobile.
  *
  * Edition VII · Aurora. The values below were flipped from the
- * Champagne & Rose palette (Edition VI) to Aurora's cool / violet /
+ * Champagne & Rose palette (Edition VI) to Aurora's cool / honey /
  * mint / amber / coral system to match the system-wide theming shipped
- * on web and admin. Legacy export names (`brand.orange`, `tones.orange`,
+ * on web and admin. The premium "foil" accent (and Pro plan) is
+ * honey/champagne. Legacy export names (`brand.orange`, `tones.orange`,
  * `roseScale`, `foilScale`, etc.) are preserved on purpose so the
  * mobile app — the only runtime consumer of this file — flips palette
  * without a codemod. Web and admin don't import at runtime; their
@@ -24,31 +25,31 @@
 
 // ────────────────────────────────────────────────────────────────────
 // Brand palette — Aurora (Edition VII)
-// Cool blue primary, violet accent, mint success.
+// Cool blue primary, honey/champagne accent, mint success.
 // ────────────────────────────────────────────────────────────────────
 
 export const brandColors = {
   // Legacy names — kept so `brand.orange` references in code keep working.
-  // Values now resolve to Aurora cool/violet so the visual surface flips
-  // automatically.
+  // Values now resolve to Aurora cool (primary) / honey (accent) so the
+  // visual surface flips automatically.
   orange: "#7FB6E8", // primary — Aurora cool
   orangeLight: "#A5C9F0", // hover / soft glow
   orangeDark: "#5C9DDC", // pressed — Aurora cool-2
-  amber: "#B49BFF", // secondary / accent — Aurora violet
+  amber: "#F2C46C", // secondary / accent — honey/champagne foil
 
   // Canonical Aurora names.
   rose: "#7FB6E8", // primary cool
   roseLight: "#A5C9F0",
   roseDeep: "#5C9DDC",
   roseDark: "#3D7AB8",
-  foil: "#B49BFF", // violet accent
-  foilHighlight: "#DDE7F5", // cool ink-1 (high luminance)
-  foilShadow: "#5C9DDC", // cool-2
-  foilInk: "#1F5FA0", // cool deep, "ink"
+  foil: "#F2C46C", // honey/champagne accent (Pro)
+  foilHighlight: "#FBE7BD", // champagne highlight (gradient stop a)
+  foilShadow: "#D99A4E", // champagne shadow (gradient stop c)
+  foilInk: "#7A5418", // honey ink
   sage: "#87DDC0", // mint
   sageSoft: "#B0E8D2",
-  nude: "#B49BFF", // alias of foil/violet
-  nudeDeep: "#8B73E0",
+  nude: "#F2C46C", // alias of foil/honey
+  nudeDeep: "#D99A4E",
 } as const;
 
 /**
@@ -71,15 +72,15 @@ export const roseScale = {
 } as const;
 
 /**
- * Foil/violet scale — Aurora secondary accent. Maps the old champagne
- * highlight → body → shadow keys onto cool→violet→cool-2 so legacy
- * `foilScale.highlight` callers keep rendering, just in Aurora colors.
+ * Foil/honey scale — Aurora secondary accent. Champagne highlight →
+ * honey body → champagne shadow so legacy `foilScale.highlight` callers
+ * keep rendering, now in the honey/champagne foil.
  */
 export const foilScale = {
-  highlight: "#DDE7F5", // cool ink-1
-  body: "#B49BFF", // Aurora violet (the flat-color use)
-  shadow: "#5C9DDC", // cool-2
-  ink: "#1F5FA0", // cool deep on paper
+  highlight: "#FBE7BD", // champagne highlight
+  body: "#F2C46C", // honey/champagne (the flat-color use)
+  shadow: "#D99A4E", // champagne shadow
+  ink: "#7A5418", // honey ink on paper
 } as const;
 
 /**
@@ -135,7 +136,7 @@ export const textLight = {
 export const borderDark = {
   default: "rgba(255, 255, 255, 0.05)", // au-edge-2
   strong: "rgba(255, 255, 255, 0.10)", // au-edge
-  foil: "rgba(180, 155, 255, 0.22)", // violet hairline
+  foil: "rgba(242, 196, 108, 0.24)", // honey hairline
   rose: "rgba(127, 182, 232, 0.30)", // cool ring
   focus: "rgba(127, 182, 232, 0.55)", // 2px outline on focus-visible
 } as const;
@@ -143,7 +144,7 @@ export const borderDark = {
 export const borderLight = {
   default: "rgba(20, 32, 47, 0.06)",
   strong: "rgba(20, 32, 47, 0.14)",
-  foil: "rgba(111, 88, 199, 0.30)",
+  foil: "rgba(176, 120, 30, 0.30)",
   rose: "rgba(45, 123, 196, 0.30)",
   focus: "rgba(45, 123, 196, 0.55)",
 } as const;
@@ -178,9 +179,9 @@ const _tonesDarkCanonical = {
     text: "#7FB6E8",
   },
   foil: {
-    bg: "rgba(180, 155, 255, 0.10)",
-    border: "rgba(180, 155, 255, 0.22)",
-    text: "#B49BFF",
+    bg: "rgba(242, 196, 108, 0.10)",
+    border: "rgba(242, 196, 108, 0.24)",
+    text: "#F2C46C",
   },
   sage: {
     bg: "rgba(135, 221, 192, 0.10)",
@@ -192,11 +193,11 @@ const _tonesDarkCanonical = {
     border: "rgba(242, 196, 108, 0.22)",
     text: "#F2C46C",
   },
-  // umber re-mapped to violet so old umber callsites still feel premium.
+  // umber — champagne shadow tone (matches bundle --tone-umber-fg).
   umber: {
-    bg: "rgba(180, 155, 255, 0.10)",
-    border: "rgba(180, 155, 255, 0.22)",
-    text: "#B49BFF",
+    bg: "rgba(216, 154, 78, 0.10)",
+    border: "rgba(216, 154, 78, 0.22)",
+    text: "#D99A4E",
   },
   slate: {
     bg: "rgba(168, 181, 201, 0.10)",
@@ -212,9 +213,9 @@ const _tonesLightCanonical = {
     text: "#2D7BC4",
   },
   foil: {
-    bg: "rgba(111, 88, 199, 0.10)",
-    border: "rgba(111, 88, 199, 0.22)",
-    text: "#6F58C7",
+    bg: "rgba(176, 120, 30, 0.10)",
+    border: "rgba(176, 120, 30, 0.22)",
+    text: "#B0781E",
   },
   sage: {
     bg: "rgba(46, 155, 121, 0.10)",
@@ -227,9 +228,9 @@ const _tonesLightCanonical = {
     text: "#B98318",
   },
   umber: {
-    bg: "rgba(111, 88, 199, 0.10)",
-    border: "rgba(111, 88, 199, 0.22)",
-    text: "#6F58C7",
+    bg: "rgba(176, 120, 30, 0.10)",
+    border: "rgba(176, 120, 30, 0.22)",
+    text: "#B0781E",
   },
   slate: {
     bg: "rgba(74, 92, 117, 0.10)",
@@ -282,16 +283,16 @@ export const glassLight = {
 // ────────────────────────────────────────────────────────────────────
 
 export const gradients = {
-  /** Foil — Aurora cool ink → cool → cool-2 at 135°. Brand moment. */
-  foil: ["#DDE7F5", "#7FB6E8", "#5C9DDC"] as const,
+  /** Foil — champagne highlight → honey → champagne shadow at 135°. Brand moment. */
+  foil: ["#FBE7BD", "#F2C46C", "#D99A4E"] as const,
   /** Rose — soft cool → cool-2, used on hero pin glows, illustration fills. */
   rose: ["#A5C9F0", "#5C9DDC"] as const,
-  /** Premium — cool→violet sweep for upgrade CTAs / "Order moving pack". */
-  premium: ["#7FB6E8", "#B49BFF"] as const,
+  /** Premium — cool→honey sweep for upgrade CTAs / "Order moving pack". */
+  premium: ["#7FB6E8", "#F2C46C"] as const,
   // Legacy names — flipped to Aurora cool so old gradient sites read cool.
   primary: ["#DDE7F5", "#7FB6E8"] as const,
   warm: ["#5C9DDC", "#7FB6E8"] as const,
-  glow: ["rgba(127, 182, 232, 0.40)", "rgba(180, 155, 255, 0.10)"] as const,
+  glow: ["rgba(127, 182, 232, 0.40)", "rgba(242, 196, 108, 0.10)"] as const,
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -369,11 +370,11 @@ export const shadowsMobile = {
     shadowRadius: 20,
     elevation: 6,
   },
-  /** Violet glow — premium / upgrade moments only. */
+  /** Honey glow — premium / upgrade moments only. */
   foil: {
-    shadowColor: "#B49BFF",
+    shadowColor: "#F2C46C",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.2,
     shadowRadius: 30,
     elevation: 6,
   },
@@ -386,7 +387,7 @@ export const shadowsWeb = {
   lg: "0 20px 50px rgba(0, 0, 0, 0.55)",
   xl: "0 40px 80px rgba(0, 0, 0, 0.60)",
   glow: "0 0 20px rgba(127, 182, 232, 0.28)", // Aurora cool
-  foil: "0 0 30px rgba(180, 155, 255, 0.16)", // Aurora violet
+  foil: "0 0 30px rgba(242, 196, 108, 0.20)", // honey/champagne
 } as const;
 
 // ────────────────────────────────────────────────────────────────────

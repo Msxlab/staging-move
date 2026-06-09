@@ -37,6 +37,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ServicesMoodBoard } from "@/components/ui/ServicesMoodBoard";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
@@ -372,6 +373,14 @@ export default function ServicesScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
+        {/* Mood-reactive board: the raccoon's pose tracks the user's REAL
+            tracked-service count (overall, not the active filter) — sad at 0,
+            celebrate on the first service + at a healthy count, happy while
+            building. Hidden only when the screen is in a hard-error state. */}
+        {!(error && services.length === 0) && (
+          <ServicesMoodBoard count={services.length} />
+        )}
+
         {/* Phase-Aware Checklist Widget */}
         {checklist && (() => {
           const phase = RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase);
@@ -447,7 +456,9 @@ export default function ServicesScreen() {
           if (selectedAddressId) suggestParams.addressId = selectedAddressId;
           return (
             <EmptyState
-              mascot="mom"
+              // No mascot here: the ServicesMoodBoard above already shows the
+              // (sad) raccoon, so the empty state uses its icon disc to avoid
+              // two stacked raccoons.
               icon={<Zap size={32} color={theme.colors.primary} />}
               title={filterCat ? t("services.emptyCategory") : t("services.empty")}
               description={

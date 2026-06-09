@@ -27,8 +27,8 @@
   --au-cool:      #8FC2F0;
   --au-cool-2:    #5C9DDC;
   --au-cool-soft: rgba(127, 182, 232, 0.20);
-  --au-violet:    #C2ADFF;
-  --au-violet-soft: rgba(180, 155, 255, 0.20);
+  --au-violet:    #F2C46C;
+  --au-violet-soft: rgba(242, 196, 108, 0.20);
   --au-mint:      #96E6CC;
   --au-mint-soft: rgba(135, 221, 192, 0.20);
   --au-amber:     #F5CE82;
@@ -38,7 +38,7 @@
   --au-rose:      #F0A0B8;
 
   --au-aurora-1:  rgba(127, 182, 232, 0.18);
-  --au-aurora-2:  rgba(180, 155, 255, 0.12);
+  --au-aurora-2:  rgba(242, 196, 108, 0.12);
   --au-aurora-3:  rgba(135, 221, 192, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
@@ -70,8 +70,8 @@ html:not(.dark) .adm-aurora {
   --au-cool:      #2D7BC4;
   --au-cool-2:    #1F5FA0;
   --au-cool-soft: rgba(45, 123, 196, 0.12);
-  --au-violet:    #6F58C7;
-  --au-violet-soft: rgba(111, 88, 199, 0.10);
+  --au-violet:    #B0781E;
+  --au-violet-soft: rgba(176, 120, 30, 0.10);
   --au-mint:      #2E9B79;
   --au-mint-soft: rgba(46, 155, 121, 0.10);
   --au-amber:     #B98318;
@@ -80,7 +80,7 @@ html:not(.dark) .adm-aurora {
   --au-coral-soft:rgba(200, 78, 81, 0.10);
 
   --au-aurora-1:  rgba(45, 123, 196, 0.18);
-  --au-aurora-2:  rgba(111, 88, 199, 0.14);
+  --au-aurora-2:  rgba(176, 120, 30, 0.14);
   --au-aurora-3:  rgba(46, 155, 121, 0.10);
   --au-aurora-4:  rgba(200, 78, 81, 0.06);
 }
@@ -472,10 +472,10 @@ html:not(.dark) .adm-aurora .admin-panel {
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
   --tone-rose-bg:    rgba(127, 182, 232, 0.20); --tone-rose-br:    rgba(127, 182, 232, 0.36); --tone-rose-fg:    var(--au-cool);
-  --tone-foil-bg:    rgba(180, 155, 255, 0.20); --tone-foil-br:    rgba(180, 155, 255, 0.36); --tone-foil-fg:    var(--au-violet);
+  --tone-foil-bg:    rgba(242, 196, 108, 0.20); --tone-foil-br:    rgba(242, 196, 108, 0.36); --tone-foil-fg:    var(--au-violet);
   --tone-sage-bg:    rgba(135, 221, 192, 0.20); --tone-sage-br:    rgba(135, 221, 192, 0.36); --tone-sage-fg:    var(--au-mint);
   --tone-honey-bg:   rgba(242, 196, 108, 0.20); --tone-honey-br:   rgba(242, 196, 108, 0.36); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(180, 155, 255, 0.20); --tone-umber-br:   rgba(180, 155, 255, 0.36); --tone-umber-fg:   var(--au-violet);
+  --tone-umber-bg:   rgba(216, 154, 78, 0.20); --tone-umber-br:   rgba(216, 154, 78, 0.36); --tone-umber-fg:   var(--au-violet);
   --tone-slate-bg:   rgba(168, 181, 201, 0.20); --tone-slate-br:   rgba(168, 181, 201, 0.36); --tone-slate-fg:   var(--au-ink-2);
   --tone-orange-bg:  rgba(127, 182, 232, 0.20); --tone-orange-br:  rgba(127, 182, 232, 0.36); --tone-orange-fg:  var(--au-cool);
   --tone-emerald-bg: rgba(135, 221, 192, 0.20); --tone-emerald-br: rgba(135, 221, 192, 0.36); --tone-emerald-fg: var(--au-mint);
@@ -489,7 +489,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --border-focus: rgba(127, 182, 232, 0.55);
   --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
   --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-foil: 0 0 30px rgba(180, 155, 255, 0.16);
+  --shadow-foil: 0 0 30px rgba(242, 196, 108, 0.20);
 }
 
 /* --- Light theme overrides ----------------------------------------- */
@@ -630,11 +630,11 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 .adm-aurora .tier-stamp.tier-family {
   background: var(--au-violet-soft);
-  border-color: rgba(180, 155, 255, 0.32);
+  border-color: rgba(242, 196, 108, 0.32);
   color: var(--au-violet);
 }
 .adm-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(180, 155, 255, 0.18), rgba(127, 182, 232, 0.20));
+  background: linear-gradient(135deg, rgba(242, 196, 108, 0.18), rgba(127, 182, 232, 0.20));
   border-color: rgba(127, 182, 232, 0.40);
   color: var(--au-ink);
   box-shadow: 0 0 0 1px rgba(127, 182, 232, 0.14) inset;
@@ -645,10 +645,10 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — Aurora cool/violet/mint segmentation. */
+/* Tier distribution bar — Aurora cool/honey/mint segmentation. */
 .adm-aurora .tier-bar { background: var(--au-rule); }
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
-.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #8B73E0); }
+.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #D99A4E); }
 .adm-aurora .tier-bar-seg-pro {
   background: linear-gradient(90deg, var(--au-cool) 0%, var(--au-violet) 100%);
   box-shadow: 0 0 8px rgba(127, 182, 232, 0.4);

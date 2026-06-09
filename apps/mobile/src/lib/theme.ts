@@ -53,7 +53,7 @@ const darkColors = {
   // Faded primary — Aurora cool at 12%. Keeps key faded surfaces
   // (active-plan chip, hero ring) on the cool palette.
   primaryFaded: "rgba(127, 182, 232, 0.12)",
-  accent: brandColors.amber,              // Aurora violet #B49BFF
+  accent: brandColors.amber,              // honey/champagne foil #F2C46C
 
   success: semanticColors.success,        // Aurora mint #87DDC0
   successFaded: "rgba(135, 221, 192, 0.12)",
@@ -230,33 +230,35 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       gradGlow: ["rgba(14, 159, 110, 0.30)", "rgba(52, 216, 166, 0.10)"],
     },
   },
-  // Pro — premium violet with a gold accent.
+  // Pro — premium honey / champagne foil (the brand's signature gold). Mirrors
+  // web `.plan-pro` (--primary: 41 85% 68%) so Pro reads identically on every
+  // surface. Surfaces get a faint warm-navy tint (not violet) to match.
   PRO: {
     dark: {
-      primary: "#8B7CFF",
-      primaryLight: "#A99BFF",
-      primaryDark: "#6F5CF0",
-      primaryFaded: "rgba(139, 124, 255, 0.12)",
+      primary: "#F2C46C",
+      primaryLight: "#F9D88E",
+      primaryDark: "#D99A4E",
+      primaryFaded: "rgba(242, 196, 108, 0.12)",
       accent: "#E9C46A",
-      surface: "#120F1F",
-      card: "#171426",
-      cardHover: "#211C38",
-      background: "#0B0916",
-      gradPrimary: ["#A99BFF", "#8B7CFF"],
-      gradGlow: ["rgba(139, 124, 255, 0.40)", "rgba(233, 196, 106, 0.12)"],
+      surface: "#1A1408",
+      card: "#21190B",
+      cardHover: "#2D2412",
+      background: "#120D04",
+      gradPrimary: ["#FBE7BD", "#F2C46C"],
+      gradGlow: ["rgba(242, 196, 108, 0.40)", "rgba(217, 154, 78, 0.12)"],
     },
     light: {
-      primary: "#6D28D9",
-      primaryLight: "#8B7CFF",
-      primaryDark: "#5B21B6",
-      primaryFaded: "rgba(109, 40, 217, 0.10)",
+      primary: "#B0781E",
+      primaryLight: "#D99A4E",
+      primaryDark: "#8A5E16",
+      primaryFaded: "rgba(176, 120, 30, 0.10)",
       accent: "#B8860B",
       surface: "#FFFFFF",
-      card: "#E9E7F4",
-      cardHover: "#DDD9EF",
-      background: "#F0EEF9",
-      gradPrimary: ["#8B7CFF", "#6D28D9"],
-      gradGlow: ["rgba(109, 40, 217, 0.30)", "rgba(233, 196, 106, 0.12)"],
+      card: "#F5ECD9",
+      cardHover: "#EFE3C9",
+      background: "#FAF4E7",
+      gradPrimary: ["#D99A4E", "#B0781E"],
+      gradGlow: ["rgba(176, 120, 30, 0.30)", "rgba(217, 154, 78, 0.10)"],
     },
   },
 };
