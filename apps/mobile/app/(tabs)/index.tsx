@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -42,7 +42,14 @@ import {
   type PendingInvitation,
 } from "@/lib/workspace-invite";
 import { computeAndPersistWidgetSnapshot } from "@/lib/widget-data";
+import {
+  buildAndPersistDashboardSnapshot,
+  readDashboardSnapshot,
+  snapshotRelativeAge,
+  type DashboardSnapshot,
+} from "@/lib/dashboard-snapshot";
 import { Card } from "@/components/ui/Card";
+import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
@@ -135,6 +142,19 @@ export default function DashboardScreen() {
   // is off server-side, the user dismissed it, or the fetch failed). Best-effort
   // and fully decoupled from the core dashboard payload.
   const [briefing, setBriefing] = useState<MoveBriefingState | null>(null);
+  // OFFLINE COLD-START: the last-known snapshot we hydrated the screen from, plus
+  // a flag set when the live fetch fails so we keep showing the hydrated data
+  // (instead of the error wall) under an "Offline · last updated …" chip. The
+  // snapshot is set the moment we hydrate; `offline` only flips true if the live
+  // reconcile fails AND we have something hydrated to keep showing.
+  const [offline, setOffline] = useState(false);
+  const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
+  // Mirror of `snapshot` in a ref so fetchDashboard's error branch can decide
+  // "offline (keep last-known)" vs "hard error wall" without a stale closure.
+  const snapshotRef = useRef<DashboardSnapshot | null>(null);
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
 
   const fetchDashboard = useCallback(async () => {
     // Captured during this load so the home-screen widget snapshot (computed at
@@ -191,11 +211,23 @@ export default function DashboardScreen() {
     // them even when the rest of the dashboard errors out.
     setPendingInvites(invites);
     if (res.error || addrRes.error || movingRes.error) {
-      setError(t("dashboard.loadFailed"));
+      // OFFLINE FALLBACK: the live fetch failed (no signal mid-move). If we have a
+      // hydrated last-known snapshot on screen, KEEP it and switch to the quiet
+      // "Offline · last updated …" chip instead of blanking to the error wall.
+      // Only show the hard error when there's nothing useful to fall back to.
+      if (snapshotRef.current) {
+        setOffline(true);
+        setError(null);
+      } else {
+        setOffline(false);
+        setError(t("dashboard.loadFailed"));
+      }
       return false;
     }
     if (res.data) {
+      // Live data landed → we're back online; drop any offline/error state.
       setError(null);
+      setOffline(false);
       const profileData = res.data.profile || res.data;
       // Premium = the EFFECTIVE entitlement (an inherited Family/Pro member has
       // no own paid row but inherits access). Fall back to the own-subscription
@@ -352,22 +384,132 @@ export default function DashboardScreen() {
               /* non-blocking: leave nextTaskTitle to the checklist fallback */
             }
           }
+          const primaryState =
+            addresses.find((a: any) => a.isPrimary)?.state || addresses[0]?.state || null;
           await computeAndPersistWidgetSnapshot({
             moveDate: activePlan?.moveDate ?? null,
-            state:
-              addresses.find((a: any) => a.isPrimary)?.state || addresses[0]?.state || null,
+            state: primaryState,
             tasks: openTasks,
             checklist: widgetChecklist,
             completedCritical: widgetCompletedCritical,
             missingCritical: widgetMissingCritical,
           });
+
+          // OFFLINE COLD-START SNAPSHOT — additive, best-effort, NEVER blocking.
+          // Persist a compact echo of everything the dashboard just rendered so a
+          // no-signal cold start can hydrate the screen instead of a blank wall.
+          // Built from the SAME readiness blend the command center/widget use so
+          // the hydrated number agrees with the live UI.
+          const readinessSignals: number[] = [];
+          if (widgetChecklist && widgetChecklist.totalItems > 0) {
+            readinessSignals.push(widgetChecklist.completedItems / widgetChecklist.totalItems);
+          }
+          const criticalTotal = widgetCompletedCritical + widgetMissingCritical;
+          if (criticalTotal > 0) readinessSignals.push(widgetCompletedCritical / criticalTotal);
+          const readinessPercent =
+            readinessSignals.length > 0
+              ? Math.round((readinessSignals.reduce((a, b) => a + b, 0) / readinessSignals.length) * 100)
+              : 0;
+          // Nearest-due OPEN tasks, sorted the same way UpNext sorts them.
+          const OPEN = new Set(["SUGGESTED", "ACCEPTED", "IN_PROGRESS", "REOPENED"]);
+          const snapTasks = openTasks
+            .filter((tk) => OPEN.has(tk.status) && typeof tk.title === "string" && tk.title.trim())
+            .sort((a, b) => {
+              const at = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+              const bt = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+              const av = Number.isNaN(at) ? Number.POSITIVE_INFINITY : at;
+              const bv = Number.isNaN(bt) ? Number.POSITIVE_INFINITY : bt;
+              if (av !== bv) return av - bv;
+              return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+            })
+            .map((tk) => {
+              let due: string | null = null;
+              if (tk.dueDate) {
+                const d = new Date(tk.dueDate);
+                if (!Number.isNaN(d.getTime())) {
+                  due = d.toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric" });
+                }
+              }
+              return { title: tk.title, due };
+            });
+          // Primary saved addresses (nickname/city/state chips only — no street).
+          const snapAddresses = addresses
+            .filter((a: any) => a.isPrimary)
+            .concat(addresses.filter((a: any) => !a.isPrimary))
+            .map((a: any) => ({ nickname: a.nickname ?? null, city: a.city ?? null, state: a.state ?? null }));
+          // Saved providers the dashboard already shows: name + phone the user
+          // entered on their own tracked services. No data the user can't see.
+          const snapProviders = addresses
+            .flatMap((a: any) => (Array.isArray(a.services) ? a.services : []))
+            .map((sv: any) => ({ name: sv?.providerName ?? null, phone: sv?.phone ?? null }))
+            .filter((p: { name: string | null }) => p.name);
+          await buildAndPersistDashboardSnapshot({
+            firstName: profileData?.firstName ?? profileData?.name ?? null,
+            moveDate: activePlan?.moveDate ?? null,
+            state: primaryState,
+            route: activePlan
+              ? { from: activePlan.fromAddress?.city ?? null, to: activePlan.toAddress?.city ?? null }
+              : null,
+            tasks: snapTasks,
+            readinessPercent,
+            addresses: snapAddresses,
+            providers: snapProviders,
+            budget: { monthlyExpenses, serviceCount: totalServices },
+          });
         } catch {
-          /* non-blocking: the widget snapshot is purely additive */
+          /* non-blocking: the widget + offline snapshots are purely additive */
         }
       })();
     }
     return true;
-  }, [t]);
+  }, [t, i18n.language]);
+
+  // HYDRATE FROM SNAPSHOT — paint the dashboard's visible state from the
+  // last-known offline snapshot so a no-signal cold start shows real info
+  // instantly instead of a blank wall. Best-effort + idempotent: it only fills
+  // state and is always immediately reconciled (overwritten) by the live fetch.
+  const hydrateFromSnapshot = useCallback(async (): Promise<boolean> => {
+    try {
+      const snap = await readDashboardSnapshot();
+      if (!snap) return false;
+      // Set the ref synchronously too so the live fetch's error branch can see it
+      // immediately (the state→ref mirror effect hasn't flushed yet at this point).
+      snapshotRef.current = snap;
+      setSnapshot(snap);
+      // Reconstruct the `stats` shape the UI reads. We carry only what the
+      // snapshot has; the live fetch will replace this wholesale momentarily.
+      const hasRoute = !!(snap.route && (snap.route.from || snap.route.to));
+      setStats({
+        addressCount: snap.addresses.length,
+        serviceCount: snap.budget?.serviceCount ?? 0,
+        monthlyExpenses: snap.budget?.monthlyExpenses ?? 0,
+        activePlan:
+          snap.moveDate && hasRoute
+            ? {
+                // No real plan id offline → empty string; UpNext keys off this and
+                // self-hides (it never fetches with an empty id), and the plan card
+                // tap routes to the moving tab fallback.
+                id: "",
+                fromCity: snap.route?.from || "—",
+                toCity: snap.route?.to || "—",
+                moveDate: snap.moveDate,
+                status: "PLANNING",
+              }
+            : null,
+      });
+      setPrimaryState(
+        snap.addresses.find((a) => a.state)?.state ?? snap.addresses[0]?.state ?? null,
+      );
+      setHasOriginDestination(hasRoute);
+      // Map the snapshot's readiness % back into the same critical-count shape the
+      // command center's readiness formula consumes, so the hydrated ring matches
+      // exactly (completed/(completed+missing) === readiness/100).
+      setCriticalReadiness({ completed: snap.readinessPercent, missing: 100 - snap.readinessPercent });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -387,9 +529,21 @@ export default function DashboardScreen() {
     }
   }, [fetchDashboard]);
 
+  // Mount: hydrate from the snapshot FIRST (instant paint), THEN kick off the
+  // live fetch which reconciles + overwrites + re-persists. The hydrate is
+  // awaited so the live fetch's error branch can already see the snapshot ref.
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    (async () => {
+      await hydrateFromSnapshot();
+      if (cancelled) return;
+      await load();
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Decide whether to surface the push re-prompt card. The onboarding
   // soft-prompt (maybeOfferPushSoftPrompt) only runs at onboarding completion,
@@ -526,7 +680,11 @@ export default function DashboardScreen() {
     [inviteBusyId, t],
   );
 
-  if (loading) {
+  // Only show the skeleton wall on a TRUE cold start — i.e. we're loading AND
+  // have no hydrated snapshot to paint. When a snapshot hydrated, we skip the
+  // skeleton entirely and render the (stale-but-real) dashboard while the live
+  // fetch reconciles in the background.
+  if (loading && !snapshot) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
@@ -625,6 +783,18 @@ export default function DashboardScreen() {
           />
         }
       >
+        {/* OFFLINE CHIP — shown when the live fetch failed but we hydrated the
+            last-known snapshot. Replaces the error wall with the stale-but-real
+            dashboard under an honest "Offline · last updated …" marker. */}
+        {offline && snapshot && (
+          <OfflineChip
+            relativeAge={snapshotRelativeAge(
+              snapshot,
+              (i18n.language || "en").toLowerCase().startsWith("es") ? "es-ES" : "en-US",
+            )}
+          />
+        )}
+
         {/* Pending workspace invitations — rendered near the top, even if the
             rest of the dashboard payload failed, so the user can always act. */}
         {pendingInvites.map((invite) => {

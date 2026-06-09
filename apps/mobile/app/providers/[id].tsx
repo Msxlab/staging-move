@@ -16,6 +16,7 @@ import {
   Globe,
   Phone,
   MapPin,
+  Search,
   Tag,
   TrendingUp,
   Plus,
@@ -43,7 +44,10 @@ import {
 } from "@/lib/provider-localization";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
 import { ProviderReason, type ProviderReasonInput } from "@/components/provider/ProviderReason";
-import { getProviderTrustSummary } from "@locateflow/shared";
+import {
+  getProviderTrustSummary,
+  LOCATION_SENSITIVE_PROVIDER_CATEGORIES,
+} from "@locateflow/shared";
 
 type Provider = ProviderCardData & {
   website?: string | null;
@@ -257,6 +261,23 @@ export default function ProviderDetailScreen() {
   const showStateRule =
     CRITICAL_GOVERNMENT.has(provider.category) && typeof stateRuleDays === "number";
 
+  // Honest "check availability at my address" deep-link. Only for an
+  // address-sensitive category (internet/utilities/etc.) whose coverage is
+  // NOT confirmed at the address: the engine still needs an address-level
+  // check (ADDRESS_CHECK_REQUIRED / live_address / requiresAddressCheck).
+  // When FCC already confirmed it the confidence is AVAILABLE_AT_ADDRESS and
+  // we suppress the link — there's nothing left to check. Requires a website
+  // to open; otherwise we omit the button gracefully. The copy NEVER implies
+  // LocateFlow confirmed service — the provider's own site does.
+  const coverageConfidence = trust.coverageConfidence.confidence;
+  const showAddressCheck =
+    LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(provider.category) &&
+    coverageConfidence !== "AVAILABLE_AT_ADDRESS" &&
+    (coverageConfidence === "ADDRESS_CHECK_REQUIRED" ||
+      provider.requiresAddressCheck === true ||
+      provider.coverageModel === "live_address") &&
+    Boolean(provider.website);
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -336,6 +357,33 @@ export default function ProviderDetailScreen() {
               </Text>
             </View>
           </View>
+
+          {showAddressCheck ? (
+            <View style={styles.addressCheckBox}>
+              <View style={styles.addressCheckHeader}>
+                <Search size={16} color={theme.colors.primary} />
+                <Text style={styles.addressCheckTitle}>
+                  {t("providers.checkAvailabilityTitle")}
+                </Text>
+              </View>
+              <Text style={styles.addressCheckBody}>
+                {t("providers.checkAvailabilityBody", { provider: provider.name })}
+              </Text>
+              <TouchableOpacity
+                style={styles.addressCheckBtn}
+                onPress={() => handleOpenLink(provider.website)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t("providers.checkAvailabilityA11y", { provider: provider.name })}
+                accessibilityHint={t("providers.checkAvailabilityHint", { provider: provider.name })}
+              >
+                <Globe size={16} color={theme.colors.primary} />
+                <Text style={styles.addressCheckBtnText} numberOfLines={2}>
+                  {t("providers.checkAvailabilityCta", { provider: provider.name })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
           <Button
             title={t("providers.trackManually")}
@@ -590,6 +638,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   truthTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
   truthText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  addressCheckBox: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.25)",
+  },
+  addressCheckHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  addressCheckTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, flex: 1 },
+  addressCheckBody: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 6, lineHeight: 17 },
+  addressCheckBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.35)",
+    paddingVertical: 13,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
+  addressCheckBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary, flexShrink: 1, textAlign: "center" },
   usersRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   usersTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
   usersText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
