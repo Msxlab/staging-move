@@ -64,7 +64,14 @@ import {
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
-import { detectStateZipMismatch } from "@locateflow/shared";
+import {
+  detectStateZipMismatch,
+  generateChecklist,
+  type UserChecklistProfile,
+  type RelocationChecklist,
+  type ChecklistStateRuleContext,
+} from "@locateflow/shared";
+import { MoveTeaserCard } from "@/components/ui/MoveTeaserCard";
 import { consumePendingInviteJoin } from "@/lib/workspace-invite";
 import {
   StepTransition,
@@ -235,6 +242,21 @@ export default function OnboardingScreen() {
   const [createdDestinationAddressId, setCreatedDestinationAddressId] = useState<string | null>(null);
   const [createdMovingPlanId, setCreatedMovingPlanId] = useState<string | null>(null);
 
+  // FREEMIUM: the moving plan is a paid unlock. A FREE user who enters move
+  // details does NOT create a MovingPlan — instead we compute a value-first
+  // teaser (countdown + top personalized steps) from the shared engine and show
+  // it inline, then route to the upgrade page on "Unlock". Only a genuinely
+  // paid user keeps the legacy create-the-plan flow. We resolve entitlement once
+  // on mount; a new signup (the overwhelming majority of onboarding) is free.
+  const [isPremium, setIsPremium] = useState(false);
+  // The ephemeral, NEVER-persisted checklist powering the teaser preview. Set
+  // when a free user submits the move step; cleared if they edit/cancel.
+  const [teaserChecklist, setTeaserChecklist] = useState<RelocationChecklist | null>(null);
+  // Snapshot of the route/date the teaser was computed for (so the card shows
+  // the right countdown + "from → to" even as the form fields are reused).
+  const [teaserMeta, setTeaserMeta] = useState<{ fromState: string; toState: string; moveDate: string } | null>(null);
+  const [buildingTeaser, setBuildingTeaser] = useState(false);
+
   useEffect(() => {
     if (user) {
       setProfile((prev) => ({
@@ -282,6 +304,22 @@ export default function OnboardingScreen() {
       }
       const res = await api.get<any>("/api/profile");
       if (cancelled) return;
+      // Resolve effective entitlement → only a paid tier keeps the legacy
+      // create-a-plan flow; everyone else gets the value-first teaser. Mirrors
+      // the dashboard's hasPremium derivation (entitlement first, subscription
+      // fallback). An inherited Family/Pro member is premium even with no own row.
+      {
+        const ent = res.data?.entitlement;
+        const sub = res.data?.subscription || {};
+        const hasPremium = ent
+          ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
+          : Boolean(
+              sub.plan &&
+                sub.plan !== "FREE_TRIAL" &&
+                (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date())),
+            );
+        setIsPremium(!!hasPremium);
+      }
       if (res.data?.legalConsents) {
         setLegalConsents(getDefaultLegalConsents(res.data.legalConsents));
       }
@@ -682,6 +720,131 @@ export default function OnboardingScreen() {
       setError(e.message || t("onboarding.error_savePlan"));
       return false;
     } finally { setSaving(false); }
+  };
+
+  // Shared move-destination validation used by BOTH the legacy paid create flow
+  // and the free teaser. Returns true when the destination + date are valid;
+  // sets the coral error + returns false otherwise (caller fires the shake).
+  const validateMoveDestination = (): boolean => {
+    if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
+      setError(t("onboarding.error_destinationRequired"));
+      return false;
+    }
+    if (movingForm.state.length !== 2) {
+      setError(t("onboarding.error_stateFormat"));
+      return false;
+    }
+    const destinationMismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
+    if (destinationMismatch) {
+      setError(t("onboarding.error_stateZipMismatchDestination", {
+        defaultValue: `ZIP ${movingForm.zip} appears to be in ${destinationMismatch.zipState}, but the state is ${destinationMismatch.typedState}. Please check the destination address.`,
+        state: destinationMismatch.typedState,
+        zip: movingForm.zip,
+        zipState: destinationMismatch.zipState,
+      }));
+      return false;
+    }
+    return true;
+  };
+
+  // FREE PATH: compute the value-first teaser from the entered move details and
+  // the shared checklist engine — NO MovingPlan is persisted (contract: free
+  // never creates a plan). Every step/reason shown comes from real
+  // STATE_DMV_DEADLINES data + the user's own profile, never invented.
+  const buildTeaser = async () => {
+    hapticLight();
+    if (!validateMoveDestination()) {
+      hapticError();
+      shake();
+      return;
+    }
+    setError("");
+    setBuildingTeaser(true);
+    try {
+      const checklistProfile: UserChecklistProfile = {
+        hasChildren: profile.hasChildren,
+        childrenCount: profile.childrenCount,
+        hasPets: profile.hasPets,
+        hasSenior: profile.hasSenior,
+        carCount: profile.carCount,
+        hasDisability: profile.hasDisability,
+        needsStorage: profile.needsStorage,
+        hasMotorcycle: profile.hasMotorcycle,
+        hasBoatRV: profile.hasBoatRV,
+        isImmigrant: profile.isImmigrant,
+        isBusinessOwner: profile.isBusinessOwner,
+        moveType: profile.moveType as UserChecklistProfile["moveType"],
+      };
+      const fromState = address.state.trim().toUpperCase();
+      const toState = movingForm.state.trim().toUpperCase();
+      // Optional state-rule enrichment for richer DMV/voter/tax notes. Best-effort:
+      // the engine produces honest deadlines from STATE_DMV_DEADLINES without it.
+      let stateRule: ChecklistStateRuleContext | null = null;
+      try {
+        const stateRuleRes = await api.get<any>("/api/state-rules", { state: toState });
+        stateRule = stateRuleRes.data?.stateRule || null;
+      } catch {
+        stateRule = null;
+      }
+      const cl = generateChecklist(
+        checklistProfile,
+        new Date(`${movingForm.moveDate}T00:00:00Z`),
+        fromState,
+        toState,
+        new Set<string>(),
+        stateRule,
+      );
+      setTeaserChecklist(cl);
+      setTeaserMeta({ fromState, toState, moveDate: movingForm.moveDate });
+      hapticSuccess();
+    } catch {
+      // The engine is pure + local, so a failure here is unexpected; fall back to
+      // the no-dead-end rule by routing the user to the dashboard via skip.
+      setError(t("onboarding.error_savePlan"));
+      hapticError();
+      shake();
+    } finally {
+      setBuildingTeaser(false);
+    }
+  };
+
+  // Complete onboarding WITHOUT a moving plan (free path). Used by the teaser's
+  // "Unlock" CTA (then routes to the subscription page) and by a plain
+  // skip-to-dashboard. Never POSTs /api/moving, so it can't 403 / dead-end.
+  const completeWithoutPlan = async (after: "subscription" | "dashboard") => {
+    setSaving(true);
+    setError("");
+    try {
+      if (selectedProviders.size === 0 && Object.keys(createdServiceIds).length === 0) {
+        await recordOnboardingProgress("SERVICES_SKIPPED");
+      }
+      await recordOnboardingProgress("MOVING_SKIPPED");
+      await recordOnboardingProgress("COMPLETED");
+      const profileRes = await api.get<any>("/api/profile");
+      if (profileRes.error) throw new Error(profileRes.error);
+      if (profileRes.data?.onboardingCompleted !== true) {
+        throw new Error(t("onboarding.error_onboardingIncomplete"));
+      }
+      hapticSuccess();
+      await maybeOfferPushSoftPrompt();
+      if (after === "subscription") {
+        // Land on the dashboard underneath, then open the upgrade page — so
+        // dismissing the subscription screen leaves the user in the app, not
+        // back at onboarding.
+        router.replace("/(tabs)");
+        router.push("/settings/subscription");
+      } else {
+        router.replace("/(tabs)");
+      }
+      return true;
+    } catch (e: any) {
+      setError(e?.message || t("onboarding.error_completeOnboarding"));
+      hapticError();
+      shake();
+      return false;
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleComplete = async () => {
@@ -1494,7 +1657,35 @@ export default function OnboardingScreen() {
                 </View>
               )}
 
-              {wantsToMove === true && (
+              {/* FREE TEASER: once we've computed the ephemeral preview, show the
+                  value-first teaser card (countdown + top personalized steps +
+                  Unlock CTA) in place of the form. No MovingPlan was persisted. */}
+              {wantsToMove === true && !isPremium && teaserChecklist && teaserMeta && (
+                <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
+                  <MoveTeaserCard
+                    checklist={teaserChecklist}
+                    fromState={teaserMeta.fromState}
+                    toState={teaserMeta.toState}
+                    moveDate={teaserMeta.moveDate}
+                    busy={saving}
+                    onUnlock={() => completeWithoutPlan("subscription")}
+                  />
+                  <Button
+                    title={t("onboarding.teaser_continueFree", { defaultValue: "Continue with the free plan" })}
+                    onPress={() => completeWithoutPlan("dashboard")}
+                    variant="ghost"
+                    fullWidth
+                    loading={saving}
+                  />
+                  <Button
+                    title={t("onboarding.teaser_editMove", { defaultValue: "Edit move details" })}
+                    onPress={() => { setTeaserChecklist(null); setTeaserMeta(null); }}
+                    variant="ghost"
+                  />
+                </View>
+              )}
+
+              {wantsToMove === true && !(!isPremium && teaserChecklist) && (
                 <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <MapPin size={16} color={theme.colors.primary} />
@@ -1566,7 +1757,20 @@ export default function OnboardingScreen() {
                   </View>
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
                     <View style={{ flex: 1 }}>
-                      <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                      {isPremium ? (
+                        // Paid user → the unchanged create-the-plan flow.
+                        <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                      ) : (
+                        // Free user → compute the value-first teaser (no plan persisted).
+                        <Button
+                          title={buildingTeaser ? t("common.loading") : t("onboarding.teaser_preview", { defaultValue: "See my plan preview" })}
+                          onPress={buildTeaser}
+                          loading={buildingTeaser}
+                          fullWidth
+                          size="lg"
+                          iconRight={<Sparkles size={16} color="#fff" />}
+                        />
+                      )}
                     </View>
                     <Button title={t("common.cancel")} onPress={() => { setWantsToMove(null); }} variant="ghost" />
                   </View>

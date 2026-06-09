@@ -52,7 +52,7 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("allows completed users with a missing subscription to add services within the default trial limit", async () => {
+  it("allows completed free users to add services (providers/services are unlimited on free)", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(2);
 
@@ -61,7 +61,7 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("applies the 10-service cap to active Free Access users", async () => {
+  it("gives active Free Access users UNLIMITED services (no 10-service cap)", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "INDIVIDUAL",
       status: "ACTIVE",
@@ -69,32 +69,14 @@ describe("plan limits setup grace", () => {
       freeAccessEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(10);
-
-    await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SERVICE_LIMIT_REACHED",
-      current: 10,
-      limit: 10,
-    });
-  });
-
-  it("allows Free Access users to add services when deleted history leaves active count below 10", async () => {
-    mocks.subscriptionFindUnique.mockResolvedValue({
-      plan: "INDIVIDUAL",
-      status: "ACTIVE",
-      accessType: "FREE_ACCESS",
-      freeAccessEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(7);
+    mocks.serviceCount.mockResolvedValue(500);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
       allowed: true,
     });
   });
 
-  it("applies the 10-service cap to annual Free Trial users even though the plan is Individual", async () => {
+  it("gives annual Free Trial users UNLIMITED services even at a high count", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "INDIVIDUAL",
       status: "TRIALING",
@@ -102,28 +84,23 @@ describe("plan limits setup grace", () => {
       trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(10);
+    mocks.serviceCount.mockResolvedValue(1000);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SERVICE_LIMIT_REACHED",
-      limit: 10,
+      allowed: true,
     });
   });
 
-  it("still enforces the default service cap when the subscription row is missing", async () => {
+  it("gives completed users UNLIMITED services when the subscription row is missing", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(10);
+    mocks.serviceCount.mockResolvedValue(250);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SERVICE_LIMIT_REACHED",
-      current: 10,
-      limit: 10,
+      allowed: true,
     });
   });
 
-  it("counts only active tracked services toward the trial service cap", async () => {
+  it("counts only active tracked services when checking the free service cap", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(7);
 
@@ -139,47 +116,17 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("blocks the 11th active tracked service but ignores deleted archived or canceled history", async () => {
-    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(10);
-
-    await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SERVICE_LIMIT_REACHED",
-      current: 10,
-      limit: 10,
-    });
-
-    const countArg = mocks.serviceCount.mock.calls.at(-1)?.[0];
-    expect(countArg.where).toMatchObject({
-      userId: "user_1",
-      deletedAt: null,
-      isActive: true,
-      deactivatedAt: null,
-    });
-    expect(countArg.where.OR).toEqual([
-      { migrationAction: null },
-      {
-        migrationAction: {
-          notIn: expect.arrayContaining(["CANCEL", "CANCELED", "CANCELLED", "REMOVE", "REMOVED", "ARCHIVE", "ARCHIVED"]),
-        },
-      },
-    ]);
-  });
-
-  it("allows incomplete setup users to add initial services even when a legacy trial row is expired", async () => {
+  it("allows incomplete setup users to add services without a setup cap (unlimited)", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "TRIALING",
       trialEndsAt: new Date(Date.now() - 1000),
     });
-    mocks.serviceCount.mockResolvedValue(2);
+    mocks.serviceCount.mockResolvedValue(50);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
       allowed: true,
       setupGrace: true,
-      current: 2,
-      limit: 10,
     });
   });
 
@@ -198,20 +145,21 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("enforces setup service and custom-provider quotas", async () => {
+  it("enforces the setup custom-provider quota (services are now unlimited)", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",
       trialEndsAt: new Date(Date.now() - 1000),
     });
-    mocks.serviceCount.mockResolvedValue(10);
+    mocks.serviceCount.mockResolvedValue(50);
     mocks.userCustomProviderCount.mockResolvedValue(10);
 
+    // Services are unlimited during setup now — even a high count is allowed.
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SETUP_SERVICE_LIMIT_REACHED",
-      limit: 10,
+      allowed: true,
+      setupGrace: true,
     });
+    // Custom providers keep their setup cap.
     await expect(canCreateCustomProvider("user_1")).resolves.toMatchObject({
       allowed: false,
       code: "SETUP_CUSTOM_PROVIDER_LIMIT_REACHED",
@@ -219,86 +167,103 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("allows first setup addresses within the setup allowance", async () => {
+  it("allows setup addresses up to the new 3-address allowance", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",
       trialEndsAt: new Date(Date.now() - 1000),
     });
-    mocks.addressCount.mockResolvedValue(1);
+    mocks.addressCount.mockResolvedValue(2);
 
     await expect(canCreateAddress("user_1")).resolves.toMatchObject({
       allowed: true,
       setupGrace: true,
-      current: 1,
-      limit: 2,
+      current: 2,
+      limit: 3,
     });
   });
 
-  it("returns SETUP_MOVING_PLAN_LIMIT_REACHED when a setup user exceeds the move-plan allowance", async () => {
+  it("blocks the 4th setup address with the setup address-limit code", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",
       trialEndsAt: new Date(Date.now() - 1000),
     });
-    mocks.movingPlanCount.mockResolvedValue(1);
+    mocks.addressCount.mockResolvedValue(3);
+
+    await expect(canCreateAddress("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SETUP_ADDRESS_LIMIT_REACHED",
+      limit: 3,
+    });
+  });
+
+  it("blocks a setup (fresh free, pre-completion) user from creating a moving plan with the upgrade signal", async () => {
+    // Fresh free user: no subscription row (active default Free Access),
+    // onboarding not yet completed. They never get a plan — only the teaser.
+    mocks.subscriptionFindUnique.mockResolvedValue(null);
+    mocks.userEventFindFirst.mockResolvedValue(null);
+    mocks.movingPlanCount.mockResolvedValue(0);
 
     await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({
       allowed: false,
-      code: "SETUP_MOVING_PLAN_LIMIT_REACHED",
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
       upgradeRequired: true,
-      current: 1,
-      limit: 1,
     });
   });
 
-  it("allows the first moving-plan destination address under setup allowance even when address quota is full", async () => {
-    mocks.subscriptionFindUnique.mockResolvedValue({
-      plan: "FREE_TRIAL",
-      status: "EXPIRED",
-      trialEndsAt: new Date(Date.now() - 1000),
-    });
-    mocks.addressCount.mockResolvedValue(2);
+  it("blocks an active free (completed) user from creating a moving plan with the upgrade signal", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.movingPlanCount.mockResolvedValue(0);
 
+    await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      upgradeRequired: true,
+    });
+  });
+
+  it("applies the normal address cap to a moving-plan destination address (no setup bypass)", async () => {
+    // Paid users reach this path; it just defers to canCreateAddress.
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "PRO",
+      status: "ACTIVE",
+      accessType: "PAID",
+      provider: "STRIPE",
+      currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.addressCount.mockResolvedValue(5);
+
     await expect(canCreateMovingDestinationAddress("user_1")).resolves.toMatchObject({
       allowed: true,
-      setupGrace: true,
-      current: 0,
-      limit: 1,
     });
   });
 
-  it("uses the normal address quota after the first moving-plan setup allowance is spent", async () => {
-    mocks.subscriptionFindUnique.mockResolvedValue({
-      plan: "FREE_TRIAL",
-      status: "EXPIRED",
-      trialEndsAt: new Date(Date.now() - 1000),
-    });
-    mocks.addressCount.mockResolvedValue(2);
-    mocks.movingPlanCount.mockResolvedValue(1);
-
-    await expect(canCreateMovingDestinationAddress("user_1")).resolves.toMatchObject({
-      allowed: false,
-      code: "SETUP_ADDRESS_LIMIT_REACHED",
-      limit: 2,
-    });
-  });
-
-  it("allows setup users to generate move tasks for their first plan", async () => {
-    mocks.subscriptionFindUnique.mockResolvedValue({
-      plan: "FREE_TRIAL",
-      status: "EXPIRED",
-      trialEndsAt: new Date(Date.now() - 1000),
-    });
+  it("blocks a setup (fresh free, pre-completion) user from generating move tasks with the upgrade signal", async () => {
+    // Fresh free user: no subscription row, onboarding not completed.
+    mocks.subscriptionFindUnique.mockResolvedValue(null);
+    mocks.userEventFindFirst.mockResolvedValue(null);
+    mocks.movingPlanCount.mockResolvedValue(0);
 
     await expect(canGenerateMoveTasks("user_1")).resolves.toMatchObject({
-      allowed: true,
-      setupGrace: true,
+      allowed: false,
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      upgradeRequired: true,
     });
   });
 
-  it("still blocks completed expired users from generating move tasks", async () => {
+  it("blocks an active free (completed) user from generating move tasks with the upgrade signal", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+
+    await expect(canGenerateMoveTasks("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      upgradeRequired: true,
+    });
+  });
+
+  it("still blocks completed expired (lapsed) users from generating move tasks with their tier copy", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",
@@ -450,5 +415,23 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
       hasPremium: true,
     });
     expect(mocks.subscriptionFindUnique.mock.calls[0]?.[0]?.where?.userId).toBe("owner_1");
+  });
+
+  it("allows a paid (Individual) user to create a moving plan", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("INDIVIDUAL"));
+
+    await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
+  it("allows a paid (Family) user to create a moving plan", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
+
+    await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
+  it("allows a paid (Pro) user to generate move tasks", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue(paidActive("PRO"));
+
+    await expect(canGenerateMoveTasks("user_1")).resolves.toMatchObject({ allowed: true });
   });
 });

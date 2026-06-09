@@ -66,6 +66,18 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
     details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
   const campaign = details?.campaign || details?.monthlyOffer || null;
 
+  // Move-plan paywall (freemium): the moving plan is an Individual+ feature.
+  // Free users organizing their home hit this when they try to create or
+  // generate a move plan. Copy is move-specific, not service-limit-specific.
+  if (details?.code === "MOVING_PLAN_UPGRADE_REQUIRED") {
+    return {
+      title: "Unlock your full move plan",
+      body: "Your free plan organizes your home. Upgrade to Individual to unlock your full personalized move plan — checklist, countdown, state guide, provider migration, and move tracking.",
+      primary: "Unlock with Individual",
+      secondary: "Maybe later",
+    };
+  }
+
   // Paid users hit the Individual Annual ceiling — there's no higher tier
   // to upsell into, so the modal switches to a contact-support shape and
   // the primary CTA opens subscription management instead of checkout.

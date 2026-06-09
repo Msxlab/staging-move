@@ -53,6 +53,7 @@ import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
+import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
 import { UpNext } from "@/components/ui/UpNext";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import type { ServiceLike } from "@/lib/service-insights";
@@ -910,23 +911,34 @@ export default function DashboardScreen() {
           <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
         ) : (
           <>
-        {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next
-            action. Its no-plan state is the warm "start your move" hero, so it
-            replaces the old cold empty path for users without an active move. */}
-        <View style={{ marginBottom: 16 }}>
-          <MoveCommandCenter
-            activePlan={stats?.activePlan ?? null}
-            checklist={checklist}
-            topAction={topAction}
-            missingCriticalCount={criticalReadiness.missing}
-            completedCriticalCount={criticalReadiness.completed}
-            state={primaryState}
-            hasOriginDestination={hasOriginDestination}
-            onOpenPlan={() => router.push("/(tabs)/moving")}
-            onOpenAction={(action) => router.push(`/providers/${action.id}` as Href)}
-            onStartMove={() => router.push("/moving/new")}
-          />
-        </View>
+        {/* MOVE HERO — branches on entitlement (freemium re-architecture):
+            • FREE with no plan → the value-first upsell card. The moving plan is
+              a paid unlock, so a free user never sees the "Start a move" CTA that
+              would 403 on /api/moving — they get an honest free-vs-paid card that
+              routes to the subscription page (where, after upgrading, the normal
+              plan-creation flow becomes available).
+            • PAID, or anyone with an existing plan (read-open for a lapsed/
+              downgraded user) → the full Move Command Center, unchanged. */}
+        {!isPremium && !stats?.activePlan ? (
+          <View style={{ marginBottom: 16 }}>
+            <FreeMoveUpsellCard onUnlock={() => router.push("/settings/subscription")} />
+          </View>
+        ) : (
+          <View style={{ marginBottom: 16 }}>
+            <MoveCommandCenter
+              activePlan={stats?.activePlan ?? null}
+              checklist={checklist}
+              topAction={topAction}
+              missingCriticalCount={criticalReadiness.missing}
+              completedCriticalCount={criticalReadiness.completed}
+              state={primaryState}
+              hasOriginDestination={hasOriginDestination}
+              onOpenPlan={() => router.push("/(tabs)/moving")}
+              onOpenAction={(action) => router.push(`/providers/${action.id}` as Href)}
+              onStartMove={() => router.push("/moving/new")}
+            />
+          </View>
+        )}
 
         {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each
             with a one-tap inline checkbox that completes via the same

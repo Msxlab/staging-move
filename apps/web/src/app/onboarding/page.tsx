@@ -5,8 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight, User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
   Loader2, Globe, Phone, Search, Building2, Shield, X, ChevronDown, ChevronUp, Sparkles, Calendar,
+  Lock, CalendarClock, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  generateChecklist,
+  type UserChecklistProfile,
+  type RelocationChecklist,
+  type ChecklistStateRuleContext,
+} from "@/lib/shared-relocation";
+import { getMoveCountdown } from "@locateflow/shared";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import {
   getRecommendedProviders,
@@ -122,6 +130,18 @@ export default function OnboardingPage() {
           router.replace("/dashboard");
           return;
         }
+
+        // Freemium gate signal: a paid (Individual/Family/Pro) user keeps the
+        // normal moving-plan create flow; a free user gets the value-first
+        // teaser instead. Prefer the resolved entitlement (mirrors dashboard),
+        // falling back to the raw subscription heuristic.
+        const ent = data.entitlement;
+        const sub = data.subscription || {};
+        const paid = ent
+          ? ent.isActive === true && ent.plan && ent.plan !== "FREE_TRIAL"
+          : sub.plan && sub.plan !== "FREE_TRIAL" &&
+            (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
+        setIsPremium(!!paid);
 
         const hasLegal = hasRequiredLegalConsents(data.legalConsents);
         setLegalAcceptedOnServer(hasLegal);
@@ -252,6 +272,19 @@ export default function OnboardingPage() {
     longitude: null as number | null,
   });
   const [billingData, setBillingData] = useState<Record<string, { monthlyCost: string; billingCycle: string }>>({});
+
+  // Freemium: free users cannot create a MovingPlan. Instead of POSTing to
+  // /api/moving (which now 403s for free), we compute an ephemeral, value-first
+  // TEASER from the same checklist engine the dashboard uses — no persistence.
+  // Paid users keep the normal create flow. `isPremium` decides which path the
+  // Step-3 submit takes.
+  const [isPremium, setIsPremium] = useState(false);
+  const [teaser, setTeaser] = useState<{
+    checklist: RelocationChecklist;
+    fromState: string;
+    toState: string;
+    moveDate: string;
+  } | null>(null);
 
   const updateAddressField = (field: string, value: string | boolean | number | null) => {
     setAddress((prev) => {
@@ -517,19 +550,7 @@ export default function OnboardingPage() {
 
   const saveMovingPlan = async () => {
     if (!wantsToMove) return null;
-    if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
-      setError("Please fill in destination city, state, ZIP, and move date.");
-      return false;
-    }
-    if (movingForm.state.length !== 2) {
-      setError("State must be a 2-letter code.");
-      return false;
-    }
-    const mismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
-    if (mismatch) {
-      setError(`ZIP ${movingForm.zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the destination address.`);
-      return false;
-    }
+    if (!validateMovingForm()) return false;
     if (!createdAddressId) {
       setError("No origin address found. Please go back and add an address first.");
       return false;
@@ -574,6 +595,81 @@ export default function OnboardingPage() {
     } catch (e: any) {
       setError(e.message || "Failed to create moving plan");
       toast.error(e.message || "Failed to create moving plan");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Validate the Step-3 move form (shared by the paid create path and the
+  // free teaser path). Returns true when destination + date are usable.
+  const validateMovingForm = (): boolean => {
+    if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
+      setError("Please fill in destination city, state, ZIP, and move date.");
+      return false;
+    }
+    if (movingForm.state.length !== 2) {
+      setError("State must be a 2-letter code.");
+      return false;
+    }
+    const mismatch = detectStateZipMismatch(movingForm.state, movingForm.zip);
+    if (mismatch) {
+      setError(`ZIP ${movingForm.zip} appears to be in ${mismatch.zipState}, but the state is ${mismatch.typedState}. Please check the destination address.`);
+      return false;
+    }
+    return true;
+  };
+
+  // FREE teaser: compute a personalized move preview from the entered
+  // onboarding data using the SAME checklist engine the dashboard uses. No
+  // /api/moving POST, no MovingPlan persisted — purely ephemeral. Reasons and
+  // deadlines come from the real engine + the user's data (never invented).
+  const buildMoveTeaser = async () => {
+    if (!validateMovingForm()) return false;
+    setError("");
+    setSaving(true);
+    try {
+      const checklistProfile: UserChecklistProfile = {
+        hasChildren: profile.hasChildren,
+        childrenCount: profile.childrenCount,
+        hasPets: profile.hasPets,
+        hasSenior: profile.hasSenior,
+        carCount: profile.carCount,
+        hasDisability: profile.hasDisability,
+        needsStorage: profile.needsStorage,
+        hasMotorcycle: profile.hasMotorcycle,
+        hasBoatRV: profile.hasBoatRV,
+        isImmigrant: profile.isImmigrant,
+        isBusinessOwner: profile.isBusinessOwner,
+        moveType: (profile.moveType as UserChecklistProfile["moveType"]) || "PERSONAL",
+      };
+      const toState = movingForm.state.trim().toUpperCase();
+      const fromState = address.state.trim().toUpperCase();
+      // Optional state-rule enrichment for richer "because your state…" notes.
+      // The engine works without it, so this is best-effort and non-blocking.
+      let stateRule: ChecklistStateRuleContext | null = null;
+      if (toState) {
+        try {
+          const res = await fetch(`/api/state-rules?state=${toState}`).then((r) => r.json());
+          stateRule = res.stateRule || null;
+        } catch {
+          stateRule = null;
+        }
+      }
+      const checklist = generateChecklist(
+        checklistProfile,
+        new Date(movingForm.moveDate),
+        fromState,
+        toState,
+        new Set<string>(),
+        stateRule,
+      );
+      setTeaser({ checklist, fromState, toState, moveDate: movingForm.moveDate });
+      trackEvent("move_teaser_viewed", { source: "onboarding" });
+      return true;
+    } catch (e: any) {
+      setError(e.message || "Could not build your move preview.");
+      toast.error(e.message || "Could not build your move preview.");
       return false;
     } finally {
       setSaving(false);
@@ -627,6 +723,14 @@ export default function OnboardingPage() {
   };
 
   const finishOnboarding = async () => {
+    // FREE users with a planned move: don't create a MovingPlan (the gate
+    // blocks it). Show the value-first teaser instead — onboarding completes
+    // only after the user acts on the preview (upgrade or "continue free").
+    if (wantsToMove && !isPremium) {
+      await buildMoveTeaser();
+      return;
+    }
+
     const planId = await saveMovingPlan();
     if (planId === false) return;
     try {
@@ -647,6 +751,32 @@ export default function OnboardingPage() {
       const message = e.message || "Failed to complete onboarding";
       setError(message);
       toast.error(message);
+    }
+  };
+
+  // Complete onboarding from the free teaser without persisting a MovingPlan.
+  // Used by both "Unlock with Individual" (routes to upgrade) and "Continue to
+  // dashboard". No /api/moving POST — avoids the 403 dead-end entirely.
+  const finishFromTeaser = async (target: "upgrade" | "dashboard") => {
+    setSaving(true);
+    setError("");
+    try {
+      await recordOnboardingProgress("MOVING_SKIPPED");
+      await recordOnboardingProgress("COMPLETED");
+      await ensureOnboardingCompleted();
+      trackEvent("onboarding_completed", { created_moving_plan: false, saw_teaser: true });
+      if (target === "upgrade") {
+        trackEvent("move_teaser_upgrade_clicked", { source: "onboarding" });
+        router.push("/settings/subscription?returnTo=%2Fdashboard");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (e: any) {
+      const message = e.message || "Failed to complete onboarding";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -736,6 +866,155 @@ export default function OnboardingPage() {
             )}
           </button>
         </GlassCard>
+      </div>
+    );
+  }
+
+  // ── FREE TEASER takeover ───────────────────────────────────────────────────
+  // Value-first preview computed from the entered move data via the same
+  // checklist engine the dashboard uses. NO MovingPlan is persisted. Every step
+  // + reason comes from the real engine (SERVICE_PRIORITY_MAP / STATE_DMV_
+  // DEADLINES) and the user's own data — nothing is invented.
+  if (teaser) {
+    const { checklist, fromState, toState, moveDate } = teaser;
+    const countdown = getMoveCountdown(moveDate, { state: fromState || null });
+
+    // Top personalized critical steps: nextAction first, then urgent/overdue,
+    // then the earliest URGENT/HIGH items — deduped by id, capped at 5.
+    const seen = new Set<string>();
+    const picked: typeof checklist.urgentItems = [];
+    const consider = [
+      ...(checklist.nextAction ? [checklist.nextAction] : []),
+      ...checklist.urgentItems,
+      ...checklist.overdueItems,
+      ...checklist.phases.flatMap((p) =>
+        p.items.filter((i) => i.priority === "URGENT" || i.priority === "HIGH"),
+      ),
+    ];
+    for (const item of consider) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      picked.push(item);
+      if (picked.length >= 5) break;
+    }
+
+    const countdownLine =
+      countdown.phase === "today"
+        ? "Your move is today"
+        : countdown.phase === "past"
+          ? `Moved ${countdown.absDays} day${countdown.absDays === 1 ? "" : "s"} ago`
+          : countdown.absDays === 1
+            ? "1 day to go"
+            : `${countdown.absDays} days to go`;
+
+    return (
+      <div className="space-y-5 pb-24">
+        {error && (
+          <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive text-destructive text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Countdown hero */}
+        <div className="relative overflow-hidden rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6">
+          <div className="flex items-center gap-2 text-tone-orange-fg">
+            <CalendarClock className="h-4 w-4" />
+            <p className="text-[11px] font-semibold uppercase tracking-wider">Your move preview</p>
+          </div>
+          <h2 className="mt-2 text-3xl font-extrabold text-foreground leading-tight">{countdownLine}</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {fromState || "Your state"} → {toState || "your destination"}
+          </p>
+          <p className="mt-3 text-sm font-medium text-foreground">
+            Your {checklist.totalItems}-step personalized {fromState || "origin"} → {toState || "destination"} plan is ready.
+          </p>
+        </div>
+
+        {/* Top personalized critical steps */}
+        <GlassCard className="p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-tone-honey-fg" />
+            <h3 className="text-sm font-semibold text-foreground">Your top critical steps</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Personalized from what you told us — here&apos;s what would matter most for this move.
+          </p>
+          <div className="space-y-2">
+            {picked.map((item) => {
+              // Honest "because…" reason: prefer the engine's computed state note
+              // (real DMV deadlines etc.), then a deadline-day note, then the
+              // item's own description. Never fabricated.
+              const reason =
+                item.stateNote ||
+                (item.daysUntilDeadline !== null && item.daysUntilDeadline >= 0
+                  ? `Deadline in ${item.daysUntilDeadline} day${item.daysUntilDeadline === 1 ? "" : "s"} after your move`
+                  : item.description || null);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-border bg-foreground/[0.03]"
+                >
+                  <span className="text-base leading-none mt-0.5">{item.icon || "✅"}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{item.title}</p>
+                    {reason && (
+                      <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{reason}</p>
+                    )}
+                  </div>
+                  {(item.priority === "URGENT" || item.isOverdue) && (
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-destructive">
+                      <Clock className="h-3 w-3" /> Urgent
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {checklist.totalItems > picked.length && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              + {checklist.totalItems - picked.length} more steps in your full plan.
+            </p>
+          )}
+        </GlassCard>
+
+        {/* Unlock CTA */}
+        <div className="rounded-2xl border border-tone-orange-br bg-tone-orange-bg p-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-tone-orange-br bg-background/40 p-2.5">
+              <Lock className="h-5 w-5 text-tone-orange-fg" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-foreground">Unlock your full move plan + tracking</h3>
+              <p className="mt-1 text-sm text-tone-orange-fg/90">
+                Individual turns this preview into a live, trackable plan: every step with
+                its deadline, a countdown, your destination-state guide, provider migration,
+                and reminders so nothing slips.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => finishFromTeaser("dashboard")}
+              disabled={saving}
+              className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:opacity-50"
+            >
+              Keep organizing for free
+            </button>
+            <button
+              type="button"
+              onClick={() => finishFromTeaser("upgrade")}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Unlock with Individual <ArrowRight className="h-4 w-4" /></>}
+            </button>
+          </div>
+          <p className="mt-3 text-[11px] text-tone-orange-fg/80">
+            You can keep tracking up to 3 addresses, unlimited providers, and bill reminders on the free plan.
+          </p>
+        </div>
       </div>
     );
   }
@@ -1314,7 +1593,9 @@ export default function OnboardingPage() {
         <GlassCard className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-1">Do you have a move planned?</h2>
           <p className="text-muted-foreground text-sm mb-5">
-            If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
+            {isPremium
+              ? "If yes, we'll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab."
+              : "If yes, we'll build a personalized preview of your move plan — your countdown and top critical steps. If not, you can organize your home now and plan a move any time."}
           </p>
 
           {wantsToMove === null && (
@@ -1390,7 +1671,13 @@ export default function OnboardingPage() {
                   disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
                 >
-                  {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Creating Plan...</> : <>Create Plan & Go <ArrowRight className="h-4 w-4" /></>}
+                  {saving ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" />{isPremium ? "Creating Plan..." : "Building preview..."}</>
+                  ) : isPremium ? (
+                    <>Create Plan &amp; Go <ArrowRight className="h-4 w-4" /></>
+                  ) : (
+                    <>Preview my move plan <ArrowRight className="h-4 w-4" /></>
+                  )}
                 </button>
                 <button
                   onClick={() => { setWantsToMove(null); }}

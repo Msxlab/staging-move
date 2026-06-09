@@ -106,6 +106,27 @@ describe("api gate helpers", () => {
     expect(body.entitlementCode).toBe("TRIAL_EXPIRED");
   });
 
+  it("passes MOVING_PLAN_UPGRADE_REQUIRED through verbatim (not normalized to SUBSCRIPTION_REQUIRED)", async () => {
+    // The freemium move paywall must reach the client with its own code +
+    // upgradeRequired so the teaser/Unlock CTA renders instead of a generic
+    // subscription error.
+    const response = entitlementErrorResponse(
+      {
+        allowed: false,
+        code: "MOVING_PLAN_UPGRADE_REQUIRED",
+        reason: "Upgrade to Individual to unlock your full move plan.",
+        upgradeRequired: true,
+      },
+      "MOVING_PLAN_LIMIT_REACHED",
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("MOVING_PLAN_UPGRADE_REQUIRED");
+    expect(body.upgradeRequired).toBe(true);
+    expect(body.entitlementCode).toBe("MOVING_PLAN_UPGRADE_REQUIRED");
+  });
+
   it("preserves explicit ApiGateError messages", async () => {
     const response = apiGateErrorResponse(new ApiGateError("FORBIDDEN", "Custom message"))!;
     const body = await response.json();
