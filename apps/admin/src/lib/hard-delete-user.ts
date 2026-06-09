@@ -125,11 +125,14 @@ export interface HardDeleteResult {
  * Cascade order (the ORDER MATTERS — FK constraints dictate it):
  *   --- inside a single $transaction (all-or-nothing on the DB side) ---
  *   1. Deactivate userLoginSession + userSession (kill live access immediately).
- *   2. For each owned Workspace (Workspace.owner = Restrict): pick an heir and
- *      transfer ownership, else delete the now-empty workspace. Clearing this FK
- *      is what lets the User row be deleted.
+ *   2. For each owned Workspace (Workspace.owner = Restrict): classify into
+ *      heir-transfer vs solo-delete (the FK is cleared either way).
  *   3. movingPlan.deleteMany (MovingPlan.from/toAddress = Restrict): remove the
- *      user's plans first so the User cascade can later remove their Addresses.
+ *      user's plans — and any plan stamped to a solo workspace about to be
+ *      dropped — BEFORE deleting workspaces, because a solo workspace.delete
+ *      cascade-removes its Addresses first; a lingering plan reference would
+ *      abort the whole $transaction (FK 1451).
+ *   3b. Transfer shared workspaces to their heir, hard-delete the solo ones.
  *   4. gDPRRequest.deleteMany: GDPRRequest has NO FK to User, so the DB cascade
  *      will NOT remove these — delete them explicitly to leave no trace.
  *   5. user.delete: cascades all remaining direct children (addresses, services,
@@ -183,32 +186,49 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
       data: { isActive: false, sessionEnd: now, lastActivity: now },
     });
 
-    // 2. Owned workspaces (Workspace.owner = Restrict): transfer or delete.
+    // 2. Owned workspaces (Workspace.owner = Restrict): decide heir-vs-solo up
+    //    front so we know which workspaces will be hard-deleted.
     const ownedWorkspaces = await tx.workspace.findMany({
       where: { ownerUserId: userId },
       select: { id: true },
     });
+    const heirTransfers: Array<{ workspaceId: string; heir: string }> = [];
+    const soloWorkspaceIds: string[] = [];
     for (const ws of ownedWorkspaces) {
       const heir = await pickOwnershipHeir(tx, ws.id, userId);
-      if (heir) {
-        const ok = await transferWorkspaceOwnership(tx, ws.id, userId, heir);
-        if (ok) {
-          ownedWorkspacesTransferred += 1;
-          reconcileWorkspaceIds.push(ws.id);
-        } else {
-          // Heir vanished mid-tx (shouldn't happen) — delete to clear the FK.
-          await tx.workspace.delete({ where: { id: ws.id } });
-          ownedWorkspacesDeleted += 1;
-        }
+      if (heir) heirTransfers.push({ workspaceId: ws.id, heir });
+      else soloWorkspaceIds.push(ws.id);
+    }
+
+    // 3. MovingPlan (from/toAddress = Restrict): purge BEFORE deleting any solo
+    //    workspace. Deleting a solo workspace cascade-removes its Addresses first,
+    //    so a plan still referencing one would abort the whole $transaction (FK
+    //    1451) and the operator would get a 500. Cover the user's own plans plus
+    //    any plan stamped to a solo workspace we are about to drop.
+    await tx.movingPlan.deleteMany({
+      where: soloWorkspaceIds.length
+        ? { OR: [{ userId }, { workspaceId: { in: soloWorkspaceIds } }] }
+        : { userId },
+    });
+
+    // 3b. Now transfer shared workspaces to their heir (workspace survives) and
+    //     hard-delete the solo ones (their Addresses cascade safely — no plan
+    //     references them anymore).
+    for (const { workspaceId, heir } of heirTransfers) {
+      const ok = await transferWorkspaceOwnership(tx, workspaceId, userId, heir);
+      if (ok) {
+        ownedWorkspacesTransferred += 1;
+        reconcileWorkspaceIds.push(workspaceId);
       } else {
-        await tx.workspace.delete({ where: { id: ws.id } });
+        // Heir vanished mid-tx (shouldn't happen) — delete to clear the FK.
+        await tx.workspace.delete({ where: { id: workspaceId } });
         ownedWorkspacesDeleted += 1;
       }
     }
-
-    // 3. MovingPlan (from/toAddress = Restrict): remove before the User cascade
-    //    so the user's Addresses can then be cascade-deleted.
-    await tx.movingPlan.deleteMany({ where: { userId } });
+    for (const wsId of soloWorkspaceIds) {
+      await tx.workspace.delete({ where: { id: wsId } });
+      ownedWorkspacesDeleted += 1;
+    }
 
     // 4. GDPRRequest has NO FK to User — the User cascade won't touch it, so
     //    purge explicitly to leave no trace (incl. any prior soft-delete queue).
