@@ -96,8 +96,17 @@ describe("notificationTypesForKind", () => {
   it("maps unsubscribe kinds to notification types", async () => {
     const { notificationTypesForKind } = await import("./unsubscribe");
     expect(notificationTypesForKind("marketing")).toEqual(["MARKETING"]);
-    expect(notificationTypesForKind("reminder")).toEqual(["REMINDER"]);
-    expect(notificationTypesForKind("all")).toEqual(["MARKETING", "REMINDER"]);
+    expect(notificationTypesForKind("reminder")).toEqual(["REMINDER", "LIFECYCLE"]);
+    expect(notificationTypesForKind("all")).toEqual(["MARKETING", "REMINDER", "LIFECYCLE"]);
+  });
+
+  it("silences LIFECYCLE via reminder and all (CAN-SPAM: a lifecycle email's own opt-out must stop it)", async () => {
+    const { notificationTypesForKind } = await import("./unsubscribe");
+    // Lifecycle nudges carry a kind=reminder unsubscribe link, so opting out of
+    // reminder — or 'all' (used by the bounce/complaint webhook) — must disable it.
+    expect(notificationTypesForKind("reminder")).toContain("LIFECYCLE");
+    expect(notificationTypesForKind("all")).toContain("LIFECYCLE");
+    expect(notificationTypesForKind("marketing")).not.toContain("LIFECYCLE");
   });
 });
 
