@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import {
@@ -302,7 +302,7 @@ export async function PATCH(request: NextRequest) {
         });
         // A promoted custom provider becomes a public listing — bust the
         // cached provider set like every other provider mutation does.
-        revalidateTag("providers", "default");
+        revalidateProvidersCatalog();
         return NextResponse.json({ provider: newProvider, promoted: true });
       }
 

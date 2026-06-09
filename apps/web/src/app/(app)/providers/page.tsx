@@ -7,9 +7,10 @@ import { ProvidersClient, type ProviderItem, type AddressOption } from "./provid
 
 // Page is user-scoped (user's addresses drive the view) — dynamic is
 // required. But the provider catalog itself is global and changes rarely,
-// so we cache just that query under a `providers` tag. Admin mutations
-// already call revalidateTag("providers"), so this stays fresh without a
-// time-based refetch.
+// so we cache just that query under a `providers` tag. Admin and web are
+// separate Next processes, so an admin edit invalidates this tag via the
+// cross-app HMAC webhook (/api/providers/revalidate); the 5-min TTL below is
+// only a safety net for a missed webhook.
 export const dynamic = "force-dynamic";
 
 const getActiveProviders = unstable_cache(

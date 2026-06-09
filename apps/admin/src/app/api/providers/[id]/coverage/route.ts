@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
@@ -265,7 +265,7 @@ export async function PATCH(
       request: requestMeta,
     });
 
-    revalidateTag("providers", "default");
+    revalidateProvidersCatalog();
 
     const summary = await loadCoverageSummary(id);
     return NextResponse.json({ success: true, rebuiltRows: rowCount, ...summary });

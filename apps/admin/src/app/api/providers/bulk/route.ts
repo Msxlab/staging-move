@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { PROVIDER_CATEGORY_VALUES } from "@locateflow/shared";
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    revalidateTag("providers", "default");
+    revalidateProvidersCatalog();
 
     return NextResponse.json({ success: true, affected: result.count ?? ids.length, skipped });
   } catch (error: any) {

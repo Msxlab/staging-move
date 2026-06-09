@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
@@ -74,7 +74,7 @@ export async function POST(
       request: requestMeta,
     });
 
-    revalidateTag("providers", "default");
+    revalidateProvidersCatalog();
 
     return NextResponse.json({ success: true, previousRows: before, rebuiltRows: rowCount });
   } catch (error: any) {
