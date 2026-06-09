@@ -72,6 +72,7 @@ model User {
   addressChangeEvents     AddressChangeEvent[]
   affiliateClicks         AffiliateClick[]
   recommendationFeedback  RecommendationFeedback[]
+  savedProviders          SavedProvider[]
   ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
@@ -782,6 +783,7 @@ model ServiceProvider {
   affiliateClicks       AffiliateClick[]
   affiliateConversions  AffiliateConversion[]
   recommendationFeedback RecommendationFeedback[]
+  savedBy               SavedProvider[]
 
   deletedAt DateTime?
 
@@ -819,6 +821,21 @@ model AffiliateClick {
   @@index([userId])
   @@index([createdAt])
   @@index([providerId, createdAt]) // windowed click-rate aggregation in the admin dashboard
+}
+
+// Server-side "saved for later" provider shortlist (replaces the client-only
+// localStorage list, so saves survive device switches and can feed the product).
+// One row per (user, provider).
+model SavedProvider {
+  id         String          @id @default(cuid()) @db.VarChar(30)
+  userId     String          @db.VarChar(30)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String          @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+
+  @@unique([userId, providerId])
+  @@index([userId])
 }
 
 // Per-user recommendation feedback. A NOT_RELEVANT / DISMISS (permanent) or a

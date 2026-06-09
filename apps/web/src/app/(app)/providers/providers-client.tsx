@@ -193,38 +193,75 @@ export function ProvidersClient({
   // Compare tray: up to MAX_COMPARE providers picked for a side-by-side view.
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
-  // Shortlist: a cheap, client-only "saved for later" set persisted in
-  // localStorage. It does not hit the server — it's a convenience bookmark.
+  // Shortlist: "saved for later" set. Persisted server-side (survives device
+  // switches) with localStorage as an instant, offline cache. Toggles are
+  // optimistic and best-effort-synced to /api/providers/saved.
   const [shortlist, setShortlist] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("provider-shortlist");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setShortlist(parsed.filter((x): x is string => typeof x === "string"));
-      }
-    } catch {
-      // localStorage may be unavailable (private mode / SSR hydration) — the
-      // shortlist simply starts empty, which is a safe default.
-    }
-  }, []);
-
-  const persistShortlist = useCallback((next: string[]) => {
+  const persistShortlistLocal = useCallback((next: string[]) => {
     setShortlist(next);
     try {
       window.localStorage.setItem("provider-shortlist", JSON.stringify(next));
     } catch {
-      // Non-fatal: the in-memory shortlist still works for this session.
+      // Non-fatal offline cache.
     }
   }, []);
 
+  // Load localStorage first (instant), then reconcile with the authoritative
+  // server store, migrating any legacy local-only saves up to the server once.
+  useEffect(() => {
+    let localIds: string[] = [];
+    try {
+      const raw = window.localStorage.getItem("provider-shortlist");
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed)) localIds = parsed.filter((x): x is string => typeof x === "string");
+    } catch {
+      // ignore unavailable storage
+    }
+    if (localIds.length) setShortlist(localIds);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/providers/saved");
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverIds: string[] = Array.isArray(data?.providerIds) ? data.providerIds : [];
+        if (cancelled) return;
+        const serverSet = new Set(serverIds);
+        for (const id of localIds) {
+          if (!serverSet.has(id)) {
+            void fetch("/api/providers/saved", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ providerId: id }),
+            }).catch(() => {});
+          }
+        }
+        persistShortlistLocal(Array.from(new Set([...serverIds, ...localIds])));
+      } catch {
+        // offline / not signed in — keep the localStorage list
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [persistShortlistLocal]);
+
   const toggleShortlist = useCallback(
     (id: string) => {
-      persistShortlist(shortlist.includes(id) ? shortlist.filter((x) => x !== id) : [...shortlist, id]);
+      const adding = !shortlist.includes(id);
+      persistShortlistLocal(adding ? [...shortlist, id] : shortlist.filter((x) => x !== id));
+      void fetch("/api/providers/saved", {
+        method: adding ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId: id }),
+      }).catch(() => {
+        // optimistic — the localStorage cache keeps the UI consistent on failure
+      });
     },
-    [shortlist, persistShortlist],
+    [shortlist, persistShortlistLocal],
   );
 
   const toggleCompare = useCallback((id: string) => {
