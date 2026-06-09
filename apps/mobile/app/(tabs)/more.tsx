@@ -84,39 +84,57 @@ export default function MoreScreen() {
     ]);
   };
 
+  // Regrouped into four task-oriented sections (was a flat 16-row junk drawer).
+  // Every row reuses an EXISTING route — no new screens — except "Search" which
+  // now points at the real universal search screen instead of misleadingly
+  // routing to /providers.
   const sections: { title: string; items: MenuItem[] }[] = [
     {
-      title: t("settings.title"),
+      title: t("more.sectionTools", { defaultValue: "Tools" }),
+      items: [
+        // Typed-routes generation is stale for the newly-added screen; the file
+        // exists at app/search.tsx so the route is valid.
+        { icon: Search, label: t("search.title"), route: "/search" as Href },
+        { icon: DollarSign, label: t("budget.title"), route: "/budget" },
+        { icon: Building2, label: t("providers.title"), route: "/providers" },
+        { icon: Building2, label: t("customProviders.title"), route: "/custom-providers" },
+        { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href },
+      ],
+    },
+    {
+      title: t("more.sectionAccount", { defaultValue: "Account" }),
       items: [
         { icon: User, label: t("settings.profile"), route: "/settings/profile" },
-        // Distinct from the notifications FEED in the More group below — this is
-        // the preferences screen, so label it as settings to avoid two identical
-        // "Notifications" rows.
-        { icon: Bell, label: t("settings.notificationSettings", { defaultValue: "Notification settings" }), route: "/settings/notifications" },
         { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
-        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
-        // Typed-routes generation is stale for this recently-added screen; the
-        // file exists at app/settings/address-changes.tsx so the route is valid.
-        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href },
-        { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
         // Workspace + Export were only reachable via a second, redundant
         // "Settings" screen (the confusing "settings inside settings"). Surface
         // them here directly and drop that duplicate menu entry.
         { icon: Users, label: t("settings.workspace", { defaultValue: "Workspace" }), route: "/settings/workspace" as Href },
-        { icon: Download, label: t("settings.export"), route: "/settings/export" },
+        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
+        // Distinct from the notifications FEED in the Support group below — this
+        // is the preferences screen, so label it as settings to avoid two
+        // identical "Notifications" rows.
+        { icon: Bell, label: t("settings.notificationSettings", { defaultValue: "Notification settings" }), route: "/settings/notifications" },
       ],
     },
     {
-      title: t("tabs.more"),
+      title: t("more.sectionPrivacy", { defaultValue: "Privacy & data" }),
       items: [
-        { icon: DollarSign, label: t("budget.title"), route: "/budget" },
-        { icon: Search, label: t("providers.title"), route: "/providers" },
-        { icon: Building2, label: t("customProviders.title"), route: "/custom-providers" },
-        { icon: FileText, label: t("blog.title"), route: "/blog" },
-        { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href },
-        { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
-        { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
+        { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
+        { icon: Download, label: t("settings.export"), route: "/settings/export" },
+        // Typed-routes generation is stale for this recently-added screen; the
+        // file exists at app/settings/address-changes.tsx so the route is valid.
+        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href },
+      ],
+    },
+    {
+      title: t("more.sectionSupport", { defaultValue: "Support" }),
+      items: [
         { icon: HelpCircle, label: t("settings.help"), route: "/help" },
+        { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
+        // The notifications FEED (distinct from "Notification settings" above).
+        { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
+        { icon: FileText, label: t("blog.title"), route: "/blog" },
       ],
     },
   ];

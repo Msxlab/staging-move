@@ -35,6 +35,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { Avatar } from "@/components/ui/Avatar";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -458,9 +459,11 @@ export default function MovingDetailScreen() {
           </Card>
         </View>
 
-        {/* Move Scope */}
-        <Text style={styles.sectionTitle}>{t("moving.moveScope")}</Text>
-        <Card variant="default">
+        {/* Move Scope — heavy secondary section, collapsed by default */}
+        <CollapsibleCard
+          title={t("moving.moveScope")}
+          icon={<ArrowRightLeft size={16} color={theme.colors.primary} />}
+        >
           <View style={styles.scopeHeader}>
             <View>
               <Text style={styles.scopeTitle}>{moveScopeLabel}</Text>
@@ -478,7 +481,7 @@ export default function MovingDetailScreen() {
               <Text style={styles.scopeCardValue}>{migrationSummaryLabel}</Text>
             </View>
           </View>
-        </Card>
+        </CollapsibleCard>
 
         <Text style={styles.sectionTitle}>{t("moving.moveTasks")}</Text>
         <Card variant="default">
@@ -609,11 +612,12 @@ export default function MovingDetailScreen() {
           )}
         </Card>
 
-        {/* Migration Panel */}
+        {/* Migration Panel — heavy secondary section, collapsed by default */}
         {migration && migration.summary.total > 0 && (
-          <View style={{ marginTop: 16 }}>
-            <Text style={styles.sectionTitle}>{t("moving.serviceMigration")}</Text>
-            <Card variant="glow">
+          <CollapsibleCard
+            title={t("moving.serviceMigration")}
+            icon={<ArrowRightLeft size={16} color={theme.colors.primary} />}
+          >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <ArrowRightLeft size={16} color={theme.colors.primary} />
                 <Text style={{ fontSize: 14, fontWeight: "700", color: theme.colors.text }}>
@@ -839,8 +843,7 @@ export default function MovingDetailScreen() {
 
                 </>
               )}
-            </Card>
-          </View>
+          </CollapsibleCard>
         )}
 
         {/* State Guide */}
