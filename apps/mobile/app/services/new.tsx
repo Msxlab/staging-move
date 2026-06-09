@@ -34,6 +34,7 @@ import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
+import { SuccessToast } from "@/components/ui/SuccessToast";
 import {
   getRecommendedProviders,
   CATEGORY_META,
@@ -129,6 +130,9 @@ export default function NewServiceScreen() {
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
 
   const [saving, setSaving] = useState(false);
+  // Success micro-moment: { detail } carries an optional second line; navigate
+  // back when the toast hides. Null = hidden.
+  const [successToast, setSuccessToast] = useState<{ detail?: string } | null>(null);
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
   const fromServiceId = Array.isArray(params.fromServiceId) ? params.fromServiceId[0] : params.fromServiceId || "";
@@ -280,9 +284,13 @@ export default function NewServiceScreen() {
     }
     setSaving(false);
     if (success > 0) {
-      hapticSuccess();
-      Alert.alert(t("common.done"), `${success} ${t("services.title").toLowerCase()}`);
-      router.back();
+      // SuccessToast fires hapticSuccess + navigates back on hide.
+      setSuccessToast({
+        detail: t("services.savedToastDetail", {
+          count: success,
+          defaultValue: `${success} ${t("services.title").toLowerCase()} added`,
+        }),
+      });
     }
     if (failed > 0) {
       hapticError();
@@ -368,17 +376,22 @@ export default function NewServiceScreen() {
       await api.delete(`/api/custom-providers/${providerRes.data.provider.id}`).catch(() => null);
       hapticError();
       Alert.alert(t("common.retry"), res.error);
-    } else {
+    } else if (manualForm.coverage !== "LOCAL") {
+      // Submitted-for-review carries distinct info — keep the explicit Alert and
+      // navigate back as before (the Alert itself is the acknowledgement).
       hapticSuccess();
-      if (manualForm.coverage !== "LOCAL") {
-        Alert.alert(
-          t("services.suggestBannerTitle", { defaultValue: "Submitted for review" }),
-          t("services.suggestSuccessToast", {
-            defaultValue: "We'll verify and add it to the directory.",
-          }),
-        );
-      }
+      Alert.alert(
+        t("services.suggestBannerTitle", { defaultValue: "Submitted for review" }),
+        t("services.suggestSuccessToast", {
+          defaultValue: "We'll verify and add it to the directory.",
+        }),
+      );
       router.back();
+    } else {
+      // Standard add → success micro-moment (fires haptic + navigates on hide).
+      setSuccessToast({
+        detail: t("services.savedToastDetailOne", { defaultValue: "Service added" }),
+      });
     }
   };
 
@@ -931,6 +944,15 @@ export default function NewServiceScreen() {
           </TouchableOpacity>
         </View>
       )}
+      <SuccessToast
+        visible={successToast !== null}
+        message={t("services.savedToast", { defaultValue: "All set" })}
+        detail={successToast?.detail}
+        onHide={() => {
+          setSuccessToast(null);
+          router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -56,6 +56,12 @@
     "moving": "Mudanza",
     "more": "Más"
   },
+  "more": {
+    "sectionTools": "Herramientas",
+    "sectionAccount": "Cuenta",
+    "sectionPrivacy": "Privacidad y datos",
+    "sectionSupport": "Soporte"
+  },
   "auth": {
     "signIn_title": "Bienvenido de vuelta",
     "signUp_title": "Crea tu cuenta",
@@ -390,7 +396,11 @@
     "callProviderA11y": "Llamar a {{provider}}",
     "alternativesIn": "Alternativas en {{category}}",
     "linkUnavailable": "Este enlace no se pudo abrir en tu dispositivo.",
-    "phoneUnavailable": "Las llamadas telefónicas no están disponibles en este dispositivo."
+    "phoneUnavailable": "Las llamadas telefónicas no están disponibles en este dispositivo.",
+    "recommendedBecause": "Recomendado porque",
+    "stillNeeded": "Aún necesitas",
+    "stillNeededHint": "Esenciales para los que aún no tienes proveedor. Toca para filtrar.",
+    "stillNeededChipA11y": "Filtrar por {{category}} — aún lo necesitas"
   },
   "coverage": {
     "EXACT_ZIP": {
@@ -954,6 +964,22 @@
     "budgetsDescription": "Crea un plan mensual para comparar gastos esperados y reales.",
     "addBudget": "Agregar presupuesto",
     "tasks": "Todo al día"
+  },
+  "search": {
+    "title": "Buscar",
+    "placeholder": "Busca servicios, direcciones, planes, presupuestos",
+    "a11y": "Busca en tus datos",
+    "hint": "Busca en tus servicios, direcciones, planes de mudanza y presupuestos",
+    "prompt": "Busca en todo",
+    "promptDescription": "Encuentra tus servicios, direcciones, planes de mudanza y presupuestos en un solo lugar.",
+    "empty": "Sin coincidencias",
+    "emptyDescription": "Nada coincidió con \"{{query}}\". Prueba otro término.",
+    "sectionServices": "Servicios",
+    "sectionAddresses": "Direcciones",
+    "sectionPlans": "Planes de mudanza",
+    "sectionBudgets": "Presupuestos",
+    "resultCount": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados"
   },
   "validation": {
     "required": "Obligatorio",

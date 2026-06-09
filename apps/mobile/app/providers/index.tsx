@@ -24,7 +24,9 @@ import { ProviderCard, type ProviderCardData } from "@/components/provider/Provi
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { CategoryChipRow, type CategoryChip } from "@/components/provider/CategoryChipRow";
 import { RecommendedRow, type RecommendedRowItem } from "@/components/provider/RecommendedRow";
-import { getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { PressableScale } from "@/components/ui/PressableScale";
+import { getCategoryIcon, getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
 
 const PAGE_SIZE = 20;
 
@@ -41,11 +43,19 @@ type AddressOption = {
   city?: string | null;
 };
 
+type ScoredProviderPayload = Provider & {
+  tier?: string;
+  // Engine-computed recommendation signals; carried through to the reason chip.
+  matchReasons?: string[] | null;
+  explanation?: { reason?: string | null; profileMatch?: string | null } | null;
+};
+
 type RecommendationsResponse = {
   clusters: Array<{
     tier: "CRITICAL" | "IMPORTANT" | "RECOMMENDED" | "OPTIONAL";
-    providers: Array<Provider & { tier?: string }>;
+    providers: ScoredProviderPayload[];
   }>;
+  stats?: { missingCritical?: string[] };
   meta: { state?: string | null; currentPhase?: string };
 };
 
@@ -63,6 +73,10 @@ export default function ProvidersScreen() {
   const clearCompare = useCompareStore((s) => s.clear);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [recommended, setRecommended] = useState<RecommendedRowItem[]>([]);
+  // Essential CRITICAL categories the engine flagged with NO matching provider /
+  // service for this address (stats.missingCritical). Surfaced as tappable "still
+  // needed" gap chips — the same nudge onboarding shows, now where users shop.
+  const [missingCritical, setMissingCritical] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -122,12 +136,22 @@ export default function ProvidersScreen() {
     });
     if (res.error) {
       setRecommended([]);
+      setMissingCritical([]);
       return false;
     }
     const clusters = res.data?.clusters || [];
     const urgent = clusters
       .filter((c) => c.tier === "CRITICAL" || c.tier === "IMPORTANT")
-      .flatMap((c) => c.providers.map((p) => ({ ...p, tier: c.tier })));
+      // Carry the engine's matchReasons + explanation through so each card can
+      // surface WHY it's recommended (the "directory → guide" flip).
+      .flatMap((c) =>
+        c.providers.map((p) => ({
+          ...p,
+          tier: c.tier,
+          matchReasons: p.matchReasons,
+          explanation: p.explanation,
+        })),
+      );
     // Dedupe by id, keep first (CRITICAL first due to cluster order)
     const seen = new Set<string>();
     const unique: RecommendedRowItem[] = [];
@@ -137,6 +161,8 @@ export default function ProvidersScreen() {
       unique.push(p);
     }
     setRecommended(unique.slice(0, 10));
+    const missing = res.data?.stats?.missingCritical;
+    setMissingCritical(Array.isArray(missing) ? missing : []);
     return true;
   }, [primaryAddress]);
 
@@ -171,6 +197,32 @@ export default function ProvidersScreen() {
       .map(([value, count]) => ({ value, label: t(`categories.${value}`, { defaultValue: getCategoryLabel(value) }), count }))
       .sort((a, b) => getCategoryOrder(a.value) - getCategoryOrder(b.value));
   }, [providers, t]);
+
+  // "Still needed" gap chips — the engine-flagged missing CRITICAL categories,
+  // de-duplicated by readable label and sorted into CATEGORY_META order so they
+  // read like the onboarding nudge. Each chip pre-selects that category's filter
+  // so the user can shop for the essential they're missing. The currently
+  // selected category is dropped (no point nudging toward the active filter).
+  const gapChips = useMemo<CategoryChip[]>(() => {
+    const seen = new Set<string>();
+    const chips: CategoryChip[] = [];
+    for (const category of missingCritical) {
+      if (!category || category === selectedCat) continue;
+      const label = t(`categories.${category}`, { defaultValue: getCategoryLabel(category) });
+      if (seen.has(label)) continue;
+      seen.add(label);
+      chips.push({ value: category, label });
+    }
+    return chips.sort((a, b) => getCategoryOrder(a.value) - getCategoryOrder(b.value));
+  }, [missingCritical, selectedCat, t]);
+
+  const selectGap = useCallback(
+    (category: string) => {
+      hapticLight();
+      setSelectedCat(category);
+    },
+    [],
+  );
 
   // Filter by category + paginate
   const filtered = useMemo(() => {
@@ -258,6 +310,36 @@ export default function ProvidersScreen() {
             })}
           </View>
         ) : null}
+        {/* "Still needed" gap chips — engine-flagged essentials the user has no
+            provider for. Tapping a chip pre-selects that category's filter so
+            they can shop for it. Hidden while searching and once nothing is
+            missing. Mirrors the onboarding missingCritical nudge. */}
+        {!search && gapChips.length > 0 ? (
+          <View style={styles.gapWrap}>
+            <View style={styles.gapHeader}>
+              <AlertTriangle size={14} color={theme.colors.warning} />
+              <Text style={styles.gapTitle}>{t("providers.stillNeeded")}</Text>
+            </View>
+            <Text style={styles.gapHint}>{t("providers.stillNeededHint")}</Text>
+            <View style={styles.gapChips}>
+              {gapChips.map((c) => (
+                <PressableScale
+                  key={c.value}
+                  onPress={() => selectGap(c.value)}
+                  style={styles.gapChip}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("providers.stillNeededChipA11y", { category: c.label })}
+                >
+                  <CategoryIcon emoji={getCategoryIcon(c.value)} size={13} color={theme.colors.warning} />
+                  <Text style={styles.gapChipText} numberOfLines={1}>
+                    {c.label}
+                  </Text>
+                </PressableScale>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         {!search && recommended.length > 0 ? (
           <RecommendedRow
               title={t("providers.forYourMove")}
@@ -272,7 +354,7 @@ export default function ProvidersScreen() {
         ) : null}
       </View>
     );
-  }, [recommended, primaryAddress, addresses, router, search, t, theme]);
+  }, [recommended, primaryAddress, addresses, router, search, t, theme, gapChips, selectGap, styles]);
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
@@ -514,6 +596,48 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     lineHeight: 17,
+  },
+  gapWrap: {
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  gapHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  gapTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: theme.colors.text,
+  },
+  gapHint: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+  },
+  gapChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  gapChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.warningFaded,
+    borderWidth: 1,
+    borderColor: "rgba(242, 196, 108,0.35)",
+  },
+  gapChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.text,
+    maxWidth: 160,
   },
   scrollContent: { paddingBottom: 32 },
   scrollContentWithTray: { paddingBottom: 104 },

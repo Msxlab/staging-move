@@ -4,9 +4,18 @@ import { Sparkles, AlertTriangle, Clock } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { ProviderCard, type ProviderCardData } from "./ProviderCard";
+import { ProviderReason } from "./ProviderReason";
 
 export type RecommendedRowItem = ProviderCardData & {
   tier?: "CRITICAL" | "IMPORTANT" | "RECOMMENDED" | "OPTIONAL" | string;
+  /**
+   * Engine-computed recommendation signals (from the scored recommendation
+   * payload). Surfaced verbatim by <ProviderReason/> so each card explains WHY
+   * it's recommended — the "directory → guide" flip. Optional because plain
+   * catalog rows never carry them, and ProviderReason renders nothing then.
+   */
+  matchReasons?: string[] | null;
+  explanation?: { reason?: string | null; profileMatch?: string | null } | null;
 };
 
 interface RecommendedRowProps {
@@ -60,13 +69,17 @@ export function RecommendedRow({
           {providers.map((p) => {
             const badge = tierBadge(p.tier, t);
             return (
-              <ProviderCard
-                key={p.id}
-                provider={p}
-                variant="compact"
-                onPress={() => onPressProvider(p.id)}
-                badge={badge}
-              />
+              <View key={p.id} style={styles.cardColumn}>
+                <ProviderCard
+                  provider={p}
+                  variant="compact"
+                  onPress={() => onPressProvider(p.id)}
+                  badge={badge}
+                />
+                {/* Engine-computed "why" — renders nothing when the provider
+                    carries no real match signal, so it never invents a reason. */}
+                <ProviderReason provider={p} variant="chip" />
+              </View>
             );
           })}
         </ScrollView>
@@ -111,6 +124,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     gap: 12,
+    alignItems: "flex-start",
+  },
+  cardColumn: {
+    // Matches the compact ProviderCard fixed width so the reason chip below it
+    // wraps to the same column instead of stretching the horizontal scroll.
+    width: 220,
   },
   emptyWrap: {
     marginHorizontal: 20,

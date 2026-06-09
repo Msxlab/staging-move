@@ -21,9 +21,10 @@ import { AddressAutocompleteField } from "@/components/address/address-autocompl
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
+import { SuccessToast } from "@/components/ui/SuccessToast";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -47,6 +48,9 @@ export default function NewAddressScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
+  // Success micro-moment: fire the raccoon toast on save, then go back when it
+  // finishes so the user actually sees the loop close.
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Address type + ownership option labels — built inside the component
   // so they re-compute when the user switches language mid-session.
@@ -174,8 +178,8 @@ export default function NewAddressScreen() {
         Alert.alert(t("common.retry"), res.error);
       }
     } else {
-      hapticSuccess();
-      router.back();
+      // SuccessToast fires hapticSuccess itself; navigate back when it hides.
+      setShowSuccess(true);
     }
   };
 
@@ -366,6 +370,15 @@ export default function NewAddressScreen() {
         </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>
+      <SuccessToast
+        visible={showSuccess}
+        message={t("addresses.savedToast", { defaultValue: "Address added" })}
+        detail={t("addresses.savedToastDetail", { defaultValue: "Nice — that's one more place set up." })}
+        onHide={() => {
+          setShowSuccess(false);
+          router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }

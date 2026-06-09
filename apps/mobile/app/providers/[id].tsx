@@ -42,6 +42,7 @@ import {
   getLocalizedProviderDescription,
 } from "@/lib/provider-localization";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
+import { ProviderReason, type ProviderReasonInput } from "@/components/provider/ProviderReason";
 import { getProviderTrustSummary } from "@locateflow/shared";
 
 type Provider = ProviderCardData & {
@@ -72,7 +73,13 @@ type RecMeta = {
   };
   clusters?: Array<{
     tier: string;
-    providers: Array<{ id: string; category: string }>;
+    providers: Array<{
+      id: string;
+      category: string;
+      // Engine-computed recommendation signals, surfaced as the "why" banner.
+      matchReasons?: string[] | null;
+      explanation?: { reason?: string | null; profileMatch?: string | null } | null;
+    }>;
   }>;
 };
 
@@ -107,6 +114,25 @@ export default function ProviderDetailScreen() {
     if (!provider || !recMeta?.clusters) return null;
     for (const c of recMeta.clusters) {
       if (c.providers.some((p) => p.id === provider.id)) return c.tier;
+    }
+    return null;
+  }, [provider, recMeta]);
+
+  // The engine-scored entry for THIS provider (if it was recommended for the
+  // primary address). Carries the matchReasons + explanation that feed the
+  // "Recommended because" banner. Null for a provider the engine didn't surface
+  // — ProviderReason then renders nothing, so we never invent a reason.
+  const reasonInput = useMemo<ProviderReasonInput | null>(() => {
+    if (!provider || !recMeta?.clusters) return null;
+    for (const c of recMeta.clusters) {
+      const match = c.providers.find((p) => p.id === provider.id);
+      if (match) {
+        return {
+          category: provider.category,
+          matchReasons: match.matchReasons,
+          explanation: match.explanation,
+        };
+      }
     }
     return null;
   }, [provider, recMeta]);
@@ -286,6 +312,10 @@ export default function ProviderDetailScreen() {
           {providerDescription ? (
             <Text style={styles.providerDescription}>{providerDescription}</Text>
           ) : null}
+
+          {/* Engine-computed "why" — only renders when this provider was
+              recommended for the address and carries a real match signal. */}
+          {reasonInput ? <ProviderReason provider={reasonInput} variant="banner" /> : null}
 
           <View style={styles.badgesRow}>
             <UiBadge label={t("providers.listedProvider")} variant="warning" />

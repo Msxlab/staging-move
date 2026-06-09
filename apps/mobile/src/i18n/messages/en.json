@@ -56,6 +56,12 @@
     "moving": "Moving",
     "more": "More"
   },
+  "more": {
+    "sectionTools": "Tools",
+    "sectionAccount": "Account",
+    "sectionPrivacy": "Privacy & data",
+    "sectionSupport": "Support"
+  },
   "auth": {
     "signIn_title": "Welcome back",
     "signUp_title": "Create your account",
@@ -410,7 +416,11 @@
     "compareOfficialLink": "Official link",
     "compareWebsite": "Website",
     "compareRemove": "Remove {{provider}}",
-    "compareTrack": "Track this"
+    "compareTrack": "Track this",
+    "recommendedBecause": "Recommended because",
+    "stillNeeded": "Still needed",
+    "stillNeededHint": "Essentials you don't have a provider for yet. Tap to filter.",
+    "stillNeededChipA11y": "Filter to {{category}} — you still need this"
   },
   "coverage": {
     "EXACT_ZIP": {
@@ -982,6 +992,22 @@
     "budgetsDescription": "Create a monthly plan to compare expected and actual spending.",
     "addBudget": "Add budget",
     "tasks": "You're all caught up"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search services, addresses, plans, budgets",
+    "a11y": "Search your data",
+    "hint": "Searches your services, addresses, moving plans, and budgets",
+    "prompt": "Search everything",
+    "promptDescription": "Find your services, addresses, moving plans, and budgets in one place.",
+    "empty": "No matches",
+    "emptyDescription": "Nothing matched \"{{query}}\". Try a different term.",
+    "sectionServices": "Services",
+    "sectionAddresses": "Addresses",
+    "sectionPlans": "Moving plans",
+    "sectionBudgets": "Budgets",
+    "resultCount": "{{count}} result",
+    "resultCount_other": "{{count}} results"
   },
   "validation": {
     "required": "Required",

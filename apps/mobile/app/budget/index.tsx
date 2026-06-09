@@ -51,6 +51,8 @@ import { GradientProgress } from "@/components/ui/GradientProgress";
 import { CountUp } from "@/components/ui/CountUp";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
+import { SuccessToast } from "@/components/ui/SuccessToast";
 import { hapticSuccess, hapticError, hapticLight } from "@/lib/haptics";
 
 interface BudgetRow {
@@ -184,6 +186,9 @@ export default function BudgetScreen() {
   // Per-line actual cost drafts (keyed by service id) + which row is saving.
   const [actualDrafts, setActualDrafts] = useState<Record<string, string>>({});
   const [savingActualId, setSavingActualId] = useState<string | null>(null);
+  // Success micro-moment when a real actual cost is logged (not on clear). The
+  // screen stays mounted, so the toast self-resets via onHide.
+  const [showActualSaved, setShowActualSaved] = useState(false);
 
   const fmt = useCallback(
     (n: number) =>
@@ -339,7 +344,14 @@ export default function BudgetScreen() {
         setError(res.error);
         return;
       }
-      hapticSuccess();
+      if (amount === null) {
+        // Clearing a logged actual — quiet success haptic, no celebration toast.
+        hapticSuccess();
+      } else {
+        // Logged a real actual cost — fire the success micro-moment (the toast
+        // fires hapticSuccess itself, so don't double it here).
+        setShowActualSaved(true);
+      }
       // Reflect locally so variance/savings recompute immediately for this month.
       setMonthActuals((prev) => {
         const next = { ...prev };
@@ -955,15 +967,12 @@ export default function BudgetScreen() {
           )}
         </Card>
 
-        {/* ── Estimate vs actual variance by category ── */}
+        {/* ── Estimate vs actual variance by category (collapsed by default) ── */}
         {actuals.loggedServiceCount > 0 ? (
-          <Card variant="default" style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <BarChart3 size={16} color={theme.colors.cyan.text} />
-              <Text style={styles.sectionTitle}>
-                {t("budget.estimateVsActualByCategory", { defaultValue: "Estimate vs Actual by Category" })}
-              </Text>
-            </View>
+          <CollapsibleCard
+            title={t("budget.estimateVsActualByCategory", { defaultValue: "Estimate vs Actual by Category" })}
+            icon={<BarChart3 size={16} color={theme.colors.cyan.text} />}
+          >
             <View style={styles.catList}>
               {actuals.perCategory
                 .filter((row) => row.loggedCount > 0)
@@ -999,18 +1008,15 @@ export default function BudgetScreen() {
                   );
                 })}
             </View>
-          </Card>
+          </CollapsibleCard>
         ) : null}
 
-        {/* ── One-time costs this month ── */}
+        {/* ── One-time costs this month (collapsed by default) ── */}
         {plan.oneTimeServicesThisMonth.length > 0 ? (
-          <Card variant="default" style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <WalletCards size={16} color={theme.colors.amber.text} />
-              <Text style={styles.sectionTitle}>
-                {t("budget.oneTimeThisMonth", { defaultValue: "One-time Costs This Month" })}
-              </Text>
-            </View>
+          <CollapsibleCard
+            title={t("budget.oneTimeThisMonth", { defaultValue: "One-time Costs This Month" })}
+            icon={<WalletCards size={16} color={theme.colors.amber.text} />}
+          >
             <View style={styles.simpleList}>
               {plan.oneTimeServicesThisMonth.map((service) => (
                 <View key={service.id} style={styles.simpleRow}>
@@ -1026,17 +1032,19 @@ export default function BudgetScreen() {
                 </View>
               ))}
             </View>
-          </Card>
+          </CollapsibleCard>
         ) : null}
 
-        {/* ── Services missing cost: nudge list with deep link to edit ── */}
-        <Card variant="default" style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <AlertTriangle size={16} color={theme.colors.amber.text} />
-            <Text style={styles.sectionTitle}>
-              {t("budget.servicesMissingCost", { defaultValue: "Services Missing Cost" })}
-            </Text>
-          </View>
+        {/* ── Services missing cost: nudge list (collapsed by default) ── */}
+        <CollapsibleCard
+          title={t("budget.servicesMissingCost", { defaultValue: "Services Missing Cost" })}
+          icon={<AlertTriangle size={16} color={theme.colors.amber.text} />}
+          headerRight={
+            plan.missingCostServices.length > 0 ? (
+              <Badge label={String(plan.missingCostServices.length)} variant="warning" />
+            ) : undefined
+          }
+        >
           {plan.missingCostServices.length === 0 ? (
             <Text style={styles.emptyHint}>
               {t("budget.allHaveCost", { defaultValue: "All active services in this filter have cost data." })}
@@ -1078,16 +1086,16 @@ export default function BudgetScreen() {
               ) : null}
             </View>
           )}
-        </Card>
+        </CollapsibleCard>
 
-        {/* ── Budget history: real actual spent + savings rate ── */}
-        <Card variant="default" style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Calendar size={16} color={theme.colors.orange.text} />
-            <Text style={styles.sectionTitle}>
-              {t("budget.history", { defaultValue: "Budget History" })}
-            </Text>
-          </View>
+        {/* ── Budget history: real actual spent + savings rate (collapsed) ── */}
+        <CollapsibleCard
+          title={t("budget.history", { defaultValue: "Budget History" })}
+          icon={<Calendar size={16} color={theme.colors.orange.text} />}
+          headerRight={
+            budgets.length > 0 ? <Badge label={String(budgets.length)} variant="neutral" /> : undefined
+          }
+        >
           {budgets.length === 0 ? (
             <EmptyState
               icon={<Wallet size={28} color={theme.colors.primary} />}
@@ -1190,8 +1198,14 @@ export default function BudgetScreen() {
               })}
             </View>
           )}
-        </Card>
+        </CollapsibleCard>
       </ScrollView>
+      <SuccessToast
+        visible={showActualSaved}
+        message={t("budget.actualSavedToast", { defaultValue: "Cost logged" })}
+        detail={t("budget.actualSavedToastDetail", { defaultValue: "Your real savings just got more accurate." })}
+        onHide={() => setShowActualSaved(false)}
+      />
     </SafeAreaView>
   );
 }
