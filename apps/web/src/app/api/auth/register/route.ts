@@ -13,6 +13,7 @@ import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { isAllowlistedQaEmail, resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
+import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 
 export const runtime = "nodejs";
 
@@ -143,6 +144,19 @@ export async function POST(request: NextRequest) {
   });
   await ensureSubscriptionDefaults(user.id);
   await ensureWorkspaceDefaults(user.id);
+
+  // Owner alert: instant new-signup notification. Fire-and-forget — the
+  // helper never throws, so this can never break registration. The QA
+  // account is gated here AND suppressed inside the helper (single
+  // enforcement point).
+  if (!autoVerifyQaAccount) {
+    void sendAdminSignupAlert({
+      userId: user.id,
+      email,
+      name: [firstName, lastName].filter(Boolean).join(" ") || null,
+      source: "password",
+    });
+  }
 
   if (acceptedLegalConsents) {
     await recordLegalAcceptance({

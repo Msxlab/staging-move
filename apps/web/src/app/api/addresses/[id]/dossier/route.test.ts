@@ -28,14 +28,22 @@ vi.mock("@/lib/nws-weather", () => ({
   lookupMoveDayForecast: vi.fn(),
 }));
 
+// Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
+// the gate exercises the actual @locateflow/shared feature matrix.
+vi.mock("@/lib/plan-limits", () => ({
+  getUserPlan: vi.fn(),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { getUserPlan } from "@/lib/plan-limits";
 import { lookupFloodZone } from "@/lib/fema-flood";
 import { lookupSchoolDistrict } from "@/lib/nces-district";
 import { lookupMoveDayForecast } from "@/lib/nws-weather";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockGetUserPlan = getUserPlan as unknown as Mock;
 const mockAddressFindUnique = prisma.address.findUnique as unknown as Mock;
 const mockPlanFindFirst = prisma.movingPlan.findFirst as unknown as Mock;
 const mockLookupFloodZone = lookupFloodZone as unknown as Mock;
@@ -95,6 +103,7 @@ describe("address dossier route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user-1");
+    mockGetUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
     mockAddressFindUnique.mockResolvedValue({ ...BASE_ADDRESS });
     mockPlanFindFirst.mockResolvedValue(null);
     mockLookupFloodZone.mockResolvedValue(FLOOD_OK);
@@ -142,6 +151,50 @@ describe("address dossier route", () => {
     expect(mockLookupFloodZone).not.toHaveBeenCalled();
     expect(mockLookupSchoolDistrict).not.toHaveBeenCalled();
     expect(mockLookupMoveDayForecast).not.toHaveBeenCalled();
+  });
+
+  it("free plan gets the 200 upgrade teaser — address block omitted, no lookups spent", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    // 200 (never 403) so old clients — which require the address/section
+    // blocks — fail soft to a hidden card. toEqual pins that NO address,
+    // flood, school, or weather data leaks to an unentitled caller.
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      configured: true,
+      entitled: false,
+      upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
+    });
+    expect(mockLookupFloodZone).not.toHaveBeenCalled();
+    expect(mockLookupSchoolDistrict).not.toHaveBeenCalled();
+    expect(mockLookupMoveDayForecast).not.toHaveBeenCalled();
+    expect(mockPlanFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("404 still wins over the teaser for a free user's foreign address id", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mockAddressFindUnique.mockResolvedValueOnce({ ...BASE_ADDRESS, userId: "user-2" });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("every paid tier passes the gate (FAMILY and PRO included)", async () => {
+    for (const plan of ["FAMILY", "PRO"]) {
+      mockGetUserPlan.mockResolvedValueOnce({ plan, hasPremium: true, isActive: true });
+
+      const response = await GET(dossierRequest(), addressParams() as any);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.upgradeRequired).toBeUndefined();
+      expect(body.address).toEqual({ id: "address-1", city: "Austin", state: "TX" });
+      expect(body.flood.status).toBe("ok");
+    }
   });
 
   it("responds with the exact dossier contract shape when the move is within the weather window", async () => {

@@ -6,6 +6,8 @@ import { lookupFloodZone, type FloodLookupResult } from "@/lib/fema-flood";
 import { lookupSchoolDistrict, type SchoolDistrictLookupResult } from "@/lib/nces-district";
 import { lookupMoveDayForecast, type WeatherLookupResult } from "@/lib/nws-weather";
 import { assertScopedRecordAction, resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { getUserPlan } from "@/lib/plan-limits";
+import { planFeatures } from "@locateflow/shared";
 
 // GET /api/addresses/:id/dossier — the New Home Dossier data endpoint.
 //
@@ -97,6 +99,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     // Foreign-scope ids 404 (never 403) — same pattern as GET /api/addresses/:id.
     assertScopedRecordAction(address, scope, "address.view", { notFoundMessage: "Address not found" });
+
+    // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
+    // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 —
+    // never 403 — and the address/section blocks are omitted, so old clients
+    // (which require them) fail soft to a hidden card and no external lookups
+    // or plan queries are spent on a gated request. 401/404 above still win.
+    if (!planFeatures((await getUserPlan(userId)).plan).homeDossier) {
+      return NextResponse.json({
+        configured: true,
+        entitled: false,
+        upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
+      });
+    }
 
     const addressPayload = { id: address.id, city: address.city, state: address.state };
 

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   sendSubscriptionActivatedEmail: vi.fn(),
   sendSubscriptionCanceledEmail: vi.fn(),
   sendPaymentFailedEmail: vi.fn(),
+  sendAdminPurchaseAlert: vi.fn(),
   emitSecurityEvent: vi.fn(),
   prisma: {
     processedWebhookEvent: {
@@ -48,6 +49,9 @@ vi.mock("@/lib/email-service", () => ({
   sendSubscriptionActivatedEmail: mocks.sendSubscriptionActivatedEmail,
   sendSubscriptionCanceledEmail: mocks.sendSubscriptionCanceledEmail,
   sendPaymentFailedEmail: mocks.sendPaymentFailedEmail,
+}));
+vi.mock("@/lib/admin-alerts", () => ({
+  sendAdminPurchaseAlert: mocks.sendAdminPurchaseAlert,
 }));
 vi.mock("@/lib/security-events", () => ({
   emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
@@ -252,6 +256,7 @@ describe("Stripe webhook idempotency and livemode", () => {
     mocks.sendSubscriptionActivatedEmail.mockResolvedValue({});
     mocks.sendSubscriptionCanceledEmail.mockResolvedValue({});
     mocks.sendPaymentFailedEmail.mockResolvedValue({});
+    mocks.sendAdminPurchaseAlert.mockResolvedValue(true);
   });
 
   it("emits a safe security event when signature verification fails", async () => {
@@ -467,6 +472,39 @@ describe("Stripe webhook idempotency and livemode", () => {
       }),
     );
     expect(processedMock.create).toHaveBeenCalledTimes(1);
+    // No mapped recipient (the local row's user has no email selected here),
+    // so neither the activation email nor the owner purchase alert fires.
+    expect(mocks.sendAdminPurchaseAlert).not.toHaveBeenCalled();
+  });
+
+  it("sends the owner purchase alert once for a completed checkout with a mapped recipient", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
+    subscriptionMock.findFirst.mockResolvedValue(localSubscription({
+      user: {
+        id: "user_1",
+        deletedAt: null,
+        email: "buyer@example.com",
+        firstName: "Buyer",
+        preferredLocale: "en",
+      },
+    }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.sendSubscriptionActivatedEmail).toHaveBeenCalledTimes(1);
+    expect(mocks.sendAdminPurchaseAlert).toHaveBeenCalledTimes(1);
+    expect(mocks.sendAdminPurchaseAlert).toHaveBeenCalledWith({
+      userId: "user_1",
+      email: "buyer@example.com",
+      plan: "INDIVIDUAL",
+      interval: "YEAR",
+      provider: "stripe",
+      // Deduped on the Stripe event id so a redelivered webhook can't
+      // double-notify the owner.
+      dedupeKey: "stripe:evt_checkout_1",
+    });
   });
 
   it("updates local state to TRIALING for customer.subscription.created", async () => {

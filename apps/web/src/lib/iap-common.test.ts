@@ -47,6 +47,10 @@ vi.mock("@/lib/iap-google", () => ({
   mapGoogleSubscriptionState: vi.fn(() => "ACTIVE"),
 }));
 
+vi.mock("@/lib/admin-alerts", () => ({
+  sendAdminPurchaseAlert: vi.fn(() => Promise.resolve(true)),
+}));
+
 import {
   applyIapStateToUser,
   hashPurchaseToken,
@@ -60,6 +64,7 @@ import {
 import { prisma } from "@/lib/db";
 import { mapAppleStatus } from "@/lib/iap-apple";
 import { acknowledgeGoogleSubscription, getGoogleSubscription, mapGoogleSubscriptionState } from "@/lib/iap-google";
+import { sendAdminPurchaseAlert } from "@/lib/admin-alerts";
 
 const originalEnv = { ...process.env };
 
@@ -382,6 +387,60 @@ describe("IAP normalization", () => {
         purchaseTokenHash: hashPurchaseToken("purchase-token"),
       }),
     }));
+    // ACTIVE -> ACTIVE refresh is a renewal/no-op, not a first activation:
+    // no owner purchase alert.
+    expect(sendAdminPurchaseAlert).not.toHaveBeenCalled();
+  });
+
+  it("sends the owner purchase alert when an IAP subscription becomes active for the first time", async () => {
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null) // by originalTransactionId
+      .mockResolvedValueOnce({
+        id: "sub-1",
+        userId: "user-1",
+        status: "EXPIRED",
+        provider: "APP_STORE",
+        accessType: "PAID",
+      } as any); // by userId
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-1",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      email: "buyer@example.com",
+      firstName: "Buyer",
+      preferredLocale: "en",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "FAMILY",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "family.ios.yearly",
+      billingInterval: "YEAR",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await applyIapStateToUser({ userId: "user-1", state });
+
+    expect(sendAdminPurchaseAlert).toHaveBeenCalledTimes(1);
+    expect(sendAdminPurchaseAlert).toHaveBeenCalledWith({
+      userId: "user-1",
+      email: "buyer@example.com",
+      plan: "FAMILY",
+      interval: "YEAR",
+      provider: "apple",
+      dedupeKey: "iap:APP_STORE:1000000000001:1000000000002:ACTIVE",
+    });
   });
 
   it("rejects Google Play test purchases for non-allowlisted users in production billing environments", async () => {

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 // The card module imports lucide-react and next/link at module scope; stub
@@ -11,12 +14,39 @@ vi.mock("lucide-react", () => {
   };
   return { Sparkles: icon("sparkles"), X: icon("x"), ChevronRight: icon("chevron-right") };
 });
+// next/link → plain anchor so the teaser CTA href is assertable without a router.
 vi.mock("next/link", () => ({
-  default: ({ children }: { children?: unknown }) => children as never,
+  default: ({ href, children, className }: { href?: string; children?: unknown; className?: string }) => (
+    <a href={href} className={className}>
+      {children as never}
+    </a>
+  ),
 }));
+
+// Resolve translations from the REAL en.json catalog so the teaser tests pin
+// the shipped copy — a catalog regression fails here, not just in review.
+vi.mock("next-intl", async () => {
+  const en = (await import("@/i18n/messages/en.json")).default as unknown as Record<
+    string,
+    Record<string, string>
+  >;
+  const resolve = (key: string): string => {
+    const raw = en.dashboard?.[key];
+    if (typeof raw !== "string") throw new Error(`Missing dashboard.${key} in en.json`);
+    return raw;
+  };
+  const useTranslations = () => {
+    const t = (key: string, vars?: Record<string, unknown>) =>
+      resolve(key).replace(/\{(\w+)\}/g, (_m, name: string) => String(vars?.[name] ?? ""));
+    return t;
+  };
+  return { useTranslations, useLocale: () => "en-US" };
+});
 
 import {
   actionHref,
+  deriveBriefingState,
+  MoveBriefingTeaser,
   parseBriefing,
   type BriefingAction,
 } from "./move-briefing-card";
@@ -159,5 +189,101 @@ describe("parseBriefing — structured-target actions", () => {
     const parsed = parseBriefing("Summary line.\n1. embedded action — why");
     expect(parsed.proseLines).toEqual(["Summary line."]);
     expect(parsed.actions).toEqual([]);
+  });
+});
+
+describe("deriveBriefingState — GATE-API plan gate (entitled:false, HTTP 200)", () => {
+  it("hides when configured:false (key absent) — even if a gate code is attached", () => {
+    expect(deriveBriefingState({ configured: false })).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState({ configured: false, entitled: false, upgradeRequired: true })).toEqual({
+      kind: "hidden",
+    });
+  });
+
+  it("teases when configured and entitled:false (gated payload has no briefing text)", () => {
+    expect(
+      deriveBriefingState({
+        configured: true,
+        entitled: false,
+        upgradeRequired: true,
+        code: "BRIEFING_UPGRADE_REQUIRED",
+      }),
+    ).toEqual({ kind: "teaser" });
+  });
+
+  it("teases on a truthy upgradeRequired signal too", () => {
+    expect(deriveBriefingState({ configured: true, upgradeRequired: true })).toEqual({ kind: "teaser" });
+  });
+
+  it("teaser wins over briefing text if a gated payload ever carried both", () => {
+    expect(deriveBriefingState({ configured: true, entitled: false, briefing: "leak" })).toEqual({
+      kind: "teaser",
+    });
+  });
+
+  it("keeps the entitled path unchanged — legacy payload without an entitled field", () => {
+    expect(deriveBriefingState({ configured: true, briefing: "Hi.", aiGenerated: true })).toEqual({
+      kind: "briefing",
+      briefing: "Hi.",
+      aiGenerated: true,
+    });
+  });
+
+  it("keeps the entitled path unchanged — explicit entitled:true", () => {
+    expect(deriveBriefingState({ configured: true, entitled: true, briefing: "Hi.", aiGenerated: false })).toEqual({
+      kind: "briefing",
+      briefing: "Hi.",
+      aiGenerated: false,
+    });
+  });
+
+  it("hides on malformed payloads (null / non-object / configured without briefing)", () => {
+    expect(deriveBriefingState(null)).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState("nope")).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState({ configured: true })).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState({ configured: true, briefing: 42 })).toEqual({ kind: "hidden" });
+  });
+});
+
+describe("MoveBriefingTeaser rendering", () => {
+  it("renders the honest pitch, a CSS-only blurred strip (no readable fake text), and the /pricing CTA", () => {
+    const markup = renderToStaticMarkup(<MoveBriefingTeaser />);
+
+    // Card chrome + 2-line pitch from the real catalog
+    expect(markup).toContain("Your move briefing");
+    expect(markup).toContain("Your personalized AI move plan — written for your exact situation.");
+    expect(markup).toContain("A plain-English read on where your move stands, plus your top three next actions.");
+
+    // Blurred preview strip is pure CSS (aria-hidden, blur class) with no text
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain("blur-[2px]");
+
+    // CTA → /pricing
+    expect(markup).toContain('href="/pricing"');
+    expect(markup).toContain("Unlock with Individual");
+  });
+
+  it("shows the dismiss affordance only when a handler is provided", () => {
+    expect(renderToStaticMarkup(<MoveBriefingTeaser />)).not.toContain("Dismiss briefing");
+    expect(renderToStaticMarkup(<MoveBriefingTeaser onDismiss={() => {}} />)).toContain("Dismiss briefing");
+  });
+});
+
+describe("teaser catalog parity (en/es)", () => {
+  it("keeps the en/es briefing+dossier teaser keys in parity", () => {
+    const cwd = process.cwd();
+    const webRoot = cwd.endsWith(`${path.sep}apps${path.sep}web`) ? cwd : path.join(cwd, "apps", "web");
+    const read = (file: string) =>
+      JSON.parse(readFileSync(path.join(webRoot, "src", "i18n", "messages", file), "utf8")) as Record<
+        string,
+        Record<string, string>
+      >;
+    const en = read("en.json");
+    const es = read("es.json");
+    const teaserKeys = (cat: Record<string, Record<string, string>>) =>
+      Object.keys(cat.dashboard).filter((k) => k.startsWith("briefing_teaser_") || k.startsWith("dossier_teaser_"));
+    expect(teaserKeys(en).sort()).toEqual(teaserKeys(es).sort());
+    // 5 briefing + 5 dossier teaser keys must exist
+    expect(teaserKeys(en)).toHaveLength(10);
   });
 });

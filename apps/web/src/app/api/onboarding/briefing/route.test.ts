@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
   resolveWorkspaceDataScope: vi.fn(),
   generateLlmBriefing: vi.fn(),
+  getUserPlan: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -43,6 +44,12 @@ vi.mock("@/lib/workspace-data-scope", () => ({
 
 vi.mock("@/lib/service-active", () => ({
   activeTrackedServiceWhereForScope: () => ({}),
+}));
+
+// Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
+// the gate exercises the actual @locateflow/shared feature matrix.
+vi.mock("@/lib/plan-limits", () => ({
+  getUserPlan: (...args: unknown[]) => mocks.getUserPlan(...args),
 }));
 
 // Keep the REAL signal/action/encoding logic; stub only the network call.
@@ -110,6 +117,7 @@ describe("/api/onboarding/briefing", () => {
     mocks.requireDbUserId.mockResolvedValue(`user_${userSeq}`);
     mocks.rateLimit.mockResolvedValue({ success: true });
     mocks.getRuntimeConfigValue.mockResolvedValue("test-api-key");
+    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
     mocks.resolveWorkspaceDataScope.mockResolvedValue({
       workspaceId: null,
       memberRole: "OWNER",
@@ -141,6 +149,67 @@ describe("/api/onboarding/briefing", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({ configured: false });
     expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
+  });
+
+  it("free plan gets the 200 upgrade teaser — no LLM call, no signal queries", async () => {
+    mocks.getUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+
+    const response = await POST(makeRequest());
+    const body = await response.json();
+
+    // 200 (never 403) so old clients — which require a string `briefing` —
+    // fail soft to the deterministic dashboard.
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      configured: true,
+      entitled: false,
+      upgradeRequired: "AI_BRIEFING_UPGRADE_REQUIRED",
+    });
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
+    // The gate short-circuits before any signal gathering.
+    expect(mocks.userFindUnique).not.toHaveBeenCalled();
+    expect(mocks.movingPlanFindFirst).not.toHaveBeenCalled();
+    expect(mocks.serviceFindMany).not.toHaveBeenCalled();
+  });
+
+  it("configured:false wins over the plan gate on a keyless deployment", async () => {
+    mocks.getRuntimeConfigValue.mockResolvedValue(null);
+    mocks.getUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+
+    const body = await (await POST(makeRequest())).json();
+
+    // No upgrade CTA for a feature this deployment cannot serve to anyone.
+    expect(body).toEqual({ configured: false });
+  });
+
+  it("every paid tier passes the gate (FAMILY and PRO included)", async () => {
+    for (const plan of ["FAMILY", "PRO"]) {
+      userSeq += 1; // fresh user per tier — the route caches per user+day
+      mocks.requireDbUserId.mockResolvedValue(`user_${userSeq}`);
+      mocks.getUserPlan.mockResolvedValue({ plan, hasPremium: true, isActive: true });
+
+      const body = await (await POST(makeRequest())).json();
+
+      expect(body.configured).toBe(true);
+      expect(body.upgradeRequired).toBeUndefined();
+      expect(typeof body.briefing).toBe("string");
+    }
+  });
+
+  it("gated requests never consume the daily AI budget (upgrade mid-day still generates)", async () => {
+    mocks.getUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    for (let i = 0; i < 5; i += 1) {
+      const body = await (await POST(makeRequest())).json();
+      expect(body.upgradeRequired).toBe("AI_BRIEFING_UPGRADE_REQUIRED");
+    }
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
+
+    // Same user upgrades the same day → full budget still available.
+    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
+    const body = await (await POST(makeRequest())).json();
+    expect(body.cached).toBe(false);
+    expect(body.source).toBe("ai");
+    expect(mocks.generateLlmBriefing).toHaveBeenCalledTimes(1);
   });
 
   it("ai path: returns { source, cached } meta and a target on every action", async () => {

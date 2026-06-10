@@ -17,10 +17,12 @@ import {
   Truck,
   Users,
   Wallet,
+  Wifi,
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+import { PlanCompareTable } from "./plan-compare-table";
 
 type BillingCycle = "yearly" | "monthly";
 type PaidPlanId = "INDIVIDUAL" | "FAMILY" | "PRO";
@@ -56,6 +58,9 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
   INDIVIDUAL: [
     { icon: Home, label: "Up to 10 homes" },
     { icon: Building2, label: "100 service provider records" },
+    { icon: Sparkles, label: "AI move briefing — your move, explained" },
+    { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },
+    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data" },
     { icon: Bell, label: "Bills and renewal reminders" },
     { icon: Wallet, label: "Per-home monthly budgets" },
     { icon: Truck, label: "Smart moving planner" },
@@ -67,6 +72,9 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Users, label: "Up to 6 members" },
     { icon: Building2, label: "17 addresses" },
     { icon: Wrench, label: "250 services" },
+    { icon: Sparkles, label: "AI move briefing — your move, explained" },
+    { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },
+    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data" },
     { icon: Users, label: "Shared household workspace" },
     { icon: ShieldCheck, label: "Member roles and invites" },
     { icon: Baby, label: "Child accounts" },
@@ -78,6 +86,9 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Building2, label: "25 addresses" },
     { icon: Wrench, label: "1,000 services" },
     { icon: Crown, label: "Everything in Family" },
+    { icon: Sparkles, label: "AI move briefing — your move, explained" },
+    { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },
+    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data" },
     { icon: Map, label: "Multi-property workflows" },
     { icon: FileText, label: "Tax & property export (CSV + PDF)" },
     { icon: ShieldCheck, label: "Partner Hub — guided partner updates" },
@@ -395,6 +406,11 @@ export function PricingSection({
         ))}
       </div>
 
+      {/* Honest side-by-side matrix under the cards. Includes the Free tier
+          (which has no card above) and derives every cell from the enforced
+          plan constants — see plan-compare-table.tsx for the source map. */}
+      <PlanCompareTable />
+
       <div className="mx-auto mt-6 max-w-4xl rounded-2xl border bg-muted/30 p-6">
         <div className="mb-4 flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
@@ -405,6 +421,11 @@ export function PricingSection({
           <p>Checkout shows today&apos;s due amount, billing interval, renewal terms, and first charge date before you subscribe.</p>
           <p>Annual Individual trial terms are shown before payment. Monthly plans renew monthly until canceled.</p>
           <p>Family and Pro require web billing. If a price is not configured, checkout will tell you before any subscription is created.</p>
+          <p className="sm:col-span-2">
+            Smart provider suggestions with FCC broadband &amp; utility data are included on every plan — including Free.
+            Suggestions reflect coverage reported by providers to the FCC at the area level — reported coverage data, not a
+            guarantee of service at your address.
+          </p>
         </div>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
           <Link href="/terms" className="underline hover:text-foreground">Terms</Link>

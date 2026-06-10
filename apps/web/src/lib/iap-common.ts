@@ -26,6 +26,7 @@ import {
   sendSubscriptionActivatedEmail,
   sendSubscriptionCanceledEmail,
 } from "@/lib/email-service";
+import { sendAdminPurchaseAlert } from "@/lib/admin-alerts";
 import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
 import {
   formatPlanLabel,
@@ -180,6 +181,22 @@ async function sendIapLifecycleEmail(opts: {
         metadata,
       }),
       `activated userId=${opts.userId}`,
+    );
+    // Owner alert: first activation only — renewals keep the same ACTIVE
+    // status and return earlier (previousStatus === status), and any other
+    // active→active transition is excluded by the previousWasActive check
+    // above. Deduped on the same IAP base; the helper never throws and
+    // suppresses the allowlisted QA account internally.
+    fireAndLogIapEmail(
+      sendAdminPurchaseAlert({
+        userId: opts.userId,
+        email: user.email,
+        plan: opts.state.plan,
+        interval: opts.state.billingInterval,
+        provider: opts.state.platform === "ios" ? "apple" : "google",
+        dedupeKey: dedupeBase,
+      }),
+      `admin-purchase-alert userId=${opts.userId}`,
     );
     return;
   }

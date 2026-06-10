@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Sparkles, X, ChevronRight } from "lucide-react";
 
 /**
@@ -118,6 +119,40 @@ export function parseBriefing(raw: string): ParsedBriefing {
   return { proseLines, actions, moveStage };
 }
 
+// ── Fetch-state derivation (exported for tests) ──────────────────────────────
+
+/**
+ * What the dashboard should render for a 200 response from
+ * POST /api/onboarding/briefing:
+ *   - hidden:   not configured (no key) or nothing usable — card disappears.
+ *   - teaser:   GATE-API plan gate (entitled:false / upgradeRequired) — the
+ *               feature exists but the user's FREE/FREE_TRIAL plan doesn't
+ *               include it; render the value-first upgrade teaser.
+ *   - briefing: entitled payload with the briefing text (today's behavior;
+ *               older payloads without an `entitled` field keep working).
+ */
+export type BriefingFetchState =
+  | { kind: "hidden" }
+  | { kind: "teaser" }
+  | { kind: "briefing"; briefing: string; aiGenerated: boolean };
+
+export function deriveBriefingState(json: unknown): BriefingFetchState {
+  if (!json || typeof json !== "object") return { kind: "hidden" };
+  const j = json as {
+    configured?: unknown;
+    entitled?: unknown;
+    upgradeRequired?: unknown;
+    briefing?: unknown;
+    aiGenerated?: unknown;
+  };
+  // configured:false (key absent) hides everything — never tease a feature the
+  // deployment can't serve once the user upgrades.
+  if (j.configured !== true) return { kind: "hidden" };
+  if (j.entitled === false || j.upgradeRequired === true) return { kind: "teaser" };
+  if (typeof j.briefing !== "string") return { kind: "hidden" };
+  return { kind: "briefing", briefing: j.briefing, aiGenerated: j.aiGenerated === true };
+}
+
 function deeplinkHref(d: BriefingDeeplink): string {
   switch (d.type) {
     case "category":
@@ -161,8 +196,61 @@ export function actionHref(action: BriefingAction): string {
   return "/services";
 }
 
+/**
+ * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
+ * Keeps the briefing card chrome (sparkle badge, title, dismiss), pitches the
+ * feature honestly in two lines, previews the prose as a pure-CSS blurred
+ * skeleton strip (no fake text — nothing readable), and CTAs to /pricing.
+ * Visual language mirrors the existing MOVING_PLAN upgrade teaser
+ * (move-command-center free hero).
+ */
+export function MoveBriefingTeaser({ onDismiss }: { onDismiss?: () => void }) {
+  const td = useTranslations("dashboard");
+  return (
+    <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5">
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-full bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4 text-tone-orange-fg" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">{td("briefing_teaser_title")}</p>
+          <p className="text-[13.5px] leading-5 text-muted-foreground mt-1">{td("briefing_teaser_pitch1")}</p>
+          <p className="text-[13.5px] leading-5 text-muted-foreground">{td("briefing_teaser_pitch2")}</p>
+        </div>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label={td("briefing_teaser_dismiss")}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Blurred prose preview — pure CSS bars, intentionally NO text content
+          so nothing fake is readable (or exposed to screen readers). */}
+      <div className="mt-3 space-y-1.5 blur-[2px] opacity-70 select-none" aria-hidden="true">
+        <div className="h-3 w-full rounded bg-foreground/10" />
+        <div className="h-3 w-11/12 rounded bg-foreground/10" />
+        <div className="h-3 w-3/4 rounded bg-foreground/10" />
+      </div>
+
+      <div className="mt-4">
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+        >
+          <Sparkles className="h-4 w-4" /> {td("briefing_teaser_cta")}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function MoveBriefingCard() {
-  const [data, setData] = useState<{ briefing: string; aiGenerated: boolean } | null>(null);
+  const [state, setState] = useState<BriefingFetchState | null>(null);
   const [dismissed, setDismissed] = useState(false);
   // null while reading localStorage (avoid a flash before we know the seen state).
   const [seenStage, setSeenStage] = useState<string | null | undefined>(undefined);
@@ -182,9 +270,9 @@ export function MoveBriefingCard() {
       try {
         const res = await fetch("/api/onboarding/briefing", { method: "POST" });
         if (!res.ok) return;
-        const json = await res.json();
-        if (cancelled || !json?.configured || typeof json?.briefing !== "string") return;
-        setData({ briefing: json.briefing, aiGenerated: !!json.aiGenerated });
+        const next = deriveBriefingState(await res.json());
+        if (cancelled || next.kind === "hidden") return;
+        setState(next);
       } catch {
         // nice-to-have — degrade silently to no card
       }
@@ -194,9 +282,17 @@ export function MoveBriefingCard() {
     };
   }, [seenStage]);
 
+  const data = state?.kind === "briefing" ? state : null;
   const parsed = useMemo(() => (data ? parseBriefing(data.briefing) : null), [data]);
 
-  if (seenStage === undefined || dismissed || !parsed) return null;
+  if (seenStage === undefined || dismissed || !state) return null;
+
+  // Plan-gated → value-first teaser (session-dismissable; no stage to persist).
+  if (state.kind === "teaser") {
+    return <MoveBriefingTeaser onDismiss={() => setDismissed(true)} />;
+  }
+
+  if (!parsed) return null;
   // Re-show once per stage: hide if the user already dismissed this exact stage.
   if (parsed.moveStage && seenStage === parsed.moveStage) return null;
   if (parsed.proseLines.length === 0 && parsed.actions.length === 0) return null;

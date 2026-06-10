@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { CloudSun, Compass, GraduationCap, MapPin, Waves } from "lucide-react";
+import { CloudSun, Compass, GraduationCap, Lock, MapPin, Sparkles, Waves } from "lucide-react";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -31,10 +32,21 @@ export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 
 export interface HomeDossierResponse {
   configured: boolean;
-  address: { id: string; city: string; state: string };
-  flood: { status: DossierSectionStatus; zone: string | null; isHighRisk: boolean | null };
-  school: { status: DossierSectionStatus; districtName: string | null; ncesId: string | null };
-  weather: {
+  /**
+   * Plan gate (GATE-API contract, HTTP 200): `false` means the user's plan
+   * (FREE/FREE_TRIAL) doesn't include the dossier — render the upgrade teaser.
+   * Absent on older/entitled payloads, which keeps today's behavior.
+   */
+  entitled?: boolean;
+  /** Companion gate signal — any truthy value is treated the same as entitled:false. */
+  upgradeRequired?: boolean;
+  /** Gate code (e.g. an *_UPGRADE_REQUIRED constant) — informational only here. */
+  code?: string;
+  /** Sections are absent on gated payloads; the teaser never reads them. */
+  address?: { id: string; city: string; state: string };
+  flood?: { status: DossierSectionStatus; zone: string | null; isHighRisk: boolean | null };
+  school?: { status: DossierSectionStatus; districtName: string | null; ncesId: string | null };
+  weather?: {
     status: DossierWeatherStatus;
     forecastDate: string | null;
     summary: string | null;
@@ -42,6 +54,16 @@ export interface HomeDossierResponse {
     tempLowF: number | null;
     precipChancePct: number | null;
   };
+}
+
+/**
+ * True when the API answered 200 with a plan gate instead of data: the feature
+ * is configured (key present) but the user's plan doesn't include it. The card
+ * then renders the value-first upgrade teaser instead of hiding. configured:false
+ * still hides everything — never tease a feature the deployment can't serve.
+ */
+export function isDossierGated(data: HomeDossierResponse | null | undefined): boolean {
+  return !!data && data.configured === true && (data.entitled === false || data.upgradeRequired === true);
 }
 
 // ── Pure view derivation (exported for tests) ────────────────────────────────
@@ -155,9 +177,17 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
   const td = useTranslations("dashboard");
   const locale = useLocale();
   const view = deriveDossierView(data);
+
+  // Plan-gated (entitled:false on a configured deployment) → value-first teaser
+  // with the three insight rows shown as locked line-items. Checked BEFORE the
+  // data-driven view so a gated payload never renders real-looking rows.
+  if (isDossierGated(data)) {
+    return <HomeDossierTeaser place={[data?.address?.city, data?.address?.state].filter(Boolean).join(", ")} />;
+  }
+
   if (!view.visible || !data) return null;
 
-  const place = [data.address.city, data.address.state].filter(Boolean).join(", ");
+  const place = [data.address?.city, data.address?.state].filter(Boolean).join(", ");
 
   const weatherStats: string[] = [];
   if (view.weather) {
@@ -274,6 +304,91 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
             <p className="text-xs text-muted-foreground">{td("dossier_hint_noLocation")}</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Plan-gate teaser (exported for tests — render-pure, no fetching) ─────────
+
+/**
+ * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
+ * Same card chrome as the real dossier, with the three insight rows shown as
+ * honest locked line-items (lock glyphs, no fabricated data) and an "Unlock
+ * with Individual" CTA to /pricing. Visual language mirrors the existing
+ * MOVING_PLAN upgrade teaser (move-command-center free hero).
+ */
+const TEASER_ROWS = [
+  {
+    Icon: Waves,
+    boxClass: "bg-tone-sky-bg border-tone-sky-br",
+    iconClass: "text-tone-sky-fg",
+    titleKey: "dossier_flood_title",
+    subKey: "dossier_teaser_flood_sub",
+  },
+  {
+    Icon: GraduationCap,
+    boxClass: "bg-tone-sage-bg border-tone-sage-br",
+    iconClass: "text-tone-sage-fg",
+    titleKey: "dossier_school_title",
+    subKey: "dossier_teaser_school_sub",
+  },
+  {
+    Icon: CloudSun,
+    boxClass: "bg-tone-cyan-bg border-tone-cyan-br",
+    iconClass: "text-tone-cyan-fg",
+    titleKey: "dossier_weather_title",
+    subKey: "dossier_teaser_weather_sub",
+  },
+] as const;
+
+export function HomeDossierTeaser({ place }: { place?: string }) {
+  const td = useTranslations("dashboard");
+  return (
+    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+      <div className="flex items-baseline justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Compass className="h-4 w-4 shrink-0 text-tone-sky-fg" />
+          <h3 className="h2 text-xl text-foreground truncate">
+            {td.rich("dossier_title", { em: (chunks) => <em>{chunks}</em> })}
+          </h3>
+        </div>
+        {place && (
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
+            {place}
+          </span>
+        )}
+      </div>
+
+      <div className="px-5 pb-5 space-y-2">
+        <p className="text-[13.5px] leading-5 text-muted-foreground">{td("dossier_teaser_pitch")}</p>
+
+        {TEASER_ROWS.map(({ Icon, boxClass, iconClass, titleKey, subKey }) => (
+          <div
+            key={titleKey}
+            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02]"
+          >
+            <div
+              className={`h-9 w-9 rounded-lg border flex items-center justify-center shrink-0 ${boxClass}`}
+            >
+              <Icon className={`h-4 w-4 ${iconClass}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{td(titleKey)}</p>
+              <p className="text-xs text-muted-foreground truncate">{td(subKey)}</p>
+            </div>
+            <Lock className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          </div>
+        ))}
+
+        <div className="pt-1">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+          >
+            <Sparkles className="h-4 w-4" /> {td("dossier_teaser_cta")}
+          </Link>
+        </div>
       </div>
     </div>
   );

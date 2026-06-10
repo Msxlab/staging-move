@@ -22,13 +22,17 @@ export interface WorkspacePlanFeatures {
   advancedExport: boolean;
   /** USPS address validation / standardization / ZIP+4 (Tier 2). Paid plans. */
   addressValidation: boolean;
+  /** AI move briefing (LLM situation summary on the dashboard). Paid plans. */
+  aiBriefing: boolean;
+  /** New Home Dossier (flood / school district / move-day weather). Paid plans. */
+  homeDossier: boolean;
 }
 
 const FEATURES: Record<string, WorkspacePlanFeatures> = {
-  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true },
-  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true },
-  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true },
-  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false },
+  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true },
+  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true },
+  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true },
+  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false },
 };
 
 const DEFAULT_FEATURES: WorkspacePlanFeatures = FEATURES.FREE_TRIAL;

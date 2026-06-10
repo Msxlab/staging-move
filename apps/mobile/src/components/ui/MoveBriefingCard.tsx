@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Sparkles, X, ChevronRight } from "lucide-react-native";
+import { Sparkles, X, ChevronRight, Lock, ArrowRight } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,14 +18,26 @@ import {
 } from "./MoveBriefingCard.helpers";
 
 interface MoveBriefingCardProps {
-  /** The briefing text (plain prose + an optional machine-readable meta tail). */
-  briefing: string;
+  /**
+   * The briefing text (plain prose + an optional machine-readable meta tail).
+   * Optional so the unentitled teaser can render without one — the server
+   * never generates a briefing for a FREE user.
+   */
+  briefing?: string;
   /**
    * True when the prose summary came from the LLM. Drives the subtle
    * "AI-generated" label. When false the card renders the same way but without
    * that label (the rule-based fallback is still a real, useful briefing).
    */
-  aiGenerated: boolean;
+  aiGenerated?: boolean;
+  /**
+   * Plan entitlement (paid-plans-only packaging). `false` ⇒ render the
+   * value-first upgrade teaser (honest pitch + locked rows + "Unlock with
+   * Individual" routed to the subscription screen) instead of briefing
+   * content. Defaults to true so existing call sites — and pre-flag servers —
+   * keep today's behavior unchanged.
+   */
+  entitled?: boolean;
   onDismiss?: () => void;
 }
 
@@ -36,6 +48,10 @@ interface MoveBriefingCardProps {
 // long-press) suppresses it for good.
 const BRIEFING_SEEN_STAGE_KEY = "locateflow.moveBriefing.seenStage";
 const BRIEFING_NEVER_KEY = "locateflow.moveBriefing.never";
+// Unentitled teaser: one X-tap hides it for this install (its own key, so a
+// user who later upgrades still gets the real briefing despite having
+// dismissed the teaser). Long-press "never" suppresses both, as before.
+const BRIEFING_TEASER_SEEN_KEY = "locateflow.moveBriefing.teaserSeen";
 
 /**
  * First-run "move briefing" card. Renders a plain-English situation summary +
@@ -46,8 +62,21 @@ const BRIEFING_NEVER_KEY = "locateflow.moveBriefing.never";
  * string, navigates via its own router, and manages its own per-move-stage
  * "seen" persistence (so it recurs across stages) plus a long-press
  * "don't show again". The parent only hands it text + an onDismiss callback.
+ *
+ * Freemium packaging: the AI briefing is paid-plans-only. With
+ * `entitled={false}` the card renders a value-first teaser instead — an
+ * honest pitch + three locked rows naming what the briefing actually does +
+ * an "Unlock with Individual" CTA routed to the existing subscription screen
+ * (the same destination every mobile upsell uses). The teaser keeps the X
+ * (its own one-time "seen" key) and the long-press permanent dismissal, so
+ * an upsell never becomes an un-dismissable banner.
  */
-export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBriefingCardProps) {
+export function MoveBriefingCard({
+  briefing = "",
+  aiGenerated = false,
+  entitled = true,
+  onDismiss,
+}: MoveBriefingCardProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -63,13 +92,20 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
     let cancelled = false;
     (async () => {
       try {
-        const [never, seenStage] = await AsyncStorage.multiGet([
+        const [never, seenStage, teaserSeen] = await AsyncStorage.multiGet([
           BRIEFING_NEVER_KEY,
           BRIEFING_SEEN_STAGE_KEY,
+          BRIEFING_TEASER_SEEN_KEY,
         ]);
         if (cancelled) return;
         if (never[1] === "true") {
           setVisible(false);
+          return;
+        }
+        // Unentitled teaser: show once per install (until X), independent of
+        // the per-stage markers a paid briefing uses.
+        if (!entitled) {
+          setVisible(teaserSeen[1] !== "true");
           return;
         }
         // Show unless we've already shown this exact stage. When the stage is
@@ -88,18 +124,23 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
     return () => {
       cancelled = true;
     };
-  }, [parsed.moveStage]);
+  }, [parsed.moveStage, entitled]);
 
   // X tap: mark THIS stage as seen so it recurs when the stage changes. We do
   // NOT call the parent onDismiss here (that path is reserved for the permanent
-  // long-press dismissal), keeping per-stage re-show intact.
+  // long-press dismissal), keeping per-stage re-show intact. In teaser mode the
+  // X writes the teaser's own key instead.
   const handleSeen = useCallback(() => {
     hapticLight();
     setVisible(false);
+    if (!entitled) {
+      void AsyncStorage.setItem(BRIEFING_TEASER_SEEN_KEY, "true").catch(() => {});
+      return;
+    }
     if (parsed.moveStage) {
       void AsyncStorage.setItem(BRIEFING_SEEN_STAGE_KEY, parsed.moveStage).catch(() => {});
     }
-  }, [parsed.moveStage]);
+  }, [parsed.moveStage, entitled]);
 
   // Long-press: permanently suppress the briefing across all stages.
   const handleNeverAgain = useCallback(() => {
@@ -117,6 +158,7 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
   // needs it. Lookup failure is fine — navigation falls back to the Move tab.
   const [fetchedPlanId, setFetchedPlanId] = useState<string | null>(null);
   const wantsPlanRoute =
+    entitled &&
     parsed.planId === null &&
     parsed.actions.some((a) => a.target.kind === "plan" || a.target.kind === "state_rule");
   useEffect(() => {
@@ -156,9 +198,86 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
     [router, activePlanId],
   );
 
+  const handleUnlock = useCallback(() => {
+    hapticLight();
+    router.push("/settings/subscription");
+  }, [router]);
+
   if (visible === null || visible === false) return null;
 
   const hasActions = parsed.actions.length > 0;
+
+  // ── Value-first teaser (entitled:false) ──────────────────────
+  if (!entitled) {
+    const lockedRows = [
+      t("dashboard.briefingTeaserRow1", "A plain-English read on where your move stands"),
+      t("dashboard.briefingTeaserRow2", "Your top 3 next steps, linked to the right screen"),
+      t("dashboard.briefingTeaserRow3", "A fresh briefing as your move progresses"),
+    ];
+    return (
+      <Card variant="glow" style={{ marginBottom: 16 }}>
+        <View style={styles.headerRow}>
+          <View style={styles.iconWrap}>
+            <Sparkles size={18} color={theme.colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t("dashboard.briefingTitle", "Your move briefing")}</Text>
+            <Text style={styles.aiLabel}>
+              {t("teaser.paidFeatureLabel", "Individual plan feature")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleSeen}
+            onLongPress={handleNeverAgain}
+            delayLongPress={500}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={t("dashboard.briefingDismiss", "Dismiss briefing")}
+            accessibilityHint={t(
+              "dashboard.briefingDismissHint",
+              "Long-press to stop showing this",
+            )}
+          >
+            <X size={18} color={theme.colors.textTertiary} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.body}>
+          <Text style={styles.line}>
+            {t(
+              "dashboard.briefingTeaserPitch",
+              "Get a personalized briefing built from your real addresses, dates, and services — with the next steps that matter most right now.",
+            )}
+          </Text>
+        </View>
+
+        <View style={styles.actions}>
+          {lockedRows.map((label, i) => (
+            <View key={label} style={[styles.actionRow, i > 0 && styles.actionRowDivider]}>
+              <View style={styles.actionIcon}>
+                <Lock size={13} color={theme.colors.primary} />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={styles.actionTitle}>{label}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.unlockBtn}
+          onPress={handleUnlock}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t("teaser.unlockCta", "Unlock with Individual")}
+        >
+          <Lock size={14} color="#fff" />
+          <Text style={styles.unlockBtnText}>{t("teaser.unlockCta", "Unlock with Individual")}</Text>
+          <ArrowRight size={14} color="#fff" />
+        </TouchableOpacity>
+      </Card>
+    );
+  }
 
   return (
     <Card variant="glow" style={{ marginBottom: 16 }}>
@@ -310,5 +429,24 @@ const makeStyles = (theme: Theme) =>
       fontSize: 12,
       lineHeight: 16,
       color: theme.colors.textTertiary,
+    },
+    // ── Teaser-only styles (entitled:false) ──
+    // Same CTA idiom as FreeMoveUpsellCard (the established mobile upsell).
+    unlockBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.radius.lg,
+      paddingVertical: 12,
+      marginTop: 14,
+      ...theme.shadow.glow,
+    },
+    unlockBtnText: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: "#fff",
+      letterSpacing: -0.2,
     },
   });

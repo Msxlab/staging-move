@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   clampPct,
   deriveHomeDossier,
+  deriveHomeDossierView,
   formatForecastDate,
   getFloodRow,
   getSchoolRow,
@@ -80,6 +81,77 @@ describe("deriveHomeDossier — card-level gating", () => {
     expect(rows.weather).toBeNull();
     expect(rows.school).toEqual({ districtName: "Austin ISD", ncesId: "4808940" });
     expect(rows.hasContent).toBe(true);
+  });
+
+  it("renders no data rows for an unentitled payload, even if sections leaked in", () => {
+    // Defense in depth: rows must never render for a free user.
+    expect(deriveHomeDossier(dossier({ entitled: false })).hasContent).toBe(false);
+  });
+});
+
+describe("deriveHomeDossierView — entitlement gating", () => {
+  it("hides for null payloads and fetch failures", () => {
+    expect(deriveHomeDossierView(null)).toEqual({ kind: "hidden" });
+    expect(deriveHomeDossierView(undefined)).toEqual({ kind: "hidden" });
+  });
+
+  it("hides (never teases) when the server reports unconfigured", () => {
+    expect(deriveHomeDossierView(dossier({ configured: false, entitled: false }))).toEqual({
+      kind: "hidden",
+    });
+    expect(deriveHomeDossierView({ configured: false })).toEqual({ kind: "hidden" });
+  });
+
+  it("teases on entitled:false, with or without data sections in the payload", () => {
+    // Typical unentitled payload: no sections at all.
+    expect(
+      deriveHomeDossierView({
+        configured: true,
+        entitled: false,
+        address: { id: "addr_1", city: "Austin", state: "TX" },
+      }),
+    ).toEqual({ kind: "teaser" });
+    // Sections present anyway → still a teaser, never real rows.
+    expect(deriveHomeDossierView(dossier({ entitled: false }))).toEqual({ kind: "teaser" });
+  });
+
+  it("shows content when entitled:true", () => {
+    const view = deriveHomeDossierView(dossier({ entitled: true }));
+    expect(view.kind).toBe("content");
+    if (view.kind === "content") {
+      expect(view.rows.hasContent).toBe(true);
+      expect(view.rows.flood).toEqual({ zone: "AE", isHighRisk: true });
+    }
+  });
+
+  it("treats a missing entitled flag as entitled (pre-flag servers degrade gracefully)", () => {
+    const view = deriveHomeDossierView(dossier());
+    expect(view.kind).toBe("content");
+  });
+
+  it("hides an entitled dossier whose every section degraded", () => {
+    const view = deriveHomeDossierView(
+      dossier({
+        entitled: true,
+        flood: { status: "no_location", zone: null, isHighRisk: null },
+        school: { status: "error", districtName: null, ncesId: null },
+        weather: {
+          status: "too_far",
+          forecastDate: null,
+          summary: null,
+          tempHighF: null,
+          tempLowF: null,
+          precipChancePct: null,
+        },
+      }),
+    );
+    expect(view).toEqual({ kind: "hidden" });
+  });
+
+  it("hides an entitled but malformed payload missing its sections", () => {
+    expect(deriveHomeDossierView({ configured: true, entitled: true })).toEqual({
+      kind: "hidden",
+    });
   });
 });
 

@@ -4,9 +4,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
   HomeDossierCard,
+  HomeDossierTeaser,
   deriveDossierView,
   floodLabelKey,
   formatForecastDate,
+  isDossierGated,
   type HomeDossierResponse,
 } from "./home-dossier";
 
@@ -22,10 +24,21 @@ vi.mock("lucide-react", () => {
     CloudSun: icon("cloud-sun"),
     Compass: icon("compass"),
     GraduationCap: icon("graduation-cap"),
+    Lock: icon("lock"),
     MapPin: icon("map-pin"),
+    Sparkles: icon("sparkles"),
     Waves: icon("waves"),
   };
 });
+
+// next/link → plain anchor so the teaser CTA href is assertable without a router.
+vi.mock("next/link", () => ({
+  default: ({ href, children, className }: { href: string; children?: unknown; className?: string }) => (
+    <a href={href} className={className}>
+      {children as never}
+    </a>
+  ),
+}));
 
 // Resolve translations from the REAL en.json catalog so these tests pin the
 // mandated copy (FEMA disclaimer, NCES fine print, no-location hint) — a copy
@@ -264,6 +277,94 @@ describe("HomeDossierCard rendering", () => {
     );
     expect(markup).not.toContain("Moving day:");
     expect(markup).toContain("Zone X — minimal flood risk");
+  });
+});
+
+describe("isDossierGated — GATE-API plan gate (entitled:false, HTTP 200)", () => {
+  it("is gated when configured and entitled:false", () => {
+    expect(isDossierGated({ configured: true, entitled: false } as HomeDossierResponse)).toBe(true);
+  });
+
+  it("is gated on a truthy upgradeRequired signal too", () => {
+    expect(isDossierGated({ configured: true, upgradeRequired: true } as HomeDossierResponse)).toBe(true);
+  });
+
+  it("is NOT gated when configured:false — never tease an unconfigured feature", () => {
+    expect(isDossierGated({ configured: false, entitled: false } as HomeDossierResponse)).toBe(false);
+  });
+
+  it("is NOT gated for entitled/legacy payloads (entitled absent or true)", () => {
+    expect(isDossierGated(dossier())).toBe(false);
+    expect(isDossierGated({ ...dossier(), entitled: true })).toBe(false);
+    expect(isDossierGated(null)).toBe(false);
+    expect(isDossierGated(undefined)).toBe(false);
+  });
+});
+
+describe("HomeDossierCard — plan-gate teaser rendering", () => {
+  const gated = {
+    configured: true,
+    entitled: false,
+    upgradeRequired: true,
+    code: "DOSSIER_UPGRADE_REQUIRED",
+  } as HomeDossierResponse;
+
+  it("renders the three locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={gated} />);
+
+    // Card chrome (serif dossier title) + pitch
+    expect(markup).toContain("<em>new home</em>");
+    expect(markup).toContain(
+      "Three sourced insights about your next home — from FEMA flood maps, NCES school boundaries, and the National Weather Service.",
+    );
+
+    // The three insight rows as locked line-items
+    expect(markup).toContain("Flood zone");
+    expect(markup).toContain("School district");
+    expect(markup).toContain("Moving-day weather");
+    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(3);
+
+    // CTA → /pricing
+    expect(markup).toContain('href="/pricing"');
+    expect(markup).toContain("Unlock with Individual");
+
+    // Honest: no fabricated data, no real-row artifacts
+    expect(markup).not.toContain("Served by");
+    expect(markup).not.toContain("Zone ");
+    expect(markup).not.toContain("Moving day:");
+  });
+
+  it("teaser takes precedence over data rows even if a gated payload carries sections", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={{ ...dossier(), entitled: false }} />);
+    expect(markup).toContain("Unlock with Individual");
+    expect(markup).not.toContain("Served by Austin ISD");
+    expect(markup).not.toContain("Sunny");
+  });
+
+  it("shows the place eyebrow when the gated payload includes the address", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard data={{ ...gated, address: { id: "a1", city: "Austin", state: "TX" } }} />,
+    );
+    expect(markup).toContain("Austin, TX");
+  });
+
+  it("still renders nothing when configured:false, even with entitled:false", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard data={{ configured: false, entitled: false } as HomeDossierResponse} />,
+    );
+    expect(markup).toBe("");
+  });
+
+  it("entitled payloads keep rendering the real rows (no teaser)", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={{ ...dossier(), entitled: true }} />);
+    expect(markup).toContain("Served by Austin ISD");
+    expect(markup).not.toContain("Unlock with Individual");
+  });
+
+  it("HomeDossierTeaser renders standalone without a place", () => {
+    const markup = renderToStaticMarkup(<HomeDossierTeaser />);
+    expect(markup).toContain('href="/pricing"');
+    expect(markup).toContain("Unlock with Individual");
   });
 });
 
