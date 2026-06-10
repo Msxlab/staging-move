@@ -33,6 +33,11 @@ function sanitizeOverrides(parsed: unknown): Partial<ScoringWeights> | undefined
   const essentialCategories = sanitizeNumberRecord(source.essentialCategories);
   if (essentialCategories) overrides.essentialCategories = essentialCategories;
 
+  const signalBoosts = sanitizeNumberRecord(source.signalBoosts);
+  if (signalBoosts) {
+    overrides.signalBoosts = signalBoosts as unknown as ScoringWeights["signalBoosts"];
+  }
+
   return Object.keys(overrides).length > 0 ? overrides : undefined;
 }
 

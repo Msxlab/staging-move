@@ -510,6 +510,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Optional. Only needed to enable confirmed electric-utility serviceability.",
   },
   {
+    key: "AIRNOW_API_KEY",
+    label: "AirNow API Key",
+    description:
+      "AirNow (EPA-led air quality program) API key used by the New Home Dossier to show the current AQI near a saved address. Register (free) at https://docs.airnowapi.org to obtain a key. Without it, the dossier's air-quality section reports not_configured and the rest of the dossier is unaffected.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable the dossier's current-AQI section.",
+  },
+  {
     key: "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
     label: "Places Autocomplete Daily Limit",
     description: "Global daily cap for Places autocomplete calls when enabled.",
@@ -1635,6 +1649,7 @@ function validateScoringWeightsJson(value: string): RuntimeConfigValidationResul
     "coverageScore",
     "addressSensitivePenalty",
     "essentialCategories",
+    "signalBoosts",
   ];
   const hasUsableWeight = numericGroups.some((group) => {
     const sub = source[group];

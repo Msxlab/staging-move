@@ -71,6 +71,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { lookupElectricUtilities, isElectricUtilityServiceable } from "@/lib/electric-utility";
+import { scoreProviders } from "@/lib/recommendation-engine";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -83,6 +84,7 @@ const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: 
 const rateLimitMock = rateLimit as unknown as Mock;
 const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
 const isElectricUtilityServiceableMock = isElectricUtilityServiceable as unknown as Mock;
+const scoreProvidersMock = scoreProviders as unknown as Mock;
 
 function makeRequest(search = "") {
   return new Request(`http://localhost/api/providers/recommendations${search}`) as any;
@@ -182,6 +184,52 @@ describe("provider recommendations route", () => {
     expect(body.code).toBe("UNAUTHORIZED");
     expect(rateLimitMock).not.toHaveBeenCalled();
     expect(mockServiceProvider.findMany).not.toHaveBeenCalled();
+  });
+
+  // ── Extended onboarding signals → scoring profile (engine block 4d) ───────
+
+  it("passes the extended onboarding signals from the profile row into scoring", async () => {
+    mockProfile.findUnique.mockResolvedValue({
+      hasChildren: true,
+      childrenCount: 2,
+      hasPets: true,
+      // Persisted exactly as the Profile model stores it: a JSON string.
+      petTypes: JSON.stringify(["dog", "cat"]),
+      familyStatus: "FAMILY",
+      ageRange: "55+",
+      isBusinessOwner: true,
+      businessType: "LLC",
+      isImmigrant: true,
+      immigrationStatus: "GREEN_CARD",
+    });
+    mockServiceProvider.findMany.mockResolvedValue([dbProvider()]);
+
+    const response = await GET(makeRequest());
+
+    expect(response.status).toBe(200);
+    expect(scoreProvidersMock).toHaveBeenCalledTimes(1);
+    const passedProfile = scoreProvidersMock.mock.calls[0][1];
+    expect(passedProfile).toMatchObject({
+      familyStatus: "FAMILY",
+      ageRange: "55+",
+      petTypes: ["dog", "cat"], // JSON string parsed into a real array
+      businessType: "LLC",
+      immigrationStatus: "GREEN_CARD",
+    });
+  });
+
+  it("defaults the extended signals to no-signal when no profile row exists", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([dbProvider()]);
+
+    const response = await GET(makeRequest());
+
+    expect(response.status).toBe(200);
+    const passedProfile = scoreProvidersMock.mock.calls[0][1];
+    expect(passedProfile.familyStatus).toBeUndefined();
+    expect(passedProfile.ageRange).toBeUndefined();
+    expect(passedProfile.petTypes).toEqual([]); // safeJsonArray of a missing value
+    expect(passedProfile.businessType).toBeUndefined();
+    expect(passedProfile.immigrationStatus).toBeUndefined();
   });
 
   // ── Electric-utility serviceability enrichment (mirrors the FCC block) ────

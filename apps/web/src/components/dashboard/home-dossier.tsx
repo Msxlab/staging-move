@@ -3,17 +3,33 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { CloudSun, Compass, GraduationCap, Lock, MapPin, Sparkles, Waves } from "lucide-react";
+import {
+  CloudSun,
+  Compass,
+  Droplets,
+  FlaskConical,
+  GraduationCap,
+  Lock,
+  MapPin,
+  Mountain,
+  Sparkles,
+  Waves,
+  Wind,
+} from "lucide-react";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
  *
- * Three honest, sourced facts about the user's next home (the active move's
+ * Honest, sourced facts about the user's next home (the active move's
  * destination address, else the primary address):
  *   1. FEMA flood zone (+ mandatory "not an insurance determination" fine print
  *      and a link to the official FEMA map service center),
- *   2. School district (NCES boundaries — assignment may differ), and
- *   3. Moving-day weather (NWS forecast; only when the move is ≤7 days out).
+ *   2. School district (NCES boundaries — assignment may differ),
+ *   3. Moving-day weather (NWS forecast; only when the move is ≤7 days out),
+ *   4. Natural hazard profile (FEMA National Risk Index — relative, tract-level),
+ *   5. EPA radon zone by county (+ mandatory "test regardless of zone" fine print),
+ *   6. Drinking-water system record (EPA SDWIS health-based violations, 5 yrs), and
+ *   7. Current air quality (AirNow AQI snapshot; absent when not configured).
  *
  * GRACEFUL DEGRADATION (same contract style as apps/web/src/lib/fcc-isp.ts):
  * the card consumes GET /api/addresses/{id}/dossier, whose sections each carry
@@ -29,6 +45,12 @@ import { CloudSun, Compass, GraduationCap, Lock, MapPin, Sparkles, Waves } from 
 
 export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
+export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
+
+export interface DossierHazardRisk {
+  hazard: string;
+  rating: string;
+}
 
 export interface HomeDossierResponse {
   configured: boolean;
@@ -54,6 +76,16 @@ export interface HomeDossierResponse {
     tempLowF: number | null;
     precipChancePct: number | null;
   };
+  /**
+   * Extended sections (each independent, each optional so older payloads keep
+   * working). topRisks carries max 3 entries, only ratings >= "Relatively
+   * Moderate" per the API contract.
+   */
+  hazards?: { status: DossierSectionStatus; topRisks: DossierHazardRisk[]; overallRating: string | null };
+  /** EPA radon zone by county (1 = highest predicted indoor radon potential). */
+  radon?: { status: DossierSectionStatus; zone: 1 | 2 | 3 | null };
+  water?: { status: DossierSectionStatus; systemName: string | null; violations5y: number | null };
+  air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
 }
 
 /**
@@ -80,6 +112,10 @@ export interface HomeDossierView {
     tempLowF: number | null;
     precipChancePct: number | null;
   } | null;
+  hazards: { topRisks: DossierHazardRisk[]; overallRating: string | null } | null;
+  radon: { zone: 1 | 2 | 3 } | null;
+  water: { systemName: string; violations5y: number } | null;
+  air: { aqi: number; category: string | null } | null;
   /** One honest "add a precise address to unlock local insights" row. */
   showLocationHint: boolean;
 }
@@ -89,8 +125,21 @@ const HIDDEN_VIEW: HomeDossierView = {
   flood: null,
   school: null,
   weather: null,
+  hazards: null,
+  radon: null,
+  water: null,
+  air: null,
   showLocationHint: false,
 };
+
+/**
+ * Statuses that mean "nothing honest to render and nothing for the user to do
+ * here". `not_configured` (air) joins no_location/error: an unconfigured
+ * deployment section should never keep an otherwise-empty card alive. Weather
+ * "too_far" deliberately stays OUT — the forecast becomes available as the
+ * move approaches, so the card may still show the location hint.
+ */
+const DEGRADED_STATUSES = new Set(["no_location", "error", "not_configured"]);
 
 /**
  * Decide what (if anything) the card shows. Defensive against partial/missing
@@ -104,10 +153,14 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
   }
 
   const statuses: string[] = [data.flood.status, data.school.status, data.weather.status];
-  // Whole card hidden when EVERY section is no_location/error — there is
-  // nothing honest to say and no actionable hint beyond what the address form
-  // already communicates.
-  if (statuses.every((s) => s === "no_location" || s === "error")) return HIDDEN_VIEW;
+  // Extended sections are optional — older payloads simply don't vote.
+  for (const status of [data.hazards?.status, data.radon?.status, data.water?.status, data.air?.status]) {
+    if (typeof status === "string") statuses.push(status);
+  }
+  // Whole card hidden when EVERY section is degraded — there is nothing honest
+  // to say and no actionable hint beyond what the address form already
+  // communicates.
+  if (statuses.every((s) => DEGRADED_STATUSES.has(s))) return HIDDEN_VIEW;
 
   const flood =
     data.flood.status === "ok" && typeof data.flood.zone === "string" && data.flood.zone.trim()
@@ -135,14 +188,72 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
       }
     : null;
 
+  // (4) Natural hazard profile — FEMA National Risk Index. Meaningful only
+  // when at least one well-formed top risk survives the defensive filter
+  // (max 3 per contract; malformed entries are dropped, not rendered blank).
+  const hazardsSection = data.hazards;
+  let hazards: HomeDossierView["hazards"] = null;
+  if (hazardsSection?.status === "ok" && Array.isArray(hazardsSection.topRisks)) {
+    const topRisks = hazardsSection.topRisks
+      .filter(
+        (r): r is DossierHazardRisk =>
+          !!r &&
+          typeof r.hazard === "string" &&
+          !!r.hazard.trim() &&
+          typeof r.rating === "string" &&
+          !!r.rating.trim(),
+      )
+      .slice(0, 3)
+      .map((r) => ({ hazard: r.hazard.trim(), rating: r.rating.trim() }));
+    if (topRisks.length > 0) {
+      hazards = {
+        topRisks,
+        overallRating:
+          typeof hazardsSection.overallRating === "string" && hazardsSection.overallRating.trim()
+            ? hazardsSection.overallRating.trim()
+            : null,
+      };
+    }
+  }
+
+  // (5) EPA radon zone by county — only the three defined zones render.
+  const radonZone = data.radon?.status === "ok" ? data.radon.zone : null;
+  const radon = radonZone === 1 || radonZone === 2 || radonZone === 3 ? { zone: radonZone } : null;
+
+  // (6) Drinking water — needs BOTH the system name and a violation count
+  // (zero is meaningful: it renders the reassuring copy).
+  const waterSection = data.water;
+  const water =
+    waterSection?.status === "ok" &&
+    typeof waterSection.systemName === "string" &&
+    waterSection.systemName.trim() &&
+    typeof waterSection.violations5y === "number" &&
+    Number.isFinite(waterSection.violations5y) &&
+    waterSection.violations5y >= 0
+      ? { systemName: waterSection.systemName.trim(), violations5y: Math.round(waterSection.violations5y) }
+      : null;
+
+  // (7) Air quality now — AQI is the headline datum; category is optional.
+  const airSection = data.air;
+  const air =
+    airSection?.status === "ok" && typeof airSection.aqi === "number" && Number.isFinite(airSection.aqi)
+      ? {
+          aqi: Math.round(airSection.aqi),
+          category:
+            typeof airSection.category === "string" && airSection.category.trim()
+              ? airSection.category.trim()
+              : null,
+        }
+      : null;
+
   // Honest hint when a section couldn't run for lack of a precise location
   // (e.g. primary address without lat/lng while weather is merely "too_far").
   const showLocationHint = statuses.some((s) => s === "no_location");
 
-  const visible = Boolean(flood || school || weather || showLocationHint);
+  const visible = Boolean(flood || school || weather || hazards || radon || water || air || showLocationHint);
   if (!visible) return HIDDEN_VIEW;
 
-  return { visible, flood, school, weather, showLocationHint };
+  return { visible, flood, school, weather, hazards, radon, water, air, showLocationHint };
 }
 
 /** Plain-English flood label key for a zone, driven by the API's isHighRisk. */
@@ -152,6 +263,32 @@ export function floodLabelKey(
   if (isHighRisk === true) return "dossier_flood_high";
   if (isHighRisk === false) return "dossier_flood_low";
   return "dossier_flood_unknown";
+}
+
+/**
+ * Honey warn tone is reserved for the two highest NRI ratings — everything
+ * below stays a neutral, informational pill (honest, never alarming).
+ */
+const HAZARD_WARN_RATINGS = new Set(["relatively high", "very high"]);
+export function isHazardWarnRating(rating: string): boolean {
+  return HAZARD_WARN_RATINGS.has(rating.trim().toLowerCase());
+}
+
+/** Plain-English EPA radon-zone label key (1 = highest potential … 3 = low). */
+export function radonZoneLabelKey(
+  zone: 1 | 2 | 3,
+): "dossier_radon_zone1" | "dossier_radon_zone2" | "dossier_radon_zone3" {
+  if (zone === 1) return "dossier_radon_zone1";
+  if (zone === 2) return "dossier_radon_zone2";
+  return "dossier_radon_zone3";
+}
+
+/** Water headline key — zero violations gets the reassuring copy. */
+export function waterLabelKey(
+  violations5y: number,
+): "dossier_water_clean" | "dossier_water_violationsOne" | "dossier_water_violationsMany" {
+  if (violations5y <= 0) return "dossier_water_clean";
+  return violations5y === 1 ? "dossier_water_violationsOne" : "dossier_water_violationsMany";
 }
 
 /**
@@ -297,6 +434,111 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           </div>
         )}
 
+        {/* (4) Natural hazard profile — FEMA National Risk Index. Per-risk
+            pills; honey warn tone ONLY for "Relatively High"/"Very High". */}
+        {view.hazards && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-umber-bg border border-tone-umber-br flex items-center justify-center shrink-0">
+                <Mountain className="h-4 w-4 text-tone-umber-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_hazards_title")}</p>
+                {view.hazards.overallRating && (
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {td("dossier_hazards_overall", { rating: view.hazards.overallRating })}
+                  </p>
+                )}
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {view.hazards.topRisks.map((risk) => (
+                    <span
+                      key={`${risk.hazard}-${risk.rating}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        isHazardWarnRating(risk.rating)
+                          ? "bg-tone-honey-bg border-tone-honey-br text-tone-honey-fg"
+                          : "bg-foreground/[0.04] border-border text-muted-foreground"
+                      }`}
+                    >
+                      {risk.hazard} · {risk.rating}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* MANDATORY fine print — relative context, not a property score */}
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_hazards_disclaimer")}</p>
+          </div>
+        )}
+
+        {/* (5) EPA radon zone — MANDATORY "test regardless of zone" fine print */}
+        {view.radon && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-slate-bg border border-tone-slate-br flex items-center justify-center shrink-0">
+                <FlaskConical className="h-4 w-4 text-tone-slate-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_radon_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {td(radonZoneLabelKey(view.radon.zone))}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_radon_disclaimer")}</p>
+          </div>
+        )}
+
+        {/* (6) Drinking water — EPA SDWIS; zero violations reads reassuring */}
+        {view.water && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
+                <Droplets className="h-4 w-4 text-tone-sky-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_water_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {td(waterLabelKey(view.water.violations5y), {
+                    system: view.water.systemName,
+                    count: view.water.violations5y,
+                  })}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              {td("dossier_water_disclaimer")}{" "}
+              <a
+                href="https://enviro.epa.gov"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground transition"
+              >
+                {td("dossier_water_link")}
+              </a>
+            </p>
+          </div>
+        )}
+
+        {/* (7) Air quality now — AirNow snapshot; hidden when not_configured */}
+        {view.air && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
+                <Wind className="h-4 w-4 text-tone-sage-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_air_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {view.air.category
+                    ? td("dossier_air_now", { aqi: view.air.aqi, category: view.air.category })
+                    : td("dossier_air_nowNoCategory", { aqi: view.air.aqi })}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_air_disclaimer")}</p>
+          </div>
+        )}
+
         {/* Honest hint when a precise location is missing — no fabricated rows */}
         {view.showLocationHint && (
           <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-border bg-foreground/[0.02]">
@@ -313,7 +555,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
 /**
  * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
- * Same card chrome as the real dossier, with the three insight rows shown as
+ * Same card chrome as the real dossier, with the seven insight rows shown as
  * honest locked line-items (lock glyphs, no fabricated data) and an "Unlock
  * with Individual" CTA to /pricing. Visual language mirrors the existing
  * MOVING_PLAN upgrade teaser (move-command-center free hero).
@@ -339,6 +581,34 @@ const TEASER_ROWS = [
     iconClass: "text-tone-cyan-fg",
     titleKey: "dossier_weather_title",
     subKey: "dossier_teaser_weather_sub",
+  },
+  {
+    Icon: Mountain,
+    boxClass: "bg-tone-umber-bg border-tone-umber-br",
+    iconClass: "text-tone-umber-fg",
+    titleKey: "dossier_hazards_title",
+    subKey: "dossier_teaser_hazards_sub",
+  },
+  {
+    Icon: FlaskConical,
+    boxClass: "bg-tone-slate-bg border-tone-slate-br",
+    iconClass: "text-tone-slate-fg",
+    titleKey: "dossier_radon_title",
+    subKey: "dossier_teaser_radon_sub",
+  },
+  {
+    Icon: Droplets,
+    boxClass: "bg-tone-sky-bg border-tone-sky-br",
+    iconClass: "text-tone-sky-fg",
+    titleKey: "dossier_water_title",
+    subKey: "dossier_teaser_water_sub",
+  },
+  {
+    Icon: Wind,
+    boxClass: "bg-tone-sage-bg border-tone-sage-br",
+    iconClass: "text-tone-sage-fg",
+    titleKey: "dossier_air_title",
+    subKey: "dossier_teaser_air_sub",
   },
 ] as const;
 

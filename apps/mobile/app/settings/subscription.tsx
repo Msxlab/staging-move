@@ -15,6 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
+  ChevronUp,
   Crown,
   ExternalLink,
   Zap,
@@ -50,6 +52,7 @@ import {
   shouldRenderMobileSubscriptionPlanCard,
   shouldShowMobileSubscriptionPlan,
 } from "@/lib/subscription-visible-plans";
+import { buildPlanComparison } from "@/lib/plan-comparison";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -505,6 +508,26 @@ function LegacySubscriptionScreen() {
       ),
     [inheritedEntitlement, currentPlanKey, hasConfiguredNativeSku, isNativeStorePlatform, mobileStorePurchasesEnabled],
   );
+
+  // Informational side-by-side matrix: every tier from the shared definitions,
+  // even when its purchase card is hidden on this platform (no SKU, inherited
+  // member, free user). Prices follow the same store-advertisability rule as
+  // the purchase cards; features are the shared single source of truth.
+  const planComparison = useMemo(
+    () =>
+      buildPlanComparison({
+        currentPlanKey: effectivePlanKey,
+        isNativeStorePlatform,
+        mobileStoreCommerceAdvertisable,
+        hasAvailableNativeSku: (planKey) =>
+          isPaidNativePlanKey(planKey) ? hasAvailableNativeSku(planKey) : false,
+        getStorePriceLabel: (planKey, cycle) =>
+          isPaidNativePlanKey(planKey) ? getStorePrice(planKey, cycle) : null,
+      }),
+    [effectivePlanKey, isNativeStorePlatform, mobileStoreCommerceAdvertisable, hasAvailableNativeSku, getStorePrice],
+  );
+  // null = default (current plan expanded); "" = all collapsed.
+  const [expandedComparePlan, setExpandedComparePlan] = useState<string | null>(null);
 
   const managedElsewhereMessage = isStripeManaged
     ? t("settings.subscription_webManagedReadOnly")
@@ -1220,6 +1243,66 @@ function LegacySubscriptionScreen() {
           </TouchableOpacity>
         )}
 
+        <View style={styles.compareCard}>
+          <Text style={styles.compareTitle}>
+            {t("settings.subscription_compareTitle", { defaultValue: "What you get with each plan" })}
+          </Text>
+          <Text style={styles.compareSubtitle}>
+            {t("settings.subscription_compareSubtitle", { defaultValue: "Tap a plan to see everything it includes." })}
+          </Text>
+          {planComparison.map((entry) => {
+            const expanded = expandedComparePlan === null
+              ? entry.isCurrent
+              : expandedComparePlan === entry.key;
+            return (
+              <View key={entry.key} style={styles.compareSection}>
+                <TouchableOpacity
+                  style={styles.compareHeader}
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedComparePlan(expanded ? "" : entry.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("settings.subscription_a11yComparePlan", {
+                    plan: entry.name,
+                    defaultValue: "{{plan}} plan features",
+                  })}
+                  accessibilityHint={t("settings.subscription_a11yComparePlanHint", {
+                    defaultValue: "Expands or collapses this plan's feature list",
+                  })}
+                  accessibilityState={{ expanded }}
+                >
+                  <View style={styles.compareHeaderLeft}>
+                    <Text style={styles.comparePlanName}>{entry.name}</Text>
+                    {entry.isCurrent ? (
+                      <UiBadge label={t("pricing.cta_current")} variant="success" />
+                    ) : null}
+                  </View>
+                  <View style={styles.compareHeaderRight}>
+                    {entry.priceLabel ? (
+                      <Text style={styles.comparePlanPrice}>{entry.priceLabel}</Text>
+                    ) : null}
+                    {expanded ? (
+                      <ChevronUp size={16} color={theme.colors.textTertiary} />
+                    ) : (
+                      <ChevronDown size={16} color={theme.colors.textTertiary} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+                {expanded ? (
+                  <View style={styles.compareFeatureList}>
+                    <Text style={styles.compareDescription}>{entry.shortDescription}</Text>
+                    {entry.features.map((f) => (
+                      <View key={f} style={styles.planFeatureRow}>
+                        <Check size={14} color={theme.colors.emerald.text} />
+                        <Text style={styles.planFeatureText}>{f}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+
         <View style={styles.legalLinksRow}>
           <TouchableOpacity
             style={styles.legalLinkBtn}
@@ -1426,6 +1509,40 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
   },
+  compareCard: {
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    padding: 16,
+    marginTop: 24,
+  },
+  compareTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  compareSubtitle: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, marginBottom: 4 },
+  compareSection: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  compareHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  compareHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  compareHeaderRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  comparePlanName: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  comparePlanPrice: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    flexShrink: 1,
+    textAlign: "right",
+  },
+  compareFeatureList: { marginTop: 10, gap: 8 },
+  compareDescription: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
   restoreBtn: {
     alignItems: "center",
     justifyContent: "center",

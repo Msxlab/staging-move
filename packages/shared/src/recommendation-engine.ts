@@ -15,6 +15,9 @@
  *   5. State-specific relevance
  *   6. Community popularity (optional external signal)
  *   7. Negative scoring for irrelevant providers
+ *   8. Extended onboarding signals (familyStatus, ageRange 55+, petTypes,
+ *      businessType, immigrationStatus) — modest additive reinforcements of
+ *      existing tag/category paths (see SignalBoostWeights / block 4d)
  */
 
 import {
@@ -43,6 +46,21 @@ export interface UserProfile {
   isImmigrant?: boolean;
   /** Relocating a business or self-employed — steers SBA / business-services. */
   isBusinessOwner?: boolean;
+  /**
+   * Extended onboarding signals (scoring block 4d). All optional and treated
+   * as no-signal when absent/blank, so callers built before these existed
+   * (including older mobile payloads) score exactly as before.
+   */
+  /** Household shape — "SINGLE" | "COUPLE" | "FAMILY" | "OTHER". FAMILY (and, half-strength, COUPLE) nudges family-relevant providers. */
+  familyStatus?: string | null;
+  /** Onboarding age bucket (e.g. "25-34", "55+"). A bucket starting at 55 or older reuses the senior/Medicare path. */
+  ageRange?: string | null;
+  /** Specific pets listed at onboarding (e.g. ["dog","cat"]). Non-empty ranks pet-tagged providers slightly above the bare hasPets boolean. */
+  petTypes?: string[];
+  /** Business entity type (e.g. "LLC") — reinforces isBusinessOwner for business-tagged providers. */
+  businessType?: string | null;
+  /** Immigration status detail (e.g. "GREEN_CARD", "H1B"). "CITIZEN" and blank carry no signal. */
+  immigrationStatus?: string | null;
   currentPhase?: number;
   moveType?: string;
   daysUntilMove?: number;
@@ -621,6 +639,58 @@ const ESSENTIAL_CATEGORIES: Record<string, number> = {
   GROCERY_DELIVERY: 15, HOUSING_CLEANING: 12,
 };
 
+// ── Extended Onboarding-Signal Boosts (scoring block 4d) ─────
+// Audit follow-up: these onboarding answers were collected but ignored by
+// scoring. Each weight is a MODEST (≤15) additive reinforcement of an EXISTING
+// tag/category path — no new categories, and no single signal is large enough
+// to outrank an urgency tier on its own. Absent/blank answers are no-signal,
+// reproducing the pre-signal scores exactly.
+
+export interface SignalBoostWeights {
+  /** familyStatus === "FAMILY" → family-relevant categories/tags (schools, daycare, kid-tagged providers). */
+  familyStatusFamily: number;
+  /** familyStatus === "COUPLE" → same family-relevant set, half-strength nudge. */
+  familyStatusCouple: number;
+  /** ageRange bucket starting at 55+ → senior/medicare-tagged providers + senior care (reuses the senior path). */
+  ageRangeSenior: number;
+  /** Non-empty petTypes list → pet-tagged providers, slightly above the bare hasPets boolean. */
+  petTypesListed: number;
+  /** Concrete businessType (LLC/CORP/…) → business-tagged providers, beyond the isBusinessOwner boolean. */
+  businessTypeKnown: number;
+  /** Active non-citizen immigrationStatus → immigration-path reinforcement beyond the isImmigrant boolean. */
+  immigrationStatusActive: number;
+}
+
+const SIGNAL_BOOST_WEIGHTS: SignalBoostWeights = {
+  familyStatusFamily: 10,
+  familyStatusCouple: 5,
+  ageRangeSenior: 12,
+  petTypesListed: 6,
+  businessTypeKnown: 8,
+  immigrationStatusActive: 10,
+};
+
+// Existing family-relevant categories/tags only — block 4d never invents a
+// category, it just nudges what the kids/children/education/daycare tag
+// matchers and KIDS_* categories already cover.
+const FAMILY_SIGNAL_CATEGORIES = new Set(["KIDS_SCHOOL", "KIDS_DAYCARE", "KIDS_ACTIVITY"]);
+const FAMILY_SIGNAL_TAGS = new Set(["kids", "children", "education", "daycare"]);
+const PET_SIGNAL_TAGS = new Set(["pet", "dog", "cat", "vet"]);
+
+/** True when the onboarding ageRange bucket starts at 55 or older ("55+", "55-64", "65+"). */
+function isSeniorAgeRange(ageRange?: string | null): boolean {
+  if (typeof ageRange !== "string") return false;
+  const lead = Number.parseInt(ageRange, 10);
+  return Number.isFinite(lead) && lead >= 55;
+}
+
+/** "CITIZEN" and blank carry no steering signal; any other disclosed status does. */
+function hasActiveImmigrationStatus(status?: string | null): boolean {
+  if (typeof status !== "string") return false;
+  const normalized = status.trim().toUpperCase();
+  return normalized.length > 0 && normalized !== "CITIZEN";
+}
+
 // ── Tunable Scoring Weights ──────────────────────────────────
 // Bundles the magic-number tables that drive scoring so they can be overridden
 // at runtime (RuntimeConfig) without a deploy. scoreProviders merges any
@@ -632,6 +702,8 @@ export interface ScoringWeights {
   coverageScore: Record<CoverageConfidence, number>;
   addressSensitivePenalty: Partial<Record<CoverageConfidence, number>>;
   essentialCategories: Record<string, number>;
+  /** Extended onboarding-signal boosts (block 4d) — modest additive reinforcements. */
+  signalBoosts: SignalBoostWeights;
 }
 
 export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
@@ -639,6 +711,7 @@ export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
   coverageScore: COVERAGE_SCORE_WEIGHT,
   addressSensitivePenalty: ADDRESS_SENSITIVE_COVERAGE_PENALTY,
   essentialCategories: ESSENTIAL_CATEGORIES,
+  signalBoosts: SIGNAL_BOOST_WEIGHTS,
 };
 
 function resolveScoringWeights(overrides?: Partial<ScoringWeights>): ScoringWeights {
@@ -648,6 +721,7 @@ function resolveScoringWeights(overrides?: Partial<ScoringWeights>): ScoringWeig
     coverageScore: { ...COVERAGE_SCORE_WEIGHT, ...overrides.coverageScore },
     addressSensitivePenalty: { ...ADDRESS_SENSITIVE_COVERAGE_PENALTY, ...overrides.addressSensitivePenalty },
     essentialCategories: { ...ESSENTIAL_CATEGORIES, ...overrides.essentialCategories },
+    signalBoosts: { ...SIGNAL_BOOST_WEIGHTS, ...overrides.signalBoosts },
   };
 }
 
@@ -971,6 +1045,70 @@ export function scoreProviders(
       if (profile.hasSenior && provider.category === "GOVERNMENT_HEALTH" && tags.includes("senior")) {
         score += 16;
         if (!reasons.includes("Medicare-related services")) reasons.push("Medicare-related services");
+      }
+
+      // 4d. Extended onboarding signals (audit: collected but previously unused
+      // by scoring). Each is a modest additive reinforcement of an EXISTING
+      // tag/category path (weights documented in SignalBoostWeights, all ≤15 and
+      // overridable like every other table). Blank/absent answers are no-signal,
+      // so profiles without them score exactly as before.
+      const signalBoosts = weights.signalBoosts;
+
+      // familyStatus: a FAMILY household (and, half-strength, a COUPLE) ranks
+      // family-relevant providers — schools/daycare/kid-tagged, the same set the
+      // hasChildren paths already cover — slightly higher. It reinforces the
+      // boolean, never overrides its gates or penalties.
+      const familyStatus = typeof profile.familyStatus === "string" ? profile.familyStatus.trim().toUpperCase() : "";
+      if (familyStatus === "FAMILY" || familyStatus === "COUPLE") {
+        const familyRelevant =
+          FAMILY_SIGNAL_CATEGORIES.has(provider.category) || tags.some((t) => FAMILY_SIGNAL_TAGS.has(t));
+        const familyBoost = familyStatus === "FAMILY" ? signalBoosts.familyStatusFamily : signalBoosts.familyStatusCouple;
+        if (familyRelevant && familyBoost > 0) {
+          score += familyBoost;
+          if (!reasons.includes("Family-relevant for your household")) reasons.push("Family-relevant for your household");
+        }
+      }
+
+      // ageRange 55+: reuse the senior path (senior/medicare tags + senior care)
+      // even when the household-senior boolean wasn't toggled.
+      if (isSeniorAgeRange(profile.ageRange)) {
+        const seniorRelevant =
+          provider.category === "HEALTHCARE_SENIOR" || tags.some((t) => t === "senior" || t === "medicare");
+        if (seniorRelevant && signalBoosts.ageRangeSenior > 0) {
+          score += signalBoosts.ageRangeSenior;
+          if (!reasons.includes("Senior & Medicare services for your age group")) {
+            reasons.push("Senior & Medicare services for your age group");
+          }
+        }
+      }
+
+      // petTypes: listing specific pets is a stronger signal than the bare
+      // hasPets boolean — nudge pet-tagged providers slightly above it.
+      const hasListedPetTypes =
+        Array.isArray(profile.petTypes) &&
+        profile.petTypes.some((t) => typeof t === "string" && t.trim().length > 0);
+      if (hasListedPetTypes && tags.some((t) => PET_SIGNAL_TAGS.has(t)) && signalBoosts.petTypesListed > 0) {
+        score += signalBoosts.petTypesListed;
+        if (!reasons.includes("Care for the pets you listed")) reasons.push("Care for the pets you listed");
+      }
+
+      // businessType: a concrete entity type (LLC/CORP/…) reinforces the
+      // isBusinessOwner boolean for business-tagged providers.
+      const hasBusinessType = typeof profile.businessType === "string" && profile.businessType.trim().length > 0;
+      if (hasBusinessType && tags.includes("business") && signalBoosts.businessTypeKnown > 0) {
+        score += signalBoosts.businessTypeKnown;
+        if (!reasons.includes("Business relocation services")) reasons.push("Business relocation services");
+      }
+
+      // immigrationStatus: an active non-citizen status (GREEN_CARD/H1B/…)
+      // reinforces the immigration path beyond the isImmigrant boolean.
+      if (hasActiveImmigrationStatus(profile.immigrationStatus)) {
+        const immigrationRelevant =
+          provider.category === "GOVERNMENT_IMMIGRATION" || tags.some((t) => t === "immigration" || t === "visa");
+        if (immigrationRelevant && signalBoosts.immigrationStatusActive > 0) {
+          score += signalBoosts.immigrationStatusActive;
+          if (!reasons.includes("Immigration services for your move")) reasons.push("Immigration services for your move");
+        }
       }
 
       if (context?.stateRule && userState) {

@@ -9,6 +9,9 @@ import {
   floodLabelKey,
   formatForecastDate,
   isDossierGated,
+  isHazardWarnRating,
+  radonZoneLabelKey,
+  waterLabelKey,
   type HomeDossierResponse,
 } from "./home-dossier";
 
@@ -23,11 +26,15 @@ vi.mock("lucide-react", () => {
   return {
     CloudSun: icon("cloud-sun"),
     Compass: icon("compass"),
+    Droplets: icon("droplets"),
+    FlaskConical: icon("flask-conical"),
     GraduationCap: icon("graduation-cap"),
     Lock: icon("lock"),
     MapPin: icon("map-pin"),
+    Mountain: icon("mountain"),
     Sparkles: icon("sparkles"),
     Waves: icon("waves"),
+    Wind: icon("wind"),
   };
 });
 
@@ -72,6 +79,10 @@ function dossier(overrides: {
   flood?: Partial<HomeDossierResponse["flood"]>;
   school?: Partial<HomeDossierResponse["school"]>;
   weather?: Partial<HomeDossierResponse["weather"]>;
+  hazards?: Partial<NonNullable<HomeDossierResponse["hazards"]>>;
+  radon?: Partial<NonNullable<HomeDossierResponse["radon"]>>;
+  water?: Partial<NonNullable<HomeDossierResponse["water"]>>;
+  air?: Partial<NonNullable<HomeDossierResponse["air"]>>;
 } = {}): HomeDossierResponse {
   return {
     configured: overrides.configured ?? true,
@@ -87,6 +98,25 @@ function dossier(overrides: {
       precipChancePct: 10,
       ...overrides.weather,
     },
+    hazards: {
+      status: "ok",
+      topRisks: [{ hazard: "Riverine Flooding", rating: "Relatively Moderate" }],
+      overallRating: "Relatively Low",
+      ...overrides.hazards,
+    },
+    radon: { status: "ok", zone: 1, ...overrides.radon },
+    water: { status: "ok", systemName: "Austin Water", violations5y: 0, ...overrides.water },
+    air: { status: "ok", aqi: 42, category: "Good", ...overrides.air },
+  };
+}
+
+/** Every extended section degraded — for the card-hide tests. */
+function degradedExtended(status: "no_location" | "error"): Pick<HomeDossierResponse, "hazards" | "radon" | "water" | "air"> {
+  return {
+    hazards: { status, topRisks: [], overallRating: null },
+    radon: { status, zone: null },
+    water: { status, systemName: null, violations5y: null },
+    air: { status, aqi: null, category: null },
   };
 }
 
@@ -97,6 +127,7 @@ describe("deriveDossierView", () => {
         flood: { status: "no_location", zone: null, isHighRisk: null },
         school: { status: "no_location", districtName: null, ncesId: null },
         weather: { status: "no_location", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("no_location"),
       }),
     );
     expect(view.visible).toBe(false);
@@ -108,6 +139,7 @@ describe("deriveDossierView", () => {
         flood: { status: "error", zone: null, isHighRisk: null },
         school: { status: "error", districtName: null, ncesId: null },
         weather: { status: "error", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("error"),
       }),
     );
     expect(view.visible).toBe(false);
@@ -119,18 +151,54 @@ describe("deriveDossierView", () => {
         flood: { status: "error", zone: null, isHighRisk: null },
         school: { status: "error", districtName: null, ncesId: null },
         weather: { status: "too_far", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("error"),
       }),
     );
     expect(view.visible).toBe(false);
   });
 
-  it("shows all three rows for a fully ok dossier (no hint)", () => {
+  it("treats air not_configured as degraded for the card-hide check", () => {
+    const view = deriveDossierView(
+      dossier({
+        flood: { status: "error", zone: null, isHighRisk: null },
+        school: { status: "error", districtName: null, ncesId: null },
+        weather: { status: "error", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("error"),
+        air: { status: "not_configured", aqi: null, category: null },
+      }),
+    );
+    expect(view.visible).toBe(false);
+  });
+
+  it("shows all seven rows for a fully ok dossier (no hint)", () => {
     const view = deriveDossierView(dossier());
     expect(view.visible).toBe(true);
     expect(view.flood).toEqual({ zone: "X", isHighRisk: false });
     expect(view.school).toEqual({ districtName: "Austin ISD" });
     expect(view.weather?.summary).toBe("Sunny");
+    expect(view.hazards).toEqual({
+      topRisks: [{ hazard: "Riverine Flooding", rating: "Relatively Moderate" }],
+      overallRating: "Relatively Low",
+    });
+    expect(view.radon).toEqual({ zone: 1 });
+    expect(view.water).toEqual({ systemName: "Austin Water", violations5y: 0 });
+    expect(view.air).toEqual({ aqi: 42, category: "Good" });
     expect(view.showLocationHint).toBe(false);
+  });
+
+  it("keeps working against legacy payloads without the extended sections", () => {
+    const legacy = dossier();
+    delete legacy.hazards;
+    delete legacy.radon;
+    delete legacy.water;
+    delete legacy.air;
+    const view = deriveDossierView(legacy);
+    expect(view.visible).toBe(true);
+    expect(view.flood).not.toBeNull();
+    expect(view.hazards).toBeNull();
+    expect(view.radon).toBeNull();
+    expect(view.water).toBeNull();
+    expect(view.air).toBeNull();
   });
 
   it("primary address without coordinates: no_location sections + too_far weather → hint row only", () => {
@@ -139,12 +207,17 @@ describe("deriveDossierView", () => {
         flood: { status: "no_location", zone: null, isHighRisk: null },
         school: { status: "no_location", districtName: null, ncesId: null },
         weather: { status: "too_far", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("no_location"),
       }),
     );
     expect(view.visible).toBe(true);
     expect(view.flood).toBeNull();
     expect(view.school).toBeNull();
     expect(view.weather).toBeNull();
+    expect(view.hazards).toBeNull();
+    expect(view.radon).toBeNull();
+    expect(view.water).toBeNull();
+    expect(view.air).toBeNull();
     expect(view.showLocationHint).toBe(true);
   });
 
@@ -182,11 +255,101 @@ describe("deriveDossierView", () => {
   });
 });
 
+describe("deriveDossierView — extended sections", () => {
+  it("drops malformed hazard entries and caps the list at 3", () => {
+    const view = deriveDossierView(
+      dossier({
+        hazards: {
+          topRisks: [
+            { hazard: "  Wildfire  ", rating: " Relatively High " },
+            { hazard: "", rating: "Very High" },
+            { hazard: "Tornado", rating: "" },
+            null as never,
+            { hazard: "Hail", rating: "Relatively Moderate" },
+            { hazard: "Drought", rating: "Relatively Moderate" },
+            { hazard: "Heat Wave", rating: "Relatively Moderate" },
+          ],
+        },
+      }),
+    );
+    expect(view.hazards?.topRisks).toEqual([
+      { hazard: "Wildfire", rating: "Relatively High" },
+      { hazard: "Hail", rating: "Relatively Moderate" },
+      { hazard: "Drought", rating: "Relatively Moderate" },
+    ]);
+  });
+
+  it("skips the hazards row when ok but no risks survive (still shows the rest)", () => {
+    const view = deriveDossierView(dossier({ hazards: { topRisks: [], overallRating: "Relatively Low" } }));
+    expect(view.hazards).toBeNull();
+    expect(view.visible).toBe(true);
+  });
+
+  it("skips radon when the zone is missing or out of range", () => {
+    expect(deriveDossierView(dossier({ radon: { zone: null } })).radon).toBeNull();
+    expect(deriveDossierView(dossier({ radon: { zone: 7 as never } })).radon).toBeNull();
+    expect(deriveDossierView(dossier({ radon: { status: "error", zone: 1 } })).radon).toBeNull();
+  });
+
+  it("water needs BOTH a system name and a numeric count — zero is meaningful", () => {
+    expect(deriveDossierView(dossier({ water: { violations5y: null } })).water).toBeNull();
+    expect(deriveDossierView(dossier({ water: { systemName: "  " } })).water).toBeNull();
+    expect(deriveDossierView(dossier({ water: { violations5y: 0 } })).water).toEqual({
+      systemName: "Austin Water",
+      violations5y: 0,
+    });
+  });
+
+  it("air renders on AQI alone (category optional) and never on not_configured", () => {
+    expect(deriveDossierView(dossier({ air: { category: null } })).air).toEqual({ aqi: 42, category: null });
+    expect(deriveDossierView(dossier({ air: { aqi: null } })).air).toBeNull();
+    expect(deriveDossierView(dossier({ air: { status: "not_configured", aqi: 42 } })).air).toBeNull();
+  });
+
+  it("an ok extended section keeps the card alive when the original three degrade", () => {
+    const view = deriveDossierView(
+      dossier({
+        flood: { status: "error", zone: null, isHighRisk: null },
+        school: { status: "error", districtName: null, ncesId: null },
+        weather: { status: "error", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("error"),
+        air: { status: "ok", aqi: 51, category: "Moderate" },
+      }),
+    );
+    expect(view.visible).toBe(true);
+    expect(view.air).toEqual({ aqi: 51, category: "Moderate" });
+    expect(view.flood).toBeNull();
+  });
+});
+
 describe("floodLabelKey", () => {
   it("maps isHighRisk to the plain-English label key", () => {
     expect(floodLabelKey(true)).toBe("dossier_flood_high");
     expect(floodLabelKey(false)).toBe("dossier_flood_low");
     expect(floodLabelKey(null)).toBe("dossier_flood_unknown");
+  });
+});
+
+describe("extended-section label helpers", () => {
+  it("warn tone is reserved for Relatively High / Very High NRI ratings", () => {
+    expect(isHazardWarnRating("Relatively High")).toBe(true);
+    expect(isHazardWarnRating("Very High")).toBe(true);
+    expect(isHazardWarnRating("  very high ")).toBe(true);
+    expect(isHazardWarnRating("Relatively Moderate")).toBe(false);
+    expect(isHazardWarnRating("Relatively Low")).toBe(false);
+    expect(isHazardWarnRating("Very Low")).toBe(false);
+  });
+
+  it("maps radon zones to plain-English label keys", () => {
+    expect(radonZoneLabelKey(1)).toBe("dossier_radon_zone1");
+    expect(radonZoneLabelKey(2)).toBe("dossier_radon_zone2");
+    expect(radonZoneLabelKey(3)).toBe("dossier_radon_zone3");
+  });
+
+  it("zero violations gets the reassuring water copy; counts pluralize", () => {
+    expect(waterLabelKey(0)).toBe("dossier_water_clean");
+    expect(waterLabelKey(1)).toBe("dossier_water_violationsOne");
+    expect(waterLabelKey(3)).toBe("dossier_water_violationsMany");
   });
 });
 
@@ -205,7 +368,7 @@ describe("formatForecastDate", () => {
 });
 
 describe("HomeDossierCard rendering", () => {
-  it("renders all three rows with the mandated disclaimers and FEMA link", () => {
+  it("renders the rows with the mandated disclaimers and FEMA link", () => {
     const markup = renderToStaticMarkup(
       <HomeDossierCard data={dossier({ flood: { zone: "AE", isHighRisk: true } })} />,
     );
@@ -236,6 +399,7 @@ describe("HomeDossierCard rendering", () => {
   it("renders the minimal-risk label without the warn pill", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
     expect(markup).toContain("Zone X — minimal flood risk");
+    // Default hazards rating is "Relatively Moderate" — neutral, never honey.
     expect(markup).not.toContain("bg-tone-honey-bg");
   });
 
@@ -246,12 +410,15 @@ describe("HomeDossierCard rendering", () => {
           flood: { status: "no_location", zone: null, isHighRisk: null },
           school: { status: "no_location", districtName: null, ncesId: null },
           weather: { status: "too_far", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+          ...degradedExtended("no_location"),
         })}
       />,
     );
     expect(markup).toContain("Add a precise address to unlock local insights");
     expect(markup).not.toContain("Served by");
     expect(markup).not.toContain("FEMA");
+    expect(markup).not.toContain("EPA");
+    expect(markup).not.toContain("AQI");
   });
 
   it("renders nothing when every section degrades", () => {
@@ -261,6 +428,7 @@ describe("HomeDossierCard rendering", () => {
           flood: { status: "error", zone: null, isHighRisk: null },
           school: { status: "error", districtName: null, ncesId: null },
           weather: { status: "error", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+          ...degradedExtended("error"),
         })}
       />,
     );
@@ -276,6 +444,93 @@ describe("HomeDossierCard rendering", () => {
       />,
     );
     expect(markup).not.toContain("Moving day:");
+    expect(markup).toContain("Zone X — minimal flood risk");
+  });
+});
+
+describe("HomeDossierCard — extended rows rendering", () => {
+  it("renders the hazard profile with per-risk pills and the mandated NRI fine print", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard
+        data={dossier({
+          hazards: {
+            topRisks: [
+              { hazard: "Wildfire", rating: "Relatively High" },
+              { hazard: "Hail", rating: "Relatively Moderate" },
+            ],
+            overallRating: "Relatively Moderate",
+          },
+        })}
+      />,
+    );
+    expect(markup).toContain("Natural hazard profile");
+    expect(markup).toContain("Overall: Relatively Moderate");
+    expect(markup).toContain("Wildfire · Relatively High");
+    expect(markup).toContain("Hail · Relatively Moderate");
+    // Honey warn tone ONLY on the Relatively High pill (flood default is low-risk).
+    expect(markup.match(/bg-tone-honey-bg/g)).toHaveLength(1);
+    // MANDATORY fine print — relative, tract-level, not a property score.
+    expect(markup).toContain("FEMA National Risk Index — relative, tract-level context, not a property score.");
+  });
+
+  it("Very High also gets the warn tone; lower ratings stay neutral", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard
+        data={dossier({ hazards: { topRisks: [{ hazard: "Tornado", rating: "Very High" }] } })}
+      />,
+    );
+    expect(markup).toContain("Tornado · Very High");
+    expect(markup.match(/bg-tone-honey-bg/g)).toHaveLength(1);
+  });
+
+  it("renders the radon zone with the MANDATORY test-regardless fine print", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ radon: { zone: 1 } })} />);
+    expect(markup).toContain("EPA Radon Zone 1 — highest radon potential");
+    expect(markup).toContain("regardless of zone");
+  });
+
+  it("labels every radon zone in plain English", () => {
+    expect(renderToStaticMarkup(<HomeDossierCard data={dossier({ radon: { zone: 2 } })} />)).toContain(
+      "EPA Radon Zone 2 — moderate radon potential",
+    );
+    expect(renderToStaticMarkup(<HomeDossierCard data={dossier({ radon: { zone: 3 } })} />)).toContain(
+      "EPA Radon Zone 3 — low radon potential",
+    );
+  });
+
+  it("zero water violations reads reassuring, with the SDWIS source link", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ water: { violations5y: 0 } })} />);
+    expect(markup).toContain("Austin Water: no health-based violations in the last 5 years");
+    expect(markup).toContain('href="https://enviro.epa.gov"');
+    expect(markup).toContain("enviro.epa.gov");
+    expect(markup).toContain("EPA Safe Drinking Water Information System (SDWIS)");
+  });
+
+  it("reports water violation counts honestly (singular and plural)", () => {
+    expect(renderToStaticMarkup(<HomeDossierCard data={dossier({ water: { violations5y: 1 } })} />)).toContain(
+      "Austin Water: 1 health-based violation (5 yrs)",
+    );
+    expect(renderToStaticMarkup(<HomeDossierCard data={dossier({ water: { violations5y: 3 } })} />)).toContain(
+      "Austin Water: 3 health-based violations (5 yrs)",
+    );
+  });
+
+  it("renders current air quality with AQI and category", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 42, category: "Good" } })} />);
+    expect(markup).toContain("Air quality now: AQI 42 (Good)");
+  });
+
+  it("renders AQI without a category when the category is missing", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 55, category: null } })} />);
+    expect(markup).toContain("Air quality now: AQI 55");
+    expect(markup).not.toContain("(Good)");
+  });
+
+  it("omits the air row entirely when the section is not_configured", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard data={dossier({ air: { status: "not_configured", aqi: null, category: null } })} />,
+    );
+    expect(markup).not.toContain("Air quality now:");
     expect(markup).toContain("Zone X — minimal flood risk");
   });
 });
@@ -309,20 +564,24 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     code: "DOSSIER_UPGRADE_REQUIRED",
   } as HomeDossierResponse;
 
-  it("renders the three locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
+  it("renders the seven locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={gated} />);
 
     // Card chrome (serif dossier title) + pitch
     expect(markup).toContain("<em>new home</em>");
     expect(markup).toContain(
-      "Three sourced insights about your next home — from FEMA flood maps, NCES school boundaries, and the National Weather Service.",
+      "Seven sourced insights about your next home — from FEMA, EPA, NCES, and National Weather Service data.",
     );
 
-    // The three insight rows as locked line-items
+    // The seven insight rows as locked line-items
     expect(markup).toContain("Flood zone");
     expect(markup).toContain("School district");
     expect(markup).toContain("Moving-day weather");
-    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(3);
+    expect(markup).toContain("Natural hazard profile");
+    expect(markup).toContain("Radon");
+    expect(markup).toContain("Drinking water");
+    expect(markup).toContain("Air quality");
+    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(7);
 
     // CTA → /pricing
     expect(markup).toContain('href="/pricing"');

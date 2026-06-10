@@ -10,6 +10,8 @@
 /** Section statuses from GET /api/addresses/{id}/dossier (shared contract). */
 export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
+/** Air adds "not_configured" (AirNow needs an API key) — hidden like configured:false. */
+export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
 
 export interface HomeDossierResponse {
   configured: boolean;
@@ -40,6 +42,25 @@ export interface HomeDossierResponse {
     tempLowF: number | null;
     precipChancePct: number | null;
   };
+  /**
+   * Extended sections (second dossier phase). All four are OPTIONAL on the
+   * wire — older servers simply omit them, and the card renders exactly what
+   * it renders today. Each is independent: one degrading never hides another.
+   */
+  hazards?: {
+    status: DossierSectionStatus;
+    /** Server-side: max 3, only ratings >= "Relatively Moderate" (FEMA NRI). */
+    topRisks: Array<{ hazard: string; rating: string }>;
+    overallRating: string | null;
+  };
+  /** EPA radon zone by county (1 = highest potential … 3 = low). */
+  radon?: { status: DossierSectionStatus; zone: 1 | 2 | 3 | null };
+  water?: {
+    status: DossierSectionStatus;
+    systemName: string | null;
+    violations5y: number | null;
+  };
+  air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
 }
 
 export interface FloodRow {
@@ -62,10 +83,41 @@ export interface WeatherRow {
   precipChancePct: number | null;
 }
 
+export interface HazardRiskPill {
+  hazard: string;
+  rating: string;
+}
+
+export interface HazardsRow {
+  /** Sanitized, hard-capped at 3 pills even if the server over-delivers. */
+  topRisks: HazardRiskPill[];
+  overallRating: string | null;
+}
+
+export interface RadonRow {
+  zone: 1 | 2 | 3;
+}
+
+export interface WaterRow {
+  systemName: string;
+  /** Non-negative integer count; null when the record had no figure. */
+  violations5y: number | null;
+}
+
+export interface AirRow {
+  /** Rounded non-negative AQI; null when absent. At least one of aqi/category is set. */
+  aqi: number | null;
+  category: string | null;
+}
+
 export interface HomeDossierRows {
   flood: FloodRow | null;
   school: SchoolRow | null;
   weather: WeatherRow | null;
+  hazards: HazardsRow | null;
+  radon: RadonRow | null;
+  water: WaterRow | null;
+  air: AirRow | null;
   /** False ⇒ the card renders nothing at all. */
   hasContent: boolean;
 }
@@ -74,6 +126,10 @@ const EMPTY_ROWS: HomeDossierRows = {
   flood: null,
   school: null,
   weather: null,
+  hazards: null,
+  radon: null,
+  water: null,
+  air: null,
   hasContent: false,
 };
 
@@ -136,6 +192,72 @@ export function getWeatherRow(d: HomeDossierResponse): WeatherRow | null {
   };
 }
 
+const MAX_HAZARD_PILLS = 3;
+
+/**
+ * Hazards row renders only when FEMA NRI answered AND there is something
+ * honest to show: at least one notable risk (the server pre-filters to
+ * ratings >= "Relatively Moderate") or an overall county rating. Pills are
+ * re-sanitized and re-capped at 3 client-side — a misbehaving payload must
+ * never overflow the compact card.
+ */
+export function getHazardsRow(d: HomeDossierResponse): HazardsRow | null {
+  const hazards = d.hazards;
+  if (!hazards || hazards.status !== "ok") return null;
+  const topRisks: HazardRiskPill[] = (Array.isArray(hazards.topRisks) ? hazards.topRisks : [])
+    .filter((r): r is HazardRiskPill => !!r && nonEmpty(r.hazard) && nonEmpty(r.rating))
+    .slice(0, MAX_HAZARD_PILLS)
+    .map((r) => ({ hazard: r.hazard.trim(), rating: r.rating.trim() }));
+  const overallRating = nonEmpty(hazards.overallRating) ? hazards.overallRating.trim() : null;
+  if (topRisks.length === 0 && !overallRating) return null;
+  return { topRisks, overallRating };
+}
+
+/**
+ * Radon row renders only for a concrete EPA zone (1, 2, or 3). Anything else
+ * — including a junk number from a malformed payload — hides the row rather
+ * than rendering a zone the EPA never published.
+ */
+export function getRadonRow(d: HomeDossierResponse): RadonRow | null {
+  const radon = d.radon;
+  if (!radon || radon.status !== "ok") return null;
+  const zone = radon.zone;
+  if (zone !== 1 && zone !== 2 && zone !== 3) return null;
+  return { zone };
+}
+
+/**
+ * Water row renders only with a named drinking-water system. The 5-year
+ * violation count is optional meta — kept only as a non-negative integer
+ * (0 is meaningful and renders as honest good news), nulled otherwise.
+ */
+export function getWaterRow(d: HomeDossierResponse): WaterRow | null {
+  const water = d.water;
+  if (!water || water.status !== "ok" || !nonEmpty(water.systemName)) return null;
+  const v = water.violations5y;
+  const violations5y =
+    typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : null;
+  return { systemName: water.systemName.trim(), violations5y };
+}
+
+/**
+ * Air row renders only when AirNow answered with something real: a usable
+ * AQI number and/or a category label. "not_configured" (no AirNow key on the
+ * deployment) hides the row exactly like configured:false hides the card —
+ * never an empty or teased section for capability the server lacks.
+ */
+export function getAirRow(d: HomeDossierResponse): AirRow | null {
+  const air = d.air;
+  if (!air || air.status !== "ok") return null;
+  const aqi =
+    typeof air.aqi === "number" && Number.isFinite(air.aqi) && air.aqi >= 0
+      ? Math.round(air.aqi)
+      : null;
+  const category = nonEmpty(air.category) ? air.category.trim() : null;
+  if (aqi === null && !category) return null;
+  return { aqi, category };
+}
+
 /**
  * Build the card's render model from a dossier response. Tolerates null /
  * undefined / unconfigured payloads by returning "render nothing" — the card
@@ -152,11 +274,21 @@ export function deriveHomeDossier(
   const flood = getFloodRow(dossier);
   const school = getSchoolRow(dossier);
   const weather = getWeatherRow(dossier);
+  // Extended sections are optional on the wire (older servers omit them) and
+  // independent: each getter degrades to null on its own, never the card.
+  const hazards = getHazardsRow(dossier);
+  const radon = getRadonRow(dossier);
+  const water = getWaterRow(dossier);
+  const air = getAirRow(dossier);
   return {
     flood,
     school,
     weather,
-    hasContent: Boolean(flood || school || weather),
+    hazards,
+    radon,
+    water,
+    air,
+    hasContent: Boolean(flood || school || weather || hazards || radon || water || air),
   };
 }
 

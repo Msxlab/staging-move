@@ -216,6 +216,15 @@ export async function GET(request: NextRequest) {
       isMilitary,
       isImmigrant: profile?.isImmigrant || false,
       isBusinessOwner: profile?.isBusinessOwner || false,
+      // Extended onboarding signals (audit: collected but previously ignored by
+      // scoring — engine block 4d). petTypes persists as a JSON string ("[]"
+      // default), so parse defensively with safeJsonArray; the rest pass
+      // through as-is and the engine treats blank/absent values as no-signal.
+      familyStatus: profile?.familyStatus || undefined,
+      ageRange: profile?.ageRange || undefined,
+      petTypes: safeJsonArray(profile?.petTypes),
+      businessType: profile?.businessType || undefined,
+      immigrationStatus: profile?.immigrationStatus || undefined,
       moveType: profile?.moveType || undefined,
       currentPhase,
       daysUntilMove,

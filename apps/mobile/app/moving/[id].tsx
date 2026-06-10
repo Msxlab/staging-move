@@ -38,6 +38,8 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
+import { VehicleCheckCard } from "@/components/ui/VehicleCheckCard";
+import { isVehicleRegistrationTask } from "@/components/ui/VehicleCheckCard.helpers";
 import { StateRulesCard } from "@/components/provider/StateRulesCard";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -639,6 +641,11 @@ export default function MovingDetailScreen() {
                         <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
                       )}
                       <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
+                      {/* Vehicle-registration task only: compact VIN → specs/recalls
+                          helper (NHTSA) with the destination state's DMV link. */}
+                      {open && isVehicleRegistrationTask(task) && (
+                        <VehicleCheckCard destinationState={plan.toAddress?.state} />
+                      )}
                     </View>
                     <View style={styles.taskActions}>
                       {assignmentEnabled && open && (
