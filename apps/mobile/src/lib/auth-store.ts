@@ -59,9 +59,10 @@ const AUTH_REFRESH_TIMEOUT_MS = 12_000;
  * set (corruption, a future/renamed tier, a downgraded build) is coerced to
  * `null` so it can never break the palette — `applyPlanPalette` then falls
  * back to the base Aurora theme. "INDIVIDUAL" is valid but renders the base
- * palette (no accent), same as `null`.
+ * palette (no accent), same as `null`. FREE/FREE_TRIAL drive the candy-coral
+ * Free accent (Edition VII: every tier is color-coded, Free included).
  */
-const KNOWN_PLAN_TIERS = ["FAMILY", "PRO", "INDIVIDUAL"] as const;
+const KNOWN_PLAN_TIERS = ["FAMILY", "PRO", "INDIVIDUAL", "FREE", "FREE_TRIAL"] as const;
 
 /** Normalize an arbitrary persisted/server value to a safe plan tier or null. */
 function normalizePlanTier(value: unknown): string | null {
