@@ -20,10 +20,12 @@ import {
   Settings,
   BarChart3,
   Bell,
+  Cog,
   HelpCircle,
   Flag,
   Plug,
   Link2,
+  Layers,
   Lock,
   LifeBuoy,
   Sparkles,
@@ -44,6 +46,17 @@ export interface NavItem {
 export interface NavGroup {
   label: string;
   labelKey: string;
+  /**
+   * Group glyph for the desktop rail navigation — the slim icon column
+   * renders ONE entry per group, so each group needs its own icon.
+   */
+  icon: React.ElementType;
+  /**
+   * Short English caption under the rail icon (≤7 chars so it fits the
+   * 76px rail). Admin chrome copy is English-only; the full translated
+   * group label still appears as the tooltip + contextual panel title.
+   */
+  railLabel: string;
   items: NavItem[];
 }
 
@@ -61,10 +74,13 @@ export const navGroups: NavGroup[] = [
   {
     label: "Core",
     labelKey: "core",
+    icon: LayoutDashboard,
+    railLabel: "Core",
     items: [
       { name: "Dashboard", nameKey: "dashboard", href: "/", icon: LayoutDashboard },
       { name: "Users", nameKey: "users", href: "/users", icon: Users, show: ({ permissions }) => permissions.users.canRead },
       { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard, show: ({ permissions }) => permissions.subscriptions.canRead },
+      { name: "Plans", nameKey: "plans", href: "/plans", icon: Layers, show: ({ permissions }) => permissions.subscriptions.canRead },
       { name: "Workspaces", nameKey: "workspaces", href: "/workspaces", icon: Home, show: ({ permissions }) => permissions.users.canRead },
       { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket, show: ({ permissions }) => permissions.acquisition_campaigns.canRead },
       { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
@@ -73,6 +89,8 @@ export const navGroups: NavGroup[] = [
   {
     label: "Content",
     labelKey: "content",
+    icon: Building2,
+    railLabel: "Content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
@@ -83,6 +101,8 @@ export const navGroups: NavGroup[] = [
   {
     label: "Communication",
     labelKey: "communication",
+    icon: Bell,
+    railLabel: "Comms",
     items: [
       { name: "Support", nameKey: "support", href: "/support", icon: LifeBuoy, show: ({ permissions }) => permissions.tickets.canRead },
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell, show: ({ role }) => meetsRole(role, "ADMIN") },
@@ -94,6 +114,8 @@ export const navGroups: NavGroup[] = [
   {
     label: "System",
     labelKey: "system",
+    icon: Cog,
+    railLabel: "System",
     items: [
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },

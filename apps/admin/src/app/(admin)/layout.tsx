@@ -1,6 +1,7 @@
 import { AuroraBackground } from "@/components/aurora";
 import { Sidebar } from "@/components/sidebar";
 import { SubNav } from "@/components/sub-nav";
+import { Topbar } from "@/components/topbar";
 import { CommandPalette } from "@/components/command-palette";
 import { requirePageAdmin } from "@/lib/page-guard";
 import "../aurora.css";
@@ -41,6 +42,11 @@ export default async function AdminLayout({
         tabIndex={-1}
         className="flex-1 pl-64 focus:outline-none"
       >
+        {/* Sticky corporate topbar — breadcrumb, ⌘K search trigger, bell /
+            help / identity cluster. Lives inside <main> so it inherits the
+            sidebar offset (pl-64) and pins to the viewport top while the
+            page content scrolls beneath it. */}
+        <Topbar ctx={{ role: ctx.role, permissions: ctx.permissions, email: ctx.email }} />
         <div className="p-8">
           {/* Section tab bar — surfaces the sub-workflows that were removed
               from the sidebar (Billing, Governance, Reports, …). Renders only

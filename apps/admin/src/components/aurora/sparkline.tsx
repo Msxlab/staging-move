@@ -5,6 +5,7 @@ import { useMemo } from "react";
 interface SparklineProps {
   values: number[];
   color?: string;
+  width?: number;
   height?: number;
   fill?: boolean;
 }
@@ -13,10 +14,11 @@ interface SparklineProps {
 export function Sparkline({
   values,
   color = "var(--au-cool)",
+  width = 120,
   height = 36,
   fill = true,
 }: SparklineProps) {
-  const w = 120;
+  const w = width;
   const h = height;
   const padY = 4;
   const min = Math.min(...values);

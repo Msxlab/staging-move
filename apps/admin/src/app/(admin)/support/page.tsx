@@ -2,10 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  Loader2, MessageSquare, ChevronRight, ChevronLeft,
+  Inbox, Timer, Hourglass, AlertTriangle, UserCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MinistatStrip } from "@/components/ministat-strip";
 
 const statusBadge: Record<string, string> = {
   OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
@@ -111,21 +115,19 @@ export default function AdminSupportPage() {
         subtitle="Manage and respond to user support requests"
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        {[
-          { label: "Open", value: stats.open, cls: "text-tone-sky-fg" },
-          { label: "In Progress", value: stats.inProgress, cls: "text-tone-honey-fg" },
-          { label: "Waiting User", value: stats.waitingUser, cls: "text-tone-orange-fg" },
-          { label: "Urgent", value: stats.urgent, cls: "text-destructive" },
-          { label: "My Queue", value: stats.myTickets, cls: "text-tone-emerald-fg" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
-            <p className={`text-2xl font-bold ${s.cls}`}>{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      {/* Ministat strip — counts come straight from the /api/tickets stats
+          payload. No avg-age card: the API does not return one, and the
+          loaded page of tickets cannot honestly stand in for the queue. */}
+      <MinistatStrip
+        columns={5}
+        items={[
+          { key: "open", icon: Inbox, label: "Open", value: stats.open, tone: "cool" },
+          { key: "in-progress", icon: Timer, label: "In progress", value: stats.inProgress, tone: "family" },
+          { key: "waiting", icon: Hourglass, label: "Waiting user", value: stats.waitingUser, tone: "amber" },
+          { key: "urgent", icon: AlertTriangle, label: "Urgent", value: stats.urgent, tone: "coral" },
+          { key: "mine", icon: UserCheck, label: "My queue", value: stats.myTickets, tone: "mint" },
+        ]}
+      />
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">

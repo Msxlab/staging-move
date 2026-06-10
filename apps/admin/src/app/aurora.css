@@ -1,8 +1,12 @@
 /* =========================================================================
-   LocateFlow Admin · AURORA
-   Glass / Frost evolution: aurora background + multi-pane shell + glass cards.
+   LocateFlow Admin · AURORA — Phase 3 corporate retune.
+   Primary theme: SLATE light enterprise — paper base, flat solid cards,
+   1px hairlines, feather shadows, corporate-blue accent #1F5FA0.
+   Secondary: the existing dark navy, accent shifted to a cool muted
+   #6AA6E0, glass toned down (~half blur/alpha). Honey is demoted to
+   WARN + premium (Pro/foil) only.
    Scoped to `.adm-aurora`. Theme follows next-themes' `.dark` class on <html>.
-   Ported from the design handoff at aurora/aurora.css.
+   Ported from the design handoffs at aurora/aurora.css + admin-pro.css.
    ========================================================================= */
 
 .adm-aurora {
@@ -15,14 +19,15 @@
   --au-base:      #171E2B;
   --au-base-2:    #1C2535;
   --au-base-3:    #232D40;
-  --au-pane:      rgba(255, 255, 255, 0.07);
-  --au-pane-2:    rgba(255, 255, 255, 0.11);
-  --au-pane-3:    rgba(255, 255, 255, 0.15);
+  /* Glass alphas ~halved per the flat-corporate note. */
+  --au-pane:      rgba(255, 255, 255, 0.04);
+  --au-pane-2:    rgba(255, 255, 255, 0.06);
+  --au-pane-3:    rgba(255, 255, 255, 0.09);
 
-  --au-edge:      rgba(255, 255, 255, 0.16);
-  --au-edge-2:    rgba(255, 255, 255, 0.12);
-  --au-rule:      rgba(255, 255, 255, 0.13);
-  --au-rule-2:    rgba(255, 255, 255, 0.18);
+  --au-edge:      rgba(255, 255, 255, 0.12);
+  --au-edge-2:    rgba(255, 255, 255, 0.10);
+  --au-rule:      rgba(255, 255, 255, 0.10);
+  --au-rule-2:    rgba(255, 255, 255, 0.16);
 
   --au-cool:      #8FC2F0;
   --au-cool-2:    #5C9DDC;
@@ -44,6 +49,36 @@
   --au-aurora-3:  rgba(135, 221, 192, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
+  /* ── Phase 3 corporate accent + chrome (dark: cool muted blue) ── */
+  --au-accent:      #6AA6E0;
+  --au-accent-2:    #8BBDEC;
+  --au-accent-ink:  #0A1626;
+  --au-accent-soft: rgba(106, 166, 224, 0.13);
+  --au-accent-line: rgba(106, 166, 224, 0.28);
+
+  --au-surface:     #1C2535;                   /* solid chrome slab (rail/topbar/drawer/cards) */
+  --au-field:       #232D40;                   /* solid control fill */
+  --au-hover:       rgba(255, 255, 255, 0.05); /* neutral hover wash */
+  --au-track:       #243049;                   /* progress/bar track */
+  --au-seg-on:      #2A364C;                   /* active segmented chip */
+  --au-seg-shadow:  none;
+  --au-scrim:       rgba(8, 12, 20, 0.55);
+
+  /* Status aliases — honey is strictly WARN. */
+  --au-ok:          var(--au-mint);
+  --au-ok-soft:     var(--au-mint-soft);
+  --au-ok-line:     rgba(135, 221, 192, 0.26);
+  --au-warn:        var(--au-amber);
+  --au-warn-soft:   var(--au-amber-soft);
+  --au-warn-line:   rgba(242, 196, 108, 0.26);
+  --au-danger:      var(--au-coral);
+  --au-danger-soft: var(--au-coral-soft);
+  --au-danger-line: rgba(240, 140, 142, 0.26);
+
+  /* Feathered elevation. */
+  --au-shadow-card:   0 1px 0 rgba(0, 0, 0, 0.25), 0 12px 24px -16px rgba(0, 0, 0, 0.40);
+  --au-shadow-drawer: -34px 0 90px rgba(0, 0, 0, 0.35);
+
   --au-row: 48px;
   --au-pad: 18px;
   --au-gap: 16px;
@@ -52,26 +87,30 @@
   letter-spacing: 0;
 }
 
-/* Light theme — drives off next-themes' absence of `.dark` on <html>. */
+/* Light theme — drives off next-themes' absence of `.dark` on <html>.
+   SLATE corporate sheet: #F4F6F9 paper, solid white cards, dark hairlines,
+   corporate-blue accent. No glass in light. */
 html:not(.dark) .adm-aurora {
-  --au-ink:       #14202F;
-  --au-ink-2:     #4A5C75;
-  --au-ink-3:     #7A8A9F;
+  --au-ink:       #1A2433;
+  --au-ink-2:     #5A6678;
+  --au-ink-3:     #93A0B0;
   --au-ink-4:     #ABB6C5;
-  --au-base:      #F2F4F8;
-  --au-base-2:    #EAEEF4;
-  --au-base-3:    #E2E7EE;
-  --au-pane:      rgba(255, 255, 255, 0.55);
-  --au-pane-2:    rgba(255, 255, 255, 0.75);
-  --au-pane-3:    rgba(255, 255, 255, 0.92);
-  --au-edge:      rgba(255, 255, 255, 0.95);
-  --au-edge-2:    rgba(20, 32, 47, 0.06);
-  --au-rule:      rgba(20, 32, 47, 0.08);
-  --au-rule-2:    rgba(20, 32, 47, 0.14);
+  --au-base:      #F4F6F9;
+  --au-base-2:    #FFFFFF;
+  --au-base-3:    #EDF1F6;
+  /* Panes go SOLID in light — control fills, table headers, etc. */
+  --au-pane:      #F4F6F9;
+  --au-pane-2:    #EEF2F7;
+  --au-pane-3:    #E8EDF4;
+  /* Edges become dark hairlines (no more white inset highlights). */
+  --au-edge:      rgba(20, 32, 51, 0.10);
+  --au-edge-2:    rgba(20, 32, 51, 0.085);
+  --au-rule:      rgba(20, 32, 51, 0.085);
+  --au-rule-2:    rgba(20, 32, 51, 0.16);
 
-  --au-cool:      #2D7BC4;
-  --au-cool-2:    #1F5FA0;
-  --au-cool-soft: rgba(45, 123, 196, 0.12);
+  --au-cool:      #1F5FA0;
+  --au-cool-2:    #174E86;
+  --au-cool-soft: rgba(31, 95, 160, 0.10);
   --au-violet:    #B0781E;
   --au-violet-soft: rgba(176, 120, 30, 0.10);
   --au-family:    #1F9E78;
@@ -83,10 +122,33 @@ html:not(.dark) .adm-aurora {
   --au-coral:     #C84E51;
   --au-coral-soft:rgba(200, 78, 81, 0.10);
 
-  --au-aurora-1:  rgba(45, 123, 196, 0.18);
-  --au-aurora-2:  rgba(176, 120, 30, 0.14);
-  --au-aurora-3:  rgba(46, 155, 121, 0.10);
-  --au-aurora-4:  rgba(200, 78, 81, 0.06);
+  /* ── Phase 3 corporate accent + chrome (light: #1F5FA0) ── */
+  --au-accent:      #1F5FA0;
+  --au-accent-2:    #174E86;
+  --au-accent-ink:  #FFFFFF;
+  --au-accent-soft: rgba(31, 95, 160, 0.10);
+  --au-accent-line: rgba(31, 95, 160, 0.30);
+
+  --au-surface:     #FFFFFF;
+  --au-field:       #F4F6F9;
+  --au-hover:       rgba(20, 32, 51, 0.035);
+  --au-track:       #E5E9F0;
+  --au-seg-on:      #FFFFFF;
+  --au-seg-shadow:  0 1px 2px rgba(20, 32, 51, 0.12);
+  --au-scrim:       rgba(20, 32, 51, 0.26);
+
+  --au-ok-line:     rgba(46, 155, 121, 0.28);
+  --au-warn-line:   rgba(185, 131, 24, 0.28);
+  --au-danger-line: rgba(200, 78, 81, 0.28);
+
+  --au-shadow-card:   0 1px 2px rgba(20, 32, 51, 0.04), 0 1px 0 rgba(20, 32, 51, 0.02);
+  --au-shadow-drawer: -34px 0 90px rgba(20, 32, 51, 0.18);
+
+  /* Aurora blobs barely visible on corporate paper. */
+  --au-aurora-1:  rgba(31, 95, 160, 0.06);
+  --au-aurora-2:  rgba(90, 102, 120, 0.05);
+  --au-aurora-3:  rgba(46, 155, 121, 0.04);
+  --au-aurora-4:  rgba(31, 95, 160, 0.03);
 }
 
 /* Density variants */
@@ -175,31 +237,38 @@ html:not(.dark) .adm-aurora[data-mode="lite"] {
   background-position: 0 0, 1px 2px;
 }
 
+/* Light mode — corporate paper: blobs barely visible, grain off-stage. */
+html:not(.dark) .adm-aurora .au-aurora {
+  opacity: 0.5;
+  filter: blur(70px) saturate(105%);
+}
+html:not(.dark) .adm-aurora .au-grain { opacity: 0.15; }
+
 /* Anything inside the wrapper sits above the aurora layers */
 .adm-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
 
-/* === Glass card ==================================================== */
+/* === Card — toned-down glass (dark) / flat solid (light) =========== */
 .adm-aurora .au-card {
   position: relative;
   background:
     linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
     var(--au-base-2);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-          backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+          backdrop-filter: blur(12px) saturate(115%);
   border: 1px solid var(--au-edge-2);
   border-top: 1px solid var(--au-edge);
   border-radius: 14px;
   box-shadow:
     inset 0 1px 0 var(--au-edge),
-    0 1px 0 rgba(0, 0, 0, 0.30),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+    var(--au-shadow-card);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 html:not(.dark) .adm-aurora .au-card {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 0 rgba(20, 32, 47, 0.04),
-    0 12px 28px -16px rgba(20, 32, 47, 0.18);
+  background: var(--au-surface);
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border: 1px solid var(--au-rule);
+  box-shadow: var(--au-shadow-card);
 }
 .adm-aurora[data-mode="lite"] .au-card {
   -webkit-backdrop-filter: none;
@@ -214,7 +283,7 @@ html:not(.dark) .adm-aurora .au-card {
   border-radius: inherit;
   background: radial-gradient(
     400px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.05),
     transparent 45%
   );
   opacity: 0;
@@ -224,13 +293,13 @@ html:not(.dark) .adm-aurora .au-card {
 html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
   background: radial-gradient(
     400px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(176, 120, 30, 0.10),
+    rgba(31, 95, 160, 0.06),
     transparent 45%
   );
 }
 .adm-aurora .au-card.au-card--reflex:hover::before { opacity: 1; }
 .adm-aurora .au-card.au-card--reflex:hover {
-  border-color: rgba(242, 196, 108, 0.22);
+  border-color: var(--au-accent-line);
   transform: translateY(-1px);
 }
 
@@ -292,22 +361,23 @@ html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); 
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
 }
-.adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-violet); }
+.adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-rule-2); }
 .adm-aurora .au-btn:active { transform: translateY(1px); }
+/* Primary action — flat solid corporate blue in both themes. */
 .adm-aurora .au-btn.primary {
-  background: linear-gradient(180deg, rgba(242,196,108,0.30), rgba(242,196,108,0.18));
-  border-color: rgba(242, 196, 108, 0.40);
-  color: var(--au-ink);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
-              0 6px 18px -8px rgba(242,196,108,0.50);
+  background: var(--au-accent);
+  border-color: transparent;
+  color: var(--au-accent-ink);
+  box-shadow: none;
 }
+.adm-aurora .au-btn.primary:hover { background: var(--au-accent-2); border-color: transparent; }
 html:not(.dark) .adm-aurora .au-btn.primary {
-  background: linear-gradient(180deg, #D99A4E, #B0781E);
-  color: white;
-  border-color: rgba(176,120,30,0.40);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
-              0 6px 18px -8px rgba(176,120,30,0.50);
+  background: var(--au-accent);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(20, 32, 51, 0.16);
 }
+html:not(.dark) .adm-aurora .au-btn.primary:hover { background: var(--au-accent-2); }
 .adm-aurora .au-btn.icon   { width: 34px; padding: 0; justify-content: center; }
 .adm-aurora .au-btn.sm     { height: 28px; padding: 0 10px; font-size: 12px; }
 .adm-aurora .au-btn.danger { color: var(--au-coral); border-color: rgba(240,140,142,0.30); }
@@ -324,7 +394,7 @@ html:not(.dark) .adm-aurora .au-btn.primary {
   transition: border-color 160ms ease, background 160ms ease;
   box-sizing: border-box;
 }
-.adm-aurora .au-input:focus { border-color: var(--au-violet); background: var(--au-pane-2); }
+.adm-aurora .au-input:focus { border-color: var(--au-accent); background: var(--au-pane-2); }
 .adm-aurora .au-input::placeholder { color: var(--au-ink-3); }
 
 /* === Sparkline draw animation ====================================== */
@@ -359,12 +429,12 @@ html:not(.dark) .adm-aurora .au-btn.primary {
   color: var(--au-ink);
 }
 .adm-aurora .au-nav-item.active {
-  background: var(--au-violet-soft);
+  background: var(--au-accent-soft);
   color: var(--au-ink);
-  border-color: rgba(242,196,108,0.22);
+  border-color: var(--au-accent-line);
   font-weight: 500;
 }
-.adm-aurora .au-nav-item.active svg { color: var(--au-violet); }
+.adm-aurora .au-nav-item.active svg { color: var(--au-accent); }
 
 /* === Pulse dot ===================================================== */
 @keyframes au-pulse {
@@ -384,28 +454,24 @@ html:not(.dark) .adm-aurora .au-btn.primary {
   background:
     linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
     var(--au-base-2);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-          backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+          backdrop-filter: blur(12px) saturate(115%);
   border: 1px solid var(--au-edge-2);
   border-top: 1px solid var(--au-edge);
   border-radius: 14px;
   box-shadow:
     inset 0 1px 0 var(--au-edge),
-    0 1px 0 rgba(0, 0, 0, 0.30),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+    var(--au-shadow-card);
 }
 html:not(.dark) .adm-aurora .admin-panel {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 0 rgba(20, 32, 47, 0.04),
-    0 12px 28px -16px rgba(20, 32, 47, 0.18);
+  background: var(--au-surface);
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border: 1px solid var(--au-rule);
+  box-shadow: var(--au-shadow-card);
 }
 .adm-aurora .admin-panel:hover {
-  border-color: rgba(242, 196, 108, 0.22);
-  box-shadow:
-    inset 0 1px 0 var(--au-edge),
-    0 1px 0 rgba(0, 0, 0, 0.30),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+  border-color: var(--au-rule-2);
 }
 .adm-aurora .admin-panel-head {
   border-bottom: 1px solid var(--au-rule);
@@ -440,8 +506,9 @@ html:not(.dark) .adm-aurora .admin-panel {
   --card-foreground:      214 40% 98%;
   --popover:              218 22% 19%;
   --popover-foreground:   214 40% 98%;
-  --primary:              41 85% 68%;
-  --primary-foreground:   218 43% 6%;
+  /* Primary = corporate blue #6AA6E0 (honey is warn/premium only). */
+  --primary:              210 66% 65%;
+  --primary-foreground:   215 45% 8%;
   --secondary:            215 24% 82%;
   --secondary-foreground: 218 43% 6%;
   --muted:                218 22% 24%;
@@ -452,7 +519,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --destructive-foreground: 218 43% 6%;
   --border:               217 20% 30%;
   --input:                217 20% 30%;
-  --ring:                 41 85% 68%;
+  --ring:                 210 66% 65%;
   --radius:               0.625rem;
 
   /* Brand-token redirect — anything still calling --rose / --foil-* gets
@@ -490,33 +557,34 @@ html:not(.dark) .adm-aurora .admin-panel {
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
   --line-foil: rgba(242, 196, 108, 0.22);
-  --border-focus: rgba(242, 196, 108, 0.55);
-  --shadow-glow: 0 0 20px rgba(242, 196, 108, 0.28);
-  --shadow-rose: 0 0 20px rgba(242, 196, 108, 0.28);
+  /* Focus + glow follow the corporate accent; foil stays honey (premium). */
+  --border-focus: rgba(106, 166, 224, 0.55);
+  --shadow-glow: 0 0 16px rgba(106, 166, 224, 0.25);
+  --shadow-rose: 0 0 16px rgba(106, 166, 224, 0.25);
   --shadow-foil: 0 0 30px rgba(242, 196, 108, 0.20);
 }
 
-/* --- Light theme overrides ----------------------------------------- */
+/* --- Light theme overrides — slate enterprise ----------------------- */
 html:not(.dark) .adm-aurora {
-  --background:           220 23% 96%;
-  --foreground:           213 39% 13%;
-  --card:                 218 21% 92%;
-  --card-foreground:      213 39% 13%;
-  --popover:              218 21% 96%;
-  --popover-foreground:   213 39% 13%;
-  --primary:              38 71% 40%;
+  --background:           216 28% 97%;   /* #F4F6F9 paper */
+  --foreground:           216 33% 15%;   /* #1A2433 */
+  --card:                 0 0% 100%;     /* solid white cards */
+  --card-foreground:      216 33% 15%;
+  --popover:              0 0% 100%;
+  --popover-foreground:   216 33% 15%;
+  --primary:              210 68% 37%;   /* #1F5FA0 corporate blue */
   --primary-foreground:   0 0% 100%;
-  --secondary:            214 22% 38%;
+  --secondary:            216 14% 41%;   /* #5A6678 slate */
   --secondary-foreground: 0 0% 100%;
-  --muted:                218 21% 88%;
-  --muted-foreground:     213 14% 35%;
-  --accent:               218 21% 90%;
-  --accent-foreground:    213 39% 13%;
+  --muted:                216 25% 94%;
+  --muted-foreground:     216 14% 41%;
+  --accent:               216 28% 95%;
+  --accent-foreground:    216 33% 15%;
   --destructive:          359 51% 49%;
   --destructive-foreground: 0 0% 100%;
-  --border:               213 18% 82%;
-  --input:                213 18% 82%;
-  --ring:                 38 71% 40%;
+  --border:               217 25% 90%;   /* hairline */
+  --input:                217 25% 90%;
+  --ring:                 210 68% 37%;
 
   /* Brand-token redirect (light) — mirror the dark scope so the foil /
      premium accent reads honey/champagne in light admin too. Without this
@@ -539,29 +607,31 @@ html:not(.dark) .adm-aurora {
   --line:      var(--au-rule);
   --line-2:    var(--au-rule-2);
   --line-foil: rgba(176, 120, 30, 0.30);
-  --border-focus: rgba(176, 120, 30, 0.55);
-  --shadow-glow: 0 0 20px rgba(176, 120, 30, 0.20);
-  --shadow-rose: 0 0 20px rgba(176, 120, 30, 0.20);
+  /* Focus + glow follow the corporate accent; foil stays honey (premium). */
+  --border-focus: rgba(31, 95, 160, 0.45);
+  --shadow-glow: 0 0 14px rgba(31, 95, 160, 0.16);
+  --shadow-rose: 0 0 14px rgba(31, 95, 160, 0.16);
   --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.14);
 }
 
 /* --- Aurora-flavored chrome upgrades for legacy classes ------------- */
 
 /* Sidebar surface — already uses bg-card / border-border so it picks up
-   the new tokens automatically. Add a subtle backdrop-filter for that
-   Aurora pane feeling. */
+   the new tokens automatically. Dark keeps a toned-down pane blur; light
+   goes flat solid white with a hairline (corporate). */
 .adm-aurora aside.bg-card {
   background:
     linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
     var(--au-base-2);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-          backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+          backdrop-filter: blur(12px) saturate(115%);
   border-right: 1px solid var(--au-edge-2);
 }
 html:not(.dark) .adm-aurora aside.bg-card {
-  background:
-    linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
-    var(--au-base-2);
+  background: var(--au-surface);
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border-right: 1px solid var(--au-rule);
 }
 
 /* Foil text → Aurora cool gradient. Affects sidebar wordmark + any inline
@@ -594,27 +664,23 @@ html:not(.dark) .adm-aurora h3 em {
   background:
     linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
     var(--au-base-2);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-          backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+          backdrop-filter: blur(12px) saturate(115%);
   border: 1px solid var(--au-edge-2);
   border-top: 1px solid var(--au-edge);
   box-shadow:
     inset 0 1px 0 var(--au-edge),
-    0 1px 0 rgba(0, 0, 0, 0.30),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+    var(--au-shadow-card);
 }
 html:not(.dark) .adm-aurora .kpi-foil {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 0 rgba(20, 32, 47, 0.04),
-    0 12px 28px -16px rgba(20, 32, 47, 0.18);
+  background: var(--au-surface);
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border: 1px solid var(--au-rule);
+  box-shadow: var(--au-shadow-card);
 }
 .adm-aurora .kpi-foil:hover {
-  border-color: rgba(242, 196, 108, 0.34);
-  box-shadow:
-    inset 0 1px 0 var(--au-edge),
-    0 1px 0 rgba(0, 0, 0, 0.30),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+  border-color: var(--au-rule-2);
 }
 .adm-aurora .kpi-foil .kpi-value {
   font-family: var(--font-sans);
@@ -676,7 +742,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
 }
 
 /* Tier distribution bar — cool (Individual) / teal (Family) / honey (Pro). */
-.adm-aurora .tier-bar { background: var(--au-rule); }
+.adm-aurora .tier-bar { background: var(--au-track); }
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
 .adm-aurora .tier-bar-seg-pro {
@@ -689,9 +755,9 @@ html:not(.dark) .adm-aurora .kpi-foil {
 .adm-aurora input:focus-visible,
 .adm-aurora textarea:focus-visible,
 .adm-aurora select:focus-visible {
-  border-color: var(--au-violet);
+  border-color: var(--au-accent);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(242, 196, 108, 0.20);
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
 }
 
 /* Tables inside admin-panel — zebra rows + clearer header + roomier cells.
@@ -704,7 +770,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
   background: rgba(20, 32, 47, 0.03);
 }
 .adm-aurora .admin-panel table tbody tr:hover {
-  background: var(--au-violet-soft);
+  background: var(--au-hover);
 }
 .adm-aurora .admin-panel thead th {
   background: var(--au-pane-2);
@@ -732,7 +798,7 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
    Touch up the rounded-lg ghost border style. */
 .adm-aurora button.border-primary,
 .adm-aurora a.border-primary {
-  border-color: var(--au-violet) !important;
+  border-color: var(--au-accent) !important;
 }
 
 /* Card hover lift — apply to everything matching `bg-card` so generic
@@ -750,11 +816,972 @@ html:not(.dark) .adm-aurora .admin-panel table tbody tr:nth-child(even) {
 }
 
 /* Sidebar nav active state — already uses bg-primary/10, which now reads
-   honey. Add a subtle inner border ring like the prototype. */
+   corporate blue. Add a subtle inner border ring like the prototype. */
 .adm-aurora aside a.bg-primary\/10 {
-  border: 1px solid rgba(242, 196, 108, 0.22);
+  border: 1px solid var(--au-accent-line);
 }
 
 /* The shared sidebar logo SVG carries its champagne/honey gradient inline
    in the SVG `<defs>` so the brand mark matches the honey Pro chrome.
    Everything else cascades through the variable overrides above. */
+
+/* ====================================================================
+   Plans page (F3-F) — corporate tier cards + MRR-by-plan bars.
+
+   Each card gets ONE accent custom property (--plan-accent) resolved
+   from the --au-* system, so the markup never carries raw hex:
+     Free       → coral   (the $0 identity chip)
+     Individual → corporate blue (cool)
+     Family     → teal, featured/POPULAR border
+     Pro        → honey (premium — the only honey on the page)
+   Card chrome stays slate-enterprise: flat solid surface, 1px hairline,
+   feather shadow. Tints derive from the accent via color-mix so theme
+   switches (light slate / dark) re-resolve automatically.
+   ==================================================================== */
+.adm-aurora .au-plan-free       { --plan-accent: var(--au-coral);  --plan-accent-soft: var(--au-coral-soft); }
+.adm-aurora .au-plan-individual { --plan-accent: var(--au-cool);   --plan-accent-soft: var(--au-cool-soft); }
+.adm-aurora .au-plan-family     { --plan-accent: var(--au-family); --plan-accent-soft: var(--au-family-soft); }
+.adm-aurora .au-plan-pro        { --plan-accent: var(--au-amber);  --plan-accent-soft: var(--au-amber-soft); }
+
+.adm-aurora .au-plancard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+html:not(.dark) .adm-aurora .au-plancard {
+  box-shadow: 0 1px 2px rgba(20, 32, 47, 0.05), 0 1px 0 rgba(20, 32, 47, 0.02);
+}
+.adm-aurora .au-plancard:hover {
+  border-color: color-mix(in srgb, var(--plan-accent) 36%, transparent);
+}
+
+/* POPULAR featured border (Family). */
+.adm-aurora .au-plancard--featured {
+  border-color: color-mix(in srgb, var(--plan-accent) 46%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--plan-accent) 22%, transparent),
+    0 8px 20px -14px color-mix(in srgb, var(--plan-accent) 50%, transparent);
+}
+.adm-aurora .au-plancard--featured:hover {
+  border-color: color-mix(in srgb, var(--plan-accent) 60%, transparent);
+}
+
+.adm-aurora .au-plancard__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--plan-accent);
+  flex-shrink: 0;
+}
+.adm-aurora .au-plancard__tag {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--plan-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--plan-accent) 30%, transparent);
+  color: var(--plan-accent);
+  white-space: nowrap;
+}
+.adm-aurora .au-plancard__check {
+  color: var(--plan-accent);
+  flex-shrink: 0;
+}
+
+/* MRR-by-plan horizontal bar — flat accent fill on a hairline track. */
+.adm-aurora .au-planbar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--au-rule);
+  overflow: hidden;
+}
+.adm-aurora .au-planbar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--plan-accent);
+}
+
+/* =========================================================================
+   F3-C · Corporate topbar (.adp-topbar)
+   -------------------------------------------------------------------------
+   Ported from the design system's `.adp-top` (admin-pro.css). Slate light
+   enterprise: flat near-solid surface, 1px hairline, corporate-blue accent
+   (#1F5FA0 light / #6AA6E0 dark — honey stays demoted to warn and is not
+   used here). All colors flow through --au-* vars; the topbar-only vars
+   below extend the token sheet rather than hex-littering the component.
+   ========================================================================= */
+.adm-aurora {
+  --au-top-bg:      rgba(18, 25, 38, 0.88);
+  --au-top-field:   rgba(255, 255, 255, 0.06);
+  --au-acc:         #6AA6E0;
+  --au-acc-soft:    rgba(106, 166, 224, 0.13);
+  --au-acc-line:    rgba(106, 166, 224, 0.26);
+}
+html:not(.dark) .adm-aurora {
+  --au-top-bg:      rgba(255, 255, 255, 0.92);
+  --au-top-field:   #F4F6F9;
+  --au-acc:         #1F5FA0;
+  --au-acc-soft:    rgba(31, 95, 160, 0.10);
+  --au-acc-line:    rgba(31, 95, 160, 0.18);
+}
+
+.adm-aurora .adp-topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 14px;
+  height: 60px; padding: 0 2rem;
+  background: var(--au-top-bg);
+  border-bottom: 1px solid var(--au-rule);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+          backdrop-filter: blur(14px) saturate(130%);
+}
+.adm-aurora .adp-topbar .sp { flex: 1; }
+
+/* breadcrumb — Admin › Section › Page */
+.adm-aurora .adp-topbar .adp-crumb {
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0; overflow: hidden; white-space: nowrap;
+  font-size: 13px; color: var(--au-ink-3);
+}
+.adm-aurora .adp-topbar .adp-crumb svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--au-ink-4); }
+.adm-aurora .adp-topbar .adp-crumb b {
+  color: var(--au-ink); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+/* global-search trigger — fake field that opens the ⌘K palette */
+.adm-aurora .adp-tsearch {
+  display: flex; align-items: center; gap: 8px;
+  width: 300px; height: 38px; padding: 0 12px; flex-shrink: 0;
+  border-radius: 10px; border: 1px solid var(--au-rule);
+  background: var(--au-top-field);
+  color: var(--au-ink-3); font-size: 12.5px; text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.adm-aurora .adp-tsearch:hover { border-color: var(--au-rule-2); color: var(--au-ink-2); }
+.adm-aurora .adp-tsearch:focus-visible {
+  outline: none;
+  border-color: var(--au-acc);
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+.adm-aurora .adp-tsearch svg { width: 15px; height: 15px; flex-shrink: 0; }
+.adm-aurora .adp-tsearch .ph { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.adm-aurora .adp-tsearch .kbd {
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 9.5px;
+  color: var(--au-ink-3);
+  border: 1px solid var(--au-rule-2); border-radius: 5px; padding: 2px 5px;
+}
+
+/* icon buttons — bell / help */
+.adm-aurora .adp-iconbtn {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  border: 1px solid var(--au-rule); background: var(--au-top-field);
+  color: var(--au-ink-2);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.adm-aurora .adp-iconbtn:hover { color: var(--au-ink); border-color: var(--au-rule-2); }
+.adm-aurora .adp-iconbtn:focus-visible {
+  outline: none;
+  border-color: var(--au-acc);
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+.adm-aurora .adp-iconbtn svg { width: 16px; height: 16px; }
+/* unread dot — coral (danger ramp), rendered only when a count exists */
+.adm-aurora .adp-iconbtn .dot {
+  position: absolute; top: 8px; right: 9px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--au-coral); border: 2px solid var(--au-top-bg);
+}
+
+/* identity disc — signed-in admin initials */
+.adm-aurora .adp-avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--au-acc-soft); color: var(--au-acc);
+  border: 1px solid var(--au-acc-line);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600; font-size: 12px; letter-spacing: 0.02em;
+}
+
+/* desktop-first, but keep the row intact at 1280px-wide viewports */
+@media (max-width: 1366px) {
+  .adm-aurora .adp-tsearch { width: 240px; }
+}
+
+/* =========================================================================
+   F3-E · LIST EXPERIENCE — ministat strip, filter chips, quick-look drawer
+   -------------------------------------------------------------------------
+   Corporate slate-light / aurora-dark. Reuses the corporate-blue accent
+   vars from the topbar block (--au-acc / --au-acc-soft / --au-acc-line)
+   and extends the sheet with surface vars so the React components stay
+   hex-free:
+     --au-flat        solid (non-glass) card surface
+     --au-flat-2      inset field surface (chip rail, drawer stat boxes)
+     --au-seg-on      active chip surface
+     --au-feather     feather card shadow (slate light), none in dark
+     --au-scrim       drawer overlay wash
+     --au-drawer-shadow  drawer left-edge shadow
+     --au-acc-ink     readable text/icon color on an --au-acc fill
+   ========================================================================= */
+.adm-aurora {
+  --au-flat:          var(--au-base-2);
+  --au-flat-2:        var(--au-base-3);
+  --au-seg-on:        var(--au-pane-3);
+  --au-feather:       none;
+  --au-scrim:         rgba(8, 12, 20, 0.46);
+  --au-drawer-shadow: -34px 0 90px rgba(0, 0, 0, 0.30);
+  --au-acc-ink:       #0B1624;
+}
+html:not(.dark) .adm-aurora {
+  --au-flat:          #FFFFFF;
+  --au-flat-2:        var(--au-field); /* base-2 is now the solid white card — field keeps the inset contrast */
+  --au-seg-on:        #FFFFFF;
+  --au-feather:       0 1px 2px rgba(20, 32, 51, 0.04), 0 1px 0 rgba(20, 32, 51, 0.02);
+  --au-scrim:         rgba(20, 32, 51, 0.26);
+  --au-drawer-shadow: -34px 0 90px rgba(20, 32, 51, 0.18);
+  --au-acc-ink:       #FFFFFF;
+}
+
+/* --- Ministat strip -------------------------------------------------- */
+.adm-aurora .au-mini {
+  display: grid;
+  grid-template-columns: repeat(var(--mini-cols, 4), minmax(0, 1fr));
+  gap: var(--au-gap);
+}
+/* 5-6 card strips fold to a 3-up grid before they crush at 1280px. */
+@media (max-width: 1500px) {
+  .adm-aurora .au-mini--wrap {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.adm-aurora .au-ministat {
+  margin: 0;
+  min-width: 0;
+  text-align: left;
+  font: inherit;
+  padding: 15px 16px;
+  border-radius: 12px;
+  background: var(--au-flat);
+  border: 1px solid var(--au-rule);
+  box-shadow: var(--au-feather);
+}
+.adm-aurora button.au-ministat {
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.adm-aurora button.au-ministat:hover { border-color: var(--au-rule-2); }
+.adm-aurora button.au-ministat:focus-visible {
+  outline: none;
+  border-color: var(--au-acc);
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+.adm-aurora .au-ministat.on {
+  border-color: color-mix(in srgb, var(--c, var(--au-acc)) 45%, transparent);
+  background: color-mix(in srgb, var(--c, var(--au-acc)) 8%, var(--au-flat));
+}
+.adm-aurora .au-ministat .kr {
+  display: flex; align-items: center; gap: 9px;
+  margin-bottom: 11px;
+  min-width: 0;
+}
+.adm-aurora .au-ministat .ti {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--au-acc)) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-acc)) 26%, transparent);
+  color: var(--c, var(--au-acc));
+}
+.adm-aurora .au-ministat .k {
+  font: 500 9.5px/1.2 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--au-ink-3);
+  min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.adm-aurora .au-ministat .v {
+  font: 600 22px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--au-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.adm-aurora .au-ministat .d {
+  margin-top: 8px;
+  font: 600 11px/1.2 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  color: var(--au-ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.adm-aurora .au-ministat .d.up   { color: var(--au-mint); }
+.adm-aurora .au-ministat .d.down { color: var(--au-coral); }
+.adm-aurora .au-ministat .d span { color: var(--au-ink-3); font-weight: 400; }
+
+/* --- Segmented filter chips ------------------------------------------ */
+.adm-aurora .au-chips {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px; border-radius: 10px;
+  background: var(--au-flat-2);
+  border: 1px solid var(--au-rule);
+  max-width: 100%;
+  overflow-x: auto;
+}
+.adm-aurora .au-chips > button {
+  border: none; background: none; cursor: pointer;
+  height: 30px; padding: 0 13px; border-radius: 7px;
+  font: 500 10.5px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--au-ink-2);
+  white-space: nowrap;
+  transition: color 120ms ease, background 120ms ease;
+}
+.adm-aurora .au-chips > button:hover { color: var(--au-ink); }
+.adm-aurora .au-chips > button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+.adm-aurora .au-chips > button.on {
+  background: var(--au-seg-on);
+  color: var(--au-ink);
+  box-shadow: var(--au-feather);
+  font-weight: 600;
+}
+
+/* --- Quick-look drawer ------------------------------------------------ */
+.adm-aurora .au-qscrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: var(--au-scrim);
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  animation: au-q-fade 200ms ease both;
+}
+.adm-aurora .au-qdrawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
+  width: 432px; max-width: calc(100vw - 48px);
+  display: flex; flex-direction: column;
+  background: var(--au-flat);
+  border-left: 1px solid var(--au-rule-2);
+  box-shadow: var(--au-drawer-shadow);
+  animation: au-q-slide 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes au-q-fade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes au-q-slide {
+  from { transform: translateX(34px); opacity: 0.3; }
+  to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .au-qscrim,
+  .adm-aurora .au-qdrawer { animation: none; }
+}
+
+.adm-aurora .au-qdh {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 18px 15px;
+  border-bottom: 1px solid var(--au-rule);
+}
+.adm-aurora .au-qdh .lbl {
+  flex: 1;
+  font: 500 9px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--au-ink-3);
+}
+.adm-aurora .au-qdx {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--au-rule);
+  background: var(--au-flat-2);
+  color: var(--au-ink-2);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.adm-aurora .au-qdx:hover { color: var(--au-ink); border-color: var(--au-rule-2); }
+.adm-aurora .au-qdx:focus-visible {
+  outline: none;
+  border-color: var(--au-acc);
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+
+.adm-aurora .au-qbody {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 20px 18px 22px;
+}
+.adm-aurora .au-qprofile {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 18px;
+}
+.adm-aurora .au-qprofile .big {
+  width: 56px; height: 56px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font: 600 18px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  background: color-mix(in srgb, var(--c, var(--au-acc)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-acc)) 30%, transparent);
+  color: var(--c, var(--au-acc));
+}
+.adm-aurora .au-qprofile .nm {
+  font: 600 17px/1.25 var(--font-sans, system-ui, sans-serif);
+  letter-spacing: -0.02em;
+  color: var(--au-ink);
+  overflow-wrap: anywhere;
+}
+.adm-aurora .au-qprofile .em {
+  font-size: 12px; color: var(--au-ink-3); margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.adm-aurora .au-qprofile .meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  margin-top: 9px;
+}
+
+.adm-aurora .au-qstats {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  margin-bottom: 18px;
+}
+.adm-aurora .au-qstat {
+  min-width: 0;
+  padding: 13px 10px; border-radius: 12px;
+  background: var(--au-flat-2);
+  border: 1px solid var(--au-rule);
+  text-align: center;
+}
+.adm-aurora .au-qstat .v {
+  font: 700 16px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--au-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.adm-aurora .au-qstat .k {
+  margin-top: 5px;
+  font: 500 8px/1.2 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--au-ink-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.adm-aurora .au-qsec {
+  margin: 18px 2px 9px;
+  font: 500 9px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--au-ink-3);
+}
+.adm-aurora .au-qrow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px; border-radius: 12px; margin-bottom: 7px;
+  background: var(--au-flat-2);
+  border: 1px solid var(--au-rule);
+}
+.adm-aurora .au-qrow .ti {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--au-acc)) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-acc)) 26%, transparent);
+  color: var(--c, var(--au-acc));
+}
+.adm-aurora .au-qrow .b { flex: 1; min-width: 0; }
+.adm-aurora .au-qrow .t {
+  font: 600 13px/1.3 var(--font-sans, system-ui, sans-serif);
+  color: var(--au-ink);
+}
+.adm-aurora .au-qrow .s { font-size: 11px; color: var(--au-ink-3); margin-top: 2px; }
+
+.adm-aurora .au-qact {
+  display: flex; gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--au-rule);
+}
+.adm-aurora .au-qbtn {
+  flex: 1; height: 40px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font: 600 13px/1 var(--font-sans, system-ui, sans-serif);
+  cursor: pointer; text-decoration: none;
+  border: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.adm-aurora .au-qbtn svg { width: 15px; height: 15px; }
+.adm-aurora .au-qbtn.pri { background: var(--au-acc); color: var(--au-acc-ink); }
+.adm-aurora .au-qbtn.pri:hover {
+  background: color-mix(in srgb, var(--au-acc) 88%, var(--au-ink));
+}
+.adm-aurora .au-qbtn.ghost {
+  background: var(--au-flat-2);
+  border: 1px solid var(--au-rule-2);
+  color: var(--au-ink);
+}
+.adm-aurora .au-qbtn.ghost:hover { border-color: var(--au-acc); }
+.adm-aurora .au-qbtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-acc-soft);
+}
+
+/* =========================================================================
+   F3-D · Dashboard analytics depth
+   -------------------------------------------------------------------------
+   Chart hover (crosshair + point dot + flipping tooltip), the 7D/30D/QTR
+   segmented range control, the x-axis label strip, and the audit feed.
+   Ported from the design system's .adp-chartwrap/.adp-seg/.adp-feed
+   (admin-pro.css). Everything binds to the --au-* token system — accent is
+   the corporate blue (#1F5FA0 light / #6AA6E0 dark); honey appears only via
+   the warn tone on audit dots.
+   ========================================================================= */
+
+/* Segmented range control (7D / 30D / QTR) */
+.adm-aurora .au-seg {
+  display: inline-flex; gap: 2px; padding: 3px;
+  border-radius: 9px;
+  background: var(--au-field);
+  border: 1px solid var(--au-rule);
+}
+.adm-aurora .au-seg button {
+  border: none; background: none; cursor: pointer;
+  height: 26px; padding: 0 12px; border-radius: 7px;
+  font: 500 10px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.06em;
+  color: var(--au-ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.adm-aurora .au-seg button:hover { color: var(--au-ink); }
+.adm-aurora .au-seg button.on {
+  background: var(--au-seg-on);
+  color: var(--au-ink);
+  box-shadow: var(--au-seg-shadow);
+}
+.adm-aurora .au-seg button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
+}
+
+/* Interactive chart hover — crosshair + point dot + flipping tooltip */
+.adm-aurora .au-chartwrap { position: relative; cursor: crosshair; }
+.adm-aurora .au-chart-cross {
+  position: absolute; top: 4px; bottom: 12px; width: 1px;
+  background: var(--au-rule-2);
+  pointer-events: none;
+}
+.adm-aurora .au-chart-pt {
+  position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--au-accent);
+  box-shadow: 0 0 0 3px var(--au-surface);
+  pointer-events: none;
+}
+.adm-aurora .au-tip {
+  position: absolute; top: 6px; transform: translateX(-50%);
+  min-width: 104px; padding: 8px 10px; border-radius: 10px;
+  background: var(--au-base-3);
+  border: 1px solid var(--au-rule-2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: none; z-index: 5;
+}
+html:not(.dark) .adm-aurora .au-tip {
+  background: var(--au-surface);
+  box-shadow: 0 10px 28px rgba(20, 32, 51, 0.14);
+}
+.adm-aurora .au-tip.flip { transform: translateX(-88%); }
+.adm-aurora .au-tip .lb {
+  font: 500 9px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--au-ink-3); margin-bottom: 5px;
+}
+.adm-aurora .au-tip .vl {
+  display: flex; align-items: center; gap: 6px;
+  font: 400 11.5px/1.2 var(--font-sans, system-ui, sans-serif);
+  color: var(--au-ink-2); white-space: nowrap;
+}
+.adm-aurora .au-tip .vl i {
+  width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0;
+  background: var(--au-accent);
+}
+.adm-aurora .au-tip .vl b {
+  margin-left: auto; padding-left: 12px;
+  font: 600 11.5px/1.2 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--au-ink);
+}
+
+/* X-axis label strip under the chart */
+.adm-aurora .au-xaxis {
+  display: flex; justify-content: space-between;
+  font: 400 9px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  color: var(--au-ink-3);
+  padding: 6px 2px 0;
+}
+
+/* Audit feed — halo dot + "actor action target" + mono when */
+.adm-aurora .au-fitem { display: flex; gap: 12px; padding: 11px 2px; }
+.adm-aurora .au-fitem + .au-fitem { border-top: 1px solid var(--au-rule); }
+.adm-aurora .au-fdot {
+  width: 8px; height: 8px; border-radius: 50%;
+  margin-top: 5px; flex-shrink: 0;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+}
+.adm-aurora .au-fdot.tone-sage  { color: var(--au-ok); }
+.adm-aurora .au-fdot.tone-honey { color: var(--au-warn); }
+.adm-aurora .au-fdot.tone-rose  { color: var(--au-danger); }
+.adm-aurora .au-fdot.tone-info  { color: var(--au-accent); }
+.adm-aurora .au-fline {
+  margin: 0;
+  font: 400 12.5px/1.45 var(--font-sans, system-ui, sans-serif);
+  color: var(--au-ink);
+  overflow-wrap: anywhere;
+}
+.adm-aurora .au-fline b { font-weight: 600; }
+.adm-aurora .au-ftarget {
+  font: 500 11px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  color: var(--au-accent);
+  background: var(--au-accent-soft);
+  border-radius: 5px; padding: 1px 5px;
+  white-space: nowrap;
+}
+.adm-aurora .au-fwhen {
+  margin: 4px 0 0;
+  font: 400 10px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  color: var(--au-ink-3);
+}
+
+/* =========================================================================
+   F3-A · Corporate component kit (.adp-*)
+   -------------------------------------------------------------------------
+   Ported from the Admin Pro prototype (admin-pro.css): icon rail + context
+   panel, ministat cards, segmented filter chips, 432px detail drawer, KPI
+   sparkline. Every color binds to the --au-* system so both themes resolve
+   — light = flat solid white on paper, dark = solid navy slab. No glass on
+   chrome surfaces (flat corporate). The topbar family (.adp-topbar,
+   .adp-crumb, .adp-tsearch, .adp-iconbtn) lives in the F3-C block above.
+   Active states accept either an `.on` class or a bare `data-on` attribute.
+   ========================================================================= */
+
+/* ── Icon rail — slim left rail of the two-tier nav ─────────────────── */
+.adm-aurora .adp-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  width: 78px; flex-shrink: 0; min-height: 0;
+  padding: 16px 9px;
+  background: var(--au-surface);
+  border-right: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-rail .mark {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--au-accent); color: var(--au-accent-ink);
+  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-weight: 600; font-size: 18px;
+  margin-bottom: 12px;
+}
+html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
+.adm-aurora .adp-rail .rail-nav { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.adm-aurora .adp-rail .rail-grow { flex: 1; }
+.adm-aurora .adp-rail .rail-av {
+  width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 4px;
+  background: var(--au-accent-soft); color: var(--au-accent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600; font-size: 13px;
+}
+.adm-aurora .rail-btn {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 4px;
+  border: none; background: none; border-radius: 11px; cursor: pointer;
+  color: var(--au-ink-2);
+  transition: background 140ms ease, color 140ms ease;
+}
+.adm-aurora .rail-btn svg { width: 18px; height: 18px; color: var(--au-ink-3); }
+.adm-aurora .rail-btn span { font-size: 9.5px; font-weight: 500; letter-spacing: 0.01em; }
+.adm-aurora .rail-btn:hover { background: var(--au-hover); color: var(--au-ink); }
+.adm-aurora .rail-btn:hover svg { color: var(--au-ink-2); }
+.adm-aurora .rail-btn.on,
+.adm-aurora .rail-btn[data-on] { background: var(--au-accent-soft); color: var(--au-ink); }
+.adm-aurora .rail-btn.on svg,
+.adm-aurora .rail-btn[data-on] svg { color: var(--au-accent); }
+.adm-aurora .rail-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
+}
+
+/* ── Context panel — second tier next to the rail ───────────────────── */
+.adm-aurora .adp-panel {
+  display: grid; grid-template-rows: auto auto 1fr auto;
+  width: 208px; flex-shrink: 0; min-width: 0; min-height: 0;
+  background: var(--au-surface);
+  border-right: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-panel .panel-hd {
+  display: flex; align-items: center; gap: 9px;
+  padding: 19px 16px 12px;
+}
+.adm-aurora .adp-panel .panel-hd b {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.02em;
+  color: var(--au-ink);
+}
+.adm-aurora .adp-panel .panel-items {
+  overflow-y: auto; padding: 2px 12px 12px; min-height: 0;
+}
+
+/* nav group label + item — used inside the panel (and plain sidebars) */
+.adm-aurora .adp-grp {
+  font: 500 8.5px/1 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--au-ink-3);
+  padding: 14px 10px 7px;
+}
+.adm-aurora .adp-item {
+  display: flex; align-items: center; gap: 11px;
+  height: 36px; padding: 0 10px; border-radius: 9px;
+  color: var(--au-ink-2); font-size: 13px; font-weight: 500;
+  cursor: pointer; position: relative;
+  transition: background 140ms ease, color 140ms ease;
+}
+.adm-aurora .adp-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--au-ink-3); }
+.adm-aurora .adp-item:hover { background: var(--au-hover); color: var(--au-ink); }
+.adm-aurora .adp-item:hover svg { color: var(--au-ink-2); }
+.adm-aurora .adp-item .ct {
+  margin-left: auto;
+  font: 400 10px/1 var(--font-mono, ui-monospace, monospace);
+  color: var(--au-ink-3);
+  background: var(--au-field);
+  border: 1px solid var(--au-rule);
+  border-radius: 6px; padding: 2px 6px;
+}
+.adm-aurora .adp-item.on,
+.adm-aurora .adp-item[data-on] {
+  background: var(--au-accent-soft);
+  color: var(--au-ink);
+  font-weight: 600;
+}
+.adm-aurora .adp-item.on svg,
+.adm-aurora .adp-item[data-on] svg { color: var(--au-accent); }
+.adm-aurora .adp-item.on::before,
+.adm-aurora .adp-item[data-on]::before {
+  content: ""; position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 18px; border-radius: 0 3px 3px 0;
+  background: var(--au-accent);
+}
+
+/* ── Ministat card — module-page stats strip ────────────────────────── */
+.adm-aurora .adp-mini {
+  min-width: 0;
+  padding: 15px 16px; border-radius: 12px;
+  background: var(--au-surface);
+  border: 1px solid var(--au-rule);
+  box-shadow: var(--au-shadow-card);
+}
+.adm-aurora .adp-mini .kr { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.adm-aurora .adp-mini .ti {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--au-accent)) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-accent)) 26%, transparent);
+  color: var(--c, var(--au-accent));
+}
+.adm-aurora .adp-mini .ti svg { width: 15px; height: 15px; }
+.adm-aurora .adp-mini .k {
+  font: 500 9px/1.2 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--au-ink-3);
+}
+.adm-aurora .adp-mini .v {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 23px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
+  color: var(--au-ink);
+  font-variant-numeric: tabular-nums;
+}
+.adm-aurora .adp-mini .d {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; font-weight: 600; margin-top: 8px;
+}
+.adm-aurora .adp-mini .d.up   { color: var(--au-ok); }
+.adm-aurora .adp-mini .d.down { color: var(--au-danger); }
+.adm-aurora .adp-mini .d span { color: var(--au-ink-3); font-weight: 400; }
+
+/* ── Segmented filter chips ─────────────────────────────────────────── */
+.adm-aurora .adp-chips {
+  display: flex; gap: 4px; padding: 4px;
+  border-radius: 9px;
+  background: var(--au-field);
+  border: 1px solid var(--au-rule);
+  width: max-content; max-width: 100%;
+  overflow-x: auto;
+}
+.adm-aurora .adp-chip {
+  border: none; background: none; cursor: pointer;
+  height: 30px; padding: 0 13px; border-radius: 7px;
+  font: 500 10px/1 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  color: var(--au-ink-2); white-space: nowrap;
+  transition: color 120ms ease, background 120ms ease;
+}
+.adm-aurora .adp-chip:hover { color: var(--au-ink); }
+.adm-aurora .adp-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
+}
+.adm-aurora .adp-chip.on,
+.adm-aurora .adp-chip[data-on] {
+  background: var(--au-seg-on);
+  color: var(--au-ink);
+  box-shadow: var(--au-seg-shadow);
+}
+
+/* ── Detail drawer — 432px right overlay ────────────────────────────── */
+.adm-aurora .adp-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: var(--au-scrim);
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  animation: adp-fade 200ms ease both;
+}
+.adm-aurora .adp-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 432px; max-width: calc(100vw - 48px);
+  z-index: 61;
+  display: flex; flex-direction: column;
+  background: var(--au-surface);
+  border-left: 1px solid var(--au-rule-2);
+  box-shadow: var(--au-shadow-drawer);
+  animation: adp-slide 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes adp-fade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adp-slide { from { transform: translateX(34px); opacity: 0.3; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .adp-drawer,
+  .adm-aurora .adp-scrim { animation: none; }
+}
+
+/* drawer header / close */
+.adm-aurora .adp-dh {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 18px 15px;
+  border-bottom: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-dh .lbl {
+  font: 500 9px/1 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--au-ink-3);
+}
+.adm-aurora .adp-dh .sp { flex: 1; }
+.adm-aurora .adp-dx {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  border: 1px solid var(--au-rule);
+  background: var(--au-field); color: var(--au-ink-2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.adm-aurora .adp-dx:hover { color: var(--au-ink); border-color: var(--au-rule-2); }
+.adm-aurora .adp-dx:focus-visible {
+  outline: none;
+  border-color: var(--au-accent);
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
+}
+.adm-aurora .adp-dx svg { width: 15px; height: 15px; }
+
+/* drawer body */
+.adm-aurora .adp-dbody { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 18px 22px; }
+.adm-aurora .adp-dprofile { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.adm-aurora .adp-dprofile .big {
+  width: 58px; height: 58px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 19px; font-weight: 600;
+  background: color-mix(in srgb, var(--c, var(--au-accent)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-accent)) 30%, transparent);
+  color: var(--c, var(--au-accent));
+}
+.adm-aurora .adp-dprofile .nm { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--au-ink); overflow-wrap: anywhere; }
+.adm-aurora .adp-dprofile .em { font-size: 12px; color: var(--au-ink-3); margin-top: 2px; overflow-wrap: anywhere; }
+.adm-aurora .adp-dmeta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+
+.adm-aurora .adp-dstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
+.adm-aurora .adp-dstat {
+  min-width: 0;
+  padding: 13px 10px; border-radius: 12px; text-align: center;
+  background: var(--au-field);
+  border: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-dstat .v {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 17px; font-weight: 700; color: var(--au-ink);
+  font-variant-numeric: tabular-nums;
+}
+.adm-aurora .adp-dstat .k {
+  font: 500 8px/1.2 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--au-ink-3); margin-top: 4px;
+}
+
+.adm-aurora .adp-dsec {
+  font: 500 9px/1 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--au-ink-3);
+  margin: 18px 2px 9px;
+}
+.adm-aurora .adp-drow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px; border-radius: 12px; margin-bottom: 7px;
+  background: var(--au-field);
+  border: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-drow .ti {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--au-accent)) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--au-accent)) 26%, transparent);
+  color: var(--c, var(--au-accent));
+}
+.adm-aurora .adp-drow .ti svg { width: 15px; height: 15px; }
+.adm-aurora .adp-drow .b { flex: 1; min-width: 0; }
+.adm-aurora .adp-drow .t { font-size: 13px; font-weight: 600; color: var(--au-ink); }
+.adm-aurora .adp-drow .s { font-size: 11px; color: var(--au-ink-3); margin-top: 1px; }
+
+/* drawer footer actions */
+.adm-aurora .adp-dact {
+  display: flex; gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-dact button {
+  flex: 1; height: 42px; border-radius: 11px;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.adm-aurora .adp-dact button svg { width: 15px; height: 15px; }
+.adm-aurora .adp-dact .pri {
+  border: none;
+  background: var(--au-accent); color: var(--au-accent-ink);
+}
+html:not(.dark) .adm-aurora .adp-dact .pri { color: #FFFFFF; }
+.adm-aurora .adp-dact .pri:hover { background: var(--au-accent-2); }
+.adm-aurora .adp-dact .ghost {
+  background: var(--au-field);
+  border: 1px solid var(--au-rule-2);
+  color: var(--au-ink);
+}
+.adm-aurora .adp-dact .ghost:hover { border-color: var(--au-accent-line); }
+.adm-aurora .adp-dact button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--au-accent-soft);
+}
+
+/* ── KPI sparkline — inline trend beside a stat value ───────────────── */
+.adm-aurora .adp-kpi-spark {
+  width: 72px; height: 30px; flex-shrink: 0;
+  color: var(--au-accent); /* stroke="currentColor" inherits the accent */
+}
+.adm-aurora .adp-kpi-spark svg { width: 100%; height: 100%; display: block; overflow: visible; }
