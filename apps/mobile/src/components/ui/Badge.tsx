@@ -6,6 +6,18 @@ interface BadgeProps {
   label: string;
   variant?: "primary" | "success" | "warning" | "error" | "info" | "neutral";
   size?: "sm" | "md";
+  /**
+   * Aurora status-dot chip (Edition VII StatusBadge idiom): renders a small
+   * leading dot in the variant's text tone. Off by default so existing
+   * badges are pixel-identical.
+   */
+  dot?: boolean;
+  /**
+   * Aurora mono-uppercase micro-label treatment (kicker/status pill idiom:
+   * uppercased label, tight size, letterSpacing 1, weight 700). Off by
+   * default so existing badges are pixel-identical.
+   */
+  mono?: boolean;
   style?: ViewStyle;
 }
 
@@ -46,16 +58,58 @@ const makeStyles = (t: Theme) =>
     textMd: {
       fontSize: 13,
     },
+    // ── Aurora additive treatments (Edition VII) ──
+    // Row layout only applies when a dot is present, so dot-less badges
+    // keep the original single-Text layout untouched.
+    withDot: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    // Mono-uppercase micro-label (addresses Hub kicker convention:
+    // fontSize 10-11 / letterSpacing 1 / weight 700 / .toUpperCase()).
+    textMono: {
+      fontSize: 10,
+      letterSpacing: 1,
+      fontWeight: "700",
+    },
+    textMonoMd: {
+      fontSize: 11,
+    },
   });
 
-export function Badge({ label, variant = "neutral", size = "sm", style }: BadgeProps) {
+export function Badge({ label, variant = "neutral", size = "sm", dot = false, mono = false, style }: BadgeProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const variants = useMemo(() => makeVariantStyles(theme), [theme]);
   const v = variants[variant];
   return (
-    <View style={[styles.base, size === "md" && styles.md, { backgroundColor: v.bg, borderColor: v.border }, style]}>
-      <Text style={[styles.text, size === "md" && styles.textMd, { color: v.text }]}>{label}</Text>
+    <View
+      style={[
+        styles.base,
+        size === "md" && styles.md,
+        dot && styles.withDot,
+        { backgroundColor: v.bg, borderColor: v.border },
+        style,
+      ]}
+    >
+      {dot && <View style={[styles.dot, { backgroundColor: v.text }]} />}
+      <Text
+        style={[
+          styles.text,
+          size === "md" && styles.textMd,
+          mono && styles.textMono,
+          mono && size === "md" && styles.textMonoMd,
+          { color: v.text },
+        ]}
+      >
+        {mono ? label.toUpperCase() : label}
+      </Text>
     </View>
   );
 }

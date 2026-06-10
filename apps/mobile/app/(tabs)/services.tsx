@@ -21,12 +21,16 @@ import {
   ArrowRight,
   Check,
   X,
-  MapPin,
-  Wallet,
+  Layers,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import {
+  resolveServiceRenewal,
+  RENEWAL_SOON_DAYS,
+  type ServiceRenewal,
+} from "@/lib/service-insights";
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -244,14 +248,13 @@ export default function ServicesScreen() {
             <Plus size={20} color="#fff" />
           </View>
         </View>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <SkeletonBlock width="80%" height={13} />
-            </View>
-            <View style={styles.summaryItem}>
-              <SkeletonBlock width="80%" height={13} />
-            </View>
+        <View style={styles.hero}>
+          <SkeletonBlock width="45%" height={10} />
+          <View style={{ marginTop: 12 }}>
+            <SkeletonBlock width="60%" height={28} />
+          </View>
+          <View style={{ marginTop: 14 }}>
+            <SkeletonBlock width="100%" height={9} />
           </View>
         </View>
         <View style={[styles.scrollContent, styles.list]}>
@@ -268,6 +271,64 @@ export default function ServicesScreen() {
   const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
   const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
+
+  // ── Aurora hero derivations ──
+  // Overall (address-scoped) numbers, independent of the category filter, so
+  // the hero stays stable while the user pivots the list below it.
+  const heroMonthly = services.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
+  const activeServiceCount = services.filter((s) => s.isActive !== false).length;
+  const catTotals = categories
+    .map((cat) => ({
+      cat,
+      total: services
+        .filter((s) => getMergedDisplayCategoryKey(s.category) === cat)
+        .reduce((sum, s) => sum + (s.monthlyCost || 0), 0),
+    }))
+    .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total);
+  const heroChips = catTotals.slice(0, 3);
+
+  // "Needs attention" — derived ONLY from existing renewal signals
+  // (contractEndDate, or recurring billingDay + billingCycle), the exact
+  // derivation the service detail screen already uses. No new data concepts.
+  const renewalById = new Map<string, ServiceRenewal>();
+  for (const s of services) {
+    if (s.isActive === false) continue;
+    const r = resolveServiceRenewal(s);
+    if (r) renewalById.set(s.id, r);
+  }
+  const attentionItems = services.filter((s) => {
+    const r = renewalById.get(s.id);
+    return r != null && r.days <= RENEWAL_SOON_DAYS; // includes overdue (days < 0)
+  });
+
+  // Same headline copy as the detail screen (services/[id].tsx), reusing its keys.
+  const renewalHeadline = (renewal: ServiceRenewal) =>
+    renewal.days < 0
+      ? renewal.source === "contract"
+        ? t("services.renewalContractEnded", { defaultValue: "Contract ended" })
+        : t("services.renewalPast", { defaultValue: "Was due" })
+      : renewal.days === 0
+        ? t("services.renewalToday", { defaultValue: "Due today" })
+        : renewal.source === "contract"
+          ? t("services.renewalContractIn", { count: renewal.days, defaultValue: `Contract ends in ${renewal.days} days` })
+          : t("services.renewalIn", { count: renewal.days, defaultValue: `Renews in ${renewal.days} days` });
+
+  // Per-row status pill — existing service status (isActive) sharpened with the
+  // existing renewal signal. Labels reuse existing i18n keys only.
+  const statusPillFor = (service: any): { label: string; text: string; bg: string; border: string } => {
+    if (!service.isActive) {
+      return { label: t("services.statusInactive"), text: theme.colors.textTertiary, bg: theme.colors.surface, border: theme.colors.border };
+    }
+    const renewal = renewalById.get(service.id);
+    if (renewal && renewal.days < 0) {
+      return { label: t("services.renewalOverdueBadge", { defaultValue: "Overdue" }), text: theme.colors.error, bg: theme.colors.errorFaded, border: theme.colors.error + "47" };
+    }
+    if (renewal && renewal.days <= RENEWAL_SOON_DAYS) {
+      return { label: t("services.renewalSoonBadge", { defaultValue: "Soon" }), text: theme.colors.amber.text, bg: theme.colors.amber.bg, border: theme.colors.amber.border };
+    }
+    return { label: t("services.statusActive"), text: theme.colors.emerald.text, bg: theme.colors.emerald.bg, border: theme.colors.emerald.border };
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -289,34 +350,50 @@ export default function ServicesScreen() {
         </PressableScale>
       </View>
 
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <MapPin size={15} color={theme.colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.summaryLabel}>{t("services.viewingAddress")}</Text>
-              <Text style={styles.summaryValue} numberOfLines={1}>
-                {selectedAddress ? (selectedAddress.nickname || `${selectedAddress.city}, ${selectedAddress.state}`) : t("common.all")}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.summaryItem}>
-            <Wallet size={15} color={theme.colors.emerald.text} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.summaryLabel}>{t("services.budgetTracked")}</Text>
-              <Text style={styles.summaryValue}>{t("services.monthlyAmount", { amount: formatNumber(totalMonthly, i18n.language) })}</Text>
-            </View>
+      {/* Aurora glass hero — monthly overview + category cost distribution */}
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <Text style={styles.heroKicker}>{t("services.monthlyServices").toUpperCase()}</Text>
+          <View style={styles.heroBadge}>
+            <Layers size={12} color={theme.colors.accent} />
+            <Text style={styles.heroBadgeText}>{t("services.trackedCount", { count: services.length }).toUpperCase()}</Text>
           </View>
         </View>
-        {uncostedCount > 0 ? (
-          <Text style={styles.summaryHint}>
-            {t("services.missingCostHint", { count: uncostedCount })}
-          </Text>
-        ) : (
-          <Text style={styles.summaryHint}>
-            {t("services.summaryHint")}
-          </Text>
+        <Text style={styles.heroBig} accessibilityLabel={`${formatCurrency(heroMonthly, i18n.language)} ${t("services.heroMonthlySuffix", { count: activeServiceCount })}`}>
+          {formatCurrency(heroMonthly, i18n.language)}
+          <Text style={styles.heroBigSuffix}>{t("services.heroMonthlySuffix", { count: activeServiceCount })}</Text>
+        </Text>
+        {catTotals.length > 0 && (
+          <View style={styles.heroBar}>
+            {catTotals.map((c) => (
+              <View key={c.cat} style={[styles.heroBarSeg, { flex: c.total, backgroundColor: getServiceCategoryColor(c.cat) }]} />
+            ))}
+          </View>
         )}
+        {heroChips.length > 0 && (
+          <View style={styles.heroChips}>
+            {heroChips.map((c) => {
+              const color = getServiceCategoryColor(c.cat);
+              const on = filterCat === c.cat;
+              return (
+                <View key={c.cat} style={styles.heroChipWrap}>
+                  <PressableScale
+                    style={[styles.heroChip, { backgroundColor: color + "1A", borderColor: color + (on ? "8C" : "42") }]}
+                    onPress={() => setFilterCat(on ? null : c.cat)}
+                    accessibilityLabel={`${serviceCategoryLabel(c.cat)} · ${formatCurrency(c.total, i18n.language)}`}
+                  >
+                    <View style={[styles.heroChipSwatch, { backgroundColor: color }]} />
+                    <Text style={styles.heroChipName} numberOfLines={1}>{serviceCategoryLabel(c.cat).toUpperCase()}</Text>
+                    <Text style={styles.heroChipValue}>{formatCurrency(c.total, i18n.language)}</Text>
+                  </PressableScale>
+                </View>
+              );
+            })}
+          </View>
+        )}
+        <Text style={styles.heroHint}>
+          {uncostedCount > 0 ? t("services.missingCostHint", { count: uncostedCount }) : t("services.summaryHint")}
+        </Text>
       </View>
 
       {addresses.length > 0 && (
@@ -441,6 +518,43 @@ export default function ServicesScreen() {
             </View>
           );
         })()}
+
+        {/* Needs attention — services with an imminent/overdue renewal signal */}
+        {attentionItems.length > 0 && (
+          <View style={styles.attnList}>
+            <View style={styles.secRow}>
+              <Text style={styles.secKicker}>{t("services.needsAttention").toUpperCase()}</Text>
+              <Text style={styles.secCount}>{attentionItems.length}</Text>
+            </View>
+            {attentionItems.map((service: any) => {
+              const renewal = renewalById.get(service.id);
+              if (!renewal) return null;
+              const headline = renewalHeadline(renewal);
+              return (
+                <PressableScale
+                  key={service.id}
+                  style={styles.attnRow}
+                  onPress={() => router.push({ pathname: "/services/[id]", params: { id: service.id } })}
+                  accessibilityLabel={`${service.providerName} · ${headline}`}
+                >
+                  <View style={styles.attnIcon}>
+                    <AlertTriangle size={16} color={theme.colors.error} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.attnTitle} numberOfLines={1}>{service.providerName}</Text>
+                    <Text style={styles.attnSub} numberOfLines={1}>
+                      {headline}
+                      {service.address ? ` · ${service.address.nickname || service.address.city}` : ""}
+                    </Text>
+                  </View>
+                  <View style={styles.attnGo}>
+                    <ArrowRight size={13} color={theme.colors.error} />
+                  </View>
+                </PressableScale>
+              );
+            })}
+          </View>
+        )}
 
         {error && services.length > 0 ? (
           <View style={{ marginHorizontal: 16, marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
@@ -586,7 +700,15 @@ export default function ServicesScreen() {
                 </View>
 
                 <View style={styles.serviceFooter}>
-                  <UiBadge label={service.isActive ? t("services.statusActive") : t("services.statusInactive")} variant={service.isActive ? "success" : "neutral"} />
+                  {(() => {
+                    const pill = statusPillFor(service);
+                    return (
+                      <View style={[styles.statusPill, { backgroundColor: pill.bg, borderColor: pill.border }]} accessibilityLabel={pill.label}>
+                        <View style={[styles.statusPillDot, { backgroundColor: pill.text }]} />
+                        <Text style={[styles.statusPillText, { color: pill.text }]}>{pill.label.toUpperCase()}</Text>
+                      </View>
+                    );
+                  })()}
                   {service.billingCycle && (
                     <UiBadge label={serviceBillingCycleLabel(service.billingCycle)} variant="info" />
                   )}
@@ -608,28 +730,90 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
-  summaryCard: {
+  // ── Aurora glass hero ──
+  hero: {
     marginHorizontal: 20,
     marginBottom: 12,
-    padding: 14,
-    borderRadius: 18,
-    backgroundColor: theme.colors.card,
+    padding: 16,
+    borderRadius: theme.radius["2xl"],
+    backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.glass.border,
+    ...theme.shadow.glow,
   },
-  summaryRow: { flexDirection: "row", gap: 10 },
-  summaryItem: {
-    flex: 1,
+  heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  heroKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
+  heroBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 10,
-    borderRadius: 14,
-    backgroundColor: theme.colors.surface,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: theme.colors.warningFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.amber.border,
   },
-  summaryLabel: { fontSize: 11, color: theme.colors.textMuted, marginBottom: 2 },
-  summaryValue: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
-  summaryHint: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 12, lineHeight: 18 },
+  heroBadgeText: { fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
+  heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: -1, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  heroBigSuffix: { fontSize: 12, fontWeight: "500", letterSpacing: 0, color: theme.colors.textTertiary },
+  heroBar: { flexDirection: "row", gap: 3, height: 9, marginTop: 14, marginBottom: 12 },
+  heroBarSeg: { borderRadius: 4 },
+  heroChips: { flexDirection: "row", gap: 8 },
+  heroChipWrap: { flex: 1 },
+  heroChip: { alignItems: "flex-start", gap: 6, padding: 10, borderRadius: 13, borderWidth: 1 },
+  heroChipSwatch: { width: 18, height: 18, borderRadius: 6 },
+  heroChipName: { fontSize: 8, letterSpacing: 0.8, fontWeight: "700", color: theme.colors.textSecondary },
+  heroChipValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  heroHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 12, lineHeight: 16 },
+  // ── Needs attention ──
+  secRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 },
+  secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
+  secCount: { fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
+  attnList: { gap: 8, marginBottom: 16 },
+  attnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    padding: 13,
+    borderRadius: 14,
+    backgroundColor: theme.colors.errorFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.error + "38",
+  },
+  attnIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.errorFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.error + "38",
+  },
+  attnTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
+  attnSub: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 1 },
+  attnGo: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.error + "4D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // ── Status pill (dot + mono uppercase) ──
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  statusPillDot: { width: 5, height: 5, borderRadius: 999 },
+  statusPillText: { fontSize: 8, letterSpacing: 1, fontWeight: "700" },
   addressRow: { marginBottom: 10 },
   addressContent: { paddingHorizontal: 20, paddingVertical: 2, gap: 8, alignItems: "center" },
   addressChip: {

@@ -60,7 +60,11 @@
     "sectionTools": "Tools",
     "sectionAccount": "Account",
     "sectionPrivacy": "Privacy & data",
-    "sectionSupport": "Support"
+    "sectionSupport": "Support",
+    "planFree": "Free",
+    "planIndividual": "Individual",
+    "planFamily": "Family",
+    "planPro": "Pro"
   },
   "auth": {
     "signIn_title": "Welcome back",
@@ -187,7 +191,20 @@
     "upNext_undo": "Undo",
     "briefingTitle": "Your move briefing",
     "briefingAiLabel": "AI-generated",
-    "briefingDismiss": "Dismiss briefing"
+    "briefingDismiss": "Dismiss briefing",
+    "heroKicker": "Moving status",
+    "heroBadge_planning": "Move planned",
+    "heroBadge_inProgress": "Move in progress",
+    "heroDaysLeft": "days left",
+    "heroDaysAgo": "days ago",
+    "checklistKicker": "Moving checklist",
+    "utilitiesKicker": "Connected utilities",
+    "utilitiesMore_one": "+{{count}} more",
+    "utilitiesMore_other": "+{{count}} more",
+    "budgetKicker": "Budget tracker",
+    "budgetPerMonth": "per month",
+    "utilityStatus": "Status",
+    "manageService": "Manage service"
   },
   "addresses": {
     "title": "Addresses",
@@ -228,7 +245,14 @@
     "errorStateFormat": "Please enter a 2-letter state code (e.g. NY, CA).",
     "errorZipFormat": "Please enter a valid 5-digit ZIP code.",
     "empty": "No addresses yet",
-    "emptyDescription": "Add your first address to start tracking services."
+    "emptyDescription": "Add your first address to start tracking services.",
+    "transit": {
+      "title": "Move in progress · {{pct}}%",
+      "fromRole": "Old · moving out",
+      "toRole": "New · current",
+      "stillAtOld_one": "{{count}} account still at the old address",
+      "stillAtOld_other": "{{count}} accounts still at the old address"
+    }
   },
   "services": {
     "title": "Services",
@@ -279,6 +303,12 @@
     "summaryHint": "Monthly total updates from the services listed for the selected address.",
     "addCost": "Add cost",
     "addNext": "Add next service",
+    "monthlyServices": "Monthly services",
+    "trackedCount_one": "{{count}} tracked",
+    "trackedCount_other": "{{count}} tracked",
+    "heroMonthlySuffix_one": "/mo · {{count}} active",
+    "heroMonthlySuffix_other": "/mo · {{count}} active",
+    "needsAttention": "Needs attention",
     "mood": {
       "emptyTitle": "No services tracked yet",
       "emptySubtitle": "Add your first utility, bank, or subscription and the raccoon perks up.",
@@ -561,6 +591,8 @@
     "status_COMPLETED": "Completed",
     "status_CANCELED": "Canceled",
     "status_CANCELLED": "Canceled",
+    "statusActive": "Active",
+    "statMoves": "Moves",
     "daysLeft": "{{count}} days left",
     "temporary": "Temporary",
     "moveScope": "Move Scope",
@@ -590,6 +622,10 @@
     "dueDate": "Due {{date}}",
     "swipeDone": "Done",
     "swipeCompleteHint": "Swipe left to mark complete",
+    "percentComplete": "{{pct}}% complete",
+    "taskCountOfTotal": "{{done}} of {{total}} tasks",
+    "celebrateTitle": "Every task checked off",
+    "celebrateBody": "Nothing slipped through the move. Your new address is fully set up.",
     "accept": "Accept",
     "complete": "Complete",
     "dismiss": "Dismiss",
@@ -1156,6 +1192,13 @@
     "markAllRead": "Mark all as read",
     "emptyTitle": "No notifications",
     "emptySubtitle": "You'll see important updates here",
+    "heroTitle": "Need your attention",
+    "heroSubtitle": "Unread updates on your bills, renewals, and moves.",
+    "filter_all": "All",
+    "filter_unread": "Unread",
+    "filter_reminders": "Reminders",
+    "openAction": "Open",
+    "filterEmpty": "Nothing here right now",
     "feed_BILL_REMINDER_title": "Bill reminder",
     "feed_BILL_REMINDER_body": "Review the service and due date in LocateFlow.",
     "feed_MOVE_REMINDER_title": "Move reminder",

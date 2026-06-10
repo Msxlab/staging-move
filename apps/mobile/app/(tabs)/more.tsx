@@ -41,11 +41,18 @@ import { api } from "@/lib/api";
 import { unregisterPushNotifications } from "@/lib/push";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
 
+/** Tonal tile colors for a row's icon chip (Aurora `.pf-row .ti` idiom). */
+interface RowTone {
+  bg: string;
+  border: string;
+  text: string;
+}
+
 interface MenuItem {
   icon: any;
   label: string;
   route?: Href;
-  color?: string;
+  tone?: RowTone;
   onPress?: () => void;
 }
 
@@ -60,11 +67,25 @@ export default function MoreScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const planTier = useAuthStore((s) => s.planTier);
   const clearSession = useAuthStore((s) => s.clearSession);
 
   const initials =
     ((user?.firstName?.[0] || "") + (user?.lastName?.[0] || "")).toUpperCase() ||
     "U";
+
+  // Plan pill label — planTier is "FAMILY" | "PRO" | "INDIVIDUAL" | null;
+  // null (free or not-yet-resolved entitlement) renders as Free, matching the
+  // dashboard's resolution default. The pill itself tints via
+  // theme.colors.primary, so Family/Pro plan accents flow automatically.
+  const planLabel =
+    planTier === "FAMILY"
+      ? t("more.planFamily", { defaultValue: "Family" })
+      : planTier === "PRO"
+        ? t("more.planPro", { defaultValue: "Pro" })
+        : planTier === "INDIVIDUAL"
+          ? t("more.planIndividual", { defaultValue: "Individual" })
+          : t("more.planFree", { defaultValue: "Free" });
 
   const handleSignOut = () => {
     hapticWarning();
@@ -84,6 +105,19 @@ export default function MoreScreen() {
     ]);
   };
 
+  // Tonal tiles per row (Aurora idiom: every menu row gets an icon chip in a
+  // tonal tile). All values come from theme tone objects — plan-accent rows
+  // (Profile) use the primary set so Family/Pro tints flow through.
+  const tonePrimary: RowTone = {
+    bg: theme.colors.primaryFaded,
+    border: theme.colors.primary + "33",
+    text: theme.colors.primary,
+  };
+  const toneCool = theme.colors.rose; // Aurora cool (info)
+  const toneSage = theme.colors.emerald; // sage / money
+  const toneHoney = theme.colors.amber; // honey / foil
+  const toneSlate = theme.colors.sky; // muted slate
+
   // Regrouped into four task-oriented sections (was a flat 16-row junk drawer).
   // Every row reuses an EXISTING route — no new screens — except "Search" which
   // now points at the real universal search screen instead of misleadingly
@@ -94,47 +128,47 @@ export default function MoreScreen() {
       items: [
         // Typed-routes generation is stale for the newly-added screen; the file
         // exists at app/search.tsx so the route is valid.
-        { icon: Search, label: t("search.title"), route: "/search" as Href },
-        { icon: DollarSign, label: t("budget.title"), route: "/budget" },
-        { icon: Building2, label: t("providers.title"), route: "/providers" },
-        { icon: Building2, label: t("customProviders.title"), route: "/custom-providers" },
-        { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href },
+        { icon: Search, label: t("search.title"), route: "/search" as Href, tone: toneCool },
+        { icon: DollarSign, label: t("budget.title"), route: "/budget", tone: toneSage },
+        { icon: Building2, label: t("providers.title"), route: "/providers", tone: toneHoney },
+        { icon: Building2, label: t("customProviders.title"), route: "/custom-providers", tone: toneSlate },
+        { icon: CalendarClock, label: t("reminders.title", { defaultValue: "Reminders" }), route: "/reminders" as Href, tone: toneCool },
       ],
     },
     {
       title: t("more.sectionAccount", { defaultValue: "Account" }),
       items: [
-        { icon: User, label: t("settings.profile"), route: "/settings/profile" },
-        { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
+        { icon: User, label: t("settings.profile"), route: "/settings/profile", tone: tonePrimary },
+        { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription", tone: toneHoney },
         // Workspace + Export were only reachable via a second, redundant
         // "Settings" screen (the confusing "settings inside settings"). Surface
         // them here directly and drop that duplicate menu entry.
-        { icon: Users, label: t("settings.workspace", { defaultValue: "Workspace" }), route: "/settings/workspace" as Href },
-        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections" },
+        { icon: Users, label: t("settings.workspace", { defaultValue: "Workspace" }), route: "/settings/workspace" as Href, tone: toneSage },
+        { icon: Zap, label: t("connections.title", "Connections"), route: "/settings/connections", tone: toneCool },
         // Distinct from the notifications FEED in the Support group below — this
         // is the preferences screen, so label it as settings to avoid two
         // identical "Notifications" rows.
-        { icon: Bell, label: t("settings.notificationSettings", { defaultValue: "Notification settings" }), route: "/settings/notifications" },
+        { icon: Bell, label: t("settings.notificationSettings", { defaultValue: "Notification settings" }), route: "/settings/notifications", tone: toneSlate },
       ],
     },
     {
       title: t("more.sectionPrivacy", { defaultValue: "Privacy & data" }),
       items: [
-        { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
-        { icon: Download, label: t("settings.export"), route: "/settings/export" },
+        { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy", tone: toneCool },
+        { icon: Download, label: t("settings.export"), route: "/settings/export", tone: toneSage },
         // Typed-routes generation is stale for this recently-added screen; the
         // file exists at app/settings/address-changes.tsx so the route is valid.
-        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href },
+        { icon: Activity, label: t("addressChanges.title", "Address changes"), route: "/settings/address-changes" as Href, tone: toneHoney },
       ],
     },
     {
       title: t("more.sectionSupport", { defaultValue: "Support" }),
       items: [
-        { icon: HelpCircle, label: t("settings.help"), route: "/help" },
-        { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
+        { icon: HelpCircle, label: t("settings.help"), route: "/help", tone: toneCool },
+        { icon: Ticket, label: t("settings.support"), route: "/help/tickets", tone: toneHoney },
         // The notifications FEED (distinct from "Notification settings" above).
-        { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
-        { icon: FileText, label: t("blog.title"), route: "/blog" },
+        { icon: Bell, label: t("settings.notifications"), route: "/notifications", tone: toneSlate },
+        { icon: FileText, label: t("blog.title"), route: "/blog", tone: toneSage },
       ],
     },
   ];
@@ -149,20 +183,24 @@ export default function MoreScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Card */}
+        {/* Profile Card — Aurora `.sv-profilecard`: avatar disc + name/email +
+            mono-uppercase plan pill tinted by the plan accent. */}
         <TouchableOpacity
           style={styles.profileCard}
           onPress={() => router.push("/settings/profile")}
           activeOpacity={0.7}
         >
-          <Avatar initials={initials} size={48} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>
+          <Avatar initials={initials} size={50} />
+          <View style={styles.profileBody}>
+            <Text style={styles.profileName} numberOfLines={1}>
               {user?.firstName || t("common.unknown", { defaultValue: "User" })} {user?.lastName || ""}
             </Text>
-            <Text style={styles.profileEmail}>
+            <Text style={styles.profileEmail} numberOfLines={1}>
               {user?.email || ""}
             </Text>
+          </View>
+          <View style={styles.planPill}>
+            <Text style={styles.planPillText}>{planLabel.toUpperCase()}</Text>
           </View>
           <ChevronRight size={18} color={theme.colors.textMuted} />
         </TouchableOpacity>
@@ -174,6 +212,7 @@ export default function MoreScreen() {
             <View style={styles.sectionCard}>
               {section.items.map((item, i) => {
                 const Icon = item.icon;
+                const tone = item.tone ?? toneCool;
                 return (
                   <TouchableOpacity
                     key={item.label}
@@ -188,11 +227,13 @@ export default function MoreScreen() {
                     }}
                     activeOpacity={0.6}
                   >
-                    <View style={styles.menuIconBox}>
-                      <Icon
-                        size={18}
-                        color={item.color || theme.colors.textSecondary}
-                      />
+                    <View
+                      style={[
+                        styles.menuIconBox,
+                        { backgroundColor: tone.bg, borderColor: tone.border },
+                      ]}
+                    >
+                      <Icon size={17} color={tone.text} />
                     </View>
                     <Text style={styles.menuLabel}>{item.label}</Text>
                     <ChevronRight size={16} color={theme.colors.textMuted} />
@@ -240,33 +281,50 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 13,
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: 16,
+    padding: 15,
     marginBottom: 24,
+    ...theme.shadow.sm,
   },
+  profileBody: { flex: 1, minWidth: 0 },
   profileName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     color: theme.colors.text,
   },
   profileEmail: {
-    fontSize: 13,
+    fontSize: 12,
     color: theme.colors.textTertiary,
     marginTop: 2,
   },
+  planPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "42",
+    flexShrink: 0,
+  },
+  planPillText: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: theme.colors.primary,
+  },
   section: { marginBottom: 20 },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     color: theme.colors.textTertiary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    marginLeft: 4,
+    letterSpacing: 1.2,
+    marginBottom: 9,
+    marginLeft: 2,
   },
   sectionCard: {
     backgroundColor: theme.colors.card,
@@ -279,25 +337,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
   menuItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   menuIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 34,
+    height: 34,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   menuLabel: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
     color: theme.colors.text,
   },
   signOutBtn: {

@@ -1,14 +1,22 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
   StyleSheet,
   View,
+  type LayoutChangeEvent,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticLight } from "@/lib/haptics";
@@ -56,9 +64,64 @@ export function Button({
   const { animatedStyle, onPressIn, onPressOut } = usePressScale();
   const interactive = !disabled && !loading;
   const trailingIcon = rightIcon || iconRight;
+
+  // Aurora shimmer sweep — a one-shot highlight strip that sweeps across
+  // primary CTAs on press (Edition VII handoff, additions.css
+  // `.ca-cta.primary::after`: a skewed translateX'd gradient strip).
+  // Runs once per tap (~600ms) and is fully disabled under reduce-motion,
+  // matching the handoff's `prefers-reduced-motion` block. The existing
+  // springy press feedback (usePressScale) is untouched.
+  const reduceMotion = useReducedMotion();
+  const isPrimaryCta = variant === "primary" || variant === "gradient";
+  const shimmerEnabled = isPrimaryCta && !reduceMotion;
+  const shimmer = useSharedValue(0);
+  const [shimmerWidth, setShimmerWidth] = useState(0);
+  const onShimmerLayout = shimmerEnabled
+    ? (e: LayoutChangeEvent) => {
+        const w = Math.round(e.nativeEvent.layout.width);
+        setShimmerWidth((prev) => (prev === w ? prev : w));
+      }
+    : undefined;
+  const stripWidth = Math.max(36, shimmerWidth * 0.45);
+  const shimmerAnimatedStyle = useAnimatedStyle(
+    () => ({
+      // Invisible at rest (progress 0) and after the sweep completes (1).
+      opacity: interpolate(shimmer.value, [0, 0.08, 0.85, 1], [0, 1, 1, 0]),
+      transform: [
+        { translateX: -stripWidth + shimmer.value * (shimmerWidth + stripWidth * 2) },
+        { skewX: "-20deg" },
+      ],
+    }),
+    [stripWidth, shimmerWidth],
+  );
+  const shimmerRadius =
+    size === "sm" ? theme.radius.sm : size === "lg" ? theme.radius.xl : theme.radius.lg;
+  const shimmerOverlay =
+    shimmerEnabled && shimmerWidth > 0 ? (
+      <View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { borderRadius: shimmerRadius, overflow: "hidden" }]}
+      >
+        <Animated.View style={[styles.shimmerStrip, { width: stripWidth }, shimmerAnimatedStyle]}>
+          <LinearGradient
+            // Achromatic white highlight per the Aurora handoff
+            // (`.ca-cta.primary::after` — rgba(255,255,255,.45) sweep).
+            colors={["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.4)", "rgba(255, 255, 255, 0)"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      </View>
+    ) : null;
+
   const handlePress = () => {
     if (!loading && !disabled) {
       hapticLight();
+      if (shimmerEnabled) {
+        shimmer.value = 0;
+        shimmer.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) });
+      }
       onPress();
     }
   };
@@ -112,6 +175,7 @@ export function Button({
             colors={[theme.colors.primary, theme.colors.accent]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
+            onLayout={onShimmerLayout}
             style={[
               styles.base,
               styles[`size_${size}`],
@@ -120,6 +184,7 @@ export function Button({
             ]}
           >
             {content}
+            {shimmerOverlay}
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -133,6 +198,7 @@ export function Button({
         onPressIn={interactive ? onPressIn : undefined}
         onPressOut={interactive ? onPressOut : undefined}
         disabled={disabled || loading}
+        onLayout={onShimmerLayout}
         style={buttonStyles}
         activeOpacity={0.7}
         accessibilityRole="button"
@@ -141,6 +207,7 @@ export function Button({
         accessibilityState={{ disabled: disabled || loading }}
       >
         {content}
+        {shimmerOverlay}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -233,5 +300,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   textDisabled: {
     opacity: 0.7,
+  },
+  // Aurora shimmer sweep strip — sized/positioned at render time
+  // (width is ~45% of the measured button, per additions.css).
+  shimmerStrip: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
   },
 });
