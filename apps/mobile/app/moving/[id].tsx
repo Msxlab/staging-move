@@ -26,6 +26,8 @@ import {
   Shield,
   Check,
   UserPlus,
+  AlertTriangle,
+  ChevronRight,
 } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -66,6 +68,9 @@ export default function MovingDetailScreen() {
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Move-focused "what's still tied to the old address" — services on the from/to
+  // addresses, fetched once the plan resolves (recreates the design's Direction C).
+  const [moveAccounts, setMoveAccounts] = useState<{ atOld: any[]; atNew: any[] } | null>(null);
   // Task assignment (Family/Pro). Members + flag come from the move-tasks GET;
   // the Assign picker only shows when assignmentEnabled (2+ active members).
   const [workspaceMembers, setWorkspaceMembers] = useState<
@@ -103,6 +108,30 @@ export default function MovingDetailScreen() {
     }
     return true;
   }, [id, fetchMigration, fetchMoveTasks]);
+
+  // Correlate services to the move's old/new addresses. Services still on the
+  // FROM address are the ones at risk of being forgotten after the move.
+  useEffect(() => {
+    const fromId = plan?.fromAddress?.id;
+    const toId = plan?.toAddress?.id;
+    if (!fromId && !toId) {
+      setMoveAccounts(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<any>("/api/addresses", { limit: "200" });
+      if (cancelled || res.error || !res.data) return;
+      const byId = new Map<string, any>((res.data.addresses || []).map((a: any) => [a.id, a]));
+      setMoveAccounts({
+        atOld: (byId.get(fromId)?.services as any[]) || [],
+        atNew: (byId.get(toId)?.services as any[]) || [],
+      });
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [plan?.fromAddress?.id, plan?.toAddress?.id]);
 
   // Advance the moving plan through the same state machine the web exposes:
   // PLANNING -> IN_PROGRESS -> COMPLETED (PATCH /api/moving/[id]).
@@ -450,6 +479,55 @@ export default function MovingDetailScreen() {
             </Text>
           </Card>
         </View>
+
+        {/* Move-focused: what's set up at the new place vs still tied to the old one */}
+        {moveAccounts && (moveAccounts.atOld.length > 0 || moveAccounts.atNew.length > 0) && (
+          <View style={{ marginBottom: 4 }}>
+            <Text style={styles.moveLbl}>Catch what's still tied to your old address</Text>
+            <View style={styles.moveSplits}>
+              <View style={[styles.moveSplit, { borderColor: theme.colors.emerald.border }]}>
+                <View style={styles.moveSplitH}>
+                  <Check size={15} color={theme.colors.emerald.text} />
+                  <Text style={[styles.moveSplitHT, { color: theme.colors.emerald.text }]}>Set up at new</Text>
+                  <Text style={styles.moveSplitN}>{moveAccounts.atNew.length}</Text>
+                </View>
+                {moveAccounts.atNew.length === 0 ? (
+                  <Text style={styles.moveEmpty}>Nothing yet</Text>
+                ) : (
+                  moveAccounts.atNew.slice(0, 6).map((s: any) => (
+                    <View key={s.id} style={styles.moveRow}>
+                      <View style={[styles.moveDot, { backgroundColor: theme.colors.emerald.text }]} />
+                      <Text style={styles.moveName} numberOfLines={1}>{s.providerName || s.provider?.name || "Service"}</Text>
+                      <Check size={13} color={theme.colors.emerald.text} />
+                    </View>
+                  ))
+                )}
+              </View>
+              <View style={[styles.moveSplit, { borderColor: theme.colors.rose.border }]}>
+                <View style={styles.moveSplitH}>
+                  <AlertTriangle size={15} color={theme.colors.error} />
+                  <Text style={[styles.moveSplitHT, { color: theme.colors.error }]}>Still at old</Text>
+                  <Text style={styles.moveSplitN}>{moveAccounts.atOld.length}</Text>
+                </View>
+                {moveAccounts.atOld.length === 0 ? (
+                  <Text style={styles.moveEmpty}>All clear 🎉</Text>
+                ) : (
+                  moveAccounts.atOld.slice(0, 6).map((s: any) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={styles.moveRow}
+                      onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
+                    >
+                      <View style={[styles.moveDot, { backgroundColor: theme.colors.error }]} />
+                      <Text style={styles.moveName} numberOfLines={1}>{s.providerName || s.provider?.name || "Service"}</Text>
+                      <ChevronRight size={13} color={theme.colors.error} />
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Move Scope — heavy secondary section, collapsed by default */}
         <CollapsibleCard
@@ -878,6 +956,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   addressCards: { flexDirection: "row", gap: 12, marginTop: 16 },
   addrLabel: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.5 },
   addrValue: { fontSize: 13, fontWeight: "600", color: theme.colors.text, marginTop: 4 },
+  // Move-focused split (Aurora Direction C)
+  moveLbl: {
+    fontSize: 10, letterSpacing: 1, textTransform: "uppercase", fontWeight: "700",
+    color: theme.colors.textTertiary, marginTop: 16, marginBottom: 9, marginLeft: 2,
+  },
+  moveSplits: { flexDirection: "row", gap: 10 },
+  moveSplit: {
+    flex: 1, padding: 13, borderRadius: 16,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+  },
+  moveSplitH: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  moveSplitHT: { fontSize: 12.5, fontWeight: "700" },
+  moveSplitN: { marginLeft: "auto", fontSize: 11, fontWeight: "700", color: theme.colors.textTertiary },
+  moveRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 7, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  moveDot: { width: 7, height: 7, borderRadius: 4 },
+  moveName: { flex: 1, fontSize: 12, color: theme.colors.text },
+  moveEmpty: { fontSize: 12, color: theme.colors.textTertiary, paddingVertical: 6 },
   sectionTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 12 },
   scopeHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   scopeTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
