@@ -13,7 +13,7 @@ export const metadata = createPublicPageMetadata({
 
 const limits = [
   "Provider availability can vary by address, ZIP code, building, account type, service tier, and local infrastructure.",
-  "A provider appearing in LocateFlow is not a guarantee that it serves a specific address.",
+  "A provider appearing in LocateFlow is not a guarantee that it serves a specific address. Internet and electric suggestions are cross-checked against the public FCC National Broadband Map and utility service-territory data at the area level — coverage reported by providers to the FCC, not a service guarantee.",
   "Provider names, websites, categories, and availability context may be incomplete, outdated, or unavailable.",
   "Users should verify price, licensing, insurance, plan details, cancellation rules, and availability directly with the provider.",
 ] as const;
@@ -32,7 +32,7 @@ const coverageFaqs = [
   {
     question: "Does LocateFlow verify exact address-level availability?",
     answer:
-      "No. Exact address-level availability can change by building, unit, infrastructure, plan, timing, and provider rules. Users should confirm directly with the provider or official agency.",
+      "Not at the exact-address level. For internet and electric service, LocateFlow cross-checks availability against the public FCC National Broadband Map and utility service-territory data at the area level. That coverage is reported by providers to the FCC, and exact address-level availability can still change by building, unit, infrastructure, plan, timing, and provider rules — it is not a guarantee, so confirm with the provider before relying on it.",
   },
   {
     question: "What does provider confidence mean?",

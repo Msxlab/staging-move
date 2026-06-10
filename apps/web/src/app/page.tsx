@@ -13,6 +13,7 @@ import {
   Bell,
   CheckCircle2,
   ArrowRight,
+  Home,
   Shield,
   ChevronDown,
   Scale,
@@ -317,7 +318,7 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             { icon: MapPin, titleKey: "feature_services_title", bodyKey: "feature_services_body" },
-            { icon: Zap, titleKey: "feature_community_title", bodyKey: "feature_community_body" },
+            { icon: Home, titleKey: "feature_dossier_title", bodyKey: "feature_dossier_body" },
             { icon: Bell, titleKey: "feature_reminders_title", bodyKey: "feature_reminders_body" },
             { icon: DollarSign, titleKey: "feature_budget_title", bodyKey: "feature_budget_body" },
             { icon: FileText, titleKey: "feature_documents_title", bodyKey: "feature_documents_body" },

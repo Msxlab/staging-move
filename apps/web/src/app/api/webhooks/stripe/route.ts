@@ -22,6 +22,7 @@ import {
   sendSubscriptionResumedEmail,
   sendSubscriptionUpdatedEmail,
 } from "@/lib/email-service";
+import { sendAdminPurchaseAlert } from "@/lib/admin-alerts";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -681,6 +682,21 @@ export async function POST(request: NextRequest) {
               dedupeKey: `stripe:checkout-completed:${event.id}`,
             }),
             `checkout.session.completed userHint=${safeUserHint(recipient.userId)}`,
+          );
+          // Owner alert: first activation only — checkout.session.completed
+          // fires once per Checkout, never on renewals (those are invoice
+          // events). Deduped on the Stripe event id; the helper never throws
+          // and suppresses the allowlisted QA account internally.
+          fireAndLogEmail(
+            sendAdminPurchaseAlert({
+              userId: recipient.userId,
+              email: recipient.email,
+              plan,
+              interval: mappedPrice?.billingInterval || metadataBillingInterval(session.metadata),
+              provider: "stripe",
+              dedupeKey: `stripe:${event.id}`,
+            }),
+            `admin-purchase-alert userHint=${safeUserHint(recipient.userId)}`,
           );
         }
         break;

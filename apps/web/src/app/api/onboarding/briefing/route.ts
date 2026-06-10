@@ -5,7 +5,8 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
-import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
+import { getUserPlan } from "@/lib/plan-limits";
+import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
 import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
 import {
   buildBriefingSignals,
@@ -147,6 +148,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
   }
 
+  // ── Configuration + entitlement gates ───────────────────────
+  // The runtime key decides whether the AI section exists at all on this
+  // deployment; the caller's plan decides whether THIS user gets it. Both are
+  // resolved up front so a gated request never gathers signals, touches the
+  // cache, or consumes daily AI budget.
+  const [apiKeyValue, userPlan] = await Promise.all([
+    getRuntimeConfigValue("ANTHROPIC_API_KEY").catch(() => null),
+    getUserPlan(userId),
+  ]);
+  const apiKey = apiKeyValue?.trim() || null;
+
+  // Not configured → tell the UI to hide the AI section. We do NOT 500; the
+  // briefing is a nice-to-have layered on top of the deterministic dashboard.
+  // Checked BEFORE the plan gate so a keyless deployment never dangles an
+  // upgrade CTA for a feature nobody on it can have.
+  if (!apiKey) {
+    return NextResponse.json({ configured: false });
+  }
+
+  // Paid-plan gate (owner decision): the AI briefing is INDIVIDUAL and up.
+  // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 — never
+  // 403 — so old clients (which require a string `briefing`) fail soft to the
+  // deterministic dashboard instead of erroring.
+  if (!planFeatures(userPlan.plan).aiBriefing) {
+    return NextResponse.json({
+      configured: true,
+      entitled: false,
+      upgradeRequired: "AI_BRIEFING_UPGRADE_REQUIRED",
+    });
+  }
+
   // ── Gather coarse, non-PII signals from the user's own data ──
   const scope = await resolveWorkspaceDataScope(request, userId);
 
@@ -245,15 +277,6 @@ export async function POST(request: NextRequest) {
   // Same-day repeat with unchanged inputs → cached briefing, no API call.
   if (cached && cached.fingerprint === fingerprint) {
     return cachedResponse(cached);
-  }
-
-  // ── Gate on ANTHROPIC_API_KEY ───────────────────────────────
-  const apiKey = (await getRuntimeConfigValue("ANTHROPIC_API_KEY").catch(() => null))?.trim() || null;
-
-  // Not configured → tell the UI to hide the AI section. We do NOT 500; the
-  // briefing is a nice-to-have layered on top of the deterministic dashboard.
-  if (!apiKey) {
-    return NextResponse.json({ configured: false });
   }
 
   // Inputs changed but today's AI budget is spent → keep serving today's last

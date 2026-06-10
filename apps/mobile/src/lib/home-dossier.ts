@@ -13,18 +13,26 @@ export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 
 export interface HomeDossierResponse {
   configured: boolean;
-  address: { id: string; city: string; state: string };
-  flood: {
+  /**
+   * Plan entitlement (paid-plans-only packaging). `false` ⇒ render the
+   * value-first upgrade teaser instead of data rows. Absent (older servers
+   * that predate the flag) ⇒ treated as entitled, so a half-rolled-out
+   * backend never hides real data from a paying user.
+   */
+  entitled?: boolean;
+  address?: { id: string; city: string; state: string };
+  /** Data sections may be omitted entirely on unentitled payloads. */
+  flood?: {
     status: DossierSectionStatus;
     zone: string | null;
     isHighRisk: boolean | null;
   };
-  school: {
+  school?: {
     status: DossierSectionStatus;
     districtName: string | null;
     ncesId: string | null;
   };
-  weather: {
+  weather?: {
     status: DossierWeatherStatus;
     forecastDate: string | null;
     summary: string | null;
@@ -91,16 +99,18 @@ export function clampPct(value: number | null | undefined): number | null {
  * error state in the card (fail-open, the move plan is the primary content).
  */
 export function getFloodRow(d: HomeDossierResponse): FloodRow | null {
-  if (d.flood.status !== "ok" || !nonEmpty(d.flood.zone)) return null;
-  return { zone: d.flood.zone.trim(), isHighRisk: d.flood.isHighRisk === true };
+  const flood = d.flood;
+  if (!flood || flood.status !== "ok" || !nonEmpty(flood.zone)) return null;
+  return { zone: flood.zone.trim(), isHighRisk: flood.isHighRisk === true };
 }
 
 /** School row renders only with a concrete district name from NCES data. */
 export function getSchoolRow(d: HomeDossierResponse): SchoolRow | null {
-  if (d.school.status !== "ok" || !nonEmpty(d.school.districtName)) return null;
+  const school = d.school;
+  if (!school || school.status !== "ok" || !nonEmpty(school.districtName)) return null;
   return {
-    districtName: d.school.districtName.trim(),
-    ncesId: nonEmpty(d.school.ncesId) ? d.school.ncesId.trim() : null,
+    districtName: school.districtName.trim(),
+    ncesId: nonEmpty(school.ncesId) ? school.ncesId.trim() : null,
   };
 }
 
@@ -111,17 +121,18 @@ export function getSchoolRow(d: HomeDossierResponse): SchoolRow | null {
  * a summary or a complete high/low pair. A lone temperature renders nothing.
  */
 export function getWeatherRow(d: HomeDossierResponse): WeatherRow | null {
-  if (d.weather.status !== "ok") return null;
-  const high = roundTemp(d.weather.tempHighF);
-  const low = roundTemp(d.weather.tempLowF);
+  const weather = d.weather;
+  if (!weather || weather.status !== "ok") return null;
+  const high = roundTemp(weather.tempHighF);
+  const low = roundTemp(weather.tempLowF);
   const hasTempPair = high !== null && low !== null;
-  if (!nonEmpty(d.weather.summary) && !hasTempPair) return null;
+  if (!nonEmpty(weather.summary) && !hasTempPair) return null;
   return {
-    forecastDate: nonEmpty(d.weather.forecastDate) ? d.weather.forecastDate : null,
-    summary: nonEmpty(d.weather.summary) ? d.weather.summary.trim() : null,
+    forecastDate: nonEmpty(weather.forecastDate) ? weather.forecastDate : null,
+    summary: nonEmpty(weather.summary) ? weather.summary.trim() : null,
     tempHighF: hasTempPair ? high : null,
     tempLowF: hasTempPair ? low : null,
-    precipChancePct: clampPct(d.weather.precipChancePct),
+    precipChancePct: clampPct(weather.precipChancePct),
   };
 }
 
@@ -129,11 +140,14 @@ export function getWeatherRow(d: HomeDossierResponse): WeatherRow | null {
  * Build the card's render model from a dossier response. Tolerates null /
  * undefined / unconfigured payloads by returning "render nothing" — the card
  * disappears rather than erroring (offline, 404, half-rolled-out server).
+ * Unentitled payloads also yield empty rows: data rows must never render for
+ * a free user, even if a section leaked into the payload.
  */
 export function deriveHomeDossier(
   dossier: HomeDossierResponse | null | undefined,
 ): HomeDossierRows {
   if (!dossier || dossier.configured !== true) return EMPTY_ROWS;
+  if (dossier.entitled === false) return EMPTY_ROWS;
   if (!dossier.flood || !dossier.school || !dossier.weather) return EMPTY_ROWS;
   const flood = getFloodRow(dossier);
   const school = getSchoolRow(dossier);
@@ -144,6 +158,30 @@ export function deriveHomeDossier(
     weather,
     hasContent: Boolean(flood || school || weather),
   };
+}
+
+/**
+ * Card-level view state (freemium packaging — the dossier is a paid unlock):
+ *  - "hidden"  → render nothing. Unconfigured server, fetch failure, malformed
+ *                payload, or an entitled user whose every section degraded.
+ *                configured:false stays invisible for EVERYONE — a teaser for
+ *                a feature the deployment can't serve would be dishonest.
+ *  - "teaser"  → entitled:false from the server: render the value-first
+ *                upgrade teaser (locked rows + "Unlock with Individual").
+ *  - "content" → entitled (or a pre-flag server) with at least one real row.
+ */
+export type HomeDossierView =
+  | { kind: "hidden" }
+  | { kind: "teaser" }
+  | { kind: "content"; rows: HomeDossierRows };
+
+export function deriveHomeDossierView(
+  dossier: HomeDossierResponse | null | undefined,
+): HomeDossierView {
+  if (!dossier || dossier.configured !== true) return { kind: "hidden" };
+  if (dossier.entitled === false) return { kind: "teaser" };
+  const rows = deriveHomeDossier(dossier);
+  return rows.hasContent ? { kind: "content", rows } : { kind: "hidden" };
 }
 
 /**

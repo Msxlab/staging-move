@@ -21,6 +21,7 @@ import {
 } from "@/lib/oauth";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
+import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -937,5 +938,17 @@ export async function findOrLinkOAuthUserWithStatus(input: {
 
   await ensureSubscriptionDefaults(created.id);
   await ensureWorkspaceDefaults(created.id);
+
+  // Owner alert: instant new-signup notification for OAuth-created accounts
+  // (covers web Google/Apple callbacks and mobile native Apple sign-in).
+  // Fire-and-forget — the helper never throws and suppresses the allowlisted
+  // QA account internally, so this can never break the OAuth flow.
+  void sendAdminSignupAlert({
+    userId: created.id,
+    email: input.email.toLowerCase(),
+    name: [input.firstName, input.lastName].filter(Boolean).join(" ") || null,
+    source: `oauth:${input.provider}`,
+  });
+
   return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

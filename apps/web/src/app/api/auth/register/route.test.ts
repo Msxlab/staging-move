@@ -50,6 +50,10 @@ vi.mock("@/lib/qa-account", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/admin-alerts", () => ({
+  sendAdminSignupAlert: vi.fn(() => Promise.resolve(true)),
+}));
+
 vi.mock("@/lib/legal-acceptance", () => ({
   normalizeAcceptedLegalConsents: vi.fn((consents) =>
     consents?.termsAccepted && consents?.disclaimerAccepted
@@ -70,6 +74,7 @@ import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
+import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -85,6 +90,7 @@ const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as 
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
+const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -218,6 +224,12 @@ describe("register route", () => {
     });
     expect(recordLegalAcceptanceMock).not.toHaveBeenCalled();
     expect(userMock.update).not.toHaveBeenCalled();
+    expect(sendAdminSignupAlertMock).toHaveBeenCalledWith({
+      userId: "user-new",
+      email: "new@example.com",
+      name: "New User",
+      source: "password",
+    });
   });
 
   it("auto-verifies only the single allowlisted QA account without sending a verification email", async () => {
@@ -244,6 +256,9 @@ describe("register route", () => {
     expect(tokenMock.create).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
     expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("qa-user");
+    // Owner alert excluded for the QA account (route gate; the helper also
+    // suppresses it internally as the single enforcement point).
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
   });
 
   it("does not auto-verify normal users while the QA account env is configured", async () => {

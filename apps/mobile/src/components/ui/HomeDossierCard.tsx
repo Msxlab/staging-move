@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Home, Waves, GraduationCap, CloudSun } from "lucide-react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Home, Waves, GraduationCap, CloudSun, Lock, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { hapticLight } from "@/lib/haptics";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import {
-  deriveHomeDossier,
+  deriveHomeDossierView,
   formatForecastDate,
   type HomeDossierResponse,
 } from "@/lib/home-dossier";
@@ -33,14 +35,24 @@ interface HomeDossierCardProps {
  *  - High-risk flood zones get a honey/amber warning pill (warning tone
  *    tokens — no raw hex, no violet).
  *
+ * Freemium packaging: the dossier is paid-plans-only. A FREE / FREE_TRIAL
+ * user gets `{ configured: true, entitled: false }` from the server and sees
+ * a value-first teaser instead — an honest pitch + the three locked rows +
+ * an "Unlock with Individual" CTA routed to the existing subscription screen
+ * (same destination every mobile upsell uses). `configured: false` stays
+ * fully hidden for everyone: never tease a feature the deployment can't
+ * serve. Older servers without the flag are treated as entitled.
+ *
  * Hermes-safe: date label via Date#toLocaleDateString only (no
- * Intl.RelativeTimeFormat / ListFormat / PluralRules). All row gating lives
- * in @/lib/home-dossier so it unit-tests under the node vitest environment.
+ * Intl.RelativeTimeFormat / ListFormat / PluralRules). All row/teaser gating
+ * lives in @/lib/home-dossier so it unit-tests under the node vitest
+ * environment.
  */
 export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const [dossier, setDossier] = useState<HomeDossierResponse | null>(null);
 
   useEffect(() => {
@@ -65,9 +77,70 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
     };
   }, [addressId]);
 
-  const rows = useMemo(() => deriveHomeDossier(dossier), [dossier]);
+  const view = useMemo(() => deriveHomeDossierView(dossier), [dossier]);
 
-  if (!addressId || !rows.hasContent || !dossier) return null;
+  const handleUnlock = useCallback(() => {
+    hapticLight();
+    router.push("/settings/subscription");
+  }, [router]);
+
+  if (!addressId || !dossier || view.kind === "hidden") return null;
+
+  // ── Value-first teaser (entitled:false) ─────────────────────────────
+  if (view.kind === "teaser") {
+    const lockedRows = [
+      { Icon: Waves, color: theme.colors.sky.text, label: t("dossier.floodLabel"), value: t("dossier.teaserFlood") },
+      { Icon: GraduationCap, color: theme.colors.emerald.text, label: t("dossier.schoolLabel"), value: t("dossier.teaserSchool") },
+      { Icon: CloudSun, color: theme.colors.amber.text, label: t("dossier.weatherLabel"), value: t("dossier.teaserWeather") },
+    ];
+    return (
+      <Card variant="default" style={styles.card}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerIcon}>
+            <Home size={16} color={theme.colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t("dossier.title")}</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {t("teaser.paidFeatureLabel")}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.teaserPitch}>{t("dossier.teaserPitch")}</Text>
+
+        {lockedRows.map(({ Icon, color, label, value }) => (
+          <View key={label} style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Icon size={14} color={color} />
+            </View>
+            <View style={styles.rowBody}>
+              <View style={styles.rowTop}>
+                <Text style={styles.rowLabel}>{label}</Text>
+                <Lock size={12} color={theme.colors.textMuted} />
+              </View>
+              <Text style={styles.teaserRowValue}>{value}</Text>
+            </View>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          style={styles.unlockBtn}
+          onPress={handleUnlock}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t("teaser.unlockCta")}
+        >
+          <Lock size={14} color="#fff" />
+          <Text style={styles.unlockBtnText}>{t("teaser.unlockCta")}</Text>
+          <ArrowRight size={14} color="#fff" />
+        </TouchableOpacity>
+      </Card>
+    );
+  }
+
+  // ── Entitled: real data rows ────────────────────────────────────────
+  const rows = view.rows;
 
   const dateLocale = (i18n.language || "").toLowerCase().startsWith("es")
     ? "es-ES"
@@ -224,5 +297,36 @@ const makeStyles = (theme: Theme) =>
       color: theme.colors.textMuted,
       lineHeight: 15,
       marginTop: 5,
+    },
+    // ── Teaser-only styles (entitled:false) ──
+    teaserPitch: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: theme.colors.textSecondary,
+      marginTop: 12,
+    },
+    teaserRowValue: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.colors.textSecondary,
+      marginTop: 3,
+    },
+    // Same CTA idiom as FreeMoveUpsellCard (the established mobile upsell).
+    unlockBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.radius.lg,
+      paddingVertical: 12,
+      marginTop: 14,
+      ...theme.shadow.glow,
+    },
+    unlockBtnText: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: "#fff",
+      letterSpacing: -0.2,
     },
   });

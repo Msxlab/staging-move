@@ -59,12 +59,18 @@ vi.mock("@/lib/billing", () => ({
   ensureSubscriptionDefaults: vi.fn(() => Promise.resolve({ id: "sub-1" })),
 }));
 
+vi.mock("@/lib/admin-alerts", () => ({
+  sendAdminSignupAlert: vi.fn(() => Promise.resolve(true)),
+}));
+
 import { findOrLinkOAuthUserWithStatus } from "./user-auth";
 import { logSafeOAuthEvent } from "@/lib/oauth";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
+import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 
 const logSafeOAuthEventMock = logSafeOAuthEvent as unknown as Mock;
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
+const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
 
 describe("OAuth user linking", () => {
   beforeEach(() => {
@@ -213,6 +219,8 @@ describe("OAuth user linking", () => {
     });
     expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("password-user");
     expect(mocks.userCreate).not.toHaveBeenCalled();
+    // Linking to an existing user is NOT a new signup — no owner alert.
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
   });
 
   it("creates a new provider-verified OAuth account with emailVerifiedAt set", async () => {
@@ -241,5 +249,12 @@ describe("OAuth user linking", () => {
       },
     });
     expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("created-user");
+    // Owner alert fires for brand-new OAuth accounts only (fire-and-forget).
+    expect(sendAdminSignupAlertMock).toHaveBeenCalledWith({
+      userId: "created-user",
+      email: "new@example.com",
+      name: "New User",
+      source: "oauth:google",
+    });
   });
 });

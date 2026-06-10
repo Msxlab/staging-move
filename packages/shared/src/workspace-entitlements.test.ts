@@ -23,6 +23,26 @@ describe("planFeatures", () => {
     expect(planFeatures(null).seatLimit).toBe(1);
     expect(planFeatures("WHATEVER").manualConnectors).toBe(false);
   });
+
+  it("AI briefing matrix: every paid tier yes, free trial no", () => {
+    expect(planFeatures("PRO").aiBriefing).toBe(true);
+    expect(planFeatures("FAMILY").aiBriefing).toBe(true);
+    expect(planFeatures("INDIVIDUAL").aiBriefing).toBe(true);
+    expect(planFeatures("FREE_TRIAL").aiBriefing).toBe(false);
+    // Unknown / missing plans fall to the Free Trial floor (no AI briefing).
+    expect(planFeatures(null).aiBriefing).toBe(false);
+    expect(planFeatures("WHATEVER").aiBriefing).toBe(false);
+  });
+
+  it("Home Dossier matrix: every paid tier yes, free trial no", () => {
+    expect(planFeatures("PRO").homeDossier).toBe(true);
+    expect(planFeatures("FAMILY").homeDossier).toBe(true);
+    expect(planFeatures("INDIVIDUAL").homeDossier).toBe(true);
+    expect(planFeatures("FREE_TRIAL").homeDossier).toBe(false);
+    // Unknown / missing plans fall to the Free Trial floor (no dossier).
+    expect(planFeatures(null).homeDossier).toBe(false);
+    expect(planFeatures("WHATEVER").homeDossier).toBe(false);
+  });
 });
 
 describe("seatLimitForPlan", () => {
