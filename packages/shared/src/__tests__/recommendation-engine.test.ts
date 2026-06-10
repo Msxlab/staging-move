@@ -446,6 +446,163 @@ describe("onboarding-signal wiring", () => {
   });
 });
 
+describe("extended onboarding signals (block 4d)", () => {
+  function baseProfile(overrides: Partial<UserProfile> = {}): UserProfile {
+    return {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 0,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      currentPhase: 1,
+      ...overrides,
+    };
+  }
+
+  function provider(overrides: Partial<Provider>): Provider {
+    return {
+      id: overrides.id || "p",
+      name: overrides.name || "Provider",
+      slug: overrides.slug || (overrides.id || "p"),
+      category: overrides.category || "GOVERNMENT_OTHER",
+      description: null,
+      website: null,
+      phone: null,
+      scope: overrides.scope || "FEDERAL",
+      states: overrides.states || [],
+      tags: overrides.tags || [],
+      popularityScore: overrides.popularityScore ?? 50,
+      displayOrder: 0,
+      userCount: 0,
+    };
+  }
+
+  function scoreOf(p: Provider, profile: UserProfile): number {
+    return scoreProviders([p], profile, "TX")[0].recommendationScore;
+  }
+
+  it("familyStatus FAMILY ranks family-relevant providers above COUPLE, which ranks above SINGLE", () => {
+    const school = provider({ id: "school", category: "KIDS_SCHOOL", tags: ["kids", "education"] });
+    const parent = (familyStatus?: string) =>
+      baseProfile({ hasChildren: true, childrenCount: 1, familyStatus });
+
+    const family = scoreOf(school, parent("FAMILY"));
+    const couple = scoreOf(school, parent("COUPLE"));
+    const single = scoreOf(school, parent("SINGLE"));
+
+    expect(family).toBeGreaterThan(couple);
+    expect(couple).toBeGreaterThan(single);
+    // Conservative by contract: the whole familyStatus swing stays modest (≤15).
+    expect(family - single).toBeLessThanOrEqual(15);
+  });
+
+  it("familyStatus FAMILY can flip the ranking toward a family-relevant category", () => {
+    // Same tier (RECOMMENDED for a parent), no tags; the gym leads on raw
+    // popularity until the FAMILY signal nudges the kids activity ahead.
+    const activity = provider({ id: "kids-activity", category: "KIDS_ACTIVITY", popularityScore: 50 });
+    const gym = provider({ id: "gym", category: "FITNESS_GYM", popularityScore: 80 });
+    const parent = (familyStatus: string) =>
+      baseProfile({ hasChildren: true, childrenCount: 1, familyStatus });
+
+    const without = scoreProviders([activity, gym], parent("SINGLE"), "TX").map((p) => p.id);
+    const withFamily = scoreProviders([activity, gym], parent("FAMILY"), "TX").map((p) => p.id);
+
+    expect(without).toEqual(["gym", "kids-activity"]);
+    expect(withFamily).toEqual(["kids-activity", "gym"]);
+  });
+
+  it("ageRange 55+ boosts senior/medicare-tagged providers without requiring the household-senior boolean", () => {
+    const medicare = provider({ id: "medicare", category: "GOVERNMENT_HEALTH", tags: ["medicare", "senior"] });
+
+    const older = scoreOf(medicare, baseProfile({ ageRange: "55+" }));
+    const younger = scoreOf(medicare, baseProfile({ ageRange: "25-34" }));
+    const undisclosed = scoreOf(medicare, baseProfile());
+
+    expect(older).toBeGreaterThan(younger);
+    expect(younger).toBe(undisclosed); // non-senior buckets carry no signal
+  });
+
+  it("petTypes listed ranks pet-tagged providers slightly above the bare hasPets boolean", () => {
+    const vet = provider({ id: "vet", category: "HEALTHCARE_VET", tags: ["vet", "pet"] });
+
+    const withTypes = scoreOf(vet, baseProfile({ hasPets: true, petTypes: ["dog", "cat"] }));
+    const booleanOnly = scoreOf(vet, baseProfile({ hasPets: true, petTypes: [] }));
+
+    expect(withTypes).toBeGreaterThan(booleanOnly);
+    // "Slightly above": modest by contract, never a tier-sized jump.
+    expect(withTypes - booleanOnly).toBeLessThanOrEqual(15);
+    // Blank entries are not a signal.
+    const blankTypes = scoreOf(vet, baseProfile({ hasPets: true, petTypes: ["  "] }));
+    expect(blankTypes).toBe(booleanOnly);
+  });
+
+  it("businessType deepens the business-services boost beyond the isBusinessOwner boolean", () => {
+    const sba = provider({ id: "sba", category: "GOVERNMENT_OTHER", tags: ["business", "government"] });
+
+    const typed = scoreOf(sba, baseProfile({ isBusinessOwner: true, businessType: "LLC" }));
+    const booleanOnly = scoreOf(sba, baseProfile({ isBusinessOwner: true }));
+
+    expect(typed).toBeGreaterThan(booleanOnly);
+    expect(typed - booleanOnly).toBeLessThanOrEqual(15);
+  });
+
+  it("an active immigration status reinforces the immigration path beyond isImmigrant; CITIZEN/blank carry no signal", () => {
+    const uscis = provider({ id: "uscis", category: "GOVERNMENT_IMMIGRATION", tags: ["immigration", "government"] });
+
+    const active = scoreOf(uscis, baseProfile({ isImmigrant: true, immigrationStatus: "GREEN_CARD" }));
+    const booleanOnly = scoreOf(uscis, baseProfile({ isImmigrant: true }));
+    const citizen = scoreOf(uscis, baseProfile({ isImmigrant: true, immigrationStatus: "CITIZEN" }));
+    const blank = scoreOf(uscis, baseProfile({ isImmigrant: true, immigrationStatus: "" }));
+
+    expect(active).toBeGreaterThan(booleanOnly);
+    expect(citizen).toBe(booleanOnly);
+    expect(blank).toBe(booleanOnly);
+  });
+
+  it("treats absent/non-matching extended signals as no-signal (scores unchanged)", () => {
+    const school = provider({ id: "school", category: "KIDS_SCHOOL", tags: ["kids"] });
+    const plain = scoreOf(school, baseProfile({ hasChildren: true }));
+    const explicitNoSignal = scoreOf(
+      school,
+      baseProfile({
+        hasChildren: true,
+        familyStatus: "OTHER",
+        ageRange: "",
+        petTypes: [],
+        businessType: null,
+        immigrationStatus: null,
+      }),
+    );
+    expect(explicitNoSignal).toBe(plain);
+  });
+
+  it("keeps every extended-signal weight modest (≤15) and overridable through the weights table", () => {
+    for (const [key, value] of Object.entries(DEFAULT_SCORING_WEIGHTS.signalBoosts)) {
+      expect(value, `${key} must stay modest`).toBeLessThanOrEqual(15);
+      expect(value, `${key} must be non-negative`).toBeGreaterThanOrEqual(0);
+    }
+
+    // RECOMMENDATION_SCORING_WEIGHTS-style override is applied additively,
+    // exactly like the other weight groups.
+    const vet = provider({ id: "vet", category: "HEALTHCARE_VET", tags: ["vet"] });
+    const petProfile = baseProfile({ hasPets: true, petTypes: ["dog"] });
+    const base = scoreProviders([vet], petProfile, "TX")[0].recommendationScore;
+    const bumped = scoreProviders([vet], petProfile, "TX", undefined, undefined, {
+      weights: {
+        signalBoosts: {
+          ...DEFAULT_SCORING_WEIGHTS.signalBoosts,
+          petTypesListed: DEFAULT_SCORING_WEIGHTS.signalBoosts.petTypesListed + 5,
+        },
+      },
+    })[0].recommendationScore;
+    expect(bumped - base).toBe(5);
+  });
+});
+
 describe("injectable scoring weights", () => {
   function profile(): UserProfile {
     return {

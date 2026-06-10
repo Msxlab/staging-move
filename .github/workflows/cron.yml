@@ -112,6 +112,10 @@ jobs:
               hit "$WEB/api/cron/move-reminders"
               hit "$WEB/api/cron/contract-reminders"
               hit "$WEB/api/cron/lifecycle-nudges"
+              # Move-week weather push: NWS move-day forecast for plans moving
+              # in <=3 days. Push-only (not part of the daily-digest rollup);
+              # self-gates on local-8am + per-plan-per-day dedupe like the rest.
+              hit "$WEB/api/cron/move-week-alerts"
               # Daily reminder ROLLUP. Same per-zone local-8am slots as the
               # per-item reminders above. When DAILY_DIGEST_ENABLED is on, the
               # five crons above write only their in-app feed entries and

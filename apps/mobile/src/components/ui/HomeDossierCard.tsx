@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Home, Waves, GraduationCap, CloudSun, Lock, ArrowRight } from "lucide-react-native";
+import {
+  Home,
+  Waves,
+  GraduationCap,
+  CloudSun,
+  TriangleAlert,
+  Radiation,
+  Droplets,
+  Wind,
+  Lock,
+  ArrowRight,
+} from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useAppTheme, type Theme } from "@/lib/theme";
@@ -19,25 +30,37 @@ interface HomeDossierCardProps {
   addressId?: string | null;
 }
 
+/** Explicit zone→key map (greppable, no template-literal i18n keys). */
+const RADON_ZONE_KEYS = {
+  1: "dossier.radonZone1",
+  2: "dossier.radonZone2",
+  3: "dossier.radonZone3",
+} as const;
+
 /**
  * NEW HOME DOSSIER — a compact "Your new home" card for the moving plan
  * detail screen, mirroring the web dossier contract: FEMA flood zone, NCES
- * school district, and (within 7 days of the move) the moving-day forecast
- * for the destination address.
+ * school district, (within 7 days of the move) the moving-day forecast for
+ * the destination address, plus the extended sections — FEMA NRI natural
+ * hazards (max 3 pills), EPA county radon zone, EPA drinking-water record,
+ * and AirNow air quality.
  *
  * Honesty + graceful degradation guarantees:
  *  - Self-fetches and renders NOTHING when the lookup is unconfigured, the
  *    address has no coordinates, the device is offline, or every section
  *    degraded — the move plan is the primary content, never blocked by this.
- *  - Each row renders only real upstream data (FEMA NFHL / NCES / NWS) and
- *    carries fine-print naming the source with a verify-with-the-authority
- *    disclaimer; nothing is modeled or fabricated.
+ *  - Each row renders only real upstream data (FEMA NFHL/NRI / NCES / NWS /
+ *    EPA / AirNow) and carries fine-print naming the source with a
+ *    verify-with-the-authority disclaimer; nothing is modeled or fabricated.
+ *    Sections are independent: older servers that omit the extended sections
+ *    render exactly the original three rows.
  *  - High-risk flood zones get a honey/amber warning pill (warning tone
- *    tokens — no raw hex, no violet).
+ *    tokens — no raw hex, no violet). Hazard pills stay NEUTRAL on purpose:
+ *    the data is informational and county-relative, never alarming.
  *
  * Freemium packaging: the dossier is paid-plans-only. A FREE / FREE_TRIAL
  * user gets `{ configured: true, entitled: false }` from the server and sees
- * a value-first teaser instead — an honest pitch + the three locked rows +
+ * a value-first teaser instead — an honest pitch + the locked rows +
  * an "Unlock with Individual" CTA routed to the existing subscription screen
  * (same destination every mobile upsell uses). `configured: false` stays
  * fully hidden for everyone: never tease a feature the deployment can't
@@ -92,6 +115,10 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
       { Icon: Waves, color: theme.colors.sky.text, label: t("dossier.floodLabel"), value: t("dossier.teaserFlood") },
       { Icon: GraduationCap, color: theme.colors.emerald.text, label: t("dossier.schoolLabel"), value: t("dossier.teaserSchool") },
       { Icon: CloudSun, color: theme.colors.amber.text, label: t("dossier.weatherLabel"), value: t("dossier.teaserWeather") },
+      { Icon: TriangleAlert, color: theme.colors.orange.text, label: t("dossier.hazardsLabel"), value: t("dossier.teaserHazards") },
+      { Icon: Radiation, color: theme.colors.amber.text, label: t("dossier.radonLabel"), value: t("dossier.teaserRadon") },
+      { Icon: Droplets, color: theme.colors.cyan.text, label: t("dossier.waterLabel"), value: t("dossier.teaserWater") },
+      { Icon: Wind, color: theme.colors.sky.text, label: t("dossier.airLabel"), value: t("dossier.teaserAir") },
     ];
     return (
       <Card variant="default" style={styles.card}>
@@ -152,6 +179,14 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
     : null;
   const weatherHeadline = weather
     ? [forecastDateLabel, weather.summary].filter(Boolean).join(" · ")
+    : "";
+
+  // AQI number and/or AirNow category — the helper guarantees at least one.
+  const air = rows.air;
+  const airHeadline = air
+    ? [air.aqi !== null ? t("dossier.airAqi", { aqi: air.aqi }) : null, air.category]
+        .filter(Boolean)
+        .join(" · ")
     : "";
 
   return (
@@ -236,6 +271,82 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
           </View>
         </View>
       )}
+
+      {rows.hazards && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <TriangleAlert size={14} color={theme.colors.orange.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.hazardsLabel")}</Text>
+            {rows.hazards.overallRating !== null && (
+              <Text style={styles.rowValue}>
+                {t("dossier.hazardsOverall", { rating: rows.hazards.overallRating })}
+              </Text>
+            )}
+            {rows.hazards.topRisks.length > 0 && (
+              <View style={styles.pillWrap}>
+                {/* Max 3 pills (helper-capped). Neutral on purpose — county-
+                    relative ratings are informational, never an alarm. */}
+                {rows.hazards.topRisks.map((risk) => (
+                  <UiBadge
+                    key={risk.hazard}
+                    label={`${risk.hazard} · ${risk.rating}`}
+                    variant="neutral"
+                  />
+                ))}
+              </View>
+            )}
+            <Text style={styles.finePrint}>{t("dossier.hazardsFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {rows.radon && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Radiation size={14} color={theme.colors.amber.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.radonLabel")}</Text>
+            <Text style={styles.rowValue}>{t(RADON_ZONE_KEYS[rows.radon.zone])}</Text>
+            <Text style={styles.finePrint}>{t("dossier.radonFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {rows.water && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Droplets size={14} color={theme.colors.cyan.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.waterLabel")}</Text>
+            <Text style={styles.rowValue}>{rows.water.systemName}</Text>
+            {rows.water.violations5y !== null && (
+              <Text style={styles.rowMeta}>
+                {rows.water.violations5y === 0
+                  ? t("dossier.waterViolationsNone")
+                  : t("dossier.waterViolationsSome", { n: rows.water.violations5y })}
+              </Text>
+            )}
+            <Text style={styles.finePrint}>{t("dossier.waterFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {air && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Wind size={14} color={theme.colors.sky.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.airLabel")}</Text>
+            {!!airHeadline && <Text style={styles.rowValue}>{airHeadline}</Text>}
+            <Text style={styles.finePrint}>{t("dossier.airFinePrint")}</Text>
+          </View>
+        </View>
+      )}
     </Card>
   );
 }
@@ -297,6 +408,13 @@ const makeStyles = (theme: Theme) =>
       color: theme.colors.textMuted,
       lineHeight: 15,
       marginTop: 5,
+    },
+    // Hazard pills wrap onto extra lines on narrow devices (max 3 pills).
+    pillWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginTop: 6,
     },
     // ── Teaser-only styles (entitled:false) ──
     teaserPitch: {

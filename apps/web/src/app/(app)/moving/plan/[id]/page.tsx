@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
+import { VehicleCheck, isVehicleRegistrationTask } from "@/components/moving/vehicle-check";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks, UserPlus, UserCircle2 } from "lucide-react";
@@ -76,6 +77,8 @@ interface MoveTaskItem {
   actionType: string;
   status: string;
   confidence: string;
+  /** Relocation-checklist template id (e.g. "P3_VEHICLE_REG"); null for classifier tasks. */
+  templateId?: string | null;
   dueDate?: string | null;
   reason?: string | null;
   caveats?: string[] | null;
@@ -478,6 +481,11 @@ export default function MovingPlanDetailPage() {
                     )}
                     {task.caveats?.[0] && !isDone && !isDismissed && (
                       <p className="text-[10px] text-foreground/40 mt-2">{task.caveats[0]}</p>
+                    )}
+                    {/* Vehicle-registration task only: compact VIN → specs/recalls
+                        helper (NHTSA) with the destination state's DMV link. */}
+                    {isVehicleRegistrationTask(task) && !isDone && !isDismissed && (
+                      <VehicleCheck destinationState={plan.toAddress.state} />
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5 shrink-0">
