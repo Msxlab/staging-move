@@ -47,6 +47,7 @@
     "acquisitionCampaigns": "Campañas de adquisición",
     "billing": "Facturación",
     "providers": "Proveedores",
+    "sponsored": "Patrocinados",
     "providerGovernance": "Gobernanza de proveedores",
     "stateRules": "Reglas estatales",
     "movingPlans": "Planes de mudanza",
@@ -56,6 +57,7 @@
     "blog": "Blog",
     "waitlist": "Lista de espera",
     "analyticsPage": "Analítica",
+    "insights": "Perspectivas",
     "reports": "Reportes",
     "featureFlags": "Banderas de funciones",
     "connectors": "Conectores",
@@ -179,6 +181,180 @@
     "readiness_warn": "Advertencia",
     "readiness_missing": "Faltante",
     "readiness_unknown": "Desconocido"
+  },
+  "insights": {
+    "eyebrow": "Inteligencia",
+    "title": "Perspectivas",
+    "subtitle": "Salud de fuentes de datos, métricas de generación de IA, calidad de recomendaciones y preferencias por zona.",
+    "kpi": {
+      "healthy": "Fuentes saludables",
+      "briefings": "Briefings ({days}d)",
+      "briefingsGated": "{count, plural, one {# bloqueado} other {# bloqueados}}",
+      "feedback": "Comentarios ({days}d)",
+      "cohorts": "Grupos por zona"
+    },
+    "health": {
+      "title": "Salud de fuentes de datos",
+      "caption": "Resultados de integración por fuente — últimos {days} días.",
+      "ok": "OK",
+      "error": "Errores",
+      "notConfigured": "Sin configurar",
+      "other": "Otros",
+      "status": {
+        "healthy": "Saludable",
+        "degraded": "Degradada",
+        "off": "Apagada"
+      },
+      "sources": {
+        "fcc": "Banda ancha FCC",
+        "electric": "Tarifas eléctricas",
+        "nri": "FEMA NRI",
+        "radon": "Radón",
+        "water": "Calidad del agua",
+        "air": "Calidad del aire",
+        "nws": "Clima (NWS)",
+        "briefing": "Briefing de IA",
+        "dossier": "Dossier de IA"
+      },
+      "empty": "Aún no hay telemetría de integraciones en la ventana."
+    },
+    "ai": {
+      "title": "Métricas de IA",
+      "caption": "Resultados de briefings por día — últimos {days} días.",
+      "generated": "Generados",
+      "cached": "En caché",
+      "gated": "Bloqueados por plan",
+      "empty": "Aún no hay actividad de briefings en la ventana."
+    },
+    "reco": {
+      "title": "Calidad de recomendaciones",
+      "caption": "Comentarios de usuarios sobre recomendaciones de proveedores — últimos {days} días.",
+      "category": "Categoría",
+      "dismissed": "Descartadas",
+      "notRelevant": "No relevantes",
+      "snoozed": "Pospuestas",
+      "total": "Total",
+      "uncategorized": "Sin categoría",
+      "empty": "Aún no hay comentarios sobre recomendaciones en la ventana."
+    },
+    "area": {
+      "title": "Preferencias por zona",
+      "caption": "Principales proveedores por estado y categoría según servicios activos. Los grupos con menos de {floor} usuarios distintos se ocultan (k-anonimato).",
+      "state": "Estado",
+      "category": "Categoría",
+      "provider": "Proveedor",
+      "users": "Usuarios",
+      "services": "Servicios",
+      "allStates": "Todos los estados",
+      "filterLabel": "Filtrar por estado",
+      "rows": "{count, plural, one {# grupo} other {# grupos}}",
+      "empty": "Ningún grupo de estado y categoría ha alcanzado {floor} usuarios distintos todavía."
+    }
+  },
+  "sponsored": {
+    "eyebrow": "Contenido",
+    "title": "Espacios patrocinados",
+    "subtitle": "Espacios publicitarios etiquetados en superficies de directorio — lista de mudanzas y catálogo de proveedores.",
+    "policyBanner": "Los espacios patrocinados se muestran en un bloque separado y etiquetado, nunca dentro del ranking orgánico. La bandera de ejecución SPONSORED_ENABLED debe estar activada; el etiquetado claro y visible exigido por la FTC es obligatorio.",
+    "newPlacement": "Nuevo espacio",
+    "filters": {
+      "statusLabel": "Filtrar por estado",
+      "allStatuses": "Todos los estados",
+      "kindLabel": "Filtrar por superficie",
+      "allKinds": "Todas las superficies"
+    },
+    "kind": {
+      "mover": "Mudanzas",
+      "provider": "Proveedor"
+    },
+    "status": {
+      "live": "En vivo",
+      "scheduled": "Programado",
+      "expired": "Expirado",
+      "inactive": "Inactivo"
+    },
+    "table": {
+      "title": "Espacios",
+      "caption": "Las impresiones y los clics son contadores de mejor esfuerzo actualizados por la superficie pública — aquí son de solo lectura.",
+      "loading": "Cargando espacios…",
+      "target": "Objetivo",
+      "kind": "Superficie",
+      "label": "Etiqueta",
+      "scope": "Alcance",
+      "window": "Ventana",
+      "status": "Estado",
+      "impressions": "Impresiones",
+      "clicks": "Clics",
+      "actions": "Acciones",
+      "allStates": "Todos los estados",
+      "orphanTarget": "Objetivo faltante",
+      "edit": "Editar espacio",
+      "delete": "Eliminar espacio",
+      "activateHint": "Clic para activar",
+      "deactivateHint": "Clic para desactivar",
+      "pageOf": "Página {page} de {totalPages}",
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente"
+    },
+    "empty": {
+      "title": "No hay espacios patrocinados",
+      "description": "Crea un espacio para reservar el bloque etiquetado en una superficie de directorio. Nada se muestra públicamente hasta activar SPONSORED_ENABLED."
+    },
+    "drawer": {
+      "createTitle": "Nuevo espacio",
+      "editTitle": "Editar espacio",
+      "subtitle": "Un bloque etiquetado por superficie. La etiqueta de divulgación siempre se muestra con la tarjeta.",
+      "close": "Cerrar",
+      "kind": "Superficie",
+      "target": "Objetivo",
+      "clearTarget": "Quitar objetivo",
+      "moverSearchPlaceholder": "Buscar mudanzas por número USDOT o nombre…",
+      "providerSearchPlaceholder": "Buscar proveedores por nombre…",
+      "searching": "Buscando…",
+      "noResults": "Sin coincidencias. Los objetivos deben estar activos y ser elegibles.",
+      "notEligible": "Este objetivo no cumple el requisito de elegibilidad y no puede patrocinarse.",
+      "notEligibleShort": "no elegible",
+      "targetRequired": "Elige un objetivo antes de guardar.",
+      "windowRequired": "Define una fecha de inicio y una de fin.",
+      "label": "Etiqueta de divulgación",
+      "labelHint": "Se muestra en la tarjeta pública. La FTC exige un etiquetado claro y visible — no puede quedar en blanco.",
+      "stateScope": "Alcance estatal",
+      "stateScopePlaceholder": "p. ej. TX — vacío = todos los estados",
+      "categoryScope": "Alcance de categoría",
+      "categoryScopePlaceholder": "p. ej. internet — vacío = todas",
+      "startsAt": "Inicio",
+      "endsAt": "Fin",
+      "active": "Activo",
+      "activeHint": "Los espacios activos solo se muestran dentro de su ventana de fechas y solo mientras la bandera SPONSORED_ENABLED esté activada.",
+      "cancel": "Cancelar",
+      "create": "Crear espacio",
+      "save": "Guardar cambios"
+    },
+    "stepUp": {
+      "createTitle": "Crear espacio",
+      "createDescription": "Crear un espacio publica inventario publicitario pagado en una superficie pública del directorio cuando la bandera esté activada. Introduce tu contraseña de admin y un código MFA o de respaldo para confirmar.",
+      "createConfirm": "Crear espacio",
+      "saveTitle": "Guardar cambios del espacio",
+      "saveDescription": "Guardar reescribe inventario publicitario en vivo, incluida su etiqueta de divulgación y su alcance. Introduce tu contraseña de admin y un código MFA o de respaldo para confirmar.",
+      "saveConfirm": "Guardar cambios",
+      "activateTitle": "Activar espacio",
+      "activateDescription": "Activar el espacio de \"{name}\" lo publica en su bloque público etiquetado dentro de su ventana de fechas. Introduce tu contraseña de admin y un código MFA o de respaldo para confirmar.",
+      "activateConfirm": "Activar",
+      "deactivateTitle": "Desactivar espacio",
+      "deactivateDescription": "Desactivar el espacio de \"{name}\" lo retira de su bloque público. Introduce tu contraseña de admin y un código MFA o de respaldo para confirmar.",
+      "deactivateConfirm": "Desactivar",
+      "deleteTitle": "Eliminar espacio",
+      "deleteDescription": "El espacio de \"{name}\" se eliminará permanentemente. Esto no se puede deshacer. Introduce tu contraseña de admin y un código MFA o de respaldo para confirmar.",
+      "deleteConfirm": "Eliminar espacio"
+    },
+    "toast": {
+      "created": "Espacio creado",
+      "updated": "Espacio actualizado",
+      "deleted": "Espacio eliminado",
+      "loadFailed": "No se pudieron cargar los espacios.",
+      "actionFailed": "La acción falló.",
+      "hasTraffic": "No se puede eliminar un espacio con impresiones o clics registrados — desactívalo en su lugar."
+    }
   },
   "theme": {
     "toggle": "Tema",

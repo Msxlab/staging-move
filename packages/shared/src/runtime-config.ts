@@ -1007,6 +1007,21 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "plain",
     validation: "JSON object of scoring-weight overrides",
   },
+  {
+    key: "SPONSORED_ENABLED",
+    label: "Sponsored Placements Enabled",
+    description:
+      "Master flag for clearly-labeled sponsored placements in directory surfaces (licensed-movers list; later the provider catalog). When 'true', one active SponsoredPlacement matching the surface and state renders ABOVE organic results. Off by default. FTC ad-disclosure requirement: every rendered placement MUST carry a clear and conspicuous disclosure label (the placement's `label`, default 'Sponsored') — never ship a surface that drops the label.",
+    scope: "WEB",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app movers list"],
+    validation: "boolean",
+    note: "Default off. Placements themselves are admin-managed SponsoredPlacement rows; this flag only opens rendering. Impression/click counters are fire-and-forget and never block a user request.",
+  },
 
   // ── OAuth (Google + Apple Sign-in) ─────────────────────────
   {

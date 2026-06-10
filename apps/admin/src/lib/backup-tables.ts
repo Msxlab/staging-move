@@ -134,6 +134,12 @@ export const BACKUP_TABLES = {
   blogCategories: { model: "blogCategory", label: "Blog Categories" },
   blogTags: { model: "blogTag", label: "Blog Tags" },
   blogPosts: { model: "blogPost", label: "Blog Posts" },
+  // Sponsored placements are admin-managed delivery records whose
+  // impression/click counters are the billing evidence — recover on restore.
+  sponsoredPlacements: {
+    model: "sponsoredPlacement",
+    label: "Sponsored Placements",
+  },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;

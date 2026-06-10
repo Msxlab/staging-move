@@ -18,6 +18,7 @@ import {
   ScrollText,
   Shield,
   Settings,
+  Activity,
   BarChart3,
   Bell,
   Cog,
@@ -28,6 +29,7 @@ import {
   Layers,
   Lock,
   LifeBuoy,
+  Megaphone,
   Sparkles,
   Ticket,
   FileText,
@@ -84,6 +86,7 @@ export const navGroups: NavGroup[] = [
       { name: "Workspaces", nameKey: "workspaces", href: "/workspaces", icon: Home, show: ({ permissions }) => permissions.users.canRead },
       { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket, show: ({ permissions }) => permissions.acquisition_campaigns.canRead },
       { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
+      { name: "Insights", nameKey: "insights", href: "/insights", icon: Activity, show: ({ permissions }) => permissions.users.canRead },
     ],
   },
   {
@@ -93,6 +96,7 @@ export const navGroups: NavGroup[] = [
     railLabel: "Content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },

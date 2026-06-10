@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
+import { MoversSection } from "@/components/moving/movers-list";
 import { VehicleCheck, isVehicleRegistrationTask } from "@/components/moving/vehicle-check";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -658,6 +659,11 @@ export default function MovingPlanDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Find licensed movers — OPT-IN collapsed section (Family/Pro feature;
+          the API answers an upgrade teaser for other plans). Nothing fetches
+          or renders until the user explicitly expands it. */}
+      <MoversSection state={plan.toAddress.state} city={plan.toAddress.city} />
 
       {/* State Guide */}
       {stateRules && (

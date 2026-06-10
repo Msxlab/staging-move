@@ -8,6 +8,7 @@ import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { getUserPlan } from "@/lib/plan-limits";
 import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
 import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { recordIntegrationOutcome } from "@/lib/integration-telemetry";
 import {
   buildBriefingSignals,
   buildBriefingActions,
@@ -94,6 +95,10 @@ function briefingCacheSet(key: string, entry: CachedBriefing): void {
 
 /** The cached entry rendered as the standard success payload. */
 function cachedResponse(entry: CachedBriefing) {
+  // Fire-and-forget telemetry (synchronous in-process buffer — never throws,
+  // never adds latency): both same-day cache hits and budget-capped repeats
+  // count as 'cached' (no API attempt was spent).
+  recordIntegrationOutcome("briefing", "cached");
   return NextResponse.json({
     configured: true,
     source: entry.source,
@@ -172,6 +177,9 @@ export async function POST(request: NextRequest) {
   // 403 — so old clients (which require a string `briefing`) fail soft to the
   // deterministic dashboard instead of erroring.
   if (!planFeatures(userPlan.plan).aiBriefing) {
+    // Fire-and-forget telemetry (never throws, never adds latency): a gated
+    // request consumed no AI budget and gathered no signals.
+    recordIntegrationOutcome("briefing", "gated");
     return NextResponse.json({
       configured: true,
       entitled: false,
@@ -328,6 +336,11 @@ export async function POST(request: NextRequest) {
     generationCount,
     cachedAt: Date.now(),
   });
+
+  // Fire-and-forget telemetry (synchronous in-process buffer — never throws,
+  // never adds latency): 'generated' = the LLM wrote the summary,
+  // 'rule_based' = the deterministic fallback did.
+  recordIntegrationOutcome("briefing", source === "ai" ? "generated" : "rule_based");
 
   return NextResponse.json({
     configured: true,

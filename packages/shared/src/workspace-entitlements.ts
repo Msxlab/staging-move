@@ -26,13 +26,15 @@ export interface WorkspacePlanFeatures {
   aiBriefing: boolean;
   /** New Home Dossier (flood / school district / move-day weather). Paid plans. */
   homeDossier: boolean;
+  /** FMCSA-registered household-goods mover suggestions on the moving plan. Family and up. */
+  moverSuggestions: boolean;
 }
 
 const FEATURES: Record<string, WorkspacePlanFeatures> = {
-  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true },
-  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true },
-  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true },
-  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false },
+  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true },
+  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true },
+  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false },
+  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false },
 };
 
 const DEFAULT_FEATURES: WorkspacePlanFeatures = FEATURES.FREE_TRIAL;
