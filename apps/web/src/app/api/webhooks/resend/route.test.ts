@@ -88,8 +88,9 @@ describe("POST /api/webhooks/resend", () => {
       where: { email: "user@example.com" },
       select: { id: true },
     });
-    // upsert called for MARKETING and REMINDER (kind: "all")
-    expect(prefMock.upsert).toHaveBeenCalledTimes(2);
+    // upsert called for MARKETING, REMINDER, and LIFECYCLE (kind: "all" — a dead
+    // address should stop receiving every email category, not just promos).
+    expect(prefMock.upsert).toHaveBeenCalledTimes(3);
   });
 
   it("suppresses marketing on email.complained", async () => {
@@ -103,7 +104,9 @@ describe("POST /api/webhooks/resend", () => {
     const response = await POST(makeRequest(body, sig, id, ts));
 
     expect(response.status).toBe(200);
-    expect(prefMock.upsert).toHaveBeenCalledTimes(2);
+    // MARKETING, REMINDER, and LIFECYCLE — a spam complaint suppresses every
+    // category to protect deliverability (kind: "all").
+    expect(prefMock.upsert).toHaveBeenCalledTimes(3);
   });
 
   it("acks but does not write for non-suppression events", async () => {
