@@ -13,7 +13,10 @@ import {
   buildFallbackBriefing,
   encodeBriefingString,
   generateLlmBriefing,
+  type BriefingAction,
   type BriefingSignals,
+  type DaysToMoveBucket,
+  type MoveStage,
 } from "@/lib/onboarding-briefing";
 
 export const dynamic = "force-dynamic";
@@ -33,19 +36,74 @@ const ESSENTIAL_CATEGORIES_BASE = [
 ] as const;
 
 /**
- * Per-user in-memory cache. The briefing is derived from stable onboarding
- * signals, so it is safe to cache for the session lifetime of the process and
- * return the cached value on repeat calls. Keyed by userId + a coarse signal
- * fingerprint so it self-invalidates if the user's signals materially change.
+ * Per-user, per-UTC-day in-process LRU cache + HARD daily AI-generation cap.
+ *
+ * Keyed by `userId(:workspaceId):yyyy-mm-dd` so the budget rolls over at UTC
+ * midnight by construction (yesterday's keys are simply never read again).
+ * Each entry stores the last served briefing AND how many AI generations the
+ * user has consumed today:
+ *   - same-day repeat with an unchanged signal fingerprint → serve the cached
+ *     briefing, NO new API call, no budget consumed;
+ *   - fingerprint changed (move date/address/services materially changed) and
+ *     budget remains → regenerate (one API attempt = one unit of budget,
+ *     whether or not the model call succeeds — this is what stops hammering);
+ *   - past the cap → keep serving the same-day cached briefing (or the
+ *     rule-based one). Capping NEVER surfaces as an error to the card.
  */
 interface CachedBriefing {
   fingerprint: string;
   briefing: string;
+  actions: BriefingAction[];
+  moveStage: MoveStage;
+  daysToMoveBucket: DaysToMoveBucket;
   source: "ai" | "rule_based";
+  /** AI generation attempts consumed for this user today (UTC). */
+  generationCount: number;
   cachedAt: number;
 }
 const briefingCache = new Map<string, CachedBriefing>();
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h — briefing is stable
+/** Hard per-user cap on Anthropic API attempts per UTC day. */
+const DAILY_AI_GENERATION_CAP = 3;
+/** LRU bound — day-scoped entries, so this is purely a memory guard. */
+const BRIEFING_CACHE_MAX_ENTRIES = 2000;
+
+/** UTC day key, e.g. "2026-06-10". The cap and cache roll over with this. */
+function utcDayKey(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/** Get + LRU-touch (Map preserves insertion order; re-insert marks recency). */
+function briefingCacheGet(key: string): CachedBriefing | undefined {
+  const entry = briefingCache.get(key);
+  if (!entry) return undefined;
+  briefingCache.delete(key);
+  briefingCache.set(key, entry);
+  return entry;
+}
+
+function briefingCacheSet(key: string, entry: CachedBriefing): void {
+  briefingCache.delete(key);
+  briefingCache.set(key, entry);
+  while (briefingCache.size > BRIEFING_CACHE_MAX_ENTRIES) {
+    const oldest = briefingCache.keys().next().value;
+    if (oldest === undefined) break;
+    briefingCache.delete(oldest);
+  }
+}
+
+/** The cached entry rendered as the standard success payload. */
+function cachedResponse(entry: CachedBriefing) {
+  return NextResponse.json({
+    configured: true,
+    source: entry.source,
+    aiGenerated: entry.source === "ai",
+    briefing: entry.briefing,
+    actions: entry.actions,
+    moveStage: entry.moveStage,
+    daysToMoveBucket: entry.daysToMoveBucket,
+    cached: true,
+  });
+}
 
 function signalFingerprint(signals: BriefingSignals): string {
   return JSON.stringify([
@@ -180,24 +238,13 @@ export async function POST(request: NextRequest) {
 
   const fingerprint = signalFingerprint(signals);
 
-  // ── Per-user cache (briefing is stable) ─────────────────────
-  const cacheKey = scope.workspaceId ? `${userId}:${scope.workspaceId}` : userId;
-  const cached = briefingCache.get(cacheKey);
-  if (
-    cached &&
-    cached.fingerprint === fingerprint &&
-    Date.now() - cached.cachedAt < CACHE_TTL_MS
-  ) {
-    return NextResponse.json({
-      configured: true,
-      source: cached.source,
-      aiGenerated: cached.source === "ai",
-      briefing: cached.briefing,
-      // moveStage drives the client's per-stage re-show; cheap to recompute and
-      // always returned so a cache hit doesn't strand the client without it.
-      moveStage: signals.moveStage,
-      cached: true,
-    });
+  // ── Per-user, per-UTC-day cache + daily cap ─────────────────
+  const cacheKey = `${userId}:${scope.workspaceId ?? "self"}:${utcDayKey()}`;
+  const cached = briefingCacheGet(cacheKey);
+
+  // Same-day repeat with unchanged inputs → cached briefing, no API call.
+  if (cached && cached.fingerprint === fingerprint) {
+    return cachedResponse(cached);
   }
 
   // ── Gate on ANTHROPIC_API_KEY ───────────────────────────────
@@ -209,11 +256,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ configured: false });
   }
 
-  // Structured, deep-linked actions are deterministic and honest — assembled the
-  // same way regardless of whether the prose summary is AI-written or rule-based.
+  // Inputs changed but today's AI budget is spent → keep serving today's last
+  // briefing rather than burning another generation. Never an error; the next
+  // UTC day (new cache key) restores the budget.
+  if (cached && cached.generationCount >= DAILY_AI_GENERATION_CAP) {
+    return cachedResponse(cached);
+  }
+
+  // Structured, deep-linked actions (each with a machine-readable `target`) are
+  // deterministic and honest — derived server-side from the same signals that
+  // built the prompt, never from LLM output, regardless of which path wrote the
+  // prose summary.
   const actions = buildBriefingActions(signals);
 
   // ── Try the LLM for the situation SUMMARY; degrade to the rule-based summary ──
+  // One attempt = one unit of today's budget, success or not — that is the
+  // hammering guard. generateLlmBriefing never throws; null means "fall back".
+  const generationCount = (cached?.generationCount ?? 0) + 1;
   const aiSummary = await generateLlmBriefing(apiKey, signals);
   let source: "ai" | "rule_based" = "ai";
   let prose: string;
@@ -236,10 +295,14 @@ export async function POST(request: NextRequest) {
     daysToMoveBucket: signals.daysToMoveBucket,
   });
 
-  briefingCache.set(cacheKey, {
+  briefingCacheSet(cacheKey, {
     fingerprint,
     briefing,
+    actions,
+    moveStage: signals.moveStage,
+    daysToMoveBucket: signals.daysToMoveBucket,
     source,
+    generationCount,
     cachedAt: Date.now(),
   });
 

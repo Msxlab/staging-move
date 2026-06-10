@@ -39,6 +39,7 @@ import {
   getRecommendedProviders,
   CATEGORY_META,
   getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
   groupByMergedDisplayCategory,
@@ -219,6 +220,33 @@ export default function NewServiceScreen() {
 
   const recommended = getRecommendedProviders(allProviders, 10);
 
+  // ── Category-aware landing (briefing CTAs & deep links) ──────
+  // When a `category` param arrives in browse mode the user came here to set up
+  // THAT category, so we lead with its recommended providers for the selected
+  // address instead of the generic all-categories view. Manual add stays one
+  // tap away as the fallback path — never the landing.
+  const focusCategoryKey = prefillCategory ? getMergedDisplayCategoryKey(prefillCategory) : "";
+  const focusProviders = useMemo(() => {
+    if (!focusCategoryKey) return [];
+    return allProviders
+      .filter((p) => getMergedDisplayCategoryKey(p.category) === focusCategoryKey)
+      .slice()
+      .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+      .slice(0, 8);
+  }, [allProviders, focusCategoryKey]);
+
+  // Auto-expand the focused category's accordion so its full provider list is
+  // already open beneath the recommended block.
+  useEffect(() => {
+    if (!focusCategoryKey) return;
+    setExpandedCats((prev) => {
+      if (prev.has(focusCategoryKey)) return prev;
+      const next = new Set(prev);
+      next.add(focusCategoryKey);
+      return next;
+    });
+  }, [focusCategoryKey]);
+
   const filteredProviders = allProviders.filter((p: ScoredProvider) => {
     if (providerSearch) {
       const q = providerSearch.toLowerCase();
@@ -228,9 +256,14 @@ export default function NewServiceScreen() {
   });
 
   const groupedProviders = groupByMergedDisplayCategory(filteredProviders);
-  const sortedCategories = Object.keys(groupedProviders).sort(
-    (a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b)
-  );
+  const sortedCategories = Object.keys(groupedProviders).sort((a, b) => {
+    // The focused category floats to the top; everything else keeps catalog order.
+    if (focusCategoryKey) {
+      if (a === focusCategoryKey && b !== focusCategoryKey) return -1;
+      if (b === focusCategoryKey && a !== focusCategoryKey) return 1;
+    }
+    return getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b);
+  });
 
   const toggleProvider = useCallback((provider: ScoredProvider) => {
     hapticLight();
@@ -428,6 +461,41 @@ export default function NewServiceScreen() {
     );
   };
 
+  // Shared recommended-provider row — used by BOTH the generic "Recommended for
+  // you" block and the category-focused block (briefing CTA landing).
+  const renderRecoCard = (provider: ScoredProvider, keyPrefix: string) => {
+    const isSelected = selectedProviders.has(provider.id);
+    const reason = getLocalizedProviderReason(
+      t,
+      i18n.language,
+      provider,
+      categoryLabel(provider.category),
+    );
+    return (
+      <TouchableOpacity
+        key={`${keyPrefix}-${provider.id}`}
+        style={[styles.recoCard, isSelected && styles.recoCardActive]}
+        onPress={() => toggleProvider(provider)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={t(isSelected ? "providers.selectedProviderA11y" : "providers.selectProviderA11y", { provider: provider.name })}
+        accessibilityHint={reason}
+        accessibilityState={{ selected: isSelected }}
+      >
+        <View style={styles.recoCardTop}>
+          {renderProviderAvatar(provider, isSelected)}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.recoName} numberOfLines={1}>{provider.name}</Text>
+            <Text style={styles.recoReason} numberOfLines={1}>
+              {reason}
+            </Text>
+          </View>
+          {isSelected && <Check size={16} color={theme.colors.primary} />}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -579,46 +647,56 @@ export default function NewServiceScreen() {
               )}
             </View>
 
-            {/* Recommended Section */}
-            {!loadingProviders && !providerSearch && recommended.length > 0 && (
+            {/* Category-focused recommended — briefing CTAs / category deep links
+                land here first: the recommended providers of THAT category for
+                this address, with manual add as the in-screen fallback. */}
+            {!loadingProviders && !providerSearch && !!focusCategoryKey && (
+              <View style={styles.recoSection}>
+                <View style={styles.recoHeader}>
+                  <Sparkles size={16} color={theme.colors.amber.text} />
+                  <Text style={styles.recoTitle}>
+                    {t("services.recommendedForCategory", {
+                      category: categoryLabel(focusCategoryKey),
+                      defaultValue: `Recommended ${categoryLabel(focusCategoryKey)} providers`,
+                    })}
+                  </Text>
+                </View>
+                {focusProviders.length > 0 ? (
+                  <View style={styles.recoGrid}>
+                    {focusProviders.map((provider: ScoredProvider) => renderRecoCard(provider, "focus"))}
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.hint}>
+                      {t("services.categoryRecoEmpty", {
+                        category: categoryLabel(focusCategoryKey),
+                        defaultValue: `No ${categoryLabel(focusCategoryKey)} providers in our directory for this address yet — add yours manually.`,
+                      })}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.manualLink}
+                      onPress={() => setMode("manual")}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("services.cantFindProvider")}
+                      accessibilityHint={t("services.manualAddHint")}
+                    >
+                      <Plus size={14} color={theme.colors.primary} />
+                      <Text style={styles.manualLinkText}>{t("services.cantFindProvider")}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            )}
+
+            {/* Recommended Section (generic — hidden while a category is in focus) */}
+            {!loadingProviders && !providerSearch && !focusCategoryKey && recommended.length > 0 && (
               <View style={styles.recoSection}>
                 <View style={styles.recoHeader}>
                   <Sparkles size={16} color={theme.colors.amber.text} />
                   <Text style={styles.recoTitle}>{t("providers.recommendedForYou")}</Text>
                 </View>
                 <View style={styles.recoGrid}>
-                  {recommended.map((provider: ScoredProvider) => {
-                    const isSelected = selectedProviders.has(provider.id);
-                    const reason = getLocalizedProviderReason(
-                      t,
-                      i18n.language,
-                      provider,
-                      categoryLabel(provider.category),
-                    );
-                    return (
-                      <TouchableOpacity
-                        key={`rec-${provider.id}`}
-                        style={[styles.recoCard, isSelected && styles.recoCardActive]}
-                        onPress={() => toggleProvider(provider)}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel={t(isSelected ? "providers.selectedProviderA11y" : "providers.selectProviderA11y", { provider: provider.name })}
-                        accessibilityHint={reason}
-                        accessibilityState={{ selected: isSelected }}
-                      >
-                        <View style={styles.recoCardTop}>
-                          {renderProviderAvatar(provider, isSelected)}
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.recoName} numberOfLines={1}>{provider.name}</Text>
-                            <Text style={styles.recoReason} numberOfLines={1}>
-                              {reason}
-                            </Text>
-                          </View>
-                          {isSelected && <Check size={16} color={theme.colors.primary} />}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {recommended.map((provider: ScoredProvider) => renderRecoCard(provider, "rec"))}
                 </View>
               </View>
             )}

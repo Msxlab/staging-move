@@ -329,6 +329,8 @@
     "clearProviderSearchHint": "Clears the current provider search text",
     "loadingProviders": "Loading providers...",
     "cantFindProvider": "Can't find your provider? Add manually",
+    "recommendedForCategory": "Recommended {{category}} providers",
+    "categoryRecoEmpty": "No {{category}} providers in our directory for this address yet — add yours manually.",
     "manualTrustText": "This creates a private provider record for LocateFlow tracking only. It does not update an external account.",
     "selectCategoryA11y": "Select category {{category}}",
     "phoneHint": "Enter the provider phone number",

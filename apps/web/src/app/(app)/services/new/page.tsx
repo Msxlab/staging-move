@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   getRecommendedProviders,
   getMergedDisplayCategoryIcon,
@@ -20,6 +21,10 @@ import {
   PROVIDER_CATEGORY_OPTIONS,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import {
+  getCategoryRecommendedProviders,
+  resolvePreselectedCategoryKey,
+} from "./category-preselect";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import {
   ServiceLimitUpsell,
@@ -53,9 +58,14 @@ interface AddressOption {
 export default function NewServicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const ts = useTranslations("services");
   const fromServiceId = searchParams.get("fromServiceId") || "";
   const prefillProviderId = searchParams.get("providerId") || "";
   const prefillCategory = searchParams.get("category") || "";
+  // Category-aware landing (briefing CTAs, migration flow): the preselected
+  // merged display key, honored on the FIRST render — not via a late effect —
+  // so the user never flashes the all-categories screen.
+  const preselectedCategoryKey = resolvePreselectedCategoryKey(prefillCategory);
   const suggestMode = searchParams.get("suggest") === "1";
   const suggestName = searchParams.get("suggestName") || "";
   const suggestAddressId = searchParams.get("addressId") || "";
@@ -68,8 +78,12 @@ export default function NewServicePage() {
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [providerSearch, setProviderSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const [activeCategory, setActiveCategory] = useState<string | null>(preselectedCategoryKey);
+  // Auto-expand the preselected category so its full provider list is one
+  // scroll (not one more click) away as the manual-browse fallback.
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(
+    () => new Set(preselectedCategoryKey ? [preselectedCategoryKey] : []),
+  );
   const [showCategories, setShowCategories] = useState(false);
 
   // Multi-select
@@ -147,12 +161,19 @@ export default function NewServicePage() {
       .finally(() => setLoadingProviders(false));
   }, [selectedAddress, addresses]);
 
-  // Pre-fill from migration flow: auto-select recommended provider and filter to category
+  // Re-apply the preselect on client-side param changes (first render is
+  // covered by the state initializers above).
   useEffect(() => {
-    if (prefillCategory) {
-      setActiveCategory(getMergedDisplayCategoryKey(prefillCategory));
+    if (preselectedCategoryKey) {
+      setActiveCategory(preselectedCategoryKey);
+      setExpandedCats((prev) => {
+        if (prev.has(preselectedCategoryKey)) return prev;
+        const next = new Set(prev);
+        next.add(preselectedCategoryKey);
+        return next;
+      });
     }
-  }, [prefillCategory]);
+  }, [preselectedCategoryKey]);
 
   useEffect(() => {
     if (!prefillProviderId || allProviders.length === 0) return;
@@ -170,6 +191,11 @@ export default function NewServicePage() {
 
   // Filtering and grouping
   const recommended = getRecommendedProviders(allProviders, 12);
+
+  // Category-aware landing: the active category's recommended providers,
+  // existing engine sort preserved ("Available at your address" stays on top).
+  const categoryRecommended = getCategoryRecommendedProviders(allProviders, activeCategory);
+  const activeCategoryLabel = activeCategory ? getMergedDisplayCategoryLabel(activeCategory) : null;
 
   const filteredProviders = allProviders.filter((p: ScoredProvider) => {
     if (providerSearch) {
@@ -570,6 +596,74 @@ export default function NewServicePage() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProviderSearch(e.target.value)}
             />
           </div>
+
+          {/* Category-aware landing: active-category banner + escape hatch */}
+          {activeCategory && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-tone-orange-br bg-tone-orange-bg px-4 py-2.5">
+              <p className="text-xs font-medium text-tone-orange-fg">
+                {ts("categoryPreselect_showingOnly", { category: activeCategoryLabel ?? activeCategory })}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveCategory(null)}
+                className="text-xs font-semibold text-tone-orange-fg underline underline-offset-2 hover:opacity-80 transition"
+              >
+                {ts("categoryPreselect_showAll")}
+              </button>
+            </div>
+          )}
+
+          {/* Recommended providers for the preselected category — shown FIRST,
+              ahead of the manual/custom-add fallback below. */}
+          {activeCategory && !loadingProviders && !providerSearch && categoryRecommended.length > 0 && (
+            <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="h-4 w-4 text-tone-honey-fg" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  {ts("categoryPreselect_recommendedTitle", { category: activeCategoryLabel ?? activeCategory })}
+                </h3>
+                <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-3">{ts("categoryPreselect_recommendedHint")}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {categoryRecommended.map((provider) => {
+                  const isSelected = selectedProviders.has(provider.id);
+                  const logoUrl = resolveLogoUrl(provider.logoUrl);
+                  return (
+                    <button key={`cat-rec-${provider.id}`} type="button" onClick={() => toggleProvider(provider)}
+                      className={`group relative text-left p-3 rounded-xl border transition-all ${
+                        isSelected
+                          ? "border-tone-foil-br bg-tone-foil-bg"
+                          : "border-border bg-foreground/[0.02] hover:bg-foreground/5 hover:border-border"
+                      }`}
+                    >
+                      {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-tone-orange-fg" />}
+                      <div className="flex items-center gap-3">
+                        {logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={logoUrl}
+                            alt=""
+                            className="shrink-0 w-9 h-9 rounded-lg object-contain bg-foreground/5"
+                          />
+                        ) : (
+                          <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
+                            isSelected ? "bg-tone-foil-bg text-white" : "bg-foreground/5 text-muted-foreground"
+                          }`}>{provider.name.charAt(0)}</div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm text-foreground truncate pr-6">{provider.name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {provider.matchReasons?.[0] || providerCategoryLabel(provider.category)}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-xl border border-tone-cyan-br bg-tone-cyan-bg p-4">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

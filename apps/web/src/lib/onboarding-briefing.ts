@@ -53,11 +53,41 @@ export type BriefingDeeplink =
   | { type: "state-rules" }
   | { type: "plan" };
 
-/** A single structured, tappable next action. `title`/`why` are display strings. */
+/** Which state-rule section a `state_rule` target points at (mirrors the
+ * /api/state-rules columns: dmvRules / voterRegistration / taxInfo). */
+export type StateRuleKind = "dmv" | "voter" | "tax";
+
+/**
+ * Machine-readable CTA target, richer than the legacy `deeplink`. Clients use it
+ * to land users somewhere specific (e.g. the RECOMMENDED providers for a category,
+ * or a particular state-rule section) instead of a generic screen.
+ *
+ * IMPORTANT: targets are derived SERVER-SIDE from the same coarse signals that
+ * built the LLM prompt — the LLM never emits these enums and is never trusted to.
+ *   - category:   open recommended providers for this catalog category
+ *                 (e.g. "UTILITY_INTERNET"); manual add is the fallback path.
+ *   - state_rule: open the state-specific rule section for `state` (`ruleKind`
+ *                 says which section: dmv | voter | tax).
+ *   - plan:       open (or create) the move plan.
+ *   - services:   open the user's tracked-services list.
+ */
+export type BriefingActionTarget =
+  | { kind: "category"; category: string }
+  | { kind: "state_rule"; state: string; ruleKind: StateRuleKind }
+  | { kind: "plan" }
+  | { kind: "services" };
+
+/**
+ * A single structured, tappable next action. `title`/`why` are display strings.
+ * `deeplink` is the legacy typed link (kept for backwards compatibility — old
+ * clients that only read `title`/`deeplink` keep working); `target` is the
+ * richer, machine-readable destination new clients should prefer.
+ */
 export interface BriefingAction {
   title: string;
   why: string;
   deeplink: BriefingDeeplink;
+  target: BriefingActionTarget;
 }
 
 export interface BriefingSignals {
@@ -357,15 +387,20 @@ function stageSummary(signals: BriefingSignals): string {
 
 /**
  * Builds up to 3 honest, deep-linked next actions purely from the user's own
- * signals + pending checklist. Each action carries a typed `deeplink` the client
- * maps to a real destination. This is the single source of structured actions for
- * BOTH paths: the AI path returns these alongside its prose, and the rule-based
- * fallback renders them inline. Never fabricates specifics.
+ * signals + pending checklist. Each action carries a typed `deeplink` (legacy)
+ * AND a richer `target` the client maps to a real destination. This is the
+ * single source of structured actions for BOTH paths: the AI path returns these
+ * alongside its prose, and the rule-based fallback renders them inline. The LLM
+ * never produces (and is never trusted to produce) the target enums — they are
+ * derived here from the same signals that built the prompt. Never fabricates
+ * specifics.
  */
 export function buildBriefingActions(signals: BriefingSignals): BriefingAction[] {
   const actions: BriefingAction[] = [];
 
   // 1) Still-pending essentials → set-up-this-category deep-links (most actionable).
+  //    The `category` target lands the user on RECOMMENDED providers for that
+  //    category (manual add stays available as the fallback path).
   for (let i = 0; i < signals.missingCriticalLabels.length; i++) {
     if (actions.length >= 3) break;
     const label = signals.missingCriticalLabels[i];
@@ -374,6 +409,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
       title: `Set up ${label.toLowerCase()}`,
       why: "It's one of the essentials most people need in place around a move.",
       deeplink: category ? { type: "category", category } : { type: "services" },
+      target: category ? { kind: "category", category } : { kind: "services" },
     });
   }
 
@@ -383,6 +419,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
       title: `Check vehicle registration rules for ${signals.state}`,
       why: "States set their own window to register after a move — your state's official guide has the exact rules.",
       deeplink: { type: "state-rules" },
+      target: { kind: "state_rule", state: signals.state, ruleKind: "dmv" },
     });
   }
   // 3) Renters → lock move dates with the plan.
@@ -391,6 +428,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
       title: "Confirm move-in and move-out dates with your landlords",
       why: "Locking the dates early keeps your utilities, deposit, and overlap from becoming a scramble.",
       deeplink: { type: "plan" },
+      target: { kind: "plan" },
     });
   }
   // 4) Kids/pets → records transfer (these belong in your tracked services).
@@ -401,6 +439,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
         : "Update your pet's records and find a local vet",
       why: "These take time to transfer, so starting now avoids a last-minute gap.",
       deeplink: { type: "services" },
+      target: { kind: "services" },
     });
   }
 
@@ -412,11 +451,13 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
       title: "List the services tied to your address",
       why: "Internet, utilities, insurance, and subscriptions are easy to forget until something lapses.",
       deeplink: { type: "services" },
+      target: { kind: "services" },
     },
     {
       title: "Set a simple change-of-address checklist",
       why: "Updating your address in one pass prevents missed mail and billing surprises.",
       deeplink: { type: "services" },
+      target: { kind: "services" },
     },
     ...(signals.hasMoveDate
       ? [
@@ -424,6 +465,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
             title: "Work backward from your move date",
             why: "Your date anchors everything else — bookings, notices, and transfers all key off it.",
             deeplink: { type: "plan" } as BriefingDeeplink,
+            target: { kind: "plan" } as BriefingActionTarget,
           },
         ]
       : [
@@ -431,6 +473,7 @@ export function buildBriefingActions(signals: BriefingSignals): BriefingAction[]
             title: "Pick your target move date and work backward",
             why: "A date anchors everything else — bookings, notices, and transfers all key off it.",
             deeplink: { type: "plan" } as BriefingDeeplink,
+            target: { kind: "plan" } as BriefingActionTarget,
           },
         ]),
   ];

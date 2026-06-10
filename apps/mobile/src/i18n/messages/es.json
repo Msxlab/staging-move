@@ -329,6 +329,8 @@
     "clearProviderSearchHint": "Borra el texto de búsqueda actual",
     "loadingProviders": "Cargando proveedores...",
     "cantFindProvider": "¿No encuentras tu proveedor? Agrégalo manualmente",
+    "recommendedForCategory": "Proveedores de {{category}} recomendados",
+    "categoryRecoEmpty": "Aún no hay proveedores de {{category}} en nuestro directorio para esta dirección. Agrega el tuyo manualmente.",
     "manualTrustText": "Esto crea un registro privado de proveedor solo para seguimiento en LocateFlow. No actualiza una cuenta externa.",
     "selectCategoryA11y": "Seleccionar categoría {{category}}",
     "phoneHint": "Introduce el teléfono del proveedor",
