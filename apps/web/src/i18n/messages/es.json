@@ -898,6 +898,10 @@
       "nationwideDesc": "Cubre todo el país. Lo revisaremos y podríamos añadirlo al directorio.",
       "stateRequired": "La cobertura estatal requiere una dirección con estado. Cambia la dirección seleccionada o elige otra cobertura."
     },
+    "categoryPreselect_showingOnly": "Mostrando solo proveedores de {category}",
+    "categoryPreselect_showAll": "Ver todas las categorías",
+    "categoryPreselect_recommendedTitle": "Proveedores de {category} recomendados",
+    "categoryPreselect_recommendedHint": "Las mejores opciones para tu dirección aparecen primero. ¿No encuentras el tuyo? Agrégalo manualmente abajo.",
     "doIt": "Hazlo"
   },
   "providers": {

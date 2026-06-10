@@ -19,16 +19,30 @@ import { Sparkles, X, ChevronRight } from "lucide-react";
 const BRIEFING_META_SENTINEL = "<<<LF_BRIEFING_META>>>";
 const SEEN_STAGE_KEY = "locateflow.moveBriefing.seenStage";
 
-type BriefingDeeplink =
+export type BriefingDeeplink =
   | { type: "category"; category: string }
   | { type: "services" }
   | { type: "state-rules" }
   | { type: "plan" };
 
-interface BriefingAction {
+/**
+ * Structured action target attached by the briefing API ({ kind, category,
+ * state }). Richer than the legacy `deeplink`: `category` actions land on the
+ * add-service flow with that category's recommended providers shown first, not
+ * the generic all-categories manual-entry screen.
+ */
+export type BriefingTarget =
+  | { kind: "category"; category: string }
+  | { kind: "state_rule"; state?: string }
+  | { kind: "plan" };
+
+export interface BriefingAction {
   title: string;
   why: string;
-  deeplink: BriefingDeeplink;
+  /** New structured target — preferred when present. */
+  target?: BriefingTarget;
+  /** Legacy typed deep-link — kept so older cached briefings still route. */
+  deeplink?: BriefingDeeplink;
 }
 
 type MoveStage = "no_move" | "planning" | "in_progress" | "recently_completed";
@@ -47,7 +61,22 @@ function isDeeplink(value: unknown): value is BriefingDeeplink {
   return false;
 }
 
-function parseBriefing(raw: string): ParsedBriefing {
+function isTarget(value: unknown): value is BriefingTarget {
+  if (!value || typeof value !== "object") return false;
+  const kind = (value as { kind?: unknown }).kind;
+  if (kind === "plan") return true;
+  if (kind === "state_rule") {
+    const state = (value as { state?: unknown }).state;
+    return state === undefined || typeof state === "string";
+  }
+  if (kind === "category") {
+    const category = (value as { category?: unknown }).category;
+    return typeof category === "string" && category.trim().length > 0;
+  }
+  return false;
+}
+
+export function parseBriefing(raw: string): ParsedBriefing {
   const idx = raw.indexOf(BRIEFING_META_SENTINEL);
   const prose = (idx >= 0 ? raw.slice(0, idx) : raw).trim();
   const proseLines = prose
@@ -65,11 +94,16 @@ function parseBriefing(raw: string): ParsedBriefing {
       if (Array.isArray(meta?.actions)) {
         actions = meta.actions
           .filter(
+            // An action is renderable when it has display strings AND at least
+            // one routable destination — the new structured `target` or the
+            // legacy `deeplink`. Actions without either are dropped (same as
+            // before `target` existed).
             (a: unknown): a is BriefingAction =>
               !!a &&
               typeof (a as BriefingAction).title === "string" &&
               typeof (a as BriefingAction).why === "string" &&
-              isDeeplink((a as BriefingAction).deeplink),
+              (isTarget((a as BriefingAction).target) ||
+                isDeeplink((a as BriefingAction).deeplink)),
           )
           .slice(0, 3);
       }
@@ -96,6 +130,35 @@ function deeplinkHref(d: BriefingDeeplink): string {
       // active plan id isn't available to this card.
       return "/moving";
   }
+}
+
+/**
+ * Maps a briefing action to its in-app destination. Prefers the structured
+ * `target` from the API:
+ *   - category:   the add-service flow with that category preselected — the
+ *                 page shows the category's recommended providers first and
+ *                 keeps manual add as the fallback path.
+ *   - state_rule: the move plan area, where the per-state guide (DMV, voter,
+ *                 tax rules) lives on the plan detail page. No per-rule anchor
+ *                 exists on web and the card has no plan id, so this lands on
+ *                 the plan page.
+ *   - plan:       the move plan page.
+ * Actions without a valid target keep today's legacy `deeplink` behavior.
+ */
+export function actionHref(action: BriefingAction): string {
+  if (isTarget(action.target)) {
+    switch (action.target.kind) {
+      case "category":
+        return `/services/new?category=${encodeURIComponent(action.target.category)}`;
+      case "state_rule":
+      case "plan":
+        return "/moving";
+    }
+  }
+  if (isDeeplink(action.deeplink)) return deeplinkHref(action.deeplink);
+  // Unreachable for parsed actions (the filter requires target or deeplink);
+  // safe neutral fallback for any direct caller.
+  return "/services";
 }
 
 export function MoveBriefingCard() {
@@ -186,7 +249,7 @@ export function MoveBriefingCard() {
           {parsed.actions.map((action, i) => (
             <Link
               key={i}
-              href={deeplinkHref(action.deeplink)}
+              href={actionHref(action)}
               className="flex items-center gap-3 p-3 hover:bg-foreground/[0.05] transition group"
             >
               <span className="h-7 w-7 rounded-lg bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center text-xs font-bold text-tone-orange-fg shrink-0">

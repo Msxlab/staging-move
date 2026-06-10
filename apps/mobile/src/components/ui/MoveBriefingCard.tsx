@@ -9,6 +9,13 @@ import { Card } from "@/components/ui/Card";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
+import { api } from "@/lib/api";
+import {
+  parseBriefing,
+  pickActivePlanId,
+  resolveBriefingActionRoute,
+  type ParsedBriefingAction,
+} from "./MoveBriefingCard.helpers";
 
 interface MoveBriefingCardProps {
   /** The briefing text (plain prose + an optional machine-readable meta tail). */
@@ -20,85 +27,6 @@ interface MoveBriefingCardProps {
    */
   aiGenerated: boolean;
   onDismiss?: () => void;
-}
-
-// ── Self-contained briefing meta parsing ──────────────────────
-// The server packs structured data into the single `briefing` string as
-// `<prose>\n<SENTINEL>\n<json>`. We split on the sentinel, render the prose, and
-// parse the JSON tail for tappable deep-linked actions + the current move stage.
-// Kept here (not imported from web) so the card stays fully self-contained.
-const BRIEFING_META_SENTINEL = "<<<LF_BRIEFING_META>>>";
-
-type BriefingDeeplink =
-  | { type: "category"; category: string }
-  | { type: "services" }
-  | { type: "state-rules" }
-  | { type: "plan" };
-
-interface BriefingAction {
-  title: string;
-  why: string;
-  deeplink: BriefingDeeplink;
-}
-
-type MoveStage = "no_move" | "planning" | "in_progress" | "recently_completed";
-
-interface ParsedBriefing {
-  /** The human-readable prose lines (sentinel + tail stripped). */
-  proseLines: string[];
-  actions: BriefingAction[];
-  moveStage: MoveStage | null;
-}
-
-function isDeeplink(value: unknown): value is BriefingDeeplink {
-  if (!value || typeof value !== "object") return false;
-  const t = (value as { type?: unknown }).type;
-  if (t === "services" || t === "state-rules" || t === "plan") return true;
-  if (t === "category") return typeof (value as { category?: unknown }).category === "string";
-  return false;
-}
-
-function parseBriefing(raw: string): ParsedBriefing {
-  const idx = raw.indexOf(BRIEFING_META_SENTINEL);
-  const prose = (idx >= 0 ? raw.slice(0, idx) : raw).trim();
-  const proseLines = prose
-    .split("\n")
-    .map((l) => l.trim())
-    // Drop any stray leading numbered-action lines (defensive: the AI summary
-    // path is prose-only, but the rule-based fallback also embeds a numbered
-    // list in its prose — those become tappable rows below, so hide them here).
-    .filter((l) => l.length > 0 && !/^\d+\.\s/.test(l));
-
-  let actions: BriefingAction[] = [];
-  let moveStage: MoveStage | null = null;
-  if (idx >= 0) {
-    try {
-      const meta = JSON.parse(raw.slice(idx + BRIEFING_META_SENTINEL.length).trim());
-      if (Array.isArray(meta?.actions)) {
-        actions = meta.actions
-          .filter(
-            (a: unknown): a is BriefingAction =>
-              !!a &&
-              typeof (a as BriefingAction).title === "string" &&
-              typeof (a as BriefingAction).why === "string" &&
-              isDeeplink((a as BriefingAction).deeplink),
-          )
-          .slice(0, 3);
-      }
-      const stage = meta?.moveStage;
-      if (
-        stage === "no_move" ||
-        stage === "planning" ||
-        stage === "in_progress" ||
-        stage === "recently_completed"
-      ) {
-        moveStage = stage;
-      }
-    } catch {
-      // Malformed tail → just render the prose with no actions.
-    }
-  }
-  return { proseLines, actions, moveStage };
 }
 
 // ── Per-stage "seen" persistence ──────────────────────────────
@@ -181,29 +109,51 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
     onDismiss?.();
   }, [onDismiss]);
 
+  // ── Active plan resolution ────────────────────────────────────
+  // plan/state_rule actions deep-link straight to the plan DETAIL screen
+  // (where the state-rules guidance + task timeline live) instead of
+  // dead-ending on the bare Move tab. The meta tail may carry the plan id;
+  // otherwise we look it up once, lazily, and only when an action actually
+  // needs it. Lookup failure is fine — navigation falls back to the Move tab.
+  const [fetchedPlanId, setFetchedPlanId] = useState<string | null>(null);
+  const wantsPlanRoute =
+    parsed.planId === null &&
+    parsed.actions.some((a) => a.target.kind === "plan" || a.target.kind === "state_rule");
+  useEffect(() => {
+    if (!wantsPlanRoute || visible !== true) return;
+    let cancelled = false;
+    void (async () => {
+      const res = await api.get<{ plans?: unknown }>("/api/moving");
+      if (cancelled || res.error) return;
+      setFetchedPlanId(pickActivePlanId(res.data?.plans));
+    })().catch(() => {
+      // Best-effort only; the Move tab fallback still works.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsPlanRoute, visible]);
+  const activePlanId = parsed.planId ?? fetchedPlanId;
+
   const navigate = useCallback(
-    (deeplink: BriefingDeeplink) => {
+    (action: ParsedBriefingAction) => {
       hapticLight();
-      switch (deeplink.type) {
-        case "category":
-          router.push({
-            pathname: "/services/new",
-            params: { category: deeplink.category, mode: "manual" },
-          });
+      const route = resolveBriefingActionRoute(action.target, activePlanId);
+      switch (route.pathname) {
+        case "/services/new":
+          // BROWSE landing with the category in focus: recommended providers of
+          // that category first, manual add as the in-screen fallback.
+          router.push({ pathname: "/services/new", params: route.params });
           break;
-        case "services":
-          router.push("/(tabs)/services");
+        case "/moving/[id]":
+          router.push({ pathname: "/moving/[id]", params: route.params });
           break;
-        case "state-rules":
-        case "plan":
-          // The plan list; the plan detail surfaces state rules (DMV, voter,
-          // tax) and the move date. Neutral target — the active plan id isn't
-          // available to this card.
-          router.push("/(tabs)/moving");
+        default:
+          router.push(route.pathname);
           break;
       }
     },
-    [router],
+    [router, activePlanId],
   );
 
   if (visible === null || visible === false) return null;
@@ -252,14 +202,14 @@ export function MoveBriefingCard({ briefing, aiGenerated, onDismiss }: MoveBrief
         <View style={styles.actions}>
           {parsed.actions.map((action, i) => {
             const emoji =
-              action.deeplink.type === "category"
-                ? getMergedDisplayCategoryIcon(action.deeplink.category)
+              action.target.kind === "category"
+                ? getMergedDisplayCategoryIcon(action.target.category)
                 : null;
             return (
               <TouchableOpacity
                 key={i}
                 style={[styles.actionRow, i > 0 && styles.actionRowDivider]}
-                onPress={() => navigate(action.deeplink)}
+                onPress={() => navigate(action)}
                 accessibilityRole="button"
                 accessibilityLabel={action.title}
                 accessibilityHint={action.why}

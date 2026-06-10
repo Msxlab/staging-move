@@ -898,6 +898,10 @@
       "nationwideDesc": "Serves the whole country. We'll review and may add it to the directory.",
       "stateRequired": "Statewide coverage needs an address with a state. Switch the selected address or pick another coverage."
     },
+    "categoryPreselect_showingOnly": "Showing {category} providers only",
+    "categoryPreselect_showAll": "Show all categories",
+    "categoryPreselect_recommendedTitle": "Recommended {category} providers",
+    "categoryPreselect_recommendedHint": "Best matches for your address come first. Can't find yours? Add it manually below.",
     "doIt": "Do it"
   },
   "providers": {
