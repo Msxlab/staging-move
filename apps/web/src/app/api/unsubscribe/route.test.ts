@@ -61,7 +61,7 @@ describe("POST /api/unsubscribe", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    expect(prefMock.upsert).toHaveBeenCalledTimes(2); // MARKETING + REMINDER
+    expect(prefMock.upsert).toHaveBeenCalledTimes(3); // MARKETING + REMINDER + LIFECYCLE
   });
 
   it("opts the user out of marketing only when k=marketing", async () => {
