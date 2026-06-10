@@ -187,7 +187,7 @@ export default async function LandingPage() {
               <Zap className="h-3.5 w-3.5" />
               {t("hero_eyebrow")}
             </div>
-            <h1 className="display-tight text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[0.98]">
+            <h1 className="display-tight text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.07]">
               {t("heroPrefix")}{" "}
               <span className="text-primary">{t("heroAccent")}</span>{" "}
               {t("heroSuffix")}

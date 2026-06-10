@@ -154,7 +154,7 @@ export function HeroMoveAnimation({ className }: { className?: string }) {
           so the SVG guide layer and the HTML chip overlay scale in lockstep. */}
       <div
         className="relative w-full overflow-visible"
-        style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}` }}
+        style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}`, containerType: "inline-size" }}
       >
         {/* Soft ambient wash — cool-blue + a hint of mint, matches the hero glow */}
         <div
@@ -249,7 +249,7 @@ function Pin({
     >
       <div
         className={cn(
-          "relative mx-auto h-[clamp(34px,7vw,52px)] w-[clamp(34px,7vw,52px)]",
+          "relative mx-auto h-[clamp(32px,7.5cqw,52px)] w-[clamp(32px,7.5cqw,52px)]",
           variant === "new" ? "text-primary" : "text-muted-foreground",
         )}
       >
@@ -269,13 +269,13 @@ function Pin({
       </div>
       <div
         className={cn(
-          "mt-2 font-mono text-[clamp(8px,1.4vw,11px)] uppercase tracking-wide transition-opacity duration-700",
+          "mt-2 font-mono text-[clamp(8px,1.5cqw,11px)] uppercase tracking-wide transition-opacity duration-700",
           variant === "new" ? "text-primary/80" : "text-muted-foreground",
           variant === "old" && spent && "opacity-50",
         )}
       >
         {place}
-        <span className="mt-0.5 block font-sans text-[clamp(10px,1.7vw,13px)] font-semibold normal-case tracking-normal text-foreground/80">
+        <span className="mt-0.5 block font-sans text-[clamp(10px,2cqw,13px)] font-semibold normal-case tracking-normal text-foreground/80">
           {label}
         </span>
       </div>
@@ -289,10 +289,10 @@ function Counter({ count, done }: { count: number; done: boolean }) {
       className="absolute z-10 text-left"
       style={{ left: `${pct(566, "x")}%`, top: `${pct(250, "y")}%` }}
     >
-      <div className="font-display text-[clamp(22px,4.5vw,40px)] font-light leading-none text-primary tabular-nums">
+      <div className="font-display text-[clamp(22px,6cqw,40px)] font-light leading-none text-primary tabular-nums">
         {count}
       </div>
-      <div className="mt-1 font-mono text-[clamp(7px,1.2vw,10px)] uppercase tracking-wider text-muted-foreground">
+      <div className="mt-1 font-mono text-[clamp(7px,1.4cqw,10px)] uppercase tracking-wider text-muted-foreground">
         {done ? "6 moved · 0 left behind" : "moving…"}
       </div>
     </div>
@@ -309,7 +309,7 @@ function ChipGlyph({
 }) {
   return (
     <div
-      className="relative flex h-[clamp(30px,6vw,46px)] w-[clamp(30px,6vw,46px)] items-center justify-center rounded-[28%] border border-primary/30 text-primary shadow-lg"
+      className="relative flex h-[clamp(26px,6.5cqw,44px)] w-[clamp(26px,6.5cqw,44px)] items-center justify-center rounded-[28%] border border-primary/30 text-primary shadow-lg"
       style={{
         background:
           "linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted)))",
@@ -363,8 +363,8 @@ function StaticScene() {
         </div>
       ))}
       <div
-        className="absolute w-[clamp(64px,12vw,118px)] -translate-x-1/2 -translate-y-full"
-        style={{ left: `${pct(996, "x")}%`, top: `${pct(296, "y")}%` }}
+        className="absolute w-[clamp(52px,11cqw,86px)] -translate-x-1/2 -translate-y-full"
+        style={{ left: `${pct(1016, "x")}%`, top: `${pct(300, "y")}%` }}
       >
         <Raccoon />
       </div>
@@ -445,8 +445,8 @@ function AnimatedScene() {
 
       {/* Welcoming raccoon — fades in once services start arriving, hops each time */}
       <motion.div
-        className="absolute w-[clamp(64px,12vw,118px)] -translate-x-1/2 -translate-y-full"
-        style={{ left: `${pct(996, "x")}%`, top: `${pct(296, "y")}%` }}
+        className="absolute w-[clamp(52px,11cqw,86px)] -translate-x-1/2 -translate-y-full"
+        style={{ left: `${pct(1016, "x")}%`, top: `${pct(300, "y")}%` }}
         initial={{ opacity: 0 }}
         animate={{ opacity: racVisible ? 1 : 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
