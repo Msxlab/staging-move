@@ -70,6 +70,10 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # gitleaks scans the PR's full commit range; the default shallow
+          # clone makes `base^..head` an unknown revision.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
