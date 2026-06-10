@@ -26,6 +26,14 @@ export function getAccountDeletionGraceDays(): number {
 
 const RESTORE_TOKEN_MIN_SECRET = 32;
 
+/**
+ * Max physical-purge attempts to keep retrying a failing Stripe cancellation
+ * before proceeding with the GDPR erasure anyway (and alerting ops to cancel the
+ * lingering subscription manually). GDPR Art. 17 erasure must NEVER be blocked
+ * indefinitely by a billing call that keeps failing.
+ */
+const ACCOUNT_DELETION_MAX_STRIPE_ATTEMPTS = 5;
+
 function getRestoreSecret(): string | null {
   const dedicated = process.env.ACCOUNT_RESTORE_SECRET;
   if (dedicated && dedicated.length >= RESTORE_TOKEN_MIN_SECRET) return dedicated;
@@ -256,19 +264,51 @@ export async function processAccountDeletionRequest(requestId: string) {
       await stripe.subscriptions.cancel(stripeSubscriptionId);
       stripeCanceled = true;
     } catch (error) {
-      lastError = (error as Error)?.message || "STRIPE_CANCEL_FAILED";
-      logger.error("account_deletion_stripe_cancel_failed", {
-        requestId: request.id,
-        userId: request.userId,
-        stripeSubscriptionId,
-        error,
-      });
+      // A "nothing to cancel" outcome means the billing side is ALREADY in the
+      // desired terminal state (a previously-canceled sub, or one removed at
+      // Stripe). Treat it as success so it can't wedge the erasure forever — this
+      // is the common case, because the grace flow sets cancel_at_period_end, so
+      // by purge time the subscription is often already fully canceled and a
+      // second cancel() throws.
+      const stripeErr = error as { code?: string; message?: string };
+      const msg = stripeErr?.message || "";
+      if (
+        stripeErr?.code === "resource_missing" ||
+        /no such subscription|already canceled|already been canceled|already cancelled/i.test(msg)
+      ) {
+        stripeCanceled = true;
+      } else {
+        lastError = msg || "STRIPE_CANCEL_FAILED";
+        logger.error("account_deletion_stripe_cancel_failed", {
+          requestId: request.id,
+          userId: request.userId,
+          stripeSubscriptionId,
+          error,
+        });
+      }
     }
   }
 
-  const cleanupComplete = stripeCanceled;
+  // GDPR Art. 17 erasure must NEVER be blocked indefinitely by billing cleanup.
+  // Retry the Stripe cancel across cron runs, but once we've tried enough times,
+  // proceed with the physical erasure anyway and alert ops so a human can cancel
+  // any lingering subscription manually. Without this, a single permanently-
+  // failing cancel leaves the user soft-deleted but never erased (PROCESSING
+  // forever) — the exact silent GDPR-retention failure this guards against.
+  const forceErase = !stripeCanceled && attempts >= ACCOUNT_DELETION_MAX_STRIPE_ATTEMPTS;
+  if (forceErase) {
+    logger.error("account_deletion_forcing_erasure_stripe_unresolved", {
+      requestId: request.id,
+      userId: request.userId,
+      stripeSubscriptionId,
+      attempts,
+      lastError,
+      note: "Erasure proceeding WITHOUT a confirmed Stripe cancellation — cancel this subscription manually.",
+    });
+  }
+  const proceedWithErase = stripeCanceled || forceErase;
 
-  if (cleanupComplete && user && !userDeleted) {
+  if (proceedWithErase && user && !userDeleted) {
     try {
       // Invalidate any live sessions first so the user can't keep making requests
       // mid-deletion. Cascade deletes the rest (sessions, oauth, profile, etc.).
@@ -276,32 +316,46 @@ export async function processAccountDeletionRequest(requestId: string) {
       // GDPR Article 17 ("right to erasure") requires a physical delete — use
       // `rawPrisma` to bypass the global soft-delete extension, which would
       // otherwise rewrite this into a `deletedAt` update and leave the row
-      // recoverable. MovingPlan has required Address relations with
-      // onDelete: Restrict, so remove the user's plans first; then User
-      // cascades physically remove addresses, services, budgets, sessions,
-      // OAuth links, etc.
+      // recoverable.
       await destroyAllUserSessions(request.userId);
       // Owned workspaces block user deletion (Workspace.owner is onDelete:
-      // Restrict). Transfer each shared workspace to an heir (the deleted user's
-      // own membership then cascades away, the workspace survives for the rest);
-      // hard-delete solo ones. rawPrisma bypasses soft-delete so the FK clears.
+      // Restrict). Decide heir-vs-solo up front so we know which workspaces will
+      // be hard-deleted, THEN purge MovingPlans before deleting any of them.
       const ownedWorkspaces = await rawPrisma.workspace.findMany({
         where: { ownerUserId: request.userId },
         select: { id: true },
       });
+      const heirTransfers: Array<{ workspaceId: string; heir: string }> = [];
+      const soloWorkspaceIds: string[] = [];
       for (const ownedWorkspace of ownedWorkspaces) {
         // Preserve data: promote ANY remaining active member (incl. a CHILD)
         // to owner rather than destroying their workspace data. Only a truly
         // sole-member (no other members) workspace is hard-deleted.
         const heir = await pickOwnershipHeir(ownedWorkspace.id, request.userId, { includeAnyRole: true });
-        if (heir) {
-          const transfer = await transferWorkspaceOwnership(ownedWorkspace.id, request.userId, heir, { allowAnyRole: true });
-          if (transfer.ok) await notifyInheritedOwner(ownedWorkspace.id, heir);
-        } else {
-          await rawPrisma.workspace.delete({ where: { id: ownedWorkspace.id } });
-        }
+        if (heir) heirTransfers.push({ workspaceId: ownedWorkspace.id, heir });
+        else soloWorkspaceIds.push(ownedWorkspace.id);
       }
-      await rawPrisma.movingPlan.deleteMany({ where: { userId: request.userId } });
+      // Purge MovingPlans BEFORE any workspace.delete. MovingPlan.from/toAddress
+      // are onDelete: Restrict, and deleting a solo workspace cascade-removes its
+      // Addresses first — so a plan still referencing one would abort the entire
+      // erasure with FK error 1451 (the error is then swallowed below and the
+      // request retries in PROCESSING forever). Cover the user's own plans plus any
+      // plan stamped to a solo workspace we are about to drop.
+      await rawPrisma.movingPlan.deleteMany({
+        where: soloWorkspaceIds.length
+          ? { OR: [{ userId: request.userId }, { workspaceId: { in: soloWorkspaceIds } }] }
+          : { userId: request.userId },
+      });
+      // Transfer shared workspaces to an heir (workspace + its data survive, the
+      // deleted user's membership then cascades away), and hard-delete the solo
+      // ones (their Addresses now cascade safely — no plan references them).
+      for (const { workspaceId, heir } of heirTransfers) {
+        const transfer = await transferWorkspaceOwnership(workspaceId, request.userId, heir, { allowAnyRole: true });
+        if (transfer.ok) await notifyInheritedOwner(workspaceId, heir);
+      }
+      for (const soloWorkspaceId of soloWorkspaceIds) {
+        await rawPrisma.workspace.delete({ where: { id: soloWorkspaceId } });
+      }
       // No-FK residue tables keyed by userId/email — the User cascade has no
       // relation to these, so without an explicit purge a GDPR Art. 17 erasure
       // leaves the user's PLAINTEXT email in WaitlistSignup and their queued
@@ -323,7 +377,9 @@ export async function processAccountDeletionRequest(requestId: string) {
     }
   }
 
-  const finalStatus = cleanupComplete && (userDeleted || !user) ? "COMPLETED" : "PROCESSING";
+  // COMPLETED once the user is physically erased (or was already gone), regardless
+  // of whether Stripe ultimately confirmed — billing cleanup never gates Art. 17.
+  const finalStatus = userDeleted || !user ? "COMPLETED" : "PROCESSING";
   // Once the user is physically erased, scrub the residual PII (plaintext email +
   // billing identifier) out of the retained GDPRRequest record. The request row
   // is kept as proof the erasure happened, but must not itself carry recoverable

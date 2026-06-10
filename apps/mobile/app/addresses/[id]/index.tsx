@@ -11,27 +11,13 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowLeft,
-  MapPin,
-  Home,
-  Briefcase,
-  Palmtree,
-  Package,
-  Clock,
-  Edit,
-  Trash2,
-  Star,
-  Zap,
-  Plus,
-} from "lucide-react-native";
+import { ArrowLeft, Edit, Trash2, Plus, AlertTriangle, ChevronRight } from "lucide-react-native";
+import { monthlyAmountForCycle } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import {
   getCategoryIcon,
@@ -39,10 +25,6 @@ import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
 } from "@/lib/recommendation-engine";
-
-const typeIcons: Record<string, any> = {
-  HOME: Home, WORK: Briefcase, VACATION: Palmtree, STORAGE: Package, TEMPORARY: Clock,
-};
 
 function getServiceFallbackIcon(category: string): string {
   return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "•";
@@ -61,7 +43,7 @@ export default function AddressDetailScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [address, setAddress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,25 +115,41 @@ export default function AddressDetailScreen() {
     );
   }
 
-  const TypeIcon = typeIcons[address.type] || MapPin;
   const services = address.services || [];
-  const totalMonthlyCost = services.reduce((sum: number, s: any) => sum + (s.monthlyCost || 0), 0);
-  const addressTypeLabel =
-    {
-      HOME: t("addresses.type_primary"),
-      WORK: t("addresses.type_secondary"),
-      VACATION: t("addresses.type_vacation"),
-      TEMPORARY: t("addresses.type_temporary"),
-      STORAGE: t("addresses.type_storage"),
-      OTHER: t("addresses.type_other"),
-    }[String(address.type || "OTHER")] || address.type;
-  const ownershipLabel =
-    {
-      OWNER: t("addresses.ownership_owner"),
-      RENTER: t("addresses.ownership_renter"),
-      FAMILY: t("addresses.ownership_family"),
-      OTHER: t("addresses.type_other"),
-    }[String(address.ownership || "OTHER")] || address.ownership;
+  // True monthly total — normalizes per-cycle costs (matches the budget engine).
+  const perMo = services.reduce(
+    (sum: number, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle),
+    0,
+  );
+  const fmtUsd = (n: number) =>
+    new Intl.NumberFormat(i18n.language || "en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+
+  // Status chip (recreates the design's .ad-st).
+  const isVacation = address.type === "VACATION";
+  const isPast = !!address.endDate && new Date(address.endDate).getTime() < Date.now();
+  const statusLabel = isVacation ? "Seasonal" : isPast ? "Past" : "Active";
+  const tone = isVacation ? theme.colors.rose : isPast ? theme.colors.amber : theme.colors.emerald;
+
+  // "Needs attention" = services renewing within 14 days (real contractEndDate).
+  const renewSoon = (s: any): number | null => {
+    if (!s.contractEndDate) return null;
+    const days = Math.ceil((new Date(s.contractEndDate).getTime() - Date.now()) / 86400000);
+    return days >= 0 && days <= 14 ? days : null;
+  };
+  const attentionItems = services
+    .map((s: any) => ({ s, days: renewSoon(s) }))
+    .filter((x: any) => x.days !== null);
+
+  // Group services into the "Everything tied here" category menu.
+  const catMap = new Map<string, { key: string; label: string; icon: string; count: number; attention: number }>();
+  for (const s of services) {
+    const label = getServiceCategoryLabel(s.category);
+    const entry = catMap.get(label) || { key: label, label, icon: getServiceFallbackIcon(s.category), count: 0, attention: 0 };
+    entry.count += 1;
+    if (renewSoon(s) !== null) entry.attention += 1;
+    catMap.set(label, entry);
+  }
+  const categories = Array.from(catMap.values()).sort((a, b) => b.count - a.count);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -177,103 +175,121 @@ export default function AddressDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        {/* Address Info Card */}
-        <Card variant="default">
-          <View style={styles.infoRow}>
-            <View style={styles.typeIcon}>
-              <TypeIcon size={22} color={theme.colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.addressStreet}>{address.street}</Text>
-              {address.street2 ? <Text style={styles.addressSub}>{address.street2}</Text> : null}
-              <Text style={styles.addressSub}>
-                {address.city}, {address.state} {address.zip}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.badges}>
-            <UiBadge label={addressTypeLabel} variant="info" />
-            <UiBadge
-              label={ownershipLabel}
-              variant={address.ownership === "OWNER" ? "success" : "neutral"}
-            />
-            {address.isPrimary && <UiBadge label={t("addresses.primary")} variant="warning" />}
-          </View>
-        </Card>
+        {/* Stylized map banner (recreates the design's .ad-dbanner) */}
+        <View style={styles.banner}>
+          {[0.34, 0.64].map((p) => (
+            <View key={`h${p}`} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, height: 1, backgroundColor: "rgba(236,241,248,0.05)" }} />
+          ))}
+          {[0.4, 0.72].map((p) => (
+            <View key={`v${p}`} style={{ position: "absolute", top: 0, bottom: 0, left: `${p * 100}%`, width: 1, backgroundColor: "rgba(236,241,248,0.05)" }} />
+          ))}
+          <View style={{ position: "absolute", left: "-5%", right: "-5%", top: "52%", height: 3, backgroundColor: "rgba(236,241,248,0.08)", transform: [{ rotate: "-7deg" }] }} />
+          <View style={[styles.bannerPin, { borderColor: tone.text, backgroundColor: tone.text + "33" }]} />
+          <View style={styles.bannerFade} />
+        </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{services.length}</Text>
-            <Text style={styles.statLabel}>{t("services.title")}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: theme.colors.emerald.text }]}>
-              ${totalMonthlyCost.toLocaleString()}
+        {/* Header */}
+        <View style={styles.dhd}>
+          <View style={styles.dhdRow}>
+            <Text style={styles.dhdTitle} numberOfLines={1}>
+              {address.nickname || (address.isPrimary ? "Current home" : address.street)}
             </Text>
-            <Text style={styles.statLabel}>{t("services.billingCycle_monthly")}</Text>
+            <View style={[styles.chip, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+              <Text style={[styles.chipText, { color: tone.text }]}>{statusLabel}</Text>
+            </View>
+          </View>
+          <Text style={styles.dhdAddr}>
+            {address.street}, {address.city}, {address.state} {address.zip}
+          </Text>
+        </View>
+
+        {/* Summary 3-stat */}
+        <View style={styles.summary}>
+          <View style={styles.sumBox}>
+            <Text style={styles.sumV}>{services.length}</Text>
+            <Text style={styles.sumK}>accounts</Text>
+          </View>
+          <View style={styles.sumBox}>
+            <Text style={[styles.sumV, attentionItems.length > 0 && { color: theme.colors.error }]}>{attentionItems.length}</Text>
+            <Text style={styles.sumK}>attention</Text>
+          </View>
+          <View style={styles.sumBox}>
+            <Text style={styles.sumV}>{fmtUsd(perMo)}</Text>
+            <Text style={styles.sumK}>per mo</Text>
           </View>
         </View>
 
-        <Card variant="default" style={{ marginTop: 14 }}>
-          <Text style={styles.budgetLabel}>{t("budget.monthlySnapshot")}</Text>
-          <Text style={styles.budgetValue}>${totalMonthlyCost.toLocaleString()}/mo</Text>
-          <Text style={styles.budgetHint}>
-            {t("budget.monthlySnapshotHint")}
-          </Text>
-        </Card>
+        {/* Needs attention */}
+        {attentionItems.length > 0 && (
+          <>
+            <Text style={styles.lbl}>Needs attention</Text>
+            {attentionItems.map(({ s, days }: any) => (
+              <TouchableOpacity
+                key={s.id}
+                style={styles.att}
+                onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
+              >
+                <AlertTriangle size={16} color={theme.colors.error} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.attT} numberOfLines={1}>
+                    {(s.providerName || s.provider?.name || "Service")} renews in {days} day{days === 1 ? "" : "s"}
+                  </Text>
+                  <Text style={styles.attS} numberOfLines={1}>Confirm the billing address before it auto-renews</Text>
+                </View>
+                <ChevronRight size={14} color={theme.colors.error} />
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
 
-        {/* Services List */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t("services.title")}</Text>
-          <TouchableOpacity
-            style={styles.addSmall}
-            onPress={() => router.push({ pathname: "/services/new", params: { addressId: String(id) } })}
-          >
-            <Plus size={16} color={theme.colors.primary} />
-            <Text style={styles.addSmallText}>{t("common.add")}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {services.length === 0 ? (
+        {/* Everything tied here — category menu */}
+        <Text style={styles.lbl}>Everything tied here</Text>
+        {categories.length === 0 ? (
           <Card variant="default">
-            <Text style={{ color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 20 }}>
+            <Text style={{ color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 18 }}>
               {t("services.emptyForAddress")}
             </Text>
           </Card>
         ) : (
-          <View style={{ gap: 10 }}>
-            {services.map((s: any) => (
-              <Card
-                key={s.id}
-                variant="default"
-                onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
+          <View style={styles.catGrid}>
+            {categories.map((c) => (
+              <TouchableOpacity
+                key={c.key}
+                style={styles.cat}
+                onPress={() => router.push({ pathname: "/(tabs)/services", params: { addressId: String(id) } })}
               >
-                <View style={styles.serviceRow}>
-                  <ServiceLogoMark
-                    service={s}
-                    fallbackIcon={getServiceFallbackIcon(s.category)}
-                    size={34}
-                    logoSize={26}
-                    borderRadius={11}
-                    backgroundColor={theme.colors.primaryFaded}
-                    borderColor={theme.colors.border}
-                    fallbackFontSize={15}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.serviceName}>{s.providerName || s.provider?.name || t("services.newTitle")}</Text>
-                    <Text style={styles.serviceCat}>
-                      {t(`categories.${s.category}`, { defaultValue: getServiceCategoryLabel(s.category) })}
-                    </Text>
-                  </View>
-                  {s.monthlyCost > 0 && (
-                    <Text style={styles.serviceCost}>${s.monthlyCost}/mo</Text>
-                  )}
+                <Text style={styles.catEmoji}>{c.icon}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.catT} numberOfLines={1}>{c.label}</Text>
+                  <Text style={styles.catC}>{c.count} {c.count === 1 ? "account" : "accounts"}</Text>
                 </View>
-              </Card>
+                {c.attention > 0 && (
+                  <View style={styles.catBadge}>
+                    <Text style={styles.catBadgeText}>{c.attention}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             ))}
           </View>
         )}
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.cta, styles.ctaGhost]}
+            onPress={() => router.push({ pathname: "/addresses/[id]/edit", params: { id: String(id) } })}
+          >
+            <Edit size={15} color={theme.colors.textSecondary} />
+            <Text style={[styles.ctaText, { color: theme.colors.textSecondary }]}>{t("common.edit")}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.cta, styles.ctaPrimary]}
+            onPress={() => router.push({ pathname: "/services/new", params: { addressId: String(id) } })}
+          >
+            <Plus size={15} color="#fff" />
+            <Text style={[styles.ctaText, { color: "#fff" }]}>{t("services.newTitle")}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Delete */}
         <TouchableOpacity
@@ -304,36 +320,58 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  typeIcon: {
-    width: 48, height: 48, borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center",
+  // ── Category-menu detail (Aurora design recreation) ──
+  banner: {
+    height: 130, borderRadius: 18, overflow: "hidden", marginTop: 8, marginBottom: 14,
+    backgroundColor: "#0B121E", borderWidth: 1, borderColor: theme.colors.border, position: "relative",
   },
-  addressStreet: { fontSize: 17, fontWeight: "700", color: theme.colors.text },
-  addressSub: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
-  badges: { flexDirection: "row", gap: 6, marginTop: 14 },
-  statsRow: { flexDirection: "row", gap: 12, marginTop: 16 },
-  statBox: {
-    flex: 1, alignItems: "center", paddingVertical: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: theme.colors.border,
+  bannerPin: {
+    position: "absolute", left: 42, top: 42, width: 22, height: 22, borderWidth: 2,
+    borderTopLeftRadius: 11, borderTopRightRadius: 11, borderBottomRightRadius: 11, borderBottomLeftRadius: 3,
+    transform: [{ rotate: "-45deg" }],
   },
-  statValue: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
-  statLabel: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 4 },
-  budgetLabel: { fontSize: 12, fontWeight: "600", color: theme.colors.textSecondary },
-  budgetValue: { fontSize: 26, fontWeight: "800", color: theme.colors.emerald.text, marginTop: 6 },
-  budgetHint: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 8, lineHeight: 18 },
-  sectionHeader: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: 24, marginBottom: 12,
+  bannerFade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 36 },
+  dhd: { paddingHorizontal: 2 },
+  dhdRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+  dhdTitle: { flexShrink: 1, fontSize: 22, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.4 },
+  chip: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
+  chipText: { fontSize: 8, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "800" },
+  dhdAddr: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 3 },
+  summary: { flexDirection: "row", gap: 8, marginTop: 16, marginBottom: 4 },
+  sumBox: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 14,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
-  addSmall: { flexDirection: "row", alignItems: "center", gap: 4 },
-  addSmallText: { fontSize: 13, fontWeight: "600", color: theme.colors.primary },
-  serviceRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  serviceName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  serviceCat: { fontSize: 11, color: theme.colors.textTertiary },
-  serviceCost: { fontSize: 14, fontWeight: "700", color: theme.colors.emerald.text },
+  sumV: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
+  sumK: { fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: theme.colors.textTertiary, marginTop: 3 },
+  lbl: {
+    fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: "700",
+    color: theme.colors.textTertiary, marginTop: 18, marginBottom: 9, marginLeft: 2,
+  },
+  att: {
+    flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 14, marginBottom: 8,
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240,140,142,0.22)",
+  },
+  attT: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
+  attS: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 1 },
+  catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
+  cat: {
+    width: "48%", flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 14,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+  },
+  catEmoji: { fontSize: 20, width: 28, textAlign: "center" },
+  catT: { fontSize: 12.5, fontWeight: "600", color: theme.colors.text },
+  catC: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 1 },
+  catBadge: {
+    minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 999,
+    backgroundColor: theme.colors.error, alignItems: "center", justifyContent: "center",
+  },
+  catBadgeText: { fontSize: 9, fontWeight: "800", color: "#2a0809" },
+  actions: { flexDirection: "row", gap: 9, marginTop: 18 },
+  cta: { flex: 1, height: 46, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+  ctaGhost: { backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border },
+  ctaPrimary: { backgroundColor: theme.colors.primary },
+  ctaText: { fontSize: 14, fontWeight: "700" },
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 32, paddingVertical: 14, borderRadius: theme.radius.lg,

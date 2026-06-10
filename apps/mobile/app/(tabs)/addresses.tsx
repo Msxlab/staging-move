@@ -6,45 +6,140 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  MapPin,
-  Home,
-  Briefcase,
-  Palmtree,
-  Plus,
-  Star,
-  Trash2,
-  Edit,
-  Zap,
-  ChevronRight,
-  Package,
-  Clock,
-} from "lucide-react-native";
+import { MapPin, Plus, Check, AlertTriangle, List, Map as MapIcon } from "lucide-react-native";
+import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
+import { monthlyAmountForCycle } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
-import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { AddressesMap } from "@/components/addresses/AddressesMap";
 import type { Address } from "@locateflow/shared";
 
-const typeIcons: Record<string, any> = {
-  HOME: Home,
-  WORK: Briefcase,
-  VACATION: Palmtree,
-  STORAGE: Package,
-  TEMPORARY: Clock,
-};
+// ── Addresses "Hub" recreation of the Aurora design (explore/Mobile Addresses) ──
+
+type StatusKind = "active" | "moving" | "seasonal" | "past";
+
+/** True monthly cost for an address — normalizes each service's per-cycle amount
+ *  (yearly/12, quarterly/3, one-time → 0) instead of summing raw, matching the
+ *  budget engine. */
+function addressPerMonth(address: Address): number {
+  return (address.services || []).reduce(
+    (sum, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle),
+    0,
+  );
+}
+
+function addressStatus(address: Address): { kind: StatusKind; label: string } {
+  if (address.type === "VACATION") return { kind: "seasonal", label: "Seasonal" };
+  if (address.endDate && new Date(address.endDate).getTime() < Date.now()) {
+    return { kind: "past", label: "Past" };
+  }
+  return { kind: "active", label: "Active" };
+}
+
+/** The single critical signal on each card. Past addresses that still carry
+ *  services surface the warn line ("N accounts still point here"); the current
+ *  home reassures; everything else is neutral. */
+function addressSignal(address: Address): { ok: boolean; text: string } | null {
+  const count = address.services?.length || 0;
+  const st = addressStatus(address);
+  if (st.kind === "past" && count > 0) {
+    return { ok: false, text: `${count} ${count === 1 ? "account" : "accounts"} still point here` };
+  }
+  if (address.isPrimary) {
+    return count > 0 ? { ok: true, text: "All accounts point here" } : null;
+  }
+  if (count > 0) {
+    return { ok: true, text: `${count} ${count === 1 ? "account" : "accounts"} tied here` };
+  }
+  return null;
+}
+
+function statusTone(kind: StatusKind, theme: Theme) {
+  switch (kind) {
+    case "seasonal":
+      return theme.colors.rose; // Aurora cool (info)
+    case "moving":
+    case "past":
+      return theme.colors.amber; // honey / foil
+    default:
+      return theme.colors.emerald; // sage
+  }
+}
+
+/** Stylized mini-map tile with a teardrop pin colored by status (recreates the
+ *  design's .ad-thumb — no real map needed). */
+function AddressThumb({ color, size = 60, theme }: { color: string; size?: number; theme: Theme }) {
+  const grid = "rgba(236,241,248,0.06)";
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 14,
+        overflow: "hidden",
+        backgroundColor: "#0B121E",
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      }}
+    >
+      {[0.32, 0.62].map((t) => (
+        <View key={`h${t}`} style={{ position: "absolute", left: 0, right: 0, top: `${t * 100}%`, height: 1, backgroundColor: grid }} />
+      ))}
+      {[0.4, 0.7].map((t) => (
+        <View key={`v${t}`} style={{ position: "absolute", top: 0, bottom: 0, left: `${t * 100}%`, width: 1, backgroundColor: grid }} />
+      ))}
+      <View style={{ position: "absolute", left: "-10%", right: "-10%", top: "56%", height: 2, backgroundColor: "rgba(236,241,248,0.10)", transform: [{ rotate: "-12deg" }] }} />
+      <View
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: 16,
+          height: 16,
+          marginLeft: -8,
+          marginTop: -10,
+          borderWidth: 2,
+          borderColor: color,
+          backgroundColor: color + "33",
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
+          borderBottomRightRadius: 8,
+          borderBottomLeftRadius: 2,
+          transform: [{ rotate: "-45deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+/** Small "linked services" health ring (recreates the design's ADHealth). */
+function AddressHealthRing({ count, color, size = 46, theme }: { count: number; color: string; size?: number; theme: Theme }) {
+  const stroke = 4;
+  const r = size / 2 - stroke;
+  const cx = size / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
+        <Circle cx={cx} cy={cx} r={r} stroke={theme.colors.border} strokeWidth={stroke} fill="none" />
+        {count > 0 && (
+          <Circle cx={cx} cy={cx} r={r} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c} ${c}`} />
+        )}
+      </Svg>
+      <Text style={{ fontSize: 13, fontWeight: "800", color: theme.colors.text, lineHeight: 14 }}>{count}</Text>
+      <Text style={{ fontSize: 7, letterSpacing: 0.5, textTransform: "uppercase", color: theme.colors.textTertiary, marginTop: 1 }}>linked</Text>
+    </View>
+  );
+}
 
 export default function AddressesScreen() {
 
@@ -59,6 +154,8 @@ export default function AddressesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [seg, setSeg] = useState<"all" | "active" | "past">("all");
+  const [viewMode, setViewMode] = useState<"hub" | "map">("hub");
 
   const fetchAddresses = useCallback(async () => {
     // limit=200 (the route max): these are small per-user collections shown as
@@ -97,34 +194,6 @@ export default function AddressesScreen() {
     load();
   }, [load]);
 
-  const handleDelete = useCallback(
-    (id: string, nickname: string) => {
-      hapticWarning();
-      Alert.alert(
-        t("addresses.delete"),
-        t("addresses.deleteConfirm", { defaultValue: `Delete "${nickname || "this"}"?` }),
-        [
-          { text: t("common.cancel"), style: "cancel" },
-          {
-            text: t("common.delete"),
-            style: "destructive",
-            onPress: async () => {
-              const res = await api.delete(`/api/addresses/${id}`);
-              if (!res.error) {
-                hapticSuccess();
-                setAddresses((prev) => prev.filter((a) => a.id !== id));
-              } else {
-                hapticError();
-                Alert.alert(t("common.retry"), res.error);
-              }
-            },
-          },
-        ]
-      );
-    },
-    [t]
-  );
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -146,16 +215,80 @@ export default function AddressesScreen() {
     );
   }
 
-  const totalMonthly = addresses.reduce(
-    (sum, a) =>
-      sum +
-      (a.services?.reduce((s, sv: any) => s + (sv.monthlyCost || 0), 0) || 0),
-    0
-  );
-  const totalServices = addresses.reduce(
-    (sum, a) => sum + (a.services?.length || 0),
-    0
-  );
+  const totalMonthly = addresses.reduce((sum, a) => sum + addressPerMonth(a), 0);
+  const totalServices = addresses.reduce((sum, a) => sum + (a.services?.length || 0), 0);
+  const fmtUsd = (n: number) =>
+    new Intl.NumberFormat(i18n.language || "en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+
+  // Segmented filter: All / Active (current + seasonal) / Past.
+  const visible = addresses.filter((a) => {
+    if (seg === "all") return true;
+    const k = addressStatus(a).kind;
+    return seg === "past" ? k === "past" : k !== "past";
+  });
+  const current = visible.filter((a) => a.isPrimary);
+  const other = visible.filter((a) => !a.isPrimary);
+
+  const renderCard = (address: Address, index: number) => {
+    const st = addressStatus(address);
+    const tone = statusTone(st.kind, theme);
+    const signal = addressSignal(address);
+    const count = address.services?.length || 0;
+    const perMo = addressPerMonth(address);
+    const cur = address.isPrimary && st.kind !== "past";
+    return (
+      <ListEntrance key={address.id} index={index}>
+        <PressableScale
+          style={[styles.adCard, cur && styles.adCardCur]}
+          onPress={() => router.push({ pathname: "/addresses/[id]", params: { id: address.id } })}
+          accessibilityLabel={address.nickname || address.street}
+        >
+          <AddressThumb color={tone.text} size={cur ? 72 : 60} theme={theme} />
+          <View style={styles.adBody}>
+            <View style={styles.adLblRow}>
+              <Text style={[styles.adLbl, cur && styles.adLblBig]} numberOfLines={1}>
+                {address.nickname || (address.isPrimary ? "Current home" : address.street)}
+              </Text>
+              <View style={[styles.adChip, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                <Text style={[styles.adChipText, { color: tone.text }]}>{st.label}</Text>
+              </View>
+            </View>
+            <Text style={styles.adAddr} numberOfLines={1}>
+              {address.street}, {address.city}, {address.state}
+            </Text>
+            {signal && (
+              <View style={styles.adSignal}>
+                {signal.ok ? (
+                  <Check size={14} color={theme.colors.emerald.text} />
+                ) : (
+                  <AlertTriangle size={14} color={theme.colors.error} />
+                )}
+                <Text
+                  style={[styles.adSignalText, { color: signal.ok ? theme.colors.emerald.text : theme.colors.error }]}
+                  numberOfLines={1}
+                >
+                  {signal.text}
+                </Text>
+              </View>
+            )}
+            <View style={styles.adMetrics}>
+              <View style={styles.adMetric}>
+                <Text style={styles.adMetricV}>{count}</Text>
+                <Text style={styles.adMetricK}>services</Text>
+              </View>
+              {perMo > 0 && (
+                <View style={styles.adMetric}>
+                  <Text style={styles.adMetricV}>{fmtUsd(perMo)}</Text>
+                  <Text style={styles.adMetricK}>per mo</Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <AddressHealthRing count={count} color={tone.text} size={cur ? 56 : 46} theme={theme} />
+        </PressableScale>
+      </ListEntrance>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -163,37 +296,45 @@ export default function AddressesScreen() {
         <View>
           <Text style={styles.title}>{t("addresses.title")}</Text>
           <Text style={styles.subtitle}>
-            {addresses.length} · {totalServices} {t("services.title").toLowerCase()} · {
-              new Intl.NumberFormat(i18n.language || "en", {
-                style: "currency",
-                currency: "USD",
-                maximumFractionDigits: 0,
-              }).format(totalMonthly)
-            }
+            {addresses.length} · {totalServices} {t("services.title").toLowerCase()} · {fmtUsd(totalMonthly)}
           </Text>
         </View>
-        <PressableScale
-          style={styles.addButton}
-          onPress={() => router.push("/addresses/new")}
-          accessibilityLabel={t("addresses.newTitle")}
-        >
-          <Plus size={20} color="#fff" />
-        </PressableScale>
+        <View style={styles.headerRight}>
+          <View style={styles.viewToggle}>
+            <TouchableOpacity
+              style={[styles.viewToggleBtn, viewMode === "hub" && styles.viewToggleBtnOn]}
+              onPress={() => setViewMode("hub")}
+              accessibilityLabel="List view"
+            >
+              <List size={18} color={viewMode === "hub" ? theme.colors.primary : theme.colors.textTertiary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewToggleBtn, viewMode === "map" && styles.viewToggleBtnOn]}
+              onPress={() => setViewMode("map")}
+              accessibilityLabel="Map view"
+            >
+              <MapIcon size={18} color={viewMode === "map" ? theme.colors.primary : theme.colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
+          <PressableScale
+            style={styles.addButton}
+            onPress={() => router.push("/addresses/new")}
+            accessibilityLabel={t("addresses.newTitle")}
+          >
+            <Plus size={20} color="#fff" />
+          </PressableScale>
+        </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
         {error && addresses.length > 0 ? (
-          <View style={{ marginHorizontal: 16, marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
+          <View style={{ marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
             <Text style={{ color: theme.colors.rose.text, fontSize: 12, textAlign: "center" }}>{error}</Text>
           </View>
         ) : null}
@@ -208,129 +349,51 @@ export default function AddressesScreen() {
             actionLabel={t("addresses.newTitle")}
             onAction={() => router.push("/addresses/new")}
           />
+        ) : viewMode === "map" ? (
+          <AddressesMap
+            addresses={addresses}
+            onOpen={(id) => router.push({ pathname: "/addresses/[id]", params: { id } })}
+          />
         ) : (
-          <View style={styles.list}>
-            {addresses.map((address, index) => {
-              const TypeIcon = typeIcons[address.type] || MapPin;
-              const servicesCount = address.services?.length || 0;
-              const monthlyCost =
-                address.services?.reduce(
-                  (sum: number, s: any) => sum + (s.monthlyCost || 0),
-                  0
-                ) || 0;
-
-              return (
-                <ListEntrance key={address.id} index={index}>
-                <Card
-                  variant="default"
-                  onPress={() =>
-                    router.push({ pathname: "/addresses/[id]", params: { id: address.id } })
-                  }
+          <>
+            {/* Segmented filter */}
+            <View style={styles.seg}>
+              {(["all", "active", "past"] as const).map((k) => (
+                <TouchableOpacity
+                  key={k}
+                  style={[styles.segBtn, seg === k && styles.segBtnOn]}
+                  onPress={() => setSeg(k)}
                 >
-                  {/* Top Row */}
-                  <View style={styles.cardTop}>
-                    <View style={styles.cardIconRow}>
-                      <View style={styles.typeIcon}>
-                        <TypeIcon size={20} color={theme.colors.primary} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.nameRow}>
-                          <Text style={styles.cardTitle} numberOfLines={1}>
-                            {address.nickname || t("addresses.title")}
-                          </Text>
-                          {address.isPrimary && (
-                            <Star
-                              size={14}
-                              color={theme.colors.amber.text}
-                              fill={theme.colors.amber.text}
-                            />
-                          )}
-                        </View>
-                        <Text style={styles.cardAddress} numberOfLines={1}>
-                          {address.street}, {address.city}, {address.state}{" "}
-                          {address.zip}
-                        </Text>
-                      </View>
-                    </View>
-                    <UiBadge
-                      label={
-                        address.ownership === "OWNER"
-                          ? t("addresses.nickname")
-                          : t("addresses.title")
-                      }
-                      variant={
-                        address.ownership === "OWNER" ? "success" : "info"
-                      }
-                    />
-                  </View>
+                  <Text style={[styles.segText, seg === k && styles.segTextOn]}>
+                    {k === "all" ? "All" : k === "active" ? "Active" : "Past"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-                  {/* Stats */}
-                  <View style={styles.cardStats}>
-                    <Text style={styles.statText}>
-                      <Text style={styles.statBold}>{servicesCount}</Text>{" "}
-                      {t("services.title").toLowerCase()}
-                    </Text>
-                    <Text style={styles.statText}>
-                      <Text style={styles.statGreen}>
-                        {new Intl.NumberFormat(i18n.language || "en", {
-                          style: "currency",
-                          currency: "USD",
-                          maximumFractionDigits: 0,
-                        }).format(monthlyCost)}
-                      </Text>
-                    </Text>
-                  </View>
+            {current.length > 0 && (
+              <>
+                <Text style={styles.adSectionLbl}>Current</Text>
+                <View style={styles.list}>{current.map((a, i) => renderCard(a, i))}</View>
+              </>
+            )}
+            {other.length > 0 && (
+              <>
+                <Text style={styles.adSectionLbl}>{current.length > 0 ? "Past & other" : "Addresses"}</Text>
+                <View style={styles.list}>{other.map((a, i) => renderCard(a, i + current.length))}</View>
+              </>
+            )}
+            {visible.length === 0 && (
+              <Text style={[styles.adSectionLbl, { textAlign: "center", marginTop: 24 }]}>
+                No {seg} addresses
+              </Text>
+            )}
 
-                  <View style={styles.cardInsights}>
-                    <Text style={styles.insightText} numberOfLines={1}>
-                      {servicesCount > 0
-                        ? `${servicesCount} ${t("services.title").toLowerCase()}`
-                        : t("services.empty")}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.viewServicesBtn}
-                      onPress={() => router.push({ pathname: "/(tabs)/services", params: { addressId: address.id } })}
-                    >
-                      <Text style={styles.viewServicesText}>{t("common.view")}</Text>
-                      <ChevronRight size={14} color={theme.colors.primary} />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Actions */}
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={() =>
-                        router.push({ pathname: "/addresses/[id]/edit", params: { id: address.id } })
-                      }
-                    >
-                      <Edit size={14} color={theme.colors.textTertiary} />
-                      <Text style={styles.actionText}>{t("common.edit")}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={() =>
-                        router.push({ pathname: "/services/new", params: { addressId: address.id } })
-                      }
-                    >
-                      <Zap size={14} color={theme.colors.textTertiary} />
-                      <Text style={styles.actionText}>{t("services.newTitle")}</Text>
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }} />
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={() =>
-                        handleDelete(address.id, address.nickname || "")
-                      }
-                    >
-                      <Trash2 size={14} color={theme.colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-                </ListEntrance>
-              );
-            })}
-          </View>
+            <TouchableOpacity style={styles.adAddCard} onPress={() => router.push("/addresses/new")}>
+              <Plus size={16} color={theme.colors.textTertiary} />
+              <Text style={styles.adAddText}>Add another address</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -364,64 +427,92 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   list: { gap: 12 },
-  cardTop: {
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  viewToggle: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    padding: 3,
+    borderRadius: 11,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  viewToggleBtn: { width: 36, height: 36, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  viewToggleBtnOn: { backgroundColor: theme.colors.primaryFaded },
+  // ── Hub (Aurora design recreation) ──
+  seg: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+    borderRadius: 13,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 16,
+  },
+  segBtn: { flex: 1, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 10 },
+  segBtnOn: { backgroundColor: theme.colors.primaryFaded },
+  segText: {
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+  },
+  segTextOn: { color: theme.colors.primary },
+  adSectionLbl: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+    marginTop: 16,
+    marginBottom: 9,
+    marginLeft: 2,
+  },
+  adCard: {
+    flexDirection: "row",
+    gap: 13,
+    padding: 14,
+    borderRadius: 20,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: "flex-start",
   },
-  cardIconRow: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  typeIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: theme.colors.primaryFaded,
-    borderWidth: 1,
-    borderColor: "rgba(127, 182, 232, 0.2)",
+  adCardCur: {
+    borderColor: "rgba(127, 182, 232, 0.32)",
+    ...theme.shadow.glow,
+  },
+  adBody: { flex: 1, minWidth: 0, alignSelf: "center" },
+  adLblRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  adLbl: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  adLblBig: { fontSize: 17 },
+  adChip: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
+  adChipText: { fontSize: 8, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "800" },
+  adAddr: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  adSignal: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
+  adSignalText: { flex: 1, fontSize: 12, fontWeight: "600" },
+  adMetrics: { flexDirection: "row", gap: 16, marginTop: 9 },
+  adMetric: {},
+  adMetricV: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  adMetricK: {
+    fontSize: 8,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    color: theme.colors.textTertiary,
+    marginTop: 2,
+  },
+  adAddCard: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-  },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  cardAddress: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
-  cardStats: {
-    flexDirection: "row",
-    gap: 16,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  cardInsights: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  statText: { fontSize: 13, color: theme.colors.textTertiary },
-  statBold: { fontWeight: "600", color: theme.colors.textSecondary },
-  statGreen: { fontWeight: "700", color: theme.colors.emerald.text },
-  insightText: { flex: 1, fontSize: 12, color: theme.colors.textTertiary },
-  viewServicesBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  viewServicesText: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
-  cardActions: {
-    flexDirection: "row",
     gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: theme.colors.border,
+    marginTop: 14,
   },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  actionText: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
+  adAddText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "600" },
 });

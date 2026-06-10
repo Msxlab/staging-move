@@ -58,6 +58,9 @@ export interface ProviderTrustRecord extends ProviderIntegrityRecord {
   requiresAddressCheck?: boolean | null;
   requiresPolygonCheck?: boolean | null;
   duplicateDomainCount?: number | null;
+  /** Last time the catalog row was touched. Drives the stale_record freshness
+   *  warning. Optional so callers that don't track freshness still compile. */
+  updatedAt?: Date | string | number | null;
 }
 
 export interface ProviderCoverageConfidence {
@@ -80,11 +83,15 @@ export interface ProviderQualityWarning {
     | "broad_state_coverage"
     | "broad_national_coverage"
     | "address_check_required"
-    | "polygon_check_required";
+    | "polygon_check_required"
+    | "stale_record";
   label: string;
   message: string;
   severity: "info" | "warning" | "critical";
 }
+
+/** A catalog row not reviewed within this many days is flagged stale (info). */
+export const PROVIDER_STALE_AFTER_DAYS = 180;
 
 export interface ProviderTrustSummary {
   status: ProviderTrustStatus;
@@ -262,6 +269,7 @@ export function getProviderCoverageConfidence(
 
 export function getProviderQualityWarnings(
   record: ProviderTrustRecord,
+  now: number = Date.now(),
 ): ProviderQualityWarning[] {
   const warnings: ProviderQualityWarning[] = [];
   const states = normalizeStates(record.states);
@@ -373,6 +381,25 @@ export function getProviderQualityWarnings(
       message: "Coverage is approximate and should be reviewed against provider source maps.",
       severity: states.length > 1 ? "warning" : "info",
     });
+  }
+
+  // Freshness: this catalog is explicitly "unverified directory data", so a row
+  // that hasn't been touched in a long time is a worklist signal for operators
+  // (re-check coverage, links, contact details) rather than a hard defect.
+  if (record.updatedAt != null) {
+    const updatedMs =
+      record.updatedAt instanceof Date ? record.updatedAt.getTime() : new Date(record.updatedAt).getTime();
+    if (Number.isFinite(updatedMs)) {
+      const ageDays = (now - updatedMs) / (24 * 60 * 60 * 1000);
+      if (ageDays >= PROVIDER_STALE_AFTER_DAYS) {
+        warnings.push({
+          code: "stale_record",
+          label: "Stale record",
+          message: `Not reviewed in over ${PROVIDER_STALE_AFTER_DAYS} days — re-check coverage, links, and contact details.`,
+          severity: "info",
+        });
+      }
+    }
   }
 
   return warnings;

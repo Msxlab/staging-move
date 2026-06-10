@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { isHttpsUrl } from "@/lib/url-safety";
@@ -290,7 +290,7 @@ export async function PATCH(
       },
     });
 
-    revalidateTag("providers", "default");
+    revalidateProvidersCatalog();
 
     return NextResponse.json({ provider });
   } catch (error: any) {
@@ -370,7 +370,7 @@ export async function DELETE(
       },
     });
 
-    revalidateTag("providers", "default");
+    revalidateProvidersCatalog();
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

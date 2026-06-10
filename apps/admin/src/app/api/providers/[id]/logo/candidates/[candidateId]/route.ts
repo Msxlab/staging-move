@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 
@@ -109,7 +109,7 @@ export async function PATCH(
         });
       });
 
-      revalidateTag("providers", "default");
+      revalidateProvidersCatalog();
 
       return NextResponse.json({
         status: "APPROVED",

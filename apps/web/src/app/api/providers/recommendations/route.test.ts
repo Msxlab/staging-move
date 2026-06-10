@@ -20,6 +20,9 @@ vi.mock("@/lib/db", () => ({
     stateRule: {
       findUnique: vi.fn(),
     },
+    recommendationFeedback: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -56,6 +59,7 @@ const mockAddress = prisma.address as unknown as { findMany: Mock };
 const mockService = prisma.service as unknown as { findMany: Mock };
 const mockMovingPlan = prisma.movingPlan as unknown as { findFirst: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Mock };
+const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
 const rateLimitMock = rateLimit as unknown as Mock;
 
 function makeRequest(search = "") {
@@ -71,6 +75,7 @@ describe("provider recommendations route", () => {
     mockService.findMany.mockResolvedValue([]);
     mockMovingPlan.findFirst.mockResolvedValue(null);
     mockServiceProvider.findMany.mockResolvedValue([]);
+    mockRecFeedback.findMany.mockResolvedValue([]);
   });
 
   it("keeps no-context recommendations to federal non-transit candidates", async () => {

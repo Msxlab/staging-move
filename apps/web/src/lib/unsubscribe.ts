@@ -84,11 +84,19 @@ export function parseUnsubscribeKind(input: string | null | undefined): Unsubscr
 /**
  * Maps an unsubscribe choice to the NotificationPreference.type values
  * that should be flipped to enabled=false. "all" turns everything off.
+ *
+ * LIFECYCLE (abandoned-setup / win-back nudges) is folded into "reminder"
+ * AND "all": those promotional nudges present themselves as reminder-class
+ * and carry a `kind=reminder` one-click unsubscribe link, so opting out of
+ * "reminder" MUST also silence LIFECYCLE — otherwise the opt-out mechanism
+ * offered inside a lifecycle email fails to stop that very category, a
+ * CAN-SPAM exposure. (The bounce/complaint webhook uses "all", so a spam
+ * complaint now disables lifecycle too.)
  */
 export function notificationTypesForKind(kind: UnsubscribeKind): string[] {
   if (kind === "marketing") return ["MARKETING"];
-  if (kind === "reminder") return ["REMINDER"];
-  return ["MARKETING", "REMINDER"];
+  if (kind === "reminder") return ["REMINDER", "LIFECYCLE"];
+  return ["MARKETING", "REMINDER", "LIFECYCLE"];
 }
 
 /**

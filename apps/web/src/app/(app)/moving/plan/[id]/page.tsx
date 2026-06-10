@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks, UserPlus, UserCircle2 } from "lucide-react";
@@ -351,6 +352,9 @@ export default function MovingPlanDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Personalized "set up now" recommendations — only while the move is active. */}
+      {(plan.status === "PLANNING" || plan.status === "IN_PROGRESS") && <MovingPlanRecommendations />}
 
       {/* Address cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

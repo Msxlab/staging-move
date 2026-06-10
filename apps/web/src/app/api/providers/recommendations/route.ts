@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     const queryLatitude = Number.isFinite(requestedLatitude) ? requestedLatitude : null;
     const queryLongitude = Number.isFinite(requestedLongitude) ? requestedLongitude : null;
 
-    const [profile, addresses, services, movingPlan] = await Promise.all([
+    const [profile, addresses, services, movingPlan, recFeedback] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
       prisma.address.findMany({
         where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
@@ -96,7 +96,18 @@ export async function GET(request: NextRequest) {
         ),
         orderBy: { moveDate: "asc" },
       }),
+      // Active dismiss/snooze feedback — excluded from the recommendation clusters
+      // so the engine stops re-surfacing what the user rejected. (Snoozes whose
+      // `until` has passed are not loaded, so they auto-resurface.)
+      prisma.recommendationFeedback
+        .findMany({
+          where: { userId, OR: [{ until: null }, { until: { gt: new Date() } }] },
+          select: { providerId: true },
+        })
+        .catch(() => [] as Array<{ providerId: string }>),
     ]);
+
+    const dismissedProviderIds = new Set(recFeedback.map((f) => f.providerId));
 
     const selectedAddress = addresses.find((a) => a.id === requestedAddressId);
     const primaryAddr = selectedAddress || addresses.find((a) => a.isPrimary) || addresses[0];
@@ -163,6 +174,13 @@ export async function GET(request: NextRequest) {
         )
       : 0;
 
+    // Days until the move (positive = upcoming, negative = past). Drives the
+    // proximity scoring signal so time-sensitive setups rank higher as the move
+    // nears. Undefined when there's no active move date.
+    const daysUntilMove = movingPlan?.moveDate
+      ? Math.ceil((new Date(movingPlan.moveDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+      : undefined;
+
     // A MILITARY/PCS move implies military affiliation even if the explicit
     // isMilitary flag wasn't toggled — fold both onboarding signals together so
     // VA / military benefits surface for either.
@@ -195,6 +213,7 @@ export async function GET(request: NextRequest) {
       isBusinessOwner: profile?.isBusinessOwner || false,
       moveType: profile?.moveType || undefined,
       currentPhase,
+      daysUntilMove,
       ownership: normalizeOwnership(primaryAddr?.ownership),
       // Destination coordinates drive true geo-local provider ranking in the
       // shared engine (nearer geo-bearing providers rank higher). Undefined
@@ -301,7 +320,7 @@ export async function GET(request: NextRequest) {
         weights: scoringWeights,
       }
     );
-    const result = buildRecommendationClusters(scored, completedCategories);
+    const result = buildRecommendationClusters(scored, completedCategories, dismissedProviderIds);
 
     return NextResponse.json({
       ...result,

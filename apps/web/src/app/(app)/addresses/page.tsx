@@ -20,7 +20,7 @@ export default async function AddressesPage() {
           { userId, workspaceId: scope.workspaceId },
           scope.memberRole === "CHILD" ? { userId } : {},
         ),
-        select: { id: true, monthlyCost: true },
+        select: { id: true, monthlyCost: true, billingCycle: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -40,6 +40,7 @@ export default async function AddressesPage() {
     services: a.services?.map((s: any) => ({
       id: s.id,
       monthlyCost: s.monthlyCost ? Number(s.monthlyCost) : undefined,
+      billingCycle: s.billingCycle ?? null,
     })),
   }));
 

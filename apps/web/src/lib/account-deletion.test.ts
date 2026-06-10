@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   rawMovingPlanDeleteMany: vi.fn(),
   rawUserUpdate: vi.fn(),
   rawUserDelete: vi.fn(),
+  rawWaitlistDeleteMany: vi.fn(),
+  rawNotificationQueueDeleteMany: vi.fn(),
   rawWorkspaceFindMany: vi.fn(),
   rawWorkspaceDelete: vi.fn(),
   workspaceMemberFindFirst: vi.fn(),
@@ -59,6 +61,13 @@ vi.mock("@/lib/db", () => ({
     workspace: {
       findMany: (...args: unknown[]) => mocks.rawWorkspaceFindMany(...args),
       delete: (...args: unknown[]) => mocks.rawWorkspaceDelete(...args),
+    },
+    // No-FK residue tables purged after the user delete (keyed by userId/email).
+    waitlistSignup: {
+      deleteMany: (...args: unknown[]) => mocks.rawWaitlistDeleteMany(...args),
+    },
+    notificationQueue: {
+      deleteMany: (...args: unknown[]) => mocks.rawNotificationQueueDeleteMany(...args),
     },
   },
 }));
@@ -120,6 +129,8 @@ describe("account deletion processor", () => {
     mocks.stripeUpdate.mockResolvedValue({ id: "sub_live_123" });
     mocks.destroyAllUserSessions.mockResolvedValue(undefined);
     mocks.rawMovingPlanDeleteMany.mockResolvedValue({ count: 1 });
+    mocks.rawWaitlistDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.rawNotificationQueueDeleteMany.mockResolvedValue({ count: 0 });
     mocks.rawUserUpdate.mockResolvedValue({ id: "user-1" });
     mocks.rawUserDelete.mockResolvedValue({ id: "user-1" });
     // Restore tokens are signed with USER_JWT_SECRET when no dedicated secret.
@@ -166,6 +177,50 @@ describe("account deletion processor", () => {
     expect(result.cleanup?.stripeCanceled).toBe(false);
     expect(result.cleanup?.userDeleted).toBe(false);
     expect(result.cleanup?.lastError).toBe("stripe unavailable");
+  });
+
+  it("treats an already-canceled Stripe subscription as success and completes the erasure", async () => {
+    // A previously-canceled sub (the common case: the grace flow set
+    // cancel_at_period_end) makes a second cancel() throw resource_missing —
+    // this must NOT wedge the GDPR erasure.
+    const err = new Error("No such subscription: 'sub_live_123'") as Error & { code?: string };
+    err.code = "resource_missing";
+    mocks.stripeCancel.mockRejectedValue(err);
+
+    const result = await processAccountDeletionRequest("gdpr-1");
+
+    expect(mocks.rawUserDelete).toHaveBeenCalledWith({ where: { id: "user-1" } });
+    expect(result.status).toBe("COMPLETED");
+    expect(result.cleanup?.stripeCanceled).toBe(true);
+    expect(result.cleanup?.userDeleted).toBe(true);
+  });
+
+  it("force-completes the erasure after the max Stripe attempts even if cancel keeps failing", async () => {
+    // attempts already at MAX-1 so this run is the final attempt → erasure must
+    // proceed regardless of Stripe, and ops is alerted to cancel manually. GDPR
+    // Art. 17 erasure is never blocked indefinitely by a failing billing call.
+    mocks.gdprFindUnique.mockResolvedValue(
+      deletionRequest({
+        requestData: JSON.stringify({
+          source: "self_service",
+          email: "user@example.com",
+          stripeSubscriptionId: "sub_live_123",
+          cleanup: { stripeCanceled: false, userDeleted: false, attempts: 4, lastAttemptAt: null, lastError: null },
+        }),
+      }),
+    );
+    mocks.stripeCancel.mockRejectedValue(new Error("stripe down"));
+
+    const result = await processAccountDeletionRequest("gdpr-1");
+
+    expect(mocks.rawUserDelete).toHaveBeenCalledWith({ where: { id: "user-1" } });
+    expect(result.status).toBe("COMPLETED");
+    expect(result.cleanup?.userDeleted).toBe(true);
+    expect(result.cleanup?.stripeCanceled).toBe(false);
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      "account_deletion_forcing_erasure_stripe_unresolved",
+      expect.objectContaining({ requestId: "gdpr-1", userId: "user-1", attempts: 5 }),
+    );
   });
 
   it("logs Stripe cancellation failures without leaking the Stripe secret", async () => {

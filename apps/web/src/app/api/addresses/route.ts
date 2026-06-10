@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
               { userId, workspaceId: scope.workspaceId },
               scope.memberRole === "CHILD" ? { userId } : {},
             ),
-            select: { id: true, providerName: true, category: true, monthlyCost: true },
+            select: { id: true, providerName: true, category: true, monthlyCost: true, billingCycle: true, billingDay: true },
           },
           user: { select: { id: true, firstName: true, lastName: true } },
         },

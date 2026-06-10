@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
+import { monthlyAmountForCycle } from "@/lib/budget-planning";
 
 const typeIcons: Record<string, React.ElementType> = {
   HOME: Home,
@@ -26,7 +27,7 @@ export interface AddressItem {
   isPrimary: boolean;
   ownership: string;
   startDate: string;
-  services?: { id: string; monthlyCost?: number }[];
+  services?: { id: string; monthlyCost?: number; billingCycle?: string | null }[];
 }
 
 export function AddressesClient({ initial }: { initial: AddressItem[] }) {
@@ -75,8 +76,13 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
     setDeleteConfirm(null);
   };
 
+  // Normalize each service's per-cycle cost to its true monthly value so a
+  // yearly/quarterly service isn't counted as if it were billed every month
+  // (ONE_TIME → 0). Mirrors the budget engine; keeps this figure consistent
+  // with /budget instead of inflating it.
   const totalMonthly = addresses.reduce(
-    (sum, a) => sum + (a.services?.reduce((s: number, sv: any) => s + (sv.monthlyCost || 0), 0) || 0),
+    (sum, a) =>
+      sum + (a.services?.reduce((s: number, sv: any) => s + monthlyAmountForCycle(sv.monthlyCost || 0, sv.billingCycle), 0) || 0),
     0,
   );
   const totalServices = addresses.reduce((sum, a) => sum + (a.services?.length || 0), 0);
@@ -117,7 +123,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           {addresses.map((address) => {
             const TypeIcon = typeIcons[address.type] || MapPin;
             const servicesCount = address.services?.length || 0;
-            const monthlyCost = address.services?.reduce((sum: number, s: any) => sum + (s.monthlyCost || 0), 0) || 0;
+            const monthlyCost = address.services?.reduce((sum: number, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle), 0) || 0;
             const isDeleting = deletingId === address.id;
             const isConfirming = deleteConfirm === address.id;
 

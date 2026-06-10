@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ONBOARDING_FUNNEL_STEPS } from "@/lib/onboarding-progress";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight, User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
@@ -48,6 +49,11 @@ const STEPS = [
   { icon: Zap, label: "Services" },
   { icon: Truck, label: "Moving" },
 ];
+
+// Client draft for transient Step-3 inputs (move intent + typed destination/date)
+// so a mid-wizard refresh doesn't drop typed-but-uncommitted work. Cleared on
+// completion so a finished flow can't pre-fill a later one on a shared device.
+const ONBOARDING_DRAFT_KEY = "locateflow.onboarding.draft";
 
 // --- Glass card wrapper ---
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -115,6 +121,26 @@ export default function OnboardingPage() {
   const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
   const legalStepRequested = searchParams.get("step") === "legal";
 
+  // Best-effort funnel telemetry: fire ONBOARDING_STARTED once when the wizard
+  // mounts and ONBOARDING_STEP_VIEWED_<STEP> whenever the active step changes, so
+  // per-step drop-off is measurable. Never blocks onboarding; deduped once-per
+  // (user, event) server-side.
+  const funnelStartedRef = useRef(false);
+  const trackOnboardingFunnel = useCallback((event: "STARTED" | "STEP_VIEWED", funnelStep?: string) => {
+    fetch("/api/onboarding/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(funnelStep ? { event, step: funnelStep } : { event }),
+    }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!funnelStartedRef.current) {
+      funnelStartedRef.current = true;
+      trackOnboardingFunnel("STARTED");
+    }
+    trackOnboardingFunnel("STEP_VIEWED", ONBOARDING_FUNNEL_STEPS[step] ?? "profile");
+  }, [step, trackOnboardingFunnel]);
+
   // Resume the server-derived onboarding step. Profile, address, service
   // skip, and moving skip decisions are persisted server-side so refreshes do
   // not accidentally fall through to the dashboard.
@@ -127,6 +153,14 @@ export default function OnboardingPage() {
         if (cancelled) return;
 
         if (data.onboardingCompleted === true) {
+          // Backstop: a completed user who revisits /onboarding shouldn't carry a
+          // stale draft forward (covers any completion path that bypassed the
+          // explicit clear in ensureOnboardingCompleted).
+          try {
+            localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+          } catch {
+            // ignore
+          }
           router.replace("/dashboard");
           return;
         }
@@ -149,15 +183,17 @@ export default function OnboardingPage() {
           setLegalConsents(getDefaultLegalConsents(data.legalConsents));
         }
 
-        if (!hasLegal) {
-          if (!legalStepRequested) {
-            router.replace("/onboarding?step=legal");
-          }
-          return;
-        }
-
+        // Legal consent is now collected INLINE on Step 0 (LegalConsentPanel in
+        // the profile step). The dedicated ?step=legal interstitial is kept only
+        // as the landing target for server redirects (e.g. OAuth callbacks):
+        //  - ?step=legal + already accepted → bounce back to the wizard.
+        //  - ?step=legal + not accepted     → the legal gate renders (below).
+        //  - no ?step=legal + not accepted  → stay on the normal wizard; Step 0
+        //    shows the inline legal panel and gates advancement on it.
         if (legalStepRequested) {
-          router.replace("/onboarding");
+          if (hasLegal) {
+            router.replace("/onboarding");
+          }
           return;
         }
 
@@ -256,6 +292,9 @@ export default function OnboardingPage() {
   // Step 2 – Providers
   const [providers, setProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+  // Server-computed essential categories the user hasn't tracked yet (coarse
+  // catalog labels, never PII) — drives the "you still need…" nudge on Step 2.
+  const [missingCritical, setMissingCritical] = useState<string[]>([]);
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
   const [providerSearch, setProviderSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -272,6 +311,65 @@ export default function OnboardingPage() {
     longitude: null as number | null,
   });
   const [billingData, setBillingData] = useState<Record<string, { monthlyCost: string; billingCycle: string }>>({});
+
+  // Restore the Step-3 draft once on mount (move intent + typed destination/date),
+  // then persist it as the user types so a refresh mid-wizard doesn't lose it.
+  // Only the typed text fields are restored — coords/placeId re-derive from the
+  // address picker so a stale draft can't desync them from the city/zip.
+  const draftRestoredRef = useRef(false);
+  const clearOnboardingDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ONBOARDING_DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && typeof d === "object") {
+          if (typeof d.wantsToMove === "boolean") setWantsToMove(d.wantsToMove);
+          const mf = d.movingForm;
+          if (mf && typeof mf === "object") {
+            setMovingForm((prev) => ({
+              ...prev,
+              street: typeof mf.street === "string" ? mf.street : prev.street,
+              city: typeof mf.city === "string" ? mf.city : prev.city,
+              state: typeof mf.state === "string" ? mf.state : prev.state,
+              zip: typeof mf.zip === "string" ? mf.zip : prev.zip,
+              moveDate: typeof mf.moveDate === "string" ? mf.moveDate : prev.moveDate,
+            }));
+          }
+        }
+      }
+    } catch {
+      // ignore malformed / unavailable storage
+    } finally {
+      draftRestoredRef.current = true;
+    }
+  }, []);
+  useEffect(() => {
+    if (!draftRestoredRef.current) return;
+    try {
+      localStorage.setItem(
+        ONBOARDING_DRAFT_KEY,
+        JSON.stringify({
+          wantsToMove,
+          movingForm: {
+            street: movingForm.street,
+            city: movingForm.city,
+            state: movingForm.state,
+            zip: movingForm.zip,
+            moveDate: movingForm.moveDate,
+          },
+        }),
+      );
+    } catch {
+      // ignore storage failures
+    }
+  }, [wantsToMove, movingForm]);
 
   // Freemium: free users cannot create a MovingPlan. Instead of POSTing to
   // /api/moving (which now 403s for free), we compute an ephemeral, value-first
@@ -327,6 +425,7 @@ export default function OnboardingPage() {
       const res = await fetch(`/api/providers/recommendations?${params.toString()}`);
       const data = await res.json();
       setProviders(data.allProviders || []);
+      setMissingCritical(Array.isArray(data?.stats?.missingCritical) ? data.stats.missingCritical : []);
     } catch {
       setProviders([]);
     } finally {
@@ -436,6 +535,36 @@ export default function OnboardingPage() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Inline legal acceptance for Step 0 (no redirect, unlike the OAuth-landing
+  // gate's acceptLegal). The profile POST requires legal consent server-side, so
+  // Step 0 accepts legal BEFORE saving the profile. Returns false (with an error
+  // surfaced) when consent is missing or the save fails.
+  const acceptLegalInline = async (): Promise<boolean> => {
+    if (legalAcceptedOnServer) return true;
+    if (!hasRequiredLegalConsents(legalConsents)) {
+      setError("Please accept the Terms of Service and Legal Disclaimer to continue.");
+      return false;
+    }
+    try {
+      const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
+      const res = await fetch("/api/legal/acceptance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legalConsents: acceptedLegalConsents }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to save legal acknowledgement");
+      setLegalConsents(getDefaultLegalConsents(data.legalConsents || acceptedLegalConsents));
+      setLegalAcceptedOnServer(true);
+      return true;
+    } catch (e: any) {
+      const message = e.message || "Failed to save legal acknowledgement";
+      setError(message);
+      toast.error(message);
+      return false;
     }
   };
 
@@ -697,12 +826,22 @@ export default function OnboardingPage() {
     if (data.onboardingCompleted !== true) {
       throw new Error("Onboarding could not be completed. Please try again.");
     }
+    // Onboarding is done — drop the transient draft so a finished flow can't
+    // pre-fill a different user's wizard on a shared device.
+    clearOnboardingDraft();
   };
 
   const next = async () => {
     let ok = true;
-    if (step === 0) ok = await saveProfile();
-    else if (step === 1) ok = await saveAddress();
+    if (step === 0) {
+      // Legal is collected inline on Step 0; accept it BEFORE saving the profile
+      // because /api/profile rejects writes without consent (api-gates).
+      if (!legalAcceptedOnServer) {
+        const legalOk = await acceptLegalInline();
+        if (!legalOk) return;
+      }
+      ok = await saveProfile();
+    } else if (step === 1) ok = await saveAddress();
     else if (step === 2) {
       const selectedCount = selectedProviders.size;
       ok = await saveServices();
@@ -784,6 +923,26 @@ export default function OnboardingPage() {
 
   // ---- Provider scoring & filtering ----
   const recommended = getRecommendedProviders(providers, 12);
+  // Essentials = the CRITICAL/IMPORTANT picks (electric, internet, USPS, …).
+  // Mirrors the mobile onboarding so picking providers isn't a one-by-one chore.
+  const essentialRecommended = recommended.filter(
+    (p) => p.urgencyTier === "CRITICAL" || p.urgencyTier === "IMPORTANT",
+  );
+  const unselectedEssentialCount = essentialRecommended.reduce(
+    (n, p) => (selectedProviders.has(p.id) ? n : n + 1),
+    0,
+  );
+  // One-tap: add every essential the user hasn't already picked. Purely additive
+  // — never deselects, so any extra pick (or a later deselect) is preserved.
+  const addAllEssentials = () => {
+    setSelectedProviders((prev) => {
+      const next = new Map(prev);
+      for (const provider of essentialRecommended) {
+        if (!next.has(provider.id)) next.set(provider.id, provider);
+      }
+      return next;
+    });
+  };
 
   const filteredProviders = providers.filter((p: ScoredProvider) => {
     if (providerSearch) {
@@ -1270,6 +1429,18 @@ export default function OnboardingPage() {
             )}
 
           </div>
+          {/* Legal consent is collected inline here (mobile parity) instead of a
+              separate ?step=legal interstitial. Advancing Step 0 accepts it first
+              (next() → acceptLegalInline) because /api/profile requires consent. */}
+          {!legalAcceptedOnServer && (
+            <div className="mt-5 border-t border-border pt-5">
+              <div className="mb-3 flex items-start gap-2">
+                <Shield className="h-4 w-4 text-tone-orange-fg mt-0.5 shrink-0" />
+                <p className="text-sm font-semibold text-foreground">Required legal acknowledgements</p>
+              </div>
+              <LegalConsentPanel consents={legalConsents} onChange={setLegalConsents} />
+            </div>
+          )}
         </GlassCard>
       )}
 
@@ -1362,6 +1533,34 @@ export default function OnboardingPage() {
               Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
             </p>
           </div>
+
+          {/* One-tap essentials + still-needed nudge (picking providers one-by-one
+              is the highest-friction part of activation; mobile proved this). */}
+          {(essentialRecommended.length > 0 || missingCritical.length > 0) && (
+            <div className="rounded-xl border border-tone-orange-br bg-tone-orange-bg/40 p-3 flex items-center gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                {missingCritical.length > 0 ? (
+                  <p className="text-xs text-foreground">
+                    <span className="font-semibold">You still need:</span> {missingCritical.slice(0, 5).join(", ")}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">You&apos;ve got the essentials covered.</p>
+                )}
+              </div>
+              {essentialRecommended.length > 0 && (
+                <button
+                  type="button"
+                  onClick={addAllEssentials}
+                  disabled={unselectedEssentialCount === 0}
+                  className="shrink-0 rounded-lg border border-tone-orange-br bg-tone-orange-fg text-white text-xs font-semibold px-3 py-2 hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {unselectedEssentialCount === 0
+                    ? "Essentials added ✓"
+                    : `Add all essentials (${unselectedEssentialCount})`}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Selected chips */}
           {selectedProviders.size > 0 && (
@@ -1709,7 +1908,7 @@ export default function OnboardingPage() {
               {step < 3 && (
                 <button
                   onClick={next}
-                  disabled={saving}
+                  disabled={saving || (step === 0 && !legalAcceptedOnServer && !hasRequiredLegalConsents(legalConsents))}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
                 >
                   {saving ? (

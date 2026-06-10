@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Receipt, Calendar, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { isMonthlyBillableCycle } from "@/lib/budget-planning";
 import Link from "next/link";
 
 interface BillService {
@@ -11,6 +12,7 @@ interface BillService {
   providerName: string;
   category: string;
   monthlyCost: number;
+  billingCycle?: string | null;
   billingDay: number;
   address?: { nickname?: string; city?: string };
 }
@@ -47,7 +49,12 @@ export function UpcomingBills() {
       .then((data) => {
         const services = (data.services || []) as BillService[];
         const withBilling = services
-          .filter((s) => s.billingDay && s.billingDay > 0 && (s.monthlyCost || 0) > 0)
+          // billingDay is a day-of-month, so only MONTHLY-cycle services can be
+          // placed as a recurring "upcoming bill". Yearly/quarterly/one-time
+          // services can't be located in a month from billingDay alone, and
+          // previously every costed service showed as a monthly bill (a yearly
+          // premium appeared 12×). Exclude non-monthly cycles here.
+          .filter((s) => s.billingDay && s.billingDay > 0 && (s.monthlyCost || 0) > 0 && isMonthlyBillableCycle(s.billingCycle))
           .sort((a, b) => getDaysUntilBill(a.billingDay) - getDaysUntilBill(b.billingDay));
         setBills(withBilling.slice(0, 6));
       })

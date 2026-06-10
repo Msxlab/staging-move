@@ -3,6 +3,20 @@ import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 export const ONBOARDING_SERVICES_SKIPPED_EVENT = "ONBOARDING_SERVICES_SKIPPED";
 export const ONBOARDING_MOVING_SKIPPED_EVENT = "ONBOARDING_MOVING_SKIPPED";
 
+// Funnel telemetry (best-effort, deduped once-per-user). ONBOARDING_STARTED marks
+// that a user reached the wizard; ONBOARDING_STEP_VIEWED_<STEP> marks the first
+// time they landed on each step — together these expose per-step drop-off using
+// the same consent-independent UserEvent rows that already drive step resume.
+export const ONBOARDING_STARTED_EVENT = "ONBOARDING_STARTED";
+export const ONBOARDING_STEP_VIEWED_EVENT_PREFIX = "ONBOARDING_STEP_VIEWED_";
+
+export const ONBOARDING_FUNNEL_STEPS = ["profile", "address", "services", "moving"] as const;
+export type OnboardingFunnelStep = (typeof ONBOARDING_FUNNEL_STEPS)[number];
+
+export function onboardingStepViewedEvent(step: string): string {
+  return `${ONBOARDING_STEP_VIEWED_EVENT_PREFIX}${step.trim().toUpperCase()}`;
+}
+
 export type OnboardingStep = "profile" | "address" | "services" | "moving" | "complete";
 
 export interface OnboardingProgressInput {

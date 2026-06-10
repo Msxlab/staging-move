@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest } from "next/server";
-import { ONBOARDING_SERVICES_SKIPPED_EVENT } from "@/lib/onboarding-progress";
+import {
+  ONBOARDING_SERVICES_SKIPPED_EVENT,
+  ONBOARDING_STARTED_EVENT,
+  onboardingStepViewedEvent,
+} from "@/lib/onboarding-progress";
 
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -64,6 +68,45 @@ describe("onboarding progress route", () => {
     const response = await POST(makeRequest({ event: "SERVICES_SKIPPED" }));
 
     expect(response.status).toBe(200);
+    expect(userEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("records the ONBOARDING_STARTED funnel event", async () => {
+    const response = await POST(makeRequest({ event: "STARTED" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.event).toBe(ONBOARDING_STARTED_EVENT);
+    expect(userEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-1", event: ONBOARDING_STARTED_EVENT }),
+    });
+  });
+
+  it("records a per-step STEP_VIEWED event keyed by step", async () => {
+    const response = await POST(makeRequest({ event: "STEP_VIEWED", step: "services" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.event).toBe(onboardingStepViewedEvent("services"));
+    expect(userEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        event: onboardingStepViewedEvent("services"),
+        metadata: expect.stringContaining("services"),
+      }),
+    });
+  });
+
+  it("rejects STEP_VIEWED without a step", async () => {
+    const response = await POST(makeRequest({ event: "STEP_VIEWED" }));
+
+    expect(response.status).toBe(400);
+    expect(userEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects STEP_VIEWED with an unknown step", async () => {
+    const response = await POST(makeRequest({ event: "STEP_VIEWED", step: "checkout" }));
+
+    expect(response.status).toBe(400);
     expect(userEvent.create).not.toHaveBeenCalled();
   });
 

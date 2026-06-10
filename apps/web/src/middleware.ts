@@ -100,6 +100,9 @@ const PUBLIC_API_EXACT = [
   "/api/auth/impersonate-handoff",
   "/api/consent/ccpa",
   "/api/blog/revalidate",
+  // Cross-app cache invalidation from the admin app (HMAC-signed, same scheme as
+  // blog/revalidate) so provider catalog edits refresh the public site at once.
+  "/api/providers/revalidate",
   "/api/blog/view",
 ];
 const PUBLIC_API_GET = [

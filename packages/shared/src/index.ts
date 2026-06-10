@@ -26,6 +26,7 @@ export * from "./move-task-local-effect";
 export * from "./sentry-redaction";
 export * from "./audit-redaction";
 export * from "./blog";
+export * from "./billing-metrics";
 export {
   sanitizeEmailHtml as sharedSanitizeEmailHtml,
   sanitizeEmailSubject as sharedSanitizeEmailSubject,

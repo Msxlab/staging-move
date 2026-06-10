@@ -45,6 +45,8 @@ export interface AddressOption {
   state: string;
   zip: string;
   isPrimary: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ProviderItem {
@@ -191,38 +193,75 @@ export function ProvidersClient({
   // Compare tray: up to MAX_COMPARE providers picked for a side-by-side view.
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
-  // Shortlist: a cheap, client-only "saved for later" set persisted in
-  // localStorage. It does not hit the server — it's a convenience bookmark.
+  // Shortlist: "saved for later" set. Persisted server-side (survives device
+  // switches) with localStorage as an instant, offline cache. Toggles are
+  // optimistic and best-effort-synced to /api/providers/saved.
   const [shortlist, setShortlist] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("provider-shortlist");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setShortlist(parsed.filter((x): x is string => typeof x === "string"));
-      }
-    } catch {
-      // localStorage may be unavailable (private mode / SSR hydration) — the
-      // shortlist simply starts empty, which is a safe default.
-    }
-  }, []);
-
-  const persistShortlist = useCallback((next: string[]) => {
+  const persistShortlistLocal = useCallback((next: string[]) => {
     setShortlist(next);
     try {
       window.localStorage.setItem("provider-shortlist", JSON.stringify(next));
     } catch {
-      // Non-fatal: the in-memory shortlist still works for this session.
+      // Non-fatal offline cache.
     }
   }, []);
 
+  // Load localStorage first (instant), then reconcile with the authoritative
+  // server store, migrating any legacy local-only saves up to the server once.
+  useEffect(() => {
+    let localIds: string[] = [];
+    try {
+      const raw = window.localStorage.getItem("provider-shortlist");
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed)) localIds = parsed.filter((x): x is string => typeof x === "string");
+    } catch {
+      // ignore unavailable storage
+    }
+    if (localIds.length) setShortlist(localIds);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/providers/saved");
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverIds: string[] = Array.isArray(data?.providerIds) ? data.providerIds : [];
+        if (cancelled) return;
+        const serverSet = new Set(serverIds);
+        for (const id of localIds) {
+          if (!serverSet.has(id)) {
+            void fetch("/api/providers/saved", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ providerId: id }),
+            }).catch(() => {});
+          }
+        }
+        persistShortlistLocal(Array.from(new Set([...serverIds, ...localIds])));
+      } catch {
+        // offline / not signed in — keep the localStorage list
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [persistShortlistLocal]);
+
   const toggleShortlist = useCallback(
     (id: string) => {
-      persistShortlist(shortlist.includes(id) ? shortlist.filter((x) => x !== id) : [...shortlist, id]);
+      const adding = !shortlist.includes(id);
+      persistShortlistLocal(adding ? [...shortlist, id] : shortlist.filter((x) => x !== id));
+      void fetch("/api/providers/saved", {
+        method: adding ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId: id }),
+      }).catch(() => {
+        // optimistic — the localStorage cache keeps the UI consistent on failure
+      });
     },
-    [shortlist, persistShortlist],
+    [shortlist, persistShortlistLocal],
   );
 
   const toggleCompare = useCallback((id: string) => {
@@ -239,8 +278,19 @@ export function ProvidersClient({
     return map;
   }, [providers]);
 
+  // Coordinates of the currently selected address (if any) — passed to the
+  // providers API so the server applies coverage matching + distance-aware
+  // ranking to the full catalog rather than the client filtering a single page.
+  const selectedCoords = useMemo(() => {
+    const a = addresses.find((x) => x.id === selectedAddressId);
+    return {
+      lat: typeof a?.latitude === "number" ? a.latitude : null,
+      lng: typeof a?.longitude === "number" ? a.longitude : null,
+    };
+  }, [addresses, selectedAddressId]);
+
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
-  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
+  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string, lat?: number | null, lng?: number | null) => {
     setLoading(true);
     setLoadError(false);
     try {
@@ -248,6 +298,10 @@ export function ProvidersClient({
       if (state) params.set("state", state);
       if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
+      // Destination coordinates unlock the server's coverage-match + distance
+      // ranking ("providers near your new place") over the whole catalog.
+      if (typeof lat === "number" && Number.isFinite(lat)) params.set("lat", String(lat));
+      if (typeof lng === "number" && Number.isFinite(lng)) params.set("lng", String(lng));
       const res = await fetch(`/api/providers?${params.toString()}`);
       if (!res.ok) throw new Error(`Providers request failed (${res.status})`);
       const data = await res.json();
@@ -289,9 +343,9 @@ export function ProvidersClient({
 
   // Debounced server-side search when q or category or state/zip change
   useEffect(() => {
-    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim()), 250);
+    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim(), selectedCoords.lat, selectedCoords.lng), 250);
     return () => clearTimeout(t);
-  }, [selectedState, selectedZip, search, fetchProviders]);
+  }, [selectedState, selectedZip, search, selectedCoords, fetchProviders]);
 
   useEffect(() => {
     const normalized = search.trim().toLowerCase();
@@ -332,12 +386,45 @@ export function ProvidersClient({
     return list;
   }, [providers, categoryFilter, showSavedOnly, shortlist]);
 
-  const criticalCluster = recs?.clusters.find((c) => c.tier === "CRITICAL");
-  const importantCluster = recs?.clusters.find((c) => c.tier === "IMPORTANT");
-  const highlightProviders = [
-    ...(criticalCluster?.providers || []).slice(0, 3),
-    ...(importantCluster?.providers || []).slice(0, 3),
-  ].slice(0, 6);
+  // Per-user "not relevant" dismissals — optimistically hidden here and persisted
+  // server-side so the engine stops re-surfacing them on future loads.
+  const [dismissedRecIds, setDismissedRecIds] = useState<Set<string>>(new Set());
+  const dismissRecommendation = useCallback((providerId: string) => {
+    setDismissedRecIds((prev) => new Set(prev).add(providerId));
+    trackEvent("recommendation_dismiss", { provider_id: providerId, surface: "providers_strip" });
+    void fetch("/api/providers/recommendations/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ providerId, action: "NOT_RELEVANT" }),
+    }).catch(() => {});
+  }, []);
+
+  const highlightProviders = useMemo(() => {
+    const critical = recs?.clusters.find((c) => c.tier === "CRITICAL");
+    const important = recs?.clusters.find((c) => c.tier === "IMPORTANT");
+    // Filter dismissed BEFORE slicing so a dismissal promotes the next pick in.
+    const crit = (critical?.providers || []).filter((p) => !dismissedRecIds.has(p.id)).slice(0, 3);
+    const imp = (important?.providers || []).filter((p) => !dismissedRecIds.has(p.id)).slice(0, 3);
+    return [...crit, ...imp].slice(0, 6);
+  }, [recs, dismissedRecIds]);
+
+  // Fire one impression per recommended provider so the recommendation engine's
+  // runtime-tunable scoring weights become measurable via CTR. Deduped by id
+  // across re-renders so scrolling/typing doesn't double-count.
+  const trackedRecImpressionsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const p of highlightProviders) {
+      if (trackedRecImpressionsRef.current.has(p.id)) continue;
+      trackedRecImpressionsRef.current.add(p.id);
+      trackEvent("recommendation_impression", {
+        provider_id: p.id,
+        tier: p.urgencyTier,
+        category: p.category,
+        score: Math.round(p.recommendationScore),
+        surface: "providers_strip",
+      });
+    }
+  }, [highlightProviders]);
   const emptyStateCopy = getProviderEmptyStateCopy({
     state: selectedState,
     search,
@@ -417,8 +504,31 @@ export function ProvidersClient({
               <Link
                 key={p.id}
                 href={`/providers/${p.id}`}
-                className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3 overflow-hidden"
+                onClick={() =>
+                  trackEvent("recommendation_click", {
+                    provider_id: p.id,
+                    tier: p.urgencyTier,
+                    category: p.category,
+                    score: Math.round(p.recommendationScore),
+                    surface: "providers_strip",
+                  })
+                }
+                className="group relative min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 pr-7 flex items-start gap-3 overflow-hidden"
               >
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Not relevant"
+                  title="Not relevant — hide this recommendation"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dismissRecommendation(p.id);
+                  }}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/10 transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </span>
                 <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
                 <div className="min-w-0 flex-1">
                   {(() => {
@@ -538,7 +648,7 @@ export function ProvidersClient({
           title="Couldn't load providers"
           description="Something went wrong loading providers. Check your connection and try again."
           actionLabel="Try again"
-          onAction={() => fetchProviders(selectedState, selectedZip, search.trim())}
+          onAction={() => fetchProviders(selectedState, selectedZip, search.trim(), selectedCoords.lat, selectedCoords.lng)}
         />
       ) : visibleProviders.length === 0 ? (
         <EmptyState
