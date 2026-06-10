@@ -21,11 +21,11 @@ interface RevealModalProps {
  *
  * - Sticker zooms in with elastic bounce (1.2s)
  * - Foil glow + expanding ring loop in the background
- * - 24 confetti pieces (rose / foil / champagne) fall over 2s
+ * - 24 confetti pieces (cool / foil / honey) fall over 2s
  * - Eyebrow → title → sub → buttons fade up in sequence
  * - Esc or backdrop click closes
  *
- * Style is locked to the design-system "champagne and rose" palette and uses
+ * Style is locked to the design-system "honey and cool" palette and uses
  * the global `reveal-*` CSS in `apps/web/src/styles/globals.css`.
  */
 export function RevealModal({
@@ -135,7 +135,7 @@ export function RevealModal({
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-primary0 to-accent px-4 py-2 text-sm font-medium text-white shadow-md hover:from-primary0/90 hover:to-accent transition-all"
+            className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-[var(--foil-a)] via-[var(--foil-b)] to-[var(--foil-c)] px-4 py-2 text-sm font-medium text-[#1A1408] shadow-md hover:opacity-90 transition-all"
             onClick={() => {
               onPrimary?.();
               onClose();

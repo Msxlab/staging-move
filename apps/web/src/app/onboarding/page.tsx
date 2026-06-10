@@ -1010,7 +1010,7 @@ export default function OnboardingPage() {
             type="button"
             onClick={acceptLegal}
             disabled={saving || !hasRequiredLegalConsents(legalConsents)}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-6 py-2.5 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -1076,7 +1076,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Countdown hero */}
-        <div className="relative overflow-hidden rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6">
           <div className="flex items-center gap-2 text-tone-orange-fg">
             <CalendarClock className="h-4 w-4" />
             <p className="text-[11px] font-semibold uppercase tracking-wider">Your move preview</p>
@@ -1567,7 +1567,7 @@ export default function OnboardingPage() {
             <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
               {Array.from(selectedProviders.values()).map((p) => (
                 <button key={p.id} onClick={() => toggleProvider(p)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition">
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition">
                   {p.name} <X className="h-3 w-3" />
                 </button>
               ))}
@@ -1676,7 +1676,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={next}
                   disabled={saving}
-                  className="flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   Continue without listed providers <ArrowRight className="h-4 w-4" />
                 </button>
@@ -1803,7 +1803,7 @@ export default function OnboardingPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setWantsToMove(true)}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
                 >
                   <Truck className="h-4 w-4" /> Yes, plan my move
                 </button>
@@ -1823,7 +1823,7 @@ export default function OnboardingPage() {
               <button
                 onClick={finishOnboarding}
                 disabled={saving}
-                className="mt-5 flex items-center gap-2 mx-auto px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                className="mt-5 flex items-center gap-2 mx-auto px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
               >
                 {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Finishing...</> : <>Go to Dashboard <ArrowRight className="h-4 w-4" /></>}
               </button>
@@ -1868,7 +1868,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={finishOnboarding}
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
                 >
                   {saving ? (
                     <><Loader2 className="h-4 w-4 animate-spin" />{isPremium ? "Creating Plan..." : "Building preview..."}</>
@@ -1909,7 +1909,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={next}
                   disabled={saving || (step === 0 && !legalAcceptedOnServer && !hasRequiredLegalConsents(legalConsents))}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
                 >
                   {saving ? (
                     <><Loader2 className="h-4 w-4 animate-spin" />Saving...</>

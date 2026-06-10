@@ -33,7 +33,7 @@ export function EmptyState({
   secondaryActionHref,
   onSecondaryAction,
 }: EmptyStateProps) {
-  const primaryBtn = "px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition";
+  const primaryBtn = "px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition";
   const secondaryBtn = "px-5 py-2.5 rounded-xl border border-border bg-foreground/5 text-foreground text-sm font-medium hover:bg-foreground/10 transition";
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center glass-card">

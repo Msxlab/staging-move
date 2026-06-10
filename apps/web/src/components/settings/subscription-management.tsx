@@ -903,7 +903,7 @@ export default function SubscriptionManagementPage({
                     type="button"
                     onClick={() => void startAnnualTrial()}
                     disabled={Boolean(processing) || !acceptedAnnualTerms}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-3 text-sm font-semibold text-white transition hover:bg-tone-orange-bg disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check className="h-4 w-4" />
                     {offerCtaLabel}

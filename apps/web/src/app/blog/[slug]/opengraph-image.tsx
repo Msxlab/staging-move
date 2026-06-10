@@ -54,7 +54,7 @@ export default async function BlogPostOgImage({
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #B49BFF 0%, #5C9DDC 100%)",
+              background: "linear-gradient(135deg, #A5C9F0 0%, #5C9DDC 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

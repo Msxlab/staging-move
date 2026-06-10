@@ -601,7 +601,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(242, 196, 108,0.25)",
+    borderColor: theme.colors.amber.border,
   },
   truthText: {
     flex: 1,
@@ -647,7 +647,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.full,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(242, 196, 108,0.35)",
+    borderColor: theme.colors.amber.border,
   },
   gapChipText: {
     fontSize: 13,

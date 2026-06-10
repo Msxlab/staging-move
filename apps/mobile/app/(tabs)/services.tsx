@@ -58,7 +58,7 @@ const catColors: Record<string, string> = {
   // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
   GOVERNMENT: "#F08C8E", UTILITY: "#F2C46C", FINANCIAL: "#87DDC0",
   HOUSING: "#7FB6E8", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#5C9DDC",
-  KIDS: "#B49BFF", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
+  KIDS: "#D99A4E", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
@@ -419,7 +419,7 @@ export default function ServicesScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 12, color: theme.colors.textSecondary }} numberOfLines={1}>{item.title}</Text>
                     {item.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#B49BFF" }} numberOfLines={2}>{item.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: theme.colors.info }} numberOfLines={2}>{item.stateNote}</Text>
                     ) : null}
                   </View>
                   {item.estimatedMinutes ? (
@@ -534,8 +534,8 @@ export default function ServicesScreen() {
                       <Text style={styles.cost}>{formatCurrency(service.monthlyCost, i18n.language)}<Text style={styles.costPer}>/mo</Text></Text>
                     ) : (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(242, 196, 108,0.1)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)" }}>
-                        <DollarSign size={10} color="#B49BFF" />
-                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#B49BFF" }}>{t("services.addCost")}</Text>
+                        <DollarSign size={10} color="#F2C46C" />
+                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#F2C46C" }}>{t("services.addCost")}</Text>
                       </View>
                     )}
                   </TouchableOpacity>

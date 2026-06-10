@@ -50,7 +50,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         <defs>
           <linearGradient id={`tm-f-${id}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#DDE7F5" />
-            <stop offset="50%" stopColor="#B49BFF" />
+            <stop offset="50%" stopColor="#4FD1B5" />
             <stop offset="100%" stopColor="#5C9DDC" />
           </linearGradient>
         </defs>
@@ -58,14 +58,14 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         <polygon
           points="40,12 62,24 62,56 40,68 18,56 18,24"
           fill="#0E1521"
-          stroke="rgba(180,155,255,0.4)"
+          stroke="rgba(79,209,181,0.4)"
           strokeWidth="0.5"
         />
         <text
           x="40"
           y="50"
           textAnchor="middle"
-          fill="#B49BFF"
+          fill="#4FD1B5"
           fontFamily="var(--font-display), Georgia, serif"
           fontSize="22"
           fontStyle="italic"
@@ -82,12 +82,12 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
       <defs>
         <linearGradient id={`tm-p-foil-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#DDE7F5" />
-          <stop offset="40%" stopColor="#B49BFF" />
+          <stop offset="40%" stopColor="#F2C46C" />
           <stop offset="100%" stopColor="#1F5FA0" />
         </linearGradient>
         <radialGradient id={`tm-p-glow-${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#B49BFF" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#B49BFF" stopOpacity="0" />
+          <stop offset="0%" stopColor="#F2C46C" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#F2C46C" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="38" fill={`url(#tm-p-glow-${id})`} />
@@ -96,7 +96,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
       <polygon
         points="40,15 60,26 60,54 40,65 20,54 20,26"
         fill="none"
-        stroke="#B49BFF"
+        stroke="#F2C46C"
         strokeOpacity="0.5"
         strokeWidth="0.5"
       />
@@ -104,7 +104,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         x="40"
         y="38"
         textAnchor="middle"
-        fill="#B49BFF"
+        fill="#F2C46C"
         fontFamily="var(--font-mono, 'Geist Mono', ui-monospace)"
         fontSize="8"
         fontWeight="600"

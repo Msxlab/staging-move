@@ -359,11 +359,15 @@
     --text-tertiary: rgba(236, 241, 248, 0.43);
   }
 
-  /* Per-plan accent — additive; AppShell adds .plan-family / .plan-pro only for
-     Family/Pro members. Dark is the default; a .light ancestor switches to the
-     light values. Absent class = base Aurora theme (no change). */
-  .plan-family { --primary: 162 68% 53%; --ring: 162 68% 53%; }
-  .light .plan-family { --primary: 160 84% 34%; --ring: 160 84% 34%; }
+  /* Per-plan accent — additive; AppShell adds .plan-free / .plan-family /
+     .plan-pro per member tier. Dark is the default; a .light ancestor switches
+     to the light values. Absent class (Individual) = base Aurora theme.
+     Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#E0567E,
+     Family #4FD1B5/#1F9E78, Pro #F2C46C/#B0781E. */
+  .plan-free { --primary: 347 100% 81%; --ring: 347 100% 81%; }
+  .light .plan-free { --primary: 343 69% 61%; --ring: 343 69% 61%; }
+  .plan-family { --primary: 168 60% 56%; --ring: 168 60% 56%; }
+  .light .plan-family { --primary: 162 67% 37%; --ring: 162 67% 37%; }
   .plan-pro { --primary: 41 85% 68%; --ring: 41 85% 68%; }
   .light .plan-pro { --primary: 38 71% 40%; --ring: 38 71% 40%; }
 
@@ -437,7 +441,9 @@
   .h1 em {
     font-style: italic;
     font-weight: var(--fw-regular);
-    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+    /* Editorial italic emphasis is COOL by decree — honey/foil is reserved
+       for Pro/premium moments only (Edition VII, owner-ratified). */
+    background: linear-gradient(135deg, var(--rose-light) 0%, var(--rose) 50%, var(--rose-deep) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -453,7 +459,7 @@
   .h2 em {
     font-style: italic;
     font-weight: var(--fw-light);
-    color: var(--foil-b);
+    color: var(--rose);
   }
   .h3 {
     font-family: var(--font-display);

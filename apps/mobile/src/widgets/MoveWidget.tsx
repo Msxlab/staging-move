@@ -36,7 +36,7 @@ const COLORS = {
   text: "#F2F5FA",
   textDim: "#8A98AC",
   accent: "#7FB6E8",
-  success: "#34D8A6",
+  success: "#4FD1B5",
 } as const;
 
 /** "N days to go" / "Moving day!" / "N days ago" / no-plan headline. */

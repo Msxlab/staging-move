@@ -1044,7 +1044,7 @@ export default function OnboardingScreen() {
             logoSize={30}
             borderRadius={10}
             backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
-            borderColor="rgba(127, 182, 232,0.2)"
+            borderColor={theme.colors.rose.border}
             fallbackFontSize={16}
           />
           <View style={{ flex: 1 }}>
@@ -1537,7 +1537,7 @@ export default function OnboardingScreen() {
                                   logoSize={30}
                                   borderRadius={10}
                                   backgroundColor={sel ? theme.colors.primary : "rgba(255,255,255,0.05)"}
-                                  borderColor="rgba(127, 182, 232,0.2)"
+                                  borderColor={theme.colors.rose.border}
                                   fallbackFontSize={16}
                                 />
                                 <View style={{ flex: 1 }}>
@@ -1552,8 +1552,8 @@ export default function OnboardingScreen() {
                                       </Text>
                                     </View>
                                     {bd?.monthlyCost ? (
-                                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, backgroundColor: "rgba(16,185,129,0.15)" }}>
-                                        <Text style={{ fontSize: 9, fontWeight: "600", color: "#34d399" }}>${bd.monthlyCost}/mo</Text>
+                                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, backgroundColor: theme.colors.successFaded }}>
+                                        <Text style={{ fontSize: 9, fontWeight: "600", color: theme.colors.success }}>${bd.monthlyCost}/mo</Text>
                                       </View>
                                     ) : null}
                                   </View>
@@ -1577,7 +1577,7 @@ export default function OnboardingScreen() {
                                     <TouchableOpacity
                                       key={cycle}
                                       onPress={() => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: cycle } }))}
-                                      style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primaryFaded : theme.colors.surface, borderWidth: 1, borderColor: (bd?.billingCycle || "MONTHLY") === cycle ? "rgba(127, 182, 232,0.4)" : theme.colors.border }}>
+                                      style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primaryFaded : theme.colors.surface, borderWidth: 1, borderColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.borderFocus : theme.colors.border }}>
                                       <Text style={{ fontSize: 10, fontWeight: "600", color: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primary : theme.colors.textMuted }}>
                                         {cycle === "MONTHLY" ? t("onboarding.billingCycle_monthly") : t("onboarding.billingCycle_yearly")}
                                       </Text>
@@ -1611,7 +1611,7 @@ export default function OnboardingScreen() {
           {/* Step 3: Moving */}
           {step === 3 && (
             <View style={styles.stepContent}>
-              <View style={[styles.stepIcon, { backgroundColor: theme.colors.successFaded, borderColor: "rgba(16,185,129,0.3)" }]}>
+              <View style={[styles.stepIcon, { backgroundColor: theme.colors.successFaded, borderColor: theme.colors.emerald.border }]}>
                 <Truck size={28} color={theme.colors.success} />
               </View>
               <Text style={styles.stepTitle}>{t("onboarding.moving_title")}</Text>
@@ -1821,7 +1821,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   stepIcon: {
     width: 64, height: 64, borderRadius: 20,
     backgroundColor: theme.colors.primaryFaded, borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.3)", alignItems: "center",
+    borderColor: theme.colors.rose.border, alignItems: "center",
     justifyContent: "center", marginBottom: 20,
   },
   stepTitle: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: -0.3 },
@@ -1829,9 +1829,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   fieldLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, alignSelf: "flex-start", marginTop: 20, marginBottom: 8 },
   errorBox: {
     marginHorizontal: 24, marginTop: 8, padding: 12, borderRadius: theme.radius.lg,
-    backgroundColor: "rgba(240, 140, 142, 0.10)", borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)",
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: theme.colors.error + "44",
   },
-  errorText: { fontSize: 13, color: "#F08C8E", textAlign: "center" },
+  errorText: { fontSize: 13, color: theme.colors.error, textAlign: "center" },
   memberBanner: {
     marginTop: 16,
     padding: 12,
@@ -1848,7 +1848,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)" },
+  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
   chipText: { fontSize: 14, color: theme.colors.textTertiary, fontWeight: "500" },
   chipTextActive: { color: theme.colors.primary },
   toggleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
@@ -1857,7 +1857,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  toggleChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)" },
+  toggleChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
   toggleChipText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "500" },
   toggleChipTextActive: { color: theme.colors.primary },
   counterRow: {
@@ -1897,23 +1897,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   catTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text, flex: 1 },
   catRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   catCount: { fontSize: 11, color: theme.colors.textMuted },
-  catBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, backgroundColor: "rgba(127, 182, 232,0.2)" },
+  catBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, backgroundColor: theme.colors.primaryFaded },
   catBadgeText: { fontSize: 10, fontWeight: "600", color: theme.colors.primary },
   providerItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  providerItemActive: { backgroundColor: "rgba(127, 182, 232,0.08)" },
+  providerItemActive: { backgroundColor: theme.colors.primaryFaded },
   providerName: { fontSize: 14, fontWeight: "500", color: theme.colors.text },
   providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
   providerMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
   scopeBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
-  scopeFederal: { backgroundColor: "rgba(59,130,246,0.15)" },
-  scopeState: { backgroundColor: "rgba(16,185,129,0.15)" },
+  scopeFederal: { backgroundColor: theme.colors.infoFaded },
+  scopeState: { backgroundColor: theme.colors.successFaded },
   scopeText: { fontSize: 9, fontWeight: "600" },
-  scopeFederalText: { color: "#60a5fa" },
-  scopeStateText: { color: "#34d399" },
+  scopeFederalText: { color: theme.colors.info },
+  scopeStateText: { color: theme.colors.success },
   catIcon: { fontSize: 16, marginRight: 4 },
   recoSection: {
     marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border,
@@ -1935,7 +1935,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   addAllBtn: {
     flexDirection: "row", alignItems: "center", gap: 5,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.borderFocus,
   },
   addAllBtnText: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
   addAllDone: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
@@ -1946,7 +1946,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",
     marginBottom: 6,
   },
-  recoCardActive: { borderColor: "rgba(127, 182, 232,0.4)", backgroundColor: theme.colors.primaryFaded },
+  recoCardActive: { borderColor: theme.colors.borderFocus, backgroundColor: theme.colors.primaryFaded },
   recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
   bottomBar: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",

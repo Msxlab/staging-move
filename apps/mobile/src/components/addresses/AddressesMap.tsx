@@ -162,7 +162,10 @@ const makeStyles = (theme: Theme) =>
       height: 320,
       borderRadius: 18,
       overflow: "hidden",
-      backgroundColor: "#0B121E",
+      // Intentionally dark-fixed (Aurora navy au-base): the map canvas is a
+      // dark-styled map per design, so its backdrop stays dark even in the
+      // Light theme — map tiles do not retheme.
+      backgroundColor: "#0A0F18",
       borderWidth: 1,
       borderColor: theme.colors.border,
       marginBottom: 14,

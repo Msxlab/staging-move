@@ -317,7 +317,7 @@ export default function ProviderDetailScreen() {
               logoSize={48}
               borderRadius={14}
               backgroundColor={theme.colors.primaryFaded}
-              borderColor="rgba(127, 182, 232,0.2)"
+              borderColor={theme.colors.rose.border}
               fallbackFontSize={26}
             />
             <View style={{ flex: 1 }}>
@@ -604,7 +604,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: "rgba(240, 140, 142, 0.30)",
+    borderColor: theme.colors.error + "44",
     marginBottom: 14,
   },
   criticalTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.rose.text },
@@ -617,7 +617,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.2)",
+    borderColor: theme.colors.rose.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -634,7 +634,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(242,196,108,0.25)",
+    borderColor: theme.colors.amber.border,
   },
   truthTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
   truthText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
@@ -644,7 +644,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.25)",
+    borderColor: theme.colors.rose.border,
   },
   addressCheckHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   addressCheckTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, flex: 1 },
@@ -657,7 +657,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.35)",
+    borderColor: theme.colors.rose.border,
     paddingVertical: 13,
     paddingHorizontal: 12,
     marginTop: 12,
@@ -691,7 +691,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.primaryFaded,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.35)",
+    borderColor: theme.colors.rose.border,
     paddingVertical: 15,
     marginTop: 14,
   },

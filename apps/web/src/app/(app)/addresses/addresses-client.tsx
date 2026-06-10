@@ -103,7 +103,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           </p>
         </div>
         <Link href="/addresses/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
             <Plus className="h-4 w-4" /> {t("newTitle")}
           </button>
         </Link>
@@ -141,7 +141,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     <div>
                       <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                         {address.nickname || t("title")}
-                        {address.isPrimary && <Star className="h-3.5 w-3.5 text-tone-honey-fg fill-amber-400" />}
+                        {address.isPrimary && <Star className="h-3.5 w-3.5 text-tone-honey-fg fill-warning" />}
                       </h3>
                       <p className="text-sm text-foreground/35">
                         {address.street}, {address.city}, {address.state} {address.zip}

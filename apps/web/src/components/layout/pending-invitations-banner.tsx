@@ -147,7 +147,7 @@ export function PendingInvitationsBanner() {
           <div
             key={inv.id}
             data-testid="pending-invitation"
-            className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-accent0/5 p-4 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">

@@ -64,7 +64,7 @@ interface CompareResponse {
 }
 
 const CONFIDENCE_TONE: Record<string, string> = {
-  high: "bg-tone-mint-bg text-tone-mint-fg border-tone-mint-br",
+  high: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
   medium: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
   low: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
   unknown: "bg-foreground/10 text-muted-foreground border-border",
@@ -79,7 +79,7 @@ function formatCount(n: number | undefined): string {
 
 function YesNo({ value }: { value: boolean }) {
   return value ? (
-    <span className="inline-flex items-center gap-1 text-tone-mint-fg">
+    <span className="inline-flex items-center gap-1 text-tone-sage-fg">
       <Check className="h-3.5 w-3.5" /> Yes
     </span>
   ) : (
@@ -399,7 +399,7 @@ export function CompareView({
                       <Cell key={p.id}>
                         <Link
                           href={`/services/new?providerId=${encodeURIComponent(p.id)}&category=${encodeURIComponent(p.category)}`}
-                          className="inline-block rounded-lg bg-gradient-to-r from-primary0 to-accent px-3 py-1.5 text-[11px] font-semibold text-white hover:from-primary hover:to-accent"
+                          className="inline-block rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
                         >
                           Track this
                         </Link>

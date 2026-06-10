@@ -31,7 +31,7 @@ const DARK = "#3a4350";
 // Aurora brand tokens, mirrored from packages/shared/src/design-tokens.ts so the
 // pose accents read on-brand (we can't import runtime theme into a pure SVG).
 const AURORA_BLUE = "#7FB6E8";
-const AURORA_VIOLET = "#B49BFF";
+const AURORA_MASK_TIP = "#9CCBF2";
 const AURORA_MINT = "#87DDC0";
 const AURORA_AMBER = "#F2C46C";
 const BLUSH = "#F58FB4";
@@ -166,9 +166,9 @@ export function RaccoonMascot({ size = 100, fur = "#aeb9c6", variant = "kid", su
         <G>
           <Ellipse cx={62} cy={22} rx={31} ry={6.5} fill="#15171c" />
           <Rect x={44} y={-5} width={36} height={24} rx={3.5} fill="#15171c" />
-          <Rect x={44} y={6} width={36} height={6.5} fill="#E9C46A" />
-          <Path d="M62 90 l-15 -8 v16 z" fill="#E9C46A" />
-          <Path d="M62 90 l15 -8 v16 z" fill="#E9C46A" />
+          <Rect x={44} y={6} width={36} height={6.5} fill={AURORA_AMBER} />
+          <Path d="M62 90 l-15 -8 v16 z" fill={AURORA_AMBER} />
+          <Path d="M62 90 l15 -8 v16 z" fill={AURORA_AMBER} />
           <Circle cx={62} cy={90} r={4.8} fill="#caa24a" />
         </G>
       )}
@@ -197,8 +197,8 @@ export function RaccoonMascot({ size = 100, fur = "#aeb9c6", variant = "kid", su
           <Rect x={59} y={1} width={5} height={5} rx={1.3} fill={AURORA_AMBER} transform="rotate(30 61 3)" />
           <Path d="M4 52 l3 3 M7 52 l-3 3" stroke={AURORA_MINT} strokeWidth={2} strokeLinecap="round" />
           <Path d="M115 56 l3 3 M118 56 l-3 3" stroke={AURORA_AMBER} strokeWidth={2} strokeLinecap="round" />
-          <Circle cx={14} cy={40} r={2.4} fill={AURORA_VIOLET} />
-          <Circle cx={110} cy={42} r={2.4} fill={AURORA_VIOLET} />
+          <Circle cx={14} cy={40} r={2.4} fill={AURORA_MASK_TIP} />
+          <Circle cx={110} cy={42} r={2.4} fill={AURORA_MASK_TIP} />
         </G>
       )}
     </Svg>

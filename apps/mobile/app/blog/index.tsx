@@ -244,7 +244,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   cover: {
     width: "100%",
     aspectRatio: 1200 / 630,
-    backgroundColor: "#1a1a22",
+    backgroundColor: theme.colors.elevated,
   },
   coverPlaceholder: {
     backgroundColor: "rgba(255,255,255,0.04)",

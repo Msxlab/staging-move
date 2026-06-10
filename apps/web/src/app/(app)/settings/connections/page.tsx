@@ -180,7 +180,7 @@ export default function ConnectionsPage() {
                   type="button"
                   onClick={syncNow}
                   disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
                 >
                   {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                   Sync now
@@ -247,7 +247,7 @@ export default function ConnectionsPage() {
                         <button
                           type="button"
                           onClick={() => connect(c.connectorKey)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                           Connect

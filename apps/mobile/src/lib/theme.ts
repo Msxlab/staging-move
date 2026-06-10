@@ -199,59 +199,65 @@ type PlanAccentSet = {
   primaryLight: string;
   primaryDark: string;
   primaryFaded: string;
-  accent: string;
-  surface: string;
-  card: string;
-  cardHover: string;
-  background: string;
   gradPrimary: readonly [string, string];
   gradGlow: readonly [string, string];
 };
 
-const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet>> = {
-  // Family — crystal / emerald green, luxury.
-  FAMILY: {
+// Canonical plan hexes from the Edition VII design handoff (additions.css):
+// Free #FF9DB2/#E0567E · Individual = base cool blue (no entry) ·
+// Family #4FD1B5/#1F9E78 · Pro #F2C46C/#B0781E. Per the handoff, plans
+// retint ONLY the accent set — surfaces/cards/backgrounds stay on the base
+// Aurora navy/paper so every plan shares one canvas (and honey stays
+// reserved for premium moments rather than tinting whole screens).
+const planAccents: Record<"FREE" | "FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet>> = {
+  // Free — candy coral/pink ("Start here"), deliberately distinct from the
+  // paid accents so the upgrade path reads at a glance.
+  FREE: {
     dark: {
-      primary: "#34D8A6",
-      primaryLight: "#5FE7BE",
-      primaryDark: "#1FB98A",
-      primaryFaded: "rgba(52, 216, 166, 0.12)",
-      accent: "#87DDC0",
-      surface: "#0D1A15",
-      card: "#11211A",
-      cardHover: "#193227",
-      background: "#091310",
-      gradPrimary: ["#5FE7BE", "#34D8A6"],
-      gradGlow: ["rgba(52, 216, 166, 0.40)", "rgba(135, 221, 192, 0.10)"],
+      primary: "#FF9DB2",
+      primaryLight: "#FFB9C8",
+      primaryDark: "#F4799A",
+      primaryFaded: "rgba(255, 157, 178, 0.12)",
+      gradPrimary: ["#FFB9C8", "#FF9DB2"],
+      gradGlow: ["rgba(255, 157, 178, 0.34)", "rgba(244, 121, 154, 0.10)"],
     },
     light: {
-      primary: "#0E9F6E",
-      primaryLight: "#34D8A6",
-      primaryDark: "#0A7D57",
-      primaryFaded: "rgba(14, 159, 110, 0.10)",
-      accent: "#0E9F6E",
-      surface: "#FFFFFF",
-      card: "#E4F1EA",
-      cardHover: "#D8EADF",
-      background: "#ECF6F0",
-      gradPrimary: ["#34D8A6", "#0E9F6E"],
-      gradGlow: ["rgba(14, 159, 110, 0.30)", "rgba(52, 216, 166, 0.10)"],
+      primary: "#E0567E",
+      primaryLight: "#E97B99",
+      primaryDark: "#BC3E62",
+      primaryFaded: "rgba(224, 86, 126, 0.10)",
+      gradPrimary: ["#E97B99", "#E0567E"],
+      gradGlow: ["rgba(224, 86, 126, 0.28)", "rgba(188, 62, 98, 0.10)"],
+    },
+  },
+  // Family — teal/mint, luxury crystal green.
+  FAMILY: {
+    dark: {
+      primary: "#4FD1B5",
+      primaryLight: "#7FDFC9",
+      primaryDark: "#2FB89C",
+      primaryFaded: "rgba(79, 209, 181, 0.12)",
+      gradPrimary: ["#7FDFC9", "#4FD1B5"],
+      gradGlow: ["rgba(79, 209, 181, 0.40)", "rgba(47, 184, 156, 0.10)"],
+    },
+    light: {
+      primary: "#1F9E78",
+      primaryLight: "#2FB89C",
+      primaryDark: "#16775A",
+      primaryFaded: "rgba(31, 158, 120, 0.10)",
+      gradPrimary: ["#2FB89C", "#1F9E78"],
+      gradGlow: ["rgba(31, 158, 120, 0.30)", "rgba(47, 184, 156, 0.10)"],
     },
   },
   // Pro — premium honey / champagne foil (the brand's signature gold). Mirrors
   // web `.plan-pro` (--primary: 41 85% 68%) so Pro reads identically on every
-  // surface. Surfaces get a faint warm-navy tint (not violet) to match.
+  // surface.
   PRO: {
     dark: {
       primary: "#F2C46C",
       primaryLight: "#F9D88E",
       primaryDark: "#D99A4E",
       primaryFaded: "rgba(242, 196, 108, 0.12)",
-      accent: "#E9C46A",
-      surface: "#1A1408",
-      card: "#21190B",
-      cardHover: "#2D2412",
-      background: "#120D04",
       gradPrimary: ["#FBE7BD", "#F2C46C"],
       gradGlow: ["rgba(242, 196, 108, 0.40)", "rgba(217, 154, 78, 0.12)"],
     },
@@ -260,11 +266,6 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
       primaryLight: "#D99A4E",
       primaryDark: "#8A5E16",
       primaryFaded: "rgba(176, 120, 30, 0.10)",
-      accent: "#B8860B",
-      surface: "#FFFFFF",
-      card: "#F5ECD9",
-      cardHover: "#EFE3C9",
-      background: "#FAF4E7",
       gradPrimary: ["#D99A4E", "#B0781E"],
       gradGlow: ["rgba(176, 120, 30, 0.30)", "rgba(217, 154, 78, 0.10)"],
     },
@@ -272,11 +273,11 @@ const planAccents: Record<"FAMILY" | "PRO", Record<ResolvedScheme, PlanAccentSet
 };
 
 /**
- * Returns the base theme tinted for the given plan. FAMILY / PRO shift the
- * primary + accent + hero gradients; any other value (Individual, null)
- * returns the base palette unchanged. Cast through `unknown` because the
- * base palette uses `as const` literal types and the plan values are
- * different literals of the same shape.
+ * Returns the base theme tinted for the given plan. FREE / FAMILY / PRO shift
+ * the primary accent + hero gradients; Individual (or unknown) returns the
+ * base palette unchanged. Surfaces are never retinted — one Aurora canvas for
+ * every plan. Cast through `unknown` because the base palette uses `as const`
+ * literal types and the plan values are different literals of the same shape.
  */
 export function applyPlanPalette(
   base: Theme,
@@ -284,7 +285,11 @@ export function applyPlanPalette(
   plan: string | null | undefined,
 ): Theme {
   const key = (plan ?? "").toUpperCase();
-  const accentSet = key === "FAMILY" ? planAccents.FAMILY : key === "PRO" ? planAccents.PRO : null;
+  const accentSet =
+    key === "FAMILY" ? planAccents.FAMILY
+    : key === "PRO" ? planAccents.PRO
+    : key.startsWith("FREE") ? planAccents.FREE
+    : null;
   if (!accentSet) return base;
   const p = accentSet[scheme];
   return {
@@ -295,11 +300,6 @@ export function applyPlanPalette(
       primaryLight: p.primaryLight,
       primaryDark: p.primaryDark,
       primaryFaded: p.primaryFaded,
-      accent: p.accent,
-      surface: p.surface,
-      card: p.card,
-      cardHover: p.cardHover,
-      background: p.background,
       gradient: {
         ...base.colors.gradient,
         primary: p.gradPrimary,

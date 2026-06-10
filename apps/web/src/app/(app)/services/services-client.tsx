@@ -205,7 +205,7 @@ export function ServicesClient({
   return (
     <div className="space-y-6">
       {checklist && (
-        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent p-5 space-y-4">
+        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-xl">{currentPhaseInfo?.icon || ""}</span>
@@ -223,7 +223,7 @@ export function ServicesClient({
           </div>
 
           <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-primary0 to-accent transition-all duration-500" style={{ width: `${checklist.progressPercent}%` }} />
+            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${checklist.progressPercent}%` }} />
           </div>
 
           {checklist.overdueItems.length > 0 && (
@@ -268,7 +268,7 @@ export function ServicesClient({
                 )}
               </div>
               <Link href="/services/new">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition whitespace-nowrap">
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
                   {t("doIt")} <ArrowRight className="h-3 w-3" />
                 </button>
               </Link>
@@ -295,7 +295,7 @@ export function ServicesClient({
           </div>
         </div>
         <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
             <Plus className="h-4 w-4" />{t("newTitle")}
           </button>
         </Link>
@@ -325,7 +325,7 @@ export function ServicesClient({
                 >
                   <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-tone-orange-fg" : "text-foreground/35"}`} />
                   <span>{addr.nickname || `${addr.city}, ${addr.state}`}</span>
-                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400" />}
+                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-warning" />}
                   <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
                 </button>
               );

@@ -257,7 +257,7 @@ export default function ProviderCompareScreen() {
                       logoSize={36}
                       borderRadius={12}
                       backgroundColor={theme.colors.primaryFaded}
-                      borderColor="rgba(127, 182, 232,0.2)"
+                      borderColor={theme.colors.rose.border}
                       fallbackFontSize={20}
                     />
                     <TouchableOpacity
@@ -463,7 +463,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.lg,
       backgroundColor: theme.colors.warningFaded,
       borderWidth: 1,
-      borderColor: "rgba(242, 196, 108,0.25)",
+      borderColor: theme.colors.amber.border,
     },
     truthText: { flex: 1, fontSize: 12, color: theme.colors.textSecondary, lineHeight: 17 },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },

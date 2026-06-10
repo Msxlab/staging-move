@@ -502,7 +502,7 @@ export default function NewServicePage() {
                         <p className={`font-semibold text-sm truncate ${isActive ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"}`}>
                           {a.nickname || `${a.city}, ${a.state}`}
                         </p>
-                        {a.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
+                        {a.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-warning shrink-0" />}
                       </div>
                       <p className="text-xs text-foreground/40 truncate mt-0.5">{a.street}</p>
                       <div className="flex items-center gap-2 mt-1.5">
@@ -553,7 +553,7 @@ export default function NewServicePage() {
             <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
               {Array.from(selectedProviders.values()).map((p) => (
                 <button key={p.id} onClick={() => toggleProvider(p)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition">
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition">
                   {p.name} <X className="h-3 w-3" />
                 </button>
               ))}
@@ -776,7 +776,7 @@ export default function NewServicePage() {
               <button
                 type="button"
                 onClick={() => setShowCustomProvider(true)}
-                className="mt-4 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg"
+                className="mt-4 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
               >
                 Add local/custom provider
               </button>
@@ -880,7 +880,7 @@ export default function NewServicePage() {
               <button
                 onClick={handleSaveAll}
                 disabled={saving || !selectedAddress}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><CheckCircle2 className="h-4 w-4" />Add as service{selectedCount > 1 ? "s" : ""}</>}
               </button>

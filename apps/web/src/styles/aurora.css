@@ -27,8 +27,13 @@
   --au-cool:      #7FB6E8;
   --au-cool-2:    #5C9DDC;
   --au-cool-soft: rgba(127, 182, 232, 0.14);
-  --au-violet:    #B49BFF;
-  --au-violet-soft: rgba(180, 155, 255, 0.14);
+  /* Legacy name — holds HONEY since Edition VII killed purple ("mor yok").
+     Kept so old class names keep compiling; never reintroduce violet here. */
+  --au-violet:    #F2C46C;
+  --au-violet-soft: rgba(242, 196, 108, 0.14);
+  /* Family plan teal (canonical #4FD1B5 / light #1F9E78). */
+  --au-family:    #4FD1B5;
+  --au-family-soft: rgba(79, 209, 181, 0.14);
   --au-mint:      #87DDC0;
   --au-mint-soft: rgba(135, 221, 192, 0.14);
   --au-amber:     #F2C46C;
@@ -38,7 +43,7 @@
   --au-rose:      #F0A0B8;
 
   --au-aurora-1:  rgba(127, 182, 232, 0.18);
-  --au-aurora-2:  rgba(180, 155, 255, 0.12);
+  --au-aurora-2:  rgba(242, 196, 108, 0.10);
   --au-aurora-3:  rgba(135, 221, 192, 0.10);
   --au-aurora-4:  rgba(240, 160, 184, 0.08);
 
@@ -70,8 +75,10 @@
   --au-cool:      #2D7BC4;
   --au-cool-2:    #1F5FA0;
   --au-cool-soft: rgba(45, 123, 196, 0.12);
-  --au-violet:    #6F58C7;
-  --au-violet-soft: rgba(111, 88, 199, 0.10);
+  --au-violet:    #B98318;
+  --au-violet-soft: rgba(185, 131, 24, 0.10);
+  --au-family:    #1F9E78;
+  --au-family-soft: rgba(31, 158, 120, 0.10);
   --au-mint:      #2E9B79;
   --au-mint-soft: rgba(46, 155, 121, 0.10);
   --au-amber:     #B98318;
@@ -80,7 +87,7 @@
   --au-coral-soft:rgba(200, 78, 81, 0.10);
 
   --au-aurora-1:  rgba(45, 123, 196, 0.18);
-  --au-aurora-2:  rgba(111, 88, 199, 0.14);
+  --au-aurora-2:  rgba(185, 131, 24, 0.10);
   --au-aurora-3:  rgba(46, 155, 121, 0.10);
   --au-aurora-4:  rgba(200, 78, 81, 0.06);
 }
@@ -451,31 +458,33 @@
   --ring:                 207 67% 70%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose / --foil-* gets
-     the Aurora cool / violet palette. The SVG sidebar logo sets its own
-     gradients via inline `<defs>`, so it's not affected. */
+  /* Brand-token redirect — anything still calling --rose gets the Aurora
+     cool primary; --foil-* resolves to the HONEY/champagne premium accent
+     (Edition VII canon — honey is reserved for premium, no purple). The SVG
+     sidebar logo sets its own gradients via inline `<defs>`, so it's not
+     affected. */
   --rose:        var(--au-cool);
   --rose-light:  var(--au-cool);
   --rose-deep:   var(--au-cool-2);
-  --foil-a:      #DDE7F5;
-  --foil-b:      var(--au-cool);
-  --foil-c:      var(--au-cool-2);
-  --foil:        var(--au-cool);
-  --foil-ink:    var(--au-cool-2);
+  --foil-a:      #FBE7BD;
+  --foil-b:      var(--au-amber);
+  --foil-c:      #D99A4E;
+  --foil:        var(--au-amber);
+  --foil-ink:    var(--au-amber);
   --sage:        var(--au-mint);
   --brand-orange:       var(--au-cool);
   --brand-orange-light: var(--au-cool);
   --brand-orange-dark:  var(--au-cool-2);
-  --brand-amber:        var(--au-violet);
+  --brand-amber:        var(--au-amber);
 
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
   --tone-rose-bg:    rgba(127, 182, 232, 0.10); --tone-rose-br:    rgba(127, 182, 232, 0.22); --tone-rose-fg:    var(--au-cool);
-  --tone-foil-bg:    rgba(180, 155, 255, 0.10); --tone-foil-br:    rgba(180, 155, 255, 0.22); --tone-foil-fg:    var(--au-violet);
+  --tone-foil-bg:    rgba(242, 196, 108, 0.10); --tone-foil-br:    rgba(242, 196, 108, 0.22); --tone-foil-fg:    var(--au-amber);
   --tone-sage-bg:    rgba(135, 221, 192, 0.10); --tone-sage-br:    rgba(135, 221, 192, 0.22); --tone-sage-fg:    var(--au-mint);
   --tone-honey-bg:   rgba(242, 196, 108, 0.10); --tone-honey-br:   rgba(242, 196, 108, 0.22); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(180, 155, 255, 0.10); --tone-umber-br:   rgba(180, 155, 255, 0.22); --tone-umber-fg:   var(--au-violet);
+  --tone-umber-bg:   rgba(242, 196, 108, 0.10); --tone-umber-br:   rgba(242, 196, 108, 0.22); --tone-umber-fg:   var(--au-amber);
   --tone-slate-bg:   rgba(168, 181, 201, 0.10); --tone-slate-br:   rgba(168, 181, 201, 0.22); --tone-slate-fg:   var(--au-ink-2);
   --tone-orange-bg:  rgba(127, 182, 232, 0.10); --tone-orange-br:  rgba(127, 182, 232, 0.22); --tone-orange-fg:  var(--au-cool);
   --tone-emerald-bg: rgba(135, 221, 192, 0.10); --tone-emerald-br: rgba(135, 221, 192, 0.22); --tone-emerald-fg: var(--au-mint);
@@ -489,7 +498,7 @@
   --border-focus: rgba(127, 182, 232, 0.55);
   --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
   --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
-  --shadow-foil: 0 0 30px rgba(180, 155, 255, 0.16);
+  --shadow-foil: 0 0 30px rgba(242, 196, 108, 0.16);
 }
 
 /* --- Light theme overrides ----------------------------------------- */
@@ -629,15 +638,15 @@
   color: var(--au-cool);
 }
 .lf-aurora .tier-stamp.tier-family {
-  background: var(--au-violet-soft);
-  border-color: rgba(180, 155, 255, 0.32);
-  color: var(--au-violet);
+  background: var(--au-family-soft);
+  border-color: rgba(79, 209, 181, 0.32);
+  color: var(--au-family);
 }
 .lf-aurora .tier-stamp.tier-pro {
-  background: linear-gradient(135deg, rgba(180, 155, 255, 0.18), rgba(127, 182, 232, 0.20));
-  border-color: rgba(127, 182, 232, 0.40);
+  background: linear-gradient(135deg, rgba(242, 196, 108, 0.18), rgba(251, 231, 189, 0.20));
+  border-color: rgba(242, 196, 108, 0.40);
   color: var(--au-ink);
-  box-shadow: 0 0 0 1px rgba(127, 182, 232, 0.14) inset;
+  box-shadow: 0 0 0 1px rgba(242, 196, 108, 0.14) inset;
 }
 .lf-aurora .tier-stamp.tier-trial {
   background: var(--au-amber-soft);
@@ -645,13 +654,13 @@
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — Aurora cool/violet/mint segmentation. */
+/* Tier distribution bar — cool (Individual) / teal (Family) / honey (Pro). */
 .lf-aurora .tier-bar { background: var(--au-rule); }
 .lf-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
-.lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #8B73E0); }
+.lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
 .lf-aurora .tier-bar-seg-pro {
-  background: linear-gradient(90deg, var(--au-cool) 0%, var(--au-violet) 100%);
-  box-shadow: 0 0 8px rgba(127, 182, 232, 0.4);
+  background: linear-gradient(90deg, #FBE7BD 0%, var(--au-amber) 100%);
+  box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);
 }
 
 /* Inputs / search fields — anything using `bg-background` + `border-input`

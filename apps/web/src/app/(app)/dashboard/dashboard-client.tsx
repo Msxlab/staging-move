@@ -32,7 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 const categoryColors: Record<string, string> = {
   GOVERNMENT: "bg-destructive", UTILITY: "bg-tone-honey-fg", FINANCIAL: "bg-tone-emerald-fg",
-  HOUSING: "bg-tone-sky-bg", HEALTHCARE: "bg-destructive", TRANSPORTATION: "bg-tone-sky-fg",
+  HOUSING: "bg-tone-sky-fg", HEALTHCARE: "bg-destructive", TRANSPORTATION: "bg-tone-sky-fg",
   KIDS: "bg-tone-foil-fg", FITNESS: "bg-tone-orange-fg", SHOPPING: "bg-destructive", OTHER: "bg-tone-slate-fg",
 };
 const CATEGORY_KEYS = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"] as const;
@@ -533,7 +533,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{td("title")}</h1>
             {isPremium && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary0/20 via-primary/600/20 to-accent0/20 border border-tone-honey-br text-tone-honey-fg animate-pulse">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary/20 via-primary/20 to-transparent border border-tone-honey-br text-tone-honey-fg animate-pulse">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 {td("premiumBadge")}
               </span>
@@ -558,7 +558,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           {/* Free users can't create a MovingPlan — route the move CTA to the
               upgrade path instead of /moving/new (which 403s for them). */}
           <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
               <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}
             </button>
           </Link>
@@ -627,7 +627,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             switch (key) {
               case "nextCritical":
                 return criticalActions.length > 0 ? (
-                  <div key={key} className="rounded-2xl border border-destructive bg-gradient-to-br from-primary0/5 to-accent0/5 p-5 space-y-3">
+                  <div key={key} className="rounded-2xl border border-destructive bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-destructive" />
@@ -691,11 +691,11 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
-                                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
+                                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-warning shrink-0" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                   <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${addr.nickname || addr.street} spending percentage`}>
-                                    <div className="h-full bg-gradient-to-r from-primary0 to-accent0 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                   <span className="text-xs text-muted-foreground shrink-0">{Math.round(pct)}%</span>
                                 </div>
@@ -714,7 +714,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               case "moving": {
                 const phaseInfo = checklist ? RELOCATION_PHASES.find((ph: any) => ph.phase === checklist.currentPhase) : null;
                 return stats.activePlan ? (
-                  <div key={key} className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent p-5 space-y-4">
+                  <div key={key} className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{phaseInfo?.icon || "🚚"}</span>
@@ -737,7 +737,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     {/* Progress bar */}
                     <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary0 to-accent0 transition-all duration-500"
+                        className="h-full rounded-full bg-primary transition-all duration-500"
                         style={{ width: `${checklist?.progressPercent ?? progress}%` }}
                       />
                     </div>
@@ -786,7 +786,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                           )}
                         </div>
                         <Link href="/services">
-                          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition whitespace-nowrap">
+                          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
                             {t("doIt")} <ArrowRight className="h-3 w-3" />
                           </button>
                         </Link>

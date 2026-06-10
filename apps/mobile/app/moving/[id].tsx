@@ -1006,7 +1006,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   migBtnText: { fontSize: 11, fontWeight: "700", color: theme.colors.textSecondary },
   migBtnConfirmed: {
-    backgroundColor: "rgba(16,185,129,0.15)", borderColor: "rgba(16,185,129,0.4)",
+    backgroundColor: theme.colors.successFaded, borderColor: theme.colors.success,
   },
   migBtnTextConfirmed: { color: theme.colors.emerald.text },
   migBtnPrimary: {

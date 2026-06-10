@@ -290,7 +290,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.colors.border,
     },
     stepTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-    stepReason: { fontSize: 11, color: "#B49BFF", marginTop: 2, lineHeight: 15 },
+    stepReason: { fontSize: 11, color: theme.colors.info, marginTop: 2, lineHeight: 15 },
     moreRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
     moreText: { fontSize: 12, color: theme.colors.textMuted, fontWeight: "600" },
     unlockWrap: { gap: 10, marginTop: 2 },
