@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,13 +14,10 @@ import {
   Plus,
   Calendar,
   ArrowRight,
-  MapPin,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -28,13 +25,23 @@ import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
-const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
-  PLANNING: "neutral",
-  IN_PROGRESS: "primary",
-  COMPLETED: "success",
-  CANCELED: "error",
-  CANCELLED: "error",
-};
+// ── Moving "Move history" recreation of the Aurora design (services-more /
+// MoveHistoryView): lifetime stat summary + left-accent route cards. ──
+
+/** Live = a move that is still underway (the design's "Active" moves). */
+function isLiveStatus(status: string): boolean {
+  return status === "PLANNING" || status === "IN_PROGRESS";
+}
+
+/** Honest, derivable progress for a live move: fraction of the runway between
+ *  plan creation and the move date already elapsed. Null when not derivable. */
+function timeProgress(plan: any): number | null {
+  const created = new Date(plan.createdAt).getTime();
+  const move = new Date(plan.moveDate).getTime();
+  if (!Number.isFinite(created) || !Number.isFinite(move) || move <= created) return null;
+  const f = (Date.now() - created) / (move - created);
+  return Math.max(0.04, Math.min(1, f));
+}
 
 export default function MovingScreen() {
 
@@ -104,6 +111,28 @@ export default function MovingScreen() {
     );
   }
 
+  // Lifetime summary, derived from the loaded plan list (design's sv-mhsummary).
+  const normalized = plans.map((plan: any) => normalizeMovingPlanStatus(plan.status));
+  const completedCount = normalized.filter((s) => s === "COMPLETED").length;
+  const activeCount = normalized.filter((s) => isLiveStatus(s)).length;
+
+  /** Left accent + status text tone: active = primary, done = success,
+   *  archived (canceled / unknown) = border. Plan accents flow through
+   *  theme.colors.primary automatically. */
+  const accentFor = (status: string) =>
+    isLiveStatus(status)
+      ? theme.colors.primary
+      : status === "COMPLETED"
+        ? theme.colors.success
+        : theme.colors.border;
+
+  const statusColorFor = (status: string) =>
+    isLiveStatus(status)
+      ? theme.colors.primary
+      : status === "COMPLETED"
+        ? theme.colors.success
+        : theme.colors.textMuted;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -142,56 +171,105 @@ export default function MovingScreen() {
             onAction={() => router.push("/moving/new")}
           />
         ) : (
-          <View style={styles.list}>
-            {plans.map((plan: any, index: number) => {
-              const normalizedStatus = normalizeMovingPlanStatus(plan.status);
-              const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          <>
+            {/* Lifetime summary — total / completed / active */}
+            <View style={styles.statsRow}>
+              <View style={styles.statTile}>
+                <Text style={styles.statV}>{plans.length}</Text>
+                <Text style={styles.statK}>{t("moving.statMoves")}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={styles.statV}>{completedCount}</Text>
+                <Text style={styles.statK}>{t("moving.status_COMPLETED")}</Text>
+              </View>
+              <View style={styles.statTile}>
+                <Text style={[styles.statV, activeCount > 0 && { color: theme.colors.primary }]}>{activeCount}</Text>
+                <Text style={styles.statK}>{t("moving.statusActive")}</Text>
+              </View>
+            </View>
 
-              return (
-                <ListEntrance key={plan.id} index={index}>
-                <Card variant="default" onPress={() => router.push({ pathname: "/moving/[id]", params: { id: plan.id } })}>
-                  <View style={styles.planTop}>
-                    <View style={styles.planIcon}>
-                      <Truck size={20} color={theme.colors.primary} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.planTitle}>
-                        {plan.fromAddress?.city || "—"} → {plan.toAddress?.city || "—"}
+            <View style={styles.list}>
+              {plans.map((plan: any, index: number) => {
+                const normalizedStatus = normalizeMovingPlanStatus(plan.status);
+                const live = isLiveStatus(normalizedStatus);
+                const accent = accentFor(normalizedStatus);
+                const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                const progress = live ? timeProgress(plan) : null;
+                const fromCity = plan.fromAddress?.city || "—";
+                const toCity = plan.toAddress?.city || "—";
+                const statusLabel = t(`moving.status_${normalizedStatus}`, {
+                  defaultValue: normalizedStatus.replace("_", " "),
+                });
+
+                return (
+                  <ListEntrance key={plan.id} index={index}>
+                    <PressableScale
+                      style={[
+                        styles.routeCard,
+                        live && styles.routeCardLive,
+                        { borderLeftColor: accent },
+                      ]}
+                      onPress={() => router.push({ pathname: "/moving/[id]", params: { id: plan.id } })}
+                      accessibilityLabel={`${fromCity} ${t("moving.to")} ${toCity}, ${statusLabel}`}
+                    >
+                      {/* Route line + ACTIVE pill */}
+                      <View style={styles.routeHd}>
+                        <Text style={styles.routeCity} numberOfLines={1}>
+                          {fromCity}{plan.fromAddress?.state ? `, ${plan.fromAddress.state}` : ""}
+                        </Text>
+                        <ArrowRight size={14} color={live ? theme.colors.primary : theme.colors.textMuted} />
+                        <Text style={styles.routeCity} numberOfLines={1}>
+                          {toCity}{plan.toAddress?.state ? `, ${plan.toAddress.state}` : ""}
+                        </Text>
+                        {live && (
+                          <View style={styles.livePill}>
+                            <Text style={styles.livePillText}>{t("moving.statusActive")}</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Street-level detail, one compact line */}
+                      <Text style={styles.streets} numberOfLines={1}>
+                        {plan.fromAddress?.street || t("moving.fromAddress")} → {plan.toAddress?.street || t("moving.toAddress")}
                       </Text>
-                      <View style={styles.planMeta}>
+
+                      {/* Meta — date · days left · status */}
+                      <View style={styles.meta}>
                         <Calendar size={12} color={theme.colors.textMuted} />
-                        <Text style={styles.planDate}>
+                        <Text style={styles.metaText}>
                           {new Date(plan.moveDate).toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric", year: "numeric" })}
                         </Text>
                         {daysUntil > 0 && (
                           <Text style={styles.daysLeft}>{daysUntil}d</Text>
                         )}
+                        <Text style={styles.metaDot}>·</Text>
+                        <Text style={[styles.metaStatus, { color: statusColorFor(normalizedStatus) }]}>
+                          {statusLabel}
+                        </Text>
                       </View>
-                    </View>
-                    <UiBadge label={normalizedStatus.replace("_", " ")} variant={statusVariant[normalizedStatus] || "neutral"} />
-                  </View>
 
-                  {/* Addresses */}
-                  <View style={styles.addressRow}>
-                    <View style={styles.addressItem}>
-                      <MapPin size={12} color={theme.colors.textMuted} />
-                      <Text style={styles.addressText} numberOfLines={1}>
-                        {plan.fromAddress?.street || t("moving.fromAddress")}, {plan.fromAddress?.state || ""}
-                      </Text>
-                    </View>
-                    <ArrowRight size={12} color={theme.colors.textMuted} />
-                    <View style={styles.addressItem}>
-                      <MapPin size={12} color={theme.colors.emerald.text} />
-                      <Text style={styles.addressText} numberOfLines={1}>
-                        {plan.toAddress?.street || t("moving.toAddress")}, {plan.toAddress?.state || ""}
-                      </Text>
-                    </View>
-                  </View>
-                </Card>
-                </ListEntrance>
-              );
-            })}
-          </View>
+                      {/* Runway progress on live moves (creation → move date) */}
+                      {progress != null && (
+                        <View style={styles.progressTrack}>
+                          <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+                        </View>
+                      )}
+                    </PressableScale>
+                  </ListEntrance>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              style={styles.newMoveCard}
+              onPress={() => router.push("/moving/new")}
+              accessibilityRole="button"
+              accessibilityLabel={t("moving.newPlan")}
+            >
+              <Plus size={16} color={theme.colors.textTertiary} />
+              <Text style={styles.newMoveText}>{t("moving.newPlan")}</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -205,14 +283,85 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
-  list: { gap: 12 },
-  planTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  planIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", alignItems: "center", justifyContent: "center" },
-  planTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  planMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  planDate: { fontSize: 12, color: theme.colors.textTertiary },
-  daysLeft: { fontSize: 11, color: theme.colors.amber.text, fontWeight: "600", marginLeft: 6 },
-  addressRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-  addressItem: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
-  addressText: { fontSize: 11, color: theme.colors.textTertiary },
+  list: { gap: 10 },
+  // ── Lifetime summary (design sv-mhsummary) ──
+  statsRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
+  statTile: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    alignItems: "center",
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  statV: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
+  statK: {
+    fontSize: 8,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+  },
+  // ── Route cards (design sv-move) ──
+  routeCard: {
+    padding: 15,
+    paddingLeft: 16,
+    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderLeftWidth: 3,
+  },
+  routeCardLive: {
+    ...theme.shadow.glow,
+  },
+  routeHd: { flexDirection: "row", alignItems: "center", gap: 8 },
+  routeCity: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: theme.colors.text, letterSpacing: -0.2 },
+  livePill: {
+    marginLeft: "auto",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: theme.colors.primaryFaded,
+    borderColor: theme.colors.borderFocus,
+  },
+  livePillText: {
+    fontSize: 8,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    fontWeight: "800",
+    color: theme.colors.primary,
+  },
+  streets: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 4 },
+  meta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 9, flexWrap: "wrap" },
+  metaText: { fontSize: 11, color: theme.colors.textTertiary },
+  daysLeft: { fontSize: 11, color: theme.colors.amber.text, fontWeight: "600", marginLeft: 4 },
+  metaDot: { fontSize: 11, color: theme.colors.textMuted },
+  metaStatus: { fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "700" },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.surface,
+    marginTop: 11,
+    overflow: "hidden",
+  },
+  progressFill: { height: "100%", borderRadius: 2, backgroundColor: theme.colors.primary },
+  // ── Dashed create-new-move card (Hub idiom) ──
+  newMoveCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: theme.colors.border,
+    marginTop: 14,
+  },
+  newMoveText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "600" },
 });

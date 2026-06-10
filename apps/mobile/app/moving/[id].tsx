@@ -32,6 +32,8 @@ import {
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { Avatar } from "@/components/ui/Avatar";
+import { RaccoonMascot } from "@/components/ui/RaccoonMascot";
+import { GradientProgress } from "@/components/ui/GradientProgress";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
@@ -266,6 +268,17 @@ export default function MovingDetailScreen() {
     });
   };
 
+  // Compact gutter label for the timeline date rail — "OCT 26" (wraps to two
+  // mono-uppercase lines in the 38px gutter, matching the Aurora spec).
+  const formatTaskDueShort = (value?: string | Date | null) => {
+    if (!value) return null;
+    const dueDate = new Date(value);
+    if (Number.isNaN(dueDate.getTime())) return null;
+    return dueDate
+      .toLocaleDateString(dateLocale, { month: "short", day: "numeric" })
+      .toUpperCase();
+  };
+
   const confirmAction = async (
     serviceId: string,
     action: "KEEP" | "TRANSFER" | "SWITCH" | "CANCEL",
@@ -389,6 +402,13 @@ export default function MovingDetailScreen() {
     ? t("moving.migrationSummary", { count: migration.transitionPlans?.length || migration.summary.total })
     : t("moving.migrationEmpty");
   const hasTransitionPlans = Boolean(migration?.transitionPlans?.length);
+
+  // Timeline progress — dismissed tasks drop out of the denominator so the
+  // celebration only fires when every tracked task is genuinely done.
+  const doneTaskCount = moveTasks.filter((tk) => tk.status === "COMPLETED").length;
+  const trackedTaskCount = moveTasks.filter((tk) => tk.status !== "DISMISSED").length;
+  const taskProgressPct = trackedTaskCount > 0 ? Math.round((doneTaskCount / trackedTaskCount) * 100) : 0;
+  const allTasksDone = trackedTaskCount > 0 && doneTaskCount === trackedTaskCount;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -570,17 +590,35 @@ export default function MovingDetailScreen() {
               <Text style={styles.migBtnPrimaryText}>{taskBusy === "generate" ? t("moving.syncing") : t("moving.generate")}</Text>
             </TouchableOpacity>
           </View>
+          {/* Aurora progress strip — mono kicker + glow gradient bar (tl-prog) */}
+          {moveTasks.length > 0 && (
+            <View style={styles.tlProgress}>
+              <View style={styles.tlProgressRow}>
+                <Text style={styles.tlProgressPct}>
+                  {t("moving.percentComplete", { pct: taskProgressPct }).toUpperCase()}
+                </Text>
+                <Text style={styles.tlProgressCount}>
+                  {t("moving.taskCountOfTotal", { done: doneTaskCount, total: trackedTaskCount })}
+                </Text>
+              </View>
+              <GradientProgress progress={taskProgressPct} height={7} />
+            </View>
+          )}
           {moveTasks.length === 0 ? (
             <Text style={styles.emptyText}>{t("moving.noMoveTasks")}</Text>
           ) : (
             <GestureHandlerRootView>
-              {moveTasks.map((task, index) => {
+              {/* Aurora vertical timeline — date gutter · rail · node dot · glass card */}
+              <View style={styles.timeline}>
+                <View style={styles.timelineRail} />
+                {moveTasks.map((task) => {
                 const done = task.status === "COMPLETED";
                 const dismissed = task.status === "DISMISSED";
                 const open = !done && !dismissed;
+                const dueShort = formatTaskDueShort(task.dueDate);
                 const rowInner = (
                   <View
-                    style={[styles.taskRow, index > 0 && styles.migRowDivider]}
+                    style={[styles.taskRow, done && styles.taskRowDone]}
                     accessibilityHint={open ? t("moving.swipeCompleteHint") : undefined}
                   >
                     <View style={{ flex: 1 }}>
@@ -652,33 +690,51 @@ export default function MovingDetailScreen() {
                 // "Done" action firing the SAME COMPLETE event the button uses
                 // (optimistic + revert on error). Tap behavior is untouched.
                 // Completed/dismissed rows render plain (no swipe).
-                if (!open) {
-                  return <View key={task.id}>{rowInner}</View>;
-                }
                 return (
-                  <Swipeable
-                    key={task.id}
-                    friction={2}
-                    rightThreshold={48}
-                    overshootRight={false}
-                    renderRightActions={() => (
-                      <View style={styles.swipeAction}>
-                        <Check size={18} color="#fff" />
-                        <Text style={styles.swipeActionText}>{t("moving.swipeDone")}</Text>
-                      </View>
+                  <View key={task.id} style={styles.tlItem}>
+                    <Text style={styles.tlDate} numberOfLines={2}>
+                      {dueShort ?? ""}
+                    </Text>
+                    <View style={styles.tlDotCol}>
+                      <View style={[styles.tlDot, done && styles.tlDotDone]} />
+                    </View>
+                    {!open ? (
+                      <View style={styles.tlCardWrap}>{rowInner}</View>
+                    ) : (
+                      <Swipeable
+                        containerStyle={styles.tlCardWrap}
+                        friction={2}
+                        rightThreshold={48}
+                        overshootRight={false}
+                        renderRightActions={() => (
+                          <View style={styles.swipeAction}>
+                            <Check size={18} color="#fff" />
+                            <Text style={styles.swipeActionText}>{t("moving.swipeDone")}</Text>
+                          </View>
+                        )}
+                        onSwipeableOpen={(direction, swipeable) => {
+                          if (direction === "right") {
+                            swipeable.close();
+                            void completeMoveTaskOptimistic(task.id);
+                          }
+                        }}
+                      >
+                        {rowInner}
+                      </Swipeable>
                     )}
-                    onSwipeableOpen={(direction, swipeable) => {
-                      if (direction === "right") {
-                        swipeable.close();
-                        void completeMoveTaskOptimistic(task.id);
-                      }
-                    }}
-                  >
-                    {rowInner}
-                  </Swipeable>
+                  </View>
                 );
               })}
+              </View>
             </GestureHandlerRootView>
+          )}
+          {/* 100% — every tracked task checked off: celebrate (Aurora ca-celebrate) */}
+          {allTasksDone && (
+            <View style={styles.celebrateCard}>
+              <RaccoonMascot size={88} variant="kid" pose="celebrate" />
+              <Text style={styles.celebrateTitle}>{t("moving.celebrateTitle")}</Text>
+              <Text style={styles.celebrateBody}>{t("moving.celebrateBody")}</Text>
+            </View>
           )}
         </Card>
 
@@ -1094,10 +1150,101 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textTertiary,
     lineHeight: 18,
   },
+  // ── Aurora timeline (Edition VII) — date gutter · rail · node dot · card ──
+  tlProgress: { marginTop: 2, marginBottom: 16 },
+  tlProgressRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 8,
+  },
+  tlProgressPct: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: theme.colors.primary,
+  },
+  tlProgressCount: { fontSize: 12, color: theme.colors.textTertiary },
+  timeline: { position: "relative", marginTop: 4 },
+  // Rail centered under the dot column: date gutter 38 + half of the 28 dot
+  // column = 52; the 2px rail spans 51–53.
+  timelineRail: {
+    position: "absolute",
+    left: 51,
+    top: 10,
+    bottom: 14,
+    width: 2,
+    borderRadius: 1,
+    backgroundColor: theme.colors.border,
+  },
+  tlItem: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
+  tlDate: {
+    width: 38,
+    paddingTop: 14,
+    textAlign: "right",
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 1,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    color: theme.colors.textTertiary,
+  },
+  tlDotCol: { width: 28, alignItems: "center", paddingTop: 14 },
+  tlDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.textMuted,
+    backgroundColor: theme.colors.background,
+  },
+  tlDotDone: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  tlCardWrap: { flex: 1 },
+  celebrateCard: {
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    backgroundColor: theme.colors.successFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.emerald.border,
+  },
+  celebrateTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    color: theme.colors.text,
+    textAlign: "center",
+  },
+  celebrateBody: {
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    maxWidth: 250,
+  },
   taskRow: {
     flexDirection: "row",
     gap: 10,
-    paddingVertical: 12,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+  },
+  taskRowDone: {
+    backgroundColor: theme.colors.successFaded,
+    borderColor: theme.colors.emerald.border,
   },
   taskBadges: {
     flexDirection: "row",

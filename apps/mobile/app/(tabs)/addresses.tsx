@@ -9,15 +9,17 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MapPin, Plus, Check, AlertTriangle, List, Map as MapIcon } from "lucide-react-native";
+import { MapPin, Plus, Check, AlertTriangle, ArrowRight, List, Map as MapIcon } from "lucide-react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useReducedMotion } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { monthlyAmountForCycle } from "@locateflow/shared";
+import { monthlyAmountForCycle, normalizeMovingPlanStatus } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { GradientProgress } from "@/components/ui/GradientProgress";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { AddressesMap } from "@/components/addresses/AddressesMap";
@@ -149,6 +151,7 @@ export default function AddressesScreen() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
   const { t, i18n } = useTranslation();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,11 +159,27 @@ export default function AddressesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [seg, setSeg] = useState<"all" | "active" | "past">("all");
   const [viewMode, setViewMode] = useState<"hub" | "map">("hub");
+  // Active moving plan (PLANNING / IN_PROGRESS) powering the move-in-transit
+  // banner. Best-effort: any error just hides the banner — it never blocks
+  // the addresses list.
+  const [activeMove, setActiveMove] = useState<any | null>(null);
 
   const fetchAddresses = useCallback(async () => {
     // limit=200 (the route max): these are small per-user collections shown as
     // one list — the default page size of 50 silently dropped power users' rows.
-    const res = await api.get<any>("/api/addresses", { limit: "200" });
+    // /api/moving is the same light list call Home + Services already make; it
+    // only feeds the transit banner, so its failure is swallowed.
+    const [res, movingRes] = await Promise.all([
+      api.get<any>("/api/addresses", { limit: "200" }),
+      api.get<any>("/api/moving").catch(() => ({ data: null, error: true }) as any),
+    ]);
+    const plans: any[] = movingRes?.data?.plans || [];
+    setActiveMove(
+      plans.find((p: any) => {
+        const s = normalizeMovingPlanStatus(p.status);
+        return s === "PLANNING" || s === "IN_PROGRESS";
+      }) || null,
+    );
     if (res.error) {
       setError(res.error);
       return false;
@@ -228,6 +247,22 @@ export default function AddressesScreen() {
   });
   const current = visible.filter((a) => a.isPrimary);
   const other = visible.filter((a) => !a.isPrimary);
+
+  // ── Move-in-transit banner (recreates the design's .ad-transit) ──
+  // Derived entirely from data already on this screen: the active plan from
+  // /api/moving plus the per-address service lists. Progress = share of the
+  // move's tracked services already at the NEW address — the same old/new
+  // split the move screen's "Set up at new / Still at old" panels render.
+  const transitFrom = activeMove ? addresses.find((a) => a.id === activeMove.fromAddress?.id) : undefined;
+  const transitTo = activeMove ? addresses.find((a) => a.id === activeMove.toAddress?.id) : undefined;
+  const transitStillAtOld = transitFrom?.services?.length || 0;
+  const transitAtNew = transitTo?.services?.length || 0;
+  const transitTotal = transitStillAtOld + transitAtNew;
+  const transitPct = transitTotal > 0 ? Math.round((transitAtNew / transitTotal) * 100) : 0;
+  const transitFromCity = activeMove?.fromAddress?.city || "—";
+  const transitToCity = activeMove?.toAddress?.city || "—";
+  // Banner steals entrance slot 0, so the address cards cascade after it.
+  const entranceBase = activeMove ? 1 : 0;
 
   const renderCard = (address: Address, index: number) => {
     const st = addressStatus(address);
@@ -371,16 +406,77 @@ export default function AddressesScreen() {
               ))}
             </View>
 
+            {/* Move-in-transit banner — origin → destination route + progress */}
+            {activeMove && (
+              <ListEntrance index={0}>
+                <PressableScale
+                  style={styles.transit}
+                  onPress={() => router.push({ pathname: "/moving/[id]", params: { id: activeMove.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("addresses.transit.title", { pct: transitPct })}. ${transitFromCity} ${t(
+                    "addresses.transit.fromRole",
+                  )}. ${transitToCity} ${t("addresses.transit.toRole")}.`}
+                >
+                  <Text style={styles.transitKicker}>{t("addresses.transit.title", { pct: transitPct })}</Text>
+                  <View style={styles.transitRoute}>
+                    <View style={styles.transitNode}>
+                      <Text style={styles.transitCity} numberOfLines={1}>
+                        {transitFromCity}
+                        {activeMove.fromAddress?.state ? `, ${activeMove.fromAddress.state}` : ""}
+                      </Text>
+                      <Text style={styles.transitSub}>{t("addresses.transit.fromRole")}</Text>
+                    </View>
+                    <View style={styles.transitDash}>
+                      {[0, 1, 2].map((d) => (
+                        <View key={d} style={styles.transitDashSeg} />
+                      ))}
+                    </View>
+                    <View style={styles.transitArrow}>
+                      <ArrowRight size={15} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.transitDash}>
+                      {[0, 1, 2].map((d) => (
+                        <View key={d} style={styles.transitDashSeg} />
+                      ))}
+                    </View>
+                    <View style={styles.transitNode}>
+                      <Text style={styles.transitCity} numberOfLines={1}>
+                        {transitToCity}
+                        {activeMove.toAddress?.state ? `, ${activeMove.toAddress.state}` : ""}
+                      </Text>
+                      <Text style={styles.transitSub}>{t("addresses.transit.toRole")}</Text>
+                    </View>
+                  </View>
+                  <GradientProgress
+                    progress={transitPct}
+                    height={5}
+                    animated={!reduceMotion}
+                    colors={[theme.colors.success, theme.colors.primary]}
+                    trackColor={theme.colors.glass.highlight}
+                    style={styles.transitBar}
+                  />
+                  {transitStillAtOld > 0 && (
+                    <View style={styles.transitWarn}>
+                      <AlertTriangle size={13} color={theme.colors.error} />
+                      <Text style={styles.transitWarnText} numberOfLines={1}>
+                        {t("addresses.transit.stillAtOld", { count: transitStillAtOld })}
+                      </Text>
+                    </View>
+                  )}
+                </PressableScale>
+              </ListEntrance>
+            )}
+
             {current.length > 0 && (
               <>
                 <Text style={styles.adSectionLbl}>Current</Text>
-                <View style={styles.list}>{current.map((a, i) => renderCard(a, i))}</View>
+                <View style={styles.list}>{current.map((a, i) => renderCard(a, i + entranceBase))}</View>
               </>
             )}
             {other.length > 0 && (
               <>
                 <Text style={styles.adSectionLbl}>{current.length > 0 ? "Past & other" : "Addresses"}</Text>
-                <View style={styles.list}>{other.map((a, i) => renderCard(a, i + current.length))}</View>
+                <View style={styles.list}>{other.map((a, i) => renderCard(a, i + current.length + entranceBase))}</View>
               </>
             )}
             {visible.length === 0 && (
@@ -515,4 +611,55 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 14,
   },
   adAddText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "600" },
+  // ── Move-in-transit banner (recreates the design's .ad-transit) ──
+  transit: {
+    padding: 16,
+    borderRadius: 22,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 2,
+    ...theme.shadow.glow,
+  },
+  transitKicker: {
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    color: theme.colors.accent,
+  },
+  transitRoute: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  transitNode: { flexShrink: 1 },
+  transitCity: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  transitSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  transitDash: {
+    flex: 1,
+    minWidth: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+  },
+  transitDashSeg: {
+    width: 5,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.colors.borderFocus,
+  },
+  transitArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: theme.colors.primaryFaded,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  transitBar: { marginTop: 10 },
+  transitWarn: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 9 },
+  transitWarnText: { flex: 1, fontSize: 12, fontWeight: "600", color: theme.colors.error },
 });

@@ -8,10 +8,22 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Svg, { Circle } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  cancelAnimation,
+} from "react-native-reanimated";
 import {
   MapPin,
   Zap,
@@ -20,7 +32,9 @@ import {
   ArrowRight,
   Bell,
   BellRing,
-  AlertTriangle,
+  Check,
+  Rocket,
+  Sparkles,
   Users,
   Mail,
   X,
@@ -56,7 +70,8 @@ import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/Mov
 import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
 import { UpNext } from "@/components/ui/UpNext";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
-import type { ServiceLike } from "@/lib/service-insights";
+import { computeSavingsInsights, type ServiceLike } from "@/lib/service-insights";
+import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
@@ -66,6 +81,8 @@ import { formatCurrency } from "@/lib/format";
 import type { DashboardStats } from "@locateflow/shared";
 import {
   generateChecklist,
+  getMoveCountdown,
+  formatDateOnlyUtc,
   RELOCATION_PHASES,
   type UserChecklistProfile,
   type RelocationChecklist,
@@ -85,6 +102,145 @@ const BRIEFING_CARD_DISMISSED_KEY = "locateflow.moveBriefingDismissed";
 interface MoveBriefingState {
   briefing: string;
   aiGenerated: boolean;
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Aurora "card module" helpers (Edition VII home regroup)
+// ──────────────────────────────────────────────────────────────────────
+
+// Cold-start momentum floor (%) — identical to MoveCommandCenter's. Having an
+// active plan WITH origin + destination set is real, user-completed setup, so
+// the hero ring starts at a low non-zero instead of a demotivating 0%.
+const COLD_START_FLOOR = 6;
+
+/**
+ * Readiness blend — mirrors MoveCommandCenter.computeReadiness exactly so the
+ * Aurora hero ring shows the same number the command center showed: checklist
+ * %-done blended with critical-providers set-up-vs-needed, floored only when
+ * origin + destination are genuinely set. Kept in lockstep manually (the
+ * command-center copy is module-private).
+ */
+function computeReadiness(
+  checklist: RelocationChecklist | null,
+  completedCritical: number,
+  missingCritical: number,
+  hasOriginDestination = false,
+): number {
+  const signals: number[] = [];
+  if (checklist && checklist.totalItems > 0) {
+    signals.push(checklist.completedItems / checklist.totalItems);
+  }
+  const criticalTotal = completedCritical + missingCritical;
+  if (criticalTotal > 0) {
+    signals.push(completedCritical / criticalTotal);
+  }
+  const computed =
+    signals.length === 0
+      ? 0
+      : Math.round((signals.reduce((a, b) => a + b, 0) / signals.length) * 100);
+  const floored = hasOriginDestination ? Math.max(computed, COLD_START_FLOOR) : computed;
+  return Math.max(0, Math.min(100, floored));
+}
+
+const AnimatedRingCircle = Animated.createAnimatedComponent(Circle);
+
+/**
+ * Big Aurora hero ring — same animated-dasharray pattern as the command
+ * center's ReadinessRing (sweeps when percent changes; snaps under
+ * reduce-motion), sized up for the hero module per the Edition VII design.
+ */
+function AuroraHeroRing({
+  percent,
+  color,
+  track,
+  label,
+  size = 96,
+}: {
+  percent: number;
+  color: string;
+  track: string;
+  label: string;
+  size?: number;
+}) {
+  const stroke = 9;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const reduceMotion = useReducedMotion();
+
+  const clamped = Math.max(0, Math.min(100, percent));
+  const progress = useSharedValue(clamped / 100);
+
+  useEffect(() => {
+    const target = clamped / 100;
+    if (reduceMotion) {
+      progress.value = target;
+      return;
+    }
+    progress.value = withTiming(target, {
+      duration: 650,
+      easing: Easing.out(Easing.cubic),
+    });
+    return () => cancelAnimation(progress);
+  }, [clamped, reduceMotion, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDasharray: `${progress.value * c}, ${c}`,
+  }));
+
+  return (
+    <View
+      style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
+      accessibilityLabel={label}
+    >
+      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+        <AnimatedRingCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          fill="none"
+          animatedProps={animatedProps}
+        />
+      </Svg>
+      <Text style={{ fontSize: 21, fontWeight: "800", color }}>{percent}%</Text>
+    </View>
+  );
+}
+
+/**
+ * Tone bucket for a service category — theme tone objects only (bg/border/
+ * text), so the Connected Utilities tiles stay token-pure across plan accents
+ * and light/dark.
+ */
+function serviceTone(category: string | null | undefined, theme: Theme) {
+  const key = (category || "OTHER").split("_")[0].toUpperCase();
+  switch (key) {
+    case "UTILITY":
+    case "FITNESS":
+      return theme.colors.amber;
+    case "FINANCIAL":
+      return theme.colors.emerald;
+    case "HOUSING":
+      return theme.colors.sky;
+    case "GOVERNMENT":
+    case "HEALTHCARE":
+    case "SHOPPING":
+      return theme.colors.rose;
+    case "TRANSPORTATION":
+      return theme.colors.cyan;
+    default:
+      return theme.colors.orange;
+  }
+}
+
+/** Emoji key for CategoryIcon (resolved to a Lucide glyph via lib/icon-map) —
+ *  mirrors the services screen's fallback chain. */
+function serviceCategoryEmoji(category: string | null | undefined): string {
+  const key = category || "OTHER";
+  return getMergedDisplayCategoryIcon(key) || getCategoryIcon(key);
 }
 
 export default function DashboardScreen() {
@@ -156,6 +312,16 @@ export default function DashboardScreen() {
   useEffect(() => {
     snapshotRef.current = snapshot;
   }, [snapshot]);
+  // Budget/savings rollup for the Budget Tracker module — derived from the
+  // same services list SavingsInsightsCard consumes (no extra fetch).
+  const insights = useMemo(() => computeSavingsInsights(services), [services]);
+  // Utility quick-look sheet: the tapped service from the Connected Utilities
+  // module (null = closed). Purely presentational over already-fetched data.
+  const [utilSheet, setUtilSheet] = useState<ServiceLike | null>(null);
+  const reduceMotion = useReducedMotion();
+  // One-shot latch for the milestone celebration haptic (parity with the old
+  // MoveCommandCenter hero, which latched its pop+haptic per mount).
+  const celebratedRef = useRef(false);
 
   const fetchDashboard = useCallback(async () => {
     // Captured during this load so the home-screen widget snapshot (computed at
@@ -633,6 +799,26 @@ export default function DashboardScreen() {
     void AsyncStorage.setItem(BRIEFING_CARD_DISMISSED_KEY, "true").catch(() => {});
   }, []);
 
+  // MILESTONE CELEBRATION — parity with the old MoveCommandCenter hero: one
+  // success haptic when readiness hits 100% or move day arrives. Latched per
+  // mount so it never re-fires; skipped under reduce-motion (the old component
+  // gated its celebration pop + haptic together the same way).
+  useEffect(() => {
+    const plan = stats?.activePlan;
+    if (!plan || celebratedRef.current || reduceMotion) return;
+    const cd = getMoveCountdown(plan.moveDate, { state: primaryState });
+    const readiness = computeReadiness(
+      checklist,
+      criticalReadiness.completed,
+      criticalReadiness.missing,
+      hasOriginDestination,
+    );
+    if (readiness >= 100 || cd.phase !== "upcoming") {
+      celebratedRef.current = true;
+      hapticSuccess();
+    }
+  }, [stats, checklist, criticalReadiness, hasOriginDestination, primaryState, reduceMotion]);
+
   const handleAcceptInvite = useCallback(
     async (invite: PendingInvitation) => {
       if (inviteBusyId) return;
@@ -750,6 +936,41 @@ export default function DashboardScreen() {
       return { label: t("dashboard.proBadge", "Pro"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.34)", glyph: "✦" };
     return { label: t("dashboard.premiumBadge"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", glyph: "✦" };
   })();
+
+  // HERO derivations — same data sources + readiness blend the old command
+  // center used; only the presentation is regrouped into the Aurora hero card.
+  const heroPlan = stats?.activePlan ?? null;
+  const heroCountdown = heroPlan ? getMoveCountdown(heroPlan.moveDate, { state: primaryState }) : null;
+  const heroReadiness = heroPlan
+    ? computeReadiness(checklist, criticalReadiness.completed, criticalReadiness.missing, hasOriginDestination)
+    : 0;
+  const heroDateLabel = heroPlan ? formatDateOnlyUtc(heroPlan.moveDate) : "";
+  const heroBadgeLabel =
+    heroPlan?.status === "IN_PROGRESS"
+      ? t("dashboard.heroBadge_inProgress")
+      : t("dashboard.heroBadge_planning");
+
+  // DUO derivations — both modules render the services list this screen
+  // already fetches (no new API calls). Active services first, biggest spend
+  // first, capped at three compact rows.
+  const duoServices = [...services]
+    .sort((a, b) => {
+      const aInactive = a.isActive === false ? 1 : 0;
+      const bInactive = b.isActive === false ? 1 : 0;
+      if (aInactive !== bInactive) return aInactive - bInactive;
+      return (b.monthlyCost || 0) - (a.monthlyCost || 0);
+    })
+    .slice(0, 3);
+  const budgetSegs = insights.byCategory.filter((c) => c.total > 0).slice(0, 3);
+  const budgetSegTones = [theme.colors.amber, theme.colors.emerald, theme.colors.sky];
+  const budgetRest = Math.max(
+    0,
+    insights.totalMonthly - budgetSegs.reduce((sum, c) => sum + c.total, 0),
+  );
+  const categoryLabel = (category?: string | null) => {
+    const key = (category || "OTHER").toUpperCase();
+    return t(`categories.${key}`, { defaultValue: key.replace(/_/g, " ") });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -917,16 +1138,20 @@ export default function DashboardScreen() {
               would 403 on /api/moving — they get an honest free-vs-paid card that
               routes to the subscription page (where, after upgrading, the normal
               plan-creation flow becomes available).
-            • PAID, or anyone with an existing plan (read-open for a lapsed/
-              downgraded user) → the full Move Command Center, unchanged. */}
+            • PAID with no plan → the command center's warm "start your move"
+              raccoon hero, unchanged.
+            • ACTIVE PLAN → the Aurora hero module (Edition VII): move-status
+              badge + big readiness ring + days-left numeral, carrying the same
+              next-critical-action and view-plan navigation the command center
+              provided. */}
         {!isPremium && !stats?.activePlan ? (
           <View style={{ marginBottom: 16 }}>
             <FreeMoveUpsellCard onUnlock={() => router.push("/settings/subscription")} />
           </View>
-        ) : (
+        ) : !heroPlan ? (
           <View style={{ marginBottom: 16 }}>
             <MoveCommandCenter
-              activePlan={stats?.activePlan ?? null}
+              activePlan={null}
               checklist={checklist}
               topAction={topAction}
               missingCriticalCount={criticalReadiness.missing}
@@ -938,7 +1163,198 @@ export default function DashboardScreen() {
               onStartMove={() => router.push("/moving/new")}
             />
           </View>
+        ) : (
+          <View style={styles.heroCard} accessibilityRole="summary">
+            <LinearGradient
+              colors={[`${theme.colors.primary}26`, `${theme.colors.primary}00`]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1.1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.heroTop}>
+              <Text style={styles.heroKicker}>{t("dashboard.heroKicker").toUpperCase()}</Text>
+              <LinearGradient
+                colors={[theme.colors.success, theme.colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroBadge}
+              >
+                <Text style={styles.heroBadgeText}>{heroBadgeLabel}</Text>
+              </LinearGradient>
+            </View>
+            <View style={styles.heroMid}>
+              <AuroraHeroRing
+                percent={heroReadiness}
+                color={theme.colors.primary}
+                track={`${theme.colors.text}1A`}
+                label={t("dashboard.commandCenter_readinessLabel", { percent: heroReadiness })}
+              />
+              {heroCountdown?.phase === "today" ? (
+                <Text style={styles.heroMovingDay}>{t("dashboard.commandCenter_movingDay")}</Text>
+              ) : (
+                <View>
+                  <Text style={styles.heroDaysNum}>{heroCountdown?.absDays ?? 0}</Text>
+                  <Text style={styles.heroDaysLbl}>
+                    {(heroCountdown?.phase === "past"
+                      ? t("dashboard.heroDaysAgo")
+                      : t("dashboard.heroDaysLeft")
+                    ).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.heroGhostBtn}
+                onPress={() => {
+                  hapticLight();
+                  router.push("/(tabs)/moving");
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={t("dashboard.commandCenter_viewPlan")}
+              >
+                <Text style={styles.heroGhostText}>{t("dashboard.commandCenter_viewPlan")}</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.heroRoute} numberOfLines={1}>
+              {heroPlan.fromCity} → {heroPlan.toCity}
+              {heroDateLabel ? ` · ${heroDateLabel}` : ""}
+            </Text>
+
+            {/* Single Next Critical Action CTA (or "all set") — same behavior
+                the command center carried. */}
+            {topAction ? (
+              <TouchableOpacity
+                style={styles.heroActionRow}
+                onPress={() => {
+                  hapticLight();
+                  router.push(`/providers/${topAction.id}` as Href);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={topAction.name}
+              >
+                <View style={styles.heroActionIcon}>
+                  <Sparkles size={16} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.heroActionEyebrow}>
+                    {t("dashboard.commandCenter_nextAction").toUpperCase()}
+                  </Text>
+                  <Text style={styles.heroActionName} numberOfLines={1}>
+                    {topAction.name}
+                  </Text>
+                  {(topAction.deadline || topAction.reason) && (
+                    <Text style={styles.heroActionSub} numberOfLines={1}>
+                      {topAction.deadline ? `${topAction.deadline} · ` : ""}
+                      {topAction.reason || (topAction.category || "").replace(/_/g, " ")}
+                    </Text>
+                  )}
+                </View>
+                <ArrowRight size={16} color={theme.colors.primary} />
+              </TouchableOpacity>
+            ) : heroReadiness >= 100 ? (
+              <View style={[styles.heroActionRow, styles.heroAllSet]}>
+                <Rocket size={16} color={theme.colors.success} />
+                <Text style={styles.heroAllSetText}>{t("dashboard.commandCenter_allSet")}</Text>
+              </View>
+            ) : null}
+
+            <Text style={styles.heroFoot}>
+              {checklist
+                ? t("dashboard.commandCenter_readinessDetail", {
+                    done: checklist.completedItems,
+                    total: checklist.totalItems,
+                  })
+                : criticalReadiness.missing > 0
+                  ? t("dashboard.commandCenter_readinessProviders", {
+                      count: criticalReadiness.missing,
+                    })
+                  : t("dashboard.commandCenter_readiness")}
+            </Text>
+          </View>
         )}
+
+        {/* MOVING CHECKLIST MODULE — the relocation checklist reframed as one
+            bordered Aurora card module with colored status dots (overdue /
+            up-next / done). Same data + the same next-action navigation as
+            before; moved up under the hero per the Edition VII grouping. */}
+        {checklist && (() => {
+          const phaseInfo = RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase);
+          return (
+            <View style={styles.groupCard}>
+              <Text style={styles.groupKicker}>{t("dashboard.checklistKicker").toUpperCase()}</Text>
+              <View style={styles.groupHeadRow}>
+                <CategoryIcon emoji={phaseInfo?.icon || ""} size={18} color={theme.colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.groupTitle}>{t("moving.checklist")}</Text>
+                  <Text style={styles.groupSub}>
+                    {checklist.currentPhase + 1}: {phaseInfo?.label || ""}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={styles.groupPct}>{checklist.progressPercent}%</Text>
+                  <Text style={styles.groupCount}>
+                    {checklist.completedItems}/{checklist.totalItems}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.groupBarTrack}>
+                <View style={[styles.groupBarFill, { width: `${checklist.progressPercent}%` }]} />
+              </View>
+
+              {checklist.overdueItems.length > 0 && (
+                <View style={styles.ckRow}>
+                  <View style={[styles.ckDot, { borderColor: theme.colors.error }]} />
+                  <Text style={[styles.ckRowText, { color: theme.colors.error }]} numberOfLines={2}>
+                    {t("moving.overdueSummary", {
+                      count: checklist.overdueItems.length,
+                      title: `${checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}${
+                        checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""
+                      }`,
+                    })}
+                  </Text>
+                </View>
+              )}
+
+              {checklist.nextAction && !checklist.nextAction.isCompleted && (
+                <TouchableOpacity
+                  style={styles.ckRow}
+                  onPress={() => router.push("/(tabs)/services" as any)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={checklist.nextAction.title}
+                >
+                  <View style={[styles.ckDot, { borderColor: theme.colors.warning }]} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ckRowTitle} numberOfLines={1}>{checklist.nextAction.title}</Text>
+                    {checklist.nextAction.stateNote ? (
+                      <Text style={styles.ckRowNote} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
+                    ) : null}
+                    {checklist.nextAction.estimatedMinutes ? (
+                      <Text style={styles.ckRowMeta}>~{checklist.nextAction.estimatedMinutes} min</Text>
+                    ) : null}
+                  </View>
+                  <ArrowRight size={14} color={theme.colors.primary} />
+                </TouchableOpacity>
+              )}
+
+              {checklist.completedItems > 0 && (
+                <View style={styles.ckRow}>
+                  <View style={[styles.ckDot, styles.ckDotDone]}>
+                    <Check size={11} color={theme.colors.background} />
+                  </View>
+                  <Text style={[styles.ckRowText, { color: theme.colors.success }]}>
+                    {t("dashboard.commandCenter_readinessDetail", {
+                      done: checklist.completedItems,
+                      total: checklist.totalItems,
+                    })}
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        })()}
 
         {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each
             with a one-tap inline checkbox that completes via the same
@@ -957,6 +1373,108 @@ export default function DashboardScreen() {
             await fetchDashboard();
           }}
         />
+
+        {/* CONNECTED UTILITIES + BUDGET TRACKER — the Edition VII paired duo of
+            compact card modules, rendered entirely from the services list this
+            screen already fetched. Utilities rows open the quick-look sheet;
+            both modules deep-link into the Services tab. */}
+        {services.length > 0 && (
+          <View style={styles.duoRow}>
+            <TouchableOpacity
+              style={[styles.groupCard, styles.duoCard]}
+              onPress={() => router.push("/(tabs)/services")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t("dashboard.utilitiesKicker")}
+            >
+              <Text style={styles.groupKicker}>{t("dashboard.utilitiesKicker").toUpperCase()}</Text>
+              {duoServices.map((svc) => {
+                const tone = serviceTone(svc.category, theme);
+                const active = svc.isActive !== false;
+                return (
+                  <TouchableOpacity
+                    key={svc.id}
+                    style={styles.utilRow}
+                    onPress={() => {
+                      hapticLight();
+                      setUtilSheet(svc);
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={svc.providerName || categoryLabel(svc.category)}
+                  >
+                    <View style={[styles.utilIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                      <CategoryIcon emoji={serviceCategoryEmoji(svc.category)} size={14} color={tone.text} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.utilName} numberOfLines={1}>
+                        {svc.providerName || categoryLabel(svc.category)}
+                      </Text>
+                      <Text style={styles.utilSub} numberOfLines={1}>
+                        {active ? t("services.statusActive") : t("services.statusInactive")}
+                      </Text>
+                    </View>
+                    <View style={[styles.utilDot, active && styles.utilDotOn]} />
+                  </TouchableOpacity>
+                );
+              })}
+              {services.length > duoServices.length && (
+                <Text style={styles.utilMore}>
+                  {t("dashboard.utilitiesMore", { count: services.length - duoServices.length })}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.groupCard, styles.duoCard]}
+              onPress={() => router.push("/(tabs)/services")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t("dashboard.budgetKicker")}
+            >
+              <Text style={styles.groupKicker}>{t("dashboard.budgetKicker").toUpperCase()}</Text>
+              <Text style={styles.budgetNum}>
+                {currencyFmt(insights.totalMonthly)}
+                <Text style={styles.budgetNumUnit}> {t("dashboard.budgetPerMonth")}</Text>
+              </Text>
+              {insights.totalMonthly > 0 ? (
+                <>
+                  <View style={styles.budgetBar}>
+                    {budgetSegs.map((c, i) => (
+                      <View
+                        key={c.category}
+                        style={[styles.budgetSeg, { flex: c.total, backgroundColor: budgetSegTones[i].text }]}
+                      />
+                    ))}
+                    {budgetRest > 0 && (
+                      <View style={[styles.budgetSeg, { flex: budgetRest, backgroundColor: theme.colors.border }]} />
+                    )}
+                  </View>
+                  <View style={styles.budgetTiles}>
+                    {budgetSegs.map((c, i) => (
+                      <View
+                        key={c.category}
+                        style={[
+                          styles.budgetTile,
+                          { backgroundColor: budgetSegTones[i].bg, borderColor: budgetSegTones[i].border },
+                        ]}
+                      >
+                        <View style={[styles.budgetSwatch, { backgroundColor: budgetSegTones[i].text }]} />
+                        <Text style={styles.budgetTileLbl} numberOfLines={1}>
+                          {categoryLabel(c.category)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              ) : insights.missingCostCount > 0 ? (
+                <Text style={styles.budgetMeta} numberOfLines={2}>
+                  {t("services.missingCostHint", { count: insights.missingCostCount })}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
@@ -1060,67 +1578,6 @@ export default function DashboardScreen() {
           </Card>
         )}
 
-        {/* Relocation Checklist Progress */}
-        {checklist && (() => {
-          const phaseInfo = RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase);
-          return (
-            <Card variant="default" style={{ marginTop: 16 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <CategoryIcon emoji={phaseInfo?.icon || ""} size={18} color={theme.colors.primary} />
-                  <View>
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: theme.colors.text }}>{t("moving.checklist")}</Text>
-                    <Text style={{ fontSize: 11, color: theme.colors.textTertiary }}>
-                      {checklist.currentPhase + 1}: {phaseInfo?.label || ""}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ fontSize: 18, fontWeight: "800", color: theme.colors.text }}>{checklist.progressPercent}%</Text>
-                  <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>{checklist.completedItems}/{checklist.totalItems}</Text>
-                </View>
-              </View>
-
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.05)", marginTop: 12, overflow: "hidden" }}>
-                <View style={{ height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary, width: `${checklist.progressPercent}%` }} />
-              </View>
-
-              {checklist.overdueItems.length > 0 && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)" }}>
-                  <AlertTriangle size={14} color={theme.colors.error} />
-                  <Text style={{ fontSize: 11, color: theme.colors.error, flex: 1 }} numberOfLines={2}>
-                    {t("moving.overdueSummary", {
-                      count: checklist.overdueItems.length,
-                      title: `${checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}${
-                        checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""
-                      }`,
-                    })}
-                  </Text>
-                </View>
-              )}
-
-              {checklist.nextAction && !checklist.nextAction.isCompleted && (
-                <TouchableOpacity
-                  style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: theme.colors.border }}
-                  onPress={() => router.push("/(tabs)/services" as any)}
-                  activeOpacity={0.7}
-                >
-                  <CategoryIcon emoji={checklist.nextAction.icon} size={16} color={theme.colors.textSecondary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.text }} numberOfLines={1}>{checklist.nextAction.title}</Text>
-                    {checklist.nextAction.stateNote ? (
-                      <Text style={{ fontSize: 10, color: theme.colors.info }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
-                    ) : null}
-                    {checklist.nextAction.estimatedMinutes ? (
-                      <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{checklist.nextAction.estimatedMinutes} min</Text>
-                    ) : null}
-                  </View>
-                  <ArrowRight size={14} color={theme.colors.primary} />
-                </TouchableOpacity>
-              )}
-            </Card>
-          );
-        })()}
           </>
         )}
 
@@ -1157,6 +1614,95 @@ export default function DashboardScreen() {
           })}
         </View>
       </ScrollView>
+
+      {/* UTILITY QUICK-LOOK SHEET — bottom sheet over the tapped Connected
+          Utilities row. Purely presentational (data already on screen);
+          "Manage service" deep-links to the existing service detail route. */}
+      {utilSheet && (() => {
+        const tone = serviceTone(utilSheet.category, theme);
+        const active = utilSheet.isActive !== false;
+        const catLabel = categoryLabel(utilSheet.category);
+        const place = utilSheet.address?.nickname || utilSheet.address?.city || null;
+        return (
+          <Modal
+            transparent
+            visible
+            animationType={reduceMotion ? "none" : "slide"}
+            onRequestClose={() => setUtilSheet(null)}
+          >
+            <Pressable
+              style={styles.sheetScrim}
+              onPress={() => setUtilSheet(null)}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+            >
+              <Pressable style={styles.sheet} onPress={() => {}}>
+                <View style={styles.sheetHead}>
+                  <View style={[styles.utilIcon, styles.sheetIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                    <CategoryIcon emoji={serviceCategoryEmoji(utilSheet.category)} size={16} color={tone.text} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.sheetTitle} numberOfLines={1}>
+                      {utilSheet.providerName || catLabel}
+                    </Text>
+                    <Text style={styles.sheetSub} numberOfLines={1}>
+                      {catLabel}
+                      {place ? ` · ${place}` : ""}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.sheetClose}
+                    onPress={() => setUtilSheet(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("common.close")}
+                  >
+                    <X size={14} color={theme.colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.sheetStats}>
+                  <View style={styles.sheetStat}>
+                    <Text style={styles.sheetStatK}>{t("services.monthlyCost").toUpperCase()}</Text>
+                    <Text style={styles.sheetStatV}>
+                      {typeof utilSheet.monthlyCost === "number" && utilSheet.monthlyCost > 0
+                        ? currencyFmt(utilSheet.monthlyCost)
+                        : "—"}
+                    </Text>
+                  </View>
+                  <View style={styles.sheetStat}>
+                    <Text style={styles.sheetStatK}>{t("services.category").toUpperCase()}</Text>
+                    <Text style={styles.sheetStatV} numberOfLines={1}>{catLabel}</Text>
+                  </View>
+                  <View style={styles.sheetStat}>
+                    <Text style={styles.sheetStatK}>{t("dashboard.utilityStatus").toUpperCase()}</Text>
+                    <Text
+                      style={[
+                        styles.sheetStatV,
+                        { color: active ? theme.colors.success : theme.colors.textTertiary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {active ? t("services.statusActive") : t("services.statusInactive")}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.sheetCta}
+                  onPress={() => {
+                    const id = utilSheet.id;
+                    setUtilSheet(null);
+                    router.push(`/services/${id}` as Href);
+                  }}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.manageService")}
+                >
+                  <Text style={styles.sheetCtaText}>{t("dashboard.manageService")}</Text>
+                </TouchableOpacity>
+              </Pressable>
+            </Pressable>
+          </Modal>
+        );
+      })()}
     </SafeAreaView>
   );
 }
@@ -1295,4 +1841,285 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   pushPromptBtnDisabled: { opacity: 0.6 },
   pushPromptBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
+
+  // ── Aurora hero module (Edition VII) ──
+  heroCard: {
+    marginBottom: 16,
+    padding: 18,
+    borderRadius: theme.radius["2xl"],
+    overflow: "hidden",
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: `${theme.colors.primary}3D`,
+    ...theme.shadow.glow,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  heroKicker: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+  },
+  heroBadge: {
+    borderRadius: 999,
+    height: 26,
+    paddingHorizontal: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    ...theme.shadow.glow,
+  },
+  heroBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+    color: theme.colors.background,
+  },
+  heroMid: { flexDirection: "row", alignItems: "center", gap: 16 },
+  heroDaysNum: {
+    fontSize: 38,
+    fontWeight: "800",
+    letterSpacing: -1,
+    lineHeight: 42,
+    color: theme.colors.text,
+  },
+  heroDaysLbl: {
+    fontSize: 9,
+    letterSpacing: 1.2,
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+    marginTop: 4,
+  },
+  heroMovingDay: {
+    flex: 1,
+    fontSize: 21,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    color: theme.colors.text,
+  },
+  heroGhostBtn: {
+    marginLeft: "auto",
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroGhostText: { fontSize: 12.5, fontWeight: "700", color: theme.colors.text },
+  heroRoute: { fontSize: 12.5, color: theme.colors.textSecondary, marginTop: 12 },
+  heroActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  heroActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: theme.colors.primaryFaded,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroActionEyebrow: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 1,
+    color: theme.colors.primary,
+  },
+  heroActionName: { fontSize: 14, fontWeight: "700", color: theme.colors.text, marginTop: 1 },
+  heroActionSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  heroAllSet: {
+    backgroundColor: theme.colors.successFaded,
+    borderColor: `${theme.colors.success}3D`,
+  },
+  heroAllSetText: { fontSize: 14, fontWeight: "700", color: theme.colors.success },
+  heroFoot: { fontSize: 11, color: theme.colors.textMuted, marginTop: 10, textAlign: "right" },
+
+  // ── Aurora group card module (checklist / utilities / budget) ──
+  groupCard: {
+    padding: 15,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    marginBottom: 16,
+  },
+  groupKicker: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+  },
+  groupHeadRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  groupTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  groupSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  groupPct: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
+  groupCount: { fontSize: 10, color: theme.colors.textMuted },
+  groupBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.glass.highlight,
+    marginTop: 12,
+    marginBottom: 4,
+    overflow: "hidden",
+  },
+  groupBarFill: { height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary },
+  ckRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 11,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: 2,
+  },
+  ckDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ckDotDone: { backgroundColor: theme.colors.success, borderColor: theme.colors.success },
+  ckRowText: { flex: 1, fontSize: 12, fontWeight: "600" },
+  ckRowTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
+  ckRowNote: { fontSize: 10, color: theme.colors.info, marginTop: 1 },
+  ckRowMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
+
+  // ── Connected Utilities + Budget Tracker duo ──
+  duoRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 16 },
+  duoCard: { flex: 1, padding: 13, marginBottom: 0 },
+  utilRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: 2,
+  },
+  utilIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  utilName: { fontSize: 12, fontWeight: "600", color: theme.colors.text },
+  utilSub: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 1 },
+  utilDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.colors.textMuted },
+  utilDotOn: {
+    backgroundColor: theme.colors.success,
+    shadowColor: theme.colors.success,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  utilMore: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    color: theme.colors.textTertiary,
+    paddingTop: 8,
+  },
+  budgetNum: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    color: theme.colors.text,
+    marginTop: 10,
+  },
+  budgetNumUnit: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+  },
+  budgetBar: { flexDirection: "row", gap: 3, height: 7, marginTop: 10 },
+  budgetSeg: { borderRadius: 3, minWidth: 4 },
+  budgetMeta: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 8, lineHeight: 14 },
+  budgetTiles: { flexDirection: "row", gap: 6, marginTop: 10 },
+  budgetTile: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    gap: 5,
+  },
+  budgetSwatch: { width: 18, height: 18, borderRadius: 6 },
+  budgetTileLbl: {
+    fontSize: 7.5,
+    letterSpacing: 0.3,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    color: theme.colors.textSecondary,
+  },
+
+  // ── Utility quick-look sheet ──
+  sheetScrim: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" },
+  sheet: {
+    backgroundColor: theme.colors.elevated,
+    borderTopLeftRadius: theme.radius["2xl"],
+    borderTopRightRadius: theme.radius["2xl"],
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 18,
+    paddingBottom: 30,
+  },
+  sheetHead: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 14 },
+  sheetIcon: { width: 36, height: 36, borderRadius: 11 },
+  sheetTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  sheetSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  sheetClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetStats: { flexDirection: "row", gap: 8 },
+  sheetStat: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sheetStatK: {
+    fontSize: 8,
+    letterSpacing: 1,
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+  },
+  sheetStatV: { fontSize: 13, fontWeight: "700", color: theme.colors.text, marginTop: 4 },
+  sheetCta: {
+    height: 44,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    ...theme.shadow.glow,
+  },
+  sheetCtaText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
 });

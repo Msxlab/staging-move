@@ -60,7 +60,11 @@
     "sectionTools": "Herramientas",
     "sectionAccount": "Cuenta",
     "sectionPrivacy": "Privacidad y datos",
-    "sectionSupport": "Soporte"
+    "sectionSupport": "Soporte",
+    "planFree": "Gratis",
+    "planIndividual": "Individual",
+    "planFamily": "Familiar",
+    "planPro": "Pro"
   },
   "auth": {
     "signIn_title": "Bienvenido de vuelta",
@@ -187,7 +191,20 @@
     "upNext_undo": "Deshacer",
     "briefingTitle": "Tu resumen de mudanza",
     "briefingAiLabel": "Generado por IA",
-    "briefingDismiss": "Descartar resumen"
+    "briefingDismiss": "Descartar resumen",
+    "heroKicker": "Estado de la mudanza",
+    "heroBadge_planning": "Mudanza planificada",
+    "heroBadge_inProgress": "Mudanza en curso",
+    "heroDaysLeft": "días restantes",
+    "heroDaysAgo": "días desde la mudanza",
+    "checklistKicker": "Lista de mudanza",
+    "utilitiesKicker": "Servicios conectados",
+    "utilitiesMore_one": "+{{count}} más",
+    "utilitiesMore_other": "+{{count}} más",
+    "budgetKicker": "Control de gastos",
+    "budgetPerMonth": "al mes",
+    "utilityStatus": "Estado",
+    "manageService": "Administrar servicio"
   },
   "addresses": {
     "title": "Direcciones",
@@ -228,7 +245,14 @@
     "errorStateFormat": "Introduce un código de estado de 2 letras (ej. NY, CA).",
     "errorZipFormat": "Introduce un código postal válido de 5 dígitos.",
     "empty": "Aún no hay direcciones",
-    "emptyDescription": "Agrega tu primera dirección para empezar a rastrear servicios."
+    "emptyDescription": "Agrega tu primera dirección para empezar a rastrear servicios.",
+    "transit": {
+      "title": "Mudanza en curso · {{pct}}%",
+      "fromRole": "Anterior · saliendo",
+      "toRole": "Nueva · actual",
+      "stillAtOld_one": "{{count}} cuenta sigue en la dirección anterior",
+      "stillAtOld_other": "{{count}} cuentas siguen en la dirección anterior"
+    }
   },
   "services": {
     "title": "Servicios",
@@ -279,6 +303,12 @@
     "summaryHint": "El total mensual se actualiza con los servicios de la dirección seleccionada.",
     "addCost": "Agregar costo",
     "addNext": "Agregar siguiente servicio",
+    "monthlyServices": "Servicios mensuales",
+    "trackedCount_one": "{{count}} registrado",
+    "trackedCount_other": "{{count}} registrados",
+    "heroMonthlySuffix_one": "/mes · {{count}} activo",
+    "heroMonthlySuffix_other": "/mes · {{count}} activos",
+    "needsAttention": "Requiere atención",
     "mood": {
       "emptyTitle": "Aún no hay servicios",
       "emptySubtitle": "Agrega tu primer servicio, banco o suscripción y el mapache se animará.",
@@ -541,6 +571,8 @@
     "status_COMPLETED": "Completado",
     "status_CANCELED": "Cancelado",
     "status_CANCELLED": "Cancelado",
+    "statusActive": "Activa",
+    "statMoves": "Mudanzas",
     "daysLeft": "Faltan {{count}} días",
     "temporary": "Temporal",
     "moveScope": "Alcance de la mudanza",
@@ -570,6 +602,10 @@
     "dueDate": "Vence {{date}}",
     "swipeDone": "Listo",
     "swipeCompleteHint": "Desliza a la izquierda para completar",
+    "percentComplete": "{{pct}}% completado",
+    "taskCountOfTotal": "{{done}} de {{total}} tareas",
+    "celebrateTitle": "Cada tarea completada",
+    "celebrateBody": "Nada se escapó en la mudanza. Tu nueva dirección está completamente configurada.",
     "accept": "Aceptar",
     "complete": "Completar",
     "dismiss": "Descartar",
@@ -1128,6 +1164,13 @@
     "markAllRead": "Marcar todo como leído",
     "emptyTitle": "No hay notificaciones",
     "emptySubtitle": "Aquí verás actualizaciones importantes",
+    "heroTitle": "Requieren tu atención",
+    "heroSubtitle": "Novedades sin leer sobre tus facturas, renovaciones y mudanzas.",
+    "filter_all": "Todas",
+    "filter_unread": "Sin leer",
+    "filter_reminders": "Recordatorios",
+    "openAction": "Abrir",
+    "filterEmpty": "No hay nada aquí por ahora",
     "feed_BILL_REMINDER_title": "Recordatorio de factura",
     "feed_BILL_REMINDER_body": "Revisa el servicio y la fecha de vencimiento en LocateFlow.",
     "feed_MOVE_REMINDER_title": "Recordatorio de mudanza",
