@@ -128,9 +128,32 @@ export function formatPercent(
 }
 
 /**
- * "2 days ago" / "in 3 hours" helpers — relative time. The Intl
- * RelativeTimeFormat API is well-supported on every target runtime.
+ * "2 days ago" / "in 3 hours" helpers — relative time.
+ *
+ * HERMES WARNING: React Native's Hermes engine does NOT implement
+ * Intl.RelativeTimeFormat (its Intl subset covers NumberFormat /
+ * DateTimeFormat / Collator only). Constructing it there throws
+ * "Cannot read property 'prototype' of undefined" — which crashed the
+ * mobile dashboard on every cold start once an offline snapshot existed.
+ * The plain-English fallback below matches the product's voice anyway
+ * (US-only, English-only), so Intl is only used when it actually exists.
  */
+type RelUnit = "second" | "minute" | "hour" | "day" | "week" | "month" | "year";
+
+const RTF_CTOR: typeof Intl.RelativeTimeFormat | undefined =
+  typeof Intl !== "undefined"
+    ? (Intl as { RelativeTimeFormat?: typeof Intl.RelativeTimeFormat }).RelativeTimeFormat
+    : undefined;
+
+function fallbackRelativeTime(value: number, unit: RelUnit): string {
+  if (value === 0) {
+    return unit === "second" ? "now" : `this ${unit}`;
+  }
+  const abs = Math.abs(value);
+  const noun = abs === 1 ? unit : `${unit}s`;
+  return value < 0 ? `${abs} ${noun} ago` : `in ${abs} ${noun}`;
+}
+
 export function formatRelativeTime(
   from: Date | string | number,
   locale: string,
@@ -142,13 +165,15 @@ export function formatRelativeTime(
   const diffSec = Math.round(diffMs / 1000);
   const abs = Math.abs(diffSec);
 
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const format: (value: number, unit: RelUnit) => string = RTF_CTOR
+    ? (value, unit) => new RTF_CTOR(locale, { numeric: "auto" }).format(value, unit)
+    : fallbackRelativeTime;
 
-  if (abs < 60) return rtf.format(diffSec, "second");
-  if (abs < 60 * 60) return rtf.format(Math.round(diffSec / 60), "minute");
-  if (abs < 60 * 60 * 24) return rtf.format(Math.round(diffSec / 3600), "hour");
-  if (abs < 60 * 60 * 24 * 7) return rtf.format(Math.round(diffSec / 86400), "day");
-  if (abs < 60 * 60 * 24 * 30) return rtf.format(Math.round(diffSec / 604800), "week");
-  if (abs < 60 * 60 * 24 * 365) return rtf.format(Math.round(diffSec / 2592000), "month");
-  return rtf.format(Math.round(diffSec / 31536000), "year");
+  if (abs < 60) return format(diffSec, "second");
+  if (abs < 60 * 60) return format(Math.round(diffSec / 60), "minute");
+  if (abs < 60 * 60 * 24) return format(Math.round(diffSec / 3600), "hour");
+  if (abs < 60 * 60 * 24 * 7) return format(Math.round(diffSec / 86400), "day");
+  if (abs < 60 * 60 * 24 * 30) return format(Math.round(diffSec / 604800), "week");
+  if (abs < 60 * 60 * 24 * 365) return format(Math.round(diffSec / 2592000), "month");
+  return format(Math.round(diffSec / 31536000), "year");
 }
