@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import {
   Eye, Trash2, Users, UserPlus, CreditCard, Download,
+  CalendarDays, Clock, ExternalLink, FileText, MapPin, Truck, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,6 +14,12 @@ import {
   type BulkContext,
   type DataTableContext,
 } from "@/components/data-table-page";
+import { MinistatStrip } from "@/components/ministat-strip";
+import {
+  QuickDrawer,
+  QuickDrawerRow,
+  QuickDrawerSection,
+} from "@/components/quick-drawer";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { TierStamp } from "@/components/premium/tier-stamp";
 import { HealthPill } from "@/components/premium/health-pill";
@@ -58,6 +66,17 @@ const STATUS_COLORS: Record<string, string> = {
   EXPIRED: "bg-tone-slate-bg text-muted-foreground",
   BLOCKED: "bg-destructive/10 text-destructive",
 };
+
+// Segmented plan chips above the table. They drive the SAME `plan` URL param
+// the filter panel already reads, so chips, panel, saved views, and the
+// server fetch all stay in sync through useTableQuery.
+const PLAN_CHIPS: { value: string; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "INDIVIDUAL", label: "Individual" },
+  { value: "FAMILY", label: "Family" },
+  { value: "PRO", label: "Pro" },
+  { value: "FREE_TRIAL", label: "Free" },
+];
 
 // `status` is modelled as a filter so it is URL-synced + saveable as a named
 // view. The DataTablePage default-sort matches the old createdAt/desc default.
@@ -122,6 +141,10 @@ export default function UsersPage() {
   // Bump to force the table to refetch after a mutation (delete).
   const [refreshToken, setRefreshToken] = useState(0);
   const refresh = () => setRefreshToken((t) => t + 1);
+
+  // Quick-look drawer — renders the row's already-fetched data (no new
+  // fetch) and deep-links to the full /users/[id] profile route.
+  const [quickLook, setQuickLook] = useState<User | null>(null);
 
   const [pendingDelete, setPendingDelete] = useState<
     | { type: "single"; userId: string; email: string }
@@ -374,7 +397,26 @@ export default function UsersPage() {
             <Download className="h-3.5 w-3.5" /> Export
           </button>
         )}
-        beforeTable={() => (stats ? <UserKpiCards stats={stats} /> : null)}
+        beforeTable={(ctx: DataTableContext<User>) => (
+          <div className="space-y-4">
+            {stats ? <UserMinistats stats={stats} /> : null}
+            <div className="au-chips" role="group" aria-label="Filter by plan">
+              {PLAN_CHIPS.map((chip) => (
+                <button
+                  key={chip.value || "all"}
+                  type="button"
+                  className={
+                    (ctx.query.state.filters.plan || "") === chip.value ? "on" : ""
+                  }
+                  aria-pressed={(ctx.query.state.filters.plan || "") === chip.value}
+                  onClick={() => ctx.query.setFilter("plan", chip.value)}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         bulkActions={(ctx: BulkContext<User>) => {
           // Capture the table's clear-selection so a successful delete can
           // reset it after the async confirm resolves.
@@ -402,10 +444,10 @@ export default function UsersPage() {
         rowActions={(user) => (
           <>
             <button
-              onClick={() => window.location.assign(`/users/${user.id}`)}
-              aria-label="View user details"
+              onClick={() => setQuickLook(user)}
+              aria-label="Quick look"
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="View details"
+              title="Quick look"
             >
               <Eye className="h-4 w-4" />
             </button>
@@ -425,6 +467,8 @@ export default function UsersPage() {
           </>
         )}
       />
+
+      <UserQuickLook user={quickLook} onClose={() => setQuickLook(null)} />
 
       <PasswordConfirmModal
         open={Boolean(pendingDelete)}
@@ -466,75 +510,184 @@ export default function UsersPage() {
   );
 }
 
-/** KPI cards — same data, foil hairline + Fraunces values (unchanged). */
-function UserKpiCards({ stats }: { stats: UserStats }) {
-  const entries = Object.entries(stats.planMap || {}) as [string, number][];
-  const planTotal = entries.reduce((sum, [, count]) => sum + count, 0) || 1;
-  const barClass = (plan: string) =>
-    plan === "INDIVIDUAL"
-      ? "bg-tone-sky-fg"
-      : plan === "FAMILY"
-        ? "bg-tone-foil-fg"
-        : plan === "PRO"
-          ? "bg-tone-rose-fg"
-          : "bg-tone-honey-fg";
+/**
+ * Ministat strip — same already-computed server aggregates as the old KPI
+ * cards (totalAll / newThisWeek+trend / activeSubCount / planMap), rendered
+ * in the F3-E corporate ministat idiom. The 4th card folds the plan map into
+ * a paid-plan total with the per-plan mix as its sublabel.
+ */
+function UserMinistats({ stats }: { stats: UserStats }) {
+  const planMap = stats.planMap || {};
+  const paid =
+    (planMap.INDIVIDUAL || 0) + (planMap.FAMILY || 0) + (planMap.PRO || 0);
+  const mix = `${planMap.INDIVIDUAL || 0} ind · ${planMap.FAMILY || 0} fam · ${planMap.PRO || 0} pro`;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="kpi-label">Total Users</p>
-            <p className="kpi-value mt-2 text-foreground">{stats.totalAll}</p>
-          </div>
-          <div className="rounded-lg bg-tone-sky-bg p-2.5"><Users className="h-5 w-5 text-tone-sky-fg" /></div>
-        </div>
-      </div>
-      <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="kpi-label">New This Week</p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="kpi-value text-foreground">{stats.newThisWeek}</span>
-              {stats.weeklyTrend !== 0 && (
-                <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
-                  {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="rounded-lg bg-tone-sage-bg p-2.5"><UserPlus className="h-5 w-5 text-tone-sage-fg" /></div>
-        </div>
-      </div>
-      <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="kpi-label">Active Subscriptions</p>
-            <p className="kpi-value mt-2 text-foreground">{stats.activeSubCount}</p>
-          </div>
-          <div className="rounded-lg bg-tone-foil-bg p-2.5"><CreditCard className="h-5 w-5 text-tone-foil-fg" /></div>
-        </div>
-      </div>
-      <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
-        <p className="kpi-label mb-2">Plan Distribution</p>
-        <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-          {entries.map(([plan, count]) => (
-            <div
-              key={plan}
-              className={barClass(plan)}
-              style={{ width: `${(count / planTotal) * 100}%` }}
-              title={`${plan}: ${count}`}
-            />
-          ))}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-          {entries.map(([plan, count]) => (
-            <span key={plan} className="inline-flex items-center gap-1">
-              <span className={`inline-block h-1.5 w-1.5 rounded-full ${barClass(plan)}`} />
-              {plan}: <span className="font-medium text-foreground">{count}</span>
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+    <MinistatStrip
+      items={[
+        {
+          key: "total",
+          icon: Users,
+          label: "Total users",
+          value: stats.totalAll.toLocaleString(),
+          tone: "cool",
+        },
+        {
+          key: "new",
+          icon: UserPlus,
+          label: "New this week",
+          value: stats.newThisWeek.toLocaleString(),
+          delta:
+            stats.weeklyTrend !== 0
+              ? `${stats.weeklyTrend > 0 ? "+" : ""}${stats.weeklyTrend}%`
+              : undefined,
+          deltaDir: stats.weeklyTrend < 0 ? "down" : "up",
+          sub: stats.weeklyTrend !== 0 ? "vs prior week" : undefined,
+          tone: "mint",
+        },
+        {
+          key: "subs",
+          icon: CreditCard,
+          label: "Active subscriptions",
+          value: stats.activeSubCount.toLocaleString(),
+          tone: "family",
+        },
+        {
+          key: "paid",
+          icon: Wallet,
+          label: "Paid plans",
+          value: paid.toLocaleString(),
+          sub: mix,
+          tone: "slate",
+        },
+      ]}
+    />
+  );
+}
+
+/**
+ * Quick-look drawer for a user row. Strictly renders the row data the list
+ * already holds — the "Open profile" footer action deep-links to the full
+ * /users/[id] route, which remains the canonical detail surface.
+ */
+function UserQuickLook({
+  user,
+  onClose,
+}: {
+  user: User | null;
+  onClose: () => void;
+}) {
+  if (!user) return null;
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  const masked = maskEmail(user.email);
+  const initials =
+    `${(user.firstName ?? "").trim().charAt(0)}${(user.lastName ?? "").trim().charAt(0)}`.toUpperCase() ||
+    user.email.charAt(0).toUpperCase();
+  const plan = user.subscription?.plan || "FREE_TRIAL";
+  const status = user.deletedAt ? "BLOCKED" : user.subscription?.status || "—";
+  const health = computeUserHealth({
+    lastLoginAt: user.lastActivityAt,
+    subscriptionStatus: user.subscription?.status ?? null,
+    addresses: user._count.addresses,
+    services: user._count.services,
+    blocked: Boolean(user.deletedAt),
+  });
+  return (
+    <QuickDrawer
+      open
+      onClose={onClose}
+      eyebrow="Customer"
+      title={name || masked}
+      subtitle={masked}
+      initials={initials}
+      tone="cool"
+      meta={
+        <>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[plan] || "bg-muted text-muted-foreground"}`}
+          >
+            {plan.replace("_", " ")}
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}
+          >
+            {status}
+          </span>
+          <HealthPill tone={health.tone} label={health.label} title={health.detail} />
+        </>
+      }
+      stats={[
+        { value: user._count.addresses, label: "addresses" },
+        { value: user._count.services, label: "services" },
+        { value: user._count.movingPlans, label: "moves" },
+      ]}
+      footer={
+        <>
+          <Link href={`/users/${user.id}`} className="au-qbtn pri">
+            <ExternalLink aria-hidden="true" />
+            Open profile
+          </Link>
+          <button type="button" className="au-qbtn ghost" onClick={onClose}>
+            Close
+          </button>
+        </>
+      }
+    >
+      <QuickDrawerSection title="Plan & billing">
+        <QuickDrawerRow
+          icon={CreditCard}
+          tone="cool"
+          title={plan.replace("_", " ")}
+          sub={`Status · ${status}${
+            user.subscription?.trialEndsAt
+              ? ` · trial ends ${new Date(user.subscription.trialEndsAt).toLocaleDateString()}`
+              : ""
+          }`}
+        />
+        {user._count.movingPlans > 0 ? (
+          <QuickDrawerRow
+            icon={Truck}
+            tone="family"
+            title={`${user._count.movingPlans} moving plan${user._count.movingPlans === 1 ? "" : "s"}`}
+            sub="Across this account"
+          />
+        ) : null}
+      </QuickDrawerSection>
+      <QuickDrawerSection title="Activity">
+        <QuickDrawerRow
+          icon={CalendarDays}
+          tone="mint"
+          title={`Joined ${new Date(user.createdAt).toLocaleDateString()}`}
+          sub={
+            user.deletedAt
+              ? `Blocked / deleted ${new Date(user.deletedAt).toLocaleDateString()}`
+              : undefined
+          }
+        />
+        <QuickDrawerRow
+          icon={Clock}
+          tone="slate"
+          title={
+            user.lastActivityAt
+              ? `Last active ${new Date(user.lastActivityAt).toLocaleDateString()}`
+              : "No recorded activity"
+          }
+          sub={health.detail}
+        />
+        <QuickDrawerRow
+          icon={MapPin}
+          tone="cool"
+          title={`${user._count.addresses} address${user._count.addresses === 1 ? "" : "es"} · ${user._count.services} service${user._count.services === 1 ? "" : "s"}`}
+          sub="Linked to this account"
+        />
+        {user._count.serviceNotes > 0 ? (
+          <QuickDrawerRow
+            icon={FileText}
+            tone="slate"
+            title={`${user._count.serviceNotes} service note${user._count.serviceNotes === 1 ? "" : "s"}`}
+            sub="Personal reviews on services"
+          />
+        ) : null}
+      </QuickDrawerSection>
+    </QuickDrawer>
   );
 }

@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Ring } from "./ring";
+import { Sparkline } from "./sparkline";
 import { useCountUp } from "./use-count-up";
 import { useReflex } from "./use-reflex";
 
@@ -24,6 +25,10 @@ interface AuroraStatCardProps {
   deltaDir?: "up" | "down";
   /** When set, renders a small percentage ring in the corner. */
   ring?: number;
+  /** Mini trend series rendered beside the value (needs 2+ points). */
+  spark?: number[];
+  /** Stroke color for the spark — defaults to the corporate accent. */
+  sparkColor?: string;
   /** Pre-rendered icon element shown on the right. Must be a node — passing
    *  a component _type_ (function reference) would fail to serialize across
    *  the Server→Client RSC boundary in production. */
@@ -66,6 +71,8 @@ export function AuroraStatCard({
   delta,
   deltaDir,
   ring,
+  spark,
+  sparkColor,
   icon,
   href,
 }: AuroraStatCardProps) {
@@ -98,15 +105,36 @@ export function AuroraStatCard({
         ) : null}
       </div>
       <div
-        className="au-num"
         style={{
-          font: "600 28px/1.05 var(--font-sans, system-ui, sans-serif)",
-          letterSpacing: "-0.02em",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 10,
           marginTop: 14,
-          color: "var(--au-ink)",
         }}
       >
-        {formatted ?? fmt(v, format)}
+        <div
+          className="au-num"
+          style={{
+            font: "600 28px/1.05 var(--font-sans, system-ui, sans-serif)",
+            letterSpacing: "-0.02em",
+            color: "var(--au-ink)",
+            minWidth: 0,
+          }}
+        >
+          {formatted ?? fmt(v, format)}
+        </div>
+        {spark && spark.length > 1 && (
+          <span aria-hidden style={{ flexShrink: 0 }}>
+            <Sparkline
+              values={spark}
+              color={sparkColor}
+              width={64}
+              height={28}
+            />
+          </span>
+        )}
       </div>
       <div
         style={{

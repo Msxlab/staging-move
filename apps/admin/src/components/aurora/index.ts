@@ -1,6 +1,10 @@
+export { AuditFeed } from "./audit-feed";
+export type { AuditFeedItem, AuditFeedTone } from "./audit-feed";
 export { AuroraBackground } from "./aurora-background";
 export { AuroraStatCard } from "./aurora-stat-card";
 export { PulseDot } from "./pulse-dot";
+export { RevenueTrendCard } from "./revenue-trend";
+export type { TrendPoint } from "./revenue-trend";
 export { Ring } from "./ring";
 export { Sparkline } from "./sparkline";
 export { useCountUp } from "./use-count-up";

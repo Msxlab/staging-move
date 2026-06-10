@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { EmptyState } from "@/components/empty-state";
+import { MinistatStrip } from "@/components/ministat-strip";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 // Lifecycle action identifiers — one per server route under
@@ -729,70 +730,83 @@ export default function SubscriptionsClient() {
         />
       ) : (
       <>
-      {/* KPI Cards — Active / Trialing / Canceled cards double as status filters. */}
+      {/* Ministat strip — Active / Trialing / Canceled / Needs Attention
+          cards still double as status filters (same setFilters + setPage
+          behavior as before, now with aria-pressed state). */}
       {stats && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Total</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{stats.totalAll}</p>
-                </div>
-                <div className="rounded-lg bg-tone-sky-bg p-2"><CreditCard className="h-4 w-4 text-tone-sky-fg" /></div>
-              </div>
-            </div>
-            <button onClick={() => { setFilters({ ...filters, status: filters.status === "ACTIVE" ? "" : "ACTIVE" }); setPage(1); }}
-              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "ACTIVE" ? "border-tone-sage-br bg-tone-sage-bg" : "border-border hover:border-tone-sage-br"}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Active{filters.status === "ACTIVE" ? " · filtered" : ""}</p>
-                  <p className="mt-1 text-2xl font-bold text-tone-sage-fg">{stats.activeCount}</p>
-                </div>
-                <div className="rounded-lg bg-tone-sage-bg p-2"><CheckCircle2 className="h-4 w-4 text-tone-sage-fg" /></div>
-              </div>
-            </button>
-            <button onClick={() => { setFilters({ ...filters, status: filters.status === "TRIALING" ? "" : "TRIALING" }); setPage(1); }}
-              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "TRIALING" ? "border-tone-cyan-br bg-tone-cyan-bg" : "border-border hover:border-tone-cyan-br"}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Trialing{filters.status === "TRIALING" ? " · filtered" : ""}</p>
-                  <p className="mt-1 text-2xl font-bold text-tone-cyan-fg">{stats.trialingCount}</p>
-                </div>
-                <div className="rounded-lg bg-tone-cyan-bg p-2"><Clock className="h-4 w-4 text-tone-cyan-fg" /></div>
-              </div>
-            </button>
-            <button onClick={() => { setFilters({ ...filters, status: filters.status === "CANCELED" ? "" : "CANCELED" }); setPage(1); }}
-              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "CANCELED" ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-destructive/20"}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Canceled{filters.status === "CANCELED" ? " · filtered" : ""}</p>
-                  <p className="mt-1 text-2xl font-bold text-destructive">{stats.canceledCount}</p>
-                </div>
-                <div className="rounded-lg bg-destructive/10 p-2"><XCircle className="h-4 w-4 text-destructive" /></div>
-              </div>
-            </button>
-            <button onClick={() => { setFilters({ ...filters, status: filters.status === "PAST_DUE" ? "" : "PAST_DUE" }); setPage(1); }}
-              title="Needs attention — PAST_DUE / GRACE_PERIOD / UNPAID payments to recover"
-              className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "PAST_DUE" ? "border-tone-honey-br bg-tone-honey-bg" : "border-border hover:border-tone-honey-br"}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Needs Attention{filters.status === "PAST_DUE" ? " · filtered" : ""}</p>
-                  <p className="mt-1 text-2xl font-bold text-tone-honey-fg">{stats.pastDueCount ?? 0}</p>
-                </div>
-                <div className="rounded-lg bg-tone-honey-bg p-2"><AlertTriangle className="h-4 w-4 text-tone-honey-fg" /></div>
-              </div>
-            </button>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">New This Month</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
-                </div>
-                <div className="rounded-lg bg-tone-foil-bg p-2"><TrendingUp className="h-4 w-4 text-tone-foil-fg" /></div>
-              </div>
-            </div>
-          </div>
+          <MinistatStrip
+            columns={6}
+            items={[
+              {
+                key: "total",
+                icon: CreditCard,
+                label: "Total",
+                value: stats.totalAll,
+                tone: "slate",
+              },
+              {
+                key: "active",
+                icon: CheckCircle2,
+                label: "Active",
+                value: stats.activeCount,
+                tone: "mint",
+                active: filters.status === "ACTIVE",
+                sub: filters.status === "ACTIVE" ? "filtered" : undefined,
+                onClick: () => {
+                  setFilters({ ...filters, status: filters.status === "ACTIVE" ? "" : "ACTIVE" });
+                  setPage(1);
+                },
+              },
+              {
+                key: "trialing",
+                icon: Clock,
+                label: "Trialing",
+                value: stats.trialingCount,
+                tone: "cool",
+                active: filters.status === "TRIALING",
+                sub: filters.status === "TRIALING" ? "filtered" : undefined,
+                onClick: () => {
+                  setFilters({ ...filters, status: filters.status === "TRIALING" ? "" : "TRIALING" });
+                  setPage(1);
+                },
+              },
+              {
+                key: "canceled",
+                icon: XCircle,
+                label: "Canceled",
+                value: stats.canceledCount,
+                tone: "coral",
+                active: filters.status === "CANCELED",
+                sub: filters.status === "CANCELED" ? "filtered" : undefined,
+                onClick: () => {
+                  setFilters({ ...filters, status: filters.status === "CANCELED" ? "" : "CANCELED" });
+                  setPage(1);
+                },
+              },
+              {
+                key: "attention",
+                icon: AlertTriangle,
+                label: "Needs attention",
+                value: stats.pastDueCount ?? 0,
+                tone: "amber",
+                title: "Needs attention — PAST_DUE / GRACE_PERIOD / UNPAID payments to recover",
+                active: filters.status === "PAST_DUE",
+                sub: filters.status === "PAST_DUE" ? "filtered" : undefined,
+                onClick: () => {
+                  setFilters({ ...filters, status: filters.status === "PAST_DUE" ? "" : "PAST_DUE" });
+                  setPage(1);
+                },
+              },
+              {
+                key: "new",
+                icon: TrendingUp,
+                label: "New this month",
+                value: stats.newThisMonth,
+                tone: "family",
+              },
+            ]}
+          />
           <p className="text-[11px] text-muted-foreground">
             Click Active / Trialing / Canceled / Needs Attention to filter by status. Needs Attention covers PAST_DUE, GRACE_PERIOD, and UNPAID — the payments to recover. Plan, source, and platform live in the filters panel.
           </p>
@@ -1378,30 +1392,45 @@ function AnalyticsPanel({
   const maxTrend = Math.max(...mrrTrend.map((p) => p.mrr), 1);
   const maxPlanMrr = Math.max(...arpuByPlan.map((p) => p.mrr), 1);
 
-  const kpis = [
-    { label: "MRR", value: formatUsd(totals.mrr), icon: DollarSign, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg", sub: `ARR ${formatUsd(totals.arr)}` },
-    { label: "Paying Subs", value: totals.payingSubscriptions.toLocaleString(), icon: Users, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg", sub: `of ${totals.activeSubscriptions} active` },
-    { label: "Churn Rate", value: `${totals.churnRate}%`, icon: totals.churnRate > totals.lastMonthChurn ? TrendingDown : TrendingUp, color: totals.churnRate > 5 ? "text-destructive" : "text-tone-sage-fg", bg: totals.churnRate > 5 ? "bg-destructive/10" : "bg-tone-sage-bg", sub: `Last month ${totals.lastMonthChurn}%` },
-    { label: "Net New MRR", value: formatUsd(mrrMovement.thisMonth.netMrr), icon: mrrMovement.thisMonth.netMrr >= 0 ? ArrowUpRight : ArrowDownRight, color: mrrMovement.thisMonth.netMrr >= 0 ? "text-tone-sage-fg" : "text-destructive", bg: mrrMovement.thisMonth.netMrr >= 0 ? "bg-tone-sage-bg" : "bg-destructive/10", sub: "This month" },
-  ];
-
   return (
     <div className="space-y-5">
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{k.label}</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{k.value}</p>
-                {k.sub && <p className="mt-0.5 text-xs text-muted-foreground">{k.sub}</p>}
-              </div>
-              <div className={`rounded-lg p-2.5 ${k.bg}`}><k.icon className={`h-5 w-5 ${k.color}`} /></div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Ministat strip — same already-loaded analytics aggregates. */}
+      <MinistatStrip
+        items={[
+          {
+            key: "mrr",
+            icon: DollarSign,
+            label: "MRR",
+            value: formatUsd(totals.mrr),
+            sub: `ARR ${formatUsd(totals.arr)}`,
+            tone: "mint",
+          },
+          {
+            key: "paying",
+            icon: Users,
+            label: "Paying subs",
+            value: totals.payingSubscriptions.toLocaleString(),
+            sub: `of ${totals.activeSubscriptions} active`,
+            tone: "cool",
+          },
+          {
+            key: "churn",
+            icon: totals.churnRate > totals.lastMonthChurn ? TrendingDown : TrendingUp,
+            label: "Churn rate",
+            value: `${totals.churnRate}%`,
+            sub: `last month ${totals.lastMonthChurn}%`,
+            tone: totals.churnRate > 5 ? "coral" : "mint",
+          },
+          {
+            key: "net-mrr",
+            icon: mrrMovement.thisMonth.netMrr >= 0 ? ArrowUpRight : ArrowDownRight,
+            label: "Net new MRR",
+            value: formatUsd(mrrMovement.thisMonth.netMrr),
+            sub: "this month",
+            tone: mrrMovement.thisMonth.netMrr >= 0 ? "mint" : "coral",
+          },
+        ]}
+      />
 
       {/* MRR trend (trailing 12 months) */}
       <div className="rounded-xl border border-border bg-card p-5">

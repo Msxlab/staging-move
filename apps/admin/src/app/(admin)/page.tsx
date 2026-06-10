@@ -14,14 +14,171 @@ import {
   DollarSign,
   TrendingDown,
 } from "lucide-react";
-import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+import { BILLING_PLAN_DEFINITIONS, PAID_BILLING_PLANS } from "@locateflow/shared";
 import Link from "next/link";
 import { HealthCard } from "./health-card";
-import { maskEmail } from "@/lib/privacy";
+import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
+import { ADMIN_ROLE_HIERARCHY, requirePageAdmin } from "@/lib/page-guard";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminPanel } from "@/components/admin-panel";
-import { AuroraStatCard } from "@/components/aurora";
+import { AuditFeed, AuroraStatCard, RevenueTrendCard } from "@/components/aurora";
+import type { AuditFeedItem, AuditFeedTone } from "@/components/aurora";
 import { TierMedallion } from "@/components/premium/tier-medallion";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Daily revenue series window — capped at 90 days to keep the query cheap. */
+const REVENUE_WINDOW_DAYS = 90;
+/** Spark window for the KPI tiles (slice of the same series). */
+const SPARK_DAYS = 30;
+/** Rows shown in the dashboard audit feed. */
+const AUDIT_FEED_COUNT = 8;
+
+/** UTC day key ("2026-06-09") — all dashboard buckets use UTC days. */
+function dayKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Estimated-MRR time series, one point per UTC day for the last
+ * REVENUE_WINDOW_DAYS days. There is no payment-ledger table, so the trend
+ * is reconstructed from Subscription lifecycle timestamps: a paid sub
+ * contributes its plan's monthly price from createdAt until canceledAt.
+ * Two bounded queries: a groupBy for the paid-sub baseline at the window
+ * start, plus a capped findMany for the in-window create/cancel deltas —
+ * the 90-day cap and the 3-field select keep both cheap.
+ */
+async function getRevenueSeries(
+  now: Date,
+): Promise<Array<{ date: string; mrr: number; paidSubs: number }>> {
+  const todayStartMs = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const windowStart = new Date(todayStartMs - (REVENUE_WINDOW_DAYS - 1) * DAY_MS);
+  const paidPlans = [...PAID_BILLING_PLANS];
+
+  const [baseline, deltas] = await Promise.all([
+    // Paid subs alive at the window start: created before it and not yet
+    // canceled (or canceled inside the window — they still count at start).
+    prisma.subscription.groupBy({
+      by: ["plan"],
+      where: {
+        plan: { in: paidPlans },
+        createdAt: { lt: windowStart },
+        OR: [{ canceledAt: null }, { canceledAt: { gte: windowStart } }],
+      },
+      _count: { id: true },
+    }),
+    // Lifecycle events inside the window. Capped — at current volumes this
+    // is tiny; the cap only guards against a pathological backfill.
+    prisma.subscription.findMany({
+      where: {
+        plan: { in: paidPlans },
+        OR: [
+          { createdAt: { gte: windowStart } },
+          { canceledAt: { gte: windowStart } },
+        ],
+      },
+      select: { plan: true, createdAt: true, canceledAt: true },
+      take: 5000,
+    }),
+  ]);
+
+  const priceOf = (plan: string): number =>
+    (
+      BILLING_PLAN_DEFINITIONS as Record<
+        string,
+        { monthlyPriceUsd?: number } | undefined
+      >
+    )[plan]?.monthlyPriceUsd ?? 0;
+
+  let mrr = 0;
+  let paidSubs = 0;
+  for (const row of baseline) {
+    mrr += priceOf(row.plan) * row._count.id;
+    paidSubs += row._count.id;
+  }
+
+  const deltasByDay = new Map<string, { mrr: number; count: number }>();
+  const bump = (key: string, dMrr: number, dCount: number) => {
+    const cur = deltasByDay.get(key) ?? { mrr: 0, count: 0 };
+    cur.mrr += dMrr;
+    cur.count += dCount;
+    deltasByDay.set(key, cur);
+  };
+  for (const sub of deltas) {
+    const price = priceOf(sub.plan);
+    if (sub.createdAt >= windowStart) bump(dayKey(sub.createdAt), price, 1);
+    if (sub.canceledAt && sub.canceledAt >= windowStart) {
+      bump(dayKey(sub.canceledAt), -price, -1);
+    }
+  }
+
+  const series: Array<{ date: string; mrr: number; paidSubs: number }> = [];
+  for (let i = 0; i < REVENUE_WINDOW_DAYS; i++) {
+    const key = dayKey(new Date(windowStart.getTime() + i * DAY_MS));
+    const delta = deltasByDay.get(key);
+    if (delta) {
+      mrr += delta.mrr;
+      paidSubs += delta.count;
+    }
+    series.push({
+      date: key,
+      mrr: Math.max(0, Math.round(mrr * 100) / 100),
+      paidSubs: Math.max(0, paidSubs),
+    });
+  }
+  return series;
+}
+
+/** Tone for the audit feed halo dot — honey strictly means WARN. */
+function auditTone(action: string): AuditFeedTone {
+  const a = action.toUpperCase();
+  if (/DELETE|REMOVE|ERROR|FAIL|DENIED|REJECT|DOWN/.test(a)) return "rose";
+  if (/SECURITY|ALERT|SUSPEND|LOGIN|LOCK|MFA|PASSWORD|IMPERSONAT/.test(a)) {
+    return "honey";
+  }
+  if (/CREATE|APPROVE|GRANT|REACTIVATE|RESTORE|MERGE|VERIF/.test(a)) {
+    return "sage";
+  }
+  return "info";
+}
+
+/** "PROVIDER_UPDATED" → "provider updated" — feed-friendly verb phrase. */
+function humanizeAuditAction(action: string): string {
+  return action.toLowerCase().split("_").join(" ");
+}
+
+/**
+ * Latest admin-audit rows for the dashboard feed — same table the /logs
+ * page reads (prisma.adminAuditLog + adminUser join). Caller must gate on
+ * audit_logs:canRead with an ADMIN floor, mirroring /logs. Actor emails are
+ * always masked and entity ids always shortened here — the dashboard never
+ * reveals more than the masked /logs view does.
+ */
+async function getAuditFeed(): Promise<AuditFeedItem[]> {
+  const rows = await prisma.adminAuditLog.findMany({
+    select: {
+      id: true,
+      action: true,
+      entityType: true,
+      entityId: true,
+      createdAt: true,
+      adminUser: { select: { email: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: AUDIT_FEED_COUNT,
+  });
+  return rows.map((row: any) => ({
+    id: row.id,
+    actor: row.adminUser?.email ? maskEmail(row.adminUser.email) : "system",
+    action: humanizeAuditAction(row.action),
+    target: `${row.entityType} · ${maskProviderIdentifier(row.entityId)}`,
+    when: row.createdAt.toISOString(),
+    tone: auditTone(row.action),
+  }));
+}
 
 async function getStats() {
   const now = new Date();
@@ -43,6 +200,8 @@ async function getStats() {
     paidSubsByPlan,
     canceledLast30,
     activeAt30DaysAgo,
+    revenueSeries,
+    recentSignupDates,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
@@ -86,6 +245,16 @@ async function getStats() {
         OR: [{ canceledAt: null }, { canceledAt: { gte: thirtyDaysAgo } }],
       },
     }),
+    // Daily estimated-MRR series — feeds the revenue trend chart and the
+    // MRR / Active Subscriptions KPI sparklines.
+    getRevenueSeries(now),
+    // Signup timestamps over the spark window — feeds the Total Users
+    // sparkline. Single indexed range scan, 1 column, capped.
+    prisma.user.findMany({
+      where: { createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+      take: 5000,
+    }),
   ]);
 
   const weeklyTrend = newUsersLastWeek > 0
@@ -112,11 +281,40 @@ async function getStats() {
       : 0;
   void sixtyDaysAgo; // reserved for future 12-month trend implementation
 
+  // Total-users sparkline: cumulative count per UTC day across the spark
+  // window. Walk forward from (totalUsers - signups in window) so the last
+  // point always equals today's KPI value; signups that fall just before
+  // the first grid day (range vs day-grid skew) fold into the baseline.
+  const todayStartMs = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const gridStartKey = dayKey(
+    new Date(todayStartMs - (SPARK_DAYS - 1) * DAY_MS),
+  );
+  let usersRunning = totalUsers - recentSignupDates.length;
+  const signupsByDay = new Map<string, number>();
+  for (const row of recentSignupDates) {
+    const key = dayKey(row.createdAt);
+    if (key < gridStartKey) usersRunning += 1;
+    else signupsByDay.set(key, (signupsByDay.get(key) ?? 0) + 1);
+  }
+  const usersSpark: number[] = [];
+  for (let i = 0; i < SPARK_DAYS; i++) {
+    const key = dayKey(
+      new Date(todayStartMs - (SPARK_DAYS - 1 - i) * DAY_MS),
+    );
+    usersRunning += signupsByDay.get(key) ?? 0;
+    usersSpark.push(usersRunning);
+  }
+
   return {
     totalUsers, activeSubscriptions, activeMovingPlans, totalProviders,
     recentUsers, newUsersThisWeek, weeklyTrend, upcomingMoves,
     activeSessions, totalSessions,
     mrrUsd, arpuUsd, churnPct, paidSubCount,
+    revenueSeries, usersSpark,
     // Plan distribution feeds the new "Plan distribution" panel — counts
     // by tier so we can render foil-stamped tier medallions with shares.
     paidSubsByPlan: paidSubsByPlan as Array<{ plan: string; _count: { id: number } }>,
@@ -124,7 +322,23 @@ async function getStats() {
 }
 
 export default async function DashboardPage() {
-  const stats = await getStats();
+  // The layout already authenticates; re-resolve the permission map here so
+  // the audit feed can fail closed for admins without audit_logs:canRead —
+  // mirrors the /logs page gate (ADMIN role floor + audit_logs:canRead).
+  const ctx = await requirePageAdmin();
+  const canReadAuditLogs =
+    ADMIN_ROLE_HIERARCHY[ctx.role] >= ADMIN_ROLE_HIERARCHY.ADMIN &&
+    ctx.permissions.audit_logs?.canRead === true;
+
+  const [stats, auditFeed] = await Promise.all([
+    getStats(),
+    canReadAuditLogs ? getAuditFeed() : Promise.resolve(null),
+  ]);
+
+  // KPI mini-trends sliced from the same daily series the trend chart uses.
+  const sparkWindow = stats.revenueSeries.slice(-SPARK_DAYS);
+  const mrrSpark = sparkWindow.map((p) => p.mrr);
+  const paidSubsSpark = sparkWindow.map((p) => p.paidSubs);
 
   const fmtUsd = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -139,8 +353,8 @@ export default async function DashboardPage() {
   // (server) and passed as ReactNode so the function reference never
   // crosses the RSC boundary.
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers, icon: <Users className="h-5 w-5" />, href: "/users" as const },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const },
+    { label: "Total Users", value: stats.totalUsers, icon: <Users className="h-5 w-5" />, href: "/users" as const, spark: stats.usersSpark },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const, spark: paidSubsSpark, sparkColor: "var(--au-family)" },
     {
       label: "MRR",
       value: stats.mrrUsd,
@@ -148,6 +362,8 @@ export default async function DashboardPage() {
       icon: <DollarSign className="h-5 w-5" />,
       href: "/subscriptions" as const,
       sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid`,
+      spark: mrrSpark,
+      sparkColor: "var(--au-accent)",
     },
     {
       label: "Churn (30d)",
@@ -229,6 +445,8 @@ export default async function DashboardPage() {
             value={card.value}
             formatted={card.formatted}
             sub={card.sub}
+            spark={card.spark}
+            sparkColor={card.sparkColor}
             icon={card.icon}
             href={card.href}
           />
@@ -255,6 +473,13 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Revenue trend — daily estimated-MRR series with crosshair hover
+          and 7D/30D/QTR range control. The full 90-day series ships once;
+          range switches slice client-side without refetching. */}
+      <RevenueTrendCard
+        points={stats.revenueSeries.map((p) => ({ date: p.date, value: p.mrr }))}
+      />
 
       {/* System Health */}
       <HealthCard />
@@ -383,6 +608,23 @@ export default async function DashboardPage() {
           </div>
         </AdminPanel>
       </div>
+
+      {/* Audit feed — latest admin/system actions; rendered only for admins
+          who clear the same gate as /logs (ADMIN floor + audit_logs:canRead). */}
+      {auditFeed && (
+        <AdminPanel
+          title="Audit log"
+          caption="Latest administrator and system actions"
+          dense
+          actions={
+            <Link href="/logs" className="text-xs text-primary hover:underline">
+              View all →
+            </Link>
+          }
+        >
+          <AuditFeed items={auditFeed} />
+        </AdminPanel>
+      )}
     </div>
   );
 }

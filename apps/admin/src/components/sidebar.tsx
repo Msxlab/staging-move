@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageSelector } from "./language-selector";
+import { PulseDot } from "./aurora";
 import { filterNavGroups, type NavGroup, type NavItem } from "@/lib/admin-nav";
 
 /**
@@ -31,6 +32,58 @@ function getInitialCollapsed(groups: NavGroup[]): Record<string, boolean> {
   return collapsed;
 }
 
+function isItemActive(pathname: string, href: string): boolean {
+  return pathname === href || (href !== "/" && pathname.startsWith(href));
+}
+
+/**
+ * Translate a nav key, falling back to the English `name` when the key is
+ * missing from the message catalog (same contract as the ⌘K palette's safeT —
+ * next-intl either throws or returns the "nav.key" path depending on env).
+ */
+function navLabel(t: ReturnType<typeof useTranslations>, key: string, fallback: string): string {
+  let value: string;
+  try {
+    value = t(key);
+  } catch {
+    return fallback;
+  }
+  return value === `nav.${key}` ? fallback : value;
+}
+
+/**
+ * Compact LocateFlow pin mark for the 76px rail. Same geometry as the flat
+ * sidebar's logo but with its own gradient ids — both sidebars are in the DOM
+ * (CSS swaps them at the lg breakpoint), so ids must not collide.
+ */
+function RailMark() {
+  return (
+    <svg className="h-9 w-9 shrink-0" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="admin-rail-foil" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#5C9DDC" />
+          <stop offset="45%" stopColor="#7FB6E8" />
+          <stop offset="100%" stopColor="#DDE7F5" />
+        </linearGradient>
+        <linearGradient id="admin-rail-rose" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#A5C9F0" />
+          <stop offset="100%" stopColor="#5C9DDC" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M20 65 Q 30 32, 50 48 T 80 40"
+        stroke="url(#admin-rail-foil)"
+        strokeWidth="4"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="20" cy="65" r="5" fill="url(#admin-rail-foil)" />
+      <circle cx="80" cy="40" r="8" fill="url(#admin-rail-rose)" />
+      <circle cx="80" cy="40" r="2.75" fill="#ECF1F8" />
+    </svg>
+  );
+}
+
 interface SidebarProps {
   /**
    * Server-resolved permission context. When omitted (e.g. during the
@@ -39,9 +92,15 @@ interface SidebarProps {
    * API guards are authoritative.
    */
   ctx?: { role: AdminRoleString; permissions: AdminPermissionsMap; email?: string };
+  /**
+   * Optional cheap counts keyed by item href (e.g. { "/support": 12 }).
+   * Rendered as a badge next to the panel item when present. Display only —
+   * the sidebar never fetches; callers pass counts they already have.
+   */
+  counts?: Partial<Record<string, number | string>>;
 }
 
-export function Sidebar({ ctx }: SidebarProps = {}) {
+export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
   const filteredGroups = filterNavGroups(ctx ?? null);
@@ -62,6 +121,20 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   const initial = (email.trim()[0] || "A").toUpperCase();
   const settingsActive = pathname === "/settings" || pathname.startsWith("/settings");
 
+  // Active group for the rail: derived from the pathname. Match against
+  // filteredGroups (which still contains /settings) so the System icon
+  // lights up on the Settings page, then map back into displayGroups.
+  const activeGroupLabel = filteredGroups.find((g) => g.items.some((it) => isItemActive(pathname, it.href)))?.label;
+  const activeGroupIdx = Math.max(
+    0,
+    displayGroups.findIndex((g) => g.label === activeGroupLabel),
+  );
+  const panelGroup: NavGroup | undefined = displayGroups[activeGroupIdx];
+
+  // Build-time environment badge — corporate consoles surface which
+  // environment an operator is touching. NODE_ENV is statically inlined.
+  const isProd = process.env.NODE_ENV === "production";
+
   // Platform-correct command-palette hint (⌘K on Apple, Ctrl K elsewhere).
   // Defaults to the non-Apple form for SSR; corrected on mount — the <kbd>
   // carries suppressHydrationWarning so the swap is silent.
@@ -73,9 +146,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
   // Auto-expand group when navigating
   useEffect(() => {
     filteredGroups.forEach((group) => {
-      const hasActive = group.items.some(
-        (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
-      );
+      const hasActive = group.items.some((item) => isItemActive(pathname, item.href));
       if (hasActive) {
         setCollapsed((prev) => ({ ...prev, [group.label]: false }));
       }
@@ -114,8 +185,234 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
     ? allItems.filter((item) => matchesSearch(item, search))
     : null;
 
-  return (
-    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card">
+  /** One nav row (icon + label + active state + optional count badge). */
+  const renderItem = (item: NavItem, opts?: { onNavigate?: () => void }) => {
+    const isActive = isItemActive(pathname, item.href);
+    const count = counts?.[item.href];
+    return (
+      <a
+        key={item.name}
+        href={item.href}
+        onClick={opts?.onNavigate}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          "adp-item relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-colors",
+          isActive
+            ? "on bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+            : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
+      >
+        <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
+        <span className="min-w-0 flex-1 truncate">{navLabel(tNav, item.nameKey, item.name)}</span>
+        {count != null && (
+          <span className="ct shrink-0 rounded-full border border-border/60 bg-muted px-1.5 py-px font-mono text-[10px] leading-4 text-muted-foreground">
+            {count}
+          </span>
+        )}
+      </a>
+    );
+  };
+
+  /** Search input — shared by the rail panel and the flat (mobile) sidebar. */
+  const renderSearch = (idSuffix: string) => (
+    <div className="relative">
+      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+      <input
+        type="text"
+        placeholder={tCommon("search")}
+        aria-label={tCommon("search")}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        data-sidebar-search={idSuffix}
+        className="w-full rounded-lg border border-border bg-background pl-8 pr-14 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+      />
+      {/* Discoverability cue for the global ⌘K command palette. */}
+      <kbd
+        suppressHydrationWarning
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+      >
+        {isMac ? "⌘K" : "Ctrl K"}
+      </kbd>
+    </div>
+  );
+
+  /** Identity + pinned Settings/theme/language/sign-out account footer. */
+  const renderAccountFooter = (variant: "rail" | "flat") => (
+    <div className={cn("adp-user border-t border-border bg-card/60 p-3", variant === "rail" && "px-2.5")}>
+      {/* Who is signed in + privilege level — display only; the server role
+          gate remains authoritative. */}
+      {ctx && (
+        <div className="mb-2 flex items-center gap-2.5 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20"
+            aria-hidden="true"
+          >
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            {email && (
+              <p className="truncate text-xs font-medium text-foreground" title={email}>
+                {email}
+              </p>
+            )}
+            {roleMeta && (
+              <span
+                className={cn(
+                  "mt-0.5 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+                  roleMeta.tone,
+                )}
+              >
+                {roleMeta.label}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Settings (pinned) + theme + language on one row. */}
+      <div className="flex items-center gap-1.5">
+        <a
+          href="/settings"
+          className={cn(
+            "relative flex min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
+            settingsActive
+              ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+              : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground",
+          )}
+        >
+          <Settings className={cn("h-4 w-4 shrink-0", settingsActive ? "text-primary" : "text-muted-foreground/70")} />
+          <span className="truncate">{navLabel(tNav, "settings", "Settings")}</span>
+        </a>
+        <ThemeToggle compact />
+        <LanguageSelector compact />
+      </div>
+      <button
+        onClick={handleLogout}
+        className="mt-1.5 flex w-full items-center justify-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+      >
+        <LogOut className="h-4 w-4" />
+        <span className="truncate">{tCommon("signOut")}</span>
+      </button>
+    </div>
+  );
+
+  /* ────────────────────────────────────────────────────────────────────
+     A·Rail — desktop (lg+): slim 76px icon rail (one icon per group) +
+     180px contextual panel listing only the active group's items. The two
+     columns total 256px (w-64) so the shell's pl-64 stays correct. Class
+     hooks (.adp-rail / .adp-panel / .rail-btn / .panel-items) match the
+     Slate enterprise sheet in aurora.css; Tailwind semantic tokens provide
+     the baseline so the nav renders correctly standalone.
+     ──────────────────────────────────────────────────────────────────── */
+  const railSidebar = (
+    <aside className="adp-side rail fixed inset-y-0 left-0 z-50 hidden w-64 grid-cols-[76px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] border-r border-border bg-card lg:grid">
+      {/* Icon rail — brand mark, one button per group, identity chip. */}
+      <div className="adp-rail flex min-h-0 flex-col items-center border-r border-border/60 px-2 py-4">
+        <a
+          href="/"
+          title="LocateFlow Admin"
+          aria-label="LocateFlow Admin — Dashboard"
+          className="mark mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-accent"
+        >
+          <RailMark />
+        </a>
+        <nav className="rail-nav flex w-full flex-col gap-1" aria-label="Admin sections">
+          {displayGroups.map((group, i) => {
+            const GroupIcon = group.icon;
+            const isOn = i === activeGroupIdx;
+            const groupTitle = navLabel(tNav, group.labelKey, group.label);
+            const firstHref = group.items[0]?.href ?? "/";
+            return (
+              <a
+                key={group.label}
+                href={firstHref}
+                title={groupTitle}
+                aria-current={isOn ? "true" : undefined}
+                className={cn(
+                  "rail-btn relative flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2.5 transition-colors",
+                  isOn
+                    ? "on bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:h-7 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <GroupIcon className={cn("h-[18px] w-[18px]", isOn ? "text-primary" : "text-muted-foreground/70")} />
+                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.08em]">{group.railLabel}</span>
+              </a>
+            );
+          })}
+        </nav>
+        <span className="rail-grow min-h-4 flex-1" aria-hidden="true" />
+        {/* Identity chip — full identity card lives in the panel footer. */}
+        {ctx && (
+          <span
+            className="rail-av flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 font-mono text-xs font-semibold text-primary ring-1 ring-primary/20"
+            title={email ? `${email}${roleMeta ? ` — ${roleMeta.label}` : ""}` : roleMeta?.label}
+            aria-hidden="true"
+          >
+            {initial}
+          </span>
+        )}
+      </div>
+
+      {/* Contextual panel — brand block, search, active group's items. */}
+      <div className="adp-panel flex min-h-0 min-w-0 flex-col">
+        <div className="panel-hd flex h-16 items-center gap-2 border-b border-border px-3">
+          <div className="flex min-w-0 flex-col leading-none">
+            <span
+              className="truncate text-[15px] tracking-[-0.025em] text-foreground"
+              style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
+            >
+              Locate<span className="foil-text">flow</span>
+            </span>
+            <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.22em] text-muted-foreground/70">
+              Admin
+            </span>
+          </div>
+          <span className="flex-1" />
+          {/* Environment pill — pulsing-ok dot in production. */}
+          <span
+            className="env inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            title={isProd ? "Production environment" : "Development environment"}
+          >
+            <PulseDot tone={isProd ? "mint" : "amber"} />
+            {isProd ? "Prod" : "Dev"}
+          </span>
+        </div>
+
+        <div className="px-3 pt-3 pb-1">{renderSearch("rail")}</div>
+
+        <nav className="panel-items min-h-0 flex-1 overflow-y-auto px-2 py-2" aria-label="Section pages">
+          {isSearching ? (
+            // Flat filtered list across ALL groups (mirrors the ⌘K palette).
+            <div className="space-y-0.5">
+              {filteredItems && filteredItems.length > 0 ? (
+                filteredItems.map((item) => renderItem(item, { onNavigate: () => setSearch("") }))
+              ) : (
+                <p className="px-3 py-4 text-center text-xs text-muted-foreground">{tCommon("no")}</p>
+              )}
+            </div>
+          ) : (
+            panelGroup && (
+              <>
+                <div className="adp-grp px-2.5 pb-1.5 pt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">
+                  {navLabel(tNav, panelGroup.labelKey, panelGroup.label)}
+                </div>
+                <div className="space-y-0.5">{panelGroup.items.map((item) => renderItem(item))}</div>
+              </>
+            )
+          )}
+        </nav>
+
+        {renderAccountFooter("rail")}
+      </div>
+    </aside>
+  );
+
+  /* ────────────────────────────────────────────────────────────────────
+     Flat sidebar — below lg. Unchanged from the pre-rail behavior so
+     small screens keep the grouped, collapsible list.
+     ──────────────────────────────────────────────────────────────────── */
+  const flatSidebar = (
+    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card lg:hidden">
       {/* Logo — mirrors public/logo-mark.svg from the design system.
           Animations driven by .sb-sweep / .sb-ripple / .sb-pin-float in
           globals.css. All respect prefers-reduced-motion. */}
@@ -173,26 +470,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
       </div>
 
       {/* Search */}
-      <div className="px-3 pt-3 pb-1">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={tCommon("search")}
-            aria-label={tCommon("search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background pl-8 pr-14 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-          />
-          {/* Discoverability cue for the global ⌘K command palette. */}
-          <kbd
-            suppressHydrationWarning
-            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-          >
-            {isMac ? "⌘K" : "Ctrl K"}
-          </kbd>
-        </div>
-      </div>
+      <div className="px-3 pt-3 pb-1">{renderSearch("flat")}</div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2">
@@ -200,25 +478,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
           // Flat filtered list
           <div className="space-y-0.5">
             {filteredItems && filteredItems.length > 0 ? (
-              filteredItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                return (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setSearch("")}
-                    className={cn(
-                      "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                        : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                  >
-                    <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
-                    {tNav(item.nameKey)}
-                  </a>
-                );
-              })
+              filteredItems.map((item) => renderItem(item, { onNavigate: () => setSearch("") }))
             ) : (
               <p className="px-3 py-4 text-xs text-muted-foreground text-center">{tCommon("no")}</p>
             )}
@@ -228,9 +488,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
           <div className="space-y-1">
             {displayGroups.map((group) => {
               const isCollapsed = collapsed[group.label];
-              const hasActive = group.items.some(
-                (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
-              );
+              const hasActive = group.items.some((item) => isItemActive(pathname, item.href));
               return (
                 <div key={group.label}>
                   <button
@@ -243,7 +501,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                         : "text-muted-foreground/60 hover:text-muted-foreground"
                     )}
                   >
-                    {tNav(group.labelKey)}
+                    {navLabel(tNav, group.labelKey, group.label)}
                     <ChevronDown
                       className={cn(
                         "h-3 w-3 transition-transform duration-200",
@@ -253,24 +511,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                   </button>
                   {!isCollapsed && (
                     <div className="space-y-0.5 mt-0.5 mb-2">
-                      {group.items.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                        return (
-                          <a
-                            key={item.name}
-                            href={item.href}
-                            className={cn(
-                              "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                              isActive
-                                ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                                : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                            )}
-                          >
-                            <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
-                            {tNav(item.nameKey)}
-                          </a>
-                        );
-                      })}
+                      {group.items.map((item) => renderItem(item))}
                     </div>
                   )}
                 </div>
@@ -283,61 +524,14 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
       {/* Pinned account bar — identity, Settings and Sign out are always
           reachable here without scrolling the nav; theme + language are
           compact icon buttons so the footer stays short. */}
-      <div className="border-t border-border bg-card/60 p-3">
-        {/* Who is signed in + privilege level — display only; the server role
-            gate remains authoritative. */}
-        {ctx && (
-          <div className="mb-2 flex items-center gap-2.5 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20"
-              aria-hidden="true"
-            >
-              {initial}
-            </div>
-            <div className="min-w-0 flex-1">
-              {email && (
-                <p className="truncate text-xs font-medium text-foreground" title={email}>
-                  {email}
-                </p>
-              )}
-              {roleMeta && (
-                <span
-                  className={cn(
-                    "mt-0.5 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
-                    roleMeta.tone,
-                  )}
-                >
-                  {roleMeta.label}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-        {/* Settings (pinned) + theme + language on one row. */}
-        <div className="flex items-center gap-1.5">
-          <a
-            href="/settings"
-            className={cn(
-              "relative flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-              settingsActive
-                ? "bg-primary/10 font-semibold text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground",
-            )}
-          >
-            <Settings className={cn("h-4 w-4 shrink-0", settingsActive ? "text-primary" : "text-muted-foreground/70")} />
-            {tNav("settings")}
-          </a>
-          <ThemeToggle compact />
-          <LanguageSelector compact />
-        </div>
-        <button
-          onClick={handleLogout}
-          className="mt-1.5 flex w-full items-center justify-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-        >
-          <LogOut className="h-4 w-4" />
-          {tCommon("signOut")}
-        </button>
-      </div>
+      {renderAccountFooter("flat")}
     </aside>
+  );
+
+  return (
+    <>
+      {railSidebar}
+      {flatSidebar}
+    </>
   );
 }
