@@ -604,7 +604,7 @@ const ESSENTIAL_CATEGORIES: Record<string, number> = {
   FINANCIAL_INSURANCE_AUTO: 35, FINANCIAL_INSURANCE_HEALTH: 42,
   FINANCIAL_INSURANCE_HOME: 35, FINANCIAL_MORTGAGE: 30,
   TRANSPORTATION_TOLL: 25, TRANSPORTATION_TRANSIT: 22,
-  HOUSING_SECURITY: 28, HOUSING_MOVING: 35,
+  HOUSING_SECURITY: 28, HOUSING_MOVING: 20,
   GROCERY_DELIVERY: 15, HOUSING_CLEANING: 12,
 };
 
@@ -684,7 +684,17 @@ const TAG_PROFILE_MAP: Record<string, (p: UserProfile) => { match: boolean; reas
 // ── Phase Boost ──────────────────────────────────────────────
 
 const PHASE_CATEGORY_BOOST: Record<number, Record<string, number>> = {
-  0: { GOVERNMENT_POSTAL: 30, KIDS_SCHOOL: 20, HOUSING_STORAGE: 15, HEALTHCARE_VET: 10, HOUSING_MOVING: 25 },
+  // Phase 0 (early planning): lead with the address-tied day-one essentials
+  // (USPS change-of-address, utilities, bank, gov ID) — these are what a move
+  // forces you to update. Moving logistics (truck/storage) stay a small nudge,
+  // never above the essentials, so a U-Haul never outranks the electric/water/bank.
+  0: {
+    GOVERNMENT_POSTAL: 30,
+    UTILITY_ELECTRIC: 20, UTILITY_WATER: 18, UTILITY_GAS: 15, UTILITY_INTERNET: 15,
+    FINANCIAL_BANK: 15, GOVERNMENT_ID: 12,
+    KIDS_SCHOOL: 20, HEALTHCARE_VET: 10,
+    HOUSING_MOVING: 10, HOUSING_STORAGE: 10,
+  },
   1: { UTILITY_ELECTRIC: 30, UTILITY_WATER: 25, UTILITY_GAS: 20, UTILITY_INTERNET: 25, FINANCIAL_INSURANCE_HOME: 20, HOUSING_SECURITY: 15 },
   2: { GOVERNMENT_TAX: 25, FINANCIAL_BANK: 20, GOVERNMENT_IMMIGRATION: 30, GOVERNMENT_BENEFITS: 15 },
   3: { GOVERNMENT_DMV: 30, FINANCIAL_INSURANCE_AUTO: 25, FINANCIAL_INSURANCE_HEALTH: 30, GOVERNMENT_VOTER: 15 },
