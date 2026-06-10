@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Locateflow Admin — Creative UI/UX Prototypes</title>
+  <!-- Tailwind CSS CDN for layout styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            brand: {
+              gold: '#F2C46C',
+              goldLight: '#FBE7BD',
+              goldDark: '#D99A4E',
+              blue: '#5C9DDC',
+              blueLight: '#7FB6E8',
+              blueDark: '#1F5FA0',
+              purple: '#A5C9F0',
+              purpleDeep: '#8A5E14',
+              sage: '#87DDC0',
+            },
+            darkBg: '#090D14',
+            darkSurface: '#0E131F',
+            darkCard: '#141B2B',
+            lightBg: '#F8FAFC',
+            lightSurface: '#FFFFFF',
+            lightCard: '#F1F5F9',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style type="text/css">
+    :root {
+      --font-display: 'Outfit', sans-serif;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    /* Aurora Glows */
+    .aurora-bg {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .dark .aurora-bg-blue {
+      background: radial-gradient(circle, #5c9ddc 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+    }
+    .dark .aurora-bg-gold {
+      background: radial-gradient(circle, #f2c46c 0%, transparent 70%);
+      bottom: -150px;
+      left: 10%;
+    }
+
+    /* Glass Effects */
+    .glass-effect {
+      background: rgba(14, 19, 31, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    
+    .light .glass-effect {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* Floating Dock Styling */
+    .floating-dock {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 64px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-radius: 20px;
+      z-index: 50;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .floating-dock:hover {
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(242, 196, 108, 0.2);
+    }
+
+    /* Dock Icon Hover Animation (macOS style zoom) */
+    .dock-icon {
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+    }
+    .dock-icon:hover {
+      transform: translateY(-8px) scale(1.15);
+    }
+
+    /* Glass Cards */
+    .glass-card {
+      background: rgba(20, 27, 43, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      background: rgba(20, 27, 43, 0.65);
+      border-color: rgba(242, 196, 108, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+    .light .glass-card {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .light .glass-card:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(176, 120, 30, 0.2);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Foil text */
+    .foil-text {
+      background: linear-gradient(135deg, #FBE7BD 0%, #F2C46C 50%, #D99A4E 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .light .foil-text {
+      background: linear-gradient(135deg, #B0781E 0%, #D99A4E 50%, #8A5E14 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* Navigation item active indicator */
+    .nav-item-active {
+      background: rgba(242, 196, 108, 0.1);
+      color: #F2C46C;
+      font-weight: 600;
+    }
+    .nav-item-active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 18px;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+      background-color: #F2C46C;
+    }
+    .light .nav-item-active {
+      background: rgba(176, 120, 30, 0.08);
+      color: #B0781E;
+    }
+    .light .nav-item-active::before {
+      background-color: #B0781E;
+    }
+
+    /* Ribbon Sidebar Collapsed Item */
+    .ribbon-item-active {
+      background-color: rgba(242, 196, 108, 0.1);
+      color: #F2C46C;
+    }
+    .light .ribbon-item-active {
+      background-color: rgba(176, 120, 30, 0.08);
+      color: #B0781E;
+    }
+
+    /* Spring Animation */
+    .logo-pin { animation: pinFloat 3.8s ease-in-out infinite; }
+    @keyframes pinFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .logo-ripple {
+      animation: ripple 2.4s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+      transform-origin: center;
+    }
+    @keyframes ripple {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .status-pulse {
+      box-shadow: 0 0 0 0 rgba(135, 221, 192, 0.7);
+      animation: pulseGreen 2s infinite;
+    }
+    @keyframes pulseGreen {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(135, 221, 192, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(135, 221, 192, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(135, 221, 192, 0); }
+    }
+
+    /* Transition states */
+    .transition-layout {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-200 bg-darkBg selection:bg-brand-gold/30 selection:text-white transition-colors duration-300">
+
+  <!-- Aurora Background -->
+  <div class="relative w-full min-h-screen overflow-hidden bg-darkBg dark:bg-darkBg light:bg-lightBg text-slate-200 dark:text-slate-200 light:text-slate-800">
+    <div class="aurora-bg aurora-bg-blue"></div>
+    <div class="aurora-bg aurora-bg-gold"></div>
+
+    <!-- Layout Container (Dynamic) -->
+    <div class="flex h-screen overflow-hidden relative z-10" id="layout-wrapper">
+      
+      <!-- 1. CLASSIC SIDEBAR LAYOUT (Polished) -->
+      <aside id="classic-sidebar" class="glass-effect w-64 flex flex-col shrink-0 h-full relative transition-all duration-300">
+        <!-- Logo -->
+        <div class="flex h-16 items-center gap-3 border-b border-white/5 dark:border-white/5 light:border-black/5 px-5 select-none">
+          <svg class="h-8 w-8 shrink-0 drop-shadow-[0_0_10px_rgba(242,196,108,0.2)]" viewBox="0 0 100 100" fill="none">
+            <path class="logo-sweep" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#admin-mk-foil)" stroke-width="4" fill="none" />
+            <circle cx="20" cy="65" r="5" fill="#5C9DDC" />
+            <g class="logo-pin"><circle cx="80" cy="40" r="8" fill="#F2C46C" /></g>
+          </svg>
+          <div class="flex flex-col">
+            <span class="text-base font-display font-bold text-white dark:text-white light:text-slate-900 leading-none">Locateflow</span>
+            <span class="text-[8px] font-mono tracking-widest text-slate-400 font-semibold mt-0.5">ADMIN PANEL</span>
+          </div>
+        </div>
+        <!-- Nav menu -->
+        <nav class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div>
+            <span class="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Modüller</span>
+            <div class="space-y-0.5 mt-1">
+              <a href="#" onclick="switchTab('dashboard', this)" class="nav-item-active relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all">
+                <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                <span>Kontrol Paneli</span>
+              </a>
+              <a href="#" onclick="switchTab('providers', this)" class="relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-lucide="building-2" class="h-4 w-4"></i>
+                <span>Hizmet Sağlayıcılar</span>
+              </a>
+              <a href="#" onclick="switchTab('moving', this)" class="relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-lucide="truck" class="h-4 w-4"></i>
+                <span>Taşıma Planları</span>
+              </a>
+              <a href="#" onclick="switchTab('users', this)" class="relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-lucide="users" class="h-4 w-4"></i>
+                <span>Kullanıcı Listesi</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+        <div class="p-3 border-t border-white/5 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400">kutay@locateflow.co</span>
+          <button onclick="toggleTheme()" class="p-1.5 rounded hover:bg-white/5 text-slate-400"><i data-lucide="moon" class="h-4 w-4"></i></button>
+        </div>
+      </aside>
+
+
+      <!-- 2. CREATIVE RIBBON MENU LAYOUT (Collapsible Iconic Strip) -->
+      <aside id="ribbon-sidebar" class="hidden glass-effect w-16 flex-col shrink-0 h-full items-center py-4 justify-between border-r border-white/5 z-20">
+        <!-- Top Item: Logo -->
+        <div class="flex flex-col items-center gap-6">
+          <div class="h-10 w-10 rounded-xl bg-brand-gold/10 text-brand-gold border border-brand-gold/20 flex items-center justify-center cursor-pointer" onclick="toggleLayout('hub')" title="Ana Merkeze Git">
+            <i data-lucide="layout-grid" class="h-5 w-5"></i>
+          </div>
+          <!-- Menu Ribbon Groups -->
+          <div class="flex flex-col gap-2.5">
+            <button onclick="switchTab('dashboard', this); selectRibbon(this)" class="ribbon-item-active h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Kontrol Paneli">
+              <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
+            </button>
+            <button onclick="switchTab('providers', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Hizmet Sağlayıcılar">
+              <i data-lucide="building-2" class="h-5 w-5"></i>
+            </button>
+            <button onclick="switchTab('moving', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Taşıma Planları">
+              <i data-lucide="truck" class="h-5 w-5"></i>
+            </button>
+            <button onclick="switchTab('users', this); selectRibbon(this)" class="h-10 w-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-gold hover:bg-white/5 transition-all" title="Kullanıcılar">
+              <i data-lucide="users" class="h-5 w-5"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Bottom: User & Theme -->
+        <div class="flex flex-col gap-3 items-center">
+          <button onclick="toggleTheme()" class="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+            <i data-lucide="moon" class="h-4 w-4"></i>
+          </button>
+          <div class="h-8 w-8 rounded-full bg-brand-gold/15 text-brand-gold font-bold text-xs flex items-center justify-center border border-brand-gold/20">
+            K
+          </div>
+        </div>
+      </aside>
+
+
+      <!-- MAIN APPLICATION WORKSPACE -->
+      <main class="flex-1 flex flex-col h-full overflow-hidden transition-layout">
+        
+        <!-- 3. DETACHED CREATIVE TOP BAR (Layout-dependent) -->
+        <header id="creative-topbar" class="h-16 flex items-center justify-between border-b border-white/5 dark:border-white/5 light:border-black/5 px-8 select-none glass-effect z-10 shrink-0">
+          <!-- Logo & Brand (visible only in Hub/Ribbon mode) -->
+          <div class="flex items-center gap-4">
+            <div id="topbar-logo-mark" class="flex items-center gap-3">
+              <svg class="h-7 w-7 shrink-0 drop-shadow-[0_0_10px_rgba(242,196,108,0.2)]" viewBox="0 0 100 100" fill="none">
+                <path class="logo-sweep" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#admin-mk-foil)" stroke-width="5" fill="none" />
+                <circle cx="20" cy="65" r="5" fill="#5C9DDC" />
+                <circle cx="80" cy="40" r="8" fill="#F2C46C" />
+              </svg>
+              <span class="text-sm font-display font-bold text-white dark:text-white light:text-slate-900">Locate<span class="foil-text font-bold">flow</span></span>
+            </div>
+            
+            <span class="h-4 w-px bg-white/10 dark:bg-white/10 light:bg-black/10"></span>
+            
+            <!-- Breadcrumbs -->
+            <div class="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">
+              <span id="breadcrumb-active-label" class="text-slate-200 dark:text-slate-200 light:text-slate-800 font-semibold">Kontrol Paneli</span>
+            </div>
+          </div>
+
+          <!-- Global Interactive Center Search (Easy Accessibility) -->
+          <div class="hidden md:flex relative w-96">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
+            <input
+              type="text"
+              placeholder="Her şeyi hızlıca bulun (⌘K / yazmaya başlayın)..."
+              class="w-full rounded-xl border border-white/5 dark:border-white/5 light:border-black/10 bg-slate-950/40 pl-9 pr-14 py-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-gold/50 focus:border-brand-gold/50 transition-all shadow-inner"
+            />
+            <kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-slate-800 dark:bg-slate-800 light:bg-slate-200 border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-slate-400">Ctrl K</kbd>
+          </div>
+
+          <!-- Layout Selector Selector (To showcase options to user in real-time) -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 bg-slate-900/40 dark:bg-slate-900/40 light:bg-slate-200 border border-white/5 dark:border-white/5 light:border-black/5 rounded-xl p-1">
+              <button onclick="toggleLayout('sidebar')" id="btn-layout-sidebar" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all text-slate-400 hover:text-white">Klasik Menü</button>
+              <button onclick="toggleLayout('ribbon')" id="btn-layout-ribbon" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all text-slate-400 hover:text-white">Şerit Menü</button>
+              <button onclick="toggleLayout('hub')" id="btn-layout-hub" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm">Yüzen Panel</button>
+            </div>
+
+            <span class="h-4 w-px bg-white/10 dark:bg-white/10 light:bg-black/10"></span>
+            
+            <!-- Quick Notification -->
+            <button class="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+              <i data-lucide="bell" class="h-4.5 w-4.5"></i>
+              <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-gold"></span>
+            </button>
+          </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE APP CONTENT -->
+        <div class="flex-1 overflow-y-auto p-8 pb-32 relative" id="main-content-scroll">
+          
+          <!-- TAB: DASHBOARD -->
+          <div id="tab-dashboard" class="space-y-8 tab-pane">
+            <div class="flex flex-col gap-1">
+              <h1 class="text-2xl font-bold font-display text-white dark:text-white light:text-slate-900">Yönetim Özet Paneli</h1>
+              <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">Operasyonel faaliyetleri ve servis durumlarını anlık takip edin.</p>
+            </div>
+
+            <!-- Dashboard widgets -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+                <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">Kullanıcı Hacmi</span>
+                <h3 class="text-3xl font-light font-display text-white dark:text-white light:text-slate-900 mt-2">12,842</h3>
+                <span class="text-[10px] text-brand-sage flex items-center gap-1 mt-1"><i data-lucide="arrow-up-right" class="h-3 w-3"></i> +14% büyüme</span>
+              </div>
+              <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+                <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">Aktif Nakliyat</span>
+                <h3 class="text-3xl font-light font-display text-white dark:text-white light:text-slate-900 mt-2">384</h3>
+                <span class="text-[10px] text-brand-blueLight flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="h-3 w-3"></i> 8 aktif araç</span>
+              </div>
+              <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+                <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">Aylık Hacim</span>
+                <h3 class="text-3xl font-light font-display text-white dark:text-white light:text-slate-900 mt-2">₺1.42M</h3>
+                <span class="text-[10px] text-brand-sage flex items-center gap-1 mt-1"><i data-lucide="arrow-up-right" class="h-3 w-3"></i> +22.4%</span>
+              </div>
+              <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+                <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">Sağlayıcı Memnuniyeti</span>
+                <h3 class="text-3xl font-light font-display text-white dark:text-white light:text-slate-900 mt-2">%98.4</h3>
+                <span class="text-[10px] text-brand-sage flex items-center gap-1 mt-1"><i data-lucide="check" class="h-3 w-3"></i> Yüksek Kalite</span>
+              </div>
+            </div>
+
+            <!-- Performance Graph -->
+            <div class="glass-card rounded-2xl p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-white dark:text-white light:text-slate-900">Operasyonel İşlem Hacmi (Haftalık)</h3>
+                <span class="text-[11px] text-brand-gold bg-brand-gold/10 px-2.5 py-0.5 rounded border border-brand-gold/20">Maksimum Performans</span>
+              </div>
+              <div class="h-44 w-full flex items-end">
+                <svg class="w-full h-full" viewBox="0 0 500 150" preserveAspectRatio="none">
+                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30 L 500 30 L 500 150 L 0 150 Z" fill="rgba(242, 196, 108, 0.08)" />
+                  <path d="M 0 130 Q 80 80 160 90 T 320 60 T 480 30" fill="none" stroke="#F2C46C" stroke-width="3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: PROVIDERS -->
+          <div id="tab-providers" class="space-y-8 tab-pane hidden">
+            <div class="flex justify-between items-center">
+              <div class="flex flex-col gap-1">
+                <h1 class="text-2xl font-bold font-display text-white dark:text-white light:text-slate-900">Hizmet Sağlayıcılar</h1>
+                <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">Sistem nakliyat partnerlerini ve performanslarını izleyin.</p>
+              </div>
+              <button class="flex items-center gap-2 rounded-xl bg-brand-gold hover:bg-brand-goldLight text-slate-900 font-semibold px-4 py-2 text-xs transition-all shadow-[0_4px_16px_rgba(242,196,108,0.2)]">
+                <i data-lucide="plus" class="h-4 w-4"></i> Yeni Sağlayıcı
+              </button>
+            </div>
+
+            <!-- Grid of Providers instead of plain tables (More creative layout!) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              
+              <!-- Provider Card 1 -->
+              <div class="glass-card rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-xl bg-brand-gold/10 text-brand-gold border border-brand-gold/20 flex items-center justify-center font-bold text-sm">EE</div>
+                  <div class="min-w-0 flex-1">
+                    <h4 class="font-semibold text-white dark:text-white light:text-slate-800 truncate">Evden Eve Lojistik A.Ş.</h4>
+                    <span class="text-[10px] text-slate-400">Şehirler Arası</span>
+                  </div>
+                </div>
+                <div class="h-px bg-white/5"></div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Hizmet Bölgesi:</span>
+                  <span class="font-medium text-white dark:text-white light:text-slate-800">Marmara, Ege</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Kalite Skoru:</span>
+                  <span class="text-brand-gold font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-gold"></i> 4.8</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1">
+                  <span class="inline-flex items-center gap-1 rounded-full bg-brand-sage/10 px-2 py-0.5 text-[9px] font-semibold text-brand-sage border border-brand-sage/20">Aktif</span>
+                  <div class="flex gap-1">
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Provider Card 2 -->
+              <div class="glass-card rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-xl bg-brand-blue/10 text-brand-blue border border-brand-blue/20 flex items-center justify-center font-bold text-sm">TT</div>
+                  <div class="min-w-0 flex-1">
+                    <h4 class="font-semibold text-white dark:text-white light:text-slate-800 truncate">TransTaş Lojistik Grubu</h4>
+                    <span class="text-[10px] text-slate-400">Depolama & Kargo</span>
+                  </div>
+                </div>
+                <div class="h-px bg-white/5"></div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Hizmet Bölgesi:</span>
+                  <span class="font-medium text-white dark:text-white light:text-slate-800">İç Anadolu</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Kalite Skoru:</span>
+                  <span class="text-brand-gold font-bold flex items-center gap-1"><i data-lucide="star" class="h-3 w-3 fill-brand-gold"></i> 4.5</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1">
+                  <span class="inline-flex items-center gap-1 rounded-full bg-brand-sage/10 px-2 py-0.5 text-[9px] font-semibold text-brand-sage border border-brand-sage/20">Aktif</span>
+                  <div class="flex gap-1">
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Provider Card 3 -->
+              <div class="glass-card rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center font-bold text-sm">NK</div>
+                  <div class="min-w-0 flex-1">
+                    <h4 class="font-semibold text-white dark:text-white light:text-slate-800 truncate">Nova Kargo & Nakliyat</h4>
+                    <span class="text-[10px] text-slate-400">Şehirler Arası</span>
+                  </div>
+                </div>
+                <div class="h-px bg-white/5"></div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Hizmet Bölgesi:</span>
+                  <span class="font-medium text-white dark:text-white light:text-slate-800">Tüm Bölgeler</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">Kalite Skoru:</span>
+                  <span class="text-slate-400 font-medium italic">Skor Yok</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1">
+                  <span class="inline-flex items-center gap-1 rounded-full bg-brand-gold/10 px-2 py-0.5 text-[9px] font-semibold text-brand-gold border border-brand-gold/20">İncelemede</span>
+                  <div class="flex gap-1">
+                    <button class="p-1 rounded bg-white/5 hover:bg-brand-gold/15 hover:text-brand-gold"><i data-lucide="edit-3" class="h-3 w-3"></i></button>
+                    <button class="p-1 rounded bg-white/5 hover:bg-red-500/10 hover:text-red-400"><i data-lucide="slash" class="h-3 w-3"></i></button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- TAB: MOVING PLANS -->
+          <div id="tab-moving" class="space-y-8 tab-pane hidden">
+            <div class="flex flex-col gap-1">
+              <h1 class="text-2xl font-bold font-display text-white dark:text-white light:text-slate-900">Operasyon Takip Panosu</h1>
+              <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">Aktif nakliyat süreçlerini aşamalarına göre kontrol edin.</p>
+            </div>
+            
+            <!-- Pipeline Board -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="glass-card rounded-2xl p-4 space-y-4">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-xs font-semibold">Teklif Aşaması</span>
+                  <span class="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded">12</span>
+                </div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div class="flex justify-between text-[10px]"><span class="text-brand-gold">#MP-9482</span><span>₺18.5k</span></div>
+                  <p class="text-xs font-semibold text-white">Kadıköy → Karşıyaka</p>
+                </div>
+              </div>
+              <div class="glass-card rounded-2xl p-4 space-y-4">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-xs font-semibold">Atama Yapıldı</span>
+                  <span class="text-[9px] font-mono bg-brand-blue/15 text-brand-blue px-2 py-0.5 rounded">8</span>
+                </div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div class="flex justify-between text-[10px]"><span class="text-brand-blue">#MP-9460</span><span>₺24k</span></div>
+                  <p class="text-xs font-semibold text-white">Çankaya → Muratpaşa</p>
+                </div>
+              </div>
+              <div class="glass-card rounded-2xl p-4 space-y-4">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-xs font-semibold">Yolda / Yükleme</span>
+                  <span class="text-[9px] font-mono bg-brand-gold/15 text-brand-gold px-2 py-0.5 rounded">5</span>
+                </div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-brand-gold/20 space-y-2">
+                  <div class="flex justify-between text-[10px]"><span class="text-brand-gold">#MP-9411</span><span>₺15.8k</span></div>
+                  <p class="text-xs font-semibold text-white">Bodrum → Kadıköy</p>
+                </div>
+              </div>
+              <div class="glass-card rounded-2xl p-4 space-y-4 opacity-70">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-xs font-semibold">Tamamlandı</span>
+                  <span class="text-[9px] font-mono bg-brand-sage/15 text-brand-sage px-2 py-0.5 rounded">240</span>
+                </div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div class="flex justify-between text-[10px]"><span class="text-slate-400">#MP-9390</span><span>₺12.5k</span></div>
+                  <p class="text-xs font-semibold text-white">Konak → Beşiktaş</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: USERS -->
+          <div id="tab-users" class="space-y-8 tab-pane hidden">
+            <div class="flex flex-col gap-1">
+              <h1 class="text-2xl font-bold font-display text-white dark:text-white light:text-slate-900">Kullanıcı Listesi</h1>
+              <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">Sistem yöneticileri ve müşterilerin yetki kontrol panelidir.</p>
+            </div>
+            
+            <!-- User Grid Mock -->
+            <div class="glass-card rounded-2xl p-6">
+              <p class="text-xs text-slate-400">Kullanıcı veritabanı görüntülendi.</p>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- 4. FLOATING DOCK (Visible ONLY in Hub layout - The ultra creative way) -->
+      <div id="creative-dock" class="floating-dock glass-effect transition-all duration-300">
+        <!-- Dock Item: Dashboard -->
+        <button onclick="switchTab('dashboard', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-brand-gold/10 text-brand-gold flex items-center justify-center border border-brand-gold/25 shadow-sm" title="Özet Paneli">
+          <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
+        </button>
+        <!-- Dock Item: Providers -->
+        <button onclick="switchTab('providers', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all" title="Sağlayıcılar">
+          <i data-lucide="building-2" class="h-5 w-5"></i>
+        </button>
+        <!-- Dock Item: Moving Plans -->
+        <button onclick="switchTab('moving', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all" title="Taşıma Planları">
+          <i data-lucide="truck" class="h-5 w-5"></i>
+        </button>
+        <!-- Dock Item: Users -->
+        <button onclick="switchTab('users', this); selectDock(this)" class="dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all" title="Kullanıcı Yönetimi">
+          <i data-lucide="users" class="h-5 w-5"></i>
+        </button>
+        
+        <span class="h-8 w-px bg-white/10 dark:bg-white/10 light:bg-black/10 mx-1"></span>
+
+        <!-- Dock Item: All Modules (Mega Grid Overlay - Highly creative & accessible) -->
+        <button onclick="toggleMegaGrid(true)" class="dock-icon h-12 w-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center border border-brand-blue/20 hover:bg-brand-blue/20 transition-all" title="Tüm Modüller">
+          <i data-lucide="layout-grid" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <!-- 5. MEGA MODULE GRID MATRIX OVERLAY (Full-screen creative glass panel) -->
+      <div id="mega-grid-overlay" class="fixed inset-0 bg-darkBg/90 backdrop-blur-3xl z-50 flex items-center justify-center p-8 hidden opacity-0 transition-opacity duration-300">
+        <div class="w-full max-w-5xl space-y-8 relative">
+          <!-- Close button -->
+          <button onclick="toggleMegaGrid(false)" class="absolute -top-4 -right-4 p-3 rounded-full bg-slate-900/50 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5 transition-all">
+            <i data-lucide="x" class="h-5 w-5"></i>
+          </button>
+
+          <!-- Top section -->
+          <div class="flex flex-col items-center text-center space-y-2">
+            <span class="text-[10px] font-mono tracking-widest text-brand-gold uppercase font-bold">Locateflow Hub</span>
+            <h2 class="text-3xl font-display font-bold text-white leading-none">Tüm Sistem Modülleri</h2>
+            <p class="text-xs text-slate-400 max-w-md">Klavye kısayolları veya arama çubuğunu kullanarak gitmek istediğiniz modüle anında erişin.</p>
+            
+            <div class="relative w-80 mt-4">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+              <input type="text" placeholder="Modül adı ara..." class="w-full rounded-xl border border-white/10 bg-slate-950/60 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-gold" />
+            </div>
+          </div>
+
+          <!-- Modul Matrix Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            <!-- Category: Core -->
+            <div class="glass-card rounded-2xl p-4 space-y-3 border border-white/5">
+              <h4 class="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Ana Sistem</h4>
+              <div class="space-y-2">
+                <a href="#" onclick="clickFromMega('dashboard')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="layout-dashboard" class="h-4 w-4"></i> Özet Paneli</span>
+                  <span class="text-[9px] font-mono text-slate-500">1</span>
+                </a>
+                <a href="#" onclick="clickFromMega('providers')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="building-2" class="h-4 w-4"></i> Sağlayıcılar</span>
+                  <span class="text-[9px] font-mono text-slate-500">2</span>
+                </a>
+                <a href="#" onclick="clickFromMega('moving')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-gold/10 hover:text-brand-gold transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="truck" class="h-4 w-4"></i> Taşıma Planları</span>
+                  <span class="text-[9px] font-mono text-slate-500">3</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Category: Content -->
+            <div class="glass-card rounded-2xl p-4 space-y-3 border border-white/5">
+              <h4 class="text-[10px] font-bold text-brand-blueLight uppercase tracking-wider">İçerik & Pazarlama</h4>
+              <div class="space-y-2">
+                <a href="#" onclick="clickFromMega('users')" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-blue/15 hover:text-brand-blueLight transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="users" class="h-4 w-4"></i> Kullanıcılar</span>
+                  <span class="text-[9px] font-mono text-slate-500">4</span>
+                </a>
+                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-blue/15 hover:text-brand-blueLight transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="link-2" class="h-4 w-4"></i> Affiliate</span>
+                  <span class="text-[9px] font-mono text-slate-500">5</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Category: Communication -->
+            <div class="glass-card rounded-2xl p-4 space-y-3 border border-white/5">
+              <h4 class="text-[10px] font-bold text-brand-sage uppercase tracking-wider">İletişim</h4>
+              <div class="space-y-2">
+                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-sage/15 hover:text-brand-sage transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="life-buoy" class="h-4 w-4"></i> Destek</span>
+                  <span class="text-[9px] font-mono text-slate-500">6</span>
+                </a>
+                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-brand-sage/15 hover:text-brand-sage transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="bell" class="h-4 w-4"></i> Bildirimler</span>
+                  <span class="text-[9px] font-mono text-slate-500">7</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Category: System -->
+            <div class="glass-card rounded-2xl p-4 space-y-3 border border-white/5">
+              <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Ayarları</h4>
+              <div class="space-y-2">
+                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 hover:text-white transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="plug" class="h-4 w-4"></i> Connectors</span>
+                  <span class="text-[9px] font-mono text-slate-500">8</span>
+                </a>
+                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 hover:text-white transition-all">
+                  <span class="text-xs font-semibold flex items-center gap-2.5"><i data-lucide="lock" class="h-4 w-4"></i> Güvenlik</span>
+                  <span class="text-[9px] font-mono text-slate-500">9</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let activeLayout = 'hub'; // 'sidebar', 'ribbon', 'hub'
+
+    // Switch between modules/tabs
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-pane').forEach(tab => {
+        tab.classList.add('hidden');
+      });
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      const breadcrumb = document.getElementById('breadcrumb-active-label');
+      
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+      }
+
+      // Update breadcrumb
+      if (el) {
+        let label = el.querySelector('span') ? el.querySelector('span').innerText : el.innerText;
+        breadcrumb.innerText = label;
+      }
+      
+      document.getElementById('main-content-scroll').scrollTop = 0;
+    }
+
+    // Toggle different visual layouts
+    function toggleLayout(layout) {
+      activeLayout = layout;
+      const sidebar = document.getElementById('classic-sidebar');
+      const ribbon = document.getElementById('ribbon-sidebar');
+      const dock = document.getElementById('creative-dock');
+      const topbar = document.getElementById('creative-topbar');
+      const wrapper = document.getElementById('layout-wrapper');
+      
+      // Reset layout button styles
+      document.querySelectorAll('[id^="btn-layout-"]').forEach(btn => {
+        btn.className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+      });
+
+      // Show/Hide sidebar panels
+      if (layout === 'sidebar') {
+        sidebar.style.display = 'flex';
+        ribbon.style.display = 'none';
+        dock.style.display = 'none';
+        document.getElementById('btn-layout-sidebar').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+      } else if (layout === 'ribbon') {
+        sidebar.style.display = 'none';
+        ribbon.style.display = 'flex';
+        dock.style.display = 'none';
+        document.getElementById('btn-layout-ribbon').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+      } else if (layout === 'hub') {
+        sidebar.style.display = 'none';
+        ribbon.style.display = 'none';
+        dock.style.display = 'flex';
+        document.getElementById('btn-layout-hub').className = "px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all bg-brand-gold/15 text-brand-gold border border-brand-gold/25 shadow-sm";
+      }
+    }
+
+    // Mega Grid Overlay
+    function toggleMegaGrid(show) {
+      const overlay = document.getElementById('mega-grid-overlay');
+      if (show) {
+        overlay.classList.remove('hidden');
+        setTimeout(() => { overlay.classList.add('opacity-100'); }, 10);
+      } else {
+        overlay.classList.remove('opacity-100');
+        setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+      }
+    }
+
+    function clickFromMega(tabId) {
+      switchTab(tabId);
+      toggleMegaGrid(false);
+      
+      // Update dock active class if in dock mode
+      if (activeLayout === 'hub') {
+        document.querySelectorAll('#creative-dock button').forEach(btn => {
+          btn.className = "dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all";
+        });
+        // Highlight active dock item (we can map tabId to index or look for elements)
+      }
+    }
+
+    // Ribbon highlighting
+    function selectRibbon(el) {
+      document.querySelectorAll('#ribbon-sidebar button').forEach(btn => {
+        btn.classList.remove('ribbon-item-active');
+      });
+      el.classList.add('ribbon-item-active');
+    }
+
+    // Dock highlighting
+    function selectDock(el) {
+      document.querySelectorAll('#creative-dock button').forEach(btn => {
+        btn.className = "dock-icon h-12 w-12 rounded-2xl bg-white/5 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all";
+      });
+      el.className = "dock-icon h-12 w-12 rounded-2xl bg-brand-gold/10 text-brand-gold flex items-center justify-center border border-brand-gold/25 shadow-sm";
+    }
+
+    // Dark/Light Theme Switch
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const body = document.body;
+      
+      if (htmlEl.classList.contains('dark')) {
+        htmlEl.classList.remove('dark');
+        htmlEl.classList.add('light');
+        body.classList.remove('bg-darkBg', 'text-slate-200');
+        body.classList.add('bg-lightBg', 'text-slate-800');
+      } else {
+        htmlEl.classList.remove('light');
+        htmlEl.classList.add('dark');
+        body.classList.remove('bg-lightBg', 'text-slate-800');
+        body.classList.add('bg-darkBg', 'text-slate-200');
+      }
+    }
+
+    // Initialize Layout & Icons
+    toggleLayout('hub');
+    lucide.createIcons();
+  </script>
+</body>
+</html>

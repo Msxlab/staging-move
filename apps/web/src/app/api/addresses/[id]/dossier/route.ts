@@ -10,6 +10,7 @@ import { lookupRadonZone, type RadonLookupResult, type RadonZone } from "@/lib/e
 import { lookupWaterSystem, type WaterSystemLookupResult } from "@/lib/epa-water";
 import { lookupAirQuality, type AirQualityLookupResult } from "@/lib/airnow";
 import { assertScopedRecordAction, resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getUserPlan } from "@/lib/plan-limits";
 import { planFeatures } from "@locateflow/shared";
 
@@ -162,6 +163,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // (which require them) fail soft to a hidden card and no external lookups
     // or plan queries are spent on a gated request. 401/404 above still win.
     if (!planFeatures((await getUserPlan(userId)).plan).homeDossier) {
+      // Fire-and-forget telemetry (never throws, never adds latency): a gated
+      // dossier request spent no external lookups, so only the composite
+      // 'dossier' counter records it.
+      recordIntegrationOutcome("dossier", "gated");
       return NextResponse.json({
         configured: true,
         entitled: false,
@@ -182,6 +187,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // address is an incomplete address — the uniform short-circuit keeps the
     // "no coordinates = zero external calls" guarantee simple and true.)
     if (!hasLocation) {
+      // Fire-and-forget telemetry (never throws, never adds latency): every
+      // tracked section reports no_location; the dossier itself answered ok.
+      recordIntegrationOutcomes({
+        nws: "no_location",
+        nri: "no_location",
+        radon: "no_location",
+        water: "no_location",
+        air: "no_location",
+        dossier: "ok",
+      });
       return NextResponse.json({
         configured: true,
         address: addressPayload,
@@ -233,7 +248,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
       ]);
 
-    return NextResponse.json({
+    const dossier = {
       configured: true,
       address: addressPayload,
       flood: floodSection(floodSettled),
@@ -243,7 +258,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       radon: radonSection(radonSettled),
       water: waterSection(waterSettled),
       air: airSection(airSettled),
+    };
+
+    // Fire-and-forget telemetry (synchronous in-process buffer — never throws,
+    // never adds latency). Per-section statuses for the sources that have an
+    // IntegrationDailyStat bucket (weather→nws, hazards→nri, radon, water,
+    // air; flood/school have no bucket), plus the composite 'dossier' ok.
+    recordIntegrationOutcomes({
+      nws: dossier.weather.status,
+      nri: dossier.hazards.status,
+      radon: dossier.radon.status,
+      water: dossier.water.status,
+      air: dossier.air.status,
+      dossier: "ok",
     });
+
+    return NextResponse.json(dossier);
   } catch (error) {
     const authResponse = apiGateErrorResponse(error);
     if (authResponse) return authResponse;

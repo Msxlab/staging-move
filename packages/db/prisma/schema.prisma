@@ -53,7 +53,7 @@ model User {
   budgets                 Budget[]
   movingPlans             MovingPlan[]
   moveTasks               MoveTask[]
-  assignedMoveTasks       MoveTask[]              @relation("MoveTaskAssignee")
+  assignedMoveTasks       MoveTask[]               @relation("MoveTaskAssignee")
   customProviders         UserCustomProvider[]
   loginSessions           UserLoginSession[]
   mobileOAuthCodes        MobileOAuthCode[]
@@ -73,7 +73,7 @@ model User {
   affiliateClicks         AffiliateClick[]
   recommendationFeedback  RecommendationFeedback[]
   savedProviders          SavedProvider[]
-  ownedWorkspaces         Workspace[]             @relation("WorkspaceOwner")
+  ownedWorkspaces         Workspace[]              @relation("WorkspaceOwner")
   workspaceMemberships    WorkspaceMember[]
 
   // Soft-delete. Populated by admin UI "delete" action; hard-delete runs
@@ -514,7 +514,7 @@ model Service {
   phone   String? @db.Text
   email   String? @db.Text
 
-  monthlyCost     Float?
+  monthlyCost       Float?
   // ACTUAL per-cycle amount the user paid (money layer). NULL = not yet logged
   // or confirmed → the projection (monthlyCost) is used as the estimate and the
   // line is excluded from realized-actual / savings totals. Same cycle semantics
@@ -527,10 +527,10 @@ model Service {
   // month's logged amount, but the budget engine resolves actuals per month from
   // ServiceCostLog, not from this column.
   actualMonthlyCost Float?
-  billingDay      Int?
-  billingCycle    String?   @db.VarChar(20)
-  autoRenewal     Boolean   @default(false)
-  contractEndDate DateTime?
+  billingDay        Int?
+  billingCycle      String?   @db.VarChar(20)
+  autoRenewal       Boolean   @default(false)
+  contractEndDate   DateTime?
 
   notes String? @db.Text
 
@@ -747,9 +747,9 @@ model ServiceProvider {
   // Affiliate revenue (Layer 1). Inert until affiliateActive=true AND a valid
   // https affiliateUrl is set. affiliateNetwork is a free-form tag (e.g.
   // "impact", "cj", "direct") for reporting/payout reconciliation.
-  affiliateUrl     String?  @db.VarChar(500)
-  affiliateNetwork String?  @db.VarChar(40)
-  affiliateActive  Boolean  @default(false)
+  affiliateUrl     String? @db.VarChar(500)
+  affiliateNetwork String? @db.VarChar(40)
+  affiliateActive  Boolean @default(false)
 
   scope    String @default("FEDERAL") @db.VarChar(20)
   states   String @default("[]") @db.VarChar(2000)
@@ -773,17 +773,17 @@ model ServiceProvider {
   userCount     Int     @default(0)
   lastUpdatedBy String? @db.VarChar(30)
 
-  services              Service[]
-  coverages             ServiceProviderCoverage[]
-  linkedCustomProviders UserCustomProvider[]      @relation("LinkedCustomProviders")
-  moveTasks             MoveTask[]                @relation("MoveTaskProvider")
-  destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
-  governanceIssues      ProviderGovernanceIssue[]
-  logoCandidates        ProviderLogoCandidate[]
-  affiliateClicks       AffiliateClick[]
-  affiliateConversions  AffiliateConversion[]
+  services               Service[]
+  coverages              ServiceProviderCoverage[]
+  linkedCustomProviders  UserCustomProvider[]      @relation("LinkedCustomProviders")
+  moveTasks              MoveTask[]                @relation("MoveTaskProvider")
+  destinationMoveTasks   MoveTask[]                @relation("MoveTaskDestinationProvider")
+  governanceIssues       ProviderGovernanceIssue[]
+  logoCandidates         ProviderLogoCandidate[]
+  affiliateClicks        AffiliateClick[]
+  affiliateConversions   AffiliateConversion[]
   recommendationFeedback RecommendationFeedback[]
-  savedBy               SavedProvider[]
+  savedBy                SavedProvider[]
 
   deletedAt DateTime?
 
@@ -2036,7 +2036,7 @@ model ConnectorDispatch {
   // CanonicalAddressChange snapshot, encrypted with FIELD_ENCRYPTION_KEY. Keeps
   // the outbox row self-contained so the worker can run without depending on
   // the (not-yet-built) AddressChangeEvent model.
-  payloadEncrypted String? @db.Text
+  payloadEncrypted      String? @db.Text
 
   nextRetryAt  DateTime?
   dispatchedAt DateTime?
@@ -2233,4 +2233,88 @@ model WorkspaceAuthChallenge {
 
   @@index([userId, expiresAt])
   @@index([workspaceId])
+}
+
+// ==================== INSIGHTS / MOVERS FOUNDATION ====================
+// Three self-contained tables for the insights + movers feature round.
+// Deliberately FK-free (loose string refs only) so they stay decoupled from
+// the user/provider domain and stay inert until their feature surfaces read
+// them. See the shared data contracts for the insights round.
+
+// One row per (UTC day, integration source) of aggregated outcome counters for
+// the external-data integrations (FCC broadband, electric rates, FEMA NRI,
+// radon, water, air quality, NWS, briefing/dossier generation, ...).
+// Written by fire-and-forget telemetry — counter bumps are upserted on the
+// [day, source] key and must NEVER add latency or failures to user paths.
+// statusCounts is a flat JSON counter map, e.g. {"ok": 41, "error": 2,
+// "not_configured": 0, "cached": 17, "gated": 3, "generated": 5}; keys are
+// open-ended so a new outcome never needs a migration.
+model IntegrationDailyStat {
+  id           String   @id @default(cuid()) @db.VarChar(30)
+  day          DateTime @db.Date
+  source       String   @db.VarChar(30) // fcc | electric | nri | radon | water | air | nws | briefing | dossier
+  statusCounts Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // The telemetry upsert key — one counters row per source per UTC day.
+  @@unique([day, source])
+  @@index([source, day])
+}
+
+// Interstate household-goods movers from the public FMCSA census (USDOT
+// registry). Read-only catalog refreshed by an importer job: rows are matched
+// on usdotNumber and carriers that drop out of the source are flipped
+// active=false rather than deleted, so links never 404. dataAsOf is the
+// snapshot date of the upstream file the row was last refreshed from.
+model MovingCompany {
+  id               String   @id @default(cuid()) @db.VarChar(30)
+  usdotNumber      Int      @unique
+  legalName        String   @db.VarChar(255)
+  dbaName          String?  @db.VarChar(255)
+  state            String   @db.VarChar(2)
+  city             String?  @db.VarChar(100)
+  phone            String?  @db.VarChar(30)
+  hhgAuthorization Boolean // authorized for household-goods carriage
+  fleetSize        Int?
+  complaintCount2y Int      @default(0) // FMCSA complaints, trailing 2 years
+  safetyRating     String?  @db.VarChar(20) // FMCSA rating: Satisfactory | Conditional | Unsatisfactory
+  dataAsOf         DateTime
+  active           Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([state])
+  @@index([state, city])
+}
+
+// Admin-managed sponsored slot in a directory listing (movers or the provider
+// catalog). targetId is a loose ref to MovingCompany.id or ServiceProvider.id
+// depending on `kind` — deliberately not an FK so a placement can never block
+// catalog maintenance. A placement renders only while active AND now is within
+// [startsAt, endsAt]; impressions/clicks are denormalized fire-and-forget
+// counters (never a user-path failure source) and every rendered placement is
+// labeled with `label` for FTC-compliant ad disclosure.
+model SponsoredPlacement {
+  id               String   @id @default(cuid()) @db.VarChar(30)
+  kind             String   @db.VarChar(20) // mover | provider
+  targetId         String   @db.VarChar(30) // MovingCompany.id or ServiceProvider.id per kind
+  label            String   @default("Sponsored") @db.VarChar(60)
+  categoryScope    String?  @db.VarChar(50) // null = all categories
+  stateScope       String?  @db.VarChar(2) //  null = all states
+  startsAt         DateTime
+  endsAt           DateTime
+  active           Boolean
+  impressions      Int      @default(0)
+  clicks           Int      @default(0)
+  createdByAdminId String?  @db.VarChar(30) // loose AdminUser ref; audit-style, no FK
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind, targetId])
+  @@index([active, startsAt, endsAt])
+  @@index([stateScope])
 }

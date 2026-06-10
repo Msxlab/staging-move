@@ -221,6 +221,12 @@ const IMPORT_MODEL_OPS = {
       prismaUnsafe.blogPost.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.blogPost.create({ data }),
   },
+  sponsoredPlacements: {
+    count: () => prisma.sponsoredPlacement.count(),
+    findUniqueById: (id: string) =>
+      prisma.sponsoredPlacement.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.sponsoredPlacement.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

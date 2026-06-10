@@ -47,6 +47,7 @@
     "acquisitionCampaigns": "Acquisition Campaigns",
     "billing": "Billing",
     "providers": "Providers",
+    "sponsored": "Sponsored",
     "providerGovernance": "Provider Governance",
     "stateRules": "State Rules",
     "movingPlans": "Moving Plans",
@@ -56,6 +57,7 @@
     "blog": "Blog",
     "waitlist": "Waitlist",
     "analyticsPage": "Analytics",
+    "insights": "Insights",
     "reports": "Reports",
     "featureFlags": "Feature Flags",
     "connectors": "Connectors",
@@ -179,6 +181,180 @@
     "readiness_warn": "Warn",
     "readiness_missing": "Missing",
     "readiness_unknown": "Unknown"
+  },
+  "insights": {
+    "eyebrow": "Intelligence",
+    "title": "Insights",
+    "subtitle": "Data source health, AI generation metrics, recommendation quality, and area preferences.",
+    "kpi": {
+      "healthy": "Healthy sources",
+      "briefings": "Briefings ({days}d)",
+      "briefingsGated": "{count, plural, one {# gated} other {# gated}}",
+      "feedback": "Feedback ({days}d)",
+      "cohorts": "Area cohorts"
+    },
+    "health": {
+      "title": "Data source health",
+      "caption": "Integration outcomes per source — last {days} days.",
+      "ok": "OK",
+      "error": "Errors",
+      "notConfigured": "Not configured",
+      "other": "Other",
+      "status": {
+        "healthy": "Healthy",
+        "degraded": "Degraded",
+        "off": "Off"
+      },
+      "sources": {
+        "fcc": "FCC broadband",
+        "electric": "Electric rates",
+        "nri": "FEMA NRI",
+        "radon": "Radon",
+        "water": "Water quality",
+        "air": "Air quality",
+        "nws": "Weather (NWS)",
+        "briefing": "AI briefing",
+        "dossier": "AI dossier"
+      },
+      "empty": "No integration telemetry in the window yet."
+    },
+    "ai": {
+      "title": "AI metrics",
+      "caption": "Briefing outcomes per day — last {days} days.",
+      "generated": "Generated",
+      "cached": "Cached",
+      "gated": "Gated",
+      "empty": "No briefing activity in the window yet."
+    },
+    "reco": {
+      "title": "Recommendation quality",
+      "caption": "User feedback on provider recommendations — last {days} days.",
+      "category": "Category",
+      "dismissed": "Dismissed",
+      "notRelevant": "Not relevant",
+      "snoozed": "Snoozed",
+      "total": "Total",
+      "uncategorized": "Uncategorized",
+      "empty": "No recommendation feedback in the window yet."
+    },
+    "area": {
+      "title": "Area preferences",
+      "caption": "Top providers per state and category from active services. Cohorts under {floor} distinct users are hidden (k-anonymity).",
+      "state": "State",
+      "category": "Category",
+      "provider": "Provider",
+      "users": "Users",
+      "services": "Services",
+      "allStates": "All states",
+      "filterLabel": "Filter by state",
+      "rows": "{count, plural, one {# cohort} other {# cohorts}}",
+      "empty": "No state-and-category cohort has reached {floor} distinct users yet."
+    }
+  },
+  "sponsored": {
+    "eyebrow": "Content",
+    "title": "Sponsored Placements",
+    "subtitle": "Labeled ad slots on directory surfaces — movers list and provider catalog.",
+    "policyBanner": "Sponsored placements render in a separate labeled slot, never inside organic rankings. SPONSORED_ENABLED runtime flag must be on; FTC clear-and-conspicuous labeling is mandatory.",
+    "newPlacement": "New placement",
+    "filters": {
+      "statusLabel": "Filter by status",
+      "allStatuses": "All statuses",
+      "kindLabel": "Filter by surface",
+      "allKinds": "All surfaces"
+    },
+    "kind": {
+      "mover": "Mover",
+      "provider": "Provider"
+    },
+    "status": {
+      "live": "Live",
+      "scheduled": "Scheduled",
+      "expired": "Expired",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "title": "Placements",
+      "caption": "Impressions and clicks are fire-and-forget counters bumped by the public surface — read-only here.",
+      "loading": "Loading placements…",
+      "target": "Target",
+      "kind": "Surface",
+      "label": "Label",
+      "scope": "Scope",
+      "window": "Window",
+      "status": "Status",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "actions": "Actions",
+      "allStates": "All states",
+      "orphanTarget": "Target missing",
+      "edit": "Edit placement",
+      "delete": "Delete placement",
+      "activateHint": "Click to activate",
+      "deactivateHint": "Click to deactivate",
+      "pageOf": "Page {page} of {totalPages}",
+      "previousPage": "Previous page",
+      "nextPage": "Next page"
+    },
+    "empty": {
+      "title": "No sponsored placements",
+      "description": "Create a placement to reserve the labeled slot on a directory surface. Nothing renders publicly until SPONSORED_ENABLED is on."
+    },
+    "drawer": {
+      "createTitle": "New placement",
+      "editTitle": "Edit placement",
+      "subtitle": "One labeled slot per surface. The disclosure label always renders with the card.",
+      "close": "Close",
+      "kind": "Surface",
+      "target": "Target",
+      "clearTarget": "Clear target",
+      "moverSearchPlaceholder": "Search movers by USDOT number or name…",
+      "providerSearchPlaceholder": "Search providers by name…",
+      "searching": "Searching…",
+      "noResults": "No matches. Targets must be active and eligible.",
+      "notEligible": "This target does not meet the eligibility gate and cannot be sponsored.",
+      "notEligibleShort": "not eligible",
+      "targetRequired": "Pick a target before saving.",
+      "windowRequired": "Set both a start and an end date.",
+      "label": "Disclosure label",
+      "labelHint": "Shown on the public card. FTC requires clear and conspicuous labeling — it cannot be blank.",
+      "stateScope": "State scope",
+      "stateScopePlaceholder": "e.g. TX — blank = all states",
+      "categoryScope": "Category scope",
+      "categoryScopePlaceholder": "e.g. internet — blank = all",
+      "startsAt": "Starts",
+      "endsAt": "Ends",
+      "active": "Active",
+      "activeHint": "Active placements render only inside their date window and only while the SPONSORED_ENABLED flag is on.",
+      "cancel": "Cancel",
+      "create": "Create placement",
+      "save": "Save changes"
+    },
+    "stepUp": {
+      "createTitle": "Create placement",
+      "createDescription": "Creating a placement publishes paid ad inventory to a public directory surface once the flag is on. Enter your admin password and MFA code or backup code to confirm.",
+      "createConfirm": "Create placement",
+      "saveTitle": "Save placement changes",
+      "saveDescription": "Saving rewrites live ad inventory, including its disclosure label and scope. Enter your admin password and MFA code or backup code to confirm.",
+      "saveConfirm": "Save changes",
+      "activateTitle": "Activate placement",
+      "activateDescription": "Activating the placement for \"{name}\" publishes it to its labeled public slot within its date window. Enter your admin password and MFA code or backup code to confirm.",
+      "activateConfirm": "Activate",
+      "deactivateTitle": "Deactivate placement",
+      "deactivateDescription": "Deactivating the placement for \"{name}\" removes it from its public slot. Enter your admin password and MFA code or backup code to confirm.",
+      "deactivateConfirm": "Deactivate",
+      "deleteTitle": "Delete placement",
+      "deleteDescription": "The placement for \"{name}\" will be permanently deleted. This cannot be undone. Enter your admin password and MFA code or backup code to confirm.",
+      "deleteConfirm": "Delete placement"
+    },
+    "toast": {
+      "created": "Placement created",
+      "updated": "Placement updated",
+      "deleted": "Placement deleted",
+      "loadFailed": "Failed to load placements.",
+      "actionFailed": "Action failed.",
+      "hasTraffic": "Cannot delete a placement with recorded impressions or clicks — deactivate it instead."
+    }
   },
   "theme": {
     "toggle": "Theme",

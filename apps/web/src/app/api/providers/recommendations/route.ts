@@ -12,6 +12,7 @@ import {
 } from "@/lib/recommendation-engine";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
 import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
@@ -372,6 +373,15 @@ export async function GET(request: NextRequest) {
       }
     );
     const result = buildRecommendationClusters(scored, completedCategories, dismissedProviderIds);
+
+    // Fire-and-forget integration telemetry (synchronous in-process buffer —
+    // never throws, never adds latency). Mirrors the fcc/electric statuses
+    // reported in `meta` below so per-day IntegrationDailyStat counters track
+    // how often each lookup is ok / not_configured / skipped / erroring.
+    recordIntegrationOutcomes({
+      fcc: fccLookup?.status || (hasInternetCandidates ? "not_configured" : "skipped"),
+      electric: electricLookup?.status || (hasElectricCandidates ? "not_configured" : "skipped"),
+    });
 
     return NextResponse.json({
       ...result,

@@ -63,6 +63,8 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "ServiceCostLog", // per-service monthly cost history; derived budget telemetry rebuilt as services accrue — PITR covers point-in-time recovery
   "SavedProvider", // convenience provider shortlist; user-rebuildable, low disaster-recovery value (same rationale as NotificationPreference)
   "RecommendationFeedback", // per-user recommendation dismiss/snooze signal; regenerates through use, low recovery value (same rationale as UserEvent)
+  "IntegrationDailyStat", // rebuildable telemetry counters (trend-grade observability); PITR covers recovery (same rationale as RateLimitLog)
+  "MovingCompany", // re-importable from the public FMCSA census via scripts/etl-fmcsa-movers.mjs — source of truth is external
 ]);
 
 describe("backup table catalog", () => {
