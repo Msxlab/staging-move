@@ -41,7 +41,9 @@ export default async function MovingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground">
+            {t.rich("titleRich", { em: (chunks) => <em>{chunks}</em> })}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Link href="/moving/new">

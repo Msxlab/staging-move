@@ -435,7 +435,7 @@ export default function BudgetPage() {
             </button>
           </Link>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Budget</h1>
+            <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Budget</em></h1>
             <p className="text-muted-foreground mt-1">Plan monthly service commitments and one-time moving costs.</p>
           </div>
         </div>

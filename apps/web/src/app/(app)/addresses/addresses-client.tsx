@@ -1,14 +1,15 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, MapPin, Home, Briefcase, Palmtree, Star, Edit, Trash2, Zap, Eye, Loader2 } from "lucide-react";
+import { Plus, MapPin, Home, Briefcase, Palmtree, Star, Edit, Trash2, Zap, Eye, Loader2, ArrowRight, Bell } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { monthlyAmountForCycle } from "@/lib/budget-planning";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const typeIcons: Record<string, React.ElementType> = {
   HOME: Home,
@@ -30,6 +31,50 @@ export interface AddressItem {
   services?: { id: string; monthlyCost?: number; billingCycle?: string | null }[];
 }
 
+/** Lightweight slice of GET /api/moving consumed by the transit hero. The
+ *  route returns full plans; only these fields are read here. */
+interface ActiveMovePlan {
+  id: string;
+  status: string;
+  moveDate: string;
+  fromAddressId?: string | null;
+  toAddressId?: string | null;
+  fromAddress?: { id?: string; city?: string; state?: string } | null;
+  toAddress?: { id?: string; city?: string; state?: string } | null;
+}
+
+/** Per-address health ring (mirrors the mobile hub's linked-services ring):
+ *  hand-rolled SVG — arc = this address's share of all active tracked
+ *  accounts, count centered. Warn tint when accounts linger at a move origin. */
+function AddressHealthRing({ count, total, warn, label }: { count: number; total: number; warn?: boolean; label: string }) {
+  const size = 44;
+  const stroke = 4;
+  const r = (size - stroke) / 2;
+  const cx = size / 2;
+  const c = 2 * Math.PI * r;
+  const share = total > 0 ? count / total : 0;
+  return (
+    <div className="relative h-11 w-11 shrink-0" role="img" aria-label={label} title={label}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full -rotate-90">
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="hsl(var(--border))" strokeWidth={stroke} />
+        {count > 0 && (
+          <circle
+            cx={cx}
+            cy={cx}
+            r={r}
+            fill="none"
+            stroke={warn ? "hsl(var(--destructive))" : "var(--sage)"}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${Math.max(c * share, stroke)} ${c}`}
+          />
+        )}
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">{count}</span>
+    </div>
+  );
+}
+
 export function AddressesClient({ initial }: { initial: AddressItem[] }) {
   const router = useRouter();
   const t = useTranslations("addresses");
@@ -41,6 +86,31 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
   const [addresses, setAddresses] = useState<AddressItem[]>(initial);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Active moving plan (PLANNING / IN_PROGRESS) powering the move-in-transit
+  // hero. Best-effort: /api/moving is the same light list call the dashboard
+  // and the mobile hub already make — any failure simply hides the hero and
+  // never blocks the addresses grid.
+  const [activeMove, setActiveMove] = useState<ActiveMovePlan | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/moving")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const plans: ActiveMovePlan[] = data?.plans || [];
+        setActiveMove(
+          plans.find((p) => {
+            const s = normalizeMovingPlanStatus(p.status);
+            return s === "PLANNING" || s === "IN_PROGRESS";
+          }) || null,
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -87,11 +157,33 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
   );
   const totalServices = addresses.reduce((sum, a) => sum + (a.services?.length || 0), 0);
 
+  // ── Move-in-transit hero (mirrors mobile P1-E's derivation) ──
+  // Progress = share of the move's tracked services already at the NEW
+  // address, computed from the active plan (/api/moving) plus the per-address
+  // service lists this page already loads — same old/new split as the move
+  // screen's "Set up at new / Still at old" panels.
+  const transitFrom = activeMove
+    ? addresses.find((a) => a.id === (activeMove.fromAddressId || activeMove.fromAddress?.id))
+    : undefined;
+  const transitTo = activeMove
+    ? addresses.find((a) => a.id === (activeMove.toAddressId || activeMove.toAddress?.id))
+    : undefined;
+  const transitStillAtOld = transitFrom?.services?.length || 0;
+  const transitAtNew = transitTo?.services?.length || 0;
+  const transitTotal = transitStillAtOld + transitAtNew;
+  const transitPct = transitTotal > 0 ? Math.round((transitAtNew / transitTotal) * 100) : 0;
+  const transitFromCity = activeMove?.fromAddress?.city || transitFrom?.city || "—";
+  const transitFromState = activeMove?.fromAddress?.state || transitFrom?.state || "";
+  const transitToCity = activeMove?.toAddress?.city || transitTo?.city || "—";
+  const transitToState = activeMove?.toAddress?.state || transitTo?.state || "";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground">
+            {t.rich("titleEditorial", { em: (chunks) => <em>{chunks}</em> })}
+          </h1>
           <p className="text-muted-foreground mt-1">
             {addresses.length} · {totalServices} · {
               new Intl.NumberFormat(locale, {
@@ -108,6 +200,57 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           </button>
         </Link>
       </div>
+
+      {/* Move-in-transit hero — route nodes old → new + sage→primary progress */}
+      {activeMove && (
+        <Link
+          href={`/moving/plan/${activeMove.id}`}
+          aria-label={t("transit_aria", { from: transitFromCity, to: transitToCity })}
+          className="block rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 hover:bg-foreground/[0.07] transition-all"
+        >
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{t("transit_kicker")}</p>
+          <div className="my-3 flex items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-semibold text-foreground">
+                {transitFromCity}
+                {transitFromState ? `, ${transitFromState}` : ""}
+              </p>
+              <p className="mt-0.5 text-xs text-foreground/35">{t("transit_fromRole")}</p>
+            </div>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <ArrowRight className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1 text-right">
+              <p className="truncate text-base font-semibold text-foreground">
+                {transitToCity}
+                {transitToState ? `, ${transitToState}` : ""}
+              </p>
+              <p className="mt-0.5 text-xs text-foreground/35">{t("transit_toRole")}</p>
+            </div>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${transitPct}%`,
+                background: "linear-gradient(90deg, var(--sage), hsl(var(--primary)))",
+              }}
+            />
+          </div>
+          <p className="mt-2.5 text-xs text-foreground/35">
+            {t("transit_progress", {
+              pct: transitPct,
+              date: new Date(activeMove.moveDate).toLocaleDateString(locale, { month: "short", day: "numeric" }),
+            })}
+            {" · "}
+            {transitStillAtOld > 0 ? (
+              <span className="font-medium text-destructive">{t("transit_stillAtOld", { count: transitStillAtOld })}</span>
+            ) : (
+              t("transit_allMoved")
+            )}
+          </p>
+        </Link>
+      )}
 
       {addresses.length === 0 ? (
         <EmptyState
@@ -126,6 +269,9 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
             const monthlyCost = address.services?.reduce((sum: number, s: any) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle), 0) || 0;
             const isDeleting = deletingId === address.id;
             const isConfirming = deleteConfirm === address.id;
+            // Origin of the active move with accounts left behind → warn tint
+            // on the ring plus the "still active here" signal line.
+            const isMoveOrigin = !!transitFrom && transitFrom.id === address.id;
 
             return (
               <div
@@ -148,15 +294,23 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${
-                      address.ownership === "OWNER"
-                        ? "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"
-                        : "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br"
-                    }`}
-                  >
-                    {address.ownership === "OWNER" ? t("ownership_owner") : t("ownership_renter")}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${
+                        address.ownership === "OWNER"
+                          ? "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"
+                          : "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br"
+                      }`}
+                    >
+                      {address.ownership === "OWNER" ? t("ownership_owner") : t("ownership_renter")}
+                    </span>
+                    <AddressHealthRing
+                      count={servicesCount}
+                      total={totalServices}
+                      warn={isMoveOrigin && servicesCount > 0}
+                      label={t("healthRing", { count: servicesCount })}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-sm border-t border-border pt-3 mb-3">
@@ -174,6 +328,13 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     {new Date(address.startDate).toLocaleDateString(locale, { month: "short", year: "numeric" })}
                   </span>
                 </div>
+
+                {isMoveOrigin && servicesCount > 0 && (
+                  <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-destructive">
+                    <Bell className="h-3.5 w-3.5 shrink-0" />
+                    {t("signal_stillHere", { count: servicesCount })}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-1.5 border-t border-border pt-3" onClick={(e) => e.stopPropagation()}>
                   <button
