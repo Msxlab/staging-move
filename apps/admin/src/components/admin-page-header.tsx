@@ -16,9 +16,12 @@ interface AdminPageHeaderProps {
 }
 
 /**
- * Champagne-and-rose admin page header. Pairs a Fraunces italic title with
- * a mono kicker eyebrow and an actions slot — applied across all top-level
- * admin pages so they share the same visual rhythm.
+ * Corporate admin page header (Faz 3). Pairs a sans headline — same
+ * `--font-sans` / 600-weight typography as the topbar breadcrumb — with a
+ * mono kicker eyebrow and an actions slot, applied across all top-level
+ * admin pages so they share the same visual rhythm. The `<em>` segment
+ * keeps the brand foil gradient but renders upright (no serif italics in
+ * the corporate direction).
  */
 export function AdminPageHeader({
   eyebrow,
@@ -41,13 +44,21 @@ export function AdminPageHeader({
           </p>
         ) : null}
         <h1
-          className="text-3xl md:text-4xl font-light tracking-tight text-foreground"
-          style={{ fontFamily: "var(--font-display), Didot, Georgia, serif" }}
+          className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground"
+          style={{ fontFamily: "var(--font-sans)" }}
         >
           {emMatch ? (
             <>
               {emMatch[1]}
-              <em className="foil-text not-italic-fallback">{emMatch[2]}</em>
+              {/* Foil gradient stays (brand accent); inline style overrides
+                  .foil-text's italic/400 so the headline reads as one
+                  upright corporate sans run. */}
+              <em
+                className="foil-text"
+                style={{ fontStyle: "normal", fontWeight: "inherit" }}
+              >
+                {emMatch[2]}
+              </em>
               {emMatch[3]}
             </>
           ) : (

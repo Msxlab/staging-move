@@ -166,6 +166,42 @@ describe("services route", () => {
     );
   });
 
+  it("keeps the renewal honesty fields (contractEndDate, autoRenewal) in the list payload", async () => {
+    // These are plain scalars (not in the encrypted/redacted sensitive set) —
+    // mobile's needs-attention + renewal derivations depend on them, so the
+    // list payload must keep passing them through decrypt → enrich → redact.
+    mockService.findMany.mockResolvedValueOnce([
+      {
+        id: "service-1",
+        userId: "user-1",
+        providerName: "PSE&G",
+        category: "UTILITY_ELECTRIC",
+        addressId: "address-1",
+        billingDay: 12,
+        billingCycle: "MONTHLY",
+        autoRenewal: true,
+        contractEndDate: new Date("2026-06-30T00:00:00.000Z"),
+        phone: "enc:1-800-436-7734",
+        address: { id: "address-1", nickname: null, city: "Newark", state: "NJ" },
+        provider: null,
+        customProvider: null,
+      },
+    ]);
+    mockService.count.mockResolvedValueOnce(1);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.services).toHaveLength(1);
+    expect(body.services[0]).toMatchObject({
+      id: "service-1",
+      autoRenewal: true,
+      contractEndDate: "2026-06-30T00:00:00.000Z",
+      phone: "1-800-436-7734",
+    });
+  });
+
   it("returns 401 instead of a server error when the session is invalid", async () => {
     mockRequireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
 

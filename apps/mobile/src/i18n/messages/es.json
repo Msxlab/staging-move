@@ -453,7 +453,27 @@
     "stateGuideTitle": "Guía del estado de {{state}}",
     "stateGuideSubtitle": "Reglas estatales para gestionar después de mudarte",
     "stateGuideBadge": "Estatal",
-    "stateGuideDisclaimer": "Solo orientación estatal — tu ciudad o condado puede agregar pasos. Confirma con la agencia estatal oficial."
+    "stateGuideDisclaimer": "Solo orientación estatal — tu ciudad o condado puede agregar pasos. Confirma con la agencia estatal oficial.",
+    "category": "Categoría",
+    "compareTitle": "Comparar",
+    "compareCount": "Comparar ({{count}}/{{max}})",
+    "compareClear": "Limpiar comparación",
+    "compareOpen": "Abrir comparación lado a lado",
+    "comparePickMore": "Elige 2+",
+    "compareGo": "Comparar",
+    "compareLongPressHint": "Mantén presionado para agregar a la comparación",
+    "comparePickTitle": "Elige proveedores para comparar",
+    "comparePickDescription": "Mantén presionados al menos dos proveedores de la lista para compararlos lado a lado.",
+    "compareUnavailable": "No se pudo cargar la comparación.",
+    "compareAtAddress": "Cobertura mostrada para {{address}}",
+    "compareNoAddress": "Agrega una dirección principal para ver la cobertura en tu dirección.",
+    "compareTruth": "Comparación basada solo en datos reales del catálogo — confianza de cobertura, popularidad relativa, categoría y etiquetas. Sin calificaciones ni precios. Confirma con cada proveedor.",
+    "comparePopularity": "Popularidad",
+    "compareUsers": "Usuarios de la comunidad",
+    "compareOfficialLink": "Enlace oficial",
+    "compareWebsite": "Sitio web",
+    "compareRemove": "Quitar {{provider}}",
+    "compareTrack": "Rastrear este"
   },
   "coverage": {
     "EXACT_ZIP": {
@@ -632,6 +652,20 @@
     "utilities": "Servicios públicos",
     "insurance": "Seguro",
     "upgradeRequiredBody": "El plan de mudanza completo — lista personalizada, cuenta regresiva y seguimiento — se desbloquea con Individual."
+  },
+  "dossier": {
+    "title": "Tu nuevo hogar",
+    "floodLabel": "Zona de inundación",
+    "floodZone": "Zona {{zone}}",
+    "floodHighRisk": "Riesgo alto",
+    "floodFinePrint": "Datos del mapa de inundaciones de FEMA, solo informativos. Verifica tus necesidades de cobertura con tu aseguradora o la oficina local de zonas inundables.",
+    "schoolLabel": "Distrito escolar",
+    "schoolNces": "ID de distrito NCES {{id}}",
+    "schoolFinePrint": "Límite del distrito según datos de NCES. La asignación escolar no está garantizada — confirma la inscripción con el distrito.",
+    "weatherLabel": "Clima del día de mudanza",
+    "weatherHighLow": "Máx {{high}}°F · Mín {{low}}°F",
+    "weatherPrecip": "{{pct}}% de probabilidad de precipitación",
+    "weatherFinePrint": "Pronóstico del Servicio Meteorológico Nacional — las condiciones pueden cambiar. Revísalo de nuevo cerca del día de la mudanza."
   },
   "subscription": {
     "upgradeTitle": "Desbloquea tu plan de mudanza",
@@ -953,7 +987,15 @@
     "error_savePlan": "No se pudo crear el plan de mudanza",
     "error_planCleanup": "No se pudo limpiar la configuración del plan.",
     "error_completeOnboarding": "No se pudo completar la configuración. Inténtalo de nuevo.",
-    "error_onboardingIncomplete": "La configuración aún no está completa. Revisa tu perfil y dirección."
+    "error_onboardingIncomplete": "La configuración aún no está completa. Revisa tu perfil y dirección.",
+    "providers_essentialsTitle": "Recomendados para tu mudanza",
+    "providers_essentialsHint": "Toca uno para deseleccionarlo — tú tienes el control.",
+    "providers_extrasTitle": "Extras opcionales",
+    "providers_addAll": "Agregar todos",
+    "providers_addAllA11y": "Agregar los {{count}} esenciales recomendados",
+    "providers_allAdded": "Todos agregados",
+    "providers_addLater": "Agregar después",
+    "providers_skipReassure": "¿No estás listo? Toca “Agregar después” — los mantendremos en tu lista de mudanza y te lo recordaremos."
   },
   "billingCycles": {
     "MONTHLY": "Mensual",

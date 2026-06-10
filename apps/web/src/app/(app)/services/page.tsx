@@ -39,6 +39,13 @@ export default async function ServicesPage() {
     monthlyCost: s.monthlyCost ? Number(s.monthlyCost) : 0,
     billingCycle: s.billingCycle ?? null,
     billingDay: s.billingDay ?? null,
+    // Renewal honesty fields — plain (non-encrypted, non-redacted) scalars the
+    // mobile list payload already exposes; needed so the web needs-attention
+    // strip sees contract-driven renewals, not just recurring billing days.
+    contractEndDate: s.contractEndDate
+      ? (s.contractEndDate instanceof Date ? s.contractEndDate : new Date(s.contractEndDate)).toISOString()
+      : null,
+    autoRenewal: typeof s.autoRenewal === "boolean" ? s.autoRenewal : null,
     isActive: s.isActive,
     addressId: s.addressId,
     provider: s.provider ? {

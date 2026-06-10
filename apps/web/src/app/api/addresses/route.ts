@@ -6,6 +6,7 @@ import { addressSchema } from "@/lib/validators";
 import { canCreateAddress } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
+import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import {
@@ -85,9 +86,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = addressSchema.parse(body);
 
+    // Server-side geocode fallback for manually-typed addresses (no Places
+    // pick → null coordinates → every coverage feature degrades to its
+    // "no_location" state). Best-effort + fail-open: on no_match/error/timeout
+    // we persist nulls exactly as before with NO user-facing error, capped at
+    // 2.5s. Never overwrites user/Places-provided coordinates (the helper
+    // no-ops when either coordinate is present).
+    const geocoded = await geocodeFallbackForPersist(validated);
+
     // Encrypt sensitive fields
     const encryptedData = {
       ...validated,
+      ...(geocoded ?? {}),
       formattedAddress: validated.formattedAddress ? encrypt(validated.formattedAddress) : validated.formattedAddress,
     };
 

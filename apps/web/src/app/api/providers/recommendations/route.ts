@@ -17,6 +17,11 @@ import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { lookupFccIsps, isIspServiceable, type FccLookupResult } from "@/lib/fcc-isp";
+import {
+  lookupElectricUtilities,
+  isElectricUtilityServiceable,
+  type ElectricLookupResult,
+} from "@/lib/electric-utility";
 import type { ProviderCoverageMetadata } from "@locateflow/db";
 
 // Representative geo coordinate for a GEO-BEARING provider: the centroid of its
@@ -294,6 +299,43 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ── Electric-utility serviceability enrichment (electric providers) ──────
+    // The electric mirror of the FCC block above. Electric providers are
+    // territory-based monopolies the catalog can only model coarsely. When the
+    // OpenEI Utility Rate Database lookup is configured (see
+    // apps/web/src/lib/electric-utility.ts) and we have address coordinates,
+    // confirm which utilities actually serve this location and flag them
+    // `utilityServiceable` so the recommendation engine surfaces them with an
+    // "available at your address" confidence instead of "check availability".
+    //
+    // GRACEFUL DEGRADATION: a single lookup is attempted only if there is at
+    // least one electric provider in the candidate set. Any non-"ok" status
+    // (lookup unconfigured / no coordinates / network error) leaves every
+    // provider untouched, so recommendations behave exactly as before.
+    let electricLookup: ElectricLookupResult | null = null;
+    const hasElectricCandidates = parsedProviders.some((p) => p.category === "UTILITY_ELECTRIC");
+    if (hasElectricCandidates) {
+      try {
+        electricLookup = await lookupElectricUtilities({
+          latitude: fallbackLatitude,
+          longitude: fallbackLongitude,
+        });
+        if (electricLookup.status === "ok") {
+          for (const provider of parsedProviders) {
+            if (provider.category !== "UTILITY_ELECTRIC") continue;
+            if (isElectricUtilityServiceable(electricLookup, provider.name)) {
+              provider.utilityServiceable = true;
+            }
+          }
+        }
+      } catch {
+        // Defensive: lookupElectricUtilities already swallows network errors,
+        // but make the route bullet-proof so a malformed response can never
+        // break recs.
+        electricLookup = null;
+      }
+    }
+
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
     const completedCategories = [...new Set(services.map((s) => s.category).filter(Boolean))];
 
@@ -344,6 +386,17 @@ export async function GET(request: NextRequest) {
           status: fccLookup?.status || (hasInternetCandidates ? "not_configured" : "skipped"),
           confirmedCount: parsedProviders.filter((p) => p.fccServiceable === true).length,
           blockGeoid: fccLookup?.blockGeoid || null,
+        },
+        // Electric-utility serviceability telemetry, mirroring `fcc` above.
+        // `status` is one of the ElectricLookupStatus values; "not_configured"
+        // is the default until the owner sets ELECTRIC_LOOKUP_ENABLED +
+        // OPENEI_API_KEY (see lib/electric-utility.ts). `confirmedCount` is how
+        // many electric providers were confirmed at the address. Never
+        // user-facing copy — for dashboards / debugging only.
+        electric: {
+          status: electricLookup?.status || (hasElectricCandidates ? "not_configured" : "skipped"),
+          confirmedCount: parsedProviders.filter((p) => p.utilityServiceable === true).length,
+          utilityCount: electricLookup?.status === "ok" ? electricLookup.utilities.length : 0,
         },
         addressId: primaryAddr?.id || null,
         currentPhase,

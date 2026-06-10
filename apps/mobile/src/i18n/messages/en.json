@@ -653,6 +653,20 @@
     "insurance": "Insurance",
     "upgradeRequiredBody": "The full moving plan — personalized checklist, countdown, and tracking — unlocks with Individual."
   },
+  "dossier": {
+    "title": "Your new home",
+    "floodLabel": "Flood zone",
+    "floodZone": "Zone {{zone}}",
+    "floodHighRisk": "High risk",
+    "floodFinePrint": "FEMA flood map data, for information only. Verify coverage needs with your insurer or local floodplain office.",
+    "schoolLabel": "School district",
+    "schoolNces": "NCES district ID {{id}}",
+    "schoolFinePrint": "District boundary from NCES data. School assignment isn't guaranteed — confirm enrollment with the district.",
+    "weatherLabel": "Moving-day weather",
+    "weatherHighLow": "High {{high}}°F · Low {{low}}°F",
+    "weatherPrecip": "{{pct}}% chance of precipitation",
+    "weatherFinePrint": "National Weather Service forecast — conditions can change. Check again closer to moving day."
+  },
   "subscription": {
     "upgradeTitle": "Unlock your move plan",
     "upgrade": "Upgrade"

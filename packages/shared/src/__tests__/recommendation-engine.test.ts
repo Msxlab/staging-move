@@ -104,6 +104,65 @@ describe("provider recommendation safety", () => {
     expect(scored[0].explanation.recommendationUse).toBe("MANUAL_TRACKING_CANDIDATE");
   });
 
+  it("treats utilityServiceable=true as available-at-address, identically to fccServiceable", () => {
+    // utilityServiceable is set by the upstream OpenEI electric-utility lookup
+    // (apps/web/src/lib/electric-utility.ts) and must mirror fccServiceable:
+    // confirmed providers win AVAILABLE_AT_ADDRESS confidence over the
+    // catalog-derived live_address tier; unconfirmed siblings keep the
+    // "check availability" posture.
+    const scored = scoreProviders(
+      [
+        provider({
+          id: "confirmed-electric",
+          name: "Austin Energy",
+          scope: "FEDERAL",
+          coverageModel: "live_address",
+          coverageMatchLevel: "live_address",
+          requiresAddressCheck: true,
+        }),
+        provider({
+          id: "unconfirmed-electric",
+          name: "Other Electric Co",
+          scope: "FEDERAL",
+          coverageModel: "live_address",
+          coverageMatchLevel: "live_address",
+          requiresAddressCheck: true,
+        }),
+      ].map((p) => (p.id === "confirmed-electric" ? { ...p, utilityServiceable: true } : p)),
+      baseProfile,
+      "TX",
+    );
+
+    const confirmed = scored.find((p) => p.id === "confirmed-electric")!;
+    const unconfirmed = scored.find((p) => p.id === "unconfirmed-electric")!;
+
+    expect(confirmed.explanation.coverageConfidence).toBe("AVAILABLE_AT_ADDRESS");
+    expect(confirmed.matchReasons).toContain("Available at your address");
+    expect(unconfirmed.explanation.coverageConfidence).toBe("ADDRESS_CHECK_REQUIRED");
+    expect(confirmed.recommendationScore).toBeGreaterThan(unconfirmed.recommendationScore);
+  });
+
+  it("falls back to catalog confidence when utilityServiceable is absent or false", () => {
+    const base = {
+      id: "electric",
+      name: "Electric Co",
+      scope: "FEDERAL",
+      coverageModel: "live_address" as const,
+      coverageMatchLevel: "live_address" as const,
+      requiresAddressCheck: true,
+    };
+    const [absent] = scoreProviders([provider(base)], baseProfile, "TX");
+    const [explicitFalse] = scoreProviders(
+      [{ ...provider(base), utilityServiceable: false }],
+      baseProfile,
+      "TX",
+    );
+
+    expect(absent.explanation.coverageConfidence).toBe("ADDRESS_CHECK_REQUIRED");
+    expect(explicitFalse.explanation.coverageConfidence).toBe("ADDRESS_CHECK_REQUIRED");
+    expect(explicitFalse.recommendationScore).toBe(absent.recommendationScore);
+  });
+
   it("boosts time-sensitive setups as the move date nears (proximity signal)", () => {
     const electric = provider({ id: "electric", category: "UTILITY_ELECTRIC", popularityScore: 50 });
 

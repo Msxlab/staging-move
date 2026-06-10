@@ -82,13 +82,14 @@ const CATEGORY_TONE_BG: Record<string, string> = {
 };
 
 /* ── Renewal derivation ─────────────────────────────────────────────────────
- * Mirrors apps/mobile/src/lib/service-insights.ts (nextBillingDate +
- * resolveServiceRenewal + RENEWAL_SOON_DAYS). The web list payload carries
- * `billingDay` + `billingCycle` but NOT `contractEndDate`/`autoRenewal`
- * (see ./page.tsx mapping), so the only honest renewal signal here is the
- * next recurring billing date — we never fabricate one. Billing-derived
- * dates are always today-or-future by construction, so "overdue" can't
- * occur on this page (unlike mobile, which also sees contract end dates).
+ * Mirrors apps/mobile/src/lib/service-insights.ts (resolveServiceRenewal →
+ * nextBillingDate + RENEWAL_SOON_DAYS). The web list payload now carries
+ * `contractEndDate`/`autoRenewal` alongside `billingDay`/`billingCycle`
+ * (see ./page.tsx mapping), so — exactly like mobile — an explicit contract
+ * end date wins over the recurring billing day. Contract dates may be in the
+ * past (overdue); billing-derived dates are always today-or-future by
+ * construction. When neither signal exists we have no renewal date — we
+ * never fabricate one.
  */
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** "Soon" threshold (days) for flagging an imminent renewal — same as mobile. */
@@ -153,6 +154,37 @@ function nextBillingRenewal(
   return { date: candidate, days: daysUntil(candidate, now) };
 }
 
+export interface ServiceRenewalSignal {
+  date: Date;
+  /** Whole calendar days until `date` (negative = overdue contract end). */
+  days: number;
+  /** Which field the date came from — drives the honest label choice. */
+  source: "contract" | "billing";
+}
+
+/**
+ * Resolve a service's next renewal/end date — `contractEndDate` wins over the
+ * recurring billing day because it's the more specific, user-entered
+ * commitment (same priority as mobile's `resolveServiceRenewal`). Returns null
+ * when the service carries no usable date signal. Exported for tests.
+ */
+export function resolveServiceRenewalSignal(
+  service: Pick<ServicesItem, "billingDay" | "billingCycle" | "contractEndDate">,
+  now: Date,
+): ServiceRenewalSignal | null {
+  if (service.contractEndDate) {
+    const d = new Date(service.contractEndDate);
+    if (!Number.isNaN(d.getTime())) {
+      return { date: d, days: daysUntil(d, now), source: "contract" };
+    }
+  }
+  const billing = nextBillingRenewal(service, now);
+  if (billing) {
+    return { date: billing.date, days: billing.days, source: "billing" };
+  }
+  return null;
+}
+
 export interface ServicesAddress {
   id: string; nickname?: string; street: string; city: string; state: string; zip: string;
   type: string; isPrimary: boolean; ownership: string; startDate: string;
@@ -162,6 +194,10 @@ export interface ServicesItem {
   id: string; category: string; providerName: string;
   website?: string | null; phone?: string | null;
   monthlyCost: number; billingCycle?: string | null; billingDay?: number | null; isActive?: boolean;
+  /** ISO date — explicit contract end/renewal date the user entered, if any. */
+  contractEndDate?: string | null;
+  /** Whether the user marked the service as auto-renewing (null = unknown). */
+  autoRenewal?: boolean | null;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
   provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null; affiliateActive?: boolean } | null;
@@ -317,17 +353,19 @@ export function ServicesClient({
     .filter((c) => c.total > 0)
     .sort((a, b) => b.total - a.total);
 
-  // "Needs attention" — derived ONLY from existing renewal signals (recurring
-  // billingDay + billingCycle), the same derivation mobile uses. No new data.
-  const attentionItems: { service: ServicesItem; days: number }[] = [];
+  // "Needs attention" — derived ONLY from existing renewal signals
+  // (contractEndDate, or recurring billingDay + billingCycle), the exact
+  // derivation mobile uses. Includes overdue contract ends (days < 0). No new
+  // data concepts.
+  const attentionItems: { service: ServicesItem; renewal: ServiceRenewalSignal }[] = [];
   for (const s of services) {
     if (s.isActive === false) continue;
-    const renewal = nextBillingRenewal(s, now);
+    const renewal = resolveServiceRenewalSignal(s, now);
     if (renewal && renewal.days <= RENEWAL_SOON_DAYS) {
-      attentionItems.push({ service: s, days: renewal.days });
+      attentionItems.push({ service: s, renewal });
     }
   }
-  attentionItems.sort((a, b) => a.days - b.days);
+  attentionItems.sort((a, b) => a.renewal.days - b.renewal.days);
 
   const renewalCopy = (days: number) =>
     days <= 0
@@ -335,6 +373,25 @@ export function ServicesClient({
       : days === 1
         ? t("attention.renewsTomorrow")
         : t("attention.renewsInDays", { days });
+
+  // Honest label per signal: recurring billing dates (always today-or-future)
+  // and auto-renewing contracts genuinely "renew", so they use the relative
+  // renews-in copy. A contract that is NOT marked auto-renew (or whose end
+  // date already passed) only tells us when the contract ends — for those we
+  // state the factual end date instead of claiming a renewal. Reuses existing
+  // catalog keys only; date format mirrors the service detail page (en-US,
+  // US-only product).
+  const attentionLabel = (service: ServicesItem, renewal: ServiceRenewalSignal) => {
+    if (renewal.source === "billing" || (service.autoRenewal === true && renewal.days >= 0)) {
+      return renewalCopy(renewal.days);
+    }
+    const dateLabel = renewal.date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    return `${t("contractEndDate")}: ${dateLabel}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -565,9 +622,10 @@ export function ServicesClient({
         </div>
       </div>
 
-      {/* Attention strip — services with an imminent renewal signal, each card
-          actionable (links to the service detail). Billing-derived dates are
-          never past-due, so this is strictly "renewing within the week". */}
+      {/* Attention strip — services with an imminent (or, for contract end
+          dates, overdue) renewal signal, each card actionable (links to the
+          service detail). Billing-derived dates are never past-due; contract
+          end dates may be, and are sorted first. */}
       {attentionItems.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-baseline justify-between px-1">
@@ -575,19 +633,19 @@ export function ServicesClient({
             <span className="font-mono text-[10px] text-destructive/70">{attentionItems.length}</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {attentionItems.map(({ service, days }) => (
+            {attentionItems.map(({ service, renewal }) => (
               <Link
                 key={service.id}
                 href={`/services/${service.id}`}
                 className="group flex items-center gap-3 rounded-xl border border-destructive/25 bg-destructive/10 p-3 transition-all hover:bg-destructive/15"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive">
-                  {days <= 1 ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                  {renewal.days <= 1 ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-semibold text-foreground">{service.providerName}</span>
                   <span className="block truncate text-[11px] text-destructive">
-                    {renewalCopy(days)}
+                    {attentionLabel(service, renewal)}
                     {service.address ? ` · ${service.address.nickname || `${service.address.city}, ${service.address.state}`}` : ""}
                   </span>
                 </span>

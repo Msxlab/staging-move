@@ -14,6 +14,7 @@ import { BudgetDonut } from "@/components/dashboard/budget-donut";
 import { MonthlySpark } from "@/components/dashboard/monthly-spark";
 import { MilestoneTimeline } from "@/components/dashboard/milestone-timeline";
 import { RouteMapCard } from "@/components/dashboard/route-map-card";
+import { HomeDossier } from "@/components/dashboard/home-dossier";
 import { MoveCommandCenter, type CommandCenterAction } from "./move-command-center";
 import { MoveBriefingCard } from "@/components/dashboard/move-briefing-card";
 import { UpNext } from "./up-next";
@@ -63,6 +64,7 @@ const WIDGET_KEYS = [
   { key: "moving", default: true },
   { key: "routeMap", default: true },
   { key: "milestones", default: true },
+  { key: "homeDossier", default: true },
   { key: "recent", default: true },
   { key: "bills", default: true },
   { key: "budgetDonut", default: true },
@@ -137,6 +139,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
     moving: td("widget_moving"),
     routeMap: td("widget_routeMap"),
     milestones: td("widget_milestones"),
+    homeDossier: td("widget_homeDossier"),
     recent: td("widget_recent"),
     bills: td("widget_bills"),
     budgetDonut: td("widget_budgetDonut"),
@@ -162,6 +165,10 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const [resumeDismissed, setResumeDismissed] = useState(false);
   const [widgets, setWidgets] = useState<Record<WidgetKey, boolean>>(() => normaliseVisibility(initialPrefs?.visibility));
   const [widgetOrder, setWidgetOrder] = useState<WidgetKey[]>(() => normaliseOrder(initialPrefs?.order));
+  // Address the New Home Dossier card looks up: the active move's destination
+  // when one exists (that's where flood/school/weather matter most), otherwise
+  // the primary address. Null hides the widget entirely.
+  const [dossierAddressId, setDossierAddressId] = useState<string | null>(null);
   const [criticalActions, setCriticalActions] = useState<Array<{
     id: string;
     name: string;
@@ -225,7 +232,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const w = (key: WidgetKey) => widgets[key] !== false;
 
   // Which column each widget belongs to
-  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "routeMap", "milestones", "recent"];
+  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "routeMap", "milestones", "homeDossier", "recent"];
   const rightWidgets: WidgetKey[] = ["bills", "budgetDonut", "monthlySpark", "categories", "topSpending"];
   const orderedLeft = widgetOrder.filter((k) => leftWidgets.includes(k));
   const orderedRight = widgetOrder.filter((k) => rightWidgets.includes(k));
@@ -301,6 +308,12 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           addressCount: addrs.length, serviceCount: services.length, monthlyExpenses,
           activePlan,
         });
+
+        // New Home Dossier target: the active plan's destination address id
+        // (the /api/moving feed spreads the full plan record, so toAddressId is
+        // present) — else the primary address, else the first one.
+        const primaryAddressId = addrs.find((a) => a.isPrimary)?.id || addrs[0]?.id || null;
+        setDossierAddressId((inProgressPlan as any)?.toAddressId || primaryAddressId);
 
         // Generate relocation checklist if active plan exists
         if (inProgressPlan) {
@@ -578,8 +591,11 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           </Link>
           {/* Free users can't create a MovingPlan — route the move CTA to the
               upgrade path instead of /moving/new (which 403s for them). */}
+          {/* Primary CTA wears the PLAN ACCENT (bg-primary), not the always-cool
+              tone-orange token — so Pro renders honey, Free renders pink, etc.,
+              matching the sibling primary-button convention. */}
           <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition">
               <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}
             </button>
           </Link>
@@ -848,6 +864,13 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               case "milestones":
                 return !loading && checklist ? (
                   <MilestoneTimeline key={key} checklist={checklist} />
+                ) : null;
+              case "homeDossier":
+                // New Home Dossier — flood zone / school district / moving-day
+                // weather for the destination (or primary) address. The card
+                // self-hides when every section degrades (no empty shell).
+                return !loading && dossierAddressId ? (
+                  <HomeDossier key={key} addressId={dossierAddressId} />
                 ) : null;
               case "recent":
                 return !loading && recentServices.length > 0 ? (

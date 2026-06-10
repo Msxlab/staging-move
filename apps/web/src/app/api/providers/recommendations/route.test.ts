@@ -48,9 +48,29 @@ vi.mock("@/lib/recommendation-engine", () => ({
   })),
 }));
 
+// Electric-utility enrichment is mocked so the route tests can drive each
+// lookup status deterministically (the real module is unit-tested in
+// src/lib/electric-utility.test.ts). Defaults mirror production defaults:
+// unconfigured lookup, nothing serviceable.
+vi.mock("@/lib/electric-utility", () => ({
+  lookupElectricUtilities: vi.fn(async () => ({
+    status: "not_configured",
+    utilities: [],
+    normalizedNames: new Set<string>(),
+    reason: "electric_lookup_disabled",
+    source: {
+      name: "OpenEI U.S. Utility Rate Database (URDB)",
+      url: "https://openei.org/wiki/Utility_Rate_Database",
+      modeled: true,
+    },
+  })),
+  isElectricUtilityServiceable: vi.fn(() => false),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { lookupElectricUtilities, isElectricUtilityServiceable } from "@/lib/electric-utility";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -61,9 +81,50 @@ const mockMovingPlan = prisma.movingPlan as unknown as { findFirst: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Mock };
 const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
 const rateLimitMock = rateLimit as unknown as Mock;
+const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
+const isElectricUtilityServiceableMock = isElectricUtilityServiceable as unknown as Mock;
 
 function makeRequest(search = "") {
   return new Request(`http://localhost/api/providers/recommendations${search}`) as any;
+}
+
+function electricLookupResult(overrides: Record<string, unknown> = {}) {
+  return {
+    status: "not_configured",
+    utilities: [],
+    normalizedNames: new Set<string>(),
+    reason: "electric_lookup_disabled",
+    source: {
+      name: "OpenEI U.S. Utility Rate Database (URDB)",
+      url: "https://openei.org/wiki/Utility_Rate_Database",
+      modeled: true,
+    },
+    ...overrides,
+  };
+}
+
+/** A minimal federal catalog provider row as returned by prisma. */
+function dbProvider(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "provider-1",
+    name: "Provider",
+    slug: "provider",
+    category: "UTILITY_ELECTRIC",
+    subCategory: null,
+    description: null,
+    website: null,
+    phone: null,
+    logoUrl: null,
+    scope: "FEDERAL",
+    states: "[]",
+    zipCodes: "[]",
+    tags: "[]",
+    popularityScore: 50,
+    displayOrder: 0,
+    userCount: 0,
+    isActive: true,
+    ...overrides,
+  };
 }
 
 describe("provider recommendations route", () => {
@@ -76,6 +137,8 @@ describe("provider recommendations route", () => {
     mockMovingPlan.findFirst.mockResolvedValue(null);
     mockServiceProvider.findMany.mockResolvedValue([]);
     mockRecFeedback.findMany.mockResolvedValue([]);
+    lookupElectricUtilitiesMock.mockResolvedValue(electricLookupResult());
+    isElectricUtilityServiceableMock.mockReturnValue(false);
   });
 
   it("keeps no-context recommendations to federal non-transit candidates", async () => {
@@ -119,5 +182,87 @@ describe("provider recommendations route", () => {
     expect(body.code).toBe("UNAUTHORIZED");
     expect(rateLimitMock).not.toHaveBeenCalled();
     expect(mockServiceProvider.findMany).not.toHaveBeenCalled();
+  });
+
+  // ── Electric-utility serviceability enrichment (mirrors the FCC block) ────
+
+  it("skips the electric lookup entirely when no electric candidates exist", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "internet-1", name: "Comcast", category: "UTILITY_INTERNET" }),
+    ]);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupElectricUtilitiesMock).not.toHaveBeenCalled();
+    expect(body.meta.electric).toEqual({ status: "skipped", confirmedCount: 0, utilityCount: 0 });
+  });
+
+  it("flags matching electric providers utilityServiceable when the lookup confirms them", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "Austin Energy" }),
+      dbProvider({ id: "electric-2", name: "Reliant Energy" }),
+      dbProvider({ id: "internet-1", name: "Comcast", category: "UTILITY_INTERNET" }),
+    ]);
+    lookupElectricUtilitiesMock.mockResolvedValue(
+      electricLookupResult({
+        status: "ok",
+        utilities: [{ name: "City of Austin, Texas (Utility Company)", eiaId: "16604" }],
+        normalizedNames: new Set(["austintexas"]),
+        reason: null,
+      }),
+    );
+    isElectricUtilityServiceableMock.mockImplementation(
+      (_result: unknown, name: string) => name === "Austin Energy",
+    );
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupElectricUtilitiesMock).toHaveBeenCalledTimes(1);
+
+    const confirmed = body.allProviders.find((p: { id: string }) => p.id === "electric-1");
+    const unconfirmed = body.allProviders.find((p: { id: string }) => p.id === "electric-2");
+    const internet = body.allProviders.find((p: { id: string }) => p.id === "internet-1");
+    expect(confirmed.utilityServiceable).toBe(true);
+    expect(unconfirmed.utilityServiceable).toBeUndefined();
+    // Only electric providers are ever consulted/flagged by this block.
+    expect(internet.utilityServiceable).toBeUndefined();
+
+    expect(body.meta.electric).toEqual({ status: "ok", confirmedCount: 1, utilityCount: 1 });
+  });
+
+  it("leaves providers untouched when the electric lookup is not configured", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "Austin Energy" }),
+    ]);
+    // Even a (mis)matching predicate must not fire for a non-ok status —
+    // the route only consults it once the lookup answered authoritatively.
+    isElectricUtilityServiceableMock.mockReturnValue(true);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    const provider = body.allProviders.find((p: { id: string }) => p.id === "electric-1");
+    expect(provider.utilityServiceable).toBeUndefined();
+    expect(body.meta.electric).toEqual({ status: "not_configured", confirmedCount: 0, utilityCount: 0 });
+  });
+
+  it("degrades gracefully (200, untouched recs) even if the electric lookup throws", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "Austin Energy" }),
+    ]);
+    lookupElectricUtilitiesMock.mockRejectedValue(new Error("unexpected"));
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    const provider = body.allProviders.find((p: { id: string }) => p.id === "electric-1");
+    expect(provider.utilityServiceable).toBeUndefined();
+    expect(body.meta.electric).toEqual({ status: "not_configured", confirmedCount: 0, utilityCount: 0 });
   });
 });
