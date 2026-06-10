@@ -74,8 +74,8 @@ export default function MoreScreen() {
     ((user?.firstName?.[0] || "") + (user?.lastName?.[0] || "")).toUpperCase() ||
     "U";
 
-  // Plan pill label — planTier is "FAMILY" | "PRO" | "INDIVIDUAL" | null;
-  // null (free or not-yet-resolved entitlement) renders as Free, matching the
+  // Plan pill label — planTier is FAMILY | PRO | INDIVIDUAL | FREE | FREE_TRIAL
+  // | null; FREE* and null (not-yet-resolved entitlement) render as Free, matching the
   // dashboard's resolution default. The pill itself tints via
   // theme.colors.primary, so Family/Pro plan accents flow automatically.
   const planLabel =
