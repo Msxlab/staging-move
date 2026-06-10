@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
+import { BudgetDonut } from "@/components/dashboard/budget-donut";
+import { MonthlySpark } from "@/components/dashboard/monthly-spark";
+import { MilestoneTimeline } from "@/components/dashboard/milestone-timeline";
+import { RouteMapCard } from "@/components/dashboard/route-map-card";
 import { MoveCommandCenter, type CommandCenterAction } from "./move-command-center";
 import { MoveBriefingCard } from "@/components/dashboard/move-briefing-card";
 import { UpNext } from "./up-next";
@@ -47,13 +51,22 @@ interface DashboardStats {
   activePlan: { id: string; fromCity: string; toCity: string; moveDate: string; status: string } | null;
 }
 
+// Aurora (Edition VII) additions: routeMap + milestones slot in after the
+// moving/checklist widget on the left; budgetDonut + monthlySpark join the
+// right column. `normaliseOrder` appends any key missing from a user's saved
+// order, so existing persisted layouts pick the new widgets up automatically
+// (they land at the end of their column until the user re-orders).
 const WIDGET_KEYS = [
   { key: "stats", default: true },
   { key: "nextCritical", default: true },
   { key: "spending", default: true },
   { key: "moving", default: true },
+  { key: "routeMap", default: true },
+  { key: "milestones", default: true },
   { key: "recent", default: true },
   { key: "bills", default: true },
+  { key: "budgetDonut", default: true },
+  { key: "monthlySpark", default: true },
   { key: "categories", default: true },
   { key: "topSpending", default: true },
 ] as const;
@@ -122,8 +135,12 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
     nextCritical: td("widget_nextCritical"),
     spending: td("widget_spending"),
     moving: td("widget_moving"),
+    routeMap: td("widget_routeMap"),
+    milestones: td("widget_milestones"),
     recent: td("widget_recent"),
     bills: td("widget_bills"),
+    budgetDonut: td("widget_budgetDonut"),
+    monthlySpark: td("widget_monthlySpark"),
     categories: td("widget_categories"),
     topSpending: td("widget_topSpending"),
   };
@@ -208,8 +225,8 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const w = (key: WidgetKey) => widgets[key] !== false;
 
   // Which column each widget belongs to
-  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "recent"];
-  const rightWidgets: WidgetKey[] = ["bills", "categories", "topSpending"];
+  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "routeMap", "milestones", "recent"];
+  const rightWidgets: WidgetKey[] = ["bills", "budgetDonut", "monthlySpark", "categories", "topSpending"];
   const orderedLeft = widgetOrder.filter((k) => leftWidgets.includes(k));
   const orderedRight = widgetOrder.filter((k) => rightWidgets.includes(k));
 
@@ -531,7 +548,11 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{td("title")}</h1>
+            {/* Aurora serif greeting — display face with ONE italic <em>
+                accent (cool gradient via the .h1 helper in globals.css). */}
+            <h1 className="h1 text-3xl md:text-4xl text-foreground">
+              {td.rich("title_serif", { em: (chunks) => <em>{chunks}</em> })}
+            </h1>
             {isPremium && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary/20 via-primary/20 to-transparent border border-tone-honey-br text-tone-honey-fg animate-pulse">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -814,6 +835,20 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   </div>
                 ) : null;
               }
+              case "routeMap":
+                // Stylized route card — only meaningful with a genuine
+                // origin AND destination (no "Origin"/"Destination" stubs).
+                return !loading && stats.activePlan && hasOriginDestination ? (
+                  <RouteMapCard
+                    key={key}
+                    fromCity={stats.activePlan.fromCity}
+                    toCity={stats.activePlan.toCity}
+                  />
+                ) : null;
+              case "milestones":
+                return !loading && checklist ? (
+                  <MilestoneTimeline key={key} checklist={checklist} />
+                ) : null;
               case "recent":
                 return !loading && recentServices.length > 0 ? (
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
@@ -861,6 +896,19 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             switch (key) {
               case "bills":
                 return <UpcomingBills key={key} />;
+              case "budgetDonut":
+                return !loading && sortedCats.length > 0 ? (
+                  <BudgetDonut
+                    key={key}
+                    categories={sortedCats}
+                    total={stats.monthlyExpenses}
+                    labels={categoryLabels}
+                  />
+                ) : null;
+              case "monthlySpark":
+                return !loading && allServices.length > 0 ? (
+                  <MonthlySpark key={key} services={allServices} />
+                ) : null;
               case "categories":
                 return !loading && sortedCats.length > 0 ? (
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">

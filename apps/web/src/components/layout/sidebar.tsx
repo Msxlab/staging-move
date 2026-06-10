@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,10 +16,11 @@ import {
   Bell,
   LifeBuoy,
   Users,
+  Sparkles,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LogoMark } from "@/components/marketing/logo";
 
@@ -46,11 +47,31 @@ export function Sidebar({
   const isMobile = variant === "mobile";
   const isCollapsed = isMobile ? false : collapsed;
 
+  // Unread badge on the Notifications item. One-shot fetch of the same feed
+  // endpoint the header bell uses (limit=1 keeps the payload tiny — we only
+  // read `unreadCount`). No polling; errors degrade to "no badge".
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/notifications/feed?limit=1", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data && typeof data.unreadCount === "number") {
+          setUnreadCount(data.unreadCount);
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   // Keys map to `nav.*` in messages/en.json and messages/es.json. Do
   // NOT hardcode user-visible strings here — every label must be a
   // translation key so adding a third locale (pt, fr…) is a messages
   // change, not a sidebar change.
-  const navigation = [
+  const workspaceNav = [
     { key: "dashboard", href: "/dashboard", icon: Home },
     { key: "addresses", href: "/addresses", icon: MapPin },
     { key: "services", href: "/services", icon: Zap },
@@ -62,14 +83,73 @@ export function Sidebar({
     ...(showWorkspace
       ? [{ key: "workspace" as const, href: "/settings/workspace", icon: Users }]
       : []),
-    { key: "notifications", href: "/notifications", icon: Bell },
-    { key: "support", href: "/support", icon: LifeBuoy },
   ] as const;
 
-  const bottomNav = [
+  const accountNav = [
+    { key: "notifications", href: "/notifications", icon: Bell },
+    { key: "support", href: "/support", icon: LifeBuoy },
     { key: "help", href: "/help", icon: HelpCircle },
     { key: "settings", href: "/settings", icon: Settings },
   ] as const;
+
+  type NavItem =
+    | (typeof workspaceNav)[number]
+    | (typeof accountNav)[number];
+
+  const renderNavItem = (item: NavItem) => {
+    const isActive = pathname.startsWith(item.href);
+    const label = t(item.key);
+    const showUnread = item.key === "notifications" && unreadCount > 0;
+    return (
+      <Link
+        key={item.key}
+        href={item.href}
+        className={cn(
+          "relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
+          isActive
+            ? "bg-tone-orange-bg text-tone-orange-fg"
+            : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
+        )}
+        title={isCollapsed ? label : undefined}
+        aria-current={isActive ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-tone-orange-fg")} />
+        {!isCollapsed && <span>{label}</span>}
+        {showUnread ? (
+          <>
+            {isCollapsed ? (
+              <span
+                className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-tone-orange-fg"
+                aria-hidden="true"
+              />
+            ) : (
+              <span
+                className="ml-auto flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-tone-orange-fg px-1 font-mono text-[9px] font-bold text-white"
+                aria-hidden="true"
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+            <span className="sr-only">{t("unreadCount", { count: unreadCount })}</span>
+          </>
+        ) : null}
+      </Link>
+    );
+  };
+
+  // Mono-uppercase group kicker (Aurora editorial pattern). When collapsed
+  // the label has no room, so groups after the first separate with a rule.
+  const groupKicker = (label: string, dividerWhenCollapsed: boolean) =>
+    isCollapsed ? (
+      dividerWhenCollapsed ? (
+        <div className="mx-3 my-2 border-t border-border" aria-hidden="true" />
+      ) : null
+    ) : (
+      <div className="px-3 pt-2 pb-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/40">
+        {label}
+      </div>
+    );
 
   return (
     <aside
@@ -107,55 +187,43 @@ export function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          const label = t(item.key);
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
-                isActive
-                  ? "bg-tone-orange-bg text-tone-orange-fg"
-                  : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
-              )}
-              title={isCollapsed ? label : undefined}
-              aria-current={isActive ? "page" : undefined}
-              onClick={onNavigate}
-            >
-              <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-tone-orange-fg")} />
-              {!isCollapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 py-3 px-2 overflow-y-auto">
+        {groupKicker(t("groupWorkspace"), false)}
+        <div className="space-y-0.5">{workspaceNav.map(renderNavItem)}</div>
+        {groupKicker(t("groupAccount"), true)}
+        <div className="space-y-0.5">{accountNav.map(renderNavItem)}</div>
       </nav>
 
-      {/* Bottom */}
-      <div className="border-t border-border py-3 px-2 space-y-0.5 shrink-0">
-        {bottomNav.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          const label = t(item.key);
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
-                isActive
-                  ? "bg-tone-orange-bg text-tone-orange-fg"
-                  : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
-              )}
-              title={isCollapsed ? label : undefined}
-              aria-current={isActive ? "page" : undefined}
-              onClick={onNavigate}
-            >
-              <item.icon className="h-[18px] w-[18px] shrink-0" />
-              {!isCollapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
+      {/* Bottom: Pro upsell + collapse toggle */}
+      <div className="border-t border-border py-3 px-2 shrink-0">
+        {/* Foil = premium-only moment. Hidden for Pro members via the
+            .plan-pro accent class AppShell sets on the shell wrapper —
+            plan styling always flows through .plan-*, never via props. */}
+        {isCollapsed ? (
+          <Link
+            href="/settings"
+            onClick={onNavigate}
+            title={t("proUpsellTitle")}
+            className="flex h-10 w-full items-center justify-center rounded-xl border border-tone-foil-br bg-tone-foil-bg text-tone-foil-fg transition hover:opacity-90 [.plan-pro_&]:hidden"
+          >
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">{t("proUpsellTitle")}</span>
+          </Link>
+        ) : (
+          <Link
+            href="/settings"
+            onClick={onNavigate}
+            className="block rounded-2xl border border-tone-foil-br bg-tone-foil-bg p-3 transition hover:opacity-90 [.plan-pro_&]:hidden"
+          >
+            <span className="flex items-center gap-1.5 text-xs font-bold text-tone-foil-fg">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {t("proUpsellTitle")}
+            </span>
+            <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+              {t("proUpsellBody")}
+            </span>
+          </Link>
+        )}
 
         {!isMobile ? (
           <button

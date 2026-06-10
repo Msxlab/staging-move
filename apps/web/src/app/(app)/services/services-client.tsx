@@ -62,6 +62,97 @@ const groupIcons: Record<string, string> = {
 };
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 
+const GROUP_ORDER = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"];
+
+// Solid tone fills for the stacked by-category cost bar + its legend dots.
+// Full literal class names (Tailwind can't see interpolated ones). Cool tones
+// only — honey/foil stay reserved for premium moments. Adjacent categories in
+// GROUP_ORDER never share a tone.
+const CATEGORY_TONE_BG: Record<string, string> = {
+  GOVERNMENT: "bg-tone-slate-fg",
+  UTILITY: "bg-tone-sky-fg",
+  FINANCIAL: "bg-tone-sage-fg",
+  HOUSING: "bg-tone-rose-fg",
+  HEALTHCARE: "bg-tone-cyan-fg",
+  TRANSPORTATION: "bg-tone-umber-fg",
+  KIDS: "bg-tone-rose-fg",
+  FITNESS: "bg-tone-sage-fg",
+  SHOPPING: "bg-tone-slate-fg",
+  OTHER: "bg-tone-umber-fg",
+};
+
+/* ── Renewal derivation ─────────────────────────────────────────────────────
+ * Mirrors apps/mobile/src/lib/service-insights.ts (nextBillingDate +
+ * resolveServiceRenewal + RENEWAL_SOON_DAYS). The web list payload carries
+ * `billingDay` + `billingCycle` but NOT `contractEndDate`/`autoRenewal`
+ * (see ./page.tsx mapping), so the only honest renewal signal here is the
+ * next recurring billing date — we never fabricate one. Billing-derived
+ * dates are always today-or-future by construction, so "overdue" can't
+ * occur on this page (unlike mobile, which also sees contract end dates).
+ */
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** "Soon" threshold (days) for flagging an imminent renewal — same as mobile. */
+const RENEWAL_SOON_DAYS = 7;
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function daysUntil(target: Date, now: Date): number {
+  return Math.round((startOfDay(target).getTime() - startOfDay(now).getTime()) / DAY_MS);
+}
+
+/** Months to advance per billing cycle (defaults to monthly when unknown). */
+function cycleMonths(cycle?: string | null): number {
+  switch ((cycle || "MONTHLY").toUpperCase()) {
+    case "YEARLY":
+    case "ANNUAL":
+      return 12;
+    case "QUARTERLY":
+      return 3;
+    case "ONE_TIME":
+      return 0; // no recurrence
+    case "MONTHLY":
+    default:
+      return 1;
+  }
+}
+
+/**
+ * Next billing date from `billingDay` + `billingCycle`, strictly today or in
+ * the future. Clamps the day to the target month's length (day 31 in a 30-day
+ * month lands on the 30th). Returns null when there's no usable signal.
+ */
+function nextBillingRenewal(
+  service: Pick<ServicesItem, "billingDay" | "billingCycle">,
+  now: Date,
+): { date: Date; days: number } | null {
+  const billingDay = service.billingDay;
+  if (billingDay == null || !Number.isFinite(billingDay) || billingDay < 1 || billingDay > 31) {
+    return null;
+  }
+  const step = cycleMonths(service.billingCycle);
+  const today = startOfDay(now);
+
+  const clampedFor = (year: number, month: number): Date => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(billingDay, lastDay));
+  };
+
+  let candidate = clampedFor(today.getFullYear(), today.getMonth());
+  if (candidate.getTime() >= today.getTime()) {
+    return { date: candidate, days: daysUntil(candidate, now) };
+  }
+  // One-time bill whose day already passed this month has no future date.
+  if (step === 0) return null;
+  let guard = 0;
+  while (candidate.getTime() < today.getTime() && guard < 60) {
+    candidate = clampedFor(today.getFullYear(), today.getMonth() + step * (guard + 1));
+    guard += 1;
+  }
+  return { date: candidate, days: daysUntil(candidate, now) };
+}
+
 export interface ServicesAddress {
   id: string; nickname?: string; street: string; city: string; state: string; zip: string;
   type: string; isPrimary: boolean; ownership: string; startDate: string;
@@ -197,13 +288,129 @@ export function ServicesClient({
     if (!grouped[prefix]) grouped[prefix] = [];
     grouped[prefix].push(s);
   }
-  const groupOrder = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"];
-  const sortedGroups = Object.keys(grouped).sort((a, b) => groupOrder.indexOf(a) - groupOrder.indexOf(b));
+  const sortedGroups = Object.keys(grouped).sort((a, b) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b));
 
   const currentPhaseInfo = checklist ? RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase) : null;
 
+  // ── Aurora stat-row derivations (mirrors the mobile services hero) ──
+  // Computed over ALL services, not `filtered`, so the overview stays stable
+  // while the user pivots the search/category/address filters below it.
+  // Costs are cycle-normalized exactly like `totalMonthlyCost` above.
+  const now = new Date();
+  const overviewMonthly = services.reduce(
+    (sum, s) => sum + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle),
+    0,
+  );
+  const activeCount = services.filter((s) => s.isActive !== false).length;
+
+  const categoryTotalMap = new Map<string, number>();
+  for (const s of services) {
+    const prefix = s.category.split("_")[0];
+    const key = GROUP_ORDER.includes(prefix) ? prefix : "OTHER";
+    categoryTotalMap.set(
+      key,
+      (categoryTotalMap.get(key) || 0) + monthlyAmountForCycle(s.monthlyCost || 0, s.billingCycle),
+    );
+  }
+  const categoryTotals = [...categoryTotalMap.entries()]
+    .map(([prefix, total]) => ({ prefix, total }))
+    .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  // "Needs attention" — derived ONLY from existing renewal signals (recurring
+  // billingDay + billingCycle), the same derivation mobile uses. No new data.
+  const attentionItems: { service: ServicesItem; days: number }[] = [];
+  for (const s of services) {
+    if (s.isActive === false) continue;
+    const renewal = nextBillingRenewal(s, now);
+    if (renewal && renewal.days <= RENEWAL_SOON_DAYS) {
+      attentionItems.push({ service: s, days: renewal.days });
+    }
+  }
+  attentionItems.sort((a, b) => a.days - b.days);
+
+  const renewalCopy = (days: number) =>
+    days <= 0
+      ? t("attention.renewsToday")
+      : days === 1
+        ? t("attention.renewsTomorrow")
+        : t("attention.renewsInDays", { days });
+
   return (
     <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">{t("eyebrow")}</p>
+          <h1 className="h2 mt-1 text-3xl md:text-4xl text-foreground">
+            {t.rich("heroTitle", { em: (chunks) => <em>{chunks}</em> })}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-foreground/45">{t("subtitle")}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-muted-foreground text-sm">
+              {filtered.length}
+            </span>
+            {totalMonthlyCost > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-tone-emerald-bg text-tone-emerald-fg text-xs font-medium">
+                {formatCurrency(totalMonthlyCost)}/mo
+              </span>
+            )}
+          </div>
+        </div>
+        <Link href="/services/new">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
+            <Plus className="h-4 w-4" />{t("newTitle")}
+          </button>
+        </Link>
+      </div>
+
+      {/* Aurora stat row — overall numbers, stable while filters pivot the list */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.6fr]">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.perMonth")}</p>
+          <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground leading-none">{formatCurrency(overviewMonthly)}</p>
+          <p className="mt-2 text-[11px] text-foreground/45">{t("stats.acrossServices", { count: services.length })}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.active")}</p>
+          <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground leading-none">{activeCount}</p>
+          <p className="mt-2 text-[11px] text-foreground/45">{t("stats.activeHint")}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.needsAttention")}</p>
+          <p className={`mt-2 font-mono text-2xl font-bold tracking-tight leading-none ${attentionItems.length > 0 ? "text-destructive" : "text-foreground"}`}>{attentionItems.length}</p>
+          <p className="mt-2 text-[11px] text-foreground/45">
+            {attentionItems.length > 0 ? t("stats.attentionHint", { days: RENEWAL_SOON_DAYS }) : t("stats.allClear")}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4 sm:col-span-2 xl:col-span-1">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.byCategory")}</p>
+          {categoryTotals.length > 0 ? (
+            <>
+              <div className="mt-3 flex h-2 gap-[3px]" aria-hidden>
+                {categoryTotals.map((c) => (
+                  <span
+                    key={c.prefix}
+                    className={`rounded-full ${CATEGORY_TONE_BG[c.prefix] || "bg-tone-slate-fg"}`}
+                    style={{ flex: c.total }}
+                  />
+                ))}
+              </div>
+              <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+                {categoryTotals.slice(0, 4).map((c) => (
+                  <span key={c.prefix} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span className={`h-2 w-2 rounded-[3px] ${CATEGORY_TONE_BG[c.prefix] || "bg-tone-slate-fg"}`} aria-hidden />
+                    {groupLabels[c.prefix] || c.prefix}
+                    <span className="font-mono text-foreground/60">{formatCurrency(c.total)}</span>
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-3 text-[11px] text-foreground/45">{t("stats.noCosts")}</p>
+          )}
+        </div>
+      </div>
+
       {checklist && (
         <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -276,30 +483,6 @@ export function ServicesClient({
           )}
         </div>
       )}
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-foreground/45">
-            Services are the actual accounts you track at an address. They can link to listed providers or private local/custom providers.
-          </p>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-muted-foreground text-sm">
-              {filtered.length}
-            </span>
-            {totalMonthlyCost > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-tone-emerald-bg text-tone-emerald-fg text-xs font-medium">
-                {formatCurrency(totalMonthlyCost)}/mo
-              </span>
-            )}
-          </div>
-        </div>
-        <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-            <Plus className="h-4 w-4" />{t("newTitle")}
-          </button>
-        </Link>
-      </div>
 
       {addresses.length > 0 && (
         <div className="space-y-2">
@@ -381,6 +564,39 @@ export function ServicesClient({
           })}
         </div>
       </div>
+
+      {/* Attention strip — services with an imminent renewal signal, each card
+          actionable (links to the service detail). Billing-derived dates are
+          never past-due, so this is strictly "renewing within the week". */}
+      {attentionItems.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-destructive">{t("attention.kicker")}</h2>
+            <span className="font-mono text-[10px] text-destructive/70">{attentionItems.length}</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {attentionItems.map(({ service, days }) => (
+              <Link
+                key={service.id}
+                href={`/services/${service.id}`}
+                className="group flex items-center gap-3 rounded-xl border border-destructive/25 bg-destructive/10 p-3 transition-all hover:bg-destructive/15"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive">
+                  {days <= 1 ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold text-foreground">{service.providerName}</span>
+                  <span className="block truncate text-[11px] text-destructive">
+                    {renewalCopy(days)}
+                    {service.address ? ` · ${service.address.nickname || `${service.address.city}, ${service.address.state}`}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-destructive/60 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {filtered.length === 0 ? (() => {
         const isFilteredEmpty = services.length > 0;

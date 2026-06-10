@@ -448,7 +448,7 @@ export function ProvidersClient({
       {/* Header */}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Providers</h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Providers</em></h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
           </p>

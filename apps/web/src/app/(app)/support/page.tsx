@@ -1,9 +1,11 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageCircle, Plus, ChevronRight, Clock, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
+import { MessageCircle, Plus, ChevronRight, Clock, CheckCircle2, AlertCircle, Loader2, Mail, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { LEGAL_CONTACTS, mailto } from "@/lib/legal-info";
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   OPEN: { label: "Open", cls: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br" },
@@ -33,6 +35,7 @@ interface Ticket {
 }
 
 export default function SupportPage() {
+  const tHelp = useTranslations("help");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -80,7 +83,7 @@ export default function SupportPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Support</h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Support</em></h1>
           <p className="text-sm text-muted-foreground mt-1">View and manage your support tickets</p>
         </div>
         <button
@@ -88,6 +91,31 @@ export default function SupportPage() {
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
         >
           <Plus className="h-4 w-4" /> New Ticket
+        </button>
+      </div>
+
+      {/* Contact cards — email + ticket, tonal icon tiles (Aurora Help) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a
+          href={mailto(LEGAL_CONTACTS.support)}
+          className="rounded-2xl border border-border bg-foreground/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-tone-sky-br"
+        >
+          <div className="h-10 w-10 rounded-xl bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center mb-3">
+            <Mail className="h-4 w-4 text-tone-sky-fg" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">{tHelp("contactEmailTitle")}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{LEGAL_CONTACTS.support}</p>
+        </a>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="rounded-2xl border border-border bg-foreground/[0.03] p-4 text-left transition hover:-translate-y-0.5 hover:border-tone-orange-br"
+        >
+          <div className="h-10 w-10 rounded-xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center mb-3">
+            <MessageCircle className="h-4 w-4 text-tone-orange-fg" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">{tHelp("contactTicketTitle")}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{tHelp("contactTicketSubtitle")}</p>
         </button>
       </div>
 

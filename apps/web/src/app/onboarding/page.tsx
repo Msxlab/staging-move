@@ -9,6 +9,8 @@ import {
   Lock, CalendarClock, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { AuroraAside } from "./aurora-aside";
 import {
   generateChecklist,
   type UserChecklistProfile,
@@ -43,6 +45,9 @@ import {
 } from "@/components/shared/service-limit-upsell";
 import { trackEvent } from "@/lib/analytics";
 
+// Edition VII note: the design prototype opens with a plan-picker step. That
+// step is DELIBERATELY absent here — billing stays post-onboarding (owner
+// decision), so the wizard remains Profile → Address → Services → Moving.
 const STEPS = [
   { icon: User, label: "Profile" },
   { icon: MapPin, label: "Address" },
@@ -112,6 +117,7 @@ function parsePetTypes(value: unknown): string[] {
 export default function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("onboarding");
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -300,6 +306,19 @@ export default function OnboardingPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
+  // "Compiling your starter plan" ritual (Edition VII). A brief, HONEST
+  // assemble moment played once when the Step-2 recommendations finish
+  // loading: the REAL state-based recommendations the wizard already fetched
+  // appear as staggered rows under a progress ring, then the full picker
+  // reveals. It replaces the prototype's "account scan" — LocateFlow never
+  // scans accounts, inboxes, or email, and the copy says so. Decorative only:
+  // prefers-reduced-motion (or an empty result) skips straight to the list.
+  const ritualPlayedRef = useRef(false);
+  const ritualTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [ritualActive, setRitualActive] = useState(false);
+  const [ritualRevealed, setRitualRevealed] = useState(0);
+  const [ritualRows, setRitualRows] = useState<ScoredProvider[]>([]);
+
   // Step 3 – Moving plan
   const [wantsToMove, setWantsToMove] = useState<boolean | null>(null);
   const [movingForm, setMovingForm] = useState({
@@ -436,6 +455,40 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (step === 2) fetchProviders();
   }, [step, fetchProviders]);
+
+  const finishRitual = useCallback(() => {
+    ritualTimersRef.current.forEach(clearTimeout);
+    ritualTimersRef.current = [];
+    setRitualActive(false);
+  }, []);
+
+  // Play the compiling ritual exactly once, the first time the Step-2
+  // recommendations land. Rows are the top REAL recommended providers (same
+  // scoring the picker shows below) — nothing invented, nothing "scanned".
+  useEffect(() => {
+    if (step !== 2 || loadingProviders || ritualPlayedRef.current) return;
+    ritualPlayedRef.current = true;
+    const rows = getRecommendedProviders(providers, 12).slice(0, 5);
+    if (rows.length === 0) return; // nothing to assemble — show the picker directly
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return; // skip straight to the real list
+    setRitualRows(rows);
+    setRitualRevealed(0);
+    setRitualActive(true);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    rows.forEach((_, i) => {
+      timers.push(setTimeout(() => setRitualRevealed(i + 1), 350 + i * 380));
+    });
+    // Hold the "ready" beat briefly, then hand over to the full picker.
+    timers.push(setTimeout(() => setRitualActive(false), 350 + rows.length * 380 + 1200));
+    ritualTimersRef.current = timers;
+    // If the deps change mid-play (e.g. the user skips ahead), end the ritual
+    // cleanly so a later visit to Step 2 never shows a frozen animation.
+    return finishRitual;
+  }, [step, loadingProviders, providers, finishRitual]);
 
   const toggleProvider = (provider: ScoredProvider) => {
     setSelectedProviders((prev) => {
@@ -971,6 +1024,13 @@ export default function OnboardingPage() {
       .filter(Boolean)
       .join(" - ");
 
+  // Editorial serif headings carry ONE italic <em> accent (cool gradient via
+  // the .h1/.h2 helpers in globals.css). Messages embed the <em> tag.
+  const richEm = { em: (chunks: React.ReactNode) => <em>{chunks}</em> };
+  const ritualPct = ritualRows.length > 0 ? Math.round((ritualRevealed / ritualRows.length) * 100) : 0;
+  const ritualDone = ritualRows.length > 0 && ritualRevealed >= ritualRows.length;
+  const ritualStateLabel = address.state || t("aurora_yourState");
+
   // --- Common input styles for glass theme ---
   const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-tone-orange-br transition";
   const selectCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
@@ -1179,7 +1239,17 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <>
+    {/* ≥lg this breaks out of the layout's max-w-2xl column into the Aurora
+        split-screen: fixed-width brand aside + the existing wizard column 1:1.
+        Below lg the wrapper is inert and the wizard renders exactly as before
+        (the layout's wordmark header is the slim mobile header). The fixed
+        footer lives OUTSIDE this wrapper: the lg translate transform would
+        otherwise re-anchor `position: fixed` to the wrapper. */}
+    <div className="lg:relative lg:left-1/2 lg:w-[min(100vw_-_3rem,76rem)] lg:-translate-x-1/2">
+      <div className="lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-10">
+        <AuroraAside step={step} />
+        <div className="space-y-5">
       <ServiceLimitUpsell
         open={Boolean(serviceLimit)}
         details={serviceLimit}
@@ -1187,8 +1257,9 @@ export default function OnboardingPage() {
         returnTo="/onboarding"
       />
 
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center gap-1">
+      {/* Step Indicator — mobile/tablet only; the aside's vertical rail owns
+          step progress on ≥lg. */}
+      <div className="flex items-center justify-center gap-1 lg:hidden">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
           return (
@@ -1222,7 +1293,7 @@ export default function OnboardingPage() {
       {/* Step 0: Profile */}
       {step === 0 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-1">Your Profile</h2>
+          <h2 className="h2 text-2xl text-foreground mb-1">{t.rich("aurora_step0Title", richEm)}</h2>
           <p className="text-muted-foreground text-sm mb-5">Help us personalize your experience</p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -1447,7 +1518,7 @@ export default function OnboardingPage() {
       {/* Step 1: Address */}
       {step === 1 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-1">Your Primary Address</h2>
+          <h2 className="h2 text-2xl text-foreground mb-1">{t.rich("aurora_step1Title", richEm)}</h2>
           <p className="text-muted-foreground text-sm mb-5">Where do you currently live?</p>
           <div className="space-y-4">
             <div>
@@ -1506,13 +1577,82 @@ export default function OnboardingPage() {
         </GlassCard>
       )}
 
+      {/* Step 2: HONEST "compiling your starter plan" ritual. The rows below
+          are the top REAL recommendations already fetched for this address —
+          the same list the picker renders next. No accounts, inboxes, or
+          emails are scanned, and the copy says so explicitly. */}
+      {step === 2 && ritualActive && (
+        <GlassCard className="p-6">
+          <div role="status" aria-live="polite">
+          <div className="flex items-center gap-5">
+            <div className="relative h-[92px] w-[92px] shrink-0">
+              <svg width="92" height="92" viewBox="0 0 92 92" aria-hidden="true">
+                <circle cx="46" cy="46" r="40" fill="none" stroke="hsl(var(--border))" strokeWidth="5" />
+                <circle
+                  cx="46" cy="46" r="40" fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="5" strokeLinecap="round"
+                  strokeDasharray={`${(2 * Math.PI * 40 * ritualPct) / 100} ${2 * Math.PI * 40}`}
+                  transform="rotate(-90 46 46)"
+                  style={{ transition: "stroke-dasharray .45s ease" }}
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center font-mono text-base font-bold text-foreground">
+                {ritualPct}%
+              </span>
+            </div>
+            <div className="min-w-0">
+              <h2 className="h2 text-2xl text-foreground">
+                {ritualDone ? t.rich("aurora_ritualDoneTitle", richEm) : t.rich("aurora_ritualTitle", richEm)}
+              </h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {ritualDone
+                  ? t("aurora_ritualDoneSub", { count: ritualRows.length, state: ritualStateLabel })
+                  : t("aurora_ritualSub", { state: ritualStateLabel })}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 space-y-2">
+            {ritualRows.map((provider, i) => (
+              <div
+                key={provider.id}
+                className={`flex items-center gap-3 rounded-xl border border-border bg-foreground/[0.03] p-3 transition-all duration-500 ${
+                  i < ritualRevealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                }`}
+              >
+                <OnboardingProviderLogo provider={provider} isSelected={false} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{provider.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{providerCategoryLabel(provider.category)}</p>
+                </div>
+                <CheckCircle2
+                  aria-hidden="true"
+                  className={`h-4 w-4 shrink-0 text-tone-emerald-fg transition-opacity duration-300 ${
+                    i < ritualRevealed ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={finishRitual}
+              className="text-xs text-muted-foreground transition hover:text-foreground"
+            >
+              {t("aurora_ritualSkip")}
+            </button>
+          </div>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Step 2: Services */}
-      {step === 2 && (
+      {step === 2 && !ritualActive && (
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Choose Listed Providers</h2>
+              <h2 className="h2 text-2xl text-foreground">{t.rich("aurora_step2Title", richEm)}</h2>
               <p className="text-sm text-muted-foreground">
                 Choose a listed provider or add a local/custom provider later to create a tracked service.
               </p>
@@ -1790,7 +1930,7 @@ export default function OnboardingPage() {
       {/* Step 3: Moving */}
       {step === 3 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-1">Do you have a move planned?</h2>
+          <h2 className="h2 text-2xl text-foreground mb-1">{t.rich("aurora_step3Title", richEm)}</h2>
           <p className="text-muted-foreground text-sm mb-5">
             {isPremium
               ? "If yes, we'll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab."
@@ -1888,40 +2028,48 @@ export default function OnboardingPage() {
         </GlassCard>
       )}
 
-      {/* Sticky Navigation Footer */}
+        </div>
+      </div>
+    </div>
+
+      {/* Sticky Navigation Footer — on lg the controls align under the wizard
+          column (the empty first grid cell mirrors the aside width). */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="backdrop-blur-xl border-t border-border" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
-          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-            <button
-              onClick={prev}
-              disabled={step === 0 || saving}
-              className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
-            >Back</button>
-            <div className="flex items-center gap-2">
-              {step === 2 && (
-                <button
-                  onClick={next}
-                  disabled={saving}
-                  className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
-                >Skip</button>
-              )}
-              {step < 3 && (
-                <button
-                  onClick={next}
-                  disabled={saving || (step === 0 && !legalAcceptedOnServer && !hasRequiredLegalConsents(legalConsents))}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
-                >
-                  {saving ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />Saving...</>
-                  ) : (
-                    <>Continue<ArrowRight className="h-4 w-4" /></>
-                  )}
-                </button>
-              )}
+          <div className="max-w-2xl mx-auto px-4 py-3 lg:max-w-[min(100vw_-_3rem,76rem)] lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-10">
+            <div className="hidden lg:block" aria-hidden="true" />
+            <div className="flex items-center justify-between">
+              <button
+                onClick={prev}
+                disabled={step === 0 || saving}
+                className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              >Back</button>
+              <div className="flex items-center gap-2">
+                {step === 2 && (
+                  <button
+                    onClick={next}
+                    disabled={saving}
+                    className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
+                  >Skip</button>
+                )}
+                {step < 3 && (
+                  <button
+                    onClick={next}
+                    disabled={saving || (step === 0 && !legalAcceptedOnServer && !hasRequiredLegalConsents(legalConsents))}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" />Saving...</>
+                    ) : (
+                      <>Continue<ArrowRight className="h-4 w-4" /></>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
