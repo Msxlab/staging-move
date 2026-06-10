@@ -42,6 +42,8 @@ type AddressOption = {
   isPrimary: boolean;
   nickname?: string | null;
   city?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type ScoredProviderPayload = Provider & {
@@ -119,6 +121,15 @@ export default function ProvidersScreen() {
     if (search) params.q = search;
     if (primaryAddress?.state) params.state = primaryAddress.state;
     if (primaryAddress?.zip) params.zip = primaryAddress.zip;
+    // Destination coordinates unlock the server's coverage-match + distance
+    // ranking ("providers near your new place") over the whole catalog —
+    // web parity with providers-client.tsx. Only sent when present.
+    if (typeof primaryAddress?.latitude === "number" && Number.isFinite(primaryAddress.latitude)) {
+      params.lat = String(primaryAddress.latitude);
+    }
+    if (typeof primaryAddress?.longitude === "number" && Number.isFinite(primaryAddress.longitude)) {
+      params.lng = String(primaryAddress.longitude);
+    }
     const res = await api.get<{ providers: Provider[] }>("/api/providers", params);
     if (res.error) {
       setError(res.error);

@@ -37,6 +37,7 @@ import { GradientProgress } from "@/components/ui/GradientProgress";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
+import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
 import { StateRulesCard } from "@/components/provider/StateRulesCard";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -737,6 +738,12 @@ export default function MovingDetailScreen() {
             </View>
           )}
         </Card>
+
+        {/* New Home Dossier — FEMA flood zone, NCES school district, and the
+            moving-day forecast for the destination. Self-fetches
+            /api/addresses/{toAddressId}/dossier and renders nothing when the
+            lookups are unconfigured/degraded or the device is offline. */}
+        <HomeDossierCard addressId={plan.toAddress?.id} />
 
         {/* Migration Panel — heavy secondary section, collapsed by default */}
         {migration && migration.summary.total > 0 && (

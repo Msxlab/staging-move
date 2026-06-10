@@ -191,6 +191,71 @@ describe("admin acquisition campaigns create route", () => {
     expect(body.priceValidation.warning).toContain("Stripe price is $99/year");
   });
 
+  it("rejects create without password + MFA step-up (403, nothing written)", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValueOnce({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+      requiresMfa: true,
+    });
+
+    const response = await POST(request({
+      name: "Spring Trial",
+      code: "SPRING90",
+      status: "ACTIVE",
+      accessType: "FREE_TRIAL",
+      trialDays: 90,
+      stripePriceId: "price_annual",
+      displayPriceLabel: "$79/year",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      error: "Password confirmation required for this operation.",
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    // Step-up failure must short-circuit BEFORE any Stripe validation,
+    // campaign write, or audit row.
+    expect(mocks.validateStripeCampaignPrice).not.toHaveBeenCalled();
+    expect(mocks.campaignCreate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("forwards body step-up credentials with requireMfa and keeps them out of campaign columns", async () => {
+    const response = await POST(request({
+      name: "Spring Trial",
+      code: "SPRING90",
+      status: "DRAFT",
+      accessType: "FREE_TRIAL",
+      trialDays: 90,
+      stripePriceId: "price_annual",
+      displayPriceLabel: "$79/year",
+      confirmPassword: "correct horse battery staple",
+      mfaCode: "123456",
+    }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "correct horse battery staple",
+      expect.objectContaining({
+        operation: "acquisition_campaign_create",
+        requireMfa: true,
+        mfaCode: "123456",
+      }),
+    );
+    // Credentials ride in the same JSON body as the campaign payload —
+    // they must never be persisted as campaign data.
+    expect(mocks.campaignCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({
+          confirmPassword: expect.anything(),
+        }),
+      }),
+    );
+  });
+
   it("blocks active Stripe price mismatch with 422", async () => {
     mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
       ok: false,

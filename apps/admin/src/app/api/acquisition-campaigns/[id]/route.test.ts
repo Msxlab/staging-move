@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   campaignFindUnique: vi.fn(),
   campaignFindMany: vi.fn(),
   campaignUpdate: vi.fn(),
+  campaignCreate: vi.fn(),
+  campaignDelete: vi.fn(),
+  redemptionFindFirst: vi.fn(),
   auditCreate: vi.fn(),
   validateStripeCampaignPrice: vi.fn(),
 }));
@@ -23,6 +26,11 @@ vi.mock("@/lib/db", () => ({
       findUnique: mocks.campaignFindUnique,
       findMany: mocks.campaignFindMany,
       update: mocks.campaignUpdate,
+      create: mocks.campaignCreate,
+      delete: mocks.campaignDelete,
+    },
+    acquisitionRedemption: {
+      findFirst: mocks.redemptionFindFirst,
     },
     adminAuditLog: {
       create: mocks.auditCreate,
@@ -34,13 +42,19 @@ vi.mock("@/lib/stripe-campaign-validation", () => ({
   validateStripeCampaignPrice: mocks.validateStripeCampaignPrice,
 }));
 
-import { PATCH } from "./route";
+import { DELETE, PATCH, POST } from "./route";
 
-function request(body: unknown) {
+function request(body: unknown, method = "PATCH") {
   return new Request("https://admin.locateflow.com/api/acquisition-campaigns/camp_1", {
-    method: "PATCH",
+    method,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+  }) as any;
+}
+
+function bodylessRequest(method: string) {
+  return new Request("https://admin.locateflow.com/api/acquisition-campaigns/camp_1", {
+    method,
   }) as any;
 }
 
@@ -279,5 +293,140 @@ describe("admin acquisition campaigns update route", () => {
     });
     expect(mocks.validateStripeCampaignPrice).toHaveBeenCalled();
     expect(mocks.campaignUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects update without step-up confirmation (403, nothing read or written)", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValueOnce({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+      requiresMfa: true,
+    });
+
+    const response = await PATCH(request({ status: "ACTIVE" }), params());
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      error: "Password confirmation required for this operation.",
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    // Step-up failure must short-circuit before the campaign is even read,
+    // before Stripe validation, and before any write or audit row.
+    expect(mocks.campaignFindUnique).not.toHaveBeenCalled();
+    expect(mocks.validateStripeCampaignPrice).not.toHaveBeenCalled();
+    expect(mocks.campaignUpdate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("forwards body step-up credentials with requireMfa and keeps them out of update columns", async () => {
+    const response = await PATCH(
+      request({ status: "ACTIVE", confirmPassword: "correct horse battery staple", mfaCode: "654321" }),
+      params(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "correct horse battery staple",
+      expect.objectContaining({
+        operation: "acquisition_campaign_update",
+        requireMfa: true,
+        mfaCode: "654321",
+      }),
+    );
+    // Credentials ride in the same JSON body as the edit payload — they
+    // must never be persisted as campaign data.
+    expect(mocks.campaignUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({
+          confirmPassword: expect.anything(),
+        }),
+      }),
+    );
+  });
+
+  it("rejects duplicate without step-up confirmation (403, no clone created)", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValueOnce({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+      requiresMfa: true,
+    });
+
+    const response = await POST(request({ action: "duplicate" }, "POST"), params());
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      error: "Password confirmation required for this operation.",
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      undefined,
+      expect.objectContaining({ operation: "acquisition_campaign_duplicate", requireMfa: true }),
+    );
+    expect(mocks.campaignFindUnique).not.toHaveBeenCalled();
+    expect(mocks.campaignCreate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects delete without step-up — a body-less DELETE fails closed with 403", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValueOnce({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+      requiresMfa: true,
+    });
+
+    const response = await DELETE(bodylessRequest("DELETE"), params());
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      error: "Password confirmation required for this operation.",
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    // No body means no password — the route must treat that as an
+    // unconfirmed step-up, not a crash or a silent delete.
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      undefined,
+      expect.objectContaining({ operation: "acquisition_campaign_delete", requireMfa: true }),
+    );
+    expect(mocks.campaignFindUnique).not.toHaveBeenCalled();
+    expect(mocks.campaignDelete).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("deletes a redemption-free campaign once step-up is confirmed", async () => {
+    mocks.campaignFindUnique.mockResolvedValueOnce({
+      id: "camp_1",
+      code: "DRAFT90",
+      status: "DRAFT",
+      redemptionCount: 0,
+    });
+    mocks.redemptionFindFirst.mockResolvedValueOnce(null);
+    mocks.campaignDelete.mockResolvedValueOnce({ id: "camp_1" });
+
+    const response = await DELETE(
+      request({ confirmPassword: "correct horse battery staple", mfaCode: "654321" }, "DELETE"),
+      params(),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ ok: true });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ adminId: "admin_1" }),
+      "correct horse battery staple",
+      expect.objectContaining({
+        operation: "acquisition_campaign_delete",
+        requireMfa: true,
+        mfaCode: "654321",
+      }),
+    );
+    expect(mocks.campaignDelete).toHaveBeenCalledWith({ where: { id: "camp_1" } });
   });
 });

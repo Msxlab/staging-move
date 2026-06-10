@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { addressSchema } from "@/lib/validators";
+import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
@@ -103,8 +104,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const validated = addressSchema.partial().parse(body);
 
+    // Server-side geocode fallback for manually-typed edits: when the location
+    // fields change and the RESULTING record would have null coordinates
+    // (payload cleared them, or they were already null), try to geocode the
+    // post-update address. Best-effort + fail-open (no_match/error/timeout →
+    // persist nulls exactly as before, no user-facing error, 2.5s cap) and the
+    // helper never overwrites user/Places-provided coordinates.
+    let geocoded: { latitude: number; longitude: number } | null = null;
+    const locationFieldChanged = (["street", "city", "state", "zip"] as const).some(
+      (k) => validated[k] !== undefined && validated[k] !== existing[k],
+    );
+    if (locationFieldChanged) {
+      geocoded = await geocodeFallbackForPersist({
+        street: validated.street ?? existing.street,
+        city: validated.city ?? existing.city,
+        state: validated.state ?? existing.state,
+        zip: validated.zip ?? existing.zip,
+        latitude: validated.latitude !== undefined ? validated.latitude : existing.latitude,
+        longitude: validated.longitude !== undefined ? validated.longitude : existing.longitude,
+      });
+    }
+
     const updateData = {
       ...validated,
+      ...(geocoded ?? {}),
       ...(validated.formattedAddress !== undefined && {
         formattedAddress: validated.formattedAddress ? encrypt(validated.formattedAddress) : validated.formattedAddress,
       }),

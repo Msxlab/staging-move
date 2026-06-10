@@ -93,6 +93,17 @@ export interface Provider {
    */
   fccServiceable?: boolean;
   /**
+   * Set by an upstream authoritative address-level serviceability lookup for
+   * ELECTRIC utilities (the OpenEI U.S. Utility Rate Database — see
+   * apps/web/src/lib/electric-utility.ts). Mirrors `fccServiceable` exactly:
+   * when true, this provider is treated as AVAILABLE_AT_ADDRESS regardless of
+   * the catalog-derived coverageMatchLevel. When the OpenEI source is
+   * unavailable/unconfigured the field stays undefined (it is optional so
+   * existing mobile payloads keep type-checking) and the engine falls back to
+   * the existing catalog-based confidence — no crash.
+   */
+  utilityServiceable?: boolean;
+  /**
    * Representative geo coordinates for a GEO-BEARING local provider (e.g. the
    * centroid of its mapped service-area polygon, or a single physical location).
    * Optional: federal/national catalog providers and providers without mapped
@@ -214,12 +225,14 @@ const ADDRESS_SENSITIVE_RECOMMENDABLE_COVERAGE = new Set<CoverageConfidence>([
 ]);
 
 function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
-  // An authoritative per-address serviceability confirmation (set by an
-  // upstream FCC National Broadband Map lookup) wins over the catalog-derived
-  // coverage tier. This is the only place the engine reads `fccServiceable`,
-  // so when the FCC source is unavailable the field is simply undefined and
+  // An authoritative per-address serviceability confirmation wins over the
+  // catalog-derived coverage tier: `fccServiceable` is set by an upstream FCC
+  // National Broadband Map lookup (internet) and `utilityServiceable` by an
+  // upstream OpenEI Utility Rate Database lookup (electric) — both treated
+  // identically. This is the only place the engine reads either flag, so when
+  // an upstream source is unavailable its field is simply undefined and
   // confidence falls back to the existing catalog logic.
-  if (provider.fccServiceable === true) {
+  if (provider.fccServiceable === true || provider.utilityServiceable === true) {
     return mapCoverageMatchToConfidence("available_at_address");
   }
   return mapCoverageMatchToConfidence(provider.coverageMatchLevel, {
