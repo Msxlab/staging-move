@@ -63,6 +63,11 @@ jobs:
   security:
     name: Security Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # gitleaks-action lists the PR's commits via the REST API on
+      # pull_request events; without this it 403s in seconds.
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 
