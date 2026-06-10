@@ -120,6 +120,19 @@ describe("provider recommendation safety", () => {
     expect(later.matchReasons.join(" ")).not.toContain("set this up now");
   });
 
+  it("ranks address-tied essentials above moving logistics in phase 0 (no truck-before-bank)", () => {
+    // Regression: in early-planning (phase 0) the moving-truck category used to
+    // get an oversized phase boost and outrank the bank/utilities a move forces
+    // you to update. Day-one essentials must lead; logistics stay mid-list.
+    const bank = provider({ id: "bank", category: "FINANCIAL_BANK" });
+    const electric = provider({ id: "elec", category: "UTILITY_ELECTRIC" });
+    const uhaul = provider({ id: "uhaul", category: "HOUSING_MOVING" });
+    const scored = scoreProviders([uhaul, bank, electric], { ...baseProfile, currentPhase: 0 }, "TX");
+    const scoreOf = (id: string) => scored.find((p) => p.id === id)!.recommendationScore;
+    expect(scoreOf("bank")).toBeGreaterThan(scoreOf("uhaul"));
+    expect(scoreOf("elec")).toBeGreaterThan(scoreOf("uhaul"));
+  });
+
   it("damps optional extras in the final week before the move", () => {
     // HEALTHCARE_VET with no pets resolves to OPTIONAL.
     const vet = provider({ id: "vet", category: "HEALTHCARE_VET", popularityScore: 80 });
