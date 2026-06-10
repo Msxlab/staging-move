@@ -444,7 +444,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "FCC_BDC_API_KEY",
     label: "FCC BDC API Key",
-    description: "FCC National Broadband Map Public Data API token. Register (free) at https://broadbandmap.fcc.gov/ (Data Download / APIs) to obtain a username + token. Used as a Bearer token for the BDC availability endpoint. Without it, FCC serviceability stays disabled and recommendations fall back to catalog-only behavior.",
+    description: "FCC National Broadband Map Public Data API token. Register (free) at https://broadbandmap.fcc.gov/ → sign in → username menu → 'Manage API Access' → Generate (token shown once). Sent as the FCC-documented hash_value header (plus a tolerant Bearer fallback); pair with FCC_BDC_USERNAME. Without it, FCC serviceability stays disabled and recommendations fall back to catalog-only behavior.",
     scope: "WEB",
     category: "MAPS",
     isSecret: true,
@@ -453,6 +453,19 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     runtimeEditable: true,
     usedBy: ["web app recommendations"],
     note: "Optional. Only needed to enable confirmed ISP serviceability.",
+  },
+  {
+    key: "FCC_BDC_USERNAME",
+    label: "FCC BDC Username",
+    description: "FCC account email paired with FCC_BDC_API_KEY. The FCC Public Data API spec (rev 1.5) authenticates with the `username` + `hash_value` header pair, so both values are required for the documented scheme.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app recommendations"],
+    note: "Optional. Pair with FCC_BDC_API_KEY.",
   },
   {
     key: "FCC_BDC_API_BASE",

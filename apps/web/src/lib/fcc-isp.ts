@@ -331,20 +331,23 @@ function extractRows(payload: unknown): RawFccAvailabilityRow[] | null {
 interface FccConfig {
   enabled: boolean;
   apiKey: string | null;
+  username: string | null;
   apiBase: string;
 }
 
 async function loadFccConfig(): Promise<FccConfig> {
   // Read flags/keys from the same runtime-config resolver used by the rest of
   // the app (deployment env first, DB fallback). Never read raw secrets here.
-  const [enabledRaw, apiKey, apiBaseRaw] = await Promise.all([
+  const [enabledRaw, apiKey, usernameRaw, apiBaseRaw] = await Promise.all([
     getRuntimeConfigValue("FCC_BDC_ENABLED").catch(() => null),
     getRuntimeConfigValue("FCC_BDC_API_KEY").catch(() => null),
+    getRuntimeConfigValue("FCC_BDC_USERNAME").catch(() => null),
     getRuntimeConfigValue("FCC_BDC_API_BASE").catch(() => null),
   ]);
   return {
     enabled: (enabledRaw || "").trim().toLowerCase() === "true",
     apiKey: apiKey?.trim() || null,
+    username: usernameRaw?.trim() || null,
     apiBase: (apiBaseRaw?.trim() || DEFAULT_FCC_BDC_API_BASE).replace(/\/+$/, ""),
   };
 }
@@ -389,9 +392,14 @@ export async function lookupFccIsps(input: FccLookupInput): Promise<FccLookupRes
     const url = `${config.apiBase}/availability/fixed?block=${encodeURIComponent(blockGeoid)}`;
     const payload = await fetchJson(url, {
       headers: {
-        // FCC BDC issues a username + token; the documented scheme is a Bearer
-        // token. If the FCC requires a different header, change it here only.
+        // FCC's documented Public Data API scheme (spec rev 1.5) authenticates
+        // with two headers: `username` (the FCC account email) + `hash_value`
+        // (the token generated under "Manage API Access" on broadbandmap.fcc.gov).
+        // We send those when FCC_BDC_USERNAME is configured, plus a Bearer
+        // header as a tolerant fallback for endpoints that accept it.
         Authorization: `Bearer ${config.apiKey}`,
+        hash_value: config.apiKey,
+        ...(config.username ? { username: config.username } : {}),
       },
     });
 
