@@ -226,7 +226,7 @@ export default function NotificationsPage() {
 
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50">
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : "Save Preferences"}
         </button>
       </div>

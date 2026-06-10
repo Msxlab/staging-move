@@ -344,7 +344,7 @@ export default function RuntimeConfigClient() {
                       {isEditing && (
                         <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-border bg-background/50 p-4 lg:grid-cols-2">
                           {stepUpHint ? (
-                            <div className="lg:col-span-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+                            <div className="lg:col-span-2 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm text-tone-honey-fg">
                               {stepUpHint}
                             </div>
                           ) : null}

@@ -50,7 +50,7 @@ export function MovingPlanRecommendations() {
   if (!providers || providers.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-accent0/5 p-5">
+    <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-tone-orange-fg" />
         <h2 className="text-sm font-semibold text-foreground">Set up now for your move</h2>

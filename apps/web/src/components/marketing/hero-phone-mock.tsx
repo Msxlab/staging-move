@@ -17,7 +17,7 @@ export async function HeroPhoneMock() {
     <div className="relative mx-auto w-full max-w-[320px]">
       <div
         aria-hidden="true"
-        className="absolute -inset-10 rounded-[80px] bg-gradient-to-br from-primary/25 via-transparent to-accent0/15 blur-3xl"
+        className="absolute -inset-10 rounded-[80px] bg-gradient-to-br from-primary/25 via-transparent to-transparent blur-3xl"
       />
 
       <div className="relative rounded-[44px] border border-border/80 bg-background p-2 shadow-2xl rotate-[-3deg]">
@@ -49,7 +49,7 @@ export async function HeroPhoneMock() {
               </p>
               <p className="text-[9px] text-muted-foreground">{t("hero_mock_tracked_sub")}</p>
             </div>
-            <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 to-accent0/5 p-3">
+            <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 to-transparent p-3">
               <p className="text-[9px] uppercase tracking-wider text-primary">
                 {t("hero_mock_saved_label")}
               </p>

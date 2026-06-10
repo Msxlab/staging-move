@@ -33,10 +33,10 @@ const STATUS_LABEL: Record<string, string> = {
   FAILED: "Failed",
 };
 
-/** Hardcoded status hues so this never depends on optional theme color keys. */
-function statusColor(status: string, fallback: string): string {
-  if (status === "CONFIRMED") return "#16a34a";
-  if (status === "NEEDS_USER" || status === "FAILED") return "#dc2626";
+/** Status hues from the active theme so light/dark palettes stay consistent. */
+function statusColor(status: string, colors: Theme["colors"], fallback: string): string {
+  if (status === "CONFIRMED") return colors.success;
+  if (status === "NEEDS_USER" || status === "FAILED") return colors.error;
   return fallback;
 }
 
@@ -120,7 +120,7 @@ export default function AddressChangesScreen() {
                 c.dispatches.map((d, i) => (
                   <View key={`${d.connectorKey}-${i}`} style={styles.row}>
                     <Text style={styles.connector}>{(d.connectorKey || "").toUpperCase()}</Text>
-                    <Text style={[styles.status, { color: statusColor(d.status, theme.colors.textSecondary) }]}>
+                    <Text style={[styles.status, { color: statusColor(d.status, theme.colors, theme.colors.textSecondary) }]}>
                       {STATUS_LABEL[d.status] ?? d.status}
                     </Text>
                   </View>

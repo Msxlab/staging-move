@@ -20,8 +20,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -65,12 +63,19 @@ jobs:
   security:
     name: Security Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # gitleaks-action lists the PR's commits via the REST API on
+      # pull_request events; without this it 403s in seconds.
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # gitleaks scans the PR's full commit range; the default shallow
+          # clone makes `base^..head` an unknown revision.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -80,7 +85,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Dependency audit
-        run: pnpm audit --audit-level=high
+        # Gate on the PRODUCTION dependency graph only. Dev tooling (eas-cli,
+        # build chains) carries transitive advisories that can't always be
+        # forced and never ships to the runtime. Full-graph audit stays
+        # available locally via `pnpm audit --audit-level=high`.
+        run: pnpm audit --prod --audit-level=high
 
       - name: Check for secrets in tracked files
         uses: gitleaks/gitleaks-action@v2
@@ -94,8 +103,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -120,8 +127,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -148,8 +153,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:

@@ -422,7 +422,7 @@ export default function PrivacyPage() {
               <button
                 onClick={handleRequestSetPasswordEmail}
                 disabled={passwordSetupBusy}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
               >
                 {passwordSetupBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
                 Email Setup Link
@@ -465,7 +465,7 @@ export default function PrivacyPage() {
             <button
               onClick={handlePasswordChange}
               disabled={savingPw || !pwForm.current || !pwForm.next}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
             >
               {savingPw ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
               Update Password
@@ -535,7 +535,7 @@ export default function PrivacyPage() {
               <button
                 onClick={handleMfaSetup}
                 disabled={!mfaPassword || mfaBusy}
-                className="px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
+                className="px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50 shrink-0"
               >
                 {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Start setup"}
               </button>
@@ -586,7 +586,7 @@ export default function PrivacyPage() {
                 <button
                   onClick={handleMfaConfirm}
                   disabled={mfaCode.length !== 6 || mfaBusy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50 shrink-0"
                 >
                   {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                   Verify

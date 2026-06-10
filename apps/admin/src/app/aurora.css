@@ -29,6 +29,8 @@
   --au-cool-soft: rgba(127, 182, 232, 0.20);
   --au-violet:    #F2C46C;
   --au-violet-soft: rgba(242, 196, 108, 0.20);
+  --au-family:    #4FD1B5;
+  --au-family-soft: rgba(79, 209, 181, 0.14);
   --au-mint:      #96E6CC;
   --au-mint-soft: rgba(135, 221, 192, 0.20);
   --au-amber:     #F5CE82;
@@ -72,6 +74,8 @@ html:not(.dark) .adm-aurora {
   --au-cool-soft: rgba(45, 123, 196, 0.12);
   --au-violet:    #B0781E;
   --au-violet-soft: rgba(176, 120, 30, 0.10);
+  --au-family:    #1F9E78;
+  --au-family-soft: rgba(31, 158, 120, 0.10);
   --au-mint:      #2E9B79;
   --au-mint-soft: rgba(46, 155, 121, 0.10);
   --au-amber:     #B98318;
@@ -655,9 +659,9 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-cool);
 }
 .adm-aurora .tier-stamp.tier-family {
-  background: var(--au-violet-soft);
-  border-color: rgba(242, 196, 108, 0.32);
-  color: var(--au-violet);
+  background: var(--au-family-soft);
+  border-color: rgba(79, 209, 181, 0.32);
+  color: var(--au-family);
 }
 .adm-aurora .tier-stamp.tier-pro {
   background: linear-gradient(135deg, rgba(251, 231, 189, 0.18), rgba(242, 196, 108, 0.22));
@@ -671,10 +675,10 @@ html:not(.dark) .adm-aurora .kpi-foil {
   color: var(--au-amber);
 }
 
-/* Tier distribution bar — Aurora cool/honey/mint segmentation. */
+/* Tier distribution bar — cool (Individual) / teal (Family) / honey (Pro). */
 .adm-aurora .tier-bar { background: var(--au-rule); }
 .adm-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
-.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #D99A4E); }
+.adm-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-family), #2FB89C); }
 .adm-aurora .tier-bar-seg-pro {
   background: linear-gradient(90deg, #FBE7BD 0%, var(--au-violet) 60%, #D99A4E 100%);
   box-shadow: 0 0 8px rgba(242, 196, 108, 0.4);

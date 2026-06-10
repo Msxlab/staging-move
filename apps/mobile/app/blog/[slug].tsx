@@ -231,7 +231,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     aspectRatio: 1200 / 630,
     borderRadius: 12,
     marginBottom: 20,
-    backgroundColor: "#1a1a22",
+    backgroundColor: theme.colors.elevated,
   },
   category: {
     fontSize: 11,

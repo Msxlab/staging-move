@@ -440,7 +440,7 @@ export default function BudgetPage() {
           </div>
         </div>
         <button
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
           onClick={showForm ? closeBudgetForm : openBudgetForm}
         >
           {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" />Manage Budget Limits</>}
@@ -547,7 +547,7 @@ export default function BudgetPage() {
 
           <div className="flex justify-end">
             <button
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
               onClick={handleSave}
               disabled={saving}
             >
@@ -780,7 +780,7 @@ export default function BudgetPage() {
                         />
                       </div>
                       <button
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-tone-orange-fg text-white text-[11px] font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-tone-orange-fg text-white text-[11px] font-medium hover:opacity-90 transition disabled:opacity-50"
                         onClick={() => saveActualDraft(service)}
                         disabled={isSaving}
                       >

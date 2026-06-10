@@ -165,6 +165,20 @@ export const semanticColors = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
+// Plan accent colors — the canonical per-tier hexes from the Edition VII
+// design handoff (one source of truth for web `.plan-*` CSS, the mobile
+// `planAccents` palette, and admin tier chips). Individual is the base
+// cool-blue primary — listed for completeness. No purple, ever.
+// ────────────────────────────────────────────────────────────────────
+
+export const planColors = {
+  free: { dark: "#FF9DB2", light: "#E0567E" }, // candy coral — "Start here"
+  individual: { dark: "#7FB6E8", light: "#2D7BC4" }, // base Aurora cool
+  family: { dark: "#4FD1B5", light: "#1F9E78" }, // teal/mint
+  pro: { dark: "#F2C46C", light: "#B0781E" }, // honey/champagne foil
+} as const;
+
+// ────────────────────────────────────────────────────────────────────
 // Tonal pairs — stat cards, category chips, service-type indicators.
 // Six tones in the Edition VI vocabulary: rose, foil, sage, honey,
 // umber, slate. The `orange/emerald/amber/sky/cyan` legacy tone names

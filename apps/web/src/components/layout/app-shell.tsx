@@ -56,8 +56,13 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
   const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const embedMode = useEmbedMode();
-  // Per-plan accent class consumed by globals.css (.plan-family / .plan-pro).
-  const planClass = planTier === "PRO" ? "plan-pro" : planTier === "FAMILY" ? "plan-family" : "";
+  // Per-plan accent class consumed by globals.css (.plan-free / .plan-family /
+  // .plan-pro). Individual stays classless = base Aurora cool blue.
+  const planClass =
+    planTier === "PRO" ? "plan-pro"
+    : planTier === "FAMILY" ? "plan-family"
+    : planTier?.startsWith("FREE") ? "plan-free"
+    : "";
 
   useEffect(() => {
     if (!mobileMenuOpen) return;

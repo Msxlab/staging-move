@@ -203,7 +203,7 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
           <button
             type="button"
             onClick={handleUpgrade}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:bg-tone-orange-bg"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
           >
             {copy.primary}
             <ArrowRight className="h-4 w-4" />

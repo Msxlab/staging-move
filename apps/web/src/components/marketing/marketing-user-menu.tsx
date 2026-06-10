@@ -45,7 +45,7 @@ export function MarketingUserMenu() {
         aria-haspopup="true"
         aria-label={tNav("userMenu")}
       >
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary0/30 to-accent0/30 border border-border flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/30 to-transparent border border-border flex items-center justify-center">
           {initials ? (
             <span className="text-xs font-bold text-foreground/80">{initials}</span>
           ) : (

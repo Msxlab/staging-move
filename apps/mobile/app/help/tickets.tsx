@@ -39,8 +39,8 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 function makeStatusColor(theme: Theme): Record<string, string> {
   return {
     OPEN: theme.colors.primary,
-    IN_PROGRESS: "#F2C46C",
-    WAITING_USER: "#7FB6E8",
+    IN_PROGRESS: theme.colors.warning,
+    WAITING_USER: theme.colors.info,
     CLOSED: theme.colors.textMuted,
   };
 }

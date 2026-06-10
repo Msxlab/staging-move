@@ -346,7 +346,7 @@ export default function MovingPlanDetailPage() {
             </button>
           )}
           {plan.status === "IN_PROGRESS" && (
-            <button onClick={() => handleStatusChange("COMPLETED")} className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:bg-tone-emerald-bg transition">
+            <button onClick={() => handleStatusChange("COMPLETED")} className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:opacity-90 transition">
               Mark Complete
             </button>
           )}
@@ -359,13 +359,13 @@ export default function MovingPlanDetailPage() {
       {/* Address cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
-          { label: "From", addr: plan.fromAddress, color: "red" },
-          { label: "To", addr: plan.toAddress, color: "emerald" },
+          { label: "From", addr: plan.fromAddress, cardCls: "border-destructive/20 bg-destructive/5", textCls: "text-destructive" },
+          { label: "To", addr: plan.toAddress, cardCls: "border-tone-sage-br bg-tone-sage-bg", textCls: "text-tone-sage-fg" },
         ].map((item) => (
-          <div key={item.label} className={`rounded-2xl border border-${item.color}-500/20 bg-${item.color}-500/5 backdrop-blur-xl p-4`}>
+          <div key={item.label} className={`rounded-2xl border ${item.cardCls} backdrop-blur-xl p-4`}>
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className={`h-4 w-4 text-${item.color}-400`} />
-              <span className={`text-xs font-medium text-${item.color}-400`}>{item.label}</span>
+              <MapPin className={`h-4 w-4 ${item.textCls}`} />
+              <span className={`text-xs font-medium ${item.textCls}`}>{item.label}</span>
             </div>
             <p className="text-sm font-medium text-foreground">{item.addr.street}</p>
             <p className="text-xs text-muted-foreground">{item.addr.city}, {item.addr.state} {item.addr.zip}</p>
@@ -397,7 +397,7 @@ export default function MovingPlanDetailPage() {
           <button
             onClick={generateMoveTasks}
             disabled={tasksLoading}
-            className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:bg-tone-emerald-bg transition disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
           >
             {tasksLoading
               ? "Working…"

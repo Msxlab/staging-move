@@ -151,7 +151,7 @@ export function LanguageSelector({
                     onClick={() => handleChange(loc)}
                     className={`group flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left transition-colors ${
                       selected
-                        ? "bg-gradient-to-r from-primary0/10 to-accent0/5 text-foreground"
+                        ? "bg-gradient-to-r from-primary/10 to-transparent text-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >

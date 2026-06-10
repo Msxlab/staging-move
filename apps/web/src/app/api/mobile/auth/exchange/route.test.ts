@@ -77,6 +77,8 @@ describe("mobile OAuth exchange route", () => {
       ipAddress: "203.0.113.10",
       userAgent: "LocateFlowMobile/1.0",
       deviceType: "Mobile",
+      browser: "LocateFlow app",
+      os: "Mobile",
     });
     expect(mocks.rateLimit).toHaveBeenCalledTimes(2);
     expect(mocks.rateLimit).toHaveBeenCalledWith(

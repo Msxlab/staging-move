@@ -1000,13 +1000,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, marginRight: 8,
   },
   addrChipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
   },
   addrChipText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
   addrChipTextActive: { color: theme.colors.primary },
 
   // Selected chips
-  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)" },
+  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border },
   selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: theme.colors.primary },
   selectedChipText: { fontSize: 12, fontWeight: "600", color: "#fff" },
 
@@ -1031,7 +1031,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row", alignItems: "center", padding: 10, borderRadius: 12,
     borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",
   },
-  recoCardActive: { borderColor: "rgba(127, 182, 232,0.4)", backgroundColor: theme.colors.primaryFaded },
+  recoCardActive: { borderColor: theme.colors.borderFocus, backgroundColor: theme.colors.primaryFaded },
   recoCardTop: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
   recoName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
@@ -1047,7 +1047,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   catCount: { fontSize: 11, color: theme.colors.textMuted },
   catBadge: {
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.3)",
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border,
   },
   catBadgeText: { fontSize: 10, fontWeight: "700", color: theme.colors.primary },
 
@@ -1062,11 +1062,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
   providerMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
   scopeBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
-  scopeFederal: { backgroundColor: "rgba(59,130,246,0.15)" },
-  scopeState: { backgroundColor: "rgba(16,185,129,0.15)" },
+  scopeFederal: { backgroundColor: theme.colors.infoFaded },
+  scopeState: { backgroundColor: theme.colors.successFaded },
   scopeText: { fontSize: 9, fontWeight: "600" },
-  scopeFederalText: { color: "#60a5fa" },
-  scopeStateText: { color: "#34d399" },
+  scopeFederalText: { color: theme.colors.info },
+  scopeStateText: { color: theme.colors.success },
   providerWebsite: { fontSize: 9, color: theme.colors.textMuted, maxWidth: 100 },
 
   // Manual link
@@ -1080,8 +1080,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   manualTrustBox: {
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: "rgba(6,182,212,0.24)",
-    backgroundColor: "rgba(6,182,212,0.08)",
+    borderColor: theme.colors.rose.border,
+    backgroundColor: theme.colors.infoFaded,
     padding: 12,
     marginBottom: 14,
   },
@@ -1107,7 +1107,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
   },
   chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },
@@ -1124,7 +1124,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     position: "absolute", bottom: 0, left: 0, right: 0,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 14,
-    backgroundColor: "rgba(10,10,26,0.95)", borderTopWidth: 1, borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background + "F2", borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
   floatingText: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   floatingBtn: {

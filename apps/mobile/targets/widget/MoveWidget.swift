@@ -117,7 +117,7 @@ struct MoveWidgetView: View {
     private let textColor = Color(red: 0.949, green: 0.961, blue: 0.980) // #F2F5FA
     private let dim = Color(red: 0.541, green: 0.596, blue: 0.675)       // #8A98AC
     private let accent = Color(red: 0.498, green: 0.714, blue: 0.910)    // #7FB6E8
-    private let success = Color(red: 0.204, green: 0.847, blue: 0.651)   // #34D8A6
+    private let success = Color(red: 0.310, green: 0.820, blue: 0.710)   // #4FD1B5
 
     var body: some View {
         let s = entry.snapshot

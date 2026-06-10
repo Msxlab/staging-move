@@ -27,8 +27,9 @@ describe("service worker emergency shutoff", () => {
   it("keeps the install banner on native app store links, not PWA installation", () => {
     const prompt = read("src/components/shared/install-prompt.tsx");
 
-    expect(prompt).toContain("NEXT_PUBLIC_IOS_APP_STORE_URL");
-    expect(prompt).toContain("NEXT_PUBLIC_ANDROID_PLAY_STORE_URL");
+    expect(prompt).toContain("IOS_APP_STORE_URL");
+    expect(prompt).toContain("ANDROID_PLAY_STORE_URL");
+    expect(prompt).toContain("@/lib/store-links");
     expect(prompt).toContain("WaitlistForm");
     expect(prompt).not.toContain("addEventListener(\"beforeinstallprompt\"");
     expect(prompt).not.toContain("addEventListener('beforeinstallprompt'");

@@ -119,7 +119,8 @@ describe("POST /api/workspaces/[id]/invitations", () => {
       where: { workspaceId: "ws-1", status: { not: "SUSPENDED" } },
     });
     expect(mocks.workspaceInvitationCount).toHaveBeenCalledWith({
-      where: { workspaceId: "ws-1", status: "PENDING" },
+      // expiry-aware seat counting: lapsed invites don't hold a seat
+      where: { workspaceId: "ws-1", status: "PENDING", expiresAt: { gte: expect.any(Date) } },
     });
     expect(mocks.workspaceInvitationCreate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ invitedEmail: "invitee@example.com", status: "PENDING" }),

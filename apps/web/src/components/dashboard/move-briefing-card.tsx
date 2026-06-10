@@ -150,7 +150,7 @@ export function MoveBriefingCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-accent0/5 p-5">
+    <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5">
       <div className="flex items-start gap-3">
         <div className="h-9 w-9 rounded-full bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center shrink-0">
           <Sparkles className="h-4 w-4 text-tone-orange-fg" />

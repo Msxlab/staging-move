@@ -255,14 +255,14 @@ export default function ExportPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
-                      {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
+                      {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-warning shrink-0" />}
                     </div>
                     <p className="text-[10px] text-foreground/35">{svcCount} services · {formatCurrency(monthlyCost)}/mo</p>
                   </div>
                   <button
                     onClick={() => handlePdfReport(addr)}
                     disabled={isGenerating || !exportPassword}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50 shrink-0"
                   >
                     {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                     PDF Report

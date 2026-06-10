@@ -75,8 +75,8 @@ export async function openWebUrl(
         dismissButtonStyle: "done",
         // Android Custom Tabs: hide URL once page loads.
         showTitle: false,
-        toolbarColor: Platform.OS === "android" ? "#0f172a" : undefined,
-        controlsColor: Platform.OS === "ios" ? "#f97316" : undefined,
+        toolbarColor: Platform.OS === "android" ? "#0A0F18" : undefined,
+        controlsColor: Platform.OS === "ios" ? "#7FB6E8" : undefined,
         // Always reuse the existing session cookies — this is the whole
         // point of an in-app browser for owned URLs.
         showInRecents: false,

@@ -745,10 +745,10 @@ export default function DashboardScreen() {
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
     if (p === "FAMILY")
-      return { label: t("dashboard.familyBadge", "Family"), fg: "#34D8A6", bg: "rgba(52,216,166,0.12)", border: "rgba(52,216,166,0.32)", glyph: "❖" };
+      return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", glyph: "❖" };
     if (p === "PRO")
-      return { label: t("dashboard.proBadge", "Pro"), fg: "#E9C46A", bg: "rgba(233,196,106,0.12)", border: "rgba(233,196,106,0.34)", glyph: "✦" };
-    return { label: t("dashboard.premiumBadge"), fg: "#B49BFF", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", glyph: "✦" };
+      return { label: t("dashboard.proBadge", "Pro"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.34)", glyph: "✦" };
+    return { label: t("dashboard.premiumBadge"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", glyph: "✦" };
   })();
 
   return (
@@ -1109,7 +1109,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.text }} numberOfLines={1}>{checklist.nextAction.title}</Text>
                     {checklist.nextAction.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#B49BFF" }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: theme.colors.info }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
                     ) : null}
                     {checklist.nextAction.estimatedMinutes ? (
                       <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{checklist.nextAction.estimatedMinutes} min</Text>

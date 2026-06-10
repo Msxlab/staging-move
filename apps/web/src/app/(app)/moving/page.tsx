@@ -45,7 +45,7 @@ export default async function MovingPage() {
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Link href="/moving/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
             <Plus className="h-4 w-4" /> {t("newPlanTitle")}
           </button>
         </Link>

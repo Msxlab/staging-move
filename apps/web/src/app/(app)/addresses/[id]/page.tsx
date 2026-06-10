@@ -275,13 +275,13 @@ export default function AddressDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">{address.nickname || t("detail_defaultName")}</h1>
-            {address.isPrimary && <Star className="h-4 w-4 text-tone-honey-fg fill-amber-400" />}
+            {address.isPrimary && <Star className="h-4 w-4 text-tone-honey-fg fill-warning" />}
           </div>
           <p className="text-sm text-muted-foreground">{address.street}, {address.city}, {address.state} {address.zip}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/moving/new?from=${address.id}`}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
               <Truck className="h-3.5 w-3.5" />{t("detail_moveFromHere")}
             </button>
           </Link>
@@ -347,7 +347,7 @@ export default function AddressDetailPage() {
               >{bulkMode ? tCommon("cancel") : t("detail_bulkEdit")}</button>
             )}
             <Link href="/services/new">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition">
                 <Plus className="h-3 w-3" />{t("detail_addService")}
               </button>
             </Link>
@@ -455,7 +455,7 @@ export default function AddressDetailPage() {
                                     onKeyDown={(e) => { if (e.key === "Enter") saveCost(service.id); if (e.key === "Escape") setEditingCostId(null); }}
                                   />
                                   <button onClick={() => saveCost(service.id)} disabled={isSavingCost}
-                                    className="p-1 rounded-md bg-tone-orange-fg text-white hover:bg-tone-orange-bg transition disabled:opacity-50">
+                                    className="p-1 rounded-md bg-tone-orange-fg text-white hover:opacity-90 transition disabled:opacity-50">
                                     {isSavingCost ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                   </button>
                                   <button onClick={() => setEditingCostId(null)} className="p-1 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">

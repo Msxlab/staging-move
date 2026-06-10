@@ -178,7 +178,7 @@ export function ProviderDetailClient({
         <div className="flex flex-col sm:flex-row gap-2">
           <Link
             href={addCta}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary0 to-accent text-white text-sm font-semibold hover:from-primary hover:to-accent transition"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
           >
             Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>

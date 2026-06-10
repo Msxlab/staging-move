@@ -20,7 +20,7 @@ export function ImpersonationBanner() {
       aria-live="polite"
       data-testid="impersonation-banner"
       className="sticky top-0 z-50 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white"
-      style={{ background: "var(--color-warning, #b45309)" }}
+      style={{ background: "var(--warning, #B0781E)" }}
     >
       <span aria-hidden="true">⚠</span>
       <span>

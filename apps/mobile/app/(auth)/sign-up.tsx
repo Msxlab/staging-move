@@ -241,7 +241,7 @@ export default function SignUpScreen() {
   if (done) {
     return (
       <ScrollView contentContainerStyle={styles.scroll}>
-        <CheckCircle2 size={48} color="#34d399" style={{ alignSelf: "center" }} />
+        <CheckCircle2 size={48} color={theme.colors.success} style={{ alignSelf: "center" }} />
         <Text style={styles.title}>{t("auth.checkEmail")}</Text>
         <Text style={styles.subtitle}>
           {t("auth.checkEmailDescription", { email })}

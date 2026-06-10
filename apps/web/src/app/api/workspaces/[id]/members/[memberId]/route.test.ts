@@ -3,10 +3,17 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceMember: { findFirst: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    user: { findUnique: vi.fn().mockResolvedValue({ id: "u-target", email: "target@example.com", name: "Target" }) },
+    workspace: { findUnique: vi.fn().mockResolvedValue({ name: "Test Workspace" }) },
+    auditLog: { create: vi.fn() },
+    notification: { create: vi.fn() },
   },
 }));
 vi.mock("@/lib/user-auth", () => ({ getUserSession: vi.fn() }));
-vi.mock("@/lib/workspace-routes", () => ({ workspaceFeatureGate: vi.fn() }));
+vi.mock("@/lib/workspace-routes", () => ({
+  workspaceFeatureGate: vi.fn(),
+  maskEmail: vi.fn((email: string) => email),
+}));
 
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";

@@ -163,7 +163,7 @@ function ConfettiBurst() {
       Array.from({ length: 14 }, (_, i) => ({
         left: `${(i / 14) * 100 + (i % 3) * 4}%`,
         delay: `${(i % 5) * 90}ms`,
-        color: ["#7FB6E8", "#B49BFF", "#87DDC0", "#F2C46C"][i % 4],
+        color: ["#7FB6E8", "#F2C46C", "#87DDC0", "#F2C46C"][i % 4],
       })),
     [],
   );
@@ -204,7 +204,7 @@ export function MoveCommandCenter({
   // Show an honest "unlock the move" card instead of a CTA that would 403.
   if (!activePlan && !isPremium) {
     return (
-      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
             <Lock className="h-7 w-7 text-tone-orange-fg" />
@@ -233,7 +233,7 @@ export function MoveCommandCenter({
   // ── NO-PLAN: warm "start your move" hero (paid users) ─────────────────────
   if (!activePlan) {
     return (
-      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/10 p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
             <Rocket className="h-7 w-7 text-tone-orange-fg" />
@@ -306,7 +306,7 @@ export function MoveCommandCenter({
   const isCelebration = countdown.phase === "today" || readiness >= 100;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary0/10 via-foreground/[0.03] to-accent0/8 p-6 sm:p-7">
+    <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-7">
       {burst && <ConfettiBurst />}
       <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
         {/* Countdown block */}
