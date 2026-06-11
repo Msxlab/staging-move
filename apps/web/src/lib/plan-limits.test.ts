@@ -52,7 +52,7 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("allows completed free users to add services (providers/services are unlimited on free)", async () => {
+  it("allows completed free users to add services under the thin-Free 10 cap", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(2);
 
@@ -61,7 +61,7 @@ describe("plan limits setup grace", () => {
     });
   });
 
-  it("gives active Free Access users UNLIMITED services (no 10-service cap)", async () => {
+  it("enforces the thin-Free 10-service cap on completed Free Access users", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "INDIVIDUAL",
       status: "ACTIVE",
@@ -69,14 +69,16 @@ describe("plan limits setup grace", () => {
       freeAccessEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(500);
+    mocks.serviceCount.mockResolvedValue(10);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: true,
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 10,
     });
   });
 
-  it("gives annual Free Trial users UNLIMITED services even at a high count", async () => {
+  it("enforces the thin-Free 10-service cap on completed free-trial users", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "INDIVIDUAL",
       status: "TRIALING",
@@ -84,19 +86,23 @@ describe("plan limits setup grace", () => {
       trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(1000);
+    mocks.serviceCount.mockResolvedValue(10);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: true,
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 10,
     });
   });
 
-  it("gives completed users UNLIMITED services when the subscription row is missing", async () => {
+  it("enforces the thin-Free 10-service cap when the subscription row is missing", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
-    mocks.serviceCount.mockResolvedValue(250);
+    mocks.serviceCount.mockResolvedValue(10);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
-      allowed: true,
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 10,
     });
   });
 
@@ -297,14 +303,14 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
     currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
 
-  it("resolves a paid-active Family subscription to Family limits (17/250)", async () => {
+  it("resolves a paid-active Family subscription to Family limits (15/500)", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
 
     await expect(getUserPlan("user_1")).resolves.toMatchObject({
       plan: "FAMILY",
       isActive: true,
       hasPremium: true,
-      limits: { maxAddresses: 17, maxServices: 250 },
+      limits: { maxAddresses: 15, maxServices: 500 },
     });
   });
 
@@ -326,14 +332,14 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
     await expect(canCreateService("user_1")).resolves.toMatchObject({ allowed: true });
   });
 
-  it("still enforces the Family service ceiling at 250", async () => {
+  it("still enforces the Family service ceiling at 500", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
-    mocks.serviceCount.mockResolvedValue(250);
+    mocks.serviceCount.mockResolvedValue(500);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
       allowed: false,
       code: "SERVICE_LIMIT_REACHED",
-      limit: 250,
+      limit: 500,
     });
   });
 
@@ -358,7 +364,7 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
       plan: "FAMILY",
       isActive: true,
       hasPremium: true,
-      limits: { maxAddresses: 17, maxServices: 250 },
+      limits: { maxAddresses: 15, maxServices: 500 },
     });
   });
 
@@ -381,15 +387,15 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
 
   it("blocks a workspace member when the owner's Family workspace service limit is full", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue(paidActive("FAMILY"));
-    mocks.serviceCount.mockResolvedValue(250);
+    mocks.serviceCount.mockResolvedValue(500);
 
     await expect(
       canCreateService("member_1", { workspaceId: "ws_1", planOwnerUserId: "owner_1" }),
     ).resolves.toMatchObject({
       allowed: false,
       code: "SERVICE_LIMIT_REACHED",
-      current: 250,
-      limit: 250,
+      current: 500,
+      limit: 500,
     });
   });
 

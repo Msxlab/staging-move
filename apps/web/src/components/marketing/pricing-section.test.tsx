@@ -158,23 +158,37 @@ describe("PricingSection", () => {
     expect(html).toContain("Priority support");
   });
 
-  it("keeps card bullets in sync with BILLING_PLAN_DEFINITIONS marketing features", () => {
-    const paidLines = [
-      "AI move briefing — your move, explained",
-      "New Home Dossier: flood zone, school district & moving-day weather",
-      "Smart provider suggestions with FCC broadband & utility data",
-    ];
-    for (const plan of ["INDIVIDUAL", "FAMILY", "PRO"] as const) {
-      for (const line of paidLines) {
-        expect(BILLING_PLAN_DEFINITIONS[plan].features).toContain(line);
-      }
-    }
-    // Free tier gets the smart-suggestions line only — AI briefing and the
-    // dossier are paid-plan features (FREE/FREE_TRIAL sees an upgrade teaser).
-    const free = BILLING_PLAN_DEFINITIONS.FREE_TRIAL.features;
-    expect(free).toContain("Smart provider suggestions with FCC broadband & utility data");
-    expect(free.join("\n")).not.toContain("AI move briefing");
-    expect(free.join("\n")).not.toContain("New Home Dossier");
+  it("keeps card bullets in sync with the post-2026-06-10 tier matrix", () => {
+    const indiv = BILLING_PLAN_DEFINITIONS.INDIVIDUAL.features.join("\n");
+    const family = BILLING_PLAN_DEFINITIONS.FAMILY.features.join("\n");
+    const pro = BILLING_PLAN_DEFINITIONS.PRO.features.join("\n");
+    const free = BILLING_PLAN_DEFINITIONS.FREE_TRIAL.features.join("\n");
+
+    // Individual: data-checked suggestions + dossier + VIN + weather; NO AI.
+    expect(indiv).toContain("Data-checked provider suggestions");
+    expect(indiv).toContain("New Home Dossier");
+    expect(indiv).toContain("VIN recall check");
+    expect(indiv).toContain("weather alerts & weekly digest");
+    expect(indiv).not.toContain("AI move briefing");
+
+    // Family: AI + real map, inherits Individual; movers stay Pro-only.
+    expect(family).toContain("Everything in Individual");
+    expect(family).toContain("AI move briefing");
+    expect(family).toContain("Real route map");
+    expect(family).not.toContain("mover suggestions");
+
+    // Pro: inherits Family + the Pro-only differentiators.
+    expect(pro).toContain("Everything in Family");
+    expect(pro).toContain("Licensed mover suggestions");
+    expect(pro).toContain("New Home Dossier PDF export");
+    expect(pro).toContain("Up to 3 move plans at once");
+    expect(pro).toContain("Priority support");
+
+    // Free: thin tier — catalog suggestions only, no data-check / AI / dossier.
+    expect(free).toContain("Provider suggestions from our catalog");
+    expect(free).not.toContain("Data-checked");
+    expect(free).not.toContain("AI move briefing");
+    expect(free).not.toContain("New Home Dossier:");
   });
 
   it("renders the compare-plans matrix under the cards with a $0 Free column", () => {
@@ -187,7 +201,6 @@ describe("PricingSection", () => {
     // real enforced limits (PLAN_LIMITS / FEATURES — see plan-compare-table).
     expect(html).toContain("plan-free");
     expect(html).toContain("$0");
-    expect(html).toContain("Unlimited");
     // The matrix renders after the card grid.
     expect(html.indexOf("Compare plans")).toBeGreaterThan(html.indexOf('id="pricing-plan-grid"'));
   });

@@ -31,7 +31,7 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
 
   const freeFeatures = [
     { icon: MapPin, label: t("teaser.freeAddresses", { defaultValue: "Up to 3 homes & addresses" }) },
-    { icon: Zap, label: t("teaser.freeProviders", { defaultValue: "Unlimited providers & services" }) },
+    { icon: Zap, label: t("teaser.freeProviders", { defaultValue: "Up to 10 providers & services" }) },
     { icon: Bell, label: t("teaser.freeReminders", { defaultValue: "Bill & renewal reminders" }) },
   ];
 

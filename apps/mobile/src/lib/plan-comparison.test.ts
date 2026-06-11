@@ -106,14 +106,14 @@ describe("buildPlanComparison", () => {
   });
 
   // Caps and seats mirror the web compare table — drift fails CI here.
-  it("mirrors web address/service caps (3/10/15/25 · 25/100/500/1000) and seats (1/1/5/10)", () => {
+  it("mirrors web address/service caps (3/10/15/25 · 10/100/500/1000) and seats (1/1/5/10)", () => {
     const entries = buildPlanComparison(webInput);
     expect(valueOf(entries, "FREE_TRIAL", "subscription_featAddresses")).toBe(3);
     expect(valueOf(entries, "INDIVIDUAL", "subscription_featAddresses")).toBe(10);
     expect(valueOf(entries, "FAMILY", "subscription_featAddresses")).toBe(15);
     expect(valueOf(entries, "PRO", "subscription_featAddresses")).toBe(25);
 
-    expect(valueOf(entries, "FREE_TRIAL", "subscription_featServices")).toBe(25);
+    expect(valueOf(entries, "FREE_TRIAL", "subscription_featServices")).toBe(10);
     expect(valueOf(entries, "INDIVIDUAL", "subscription_featServices")).toBe(100);
     expect(valueOf(entries, "FAMILY", "subscription_featServices")).toBe(500);
     expect(valueOf(entries, "PRO", "subscription_featServices")).toBe(1000);

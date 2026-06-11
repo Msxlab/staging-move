@@ -30,19 +30,19 @@ const PLAN_LIMITS: Record<string, {
   maxAddresses: number;
   maxServices: number;
 }> = {
-  // FREE = "organize your home": 3 addresses, UNLIMITED providers/services.
+  // FREE = thin teaser tier (owner 2026-06-10): 3 addresses, 10 services.
   // The move plan itself is gated separately (see canCreateMovingPlan).
   FREE_TRIAL: {
     maxAddresses: 3,
-    maxServices: UNLIMITED,
+    maxServices: 10,
   },
   INDIVIDUAL: {
     maxAddresses: 10,
     maxServices: 100,
   },
   FAMILY: {
-    maxAddresses: 17,
-    maxServices: 250,
+    maxAddresses: 15,
+    maxServices: 500,
   },
   PRO: {
     maxAddresses: 25,
@@ -50,10 +50,12 @@ const PLAN_LIMITS: Record<string, {
   },
 };
 
-// Pre-completion (setup) caps. Free now mirrors the active FREE_TRIAL floor:
-// 3 addresses + unlimited services. The moving-plan allowance is removed
-// entirely — free users never create a plan, they get the value-first teaser
-// and an upgrade CTA instead (see canCreateMovingPlan).
+// Pre-completion (setup) caps. During onboarding/setup, services stay
+// uncapped so a new user can bulk-import their existing accounts without
+// hitting the wall mid-import; the thin-Free 10-service steady-state cap
+// (PLAN_LIMITS.FREE_TRIAL) applies only AFTER setup completes. The
+// moving-plan allowance is removed entirely — free users never create a
+// plan, they get the value-first teaser + upgrade CTA (see canCreateMovingPlan).
 const SETUP_GRACE_LIMITS = {
   maxAddresses: 3,
   maxServices: UNLIMITED,
