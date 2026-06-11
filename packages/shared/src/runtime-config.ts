@@ -1132,6 +1132,36 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     validation: "boolean",
     note: "Default off. Placements themselves are admin-managed SponsoredPlacement rows; this flag only opens rendering. Impression/click counters are fire-and-forget and never block a user request.",
   },
+  {
+    key: "MOVER_REGISTRATION_ENABLED",
+    label: "Mover Self-Service Portal Enabled",
+    description:
+      "Master flag for the mover self-service portal: the public /movers/apply form (a moving company submits its details + uploads proof documents -> an admin verification queue) and the admin review surface. When 'true', the public apply form accepts submissions. Off by default; the admin review queue is always reachable for admins regardless of this flag.",
+    scope: "WEB",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app /movers/apply"],
+    validation: "boolean",
+    note: "Default off. Gates the PUBLIC apply form only; approved movers surface in the existing licensed-movers list (Family/Pro gated, separate flag).",
+  },
+  {
+    key: "FMCSA_WEBKEY",
+    label: "FMCSA QCMobile Web Key",
+    description:
+      "Free FMCSA QCMobile API web key used by the admin mover-verification queue to cross-check a USDOT number against the live FMCSA register (operating authority active?, household-goods authority, safety rating). Request one at https://mobile.fmcsa.dot.gov/QCDevsite/docs/keyRequest. When unset the admin queue still works — the auto cross-check just shows 'not configured' and the reviewer verifies manually.",
+    scope: "ADMIN",
+    category: "APP",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["admin mover verification queue"],
+    validation: "FMCSA-issued web key",
+    note: "Optional. Verify the exact QCMobile response field mapping (allowedToOperate / carrierOperation / safetyRating) with one live call once the key is issued; the lookup degrades gracefully on any unexpected shape.",
+  },
 
   // ── OAuth (Google + Apple Sign-in) ─────────────────────────
   {

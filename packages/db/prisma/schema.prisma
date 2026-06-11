@@ -2328,3 +2328,86 @@ model SponsoredPlacement {
   @@index([active, startsAt, endsAt])
   @@index([stateScope])
 }
+
+// Mover self-service portal v1 — a moving company applies to be listed, uploads
+// proof documents, and lands in an admin verification queue. On approval the
+// application is linked to (or creates) a MovingCompany row (the existing FMCSA
+// catalog) so it surfaces in the licensed-movers list. Status flow:
+// PENDING -> IN_REVIEW -> APPROVED | REJECTED | NEEDS_INFO. The fmcsa* fields
+// snapshot the live FMCSA cross-check an admin ran during review (never shown to
+// the public; they inform the approve/reject decision). Honesty: complaintCount
+// 0 means "no complaints on record" only when fmcsaCheckedAt is set.
+model MoverApplication {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  companyLegalName String  @db.VarChar(255)
+  dbaName          String? @db.VarChar(255)
+  usdotNumber      Int
+  mcNumber         String? @db.VarChar(20)
+
+  contactName  String  @db.VarChar(120)
+  contactEmail String  @db.VarChar(191)
+  contactPhone String? @db.VarChar(30)
+  website      String? @db.VarChar(255)
+
+  // 2-letter state codes, comma-separated (e.g. "TX,OK,NM"). Services offered,
+  // comma-separated keys (e.g. "LOCAL,LONG_DISTANCE,PACKING,STORAGE").
+  serviceStates String @db.VarChar(255)
+  services      String @db.VarChar(255)
+
+  fleetSize       Int?
+  yearsInBusiness Int?
+
+  // Applicant attested the submitted information is accurate (required to submit).
+  attestation Boolean @default(false)
+
+  status String @default("PENDING") @db.VarChar(20) // PENDING | IN_REVIEW | APPROVED | REJECTED | NEEDS_INFO
+
+  // FMCSA cross-check snapshot captured during admin review (null until checked).
+  fmcsaAuthorityActive Boolean?
+  fmcsaHhgAuthorized   Boolean?
+  fmcsaComplaintCount  Int?
+  fmcsaSafetyRating    String?   @db.VarChar(20)
+  fmcsaCheckedAt       DateTime?
+
+  // Internal admin note (never emailed) + the reason shown to the applicant on
+  // a rejection / needs-info decision.
+  reviewNotes     String? @db.Text
+  decisionMessage String? @db.Text
+
+  reviewedByAdminId String?   @db.VarChar(30) // loose AdminUser ref; audit-style, no FK
+  reviewedAt        DateTime?
+
+  // Set on APPROVED: the MovingCompany row this application is listed as.
+  linkedMovingCompanyId String? @db.VarChar(30)
+
+  documents MoverDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([usdotNumber])
+  @@index([contactEmail])
+  @@index([createdAt])
+}
+
+// A proof document uploaded with a MoverApplication (USDOT cert, insurance COI,
+// state license, business registration). The file lives in R2 object storage;
+// only the object key + metadata are stored here. Deleting the application
+// cascades its documents.
+model MoverDocument {
+  id            String @id @default(cuid()) @db.VarChar(30)
+  applicationId String @db.VarChar(30)
+  application   MoverApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  kind        String @db.VarChar(30) // USDOT_CERT | INSURANCE_COI | STATE_LICENSE | BUSINESS_REG | OTHER
+  fileName    String @db.VarChar(255)
+  objectKey   String @db.VarChar(400) // R2 object key
+  contentType String @db.VarChar(120)
+  sizeBytes   Int
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+}
