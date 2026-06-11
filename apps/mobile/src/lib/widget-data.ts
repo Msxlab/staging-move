@@ -261,36 +261,16 @@ interface AppGroupBridge {
  *     `setAppGroupItem(appGroup, key, value)` + optional `reloadAllTimelines()`
  */
 async function loadAppGroupBridge(): Promise<AppGroupBridge | null> {
-  // Runtime-computed specifier defeats static module resolution so tsc/bundler
-  // don't require a module that's absent until the native build adds it.
-  const tryImport = async (name: string): Promise<any> => {
-    try {
-      const spec = name; // indirection: not a literal at the import() call site
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (await import(/* @vite-ignore */ spec).catch(() => null)) as any;
-    } catch {
-      return null;
-    }
-  };
-
-  const shared = await tryImport("react-native-shared-group-preferences");
-  const sharedApi = shared?.default ?? shared;
-  if (sharedApi && typeof sharedApi.setItem === "function") {
-    return {
-      write: (appGroup, key, value) => sharedApi.setItem(key, value, appGroup),
-      reload: typeof sharedApi.reloadAllTimelines === "function" ? () => sharedApi.reloadAllTimelines() : undefined,
-    };
-  }
-
-  const custom = await tryImport("@/lib/native-app-group");
-  const customApi = custom?.default ?? custom;
-  if (customApi && typeof customApi.setAppGroupItem === "function") {
-    return {
-      write: (appGroup, key, value) => customApi.setAppGroupItem(appGroup, key, value),
-      reload: typeof customApi.reloadAllTimelines === "function" ? () => customApi.reloadAllTimelines() : undefined,
-    };
-  }
-
+  // The iOS App Group bridge is wired but INERT until a native module is added
+  // to the EAS build. Metro cannot bundle a dynamic import() with a runtime
+  // (non-literal) specifier, and no iOS App Group module is in package.json yet,
+  // so probing at the JS layer would break the bundle (it did — Metro
+  // "Invalid call"). We return null here (the iOS widget write degrades to a
+  // documented no-op). When the native App Group module ships, add it to
+  // package.json and load it with a STATIC-LITERAL dynamic import, exactly like
+  // requestAndroidWidgetUpdate does for "react-native-android-widget":
+  //   const mod = await import("the-real-app-group-module").catch(() => null);
+  //   if (mod?.setItem) return { write: (g,k,v) => mod.setItem(k,v,g), reload: mod.reloadAllTimelines };
   return null;
 }
 
