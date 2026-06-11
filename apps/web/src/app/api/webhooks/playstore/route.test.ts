@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   refreshGoogleSubscriptionFor: vi.fn(),
   sendIapCancellationNotice: vi.fn(),
   emitSecurityEvent: vi.fn(),
+  alertWebhookSignatureFailure: vi.fn(),
   prisma: {
     processedWebhookEvent: { findUnique: vi.fn(), create: vi.fn() },
     subscription: { updateMany: vi.fn() },
@@ -42,6 +43,13 @@ vi.mock("@/lib/iap-common", () => ({
 
 vi.mock("@/lib/security-events", () => ({
   emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
+}));
+
+vi.mock("@/lib/security-alerts", () => ({
+  alertWebhookSignatureFailure: (...args: any[]) => {
+    mocks.alertWebhookSignatureFailure(...args);
+    return Promise.resolve();
+  },
 }));
 
 function request(body: unknown, headers?: Record<string, string>) {
@@ -117,6 +125,11 @@ describe("Play Store RTDN webhook auth", () => {
       type: "WEBHOOK_SIG_FAILURE",
       context: expect.objectContaining({ provider: "playstore", reason: "missing_oidc_token" }),
     }));
+    // The operator email alarm fires alongside the structured event.
+    expect(mocks.alertWebhookSignatureFailure).toHaveBeenCalledWith({
+      provider: "playstore",
+      reason: "missing_oidc_token",
+    });
   });
 
   it("accepts a valid expected service account identity", async () => {

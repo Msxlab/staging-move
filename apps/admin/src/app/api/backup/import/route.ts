@@ -60,6 +60,26 @@ const IMPORT_MODEL_OPS = {
       prisma.dataConsent.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.dataConsent.create({ data }),
   },
+  workspaces: {
+    count: () => prisma.workspace.count(),
+    // Workspace is a soft-delete model — use the raw client so a backup id
+    // colliding with a soft-deleted target row is detected (see header).
+    findUniqueById: (id: string) =>
+      prismaUnsafe.workspace.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.workspace.create({ data }),
+  },
+  workspaceMembers: {
+    count: () => prisma.workspaceMember.count(),
+    findUniqueById: (id: string) =>
+      prisma.workspaceMember.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.workspaceMember.create({ data }),
+  },
+  notificationPreferences: {
+    count: () => prisma.notificationPreference.count(),
+    findUniqueById: (id: string) =>
+      prisma.notificationPreference.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.notificationPreference.create({ data }),
+  },
   providers: {
     count: () => prisma.serviceProvider.count(),
     findUniqueById: (id: string) =>
@@ -108,6 +128,12 @@ const IMPORT_MODEL_OPS = {
       prismaUnsafe.service.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.service.create({ data }),
   },
+  reminders: {
+    count: () => prisma.reminder.count(),
+    findUniqueById: (id: string) =>
+      prisma.reminder.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.reminder.create({ data }),
+  },
   moveTasks: {
     count: () => prisma.moveTask.count(),
     findUniqueById: (id: string) =>
@@ -130,6 +156,12 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.notification.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.notification.create({ data }),
+  },
+  emailTemplates: {
+    count: () => prisma.emailTemplate.count(),
+    findUniqueById: (id: string) =>
+      prisma.emailTemplate.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.emailTemplate.create({ data }),
   },
   emailLogs: {
     count: () => prisma.emailLog.count(),
@@ -154,6 +186,18 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.connectorFallbackAction.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.connectorFallbackAction.create({ data }),
+  },
+  supportTickets: {
+    count: () => prisma.supportTicket.count(),
+    findUniqueById: (id: string) =>
+      prisma.supportTicket.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.supportTicket.create({ data }),
+  },
+  ticketMessages: {
+    count: () => prisma.ticketMessage.count(),
+    findUniqueById: (id: string) =>
+      prisma.ticketMessage.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.ticketMessage.create({ data }),
   },
   adminUsers: {
     count: () => prisma.adminUser.count(),
@@ -226,6 +270,35 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.sponsoredPlacement.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.sponsoredPlacement.create({ data }),
+  },
+  helpArticles: {
+    count: () => prisma.helpArticle.count(),
+    findUniqueById: (id: string) =>
+      prisma.helpArticle.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.helpArticle.create({ data }),
+  },
+  faqs: {
+    count: () => prisma.fAQ.count(),
+    findUniqueById: (id: string) => prisma.fAQ.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.fAQ.create({ data }),
+  },
+  stateRules: {
+    count: () => prisma.stateRule.count(),
+    findUniqueById: (id: string) =>
+      prisma.stateRule.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.stateRule.create({ data }),
+  },
+  ipRules: {
+    count: () => prisma.iPRule.count(),
+    findUniqueById: (id: string) =>
+      prisma.iPRule.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.iPRule.create({ data }),
+  },
+  waitlistSignups: {
+    count: () => prisma.waitlistSignup.count(),
+    findUniqueById: (id: string) =>
+      prisma.waitlistSignup.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.waitlistSignup.create({ data }),
   },
 } as const;
 

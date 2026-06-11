@@ -156,6 +156,13 @@ export async function GET(request: NextRequest) {
         NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-create-failed")),
       );
     }
+    if (err?.message === "SIGNUPS_PAUSED") {
+      // SEC-KILL: operator kill switch paused new signups. Browser redirect
+      // flow, so the polite "temporarily paused" message renders on sign-in.
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=signups-paused")),
+      );
+    }
     logGoogleOAuthFailure("user_link", err);
     return clearGoogleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),

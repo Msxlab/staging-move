@@ -30,6 +30,7 @@ import {
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
 import { emitSecurityEvent } from "@/lib/security-events";
+import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +55,9 @@ function emitAppstoreFailure(reason: string, context: Record<string, unknown> = 
       ...context,
     },
   });
+  // Operator email alarm (deduped to one per UTC day per reason) — detection
+  // only; never throws (audit SEC-ALERT "DETECT: web off").
+  void alertWebhookSignatureFailure({ provider: "appstore", reason });
 }
 
 export async function POST(request: NextRequest) {
@@ -72,17 +76,9 @@ export async function POST(request: NextRequest) {
     try {
       outer = verifyAppleJws<AppleNotificationPayload>(signedPayload);
     } catch (err) {
-      emitSecurityEvent({
-        type: "WEBHOOK_SIG_FAILURE",
-        severity: "warn",
-        group: "webhook",
-        context: {
-          provider: "appstore",
-          reason: "outer_jws_verify_failed",
-          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
-          tokenLength: signedPayload.length,
-        },
-      });
+      // Same event payload as before, now routed through the shared helper so
+      // the operator email alarm fires alongside the structured event.
+      emitAppstoreFailure("outer_jws_verify_failed", { tokenLength: signedPayload.length });
       console.warn("[APPSTORE WEBHOOK] outer JWS verify failed:", (err as Error).message);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
@@ -129,20 +125,14 @@ export async function POST(request: NextRequest) {
         ? verifyAppleJws<AppleRenewalPayload>(outer.data.signedRenewalInfo)
         : null;
     } catch {
-      emitSecurityEvent({
-        type: "WEBHOOK_SIG_FAILURE",
-        severity: "warn",
-        group: "webhook",
-        context: {
-          provider: "appstore",
-          reason: "inner_jws_verify_failed",
-          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
-          tokenLength: Math.max(
-            outer.data?.signedTransactionInfo?.length ?? 0,
-            outer.data?.signedRenewalInfo?.length ?? 0,
-          ),
-          correlationId: outer.notificationUUID,
-        },
+      // Same event payload as before, routed through the shared helper (which
+      // also raises the operator email alarm).
+      emitAppstoreFailure("inner_jws_verify_failed", {
+        tokenLength: Math.max(
+          outer.data?.signedTransactionInfo?.length ?? 0,
+          outer.data?.signedRenewalInfo?.length ?? 0,
+        ),
+        correlationId: outer.notificationUUID,
       });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }

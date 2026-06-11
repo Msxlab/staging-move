@@ -63,14 +63,22 @@ vi.mock("@/lib/admin-alerts", () => ({
   sendAdminSignupAlert: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock("@/lib/kill-switches", () => ({
+  areSignupsKilled: vi.fn(() => Promise.resolve(false)),
+  SIGNUPS_PAUSED_CODE: "SIGNUPS_PAUSED",
+  SIGNUPS_PAUSED_MESSAGE: "New signups are temporarily paused. Please try again later.",
+}));
+
 import { findOrLinkOAuthUserWithStatus } from "./user-auth";
 import { logSafeOAuthEvent } from "@/lib/oauth";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
+import { areSignupsKilled } from "@/lib/kill-switches";
 
 const logSafeOAuthEventMock = logSafeOAuthEvent as unknown as Mock;
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
+const areSignupsKilledMock = areSignupsKilled as unknown as Mock;
 
 describe("OAuth user linking", () => {
   beforeEach(() => {
@@ -79,6 +87,7 @@ describe("OAuth user linking", () => {
     mocks.userFindUnique.mockResolvedValue(null);
     mocks.rawUserFindUnique.mockResolvedValue(null);
     mocks.userCreate.mockResolvedValue({ id: "created-user" });
+    areSignupsKilledMock.mockResolvedValue(false);
   });
 
   it("does not reuse an OAuth link attached to a soft-deleted user", async () => {
@@ -256,5 +265,65 @@ describe("OAuth user linking", () => {
       name: "New User",
       source: "oauth:google",
     });
+  });
+
+  // SEC-KILL: KILL_SIGNUPS operator kill switch — blocks ONLY brand-new
+  // account creation at the single OAuth signup funnel.
+  it("throws SIGNUPS_PAUSED instead of creating a brand-new user when KILL_SIGNUPS is on", async () => {
+    areSignupsKilledMock.mockResolvedValue(true);
+
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "new@example.com",
+        allowNewAccount: true,
+      }),
+    ).rejects.toThrow("SIGNUPS_PAUSED");
+
+    expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(mocks.oauthCreate).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).not.toHaveBeenCalled();
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
+    expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_signup_blocked_kill_switch", {
+      provider: "google",
+      emailHash: "email-hash",
+    });
+  });
+
+  it("still signs in an existing OAuth-linked user while KILL_SIGNUPS is on", async () => {
+    areSignupsKilledMock.mockResolvedValue(true);
+    mocks.oauthFindUnique.mockResolvedValue({
+      userId: "existing-user",
+      user: { deletedAt: null },
+    });
+
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "existing@example.com",
+      }),
+    ).resolves.toEqual({ userId: "existing-user", isNewUser: false, wasLinkedNow: false });
+    expect(mocks.userCreate).not.toHaveBeenCalled();
+  });
+
+  it("still links a provider to an existing email account while KILL_SIGNUPS is on", async () => {
+    areSignupsKilledMock.mockResolvedValue(true);
+    mocks.rawUserFindUnique.mockResolvedValue({
+      id: "password-user",
+      emailVerifiedAt: new Date("2026-04-01T00:00:00Z"),
+      deletedAt: null,
+    });
+
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "password@example.com",
+      }),
+    ).resolves.toEqual({ userId: "password-user", isNewUser: false, wasLinkedNow: true });
+    expect(mocks.oauthCreate).toHaveBeenCalled();
+    expect(mocks.userCreate).not.toHaveBeenCalled();
   });
 });

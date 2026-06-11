@@ -504,3 +504,58 @@ describe("validateRuntimeConfigValueShape hardening", () => {
     expect(resolution.validation).toBe("present_but_not_fully_verified");
   });
 });
+
+describe("SEC-KILL incident-response kill switches", () => {
+  const KILL_KEYS = ["KILL_SIGNUPS", "KILL_OUTBOUND_EMAIL"] as const;
+
+  it("registers both kill switches as managed, runtime-editable, optional plain booleans", () => {
+    for (const key of KILL_KEYS) {
+      const definition = getRuntimeConfigDefinition(key);
+      expect(definition, key).toBeTruthy();
+      expect(definition!.runtimeEditable).toBe(true);
+      expect(definition!.buildTimeOnly).toBeUndefined();
+      expect(definition!.isSecret).toBe(false);
+      // A kill switch must never be required: unset means OFF.
+      expect(definition!.requiredInProduction).toBe(false);
+      expect(definition!.maskStrategy).toBe("plain");
+      expect(definition!.validation).toBe("boolean");
+      // Operator docs: the description must explain the incident use.
+      expect(definition!.description.toLowerCase()).toContain("incident");
+      expect(definition!.description).toContain("Default off");
+      expect(isManagedRuntimeConfigKey(key)).toBe(true);
+    }
+  });
+
+  it("allows DB-backed values so the switches are flippable without a deploy", () => {
+    for (const key of KILL_KEYS) {
+      expect(isRuntimeConfigDbBackedKeyAllowed(key)).toBe(true);
+    }
+  });
+
+  it("validates only strict 'true'/'false' values", () => {
+    for (const key of KILL_KEYS) {
+      expect(validateRuntimeConfigValueShape(key, "true", { productionLike: true }).ok).toBe(true);
+      expect(validateRuntimeConfigValueShape(key, "false", { productionLike: true }).ok).toBe(true);
+      expect(
+        validateRuntimeConfigValueShape(key, "yes", { productionLike: true }),
+      ).toMatchObject({ ok: false, reason: "boolean_required" });
+      expect(
+        validateRuntimeConfigValueShape(key, "1", { productionLike: true }),
+      ).toMatchObject({ ok: false, reason: "boolean_required" });
+    }
+  });
+
+  it("resolves a DB-stored 'true' as the effective value (runtime flip path)", () => {
+    for (const key of KILL_KEYS) {
+      const resolution = resolveRuntimeConfigResolution({
+        definition: getRuntimeConfigDefinition(key)!,
+        dbValue: "true",
+        env: {},
+        productionLike: true,
+      });
+      expect(resolution.effectiveValue).toBe("true");
+      expect(resolution.configured).toBe(true);
+      expect(resolution.source).toBe("Runtime Config");
+    }
+  });
+});

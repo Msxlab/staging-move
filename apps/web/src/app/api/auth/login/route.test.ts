@@ -33,6 +33,10 @@ vi.mock("@/lib/login-lockout", () => ({
   clearLoginFailures: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock("@/lib/security-alerts", () => ({
+  recordFailedLoginForAlerting: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock("@/lib/shared-encryption", () => ({
   decrypt: vi.fn(() => "totp-secret"),
 }));
@@ -51,6 +55,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, createUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordLoginFailure } from "@/lib/login-lockout";
+import { recordFailedLoginForAlerting } from "@/lib/security-alerts";
 import { verifyBackupCode } from "@/lib/totp";
 import { createAuditLog } from "@/lib/audit";
 import { POST } from "./route";
@@ -62,6 +67,7 @@ const verifyPasswordMock = verifyPassword as unknown as Mock;
 const createUserSessionMock = createUserSession as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
 const recordLoginFailureMock = recordLoginFailure as unknown as Mock;
+const recordFailedLoginForAlertingMock = recordFailedLoginForAlerting as unknown as Mock;
 const verifyBackupCodeMock = verifyBackupCode as unknown as Mock;
 const createAuditLogMock = createAuditLog as unknown as Mock;
 
@@ -96,6 +102,13 @@ describe("login route", () => {
     });
     expect(recordLoginFailureMock).toHaveBeenCalledWith(expect.stringContaining("rl:auth_login"));
     expect(recordLoginFailureMock).not.toHaveBeenCalledWith("203.0.113.10");
+    // The detection-only alarm counter sees every failed attempt (normalized
+    // email + resolved client IP), including unknown-account ones.
+    expect(recordFailedLoginForAlertingMock).toHaveBeenCalledWith({
+      email: "deleted@example.com",
+      ip: "203.0.113.10",
+      clientType: "web",
+    });
   });
 
   it("does not lock out a normal user before the failed-attempt threshold", async () => {
@@ -114,6 +127,11 @@ describe("login route", () => {
 
     expect(response.status).toBe(401);
     expect(body.error).toBe("Invalid email or password.");
+    expect(recordFailedLoginForAlertingMock).toHaveBeenCalledWith({
+      email: "user@example.com",
+      ip: "203.0.113.10",
+      clientType: "web",
+    });
   });
 
   it("returns a temporary cooldown after repeated bad login attempts", async () => {

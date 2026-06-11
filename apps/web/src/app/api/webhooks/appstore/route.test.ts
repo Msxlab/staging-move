@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   captureMessage: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   emitSecurityEvent: vi.fn(),
+  alertWebhookSignatureFailure: vi.fn(),
   prisma: {
     processedWebhookEvent: {
       findUnique: vi.fn(),
@@ -40,6 +41,12 @@ vi.mock("@/lib/iap-common", () => ({
 }));
 vi.mock("@/lib/security-events", () => ({
   emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
+}));
+vi.mock("@/lib/security-alerts", () => ({
+  alertWebhookSignatureFailure: (...args: any[]) => {
+    mocks.alertWebhookSignatureFailure(...args);
+    return Promise.resolve();
+  },
 }));
 
 import { POST } from "./route";
@@ -135,6 +142,11 @@ describe("App Store webhook idempotency", () => {
         tokenLength: "outer-jws".length,
       }),
     }));
+    // The operator email alarm fires alongside the structured event.
+    expect(mocks.alertWebhookSignatureFailure).toHaveBeenCalledWith({
+      provider: "appstore",
+      reason: "outer_jws_verify_failed",
+    });
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 
@@ -157,6 +169,10 @@ describe("App Store webhook idempotency", () => {
         reason: "bundle_mismatch",
       }),
     }));
+    expect(mocks.alertWebhookSignatureFailure).toHaveBeenCalledWith({
+      provider: "appstore",
+      reason: "bundle_mismatch",
+    });
     expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
     expect(processedMock.create).not.toHaveBeenCalled();
   });

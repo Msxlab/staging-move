@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   encryptBackup: vi.fn(),
   signBackup: vi.fn(),
   uploadBackupArchive: vi.fn(),
+  parseBackupRecordMetadata: vi.fn(),
+  deleteBackupArchive: vi.fn(),
+  isOffsiteRetentionDeleteEnabled: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -90,9 +93,11 @@ vi.mock("@/lib/backup-archive", () => ({
   createBackupArchive: vi.fn((input) => ({ version: 1, ...input })),
 }));
 vi.mock("@/lib/backup-storage", () => ({
-  parseBackupRecordMetadata: vi.fn(() => ({})),
+  parseBackupRecordMetadata: mocks.parseBackupRecordMetadata,
   serializeBackupRecordMetadata: vi.fn((metadata) => JSON.stringify(metadata)),
   uploadBackupArchive: mocks.uploadBackupArchive,
+  deleteBackupArchive: mocks.deleteBackupArchive,
+  isOffsiteRetentionDeleteEnabled: mocks.isOffsiteRetentionDeleteEnabled,
 }));
 vi.mock("@/lib/shared-encryption", () => ({
   encryptBackup: mocks.encryptBackup,
@@ -156,6 +161,13 @@ describe("cron backup safety policy", () => {
     mocks.encryptBackup.mockReturnValue("encrypted");
     mocks.signBackup.mockReturnValue("signature");
     mocks.uploadBackupArchive.mockResolvedValue({ status: "stored" });
+    mocks.parseBackupRecordMetadata.mockReturnValue({});
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(false);
+    mocks.deleteBackupArchive.mockResolvedValue({
+      outcome: "deleted",
+      objectKey: "backups/20260424/backup_cron_old/backup-file.json",
+      reason: null,
+    });
   });
 
   it("fails closed before creating a plaintext cron archive in production", async () => {
@@ -221,5 +233,79 @@ describe("cron backup safety policy", () => {
         }),
       }),
     );
+  });
+
+  it("preserves offsite-stored retention candidates while the delete flag is disabled", async () => {
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    mocks.parseBackupRecordMetadata.mockReturnValue({
+      offsite: {
+        status: "stored",
+        objectKey: "backups/20260424/backup_cron_1/backup-file.json",
+      },
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(cronRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.retention.offsiteDeleteEnabled).toBe(false);
+    expect(body.retention.preservedOffsite).toBe(1);
+    expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
+    expect(mocks.backupRecordDeleteMany).not.toHaveBeenCalled();
+  });
+
+  it("deletes the offsite object before the row when the delete flag is enabled", async () => {
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue({
+      offsite: {
+        status: "stored",
+        objectKey: "backups/20260424/backup_cron_1/backup-file.json",
+      },
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(cronRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.deleteBackupArchive).toHaveBeenCalledWith({
+      backupId: "backup_cron_1",
+      offsite: expect.objectContaining({
+        objectKey: "backups/20260424/backup_cron_1/backup-file.json",
+      }),
+    });
+    expect(mocks.backupRecordDeleteMany).toHaveBeenCalledWith({
+      where: { id: "backup_cron_1" },
+    });
+    const body = await response.json();
+    expect(body.retention.offsiteDeleted).toBe(1);
+    expect(body.retention.preservedOffsite).toBe(0);
+  });
+
+  it("keeps the retention row when the offsite delete fails", async () => {
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue({
+      offsite: {
+        status: "stored",
+        objectKey: "backups/20260424/backup_cron_1/backup-file.json",
+      },
+    });
+    mocks.deleteBackupArchive.mockResolvedValue({
+      outcome: "failed",
+      objectKey: "backups/20260424/backup_cron_1/backup-file.json",
+      reason: "Delete failed (500): InternalError",
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(cronRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.backupRecordDeleteMany).not.toHaveBeenCalled();
+    const body = await response.json();
+    expect(body.retention.offsiteDeleted).toBe(0);
+    expect(body.retention.offsiteDeleteFailed).toBe(1);
+    expect(body.retention.preservedOffsite).toBe(1);
   });
 });

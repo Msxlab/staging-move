@@ -49,6 +49,7 @@ function SignInForm() {
     "account-unavailable": "error_account_unavailable",
     "session-create-failed": "error_session_create",
     "logout-failed": "error_logout_failed",
+    "signups-paused": "error_signups_paused",
   };
 
   const [email, setEmail] = useState("");

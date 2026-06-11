@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { normalizeProviderRecord, sanitizeProviderSeedRecords } from "@locateflow/shared";
+import { normalizeProviderRecord, sanitizeProviderSeedRecords } from "@locateflow/shared/provider-integrity";
 import { rebuildProviderCoverage } from "../src/provider-coverage";
 
 const prisma = new PrismaClient();

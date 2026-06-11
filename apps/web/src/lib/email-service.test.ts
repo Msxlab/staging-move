@@ -242,6 +242,87 @@ describe("email-service logging", () => {
     );
   });
 
+  // SEC-KILL: KILL_OUTBOUND_EMAIL operator kill switch.
+  it("marks the EmailLog row SKIPPED with reason kill_switch when the send is suppressed", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({ id: "tpl_reset" });
+    mocks.sendEmailWithResult.mockResolvedValue({
+      success: false,
+      providerMessageId: null,
+      error: "kill_switch",
+      fromEmail: null,
+      killSwitch: true,
+    });
+
+    const result = await sendLoggedEmail({
+      to: "alice@example.com",
+      subject: "Reset your LocateFlow password",
+      html: "<p>Reset</p>",
+      text: "Reset",
+      templateSlug: "password-reset",
+      dedupeKey: "pwreset:user:kill-switch",
+    });
+
+    expect(result).toEqual({ success: false, skipped: false });
+    expect(mocks.emailLogUpdate).toHaveBeenCalledWith({
+      where: { id: "log_1" },
+      data: expect.objectContaining({
+        status: "SKIPPED",
+        error: "kill_switch",
+        providerMessageId: null,
+        sentAt: null,
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogUpdate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({ retryAvailable: true }),
+    );
+  });
+
+  it("re-claims a SKIPPED dedupe row so suppressed emails are retryable after the switch is lifted", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({ id: "tpl_reset" });
+    mocks.emailLogCreate.mockRejectedValue({ code: "P2002" });
+    mocks.emailLogFindFirst.mockResolvedValue({ id: "log_skipped", status: "SKIPPED" });
+    mocks.emailLogUpdateMany.mockResolvedValue({ count: 1 });
+
+    const result = await sendLoggedEmail({
+      to: "alice@example.com",
+      subject: "Reset your LocateFlow password",
+      html: "<p>Reset</p>",
+      text: "Reset",
+      templateSlug: "password-reset",
+      dedupeKey: "pwreset:user:kill-switch",
+    });
+
+    expect(result).toEqual({ success: true, skipped: false });
+    expect(mocks.emailLogUpdateMany).toHaveBeenCalledWith({
+      where: { id: "log_skipped", status: { in: ["FAILED", "SKIPPED"] } },
+      data: expect.objectContaining({ status: "PENDING", error: null }),
+    });
+    // The re-claimed row goes through the normal send + SENT update.
+    expect(mocks.sendEmailWithResult).toHaveBeenCalled();
+    expect(mocks.emailLogUpdate).toHaveBeenCalledWith({
+      where: { id: "log_skipped" },
+      data: expect.objectContaining({ status: "SENT" }),
+    });
+  });
+
+  it("does not resend a dedupe-key match that already SENT", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({ id: "tpl_reset" });
+    mocks.emailLogCreate.mockRejectedValue({ code: "P2002" });
+    mocks.emailLogFindFirst.mockResolvedValue({ id: "log_sent", status: "SENT" });
+
+    const result = await sendLoggedEmail({
+      to: "alice@example.com",
+      subject: "Reset your LocateFlow password",
+      html: "<p>Reset</p>",
+      text: "Reset",
+      templateSlug: "password-reset",
+      dedupeKey: "pwreset:user:already-sent",
+    });
+
+    expect(result).toEqual({ success: true, skipped: true });
+    expect(mocks.sendEmailWithResult).not.toHaveBeenCalled();
+  });
+
   it("falls back to inline welcome content when the Welcome template is unavailable", async () => {
     mocks.emailTemplateFindUnique.mockResolvedValue(null);
 

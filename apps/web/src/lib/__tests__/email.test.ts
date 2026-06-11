@@ -3,6 +3,9 @@ import { beforeEach, describe, it, expect, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   resendSend: vi.fn(),
   runtimeConfigValues: vi.fn(),
+  // Single-key reads — used by the KILL_OUTBOUND_EMAIL kill switch
+  // (via @/lib/kill-switches). Defaults to null = switch off.
+  runtimeConfigValue: vi.fn(),
 }));
 
 vi.mock("resend", () => ({
@@ -17,6 +20,7 @@ vi.mock("resend", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRequiredRuntimeConfigValues: (...args: unknown[]) => mocks.runtimeConfigValues(...args),
+  getRuntimeConfigValue: (...args: unknown[]) => mocks.runtimeConfigValue(...args),
 }));
 
 import {
@@ -53,6 +57,7 @@ beforeEach(() => {
     return Object.fromEntries(keys.map((key) => [key, values[key] || null]));
   });
   mocks.resendSend.mockResolvedValue({ data: { id: "resend_123" }, error: null });
+  mocks.runtimeConfigValue.mockResolvedValue(null);
 });
 
 describe("billReminderHtml", () => {
@@ -445,6 +450,65 @@ describe("transactional email layout", () => {
       });
       expect(content.html).toContain('lang="en"');
       expect(content.html).toContain("You're receiving this email because you used LocateFlow.");
+    }
+  });
+
+  // SEC-KILL: KILL_OUTBOUND_EMAIL operator kill switch.
+  it("short-circuits to a logged no-op without contacting Resend when KILL_OUTBOUND_EMAIL is on", async () => {
+    mocks.runtimeConfigValue.mockImplementation(async (key: string) =>
+      key === "KILL_OUTBOUND_EMAIL" ? "true" : null,
+    );
+
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      providerMessageId: null,
+      error: "kill_switch",
+      fromEmail: null,
+      killSwitch: true,
+    });
+    expect(mocks.resendSend).not.toHaveBeenCalled();
+    // Guard runs before config resolution — nothing else is consulted.
+    expect(mocks.runtimeConfigValues).not.toHaveBeenCalled();
+  });
+
+  it("silences email even when the email config itself is broken mid-incident", async () => {
+    mocks.runtimeConfigValue.mockImplementation(async (key: string) =>
+      key === "KILL_OUTBOUND_EMAIL" ? "true" : null,
+    );
+    mocks.runtimeConfigValues.mockRejectedValue(new Error("config store down"));
+
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result.killSwitch).toBe(true);
+    expect(mocks.resendSend).not.toHaveBeenCalled();
+  });
+
+  it("sends normally when KILL_OUTBOUND_EMAIL is unset or not exactly 'true'", async () => {
+    for (const value of [null, "false", "1", "yes"]) {
+      mocks.resendSend.mockClear();
+      mocks.runtimeConfigValue.mockImplementation(async (key: string) =>
+        key === "KILL_OUTBOUND_EMAIL" ? value : null,
+      );
+
+      const result = await sendEmailWithResult({
+        to: "alice@example.com",
+        subject: "Test",
+        html: "<p>Hello</p>",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.killSwitch).toBeUndefined();
+      expect(mocks.resendSend).toHaveBeenCalledTimes(1);
     }
   });
 

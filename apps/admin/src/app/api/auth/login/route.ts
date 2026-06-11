@@ -79,9 +79,19 @@ async function writeLoginLog(input: {
     });
   } catch {}
 }
-// SEC-005: Rate limiter for admin login (5 attempts per 15 minutes per IP)
-// Uses Upstash Redis when available, falls back to in-memory so admin access
-// is not blocked during low-cost or first-boot deployments.
+// SEC-005: Rate limiter for admin login (5 attempts per 15 minutes per IP).
+//
+// Degradation contract (SEC-RL; mirrors the cron-guard precedent in
+// apps/web/src/lib/cron-guard.ts and the admin step-up store):
+//   - Upstash NOT configured  -> proceed on the in-process Map + loud warn.
+//     Failing closed here would brick the only admin login path on low-cost
+//     or first-boot deployments that have no Redis; the Map still enforces
+//     the same limits per instance.
+//   - Upstash configured but ERRORING -> FAIL CLOSED (503 via
+//     `unavailable: true`). A degraded distributed limiter must not silently
+//     hand brute-force protection to a per-instance Map whose counters an
+//     attacker can dodge by spreading requests across replicas or waiting
+//     out a deploy.
 const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 15 * 60; // 15 minutes
 const LOCKOUT_SECONDS = 30 * 60; // 30 minutes lockout after exceeding
@@ -110,6 +120,39 @@ const ADMIN_MFA_RATE_LIMIT: AdminRateLimitPolicy = {
 // In-memory fallback
 interface LoginAttempt { count: number; resetAt: number; lockedUntil: number; }
 const loginAttempts = new Map<string, LoginAttempt>();
+
+const LIMITER_UNAVAILABLE_RETRY_SEC = 60;
+
+const LOGIN_APP_ENV = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+const LOGIN_IS_PRODUCTION =
+  process.env.NODE_ENV === "production" ||
+  LOGIN_APP_ENV === "production" ||
+  LOGIN_APP_ENV === "staging" ||
+  Boolean(process.env.DIGITALOCEAN_APP_ID);
+
+let warnedLoginLimiterNoRedis = false;
+let warnedLoginLimiterRedisError = false;
+
+function warnLoginLimiterNoRedisOnce() {
+  if (warnedLoginLimiterNoRedis) return;
+  warnedLoginLimiterNoRedis = true;
+  if (LOGIN_IS_PRODUCTION) {
+    console.error(
+      "[ADMIN-LOGIN-RL] UPSTASH_REDIS_REST_URL/_TOKEN are not configured — login rate limiting is per-instance in-memory only. Counters reset on every deploy/restart.",
+    );
+  } else {
+    console.warn("[ADMIN-LOGIN-RL] Redis not configured — using in-memory login rate limiting (dev mode).");
+  }
+}
+
+function scrubLimiterError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  return raw
+    .replace(/https?:\/\/\S+/gi, "[URL_REDACTED]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
+    .replace(/[A-Za-z0-9_\-]{32,}/g, "[TOKEN_REDACTED]")
+    .slice(0, 160);
+}
 
 async function writeLoginAuditLog(input: {
   action: "LOGIN_FAILED" | "LOGIN_BLOCKED" | "MFA_REQUIRED";
@@ -182,6 +225,8 @@ async function checkLoginRateLimitRedis(
   const url = values.UPSTASH_REDIS_REST_URL;
   const token = values.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token || url.includes("REPLACE") || token.includes("REPLACE")) {
+    // Unconfigured: documented availability fallback (per-instance Map) + warn.
+    warnLoginLimiterNoRedisOnce();
     return checkLoginRateLimitMemory(key, policy);
   }
 
@@ -224,10 +269,20 @@ async function checkLoginRateLimitRedis(
     }
 
     return { allowed: true, retryAfterSec: 0 };
-  } catch {
-    // Fallback to in-memory on Redis error. Upstash should improve distributed
-    // protection, but it must not make the only admin login path unavailable.
-    return checkLoginRateLimitMemory(key, policy);
+  } catch (err) {
+    // Redis is CONFIGURED but erroring: FAIL CLOSED for this auth limiter.
+    // Falling back to the per-instance Map here would let an attacker who can
+    // induce (or wait for) Redis errors bypass the distributed counters. The
+    // route maps `unavailable: true` to a 503 with Retry-After, so a healthy
+    // operator retries shortly; brute force gets nothing.
+    if (!warnedLoginLimiterRedisError) {
+      warnedLoginLimiterRedisError = true;
+      console.error(
+        "[ADMIN-LOGIN-RL] Redis call failed with limiter configured — failing closed (503) for admin login:",
+        scrubLimiterError(err),
+      );
+    }
+    return { allowed: false, retryAfterSec: LIMITER_UNAVAILABLE_RETRY_SEC, unavailable: true };
   }
 }
 
@@ -342,27 +397,35 @@ export async function POST(request: NextRequest) {
         ADMIN_MFA_RATE_LIMIT,
       );
       if (!mfaRateCheck.allowed) {
+        const mfaBlockReason = mfaRateCheck.unavailable ? "MFA_RATE_LIMIT_UNAVAILABLE" : "MFA_RATE_LIMIT_BLOCKED";
         await writeLoginAuditLog({
           action: "LOGIN_BLOCKED",
           email,
           ip,
           ua,
-          reason: "MFA_RATE_LIMIT_BLOCKED",
+          reason: mfaBlockReason,
           adminId: admin.id,
         });
         await writeLoginLog({
           adminUserId: admin.id,
           email,
           success: false,
-          failReason: "MFA_RATE_LIMIT_BLOCKED",
+          failReason: mfaBlockReason,
           ip,
           ua,
           mfaUsed: true,
           mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
         });
         return NextResponse.json(
-          { error: "Too many MFA attempts. Please try again later." },
-          { status: 429, headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) } },
+          {
+            error: mfaRateCheck.unavailable
+              ? "Login temporarily unavailable. Please try again later."
+              : "Too many MFA attempts. Please try again later.",
+          },
+          {
+            status: mfaRateCheck.unavailable ? 503 : 429,
+            headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) },
+          },
         );
       }
 

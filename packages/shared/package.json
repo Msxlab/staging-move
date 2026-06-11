@@ -5,11 +5,20 @@
   "main": "./src/index.ts",
   "react-native": "./src/index.mobile.ts",
   "types": "./src/index.ts",
+  "typesVersions": {
+    "*": {
+      "provider-coverage": ["src/provider-coverage.ts"],
+      "provider-integrity": ["src/provider-integrity.ts"],
+      "recommendation-engine": ["src/recommendation-engine.ts"]
+    }
+  },
   "exports": {
     ".": {
       "react-native": "./src/index.mobile.ts",
       "default": "./src/index.ts"
     },
+    "./provider-coverage": "./src/provider-coverage.ts",
+    "./provider-integrity": "./src/provider-integrity.ts",
     "./recommendation-engine": "./src/recommendation-engine.ts"
   },
   "scripts": {

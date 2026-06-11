@@ -31,6 +31,7 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { verifyPubsubOidcToken } from "@/lib/iap-google";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import { emitSecurityEvent } from "@/lib/security-events";
+import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 import {
   applyIapStateToUser,
   findUserByIapIdentifier,
@@ -98,6 +99,10 @@ function emitPlaystoreFailure(reason: string, context: Record<string, unknown> =
       ...context,
     },
   });
+  // Operator email alarm (deduped to one per UTC day per reason) — covers
+  // both OIDC auth failures and missing-verification-config states. Detection
+  // only; never throws (audit SEC-ALERT "DETECT: web off").
+  void alertWebhookSignatureFailure({ provider: "playstore", reason });
 }
 
 export async function POST(request: NextRequest) {

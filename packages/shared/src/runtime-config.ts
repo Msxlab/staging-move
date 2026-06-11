@@ -729,6 +729,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "BACKUP_RETENTION_DELETE_OFFSITE",
+    label: "Backup Retention Deletes Offsite Archives",
+    description:
+      "Safety switch for the backup retention pass. When 'true', retention deletes the offsite S3/R2 archive object (the exact object key stored on the BackupRecord, under the backups/ prefix only — never list-and-delete) before removing the expired DB row. Off by default: expired records with offsite archives are preserved so offsite data is never deleted without a deliberate opt-in.",
+    scope: "ADMIN",
+    category: "STORAGE",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    usedBy: ["admin app", "cron/worker"],
+    validation: "boolean",
+    note: "Defaults to false. Offsite delete failures and key/bucket mismatches preserve the DB row so the next retention run can retry.",
+  },
+  {
     key: "UPSTASH_REDIS_REST_URL",
     label: "Upstash Redis URL",
     description: "Redis endpoint used for production rate limiting.",
@@ -827,6 +841,38 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: false,
     maskStrategy: "url",
+  },
+
+  // ── Incident-response kill switches (runtime-editable, no deploy) ──
+  {
+    key: "KILL_SIGNUPS",
+    label: "Kill Switch — New Signups",
+    description:
+      "Incident-response kill switch. When 'true', new-account creation is paused: POST /api/auth/register and any OAuth sign-in that would create a brand-new user return a polite 503 'signups temporarily paused'. Existing users are unaffected — password sign-in, OAuth sign-in to existing accounts, and OAuth linking keep working. Runtime-editable so an operator can stop a signup flood or fraud wave instantly without a deploy. Default off (unset = off).",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app auth", "mobile signup"],
+    validation: "boolean",
+    note: "Leave unset in normal operation. Flip to 'true' only during an incident; flip back to 'false' (or deactivate the entry) to resume signups — no redeploy needed.",
+  },
+  {
+    key: "KILL_OUTBOUND_EMAIL",
+    label: "Kill Switch — Outbound Email",
+    description:
+      "Incident-response kill switch. When 'true', ALL outbound email is silenced: the central send path (sendEmailWithResult) short-circuits to a logged no-op before contacting the email provider, and logged sends record an EmailLog row with status SKIPPED and reason kill_switch. Use when a template is compromised or a runaway job is mass-mailing — silences email instantly without a deploy. Default off (unset = off).",
+    scope: "WEB",
+    category: "EMAIL",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app email", "cron/worker"],
+    validation: "boolean",
+    note: "Leave unset in normal operation. Dedupe-keyed sends suppressed while the switch is on are retryable after it is lifted (SKIPPED rows re-claim like FAILED).",
   },
   {
     key: "OPENAI_API_KEY",
@@ -1846,8 +1892,11 @@ export function validateRuntimeConfigValueShape(
     "FEATURE_API_CONNECTORS",
     "WORKSPACE_MODEL_ENABLED",
     "ALLOW_PRODUCTION_REPLACE_RESTORE",
+    "BACKUP_RETENTION_DELETE_OFFSITE",
     "PLACES_AUTOCOMPLETE_ENABLED",
     "NOTIFICATION_PUSH_ENABLED",
+    "KILL_SIGNUPS",
+    "KILL_OUTBOUND_EMAIL",
   ]);
   if (BOOLEAN_KEYS.has(key)) {
     return value === "true" || value === "false"

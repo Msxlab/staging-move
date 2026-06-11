@@ -3,30 +3,50 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
-import { parseBackupRecordMetadata } from "@/lib/backup-storage";
+import {
+  deleteBackupArchive,
+  isOffsiteRetentionDeleteEnabled,
+  parseBackupRecordMetadata,
+  type BackupOffsiteMetadata,
+} from "@/lib/backup-storage";
 import { writeBackupAudit } from "@/lib/backup-audit";
 
 // Default retention: 30 days for completed backups, 7 days for failed.
 const RETENTION_DAYS_COMPLETED = 30;
 const RETENTION_DAYS_FAILED = 7;
 const MAX_BACKUPS_KEEP = 50;
+// Cap the per-object result list embedded in the response/audit log so
+// a large backlog can't bloat the audit row. Counts stay exact.
+const MAX_OFFSITE_RESULTS_REPORTED = 50;
+
+interface OffsiteCandidate {
+  id: string;
+  offsite: BackupOffsiteMetadata;
+}
+
+interface OffsiteObjectResult {
+  backupId: string;
+  objectKey: string | null;
+  outcome: string;
+  reason: string | null;
+}
 
 async function splitRetentionCandidates(
   records: Array<{ id: string; errorMessage: string | null }>,
 ) {
   const deletableIds: string[] = [];
-  const preservedOffsiteIds: string[] = [];
+  const offsiteCandidates: OffsiteCandidate[] = [];
 
   for (const record of records) {
     const metadata = parseBackupRecordMetadata(record.errorMessage);
     if (metadata.offsite?.status === "stored" && metadata.offsite.objectKey) {
-      preservedOffsiteIds.push(record.id);
+      offsiteCandidates.push({ id: record.id, offsite: metadata.offsite });
     } else {
       deletableIds.push(record.id);
     }
   }
 
-  return { deletableIds, preservedOffsiteIds };
+  return { deletableIds, offsiteCandidates };
 }
 
 async function collectRetentionCandidates(where: any) {
@@ -35,6 +55,92 @@ async function collectRetentionCandidates(where: any) {
     select: { id: true, errorMessage: true },
   });
   return splitRetentionCandidates(records);
+}
+
+/**
+ * Offsite deletion pass. For each expired record whose archive lives
+ * offsite: delete the S3 object FIRST (exact stored key only — the
+ * client refuses prefix/bucket mismatches and never lists), and only
+ * remove the DB row once the object is confirmed gone. Any refusal or
+ * failure leaves the row intact so the next run retries. Dry-run and
+ * the disabled flag perform no deletes at all.
+ */
+async function processOffsiteCandidates(input: {
+  candidates: OffsiteCandidate[];
+  enabled: boolean;
+  dryRun: boolean;
+  processedIds: Set<string>;
+}) {
+  const results: OffsiteObjectResult[] = [];
+  let rowsDeleted = 0;
+
+  for (const candidate of input.candidates) {
+    if (input.processedIds.has(candidate.id)) continue;
+    input.processedIds.add(candidate.id);
+
+    let result: OffsiteObjectResult;
+    if (!input.enabled) {
+      result = {
+        backupId: candidate.id,
+        objectKey: candidate.offsite.objectKey,
+        outcome: "preserved_flag_disabled",
+        reason: null,
+      };
+    } else if (input.dryRun) {
+      result = {
+        backupId: candidate.id,
+        objectKey: candidate.offsite.objectKey,
+        outcome: "dry_run_would_delete",
+        reason: null,
+      };
+    } else {
+      const deletion = await deleteBackupArchive({
+        backupId: candidate.id,
+        offsite: candidate.offsite,
+      });
+      if (deletion.outcome === "deleted") {
+        try {
+          await prisma.backupRecord.deleteMany({
+            where: { id: candidate.id },
+          });
+          rowsDeleted += 1;
+          result = {
+            backupId: candidate.id,
+            objectKey: deletion.objectKey,
+            outcome: "deleted",
+            reason: deletion.reason,
+          };
+        } catch (error) {
+          // Object is gone but the row remains; the next run sees the
+          // object as already absent (treated as deleted) and removes
+          // the row then — self-healing, no orphaned offsite data.
+          result = {
+            backupId: candidate.id,
+            objectKey: deletion.objectKey,
+            outcome: "row_delete_failed",
+            reason: redactBackupSecretText(error),
+          };
+        }
+      } else {
+        result = {
+          backupId: candidate.id,
+          objectKey: deletion.objectKey,
+          outcome: deletion.outcome,
+          reason: deletion.reason,
+        };
+      }
+    }
+
+    // Per-object result logging.
+    console.info(
+      `[BACKUP-RETENTION] offsite ${result.outcome} backup=${result.backupId} key=${result.objectKey ?? "<none>"}${
+        result.reason ? ` reason=${redactBackupSecretText(result.reason)}` : ""
+      }`,
+    );
+    results.push(result);
+  }
+
+  return { results, rowsDeleted };
 }
 
 // POST /api/backup/retention - run retention cleanup (manual or cron).
@@ -74,6 +180,14 @@ export async function POST(request: NextRequest) {
       createdAt: { lt: failedCutoff },
     });
 
+    // The offsite delete flag defaults to false; the owner opts in via
+    // Runtime Config (BACKUP_RETENTION_DELETE_OFFSITE=true). When off,
+    // offsite-stored records are preserved exactly as before.
+    const offsiteDeleteEnabled = await isOffsiteRetentionDeleteEnabled();
+    const processedOffsiteIds = new Set<string>();
+    const offsiteResults: OffsiteObjectResult[] = [];
+    let offsiteRowsDeleted = 0;
+
     let completedDeleted = 0;
     let failedDeleted = 0;
     if (!dryRun && completedCandidates.deletableIds.length > 0) {
@@ -91,11 +205,23 @@ export async function POST(request: NextRequest) {
       ).count;
     }
 
+    const expiredOffsitePass = await processOffsiteCandidates({
+      candidates: [
+        ...completedCandidates.offsiteCandidates,
+        ...failedCandidates.offsiteCandidates,
+      ],
+      enabled: offsiteDeleteEnabled,
+      dryRun,
+      processedIds: processedOffsiteIds,
+    });
+    offsiteResults.push(...expiredOffsitePass.results);
+    offsiteRowsDeleted += expiredOffsitePass.rowsDeleted;
+
     const totalBackups = await prisma.backupRecord.count();
     let overflowDeleted = 0;
     let overflowCandidates = {
       deletableIds: [] as string[],
-      preservedOffsiteIds: [] as string[],
+      offsiteCandidates: [] as OffsiteCandidate[],
     };
     if (totalBackups > MAX_BACKUPS_KEEP) {
       const oldestToKeep = await prisma.backupRecord.findMany({
@@ -111,7 +237,23 @@ export async function POST(request: NextRequest) {
           })
         ).count;
       }
+      const overflowOffsitePass = await processOffsiteCandidates({
+        candidates: overflowCandidates.offsiteCandidates,
+        enabled: offsiteDeleteEnabled,
+        dryRun,
+        processedIds: processedOffsiteIds,
+      });
+      offsiteResults.push(...overflowOffsitePass.results);
+      offsiteRowsDeleted += overflowOffsitePass.rowsDeleted;
     }
+
+    const offsiteRefused = offsiteResults.filter(
+      (result) => result.outcome === "refused",
+    ).length;
+    const offsiteFailed = offsiteResults.filter(
+      (result) =>
+        result.outcome === "failed" || result.outcome === "row_delete_failed",
+    ).length;
 
     const retention = {
       dryRun,
@@ -121,11 +263,21 @@ export async function POST(request: NextRequest) {
       completedCandidates: completedCandidates.deletableIds.length,
       failedCandidates: failedCandidates.deletableIds.length,
       overflowCandidates: overflowCandidates.deletableIds.length,
-      offsiteRecordsPreserved:
-        completedCandidates.preservedOffsiteIds.length +
-        failedCandidates.preservedOffsiteIds.length +
-        overflowCandidates.preservedOffsiteIds.length,
-      offsiteCleanup: "not_implemented_metadata_preserved",
+      offsiteRecordsPreserved: offsiteResults.length - offsiteRowsDeleted,
+      offsiteCleanup: !offsiteDeleteEnabled
+        ? "disabled_metadata_preserved"
+        : dryRun
+          ? "dry_run_no_deletes"
+          : "enabled",
+      offsiteDelete: {
+        enabled: offsiteDeleteEnabled,
+        candidates: offsiteResults.length,
+        deleted: offsiteRowsDeleted,
+        refused: offsiteRefused,
+        failed: offsiteFailed,
+        results: offsiteResults.slice(0, MAX_OFFSITE_RESULTS_REPORTED),
+        resultsTruncated: offsiteResults.length > MAX_OFFSITE_RESULTS_REPORTED,
+      },
       retentionPolicy: {
         completedDays: RETENTION_DAYS_COMPLETED,
         failedDays: RETENTION_DAYS_FAILED,

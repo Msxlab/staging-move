@@ -261,6 +261,14 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+    if (message === "SIGNUPS_PAUSED") {
+      // SEC-KILL: operator kill switch paused new signups (existing users
+      // still sign in — only brand-new account creation is blocked).
+      return NextResponse.json(
+        { error: "New signups are temporarily paused. Please try again later.", code: "SIGNUPS_PAUSED" },
+        { status: 503, headers: { "Retry-After": "3600" } },
+      );
+    }
     failApple("user_link", err);
     return NextResponse.json(
       { error: "Apple sign-in could not be completed." },

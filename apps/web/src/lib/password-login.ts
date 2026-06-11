@@ -21,6 +21,7 @@ import {
   stableRateLimitHash,
 } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
+import { recordFailedLoginForAlerting } from "@/lib/security-alerts";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { extractRequestMeta } from "@/lib/audit";
@@ -232,6 +233,10 @@ export async function handlePasswordLogin(
     // Spend the same time as a genuine bcrypt check so this branch is
     // indistinguishable from a wrong password by response latency.
     await equalizePasswordTiming(password);
+    // Detection-only alarm counter (email to the operator past a burst
+    // threshold). Fire-and-forget: it never throws/rejects by contract and
+    // must never delay or alter the login response.
+    void recordFailedLoginForAlerting({ email, ip, clientType: options.clientType });
     const nextState = await recordLoginFailure(lockKey);
     if (nextState.locked) {
       emitLoginLockout("UNKNOWN_OR_OAUTH_ONLY_ACCOUNT", lockKey, nextState.retryAfterSec);
@@ -252,6 +257,8 @@ export async function handlePasswordLogin(
       changes: { reason: "INVALID_PASSWORD" },
       ...extractRequestMeta(request),
     });
+    // Detection-only alarm counter — see the unknown-account branch above.
+    void recordFailedLoginForAlerting({ email, ip, clientType: options.clientType });
     const nextState = await recordLoginFailure(lockKey);
     if (nextState.locked) {
       emitLoginLockout("INVALID_PASSWORD", lockKey, nextState.retryAfterSec);
@@ -356,6 +363,9 @@ export async function handlePasswordLogin(
           userId: user.id,
         },
       });
+      // MFA failures count as failed logins for the alarm too — a wrong-MFA
+      // burst means someone already holds a valid password.
+      void recordFailedLoginForAlerting({ email, ip, clientType: options.clientType });
       const nextState = await recordLoginFailure(lockKey);
       if (nextState.locked) {
         emitLoginLockout("MFA_FAIL_LOCKOUT", lockKey, nextState.retryAfterSec);

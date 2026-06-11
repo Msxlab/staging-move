@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
+import { isOutboundEmailKilled } from "@/lib/kill-switches";
 
 let _resend: Resend | null = null;
 let _resendApiKey: string | null = null;
@@ -80,6 +81,12 @@ export interface SendEmailResult {
   error: string | null;
   fromEmail: string | null;
   configError?: boolean;
+  /**
+   * True when the send was suppressed by the KILL_OUTBOUND_EMAIL operator
+   * kill switch (error is "kill_switch"). Loggers should record these as
+   * SKIPPED rather than FAILED — the message was deliberately not sent.
+   */
+  killSwitch?: boolean;
 }
 
 export interface EmailContent {
@@ -162,6 +169,24 @@ function safeEmailError(error: unknown): string {
 export async function sendEmailWithResult(
   options: EmailOptions,
 ): Promise<SendEmailResult> {
+  // SEC-KILL: operator kill switch — single guard for ALL outbound email.
+  // Checked before config resolution so it silences sends even when email
+  // config is broken mid-incident. Logged no-op: callers that persist
+  // EmailLog rows mark them SKIPPED via the killSwitch flag.
+  if (await isOutboundEmailKilled()) {
+    console.warn("[EMAIL] Suppressed by KILL_OUTBOUND_EMAIL kill switch:", {
+      to: options.to,
+      subject: options.subject,
+    });
+    return {
+      success: false,
+      providerMessageId: null,
+      error: "kill_switch",
+      fromEmail: null,
+      killSwitch: true,
+    };
+  }
+
   const config = await resolveEmailConfig();
   const configError = validateEmailConfig(config);
   if (configError) {

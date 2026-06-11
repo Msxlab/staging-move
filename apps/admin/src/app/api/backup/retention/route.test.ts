@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   backupDeleteMany: vi.fn(),
   auditCreate: vi.fn(),
   parseBackupRecordMetadata: vi.fn(),
+  deleteBackupArchive: vi.fn(),
+  isOffsiteRetentionDeleteEnabled: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -32,7 +34,13 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/backup-storage", () => ({
   parseBackupRecordMetadata: (...args: unknown[]) =>
     mocks.parseBackupRecordMetadata(...args),
+  deleteBackupArchive: (...args: unknown[]) =>
+    mocks.deleteBackupArchive(...args),
+  isOffsiteRetentionDeleteEnabled: (...args: unknown[]) =>
+    mocks.isOffsiteRetentionDeleteEnabled(...args),
 }));
+
+const STORED_OBJECT_KEY = "backups/20260401/backup_old/backup-file.json";
 
 function retentionRequest(body: Record<string, unknown> = {}) {
   return new NextRequest("https://admin.locateflow.com/api/backup/retention", {
@@ -40,6 +48,16 @@ function retentionRequest(body: Record<string, unknown> = {}) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+function storedOffsiteMetadata() {
+  return {
+    offsite: {
+      status: "stored",
+      bucket: "locateflow-backups",
+      objectKey: STORED_OBJECT_KEY,
+    },
+  };
 }
 
 describe("backup retention cleanup", () => {
@@ -52,6 +70,12 @@ describe("backup retention cleanup", () => {
     mocks.backupDeleteMany.mockResolvedValue({ count: 1 });
     mocks.auditCreate.mockResolvedValue({});
     mocks.parseBackupRecordMetadata.mockReturnValue({});
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(false);
+    mocks.deleteBackupArchive.mockResolvedValue({
+      outcome: "deleted",
+      objectKey: STORED_OBJECT_KEY,
+      reason: null,
+    });
   });
 
   it("supports dry-run without deleting backup records", async () => {
@@ -62,6 +86,7 @@ describe("backup retention cleanup", () => {
     const body = await response.json();
     expect(body.retention.dryRun).toBe(true);
     expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+    expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
   });
 
   it("writes an audit log for retention cleanup", async () => {
@@ -81,17 +106,109 @@ describe("backup retention cleanup", () => {
     );
   });
 
-  it("preserves metadata records when offsite object cleanup is not implemented", async () => {
-    mocks.parseBackupRecordMetadata.mockReturnValue({
-      offsite: { status: "stored", objectKey: "backups/2026/backup_1/file.json" },
-    });
+  it("preserves offsite-stored records while the delete flag is disabled (default)", async () => {
+    mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
 
     const { POST } = await import("./route");
     const response = await POST(retentionRequest());
 
     expect(response.status).toBe(200);
     const body = await response.json();
+    expect(body.retention.offsiteCleanup).toBe("disabled_metadata_preserved");
     expect(body.retention.offsiteRecordsPreserved).toBeGreaterThan(0);
     expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+    expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
+  });
+
+  it("dry-run with the flag enabled performs no offsite or DB deletes", async () => {
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
+
+    const { POST } = await import("./route");
+    const response = await POST(retentionRequest({ dryRun: true }));
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.retention.offsiteCleanup).toBe("dry_run_no_deletes");
+    expect(body.retention.offsiteDelete.deleted).toBe(0);
+    expect(mocks.deleteBackupArchive).not.toHaveBeenCalled();
+    expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+  });
+
+  it("enabled path deletes the stored offsite object exactly once, then the DB row", async () => {
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
+
+    const { POST } = await import("./route");
+    const response = await POST(retentionRequest());
+
+    expect(response.status).toBe(200);
+    // The same record surfaces from both the completed and failed
+    // candidate queries in this mock; dedupe must keep it to a single
+    // offsite delete attempt.
+    expect(mocks.deleteBackupArchive).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteBackupArchive).toHaveBeenCalledWith({
+      backupId: "backup_old",
+      offsite: expect.objectContaining({ objectKey: STORED_OBJECT_KEY }),
+    });
+    // DB row removed only after the object delete succeeded.
+    expect(mocks.backupDeleteMany).toHaveBeenCalledWith({
+      where: { id: "backup_old" },
+    });
+
+    const body = await response.json();
+    expect(body.retention.offsiteCleanup).toBe("enabled");
+    expect(body.retention.offsiteDelete.deleted).toBe(1);
+    expect(body.retention.offsiteRecordsPreserved).toBe(0);
+  });
+
+  it("preserves the DB row when the offsite delete fails (retry next run)", async () => {
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue(storedOffsiteMetadata());
+    mocks.deleteBackupArchive.mockResolvedValue({
+      outcome: "failed",
+      objectKey: STORED_OBJECT_KEY,
+      reason: "Delete failed (500): InternalError",
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(retentionRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.deleteBackupArchive).toHaveBeenCalledTimes(1);
+    expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+
+    const body = await response.json();
+    expect(body.retention.offsiteDelete.deleted).toBe(0);
+    expect(body.retention.offsiteDelete.failed).toBe(1);
+    expect(body.retention.offsiteRecordsPreserved).toBe(1);
+  });
+
+  it("preserves the DB row when the storage client refuses the key (prefix mismatch)", async () => {
+    mocks.isOffsiteRetentionDeleteEnabled.mockResolvedValue(true);
+    mocks.parseBackupRecordMetadata.mockReturnValue({
+      offsite: {
+        status: "stored",
+        bucket: "locateflow-backups",
+        objectKey: "uploads/backup_old/escaped.json",
+      },
+    });
+    mocks.deleteBackupArchive.mockResolvedValue({
+      outcome: "refused",
+      objectKey: "uploads/backup_old/escaped.json",
+      reason:
+        "Object key is missing, outside the configured backup prefix, or does not belong to this backup record.",
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(retentionRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.backupDeleteMany).not.toHaveBeenCalled();
+
+    const body = await response.json();
+    expect(body.retention.offsiteDelete.refused).toBe(1);
+    expect(body.retention.offsiteDelete.deleted).toBe(0);
+    expect(body.retention.offsiteRecordsPreserved).toBe(1);
   });
 });

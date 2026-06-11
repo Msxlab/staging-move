@@ -7,6 +7,8 @@ import {
   MAX_BACKUP_ROWS_PER_TABLE,
 } from "@/lib/backup-tables";
 import {
+  deleteBackupArchive,
+  isOffsiteRetentionDeleteEnabled,
   parseBackupRecordMetadata,
   serializeBackupRecordMetadata,
   uploadBackupArchive,
@@ -237,20 +239,74 @@ export async function POST(request: NextRequest) {
       },
       select: { id: true, errorMessage: true },
     });
-    const retentionDeleteIds = retentionCandidates
-      .filter((record) => {
-        const metadata = parseBackupRecordMetadata(record.errorMessage);
-        return !(metadata.offsite?.status === "stored" && metadata.offsite.objectKey);
-      })
-      .map((record) => record.id);
+    const retentionDeleteIds: string[] = [];
+    const offsiteRetentionCandidates: Array<{
+      id: string;
+      offsite: NonNullable<
+        ReturnType<typeof parseBackupRecordMetadata>["offsite"]
+      >;
+    }> = [];
+    for (const record of retentionCandidates) {
+      const metadata = parseBackupRecordMetadata(record.errorMessage);
+      if (metadata.offsite?.status === "stored" && metadata.offsite.objectKey) {
+        offsiteRetentionCandidates.push({
+          id: record.id,
+          offsite: metadata.offsite,
+        });
+      } else {
+        retentionDeleteIds.push(record.id);
+      }
+    }
     const cleaned =
       retentionDeleteIds.length > 0
         ? await prisma.backupRecord.deleteMany({
             where: { id: { in: retentionDeleteIds } },
           })
         : { count: 0 };
+
+    // Offsite archive cleanup is gated by the runtime flag
+    // BACKUP_RETENTION_DELETE_OFFSITE (default false). When enabled,
+    // the offsite object is deleted FIRST (exact stored key only — the
+    // storage client refuses prefix/bucket mismatches and never
+    // list-and-deletes); the DB row is removed only after the object is
+    // confirmed gone, so any failure leaves the row for the next run.
+    const offsiteDeleteEnabled = await isOffsiteRetentionDeleteEnabled();
+    let offsiteDeleted = 0;
+    let offsiteDeleteFailed = 0;
+    if (offsiteDeleteEnabled) {
+      for (const candidate of offsiteRetentionCandidates) {
+        const deletion = await deleteBackupArchive({
+          backupId: candidate.id,
+          offsite: candidate.offsite,
+        });
+        console.info(
+          `[CRON-BACKUP] offsite retention ${deletion.outcome} backup=${candidate.id} key=${deletion.objectKey ?? "<none>"}${
+            deletion.reason
+              ? ` reason=${redactBackupSecretText(deletion.reason)}`
+              : ""
+          }`,
+        );
+        if (deletion.outcome === "deleted") {
+          try {
+            await prisma.backupRecord.deleteMany({
+              where: { id: candidate.id },
+            });
+            offsiteDeleted += 1;
+          } catch (rowError) {
+            // Object gone, row remains: the next run treats the absent
+            // object as already deleted and removes the row then.
+            offsiteDeleteFailed += 1;
+            console.error(
+              `[CRON-BACKUP] offsite retention row delete failed backup=${candidate.id}: ${redactBackupSecretText(rowError)}`,
+            );
+          }
+        } else {
+          offsiteDeleteFailed += 1;
+        }
+      }
+    }
     const retentionPreservedOffsite =
-      retentionCandidates.length - retentionDeleteIds.length;
+      offsiteRetentionCandidates.length - offsiteDeleted;
 
     await writeBackupAudit({
       session: null,
@@ -267,6 +323,9 @@ export async function POST(request: NextRequest) {
         truncatedTables,
         retentionCleaned: cleaned.count,
         retentionPreservedOffsite,
+        retentionOffsiteDeleteEnabled: offsiteDeleteEnabled,
+        retentionOffsiteDeleted: offsiteDeleted,
+        retentionOffsiteDeleteFailed: offsiteDeleteFailed,
       },
     });
 
@@ -285,7 +344,13 @@ export async function POST(request: NextRequest) {
         failedTables,
         truncatedTables,
       },
-      retention: { cleaned: cleaned.count, preservedOffsite: retentionPreservedOffsite },
+      retention: {
+        cleaned: cleaned.count,
+        preservedOffsite: retentionPreservedOffsite,
+        offsiteDeleteEnabled,
+        offsiteDeleted,
+        offsiteDeleteFailed,
+      },
     });
   } catch (error) {
     if (backupId) {

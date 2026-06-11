@@ -7,6 +7,7 @@ import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { emitSecurityEvent } from "@/lib/security-events";
+import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 import { markWebhookEventProcessed, releaseProcessedWebhookEvent } from "@/lib/webhook-idempotency";
 import { isMissingDbColumnError, warnSchemaCompatibilityFallback } from "@/lib/db-schema-compat";
 import { formatPlanLabel, fireAndLogEmail as fireAndLogBillingEmail } from "@/lib/billing-email-utils";
@@ -544,6 +545,14 @@ export async function POST(request: NextRequest) {
           bodyLength: Buffer.byteLength(body, "utf8"),
           correlationId: request.headers.get("stripe-request-id") || null,
         },
+      });
+      // Operator email alarm (deduped to one per UTC day per reason) — a
+      // signature failure here is either probing or a broken
+      // STRIPE_WEBHOOK_SECRET silently dropping billing events. Detection
+      // only; never throws (audit SEC-ALERT "DETECT: web off").
+      void alertWebhookSignatureFailure({
+        provider: "stripe",
+        reason: "signature_verification_failed",
       });
       console.error("Stripe webhook signature verification failed:", err);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
