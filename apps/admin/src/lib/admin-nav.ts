@@ -35,6 +35,7 @@ import {
   Ticket,
   FileText,
   PlusCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
 
@@ -98,6 +99,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Movers", nameKey: "movers", href: "/movers", icon: Boxes, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Mover Applications", nameKey: "moverApplications", href: "/movers/applications", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
