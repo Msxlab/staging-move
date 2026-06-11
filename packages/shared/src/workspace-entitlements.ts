@@ -36,6 +36,8 @@ export interface WorkspacePlanFeatures {
   realMap: boolean;
   /** New Home Dossier PDF export. Pro only. */
   dossierPdf: boolean;
+  /** Neighborhood Intelligence dossier section (Census ACS area economics). Pro only. */
+  neighborhoodIntel: boolean;
   /** Priority support queue/label. Pro only. */
   prioritySupport: boolean;
   /** Max concurrent (non-archived) move plans. Pro runs several at once. */
@@ -48,10 +50,10 @@ export interface WorkspacePlanFeatures {
 // is cost control, not a tier line); movers, dossier-PDF, multi-plan and
 // priority support are Pro-only so Pro is meaningfully differentiated.
 const FEATURES: Record<string, WorkspacePlanFeatures> = {
-  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: true, prioritySupport: true, concurrentPlanLimit: 3 },
-  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
-  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: false, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: false, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
-  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false, vehicleCheck: false, weatherDigest: false, realMap: false, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: true, neighborhoodIntel: true, prioritySupport: true, concurrentPlanLimit: 3 },
+  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: false, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false, vehicleCheck: false, weatherDigest: false, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
 };
 
 const DEFAULT_FEATURES: WorkspacePlanFeatures = FEATURES.FREE_TRIAL;

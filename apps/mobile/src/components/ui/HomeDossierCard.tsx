@@ -38,6 +38,19 @@ const RADON_ZONE_KEYS = {
 } as const;
 
 /**
+ * Whole-dollar USD label, Hermes-safe (no Intl.NumberFormat — the app avoids
+ * locale-format APIs on this path). US-only product, so the "$" + thousands
+ * grouping is correct for both languages. Returns "" for null so the caller
+ * omits the figure. e.g. 412000 → "$412,000".
+ */
+function formatUsd(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return "";
+  const rounded = Math.round(value);
+  const grouped = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${rounded < 0 ? "-" : ""}$${grouped}`;
+}
+
+/**
  * NEW HOME DOSSIER — a compact "Your new home" card for the moving plan
  * detail screen, mirroring the web dossier contract: FEMA flood zone, NCES
  * school district, (within 7 days of the move) the moving-day forecast for
@@ -188,6 +201,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
         .filter(Boolean)
         .join(" · ")
     : "";
+
+  // Neighborhood (Pro): either the locked teaser variant or the area medians.
+  const neighborhood = rows.neighborhood;
 
   return (
     <Card variant="default" style={styles.card}>
@@ -347,6 +363,83 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
           </View>
         </View>
       )}
+
+      {/* Neighborhood (Pro-only). Locked teaser for an entitled-but-non-Pro
+          user, else the area-median stat rows. The fine print is the honest
+          core: ACS tract medians, never a valuation of THIS home. */}
+      {neighborhood?.locked === true && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Home size={14} color={theme.colors.amber.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <View style={styles.rowTop}>
+              <Text style={styles.rowLabel}>{t("dossier.neighborhoodLabel")}</Text>
+              <UiBadge label={t("dossier.neighborhoodProPill")} variant="warning" mono dot />
+            </View>
+            <Text style={styles.teaserRowValue}>{t("dossier.neighborhoodTeaser")}</Text>
+            <Text style={styles.finePrint}>{t("dossier.neighborhoodFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {neighborhood?.locked === false && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Home size={14} color={theme.colors.amber.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.neighborhoodLabel")}</Text>
+
+            {neighborhood.medianHomeValue !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodHomeValue")}</Text>
+                <Text style={styles.statValue}>{formatUsd(neighborhood.medianHomeValue)}</Text>
+              </View>
+            )}
+            {neighborhood.medianGrossRent !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodGrossRent")}</Text>
+                <Text style={styles.statValue}>
+                  {t("dossier.neighborhoodRentPerMonth", {
+                    amount: formatUsd(neighborhood.medianGrossRent),
+                  })}
+                </Text>
+              </View>
+            )}
+            {neighborhood.medianHouseholdIncome !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodIncome")}</Text>
+                <Text style={styles.statValue}>{formatUsd(neighborhood.medianHouseholdIncome)}</Text>
+              </View>
+            )}
+            {neighborhood.ownerOccupiedPct !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodOwnerOccupied")}</Text>
+                <Text style={styles.statValue}>
+                  {t("dossier.neighborhoodPercent", { percent: neighborhood.ownerOccupiedPct })}
+                </Text>
+              </View>
+            )}
+
+            {neighborhood.schools.length > 0 && (
+              <View style={styles.schoolsBlock}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodSchools")}</Text>
+                {neighborhood.schools.map((school) => (
+                  <View key={school.name} style={styles.statRow}>
+                    <Text style={styles.schoolName} numberOfLines={1}>
+                      {school.name}
+                    </Text>
+                    {school.rating ? <Text style={styles.schoolRating}>{school.rating}</Text> : null}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <Text style={styles.finePrint}>{t("dossier.neighborhoodFinePrint")}</Text>
+          </View>
+        </View>
+      )}
     </Card>
   );
 }
@@ -415,6 +508,39 @@ const makeStyles = (theme: Theme) =>
       flexWrap: "wrap",
       gap: 6,
       marginTop: 6,
+    },
+    // ── Neighborhood stat rows (label left, value right) ──
+    statRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      gap: 10,
+      marginTop: 5,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      flexShrink: 1,
+    },
+    statValue: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.colors.text,
+    },
+    schoolsBlock: {
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    schoolName: {
+      fontSize: 13,
+      color: theme.colors.text,
+      flexShrink: 1,
+    },
+    schoolRating: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
     },
     // ── Teaser-only styles (entitled:false) ──
     teaserPitch: {

@@ -54,6 +54,15 @@ describe("planFeatures", () => {
     expect(planFeatures("FAMILY").concurrentPlanLimit).toBe(1);
   });
 
+  it("Neighborhood Intelligence matrix: Pro only (everyone else, including unknown, no)", () => {
+    expect(planFeatures("PRO").neighborhoodIntel).toBe(true);
+    expect(planFeatures("FAMILY").neighborhoodIntel).toBe(false);
+    expect(planFeatures("INDIVIDUAL").neighborhoodIntel).toBe(false);
+    expect(planFeatures("FREE_TRIAL").neighborhoodIntel).toBe(false);
+    expect(planFeatures(null).neighborhoodIntel).toBe(false);
+    expect(planFeatures("WHATEVER").neighborhoodIntel).toBe(false);
+  });
+
   it("VIN check + weather/digest: Individual and up; real map: Family and up", () => {
     expect(planFeatures("INDIVIDUAL").vehicleCheck).toBe(true);
     expect(planFeatures("FREE_TRIAL").vehicleCheck).toBe(false);

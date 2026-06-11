@@ -1,0 +1,63 @@
+Locateflow cross-layer map
+Date: 2026-06-11
+
+This file will be updated from direct code/config review.
+
+Code-derived cross-layer map
+
+1. Runtime and package coupling
+- apps/web and apps/admin both transpile @locateflow/shared, @locateflow/db, and @locateflow/connectors through Next standalone builds.
+- apps/mobile imports @locateflow/shared through the mobile-safe entrypoint configured by metro.config.js and calls apps/web API endpoints over EXPO_PUBLIC_API_URL.
+- packages/db imports selected shared provider-integrity/coverage helpers for seed and coverage rebuilds.
+- packages/connectors is intentionally pure and is adapted by web/admin connector runtime/API routes.
+
+2. Data layer
+- packages/db/src/index.ts exports db with the soft-delete Prisma extension and dbUnsafe/raw clients.
+- apps/web/src/lib/db.ts and apps/admin/src/lib/db.ts re-export the shared Prisma client wrapper.
+- User-facing code is expected to use prisma/db with soft-delete filtering; restore, backup, purge, hard delete, and reconciliation paths intentionally use rawPrisma/prismaUnsafe.
+- Soft-delete fields exist across users, workspaces, addresses, services, moving plans, move tasks, blog posts, providers, custom providers, and notification-like surfaces; nested relation filters must still be explicit because the Prisma extension only guarantees top-level model filtering.
+
+3. Auth and authorization
+- Web user auth: apps/web/src/lib/auth and route-level requireDbUserId guard most authenticated API routes; mobile uses bearer/mobile auth endpoints and the same web API contracts.
+- Admin auth: apps/admin/src/lib/auth, middleware, requirePermission, requirePasswordConfirm, MFA/step-up store, and admin audit logging protect admin API routes.
+- Workspace authorization: packages/shared/src/permissions.ts can(role, action, ctx) is the shared policy function for web workspace actions; web workspace routes import can() directly.
+- Admin authorization is separate from workspace authorization: admin roles/permissions are in apps/admin/src/lib/admin-permissions.ts and apps/admin/src/lib/admin-roles.ts.
+
+4. Billing/payment flow
+- Pricing copy and plan metadata: packages/shared/src/billing.ts via BILLING_PLAN_DEFINITIONS and PAID_BILLING_PLANS.
+- Entitlement truth: packages/shared/src/entitlement.ts getEffectiveEntitlement plus packages/shared/src/workspace-entitlements.ts planFeatures/seatLimitForPlan.
+- Web checkout: apps/web/src/app/api/stripe/checkout/route.ts reads runtime config, writes subscription state, sends metadata to Stripe.
+- Stripe webhook: apps/web/src/app/api/webhooks/stripe/route.ts maps Stripe events back to Subscription rows and sends lifecycle emails/alerts.
+- Subscription actions: apps/web/src/app/api/subscription/* handles plan change, cycle switch, cancel; admin has apps/admin/src/app/api/subscriptions/* for operator cancel/refund/revalidate/resync/change-plan.
+- Store purchases: mobile IAP uses apps/mobile/src/lib/iap.ts -> /api/mobile/iap/products and /api/mobile/iap/verify; App Store/Play Store webhooks live under apps/web/src/app/api/webhooks.
+- Reconciliation/backstop: web cron routes include checkout-cleanup, trial-check, stripe-reconcile, and store/webhook idempotency helpers.
+
+5. Blog/SEO/GEO flow
+- Admin blog CRUD/publish/upload/preview-token lives in apps/admin/src/app/api/blog/* and admin blog pages.
+- Public blog rendering/query/feed lives in apps/web/src/app/blog/* and apps/web/src/lib/blog/*.
+- Admin-to-web blog invalidation uses apps/admin/src/lib/blog-revalidate.ts, INTERNAL_WEBHOOK_SECRET, and apps/web/src/app/api/blog/revalidate/route.ts.
+- SEO/GEO code paths include apps/web/src/app/sitemap.ts, robots.ts, llms.txt/route.ts, llms-full.txt/route.ts, JSON-LD components, createPublicPageMetadata, and programmatic /moving/[state]/[city] pages.
+
+6. Provider/recommendation/connectors flow
+- Admin provider CRUD/coverage/logo/bulk/merge routes write ServiceProvider and coverage metadata.
+- Web provider APIs read DB providers plus packages/db provider coverage metadata and packages/shared recommendation/trust helpers.
+- Mobile provider screens call web /api/providers, /api/providers/recommendations, /api/providers/compare, and /api/providers/[id].
+- Connectors framework bridges @locateflow/connectors into web connector runtime, web partner consent/oauth routes, web connector dispatch, and admin connector health/test/config routes.
+
+7. Mobile/web coupling
+- Mobile base URLs are configured in apps/mobile/eas.json.
+- Development points to localhost; preview, staging-preview, and production all point to https://locateflow.com/api and https://locateflow.com.
+- Mobile auth/session hydration depends on /api/mobile/auth/login, /api/mobile/auth/exchange, /api/mobile/auth/apple/native, /api/auth/me, and /api/profile.
+- Mobile settings/subscription depends on /api/profile, /api/mobile/iap/products, /api/acquisition/public-trial-campaign, and IAP verification endpoints.
+- Mobile offline/loading/null behavior must be audited screen by screen because there is no separate offline data package; it is mostly API-client/screen-level handling.
+
+8. Operations/security flow
+- Web cron routes are mostly protected by apps/web/src/lib/cron-guard.ts using CRON_SECRET/internal auth and optional rate limit.
+- Admin cron backup/blog cleanup use apps/admin/src/lib/internal-secrets.ts.
+- Web and admin middleware add nonce CSP/security headers, CSRF checks, rate limiting, staging noindex, and route allowlists.
+- External integrations include Stripe, Resend, Upstash Redis, USPS/partner connectors, R2/imgproxy, Google Maps/static map, Expo updates, App Store, Play Store.
+
+Open verification needs
+- Run typecheck/tests after code review to catch drift.
+- Run local web/admin render/browser checks if the app can start with available env/database.
+- Security scan finding-discovery phase still requires explicit subagent authorization under the Codex Security workflow before exhaustive repo-wide security discovery.

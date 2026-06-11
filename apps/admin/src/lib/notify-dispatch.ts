@@ -59,12 +59,12 @@ function renderBroadcastEmailHtml(args: {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:32px 24px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#0E1420,#357A6C);padding:32px 24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">${escapeHtml(title)}</h1>
     </div>
     <div style="padding:24px;">
       <p style="color:#334155;font-size:15px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(body)}</p>
-      <a href="${escapeHtml(ctaUrl)}" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin-top:20px;">${ctaLabel}</a>
+      <a href="${escapeHtml(ctaUrl)}" style="display:block;text-align:center;background:#357A6C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin-top:20px;">${ctaLabel}</a>
     </div>
     <div style="padding:16px 24px;text-align:center;border-top:1px solid #f1f5f9;">
       <p style="color:#94a3b8;font-size:11px;margin:0;">LocateFlow · You can manage notifications in Settings.</p>

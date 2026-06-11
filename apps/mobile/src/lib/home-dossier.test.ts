@@ -7,6 +7,7 @@ import {
   getAirRow,
   getFloodRow,
   getHazardsRow,
+  getNeighborhoodRow,
   getRadonRow,
   getSchoolRow,
   getWaterRow,
@@ -85,6 +86,7 @@ describe("deriveHomeDossier — card-level gating", () => {
       radon: null,
       water: null,
       air: null,
+      neighborhood: null,
       hasContent: false,
     });
   });
@@ -110,6 +112,28 @@ describe("deriveHomeDossier — card-level gating", () => {
       }),
     );
     expect(rows.hasContent).toBe(false);
+  });
+
+  it("a locked neighborhood (upgrade_required) keeps the card alive when every other section degraded", () => {
+    const rows = deriveHomeDossier(
+      extendedDossier({
+        ...DEGRADED_BASE,
+        hazards: { status: "error", topRisks: [], overallRating: null },
+        radon: { status: "no_location", zone: null },
+        water: { status: "error", systemName: null, violations5y: null },
+        air: { status: "not_configured", aqi: null, category: null },
+        neighborhood: {
+          status: "upgrade_required",
+          medianHomeValue: null,
+          medianGrossRent: null,
+          medianHouseholdIncome: null,
+          ownerOccupiedPct: null,
+          schools: null,
+        },
+      }),
+    );
+    expect(rows.hasContent).toBe(true);
+    expect(rows.neighborhood).toEqual({ locked: true });
   });
 
   it("has content when at least one row survives", () => {
@@ -581,5 +605,117 @@ describe("formatForecastDate", () => {
     expect(formatForecastDate(null, "en-US")).toBeNull();
     expect(formatForecastDate("   ", "en-US")).toBeNull();
     expect(formatForecastDate("not-a-date", "en-US")).toBeNull();
+  });
+});
+
+describe("getNeighborhoodRow", () => {
+  const neighborhood = (
+    over: Partial<NonNullable<HomeDossierResponse["neighborhood"]>> = {},
+  ): HomeDossierResponse =>
+    dossier({
+      neighborhood: {
+        status: "ok",
+        medianHomeValue: 412000,
+        medianGrossRent: 1850,
+        medianHouseholdIncome: 96500,
+        ownerOccupiedPct: 58,
+        schools: [{ name: "Hill Elementary", rating: "8/10" }],
+        ...over,
+      },
+    });
+
+  it("returns the locked teaser variant on upgrade_required (per-section Pro gate)", () => {
+    const row = getNeighborhoodRow(neighborhood({ status: "upgrade_required" }));
+    expect(row).toEqual({ locked: true });
+  });
+
+  it("returns the sanitized area medians + capped schools when ok", () => {
+    const row = getNeighborhoodRow(
+      neighborhood({
+        medianHomeValue: 411999.6,
+        ownerOccupiedPct: 58.4,
+        schools: [
+          { name: "  Hill Elementary  ", rating: " 8/10 " },
+          { name: "Bryker Woods", rating: null },
+          { name: "", rating: "9/10" },
+          { name: "Casis", rating: "7/10" },
+          { name: "Extra", rating: "1/10" },
+        ],
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: 412000,
+      medianGrossRent: 1850,
+      medianHouseholdIncome: 96500,
+      ownerOccupiedPct: 58,
+      schools: [
+        { name: "Hill Elementary", rating: "8/10" },
+        { name: "Bryker Woods", rating: null },
+        { name: "Casis", rating: "7/10" },
+      ],
+    });
+  });
+
+  it("keeps a 0% owner-occupied share (meaningful) but drops non-positive dollar figures", () => {
+    const row = getNeighborhoodRow(
+      neighborhood({
+        medianHomeValue: 0,
+        medianGrossRent: -5,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: 0,
+        schools: null,
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: 0,
+      schools: [],
+    });
+  });
+
+  it("renders on a named school alone (no ACS figures present)", () => {
+    const row = getNeighborhoodRow(
+      neighborhood({
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: null,
+        schools: [{ name: "Hill Elementary", rating: null }],
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: null,
+      schools: [{ name: "Hill Elementary", rating: null }],
+    });
+  });
+
+  it("hides an ok section with nothing honest to show", () => {
+    expect(
+      getNeighborhoodRow(
+        neighborhood({
+          medianHomeValue: null,
+          medianGrossRent: null,
+          medianHouseholdIncome: null,
+          ownerOccupiedPct: null,
+          schools: [],
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it.each(["no_location", "not_configured", "error"] as const)("hides on status %s", (status) => {
+    expect(getNeighborhoodRow(neighborhood({ status })) ).toBeNull();
+  });
+
+  it("hides on a legacy payload that omits the section entirely", () => {
+    expect(getNeighborhoodRow(dossier())).toBeNull();
   });
 });

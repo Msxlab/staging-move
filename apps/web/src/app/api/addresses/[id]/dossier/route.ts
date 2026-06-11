@@ -9,6 +9,11 @@ import { lookupHazardRisks, type HazardRiskLookupResult } from "@/lib/fema-nri";
 import { lookupRadonZone, type RadonLookupResult, type RadonZone } from "@/lib/epa-radon";
 import { lookupWaterSystem, type WaterSystemLookupResult } from "@/lib/epa-water";
 import { lookupAirQuality, type AirQualityLookupResult } from "@/lib/airnow";
+import {
+  lookupNeighborhoodAcs,
+  type NeighborhoodAcsResult,
+  type AcsContextBand,
+} from "@/lib/census-acs";
 import { assertScopedRecordAction, resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getUserPlan } from "@/lib/plan-limits";
@@ -84,6 +89,23 @@ interface AirSection {
   category: string | null;
 }
 
+// Pro-only Neighborhood Intelligence (Census ACS area economics). Unlike the
+// other sections this one is ALSO plan-gated: non-Pro entitled-dossier plans
+// (Individual/Family) see a teaser (`status: "upgrade_required"`) instead of
+// the data — mirroring the whole-dossier upgrade teaser pattern above.
+interface NeighborhoodSection {
+  status: "ok" | "upgrade_required" | "not_configured" | "no_location" | "error";
+  /** Set only when status === "upgrade_required" (the per-section teaser). */
+  upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED" | null;
+  medianHomeValue: number | null;
+  medianGrossRent: number | null;
+  medianHouseholdIncome: number | null;
+  ownerOccupiedShare: number | null;
+  incomeBand: AcsContextBand;
+  homeValueBand: AcsContextBand;
+  caveat: string | null;
+}
+
 function emptyWeather(status: WeatherSection["status"]): WeatherSection {
   return { status, forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null };
 }
@@ -132,6 +154,54 @@ function airSection(settled: PromiseSettledResult<AirQualityLookupResult>): AirS
   return { status, aqi, category };
 }
 
+function emptyNeighborhood(
+  status: Exclude<NeighborhoodSection["status"], "upgrade_required">,
+): NeighborhoodSection {
+  return {
+    status,
+    upgradeRequired: null,
+    medianHomeValue: null,
+    medianGrossRent: null,
+    medianHouseholdIncome: null,
+    ownerOccupiedShare: null,
+    incomeBand: "unknown",
+    homeValueBand: "unknown",
+    caveat: null,
+  };
+}
+
+/** The per-section teaser shown when the dossier is entitled but the plan is
+ *  not Pro — mirrors the whole-dossier upgrade teaser. Carries no data. */
+function neighborhoodTeaser(): NeighborhoodSection {
+  return { ...emptyNeighborhood("not_configured"), status: "upgrade_required", upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED" };
+}
+
+function neighborhoodSection(settled: PromiseSettledResult<NeighborhoodAcsResult>): NeighborhoodSection {
+  if (settled.status !== "fulfilled") return emptyNeighborhood("error");
+  const {
+    status,
+    medianHomeValue,
+    medianGrossRent,
+    medianHouseholdIncome,
+    ownerOccupiedShare,
+    incomeBand,
+    homeValueBand,
+    caveat,
+  } = settled.value;
+  return {
+    status,
+    upgradeRequired: null,
+    medianHomeValue,
+    medianGrossRent,
+    medianHouseholdIncome,
+    ownerOccupiedShare,
+    incomeBand,
+    homeValueBand,
+    // Only surface the caveat alongside actual figures.
+    caveat: status === "ok" ? caveat : null,
+  };
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
@@ -157,12 +227,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Foreign-scope ids 404 (never 403) — same pattern as GET /api/addresses/:id.
     assertScopedRecordAction(address, scope, "address.view", { notFoundMessage: "Address not found" });
 
+    // Resolve the plan once: the whole-dossier gate (homeDossier, Individual+)
+    // and the per-section Neighborhood Intelligence gate (Pro only) both read
+    // from it, so this is a single plan lookup for the request.
+    const features = planFeatures((await getUserPlan(userId)).plan);
+
     // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
     // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 —
     // never 403 — and the address/section blocks are omitted, so old clients
     // (which require them) fail soft to a hidden card and no external lookups
     // or plan queries are spent on a gated request. 401/404 above still win.
-    if (!planFeatures((await getUserPlan(userId)).plan).homeDossier) {
+    if (!features.homeDossier) {
       // Fire-and-forget telemetry (never throws, never adds latency): a gated
       // dossier request spent no external lookups, so only the composite
       // 'dossier' counter records it.
@@ -187,6 +262,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // address is an incomplete address — the uniform short-circuit keeps the
     // "no coordinates = zero external calls" guarantee simple and true.)
     if (!hasLocation) {
+      // Neighborhood Intelligence is Pro-gated: a non-Pro plan gets the teaser
+      // (no lookup, no_location is moot); a Pro plan reports no_location like
+      // the rest. census telemetry: 'gated' for the teaser, 'no_location' else.
+      const neighborhood = features.neighborhoodIntel ? emptyNeighborhood("no_location") : neighborhoodTeaser();
       // Fire-and-forget telemetry (never throws, never adds latency): every
       // tracked section reports no_location; the dossier itself answered ok.
       recordIntegrationOutcomes({
@@ -195,6 +274,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         radon: "no_location",
         water: "no_location",
         air: "no_location",
+        census: features.neighborhoodIntel ? "no_location" : "gated",
         dossier: "ok",
       });
       return NextResponse.json({
@@ -207,6 +287,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         radon: { status: "no_location", zone: null } satisfies RadonSection,
         water: { status: "no_location", systemName: null, violations5y: null } satisfies WaterSection,
         air: { status: "no_location", aqi: null, category: null } satisfies AirSection,
+        neighborhood,
       });
     }
 
@@ -248,6 +329,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
       ]);
 
+    // Neighborhood Intelligence is Pro-only: only Pro spends the Census lookup;
+    // every other entitled plan gets the per-section upgrade teaser and no call.
+    const neighborhood = features.neighborhoodIntel
+      ? neighborhoodSection(
+          await Promise.allSettled([
+            lookupNeighborhoodAcs({ latitude: address.latitude, longitude: address.longitude }),
+          ]).then(([settled]) => settled),
+        )
+      : neighborhoodTeaser();
+
     const dossier = {
       configured: true,
       address: addressPayload,
@@ -258,18 +349,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       radon: radonSection(radonSettled),
       water: waterSection(waterSettled),
       air: airSection(airSettled),
+      neighborhood,
     };
 
     // Fire-and-forget telemetry (synchronous in-process buffer — never throws,
     // never adds latency). Per-section statuses for the sources that have an
     // IntegrationDailyStat bucket (weather→nws, hazards→nri, radon, water,
-    // air; flood/school have no bucket), plus the composite 'dossier' ok.
+    // air; neighborhood→census; flood/school have no bucket), plus the
+    // composite 'dossier' ok. A non-Pro plan records census 'upgrade_required'.
     recordIntegrationOutcomes({
       nws: dossier.weather.status,
       nri: dossier.hazards.status,
       radon: dossier.radon.status,
       water: dossier.water.status,
       air: dossier.air.status,
+      census: dossier.neighborhood.status,
       dossier: "ok",
     });
 

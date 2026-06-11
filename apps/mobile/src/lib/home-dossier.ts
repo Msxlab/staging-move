@@ -12,6 +12,18 @@ export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 /** Air adds "not_configured" (AirNow needs an API key) — hidden like configured:false. */
 export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
+/**
+ * Neighborhood is a Pro-only section gated ABOVE the dossier itself (the other
+ * sections unlock at Individual+; this one needs Pro). "upgrade_required" is
+ * the per-section gate: an entitled-to-the-dossier but non-Pro user gets a
+ * locked teaser for THIS row while the others render real data.
+ */
+export type DossierNeighborhoodStatus =
+  | "ok"
+  | "upgrade_required"
+  | "not_configured"
+  | "no_location"
+  | "error";
 
 export interface HomeDossierResponse {
   configured: boolean;
@@ -61,6 +73,18 @@ export interface HomeDossierResponse {
     violations5y: number | null;
   };
   air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
+  /**
+   * Neighborhood (Pro-only) — Census/ACS area medians for the surrounding
+   * tract, NOT a valuation of this home. "upgrade_required" → locked teaser.
+   */
+  neighborhood?: {
+    status: DossierNeighborhoodStatus;
+    medianHomeValue: number | null;
+    medianGrossRent: number | null;
+    medianHouseholdIncome: number | null;
+    ownerOccupiedPct: number | null;
+    schools?: Array<{ name: string; rating: string | null }> | null;
+  };
 }
 
 export interface FloodRow {
@@ -110,6 +134,27 @@ export interface AirRow {
   category: string | null;
 }
 
+export interface NeighborhoodSchool {
+  name: string;
+  rating: string | null;
+}
+
+/**
+ * Neighborhood render model (Pro). `locked` ⇒ render the in-card Pro teaser
+ * row; otherwise the area-median figures — each null when absent so the card
+ * renders only what the ACS actually published.
+ */
+export type NeighborhoodRow =
+  | { locked: true }
+  | {
+      locked: false;
+      medianHomeValue: number | null;
+      medianGrossRent: number | null;
+      medianHouseholdIncome: number | null;
+      ownerOccupiedPct: number | null;
+      schools: NeighborhoodSchool[];
+    };
+
 export interface HomeDossierRows {
   flood: FloodRow | null;
   school: SchoolRow | null;
@@ -118,6 +163,7 @@ export interface HomeDossierRows {
   radon: RadonRow | null;
   water: WaterRow | null;
   air: AirRow | null;
+  neighborhood: NeighborhoodRow | null;
   /** False ⇒ the card renders nothing at all. */
   hasContent: boolean;
 }
@@ -130,6 +176,7 @@ const EMPTY_ROWS: HomeDossierRows = {
   radon: null,
   water: null,
   air: null,
+  neighborhood: null,
   hasContent: false,
 };
 
@@ -258,6 +305,49 @@ export function getAirRow(d: HomeDossierResponse): AirRow | null {
   return { aqi, category };
 }
 
+/** Positive whole figure (dollars/count); null for absent/invalid/≤0. */
+function posInt(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+/** Integer 0–100 percent; null for absent/invalid (0 is meaningful, kept). */
+export function clampNeighborhoodPct(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+/**
+ * Neighborhood row (Pro). "upgrade_required" ⇒ the locked teaser variant.
+ * "ok" ⇒ the area-median figures, but only when at least one figure or a named
+ * school survives (never an empty shell). Every other status hides the row.
+ * Schools are sanitized to a named list, hard-capped at 3.
+ */
+export function getNeighborhoodRow(d: HomeDossierResponse): NeighborhoodRow | null {
+  const n = d.neighborhood;
+  if (!n) return null;
+  if (n.status === "upgrade_required") return { locked: true };
+  if (n.status !== "ok") return null;
+
+  const medianHomeValue = posInt(n.medianHomeValue);
+  const medianGrossRent = posInt(n.medianGrossRent);
+  const medianHouseholdIncome = posInt(n.medianHouseholdIncome);
+  const ownerOccupiedPct = clampNeighborhoodPct(n.ownerOccupiedPct);
+  const schools: NeighborhoodSchool[] = (Array.isArray(n.schools) ? n.schools : [])
+    .filter((s): s is { name: string; rating: string | null } => !!s && nonEmpty(s.name))
+    .slice(0, 3)
+    .map((s) => ({ name: s.name.trim(), rating: nonEmpty(s.rating) ? s.rating.trim() : null }));
+
+  const hasFigure =
+    medianHomeValue !== null ||
+    medianGrossRent !== null ||
+    medianHouseholdIncome !== null ||
+    ownerOccupiedPct !== null ||
+    schools.length > 0;
+  if (!hasFigure) return null;
+
+  return { locked: false, medianHomeValue, medianGrossRent, medianHouseholdIncome, ownerOccupiedPct, schools };
+}
+
 /**
  * Build the card's render model from a dossier response. Tolerates null /
  * undefined / unconfigured payloads by returning "render nothing" — the card
@@ -280,6 +370,7 @@ export function deriveHomeDossier(
   const radon = getRadonRow(dossier);
   const water = getWaterRow(dossier);
   const air = getAirRow(dossier);
+  const neighborhood = getNeighborhoodRow(dossier);
   return {
     flood,
     school,
@@ -288,7 +379,10 @@ export function deriveHomeDossier(
     radon,
     water,
     air,
-    hasContent: Boolean(flood || school || weather || hazards || radon || water || air),
+    neighborhood,
+    hasContent: Boolean(
+      flood || school || weather || hazards || radon || water || air || neighborhood,
+    ),
   };
 }
 
