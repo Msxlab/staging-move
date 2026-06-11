@@ -210,7 +210,17 @@ async function getStats() {
     prisma.user.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
-      select: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
+      select: {
+        id: true, email: true, firstName: true, lastName: true, createdAt: true,
+        subscription: { select: { plan: true } },
+        // "Moving" flag without a second query — active lifecycle only, so
+        // settled/cancelled plans don't light the row up.
+        movingPlans: {
+          where: { status: { in: ["PLANNING", "IN_PROGRESS"] } },
+          select: { id: true },
+          take: 1,
+        },
+      },
     }),
     prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
     prisma.user.count({ where: { createdAt: { gte: new Date(sevenDaysAgo.getTime() - 7 * 24 * 60 * 60 * 1000), lt: sevenDaysAgo } } }),
@@ -550,19 +560,53 @@ export default async function DashboardPage() {
           }
         >
           <div className="space-y-2.5">
-            {stats.recentUsers.map((user: any) => (
-              <Link key={user.id} href={`/users/${user.id}`} className="flex items-center justify-between rounded-lg border border-border p-2.5 hover:bg-accent/30 transition-colors">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">
-                    {user.firstName} {user.lastName}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
-                </div>
-                <p className="text-[11px] text-muted-foreground flex-shrink-0">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </p>
-              </Link>
-            ))}
+            {stats.recentUsers.map((user: any) => {
+              const planRaw = String(user.subscription?.plan || "").toUpperCase();
+              const plan = planRaw.includes("FAMILY")
+                ? { label: "Family", color: "#4FD1B5" }
+                : planRaw.includes("PRO")
+                  ? { label: "Pro", color: "#F2C46C" }
+                  : planRaw.includes("INDIVIDUAL")
+                    ? { label: "Individual", color: "#7FB6E8" }
+                    : planRaw
+                      ? { label: "Free", color: "#8A94A6" }
+                      : null;
+              const moving = (user.movingPlans?.length || 0) > 0;
+              return (
+                <Link key={user.id} href={`/users/${user.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-border p-2.5 hover:bg-accent/30 transition-colors">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-foreground text-sm truncate">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      {moving && (
+                        <span
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                          style={{ color: "#7FB6E8", backgroundColor: "rgba(127,182,232,0.12)", borderColor: "rgba(127,182,232,0.28)" }}
+                        >
+                          <span className="h-1 w-1 rounded-full" style={{ backgroundColor: "#7FB6E8" }} />
+                          Moving
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
+                  </div>
+                  <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                    {plan && (
+                      <span
+                        className="rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                        style={{ color: plan.color, backgroundColor: plan.color + "1f", borderColor: plan.color + "47" }}
+                      >
+                        {plan.label}
+                      </span>
+                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
             {stats.recentUsers.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center">No users yet</p>
             )}

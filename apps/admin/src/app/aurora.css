@@ -244,6 +244,15 @@ html:not(.dark) .adm-aurora .au-aurora {
 }
 html:not(.dark) .adm-aurora .au-grain { opacity: 0.15; }
 
+/* Slate light = flat corporate paper: kill the aurora drift motion and the
+   topbar chrome blur. Drifting blobs + frosted glass read as consumer; the
+   enterprise Slate direction wants a still, printed-document surface. */
+html:not(.dark) .adm-aurora .au-aurora__layer { animation: none !important; }
+html:not(.dark) .adm-aurora .adp-topbar {
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+}
+
 /* Anything inside the wrapper sits above the aurora layers */
 .adm-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
 
