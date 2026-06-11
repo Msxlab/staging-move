@@ -50,6 +50,22 @@ export type PdfDossier = {
   radon: { status: string; zone: string | null };
   water: { status: string; systemName: string | null; violations5y: number | null };
   air: { status: string; aqi: number | null; category: string | null };
+  /**
+   * Pro "Neighborhood Intelligence" (Census ACS area medians). Present on Pro
+   * payloads — the only tier that reaches this PDF (dossierPdf gate). Optional
+   * so older/degraded payloads still render. Figures are area medians for the
+   * surrounding census tract, NOT a valuation of this specific home.
+   */
+  neighborhood?: {
+    status: string;
+    medianHomeValue: number | null;
+    medianGrossRent: number | null;
+    medianHouseholdIncome: number | null;
+    ownerOccupiedPct: number | null;
+    walkScore?: number | null;
+    walkBand?: string | null;
+    schools?: Array<{ name: string; level: string | null }> | null;
+  };
 };
 
 export type PdfAccountSnapshot = {

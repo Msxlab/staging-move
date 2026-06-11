@@ -42,6 +42,12 @@ vi.mock("@/lib/airnow", () => ({
 vi.mock("@/lib/census-acs", () => ({
   lookupNeighborhoodAcs: vi.fn(),
 }));
+vi.mock("@/lib/epa-walkability", () => ({
+  lookupWalkability: vi.fn(),
+}));
+vi.mock("@/lib/nces-schools", () => ({
+  lookupNearbySchools: vi.fn(),
+}));
 
 // Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
 // the gate exercises the actual @locateflow/shared feature matrix.
@@ -60,6 +66,8 @@ import { lookupRadonZone } from "@/lib/epa-radon";
 import { lookupWaterSystem } from "@/lib/epa-water";
 import { lookupAirQuality } from "@/lib/airnow";
 import { lookupNeighborhoodAcs } from "@/lib/census-acs";
+import { lookupWalkability } from "@/lib/epa-walkability";
+import { lookupNearbySchools } from "@/lib/nces-schools";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -74,6 +82,8 @@ const mockLookupRadonZone = lookupRadonZone as unknown as Mock;
 const mockLookupWaterSystem = lookupWaterSystem as unknown as Mock;
 const mockLookupAirQuality = lookupAirQuality as unknown as Mock;
 const mockLookupNeighborhoodAcs = lookupNeighborhoodAcs as unknown as Mock;
+const mockLookupWalkability = lookupWalkability as unknown as Mock;
+const mockLookupNearbySchools = lookupNearbySchools as unknown as Mock;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -176,6 +186,24 @@ const NEIGHBORHOOD_OK = {
   caveat: "These are American Community Survey 5-year medians for the surrounding census tract, not a valuation of this specific home. Treat them as neighborhood context.",
   source: { name: "US Census Bureau ACS 5-Year Estimates", url: "https://www.census.gov/programs-surveys/acs/" },
 };
+// Carries EXTRA fields (reason/source) to prove the route strips the section
+// to its contract shape.
+const WALKABILITY_OK = {
+  status: "ok" as const,
+  score: 18.8,
+  band: "most" as const,
+  reason: null,
+  source: { name: "EPA National Walkability Index", url: "https://www.epa.gov/smartgrowth/smart-location-mapping" },
+};
+const SCHOOLS_OK = {
+  status: "ok" as const,
+  schools: [
+    { name: "Austin High School", level: "High" as const },
+    { name: "Zilker Elementary", level: "Elementary" as const },
+  ],
+  reason: null,
+  source: { name: "NCES / HIFLD Public Schools", url: "https://nces.ed.gov/programs/edge/" },
+};
 
 describe("address dossier route", () => {
   beforeEach(() => {
@@ -192,6 +220,8 @@ describe("address dossier route", () => {
     mockLookupWaterSystem.mockResolvedValue(WATER_OK);
     mockLookupAirQuality.mockResolvedValue(AIR_OK);
     mockLookupNeighborhoodAcs.mockResolvedValue(NEIGHBORHOOD_OK);
+    mockLookupWalkability.mockResolvedValue(WALKABILITY_OK);
+    mockLookupNearbySchools.mockResolvedValue(SCHOOLS_OK);
   });
 
   it("returns a structured 401 when the DB-backed session is invalid", async () => {
@@ -327,13 +357,18 @@ describe("address dossier route", () => {
         medianHomeValue: null,
         medianGrossRent: null,
         medianHouseholdIncome: null,
-        ownerOccupiedShare: null,
+        ownerOccupiedPct: null,
         incomeBand: "unknown",
         homeValueBand: "unknown",
+        walkScore: null,
+        walkBand: "unknown",
+        schools: [],
         caveat: null,
       },
     });
     expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
+    expect(mockLookupWalkability).not.toHaveBeenCalled();
+    expect(mockLookupNearbySchools).not.toHaveBeenCalled();
 
     expect(mockLookupFloodZone).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
     expect(mockLookupSchoolDistrict).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
@@ -424,9 +459,12 @@ describe("address dossier route", () => {
         medianHomeValue: null,
         medianGrossRent: null,
         medianHouseholdIncome: null,
-        ownerOccupiedShare: null,
+        ownerOccupiedPct: null,
         incomeBand: "unknown",
         homeValueBand: "unknown",
+        walkScore: null,
+        walkBand: "unknown",
+        schools: [],
         caveat: null,
       },
     });
@@ -440,6 +478,8 @@ describe("address dossier route", () => {
     expect(mockLookupWaterSystem).not.toHaveBeenCalled();
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
     expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
+    expect(mockLookupWalkability).not.toHaveBeenCalled();
+    expect(mockLookupNearbySchools).not.toHaveBeenCalled();
     expect(mockPlanFindFirst).not.toHaveBeenCalled();
   });
 
@@ -451,21 +491,31 @@ describe("address dossier route", () => {
 
     expect(response.status).toBe(200);
     expect(mockLookupNeighborhoodAcs).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
-    // Extra lib fields (geography/tractName/tractFips/reason/source) are stripped.
+    expect(mockLookupWalkability).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    expect(mockLookupNearbySchools).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    // Extra lib fields (geography/tractName/tractFips/reason/source) are stripped;
+    // walkability + nearby schools merge into the same Pro bundle section.
     expect(body.neighborhood).toEqual({
       status: "ok",
       upgradeRequired: null,
       medianHomeValue: 420000,
       medianGrossRent: 1500,
       medianHouseholdIncome: 105000,
-      ownerOccupiedShare: 0.6,
+      // Lib reports a 0–1 share (0.6); the route converts to a whole percent.
+      ownerOccupiedPct: 60,
       incomeBand: "above_us",
       homeValueBand: "above_us",
+      walkScore: 18.8,
+      walkBand: "most",
+      schools: [
+        { name: "Austin High School", level: "High" },
+        { name: "Zilker Elementary", level: "Elementary" },
+      ],
       caveat: NEIGHBORHOOD_OK.caveat,
     });
   });
 
-  it("Pro neighborhood degrades to error independently when the Census lookup rejects", async () => {
+  it("Pro neighborhood: a Census failure nulls only its fields; walkability + schools still render", async () => {
     mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
     mockLookupNeighborhoodAcs.mockRejectedValueOnce(new Error("boom"));
 
@@ -473,23 +523,31 @@ describe("address dossier route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    // The bundle ran (Pro + located) → status "ok"; only the Census fields are
+    // nulled, while the keyless walkability + schools still populate.
     expect(body.neighborhood).toEqual({
-      status: "error",
+      status: "ok",
       upgradeRequired: null,
       medianHomeValue: null,
       medianGrossRent: null,
       medianHouseholdIncome: null,
-      ownerOccupiedShare: null,
+      ownerOccupiedPct: null,
       incomeBand: "unknown",
       homeValueBand: "unknown",
+      walkScore: 18.8,
+      walkBand: "most",
+      schools: [
+        { name: "Austin High School", level: "High" },
+        { name: "Zilker Elementary", level: "Elementary" },
+      ],
       caveat: null,
     });
-    // The other sections are unaffected by the neighborhood failure.
+    // The other sections are unaffected by the Census failure.
     expect(body.flood.status).toBe("ok");
     expect(body.air.status).toBe("ok");
   });
 
-  it("Pro neighborhood passes through not_configured (CENSUS_API_KEY unset) per the contract", async () => {
+  it("Pro neighborhood: an unset CENSUS_API_KEY nulls the medians but keeps walkability + schools", async () => {
     mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
     mockLookupNeighborhoodAcs.mockResolvedValueOnce({
       status: "not_configured",
@@ -510,10 +568,40 @@ describe("address dossier route", () => {
     const response = await GET(dossierRequest(), addressParams() as any);
     const body = await response.json();
 
-    expect(body.neighborhood.status).toBe("not_configured");
-    // Caveat only surfaces alongside actual figures, never on a degraded status.
+    // The section still ran (Pro + located): walkability/schools render; the
+    // Census medians are null and the Census caveat is withheld.
+    expect(body.neighborhood.status).toBe("ok");
+    expect(body.neighborhood.medianHomeValue).toBeNull();
     expect(body.neighborhood.caveat).toBeNull();
+    expect(body.neighborhood.walkScore).toBe(18.8);
+    expect(body.neighborhood.schools).toHaveLength(2);
     expect(body.air.status).toBe("ok");
+  });
+
+  it("Pro neighborhood: when every bundle source degrades, the section is ok but empty (card hides it)", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockLookupNeighborhoodAcs.mockRejectedValueOnce(new Error("boom"));
+    mockLookupWalkability.mockResolvedValueOnce({ status: "error", score: null, band: "unknown", reason: "boom", source: WALKABILITY_OK.source });
+    mockLookupNearbySchools.mockResolvedValueOnce({ status: "error", schools: [], reason: "boom", source: SCHOOLS_OK.source });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(body.neighborhood).toEqual({
+      status: "ok",
+      upgradeRequired: null,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: null,
+      incomeBand: "unknown",
+      homeValueBand: "unknown",
+      walkScore: null,
+      walkBand: "unknown",
+      schools: [],
+      caveat: null,
+    });
+    expect(body.flood.status).toBe("ok");
   });
 
   it("degrades a single section to error when its lookup rejects (others unaffected)", async () => {

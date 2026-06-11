@@ -14,6 +14,8 @@ import {
   type NeighborhoodAcsResult,
   type AcsContextBand,
 } from "@/lib/census-acs";
+import { lookupWalkability, type WalkabilityLookupResult, type WalkabilityBand } from "@/lib/epa-walkability";
+import { lookupNearbySchools, type NearbySchoolsLookupResult, type SchoolLevel } from "@/lib/nces-schools";
 import { assertScopedRecordAction, resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getUserPlan } from "@/lib/plan-limits";
@@ -89,20 +91,35 @@ interface AirSection {
   category: string | null;
 }
 
-// Pro-only Neighborhood Intelligence (Census ACS area economics). Unlike the
-// other sections this one is ALSO plan-gated: non-Pro entitled-dossier plans
+// Pro-only Neighborhood Intelligence — a small bundle of area context (Census
+// ACS economics + EPA walkability + nearby public schools). Unlike the other
+// sections this one is ALSO plan-gated: non-Pro entitled-dossier plans
 // (Individual/Family) see a teaser (`status: "upgrade_required"`) instead of
 // the data — mirroring the whole-dossier upgrade teaser pattern above.
+//
+// STATUS MODEL: the section status reflects AVAILABILITY of the Pro section,
+// not any single source — "upgrade_required" (non-Pro), "no_location" (no
+// coordinates), else "ok" (Pro + located: the bundle ran). Each datum below is
+// independently nullable, so one source degrading (e.g. an unset Census key)
+// just nulls its own fields while the others still render. Per-source health is
+// recorded to integration telemetry (census / walkability / schools buckets).
 interface NeighborhoodSection {
-  status: "ok" | "upgrade_required" | "not_configured" | "no_location" | "error";
+  status: "ok" | "upgrade_required" | "no_location";
   /** Set only when status === "upgrade_required" (the per-section teaser). */
   upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED" | null;
   medianHomeValue: number | null;
   medianGrossRent: number | null;
   medianHouseholdIncome: number | null;
-  ownerOccupiedShare: number | null;
+  /** Owner-occupied share as a 0–100 percent (the dashboard card renders a %). */
+  ownerOccupiedPct: number | null;
   incomeBand: AcsContextBand;
   homeValueBand: AcsContextBand;
+  /** EPA National Walkability Index (1–20) or null when unavailable. */
+  walkScore: number | null;
+  /** Coarse plain-English band for the walkability score. */
+  walkBand: WalkabilityBand;
+  /** Nearest open public schools (name + level), directory data only. */
+  schools: Array<{ name: string; level: SchoolLevel }>;
   caveat: string | null;
 }
 
@@ -154,18 +171,19 @@ function airSection(settled: PromiseSettledResult<AirQualityLookupResult>): AirS
   return { status, aqi, category };
 }
 
-function emptyNeighborhood(
-  status: Exclude<NeighborhoodSection["status"], "upgrade_required">,
-): NeighborhoodSection {
+function emptyNeighborhood(status: "ok" | "no_location"): NeighborhoodSection {
   return {
     status,
     upgradeRequired: null,
     medianHomeValue: null,
     medianGrossRent: null,
     medianHouseholdIncome: null,
-    ownerOccupiedShare: null,
+    ownerOccupiedPct: null,
     incomeBand: "unknown",
     homeValueBand: "unknown",
+    walkScore: null,
+    walkBand: "unknown",
+    schools: [],
     caveat: null,
   };
 }
@@ -173,33 +191,56 @@ function emptyNeighborhood(
 /** The per-section teaser shown when the dossier is entitled but the plan is
  *  not Pro — mirrors the whole-dossier upgrade teaser. Carries no data. */
 function neighborhoodTeaser(): NeighborhoodSection {
-  return { ...emptyNeighborhood("not_configured"), status: "upgrade_required", upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED" };
+  return {
+    ...emptyNeighborhood("no_location"),
+    status: "upgrade_required",
+    upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED",
+  };
 }
 
-function neighborhoodSection(settled: PromiseSettledResult<NeighborhoodAcsResult>): NeighborhoodSection {
-  if (settled.status !== "fulfilled") return emptyNeighborhood("error");
-  const {
-    status,
-    medianHomeValue,
-    medianGrossRent,
-    medianHouseholdIncome,
-    ownerOccupiedShare,
-    incomeBand,
-    homeValueBand,
-    caveat,
-  } = settled.value;
-  return {
-    status,
-    upgradeRequired: null,
-    medianHomeValue,
-    medianGrossRent,
-    medianHouseholdIncome,
-    ownerOccupiedShare,
-    incomeBand,
-    homeValueBand,
-    // Only surface the caveat alongside actual figures.
-    caveat: status === "ok" ? caveat : null,
-  };
+/**
+ * Merge the three Pro-bundle lookups (Census ACS economics, EPA walkability,
+ * nearby public schools) into one section. Always "ok" — this is only called
+ * for a Pro plan WITH coordinates, so the bundle ran; each datum is
+ * independently nullable when its own source degraded (e.g. an unset Census
+ * key nulls the medians but leaves walkability/schools intact). Extra lib
+ * fields (geography/reason/source/etc.) are stripped to the contract shape.
+ */
+function neighborhoodSection(
+  censusSettled: PromiseSettledResult<NeighborhoodAcsResult>,
+  walkSettled: PromiseSettledResult<WalkabilityLookupResult>,
+  schoolsSettled: PromiseSettledResult<NearbySchoolsLookupResult>,
+): NeighborhoodSection {
+  const section = emptyNeighborhood("ok");
+
+  if (censusSettled.status === "fulfilled" && censusSettled.value.status === "ok") {
+    const c = censusSettled.value;
+    section.medianHomeValue = c.medianHomeValue;
+    section.medianGrossRent = c.medianGrossRent;
+    section.medianHouseholdIncome = c.medianHouseholdIncome;
+    // Census reports a 0–1 share; the card renders a whole percent.
+    section.ownerOccupiedPct = c.ownerOccupiedShare === null ? null : Math.round(c.ownerOccupiedShare * 100);
+    section.incomeBand = c.incomeBand;
+    section.homeValueBand = c.homeValueBand;
+    section.caveat = c.caveat;
+  }
+
+  if (walkSettled.status === "fulfilled" && walkSettled.value.status === "ok") {
+    section.walkScore = walkSettled.value.score;
+    section.walkBand = walkSettled.value.band;
+  }
+
+  if (schoolsSettled.status === "fulfilled" && schoolsSettled.value.status === "ok") {
+    section.schools = schoolsSettled.value.schools.map(({ name, level }) => ({ name, level }));
+  }
+
+  return section;
+}
+
+/** Telemetry status for one Pro-bundle source: its own status, or "error" if
+ *  the (contractually non-throwing) lookup rejected anyway. */
+function sourceTelemetryStatus(settled: PromiseSettledResult<{ status: string }>): string {
+  return settled.status === "fulfilled" ? settled.value.status : "error";
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -275,6 +316,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         water: "no_location",
         air: "no_location",
         census: features.neighborhoodIntel ? "no_location" : "gated",
+        walkability: features.neighborhoodIntel ? "no_location" : "gated",
+        schools: features.neighborhoodIntel ? "no_location" : "gated",
         dossier: "ok",
       });
       return NextResponse.json({
@@ -329,15 +372,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
       ]);
 
-    // Neighborhood Intelligence is Pro-only: only Pro spends the Census lookup;
-    // every other entitled plan gets the per-section upgrade teaser and no call.
-    const neighborhood = features.neighborhoodIntel
-      ? neighborhoodSection(
-          await Promise.allSettled([
-            lookupNeighborhoodAcs({ latitude: address.latitude, longitude: address.longitude }),
-          ]).then(([settled]) => settled),
-        )
-      : neighborhoodTeaser();
+    // Neighborhood Intelligence is Pro-only: only Pro spends these three
+    // lookups (Census ACS + EPA walkability + nearby schools); every other
+    // entitled plan gets the per-section upgrade teaser and no calls. The
+    // three run together so one slow/failing source never blocks the others.
+    let neighborhood: NeighborhoodSection;
+    let censusStatus = "gated";
+    let walkabilityStatus = "gated";
+    let schoolsStatus = "gated";
+    if (features.neighborhoodIntel) {
+      const coords = { latitude: address.latitude, longitude: address.longitude };
+      const [censusSettled, walkSettled, schoolsSettled] = await Promise.allSettled([
+        lookupNeighborhoodAcs(coords),
+        lookupWalkability(coords),
+        lookupNearbySchools(coords),
+      ]);
+      neighborhood = neighborhoodSection(censusSettled, walkSettled, schoolsSettled);
+      censusStatus = sourceTelemetryStatus(censusSettled);
+      walkabilityStatus = sourceTelemetryStatus(walkSettled);
+      schoolsStatus = sourceTelemetryStatus(schoolsSettled);
+    } else {
+      neighborhood = neighborhoodTeaser();
+    }
 
     const dossier = {
       configured: true,
@@ -363,7 +419,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       radon: dossier.radon.status,
       water: dossier.water.status,
       air: dossier.air.status,
-      census: dossier.neighborhood.status,
+      // Per-source health for the Pro bundle (NOT the merged section status).
+      census: censusStatus,
+      walkability: walkabilityStatus,
+      schools: schoolsStatus,
       dossier: "ok",
     });
 

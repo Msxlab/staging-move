@@ -36,10 +36,13 @@ export type IntegrationSource =
   | "water"
   | "air"
   | "nws"
-  // Pro "Neighborhood Intelligence" dossier section (US Census ACS area
-  // economics). "ok" | "error" | "not_configured" | "no_location" |
-  // "upgrade_required" (the per-section Pro gate).
+  // Pro "Neighborhood Intelligence" dossier bundle. Each source records its own
+  // health: census (US Census ACS area economics), walkability (EPA National
+  // Walkability Index), schools (nearby public-school directory). Statuses:
+  // "ok" | "error" | "no_location" | "not_configured" | "gated" (non-Pro plan).
   | "census"
+  | "walkability"
+  | "schools"
   | "briefing"
   | "dossier"
   // Synthetic uptime monitor (api/cron/uptime-check) — "ok" | "error" per
