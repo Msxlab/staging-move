@@ -126,7 +126,12 @@ export function AffiliateConversionsClient() {
       <div className="mb-3 flex flex-wrap gap-2">
         {tabs.map((t) => {
           const active = filter === t;
-          const s = t === "OPEN" ? null : summary[t];
+          // Summary is computed globally (groupBy with no status filter), so the
+          // OPEN tab can show its own count = the open lifecycle (PENDING + APPROVED).
+          const s =
+            t === "OPEN"
+              ? { count: (summary.PENDING?.count ?? 0) + (summary.APPROVED?.count ?? 0), amountCents: 0 }
+              : summary[t];
           return (
             <button
               key={t}

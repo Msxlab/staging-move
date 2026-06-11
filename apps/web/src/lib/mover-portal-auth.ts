@@ -108,6 +108,15 @@ async function resolveTokenToSession(
     .catch(() => null);
   if (!record || record.revokedAt || record.expiresAt.getTime() < Date.now()) return null;
 
+  // An admin can deactivate the linked company at any time; without this check a
+  // revoked mover keeps a valid 14-day session and sees a stale dashboard.
+  // Placement requests are separately eligibility-gated, but the session itself
+  // must not outlive the company's active status.
+  const company = await prisma.movingCompany
+    .findUnique({ where: { id: record.movingCompanyId }, select: { active: true } })
+    .catch(() => null);
+  if (!company || !company.active) return null;
+
   if (opts.touch) {
     void prisma.moverPortalToken.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
   }
