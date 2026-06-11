@@ -62,6 +62,7 @@
     "insights": "Insights",
     "reports": "Reports",
     "featureFlags": "Feature Flags",
+    "runtimeConfig": "Runtime Config",
     "connectors": "Connectors",
     "connectorMetrics": "Connector Metrics",
     "connectorFallbacks": "Connector Fallbacks",

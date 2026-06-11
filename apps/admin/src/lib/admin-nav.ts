@@ -126,6 +126,7 @@ export const navGroups: NavGroup[] = [
     railLabel: "System",
     items: [
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Cog, show: ({ role }) => meetsRole(role, "SUPER_ADMIN") },
       { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Connector Metrics", nameKey: "connectorMetrics", href: "/connector-metrics", icon: BarChart3, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Connector Fallbacks", nameKey: "connectorFallbacks", href: "/connector-fallbacks", icon: Link2, show: ({ permissions }) => permissions.connectors.canRead },
