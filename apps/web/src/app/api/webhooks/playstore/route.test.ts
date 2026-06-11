@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   emitSecurityEvent: vi.fn(),
   alertWebhookSignatureFailure: vi.fn(),
   prisma: {
-    processedWebhookEvent: { findUnique: vi.fn(), create: vi.fn() },
+    processedWebhookEvent: { findUnique: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
     subscription: { updateMany: vi.fn() },
   },
 }));
@@ -66,6 +66,12 @@ function mockRuntimeConfig(overrides: Record<string, string | null>) {
   );
 }
 
+// Simulate the unique-key conflict the atomic reservation insert raises when a
+// duplicate message has already been reserved.
+function p2002() {
+  return Object.assign(new Error("duplicate"), { code: "P2002" });
+}
+
 describe("Play Store RTDN webhook auth", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
@@ -73,6 +79,7 @@ describe("Play Store RTDN webhook auth", () => {
     mockRuntimeConfig({});
     mocks.prisma.processedWebhookEvent.findUnique.mockResolvedValue(null);
     mocks.prisma.processedWebhookEvent.create.mockResolvedValue({});
+    mocks.prisma.processedWebhookEvent.deleteMany.mockResolvedValue({ count: 1 });
     mocks.findUserByIapIdentifier.mockResolvedValue({ userId: "user-1" });
     mocks.refreshGoogleSubscriptionFor.mockResolvedValue({ provider: "PLAY_STORE", status: "ACTIVE" });
     mocks.applyIapStateToUser.mockResolvedValue({});
@@ -208,7 +215,7 @@ describe("Play Store RTDN webhook auth", () => {
     expect(mocks.verifyPubsubOidcToken).not.toHaveBeenCalled();
   });
 
-  it("rejects package mismatches after marking the message idempotent", async () => {
+  it("rejects package mismatches while keeping the message reserved", async () => {
     mockRuntimeConfig({
       GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.app",
     });
@@ -226,7 +233,8 @@ describe("Play Store RTDN webhook auth", () => {
     });
 
     const response = await POST(request(envelope));
-    mocks.prisma.processedWebhookEvent.findUnique.mockResolvedValueOnce({ id: "playstore:msg-package" });
+    // A second delivery's reservation insert hits the unique PK and short-circuits.
+    mocks.prisma.processedWebhookEvent.create.mockRejectedValueOnce(p2002());
     const retry = await POST(request(envelope));
 
     expect(response.status).toBe(400);
@@ -234,7 +242,10 @@ describe("Play Store RTDN webhook auth", () => {
     expect(retry.status).toBe(200);
     await expect(retry.json()).resolves.toMatchObject({ duplicate: true });
     expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
-    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(1);
+    // The first delivery reserves and stays reserved (deterministic rejection,
+    // no side effect ran); the second reserve attempt is the duplicate.
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(2);
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).not.toHaveBeenCalled();
   });
 
   it("skips duplicate messages after success", async () => {
@@ -252,17 +263,51 @@ describe("Play Store RTDN webhook auth", () => {
     });
 
     const first = await POST(request(envelope));
-    mocks.prisma.processedWebhookEvent.findUnique.mockResolvedValueOnce({ id: "playstore:msg-1" });
+    // The duplicate delivery loses the reservation race.
+    mocks.prisma.processedWebhookEvent.create.mockRejectedValueOnce(p2002());
     const second = await POST(request(envelope));
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     await expect(second.json()).resolves.toMatchObject({ duplicate: true });
     expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
-    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(2);
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("keeps a message retryable when refresh fails before mutation", async () => {
+  it("runs side effects exactly once when duplicate deliveries race", async () => {
+    const { POST } = await import("./route");
+    const envelope = rtdnEnvelope("msg-race", {
+      version: "1.0",
+      packageName: "com.locateflow.app",
+      eventTimeMillis: String(Date.now()),
+      subscriptionNotification: {
+        version: "1.0",
+        notificationType: 4,
+        purchaseToken: "purchase-token-race",
+        subscriptionId: "individual",
+      },
+    });
+    // Only the first reservation insert wins; the racing duplicate hits the PK.
+    let reserved = false;
+    mocks.prisma.processedWebhookEvent.create.mockImplementation(async () => {
+      if (reserved) throw p2002();
+      reserved = true;
+      return {};
+    });
+
+    const [a, b] = await Promise.all([POST(request(envelope)), POST(request(envelope))]);
+
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    const bodies = await Promise.all([a.json(), b.json()]);
+    expect(bodies.filter((x) => (x as any).duplicate)).toHaveLength(1);
+    expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(2);
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("releases the reservation and stays retryable when refresh fails after reserving", async () => {
     const { POST } = await import("./route");
     const envelope = rtdnEnvelope("msg-2", {
       version: "1.0",
@@ -280,14 +325,49 @@ describe("Play Store RTDN webhook auth", () => {
     const failed = await POST(request(envelope));
     expect(failed.status).toBe(500);
     expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
-    expect(mocks.prisma.processedWebhookEvent.create).not.toHaveBeenCalled();
+    // Reserved up-front, then released on failure so Pub/Sub redelivery re-processes.
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).toHaveBeenCalledWith({
+      where: { id: "playstore:msg-2", source: "playstore" },
+    });
 
     mocks.refreshGoogleSubscriptionFor.mockResolvedValueOnce({ provider: "PLAY_STORE", status: "ACTIVE" });
     const retry = await POST(request(envelope));
 
     expect(retry.status).toBe(200);
     expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
-    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a Google test purchase reserved as a terminal skip", async () => {
+    const { POST } = await import("./route");
+    const envelope = rtdnEnvelope("msg-test-purchase", {
+      version: "1.0",
+      packageName: "com.locateflow.app",
+      eventTimeMillis: String(Date.now()),
+      subscriptionNotification: {
+        version: "1.0",
+        notificationType: 4,
+        purchaseToken: "purchase-token-test",
+        subscriptionId: "individual",
+      },
+    });
+    // applyIapStateToUser raises the sentinel for a test purchase reaching prod.
+    mocks.applyIapStateToUser.mockRejectedValueOnce(
+      new Error("GOOGLE_TEST_PURCHASE_IN_PRODUCTION"),
+    );
+
+    const response = await POST(request(envelope));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      skipped: "test_purchase_production",
+    });
+    // The inner catch released the reservation on throw; the outer handler
+    // re-reserves it so the message is NOT reprocessed on redelivery.
+    expect(mocks.prisma.processedWebhookEvent.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mocks.prisma.processedWebhookEvent.create).toHaveBeenCalledTimes(2);
   });
 });
 

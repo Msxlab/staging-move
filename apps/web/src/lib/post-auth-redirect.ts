@@ -42,13 +42,10 @@ export function resolvePostAuthRedirect(
     return buildEmailVerificationGateRedirect(safeRedirect);
   }
 
-  if (userState.needsPasswordSetup) {
-    const afterPasswordSetup = resolvePostAuthRedirect(
-      { ...userState, needsPasswordSetup: false },
-      requestedRedirect,
-    );
-    return `/account/setup-password?redirect=${encodeURIComponent(afterPasswordSetup)}`;
-  }
+  // OAuth-only accounts (no password) are NOT hard-forced to the password
+  // screen. Setting a password is an email-link flow they can opt into from
+  // the account security screen; `needsPasswordSetup` only drives an optional
+  // in-app prompt. See SCOPE W-01/M-01.
 
   if (!userState.hasRequiredLegalConsents) {
     return "/onboarding?step=legal";
@@ -75,9 +72,8 @@ export function resolveOnboardingGateRedirect(
     return buildEmailVerificationGateRedirect(safeRedirect);
   }
 
-  if (userState.needsPasswordSetup) {
-    return `/account/setup-password?redirect=${encodeURIComponent(safeRedirect)}`;
-  }
+  // OAuth-only accounts without a password are allowed through this gate; the
+  // setup-password screen is opt-in, not a hard block. See SCOPE W-01/M-01.
 
   if (userState.onboardingCompleted) {
     return "/dashboard";

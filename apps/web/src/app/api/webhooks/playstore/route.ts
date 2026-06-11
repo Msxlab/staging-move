@@ -29,7 +29,7 @@ import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { verifyPubsubOidcToken } from "@/lib/iap-google";
-import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { reserveWebhookEvent, releaseWebhookEvent } from "@/lib/webhook-idempotency";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { alertWebhookSignatureFailure } from "@/lib/security-alerts";
 import {
@@ -195,62 +195,101 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 3. Idempotency (Pub/Sub may deliver the same messageId multiple times). ──
+    //
+    // Atomically RESERVE this message BEFORE any side-effect runs (mirrors the
+    // Stripe webhook). A concurrently-delivered duplicate loses the unique-key
+    // create race and bails here, so the subscription refresh / cancellation /
+    // entitlement apply can never double-run. The reservation is RELEASED on
+    // failure (catch below) so a legitimate Pub/Sub redelivery can reprocess; it
+    // stays marked on success and on terminal no-op outcomes (test / package
+    // mismatch / unowned / conflict) since those are fully processed.
     idempotencyId = `playstore:${messageId}`;
-    if (await hasProcessedWebhookEvent(idempotencyId)) {
+    const reservation = await reserveWebhookEvent(idempotencyId, "playstore");
+    if (reservation === "duplicate") {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
-    const complete = async (body: Record<string, unknown>) => {
-      const markResult = await markWebhookEventProcessed(idempotencyId!, "playstore");
-      if (markResult === "duplicate") {
-        return NextResponse.json({ received: true, duplicate: true });
+    try {
+      // ── 4. Validate package name matches our app (defense in depth). ──
+      const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
+      if (isProductionLikeRuntime() && !expectedPackage) {
+        emitPlaystoreFailure("missing_expected_package", { messageId });
+        captureMessage(
+          "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_PACKAGE_NAME unset in production-like runtime; rejecting RTDN",
+          "error",
+        );
+        // Misconfiguration, not a bad message — release so the redelivery is
+        // reprocessed once the package name is configured.
+        await releaseWebhookEvent(idempotencyId, "playstore").catch(() => {});
+        return NextResponse.json(
+          { error: "Google Play package name is not configured" },
+          { status: 503 },
+        );
       }
-      return NextResponse.json(body);
-    };
-
-    // ── 4. Validate package name matches our app (defense in depth). ──
-    const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
-    if (isProductionLikeRuntime() && !expectedPackage) {
-      emitPlaystoreFailure("missing_expected_package", { messageId });
-      captureMessage(
-        "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_PACKAGE_NAME unset in production-like runtime; rejecting RTDN",
-        "error",
-      );
-      return NextResponse.json(
-        { error: "Google Play package name is not configured" },
-        { status: 503 },
-      );
-    }
-    if (expectedPackage && rtdn.packageName && rtdn.packageName !== expectedPackage) {
-      emitPlaystoreFailure("package_mismatch", { messageId });
-      captureMessage(
-        "[PLAYSTORE WEBHOOK] package mismatch",
-        "warning",
-      );
-      const markResult = await markWebhookEventProcessed(idempotencyId!, "playstore");
-      if (markResult === "duplicate") {
-        return NextResponse.json({ received: true, duplicate: true });
+      if (expectedPackage && rtdn.packageName && rtdn.packageName !== expectedPackage) {
+        emitPlaystoreFailure("package_mismatch", { messageId });
+        captureMessage(
+          "[PLAYSTORE WEBHOOK] package mismatch",
+          "warning",
+        );
+        // Deterministic rejection for this message — keep it reserved so a
+        // duplicate delivery short-circuits as a duplicate. No side-effect ran.
+        return NextResponse.json(
+          { received: true, skipped: "package_mismatch" },
+          { status: 400 },
+        );
       }
-      return NextResponse.json(
-        { received: true, skipped: "package_mismatch" },
-        { status: 400 },
-      );
-    }
 
-    if (rtdn.testNotification) {
-      console.info("[PLAYSTORE WEBHOOK] received TEST notification");
-      return complete({ received: true, test: true });
-    }
+      if (rtdn.testNotification) {
+        console.info("[PLAYSTORE WEBHOOK] received TEST notification");
+        return NextResponse.json({ received: true, test: true });
+      }
 
-    // ── 5. Only subscription events drive our Subscription rows today. ──
-    const subNotif = rtdn.subscriptionNotification;
-    const voidNotif = rtdn.voidedPurchaseNotification;
+      // ── 5. Only subscription events drive our Subscription rows today. ──
+      const subNotif = rtdn.subscriptionNotification;
+      const voidNotif = rtdn.voidedPurchaseNotification;
 
-    if (voidNotif?.purchaseToken) {
-      const owner = await findUserByIapIdentifier({ purchaseToken: voidNotif.purchaseToken });
-      if (owner) {
+      if (voidNotif?.purchaseToken) {
+        const owner = await findUserByIapIdentifier({ purchaseToken: voidNotif.purchaseToken });
+        if (owner) {
+          await prisma.subscription.updateMany({
+            where: { userId: owner.userId, purchaseToken: voidNotif.purchaseToken },
+            data: {
+              status: "CANCELED",
+              canceledAt: new Date(),
+              lastSyncedAt: new Date(),
+            },
+          });
+          await sendIapCancellationNotice({
+            userId: owner.userId,
+            provider: "PLAY_STORE",
+            platform: "android",
+            dedupeKey: `iap:manual-canceled:PLAY_STORE:${voidNotif.purchaseToken.slice(0, 32)}`,
+          }).catch((err) => {
+            console.error("[PLAYSTORE WEBHOOK] voided email failed:", err);
+          });
+        }
+        return NextResponse.json({ received: true, type: "voided" });
+      }
+
+      if (!subNotif?.purchaseToken) {
+        return NextResponse.json({ received: true, skipped: "no_subscription" });
+      }
+
+      const owner = await findUserByIapIdentifier({ purchaseToken: subNotif.purchaseToken });
+      if (!owner) {
+        // No row yet — the client's /verify call will create one when it lands.
+        console.warn(
+          `[PLAYSTORE WEBHOOK] no owner for purchaseToken=${subNotif.purchaseToken.slice(0, 16)}... (${subNotif.notificationType})`,
+        );
+        return NextResponse.json({ received: true, unowned: true });
+      }
+
+      const refreshed = await refreshGoogleSubscriptionFor(subNotif.purchaseToken);
+      if (!refreshed) {
+        // Purchase revoked server-side — mark canceled.
         await prisma.subscription.updateMany({
-          where: { userId: owner.userId, purchaseToken: voidNotif.purchaseToken },
+          where: { userId: owner.userId, purchaseToken: subNotif.purchaseToken },
           data: {
             status: "CANCELED",
             canceledAt: new Date(),
@@ -261,71 +300,47 @@ export async function POST(request: NextRequest) {
           userId: owner.userId,
           provider: "PLAY_STORE",
           platform: "android",
-          dedupeKey: `iap:manual-canceled:PLAY_STORE:${voidNotif.purchaseToken.slice(0, 32)}`,
+          dedupeKey: `iap:manual-canceled:PLAY_STORE:${subNotif.purchaseToken.slice(0, 32)}`,
         }).catch((err) => {
-          console.error("[PLAYSTORE WEBHOOK] voided email failed:", err);
+          console.error("[PLAYSTORE WEBHOOK] revoked email failed:", err);
         });
+        return NextResponse.json({ received: true, revoked: true });
       }
-      return complete({ received: true, type: "voided" });
-    }
 
-    if (!subNotif?.purchaseToken) {
-      return complete({ received: true, skipped: "no_subscription" });
-    }
-
-    const owner = await findUserByIapIdentifier({ purchaseToken: subNotif.purchaseToken });
-    if (!owner) {
-      // No row yet — the client's /verify call will create one when it lands.
-      console.warn(
-        `[PLAYSTORE WEBHOOK] no owner for purchaseToken=${subNotif.purchaseToken.slice(0, 16)}... (${subNotif.notificationType})`,
-      );
-      return complete({ received: true, unowned: true });
-    }
-
-    const refreshed = await refreshGoogleSubscriptionFor(subNotif.purchaseToken);
-    if (!refreshed) {
-      // Purchase revoked server-side — mark canceled.
-      await prisma.subscription.updateMany({
-        where: { userId: owner.userId, purchaseToken: subNotif.purchaseToken },
-        data: {
-          status: "CANCELED",
-          canceledAt: new Date(),
-          lastSyncedAt: new Date(),
-        },
-      });
-      await sendIapCancellationNotice({
-        userId: owner.userId,
-        provider: "PLAY_STORE",
-        platform: "android",
-        dedupeKey: `iap:manual-canceled:PLAY_STORE:${subNotif.purchaseToken.slice(0, 32)}`,
-      }).catch((err) => {
-        console.error("[PLAYSTORE WEBHOOK] revoked email failed:", err);
-      });
-      return complete({ received: true, revoked: true });
-    }
-
-    try {
-      await applyIapStateToUser({ userId: owner.userId, state: refreshed });
-    } catch (err: any) {
-      if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
-        captureMessage(
-          `[PLAYSTORE WEBHOOK] owner conflict for ${subNotif.purchaseToken.slice(0, 16)}...`,
-          "warning",
-        );
-        return complete({ received: true, conflict: true });
+      try {
+        await applyIapStateToUser({ userId: owner.userId, state: refreshed });
+      } catch (err: any) {
+        if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
+          captureMessage(
+            `[PLAYSTORE WEBHOOK] owner conflict for ${subNotif.purchaseToken.slice(0, 16)}...`,
+            "warning",
+          );
+          return NextResponse.json({ received: true, conflict: true });
+        }
+        throw err;
       }
+
+      return NextResponse.json({
+        received: true,
+        type: subNotif.notificationType,
+      });
+    } catch (err) {
+      // Processing failed after the message was reserved — release the
+      // reservation so a Pub/Sub redelivery re-processes it instead of seeing a
+      // duplicate and dropping the work. Re-throw so the outer handler maps the
+      // GOOGLE_TEST_PURCHASE_IN_PRODUCTION sentinel and other errors as before.
+      await releaseWebhookEvent(idempotencyId, "playstore").catch(() => {});
       throw err;
     }
-
-    return complete({
-      received: true,
-      type: subNotif.notificationType,
-    });
   } catch (error: any) {
     if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
+      // Terminal "skip" outcome — a Google test purchase reached production.
+      // The inner catch released the reservation on throw; re-reserve so this
+      // message is NOT reprocessed on redelivery (retrying can't change a test
+      // purchase into a real one).
       if (idempotencyId) {
-        const markResult = await markWebhookEventProcessed(idempotencyId, "playstore");
-        if (markResult === "duplicate") {
+        const reReservation = await reserveWebhookEvent(idempotencyId, "playstore");
+        if (reReservation === "duplicate") {
           return NextResponse.json({ received: true, duplicate: true });
         }
       }

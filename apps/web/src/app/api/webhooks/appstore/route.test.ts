@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
     processedWebhookEvent: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
     subscription: {
       updateMany: vi.fn(),
@@ -54,6 +55,7 @@ import { POST } from "./route";
 const processedMock = mocks.prisma.processedWebhookEvent as {
   findUnique: Mock;
   create: Mock;
+  deleteMany: Mock;
 };
 
 function request() {
@@ -78,11 +80,18 @@ function mockNotification(notificationUUID = "apple-notification-1") {
     });
 }
 
+// Simulate the unique-key conflict the atomic reservation insert raises when a
+// duplicate notification has already been reserved.
+function p2002() {
+  return Object.assign(new Error("duplicate"), { code: "P2002" });
+}
+
 describe("App Store webhook idempotency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     processedMock.findUnique.mockResolvedValue(null);
     processedMock.create.mockResolvedValue({});
+    processedMock.deleteMany.mockResolvedValue({ count: 1 });
     mocks.getRuntimeConfigValue.mockResolvedValue("com.locateflow.mobile");
     mocks.findUserByIapIdentifier.mockResolvedValue({ userId: "user-1" });
     mocks.refreshAppleSubscriptionFor.mockResolvedValue({ provider: "APP_STORE", status: "ACTIVE" });
@@ -92,38 +101,83 @@ describe("App Store webhook idempotency", () => {
   it("skips duplicate notifications after success", async () => {
     mockNotification();
     const first = await POST(request());
-    processedMock.findUnique.mockResolvedValueOnce({ id: "apple-notification-1" });
-    mocks.verifyAppleJws.mockReturnValueOnce({
-      notificationUUID: "apple-notification-1",
-      notificationType: "DID_RENEW",
-      signedDate: Date.now(),
-      data: { bundleId: "com.locateflow.mobile", signedTransactionInfo: "transaction-jws" },
-    });
 
+    // The second delivery's atomic reservation insert hits the unique PK and
+    // bails before any side effect runs.
+    mockNotification();
+    processedMock.create.mockRejectedValueOnce(p2002());
     const second = await POST(request());
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     await expect(second.json()).resolves.toMatchObject({ duplicate: true });
     expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
-    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    // Both deliveries attempt to reserve; only the first succeeds.
+    expect(processedMock.create).toHaveBeenCalledTimes(2);
+    // The losing duplicate never reaches the side-effect block, so it never
+    // releases the winner's reservation.
+    expect(processedMock.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("keeps a notification retryable when refresh fails before mutation", async () => {
+  it("runs side effects exactly once when duplicate deliveries race", async () => {
+    // Two concurrent deliveries of the same notification: the first reservation
+    // insert wins, the second hits the unique PK and short-circuits as a
+    // duplicate — so applyIapStateToUser runs exactly once.
+    //
+    // Key the JWS verify on its input (not a one-shot queue) so it stays
+    // deterministic no matter how the two in-flight requests interleave.
+    mocks.verifyAppleJws.mockImplementation((token: string) =>
+      token === "outer-jws"
+        ? {
+            notificationUUID: "apple-notification-1",
+            notificationType: "DID_RENEW",
+            signedDate: Date.now(),
+            data: { bundleId: "com.locateflow.mobile", signedTransactionInfo: "transaction-jws" },
+          }
+        : {
+            originalTransactionId: "apple-original-transaction",
+            bundleId: "com.locateflow.mobile",
+          },
+    );
+    let reserved = false;
+    processedMock.create.mockImplementation(async () => {
+      if (reserved) throw p2002();
+      reserved = true;
+      return {};
+    });
+
+    const [a, b] = await Promise.all([POST(request()), POST(request())]);
+
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    const bodies = await Promise.all([a.json(), b.json()]);
+    expect(bodies.filter((x) => (x as any).duplicate)).toHaveLength(1);
+    expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
+    expect(processedMock.create).toHaveBeenCalledTimes(2);
+    // The winner succeeds, so nothing is released.
+    expect(processedMock.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("releases the reservation and stays retryable when refresh fails after reserving", async () => {
     mockNotification();
     mocks.refreshAppleSubscriptionFor.mockRejectedValueOnce(new Error("refresh failed"));
 
     const failed = await POST(request());
     expect(failed.status).toBe(500);
     expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
-    expect(processedMock.create).not.toHaveBeenCalled();
+    // Reserved up-front, then released on failure so Apple's retry re-processes.
+    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    expect(processedMock.deleteMany).toHaveBeenCalledTimes(1);
+    expect(processedMock.deleteMany).toHaveBeenCalledWith({
+      where: { id: "apple-notification-1", source: "appstore" },
+    });
 
     mockNotification();
     const retry = await POST(request());
 
     expect(retry.status).toBe(200);
     expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
-    expect(processedMock.create).toHaveBeenCalledTimes(1);
+    expect(processedMock.create).toHaveBeenCalledTimes(2);
   });
 
   it("emits a safe security event when outer JWS verification fails", async () => {
@@ -147,6 +201,7 @@ describe("App Store webhook idempotency", () => {
       provider: "appstore",
       reason: "outer_jws_verify_failed",
     });
+    // Signature failure short-circuits before the reservation.
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 
@@ -174,6 +229,7 @@ describe("App Store webhook idempotency", () => {
       reason: "bundle_mismatch",
     });
     expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
+    // Outer bundle check short-circuits before the reservation.
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 });

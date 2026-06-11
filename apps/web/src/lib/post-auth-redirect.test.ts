@@ -28,19 +28,26 @@ describe("resolvePostAuthRedirect", () => {
     }, "/dashboard")).toBe("/onboarding?step=legal");
   });
 
-  it("routes OAuth-only users to password setup before onboarding", () => {
+  it("does not force OAuth-only users to password setup (SCOPE W-01/M-01)", () => {
+    // OAuth-only accounts (no password) are no longer hard-redirected to the
+    // setup-password screen; they flow through the normal onboarding gates.
     expect(resolvePostAuthRedirect({
       ...baseState,
       needsPasswordSetup: true,
       hasRequiredLegalConsents: false,
       onboardingCompleted: false,
-    }, "/dashboard")).toBe("/account/setup-password?redirect=%2Fonboarding%3Fstep%3Dlegal");
+    }, "/dashboard")).toBe("/onboarding?step=legal");
 
     expect(resolvePostAuthRedirect({
       ...baseState,
       needsPasswordSetup: true,
       onboardingCompleted: false,
-    }, "/dashboard")).toBe("/account/setup-password?redirect=%2Fonboarding");
+    }, "/dashboard")).toBe("/onboarding");
+
+    expect(resolvePostAuthRedirect({
+      ...baseState,
+      needsPasswordSetup: true,
+    }, "/services")).toBe("/services");
   });
 
   it("routes legal-accepted incomplete users to onboarding", () => {
@@ -69,9 +76,10 @@ describe("resolvePostAuthRedirect", () => {
     expect(resolveOnboardingGateRedirect({ ...baseState, needsEmailVerification: true }, "/onboarding")).toBe(
       "/verify-email?redirect=%2Fonboarding",
     );
-    expect(resolveOnboardingGateRedirect({ ...baseState, needsPasswordSetup: true }, "/onboarding")).toBe(
-      "/account/setup-password?redirect=%2Fonboarding",
-    );
+    // OAuth-only users are not blocked at the onboarding gate (SCOPE W-01/M-01).
+    expect(
+      resolveOnboardingGateRedirect({ ...baseState, needsPasswordSetup: true, onboardingCompleted: false }, "/onboarding"),
+    ).toBeNull();
     expect(resolveOnboardingGateRedirect(baseState, "/onboarding")).toBe("/dashboard");
   });
 });

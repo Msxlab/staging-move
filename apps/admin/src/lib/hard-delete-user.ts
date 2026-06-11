@@ -120,9 +120,62 @@ export interface HardDeleteResult {
 }
 
 /**
+ * Returned (instead of erasing) when the user has a live Stripe subscription
+ * that we could NOT cancel. The DB delete is irreversible, so we refuse to run
+ * it while the provider subscription would keep billing a "deleted" account.
+ * The caller surfaces this to the operator (resolve Stripe first, or re-run with
+ * `force` to erase anyway and reconcile billing manually).
+ */
+export interface HardDeleteBlockedResult {
+  success: false;
+  blocked: true;
+  code: "STRIPE_CANCEL_FAILED";
+  maskedEmail: string;
+  /** Present so the operator can locate the subscription in the Stripe dashboard. */
+  stripeSubscriptionId: string;
+}
+
+export type HardDeleteOutcome = HardDeleteResult | HardDeleteBlockedResult;
+
+export interface HardDeleteOptions {
+  /**
+   * Operator override: proceed with the irreversible erasure EVEN IF the Stripe
+   * cancel failed. Use only after the operator has acknowledged they will
+   * reconcile the provider subscription out of band. Default false (fail-closed).
+   */
+  force?: boolean;
+}
+
+/**
+ * Attempt to cancel a live Stripe subscription. Returns true on success, false
+ * on any failure (missing/invalid key, network error, Stripe API error). Never
+ * throws — the caller decides whether a false result blocks the erasure.
+ */
+async function tryCancelStripeSubscription(stripeSubscriptionId: string): Promise<boolean> {
+  try {
+    const stripe = new Stripe(
+      requireStripeSecretKey(await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY")),
+      { apiVersion: "2024-06-20" },
+    );
+    await stripe.subscriptions.cancel(stripeSubscriptionId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Physically erase a user and everything that references them.
  *
  * Cascade order (the ORDER MATTERS — FK constraints dictate it):
+ *   --- BEFORE the irreversible DB delete ---
+ *   0. Cancel the Stripe subscription, if the user has a live one. This MUST
+ *      happen first: the DB delete is irreversible, so if the cancel fails we
+ *      refuse to erase (returning a STRIPE_CANCEL_FAILED blocked result) rather
+ *      than leave a "deleted" account whose provider subscription keeps billing.
+ *      A user with NO subscription skips this entirely (clean delete unchanged).
+ *      The operator can override with { force: true } once they accept they must
+ *      reconcile billing manually.
  *   --- inside a single $transaction (all-or-nothing on the DB side) ---
  *   1. Deactivate userLoginSession + userSession (kill live access immediately).
  *   2. For each owned Workspace (Workspace.owner = Restrict): classify into
@@ -138,17 +191,16 @@ export interface HardDeleteResult {
  *   5. user.delete: cascades all remaining direct children (addresses, services,
  *      budgets, sessions, oauth, profile, consents, tokens, notifications,
  *      memberships, push devices, events, etc.) via onDelete: Cascade.
- *   --- after DB erasure succeeds ---
- *   6. Cancel the Stripe subscription, if any. This external side effect stays
- *      OUT of the DB transaction, but it runs after the DB commit so a DB failure
- *      cannot leave an otherwise-active local user with a canceled provider
- *      subscription. Stripe failure is surfaced in audit metadata and does not
- *      undo the already-authorized erasure.
  *
- * Returns details for the USER_HARD_DELETED audit entry. Throws if the user is
- * not found (caller maps to 404).
+ * Returns details for the USER_HARD_DELETED audit entry, OR a blocked result
+ * ({ success:false, code:"STRIPE_CANCEL_FAILED" }) when a live subscription could
+ * not be canceled and `force` was not set — in which case NOTHING was deleted.
+ * Throws if the user is not found (caller maps to 404).
  */
-export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> {
+export async function hardDeleteUser(
+  userId: string,
+  options: HardDeleteOptions = {},
+): Promise<HardDeleteOutcome> {
   // Read via rawPrisma so a soft-deleted user is still found (the operator may
   // hard-delete a user that was previously soft-deleted).
   const user = await rawPrisma.user.findUnique({
@@ -166,7 +218,26 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
   const maskedEmail = maskEmailLocal(user.email);
   const stripeSubscriptionId = user.subscription?.stripeSubscriptionId || null;
 
+  // 0. Cancel Stripe BEFORE the irreversible DB delete. A user with no live
+  //    subscription is a clean delete (stripeCanceled=true, nothing to do). If
+  //    the user DOES have a subscription and the cancel fails, we refuse to
+  //    proceed (unless the operator passed force) — erasing now would leave a
+  //    "deleted" account that Stripe keeps billing, with the operator none the
+  //    wiser. The caller turns this blocked result into an audit row + alert +
+  //    an actionable message.
   let stripeCanceled = !stripeSubscriptionId;
+  if (stripeSubscriptionId) {
+    stripeCanceled = await tryCancelStripeSubscription(stripeSubscriptionId);
+    if (!stripeCanceled && !options.force) {
+      return {
+        success: false,
+        blocked: true,
+        code: "STRIPE_CANCEL_FAILED",
+        maskedEmail,
+        stripeSubscriptionId,
+      };
+    }
+  }
 
   let ownedWorkspacesTransferred = 0;
   let ownedWorkspacesDeleted = 0;
@@ -247,22 +318,6 @@ export async function hardDeleteUser(userId: string): Promise<HardDeleteResult> 
     // 5. Delete the user — cascades all remaining direct children.
     await tx.user.delete({ where: { id: userId } });
   });
-
-  // 6. Cancel Stripe OUTSIDE the transaction, after DB commit. Best-effort:
-  //    a billing failure must not block an irreversible erasure the operator
-  //    already authorized, but we record whether it succeeded for the audit row.
-  if (stripeSubscriptionId) {
-    try {
-      const stripe = new Stripe(
-        requireStripeSecretKey(await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY")),
-        { apiVersion: "2024-06-20" },
-      );
-      await stripe.subscriptions.cancel(stripeSubscriptionId);
-      stripeCanceled = true;
-    } catch {
-      // Leave stripeCanceled=false; surfaced in the audit metadata.
-    }
-  }
 
   // Ownership moved to a new billing anchor whose plan may be smaller —
   // reconcile seats outside the tx, best-effort (never block on this).

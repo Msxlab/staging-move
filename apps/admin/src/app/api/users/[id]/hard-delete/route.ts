@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { hardDeleteUser } from "@/lib/hard-delete-user";
 import { verifyAdminActionOtpCode } from "@/lib/admin-action-otp";
+import { dispatchAlert } from "@/lib/alert-dispatcher";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +42,17 @@ export async function POST(
     let mfaCode: string | undefined;
     let backupCode: string | undefined;
     let otpCode: string | undefined;
+    // Operator override: proceed with the erasure even if the Stripe cancel
+    // fails. The operator must explicitly opt in (the UI only sets this after
+    // showing the STRIPE_CANCEL_FAILED block and an acknowledgement).
+    let force = false;
     try {
       const body = await request.json();
       confirmPassword = typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined;
       mfaCode = typeof body?.mfaCode === "string" ? body.mfaCode : undefined;
       backupCode = typeof body?.backupCode === "string" ? body.backupCode : undefined;
       otpCode = typeof body?.otpCode === "string" ? body.otpCode.trim() : undefined;
+      force = body?.force === true;
     } catch {
       /* no body — password + otp will be required */
     }
@@ -195,7 +201,7 @@ export async function POST(
     // consumed code.
     let result;
     try {
-      result = await hardDeleteUser(id);
+      result = await hardDeleteUser(id, { force });
     } catch (cascadeError: any) {
       if (cascadeError?.message === "USER_NOT_FOUND") {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -209,6 +215,45 @@ export async function POST(
       });
       console.error("Hard delete cascade failed:", { code: cascadeError?.code || null });
       return NextResponse.json({ error: "Hard delete failed. The user was not erased." }, { status: 500 });
+    }
+
+    // Blocked: a live Stripe subscription could NOT be canceled and the operator
+    // did not force. NOTHING was deleted. Record an audit row + fire a security
+    // alert (a paying account would otherwise keep billing after a "delete"),
+    // and return an actionable 409 so the operator resolves Stripe or forces.
+    if (result.success === false) {
+      await writeAdminAudit(session, {
+        action: "USER_HARD_DELETE_BLOCKED",
+        entityType: "User",
+        entityId: id,
+        metadata: {
+          operation: OTP_OPERATION,
+          status: "blocked",
+          phase: "stripe_cancel",
+          reason: result.code,
+          maskedEmail: result.maskedEmail,
+        },
+        request: requestMeta,
+      });
+      // Best-effort alert (never throws). HIGH severity so it actually dispatches.
+      await dispatchAlert(
+        "USER_HARD_DELETE_STRIPE_CANCEL_FAILED",
+        "HIGH",
+        requestMeta.ipAddress || "unknown",
+        `Hard delete of ${result.maskedEmail} (user ${id}) was BLOCKED: Stripe subscription ${result.stripeSubscriptionId} could not be canceled. The user was NOT erased. Cancel the subscription in Stripe, then retry — or re-run with force after accepting manual billing reconciliation.`,
+        session.adminId,
+      ).catch(() => {});
+      return NextResponse.json(
+        {
+          error:
+            "Stripe subscription could not be canceled, so the user was NOT deleted. Cancel the subscription in Stripe and try again, or force the deletion and reconcile billing manually.",
+          reason: result.code,
+          blocked: true,
+          stripeSubscriptionId: result.stripeSubscriptionId,
+          canForce: true,
+        },
+        { status: 409 },
+      );
     }
 
     // AdminAuditLog survives the erasure (no FK to User) — this is the

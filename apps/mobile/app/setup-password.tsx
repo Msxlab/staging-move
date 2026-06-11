@@ -8,56 +8,38 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Check, KeyRound, ShieldCheck, X } from "lucide-react-native";
+import { MailCheck, ShieldCheck } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useAuthStore } from "@/lib/auth-store";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { getPasswordRuleResults } from "@/lib/password-policy";
+import { getPasswordLinkAction } from "@/lib/password-management";
 
 export default function SetupPasswordScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const refreshUser = useAuthStore((s) => s.refreshUser);
-  const patchUser = useAuthStore((s) => s.patchUser);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [saving, setSaving] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
-  const ruleResults = useMemo(
-    () => getPasswordRuleResults(password),
-    [password],
-  );
-  const policyMet = ruleResults.every((rule) => rule.passed);
-  const canSubmit = !saving && policyMet && password === confirmPassword;
-
-  const savePassword = async () => {
+  const sendSetupLink = async () => {
     setError("");
-    if (!policyMet) {
-      setError(t("auth.setupPasswordHelper"));
-      hapticError();
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t("auth.setupPasswordMismatch"));
-      hapticError();
-      return;
-    }
-
-    setSaving(true);
+    setSending(true);
     try {
-      const res = await api.post<any>("/api/auth/security", {
-        action: "set_password",
-        newPassword: password,
+      // OAuth-only accounts set a password through a single-use email link,
+      // never with a session-only password write. See SCOPE W-01/M-01.
+      const linkAction = getPasswordLinkAction({
+        hasPasswordLogin: false,
+        email: user?.email ?? "",
       });
+      const res = await api.post<any>(linkAction.endpoint, linkAction.body);
 
       if (res.error) {
         setError(res.error || t("auth.setupPasswordFailed"));
@@ -65,20 +47,18 @@ export default function SetupPasswordScreen() {
         return;
       }
 
-      // Optimistically clear the gate locally so the AuthGuard does not bounce
-      // us straight back to this screen while /api/auth/me is still in flight.
-      // refreshUser then reconciles with the server; if it fails (timeout/5xx)
-      // the local patch keeps the user moving forward instead of looping.
-      patchUser({ hasPasswordLogin: true, needsPasswordSetup: false });
+      setSent(true);
       hapticSuccess();
-      await refreshUser(API_URL.replace(/\/api\/?$/, "")).catch(() => {});
-      router.replace("/onboarding");
     } catch {
       setError(t("auth.setupPasswordFailed"));
       hapticError();
     } finally {
-      setSaving(false);
+      setSending(false);
     }
+  };
+
+  const continueWithout = () => {
+    router.replace("/onboarding");
   };
 
   return (
@@ -90,57 +70,39 @@ export default function SetupPasswordScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <LogoBrand />
           <View style={styles.iconWrap}>
-            <ShieldCheck size={26} color={theme.colors.success} />
+            {sent ? (
+              <MailCheck size={26} color={theme.colors.success} />
+            ) : (
+              <ShieldCheck size={26} color={theme.colors.success} />
+            )}
           </View>
-          <Text style={styles.title}>{t("auth.setupPasswordTitle")}</Text>
-          <Text style={styles.subtitle}>{t("auth.setupPasswordSubtitle")}</Text>
+          <Text style={styles.title}>
+            {sent ? t("auth.setupPasswordSentTitle") : t("auth.setupPasswordTitle")}
+          </Text>
+          <Text style={styles.subtitle}>
+            {sent ? t("auth.setupPasswordSentBody") : t("auth.setupPasswordSubtitle")}
+          </Text>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Input
-            label={t("auth.newPassword")}
-            placeholder={t("auth.newPasswordPlaceholder")}
-            value={password}
-            onChangeText={setPassword}
-            isPassword
-            autoComplete="password-new"
-            leftIcon={<KeyRound size={16} color={theme.colors.textMuted} />}
-          />
-          <Input
-            label={t("auth.confirmPassword")}
-            placeholder={t("auth.confirmPasswordPlaceholder")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            isPassword
-            autoComplete="password-new"
-          />
-
-          <View style={styles.rulesBox}>
-            {ruleResults.map((rule) => {
-              const active = password.length > 0;
-              const color = !active
-                ? theme.colors.textTertiary
-                : rule.passed
-                ? theme.colors.success
-                : theme.colors.textMuted;
-              return (
-                <View key={rule.key} style={styles.ruleRow}>
-                  {rule.passed && active ? (
-                    <Check size={14} color={theme.colors.success} />
-                  ) : (
-                    <X size={14} color={active ? theme.colors.textMuted : theme.colors.textTertiary} />
-                  )}
-                  <Text style={[styles.ruleText, { color }]}>{t(rule.labelKey)}</Text>
-                </View>
-              );
-            })}
-          </View>
-
           <Button
-            title={saving ? t("common.loading") : t("auth.setupPasswordCta")}
-            onPress={savePassword}
-            loading={saving}
-            disabled={!canSubmit}
+            title={
+              sending
+                ? t("common.loading")
+                : sent
+                ? t("auth.setupPasswordResend")
+                : t("auth.setupPasswordCta")
+            }
+            onPress={sendSetupLink}
+            loading={sending}
+            disabled={sending}
+            fullWidth
+            style={{ marginTop: 8 }}
+          />
+          <Button
+            title={t("auth.setupPasswordSkip")}
+            onPress={continueWithout}
+            variant="secondary"
             fullWidth
             style={{ marginTop: 8 }}
           />
@@ -194,14 +156,4 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  rulesBox: {
-    gap: 6,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    padding: 12,
-  },
-  ruleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  ruleText: { fontSize: 12, lineHeight: 18 },
 });

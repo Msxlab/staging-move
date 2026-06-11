@@ -20,7 +20,8 @@ export type SecurityEventType =
   | "RAPID_SENSITIVE_OPS"
   | "BULK_DATA_ACCESS"
   | "FAILED_PASSWORD_CONFIRM"
-  | "BLACKLISTED_IP_ATTEMPT";
+  | "BLACKLISTED_IP_ATTEMPT"
+  | "IP_RULE_BYPASSED_FOR_BREAK_GLASS";
 
 interface SecurityEvent {
   type: SecurityEventType;
@@ -384,6 +385,24 @@ export function trackBlockedIPAttempt(ip: string, pathname: string): void {
     severity: "MEDIUM",
     ip,
     details: `Blacklisted IP ${ip} attempted to access ${pathname}`,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Track break-glass IP-rule bypasses (an IP-denied caller reaching the login
+ * surface — /login, /api/auth/login, /api/healthz — because the deny check is
+ * skipped there so a self-locked SUPER_ADMIN can recover). HIGH severity so it
+ * both lands in the audit log and fires a real-time alert: a sustained attack
+ * on the login surface from a banned IP must stay visible, not silent.
+ */
+export function trackBreakGlassBypass(ip: string, pathname: string, adminId?: string): void {
+  emitEvent({
+    type: "IP_RULE_BYPASSED_FOR_BREAK_GLASS",
+    severity: "HIGH",
+    adminId,
+    ip,
+    details: `IP rule bypassed for break-glass access to ${pathname} from IP ${ip}`,
     timestamp: Date.now(),
   });
 }

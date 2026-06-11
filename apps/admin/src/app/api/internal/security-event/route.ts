@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { trackBlockedIPAttempt, trackSessionHijackAttempt } from "@/lib/security-monitor";
+import {
+  trackBlockedIPAttempt,
+  trackBreakGlassBypass,
+  trackSessionHijackAttempt,
+} from "@/lib/security-monitor";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 export async function POST(request: NextRequest) {
@@ -19,6 +23,11 @@ export async function POST(request: NextRequest) {
 
     if (body?.type === "SESSION_HIJACK_ATTEMPT") {
       trackSessionHijackAttempt(ip, typeof body?.adminId === "string" ? body.adminId : undefined);
+      return NextResponse.json({ success: true });
+    }
+
+    if (body?.type === "IP_RULE_BYPASSED_FOR_BREAK_GLASS") {
+      trackBreakGlassBypass(ip, pathname, typeof body?.adminId === "string" ? body.adminId : undefined);
       return NextResponse.json({ success: true });
     }
 

@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
-import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { reserveWebhookEvent, releaseWebhookEvent } from "@/lib/webhook-idempotency";
 import {
   verifyAppleJws,
   type AppleNotificationPayload,
@@ -102,19 +102,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // DB-backed idempotency — prevent double-processing across restarts.
-    if (await hasProcessedWebhookEvent(outer.notificationUUID)) {
-      return NextResponse.json({ received: true, duplicate: true });
-    }
-
-    const complete = async (body: Record<string, unknown>) => {
-      const markResult = await markWebhookEventProcessed(outer.notificationUUID, "appstore");
-      if (markResult === "duplicate") {
-        return NextResponse.json({ received: true, duplicate: true });
-      }
-      return NextResponse.json(body);
-    };
-
     let innerTransaction: AppleTransactionPayload | null = null;
     let innerRenewal: AppleRenewalPayload | null = null;
     try {
@@ -142,75 +129,98 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });
     }
 
-    const originalTransactionId =
-      innerTransaction?.originalTransactionId || innerRenewal?.originalTransactionId || null;
-
-    if (!originalTransactionId) {
-      // TEST notifications from App Store Connect have no transaction payload.
-      if (outer.notificationType === "TEST") {
-        console.info("[APPSTORE WEBHOOK] received TEST notification");
-        return complete({ received: true, test: true });
-      }
-      captureMessage(
-        `[APPSTORE WEBHOOK] ${outer.notificationType}/${outer.subtype || "-"} missing originalTransactionId`,
-        "warning",
-      );
-      return complete({ received: true, skipped: true });
+    // DB-backed idempotency — atomically RESERVE this notification BEFORE any
+    // side-effect runs (mirrors the Stripe webhook). Placed AFTER signature /
+    // bundle verification (those 400 with no side-effect, so they need no
+    // reservation) but BEFORE the first side-effect. A concurrently-delivered
+    // duplicate loses the unique-key create race and bails here, so the
+    // subscription refresh / entitlement apply / cancellation notice can never
+    // double-run. The reservation is RELEASED on failure (catch below) so a
+    // legitimate Apple retry can reprocess; it stays marked on success and on
+    // terminal no-op outcomes (TEST / unowned / conflict) since those are fully
+    // processed.
+    const reservation = await reserveWebhookEvent(outer.notificationUUID, "appstore");
+    if (reservation === "duplicate") {
+      return NextResponse.json({ received: true, duplicate: true });
     }
 
-    // Find the owning user. The subscription row was linked during /api/mobile/iap/verify
-    // when the user originally purchased — so the mapping should already exist.
-    const owner = await findUserByIapIdentifier({ originalTransactionId });
-    if (!owner) {
-      // Apple can send notifications for cross-family purchases (e.g. Family
-      // Sharing) that we haven't indexed yet. Log and swallow so Apple doesn't
-      // keep retrying — the next /verify call from the client will claim it.
-      console.warn(
-        `[APPSTORE WEBHOOK] no owner for originalTransactionId=${originalTransactionId} (${outer.notificationType})`,
-      );
-      return complete({ received: true, unowned: true });
-    }
+    try {
+      const originalTransactionId =
+        innerTransaction?.originalTransactionId || innerRenewal?.originalTransactionId || null;
 
-    const refreshed = await refreshAppleSubscriptionFor(originalTransactionId);
-    if (refreshed) {
-      try {
-        await applyIapStateToUser({ userId: owner.userId, state: refreshed });
-      } catch (err: any) {
-        if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
-          // Someone else claimed this txn — log and move on.
-          captureMessage(
-            `[APPSTORE WEBHOOK] owner conflict for ${originalTransactionId}`,
-            "warning",
-          );
-          return complete({ received: true, conflict: true });
+      if (!originalTransactionId) {
+        // TEST notifications from App Store Connect have no transaction payload.
+        if (outer.notificationType === "TEST") {
+          console.info("[APPSTORE WEBHOOK] received TEST notification");
+          return NextResponse.json({ received: true, test: true });
         }
-        throw err;
+        captureMessage(
+          `[APPSTORE WEBHOOK] ${outer.notificationType}/${outer.subtype || "-"} missing originalTransactionId`,
+          "warning",
+        );
+        return NextResponse.json({ received: true, skipped: true });
       }
-    } else if (outer.notificationType === "REVOKE" || outer.notificationType === "REFUND") {
-      // Refunds may 404 in the Server API — mark canceled manually.
-      await prisma.subscription.updateMany({
-        where: { userId: owner.userId, originalTransactionId },
-        data: {
-          status: "CANCELED",
-          canceledAt: new Date(),
-          lastSyncedAt: new Date(),
-        },
-      });
-      await sendIapCancellationNotice({
-        userId: owner.userId,
-        provider: "APP_STORE",
-        platform: "ios",
-        dedupeKey: `iap:manual-canceled:APP_STORE:${originalTransactionId}`,
-      }).catch((err) => {
-        console.error("[APPSTORE WEBHOOK] cancellation email failed:", err);
-      });
-    }
 
-    return complete({
-      received: true,
-      type: outer.notificationType,
-      subtype: outer.subtype || null,
-    });
+      // Find the owning user. The subscription row was linked during /api/mobile/iap/verify
+      // when the user originally purchased — so the mapping should already exist.
+      const owner = await findUserByIapIdentifier({ originalTransactionId });
+      if (!owner) {
+        // Apple can send notifications for cross-family purchases (e.g. Family
+        // Sharing) that we haven't indexed yet. Log and swallow so Apple doesn't
+        // keep retrying — the next /verify call from the client will claim it.
+        console.warn(
+          `[APPSTORE WEBHOOK] no owner for originalTransactionId=${originalTransactionId} (${outer.notificationType})`,
+        );
+        return NextResponse.json({ received: true, unowned: true });
+      }
+
+      const refreshed = await refreshAppleSubscriptionFor(originalTransactionId);
+      if (refreshed) {
+        try {
+          await applyIapStateToUser({ userId: owner.userId, state: refreshed });
+        } catch (err: any) {
+          if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
+            // Someone else claimed this txn — log and move on.
+            captureMessage(
+              `[APPSTORE WEBHOOK] owner conflict for ${originalTransactionId}`,
+              "warning",
+            );
+            return NextResponse.json({ received: true, conflict: true });
+          }
+          throw err;
+        }
+      } else if (outer.notificationType === "REVOKE" || outer.notificationType === "REFUND") {
+        // Refunds may 404 in the Server API — mark canceled manually.
+        await prisma.subscription.updateMany({
+          where: { userId: owner.userId, originalTransactionId },
+          data: {
+            status: "CANCELED",
+            canceledAt: new Date(),
+            lastSyncedAt: new Date(),
+          },
+        });
+        await sendIapCancellationNotice({
+          userId: owner.userId,
+          provider: "APP_STORE",
+          platform: "ios",
+          dedupeKey: `iap:manual-canceled:APP_STORE:${originalTransactionId}`,
+        }).catch((err) => {
+          console.error("[APPSTORE WEBHOOK] cancellation email failed:", err);
+        });
+      }
+
+      return NextResponse.json({
+        received: true,
+        type: outer.notificationType,
+        subtype: outer.subtype || null,
+      });
+    } catch (err) {
+      // Processing failed after the notification was reserved — release the
+      // reservation so Apple's retry re-processes it instead of seeing a
+      // duplicate and dropping the work.
+      await releaseWebhookEvent(outer.notificationUUID, "appstore").catch(() => {});
+      throw err;
+    }
   } catch (error) {
     captureException(error, { route: "/api/webhooks/appstore" });
     console.error("[APPSTORE WEBHOOK] error:", error);
