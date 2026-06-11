@@ -32,6 +32,7 @@ vi.mock("@/lib/runtime-config", () => ({
     if (key === "APPLE_BUNDLE_ID") return "com.locateflow";
     if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") return process.env.QA_RESETTABLE_ACCOUNT_EMAIL || null;
     if (key === "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS") return process.env.GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS || null;
+    if (key === "APPLE_SANDBOX_PURCHASE_USER_EMAILS") return process.env.APPLE_SANDBOX_PURCHASE_USER_EMAILS || null;
     return productIds[key] || null;
   }),
 }));
@@ -109,6 +110,48 @@ describe("IAP normalization", () => {
       productId: "individual.android",
       environment: "Sandbox",
     });
+  });
+
+  it("fills gracePeriodEndsAt for a Google Play grace-period subscriber (finding 4)", async () => {
+    // A paying Google customer in the billing-retry grace window must keep
+    // access. Previously normalizeGoogleResult always wrote null, and the
+    // entitlement resolver gates grace access on gracePeriodEndsAt → instant
+    // lockout. We now anchor a 7-day grace window to the store expiry.
+    vi.mocked(mapGoogleSubscriptionState).mockReturnValue("GRACE_PERIOD");
+    const expiryTime = new Date(Date.now() + 60_000).toISOString();
+
+    const normalized = await normalizeGoogleResult({
+      packageName: "com.locateflow",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+        lineItems: [{ productId: "individual.android", expiryTime }],
+      },
+    });
+
+    expect(normalized?.status).toBe("GRACE_PERIOD");
+    expect(normalized?.gracePeriodEndsAt).toBeInstanceOf(Date);
+    // Grace deadline must be in the future (≈ expiry + 7 days), not null.
+    expect(normalized!.gracePeriodEndsAt!.getTime()).toBeGreaterThan(Date.now());
+    expect(normalized!.gracePeriodEndsAt!.getTime()).toBe(
+      new Date(expiryTime).getTime() + 7 * 24 * 60 * 60 * 1000,
+    );
+  });
+
+  it("leaves gracePeriodEndsAt null for an ACTIVE Google Play subscriber", async () => {
+    vi.mocked(mapGoogleSubscriptionState).mockReturnValue("ACTIVE");
+    const normalized = await normalizeGoogleResult({
+      packageName: "com.locateflow",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        lineItems: [{ productId: "individual.android", expiryTime: new Date(Date.now() + 86_400_000).toISOString() }],
+      },
+    });
+    expect(normalized?.status).toBe("ACTIVE");
+    expect(normalized?.gracePeriodEndsAt).toBeNull();
   });
 
   it("maps Apple free-trial offers to TRIALING while preserving the store period end", async () => {
@@ -513,6 +556,113 @@ describe("IAP normalization", () => {
         provider: "PLAY_STORE",
       }),
     }));
+  });
+
+  it("rejects Apple sandbox purchases for non-allowlisted users in production billing environments", async () => {
+    process.env.APP_ENV = "production";
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "mobile.qa@locateflow.com";
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null) // by originalTransactionId
+      .mockResolvedValueOnce(null); // by userId
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: "customer@example.com" } as any);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("APPLE_SANDBOX_PURCHASE_IN_PRODUCTION");
+    expect(prisma.subscription.upsert).not.toHaveBeenCalled();
+  });
+
+  it("allows Apple sandbox purchases for the configured QA account in production billing environments", async () => {
+    process.env.APP_ENV = "production";
+    process.env.QA_RESETTABLE_ACCOUNT_EMAIL = "mobile.qa@locateflow.com";
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: "mobile.qa@locateflow.com" } as any);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-test",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state })).resolves.toMatchObject({
+      userId: "user-1",
+    });
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({
+        appStoreEnvironment: "Sandbox",
+        provider: "APP_STORE",
+      }),
+    }));
+  });
+
+  it("allows Apple sandbox purchases for ANY user OUTSIDE production billing environments (App Review)", async () => {
+    // Default test env is not production-like → sandbox must pass for everyone
+    // (App Review and TestFlight both run in sandbox before release).
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: "anyone@example.com" } as any);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-test",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state })).resolves.toMatchObject({
+      userId: "user-1",
+    });
   });
 
   it("blocks a new store purchase when an active Stripe subscription already exists", async () => {

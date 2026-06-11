@@ -69,7 +69,11 @@ export async function checkIPAccess(
   ip: string,
   baseUrl: string
 ): Promise<{ blocked: boolean; reason?: string }> {
-  if (!ip || ip === "unknown") return { blocked: false };
+  // "anonymous" is the sentinel returned by resolveClientIpFromHeaders when
+  // no trusted IP header is present (treated identically to the legacy
+  // "unknown"): a missing IP cannot match a specific block/allow rule, so we
+  // don't block on it here.
+  if (!ip || ip === "unknown" || ip === "anonymous") return { blocked: false };
 
   // Refresh cache if stale. Single-flight: concurrent stale requests await
   // the same refresh instead of each issuing their own internal API call.

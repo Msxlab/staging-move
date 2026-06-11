@@ -138,6 +138,57 @@ describe("admin notification send boundaries", () => {
     expect(mocks.prisma.notificationQueue.create).toHaveBeenCalled();
   });
 
+  it("rejects a javascript: href before creating any record (stored-XSS guard)", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Bad link",
+      body: "Click me.",
+      channel: "IN_APP",
+      userId: "user_1",
+      href: "javascript:alert(document.cookie)",
+    }));
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid notification payload");
+    expect(mocks.prisma.notification.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an off-origin https href (open redirect guard)", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Bad link",
+      body: "Click me.",
+      channel: "IN_APP",
+      userId: "user_1",
+      href: "https://evil.example/phish",
+    }));
+
+    expect(res.status).toBe(400);
+    expect(mocks.prisma.notification.create).not.toHaveBeenCalled();
+  });
+
+  it("stores a valid in-app relative href on a single-user notification", async () => {
+    mocks.prisma.notification.create.mockResolvedValue({ id: "n1" });
+    mocks.prisma.adminAuditLog.create.mockResolvedValue({ id: "a1" });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Update",
+      body: "Your plan changed.",
+      channel: "IN_APP",
+      userId: "user_1",
+      href: "/moving/plan/abc",
+    }));
+
+    expect(res.status).toBe(200);
+    expect(mocks.prisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ href: "/moving/plan/abc" }),
+      }),
+    );
+  });
+
   it("blocks a concurrent duplicate broadcast before fan-out", async () => {
     mocks.prisma.processedWebhookEvent.create.mockRejectedValue({ code: "P2002" });
     const { POST } = await import("./route");

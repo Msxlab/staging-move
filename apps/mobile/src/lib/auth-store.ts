@@ -15,6 +15,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { create } from "zustand";
 import { tokenCache } from "@/lib/auth";
+import { runSessionCleanupHook } from "@/lib/session-cleanup-hook";
 
 const TOKEN_KEY = "locateflow.session";
 
@@ -150,6 +151,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       AsyncStorage.removeItem(PLAN_TIER_KEY).catch(() => {}),
     ]);
     set({ token: null, user: null, planTier: null, loading: false });
+    // SECURITY/PII: every session clear — manual sign-out AND forced 401 logout
+    // (onUnauthorized / refreshUser, the usual path when the 30-day JWT expires)
+    // — must wipe the same sensitive device-keyed local state (dashboard/widget
+    // snapshots, last-plan hint, onboarding cache, app-lock, analytics opt-out).
+    // Routed through a registered hook (set by the app root) to avoid an import
+    // cycle with lib/local-cleanup.ts. Best-effort; never blocks sign-out.
+    await runSessionCleanupHook();
   },
 
   patchUser(patch) {

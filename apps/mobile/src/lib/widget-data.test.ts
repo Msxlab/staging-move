@@ -27,6 +27,7 @@ import {
   persistWidgetSnapshot,
   readWidgetSnapshot,
   computeAndPersistWidgetSnapshot,
+  writeSnapshotToAppGroup,
   WIDGET_SNAPSHOT_KEY,
   type ComputeWidgetSnapshotInput,
 } from "./widget-data";
@@ -185,6 +186,14 @@ describe("persist / read round-trip", () => {
 
   it("returns null when nothing is persisted", async () => {
     expect(await readWidgetSnapshot()).toBeNull();
+  });
+
+  it("App Group bridge degrades to false (no throw) when no native module is present", async () => {
+    // In node/test there is no react-native-shared-group-preferences or
+    // @/lib/native-app-group module, so the probe finds nothing and the iOS
+    // write is a clean no-op — never throwing, so it can't disturb persist().
+    const snap = computeWidgetSnapshot(baseInput({ moveDate: "2026-06-21T00:00:00.000Z" }));
+    await expect(writeSnapshotToAppGroup(snap)).resolves.toBe(false);
   });
 
   it("shape-guards malformed stored JSON to a safe snapshot", async () => {

@@ -37,6 +37,9 @@ vi.mock("jose", () => ({
 }));
 
 import middleware from "./middleware";
+import { checkIPAccess } from "@/lib/ip-rules";
+
+const checkIPAccessMock = checkIPAccess as unknown as ReturnType<typeof vi.fn>;
 
 function request(url: string, init?: any) {
   return new NextRequest(url, init);
@@ -348,7 +351,11 @@ describe("web middleware auth boundaries", () => {
     expect(response.status).toBe(200);
   });
 
-  it("lets cron routes reach their route-level CRON_SECRET guard after coarse rate limiting", async () => {
+  it("does NOT touch the shared cron counter for credential-less cron requests (anti-DoS)", async () => {
+    // An unauthenticated attacker GETting a cron path must not be able to burn
+    // the coarse pre-limit counter and starve the real scheduler into a 429.
+    // Credential-less requests skip the pre-limit entirely and fall through to
+    // the route, where guardCronRequest returns 401.
     mocks.rateLimitMock.mockClear();
     const response = await middleware(
       request("https://locateflow.com/api/cron/expire-trials", {
@@ -357,12 +364,51 @@ describe("web middleware auth boundaries", () => {
         body: "{}",
       }),
     );
+    expect(mocks.rateLimitMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("rl:cron:"),
+      expect.anything(),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("applies the coarse cron pre-limit keyed by credential for credential-bearing requests", async () => {
+    mocks.rateLimitMock.mockClear();
+    const response = await middleware(
+      request("https://locateflow.com/api/cron/expire-trials", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer cron-secret" },
+        body: "{}",
+      }),
+    );
     expect(mocks.rateLimitMock).toHaveBeenCalledWith(
       expect.stringContaining("rl:cron:"),
       expect.objectContaining({ limit: 1, windowSeconds: 60 }),
     );
+    // The key must be scoped to the presented credential, not a single global
+    // bucket, so a bogus secret can't starve the legitimate scheduler.
+    expect(mocks.rateLimitMock).toHaveBeenCalledWith(
+      expect.stringContaining(":cred:"),
+      expect.anything(),
+    );
     expect(response.status).toBe(200);
     expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("uses the trusted platform IP header (not the attacker-controlled XFF first hop) for IP blocking", async () => {
+    checkIPAccessMock.mockClear();
+    await middleware(
+      request("https://locateflow.com/dashboard", {
+        headers: {
+          // Attacker spoofs the left-most XFF hop; the LB-set real-client-IP
+          // header is the value we must trust.
+          "x-forwarded-for": "1.2.3.4, 9.9.9.9",
+          "x-real-ip": "203.0.113.77",
+        },
+      }),
+    );
+    expect(checkIPAccessMock).toHaveBeenCalledWith("203.0.113.77", expect.any(String));
+    expect(checkIPAccessMock).not.toHaveBeenCalledWith("1.2.3.4", expect.any(String));
   });
 
   it("lets a valid scheduler cron request reach the route handler", async () => {

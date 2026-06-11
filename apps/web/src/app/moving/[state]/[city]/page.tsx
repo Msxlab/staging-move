@@ -54,12 +54,15 @@ import {
   type MetroGuide,
 } from "@/lib/states/metros";
 
-// Fully static: prerender every curated metro at build, 404 anything else, and
-// re-validate daily so a seed-data refresh (inherited state rules change)
-// rolls out without a full redeploy.
-export const dynamic = "force-static";
+// Dynamic render (like every other marketing page) so the per-request CSP
+// nonce that middleware sets matches the nonce baked into this response's
+// inline/bootstrap scripts. Under `force-static` the prerendered HTML carried
+// no per-request nonce, so the production `script-src 'nonce-X' 'strict-dynamic'`
+// CSP blocked every script on these metro pages — breaking hydration and the
+// cookie-consent banner. `dynamicParams = false` + `generateStaticParams` still
+// pin the route to the curated metro set, so unknown slugs hard-404 as before.
+export const dynamic = "force-dynamic";
 export const dynamicParams = false;
-export const revalidate = 86400;
 
 export function generateStaticParams(): Array<{ state: string; city: string }> {
   return METRO_SLUG_PAIRS;

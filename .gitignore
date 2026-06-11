@@ -65,3 +65,4 @@ LocateFlow Design System-handoff*.zip
 # local assistant/tool state
 .claude/
 node-compile-cache/
+apps/mobile/dist/

@@ -286,9 +286,12 @@ export async function POST(request: NextRequest) {
 
     const userId = await requireDbUserId();
 
-    // Rate limit: 5 checkout sessions per minute
+    // Rate limit: 5 checkout sessions per minute. Fail closed only when a
+    // CONFIGURED Redis limiter is mid-outage; if Redis is unconfigured, fall
+    // back to in-memory rather than 429ing every checkout (a Redis outage must
+    // not become a revenue outage — see audit round-2 billing #5).
     const rlKey = getRateLimitKey(request, "stripe:checkout", { userId });
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
+    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: "if-redis-configured" });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }

@@ -680,7 +680,8 @@
     "vehicleCheckRecallsUnavailable": "La información de retiradas no está disponible en este momento.",
     "vehicleCheckRecallsLink": "Detalles de retiradas en nhtsa.gov",
     "vehicleCheckDmvLink": "DMV de {{state}}: {{name}}",
-    "vehicleCheckFinePrint": "Especificaciones y retiradas de la NHTSA — los requisitos de registro provienen del DMV de tu estado."
+    "vehicleCheckFinePrint": "Especificaciones y retiradas de la NHTSA — los requisitos de registro provienen del DMV de tu estado.",
+    "vehicleCheckUpgradePitch": "Decodifica tu VIN y revisa las retiradas abiertas antes de registrarte en tu nuevo estado — se desbloquea con Individual."
   },
   "dossier": {
     "title": "Tu nuevo hogar",

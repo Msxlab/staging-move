@@ -1,4 +1,4 @@
-LocateFlow full-stack audit live TODO
+﻿LocateFlow full-stack audit live TODO
 Date: 2026-06-11
 Rule: project .md/memory files are not used as audit evidence; audit progresses by reading code/config/tests.
 
@@ -27,21 +27,21 @@ Admin
 [DONE] Admin web-to-admin data coupling
 
 Mobile
-[DOING] Mobile module inventory
-[TODO] Mobile auth/session/bootstrap
-[TODO] Mobile route/API compatibility with web backend
-[TODO] Offline/cache/error flows
-[TODO] Permissions/store/build config
-[TODO] Mobile UI/navigation edge cases
+[DONE] Mobile module inventory
+[DONE] Mobile auth/session/bootstrap
+[DONE] Mobile route/API compatibility with web backend
+[DONE] Offline/cache/error flows
+[DONE] Permissions/store/build config
+[DONE] Mobile UI/navigation edge cases
 
 Shared / DB / Connectors
-[TODO] Shared package validation/helpers
-[TODO] Prisma schema integrity and indexes
-[TODO] Connector package dispatch/security/idempotency
-[TODO] Environment/deploy/runtime config
-[TODO] Tests and coverage gaps
+[DONE] Shared package validation/helpers
+[DONE] Prisma schema integrity and indexes
+[DONE] Connector package dispatch/security/idempotency
+[DONE] Environment/deploy/runtime config
+[DONE] Tests and coverage gaps
 
 Final
-[TODO] Consolidate duplicate findings
-[TODO] Sort Critical/High first
-[TODO] Write health summary and prioritized action list
+[DONE] Consolidate duplicate findings
+[DONE] Sort Critical/High first
+[DONE] Write health summary and prioritized action list

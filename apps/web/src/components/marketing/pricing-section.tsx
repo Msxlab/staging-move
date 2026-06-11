@@ -64,7 +64,7 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },
     { icon: Car, label: "Vehicle VIN decode & NHTSA recall check" },
     { icon: CloudRain, label: "Move-week weather alerts & weekly digest" },
-    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data" },
+    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data (where available)" },
     { icon: Bell, label: "Bills and renewal reminders" },
     { icon: Wallet, label: "Per-home monthly budgets" },
     { icon: Truck, label: "Smart moving planner" },
@@ -75,10 +75,10 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: Users, label: "Up to 6 members (you + 5)" },
     { icon: Building2, label: "15 addresses" },
     { icon: Wrench, label: "500 services" },
-    { icon: Sparkles, label: "AI move briefing — your move, explained" },
+    { icon: Sparkles, label: "AI move briefing when available — your move, explained" },
     { icon: Map, label: "Real map on route & address cards" },
     { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },
-    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data" },
+    { icon: Wifi, label: "Smart provider suggestions with FCC broadband & utility data (where available)" },
     { icon: Users, label: "Shared household workspace" },
     { icon: ShieldCheck, label: "Member roles and invites" },
     { icon: Baby, label: "Child accounts" },
@@ -93,7 +93,6 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
     { icon: FileText, label: "New Home Dossier PDF export" },
     { icon: Map, label: "Up to 3 concurrent move plans" },
     { icon: FileText, label: "Tax & property export (CSV + PDF)" },
-    { icon: ShieldCheck, label: "Partner Hub — guided partner updates" },
     { icon: Headset, label: "Priority support" },
   ],
 };
@@ -424,9 +423,9 @@ export function PricingSection({
           <p>Annual Individual trial terms are shown before payment. Monthly plans renew monthly until canceled.</p>
           <p>Family and Pro require web billing. If a price is not configured, checkout will tell you before any subscription is created.</p>
           <p className="sm:col-span-2">
-            Smart provider suggestions with FCC broadband &amp; utility data are included on every plan — including Free.
-            Suggestions reflect coverage reported by providers to the FCC at the area level — reported coverage data, not a
-            guarantee of service at your address.
+            Smart provider suggestions with FCC broadband &amp; utility data are included on Individual and up. Free gets
+            provider suggestions from our catalog. Where shown, FCC suggestions reflect coverage reported by providers to
+            the FCC at the area level — reported coverage data, not a guarantee of service at your address.
           </p>
         </div>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
@@ -438,7 +437,7 @@ export function PricingSection({
       </div>
 
       <p className="mx-auto mt-4 max-w-3xl text-center text-[11px] text-muted-foreground">
-        LocateFlow tracks your services and move workflow. Provider account updates require a supported partner connection or guided handoff; availability varies and you stay in control.
+        LocateFlow tracks your services and move workflow. It does not log into or change your accounts with any provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider yourself through their official channel.
       </p>
     </section>
   );

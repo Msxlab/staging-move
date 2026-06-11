@@ -8,6 +8,7 @@ import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 import { dispatchEmailBatch, dispatchPushBatch } from "@/lib/notify-dispatch";
+import { sanitizeNotificationHref } from "@/lib/notification-href";
 
 const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP", "EMAIL", "PUSH"] as const;
 type SupportedChannel = (typeof SUPPORTED_ADMIN_SEND_CHANNELS)[number];
@@ -51,7 +52,19 @@ const notificationCreateSchema = z
     type: z.enum(ADMIN_SENDABLE_TYPES).optional(),
     title: z.string().trim().min(1).max(200),
     body: z.string().trim().min(1).max(2_000),
-    href: z.string().trim().max(500).optional(),
+    // href is rendered as `<Link href>` in the consumer feed, so it must be an
+    // in-app relative path or a same-origin https URL — never javascript:/data:
+    // (stored XSS) or an off-origin URL (open redirect). Validated + normalized
+    // server-side; fail closed on anything else.
+    href: z
+      .string()
+      .trim()
+      .max(500)
+      .refine((value) => sanitizeNotificationHref(value).ok, {
+        message:
+          "href must be an in-app path (e.g. /dashboard) or a same-origin https URL.",
+      })
+      .optional(),
     channel: z.enum(SUPPORTED_ADMIN_SEND_CHANNELS).optional(),
     userId: z.string().trim().min(1).max(60).optional(),
     broadcast: z.boolean().optional(),
@@ -175,9 +188,17 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const { type, title, body: msgBody, href, broadcast, sendAt, userId, confirmPassword } = parsed.data;
+    const { type, title, body: msgBody, broadcast, sendAt, userId, confirmPassword } = parsed.data;
     const channel: SupportedChannel = parsed.data.channel ?? "IN_APP";
     const resolvedType = type ?? "SYSTEM";
+
+    // Re-run the href validator to obtain the normalized value actually stored
+    // (already validated by the zod refine above, so this never fails here).
+    const hrefResult = sanitizeNotificationHref(parsed.data.href);
+    if (!hrefResult.ok) {
+      return NextResponse.json({ error: "Invalid notification href" }, { status: 400 });
+    }
+    const href = hrefResult.value ?? undefined;
 
     const now = Date.now();
     const requestedSendAt = sendAt ? new Date(sendAt) : null;

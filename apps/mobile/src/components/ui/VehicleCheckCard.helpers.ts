@@ -47,6 +47,17 @@ export interface VehicleRecallItem {
 }
 
 export interface VehicleDecodeResponse {
+  /**
+   * Gate-API teaser contract (mirrors dossier / movers / briefing). For a
+   * FREE/lapsed user the web route answers 200 with
+   * `{ configured:true, entitled:false, upgradeRequired:"VEHICLE_CHECK_UPGRADE_REQUIRED" }`
+   * and omits the `vehicle`/`recalls` blocks entirely. `entitled` is optional
+   * for forward-compat with paid responses (which omit it ⇒ treated as
+   * entitled).
+   */
+  configured?: boolean;
+  entitled?: boolean;
+  upgradeRequired?: string;
   vehicle?: {
     status: "ok" | "no_match" | "error";
     vin: string;
@@ -61,6 +72,9 @@ export interface VehicleDecodeResponse {
   };
 }
 
+/** The teaser code the web route returns for a gated vehicle check. */
+export const VEHICLE_CHECK_UPGRADE_REQUIRED = "VEHICLE_CHECK_UPGRADE_REQUIRED";
+
 // ── Render-state derivation ──────────────────────────────────────────────────
 
 export type VehicleCheckView =
@@ -74,17 +88,28 @@ export type VehicleCheckView =
       recallItems: VehicleRecallItem[];
     }
   | { kind: "no_match" }
+  /** FREE/lapsed user hit the paid gate — show the upgrade teaser, not an error. */
+  | { kind: "upgrade" }
   | { kind: "error" };
 
 /**
  * Decide what the card shows for a decode response. Defensive against
- * partial/missing payloads: anything malformed degrades to "error", an "ok"
- * vehicle without a single displayable field degrades to "no_match" (never an
- * empty headline), and malformed recall items are dropped, not rendered blank.
+ * partial/missing payloads: the paid-gate teaser (`entitled:false`) becomes an
+ * "upgrade" view (NOT an error), anything malformed degrades to "error", an
+ * "ok" vehicle without a single displayable field degrades to "no_match"
+ * (never an empty headline), and malformed recall items are dropped, not
+ * rendered blank.
  */
 export function deriveVehicleCheckView(
   data: VehicleDecodeResponse | null | undefined,
 ): VehicleCheckView {
+  // Gate teaser: the web route returns 200 { entitled:false, upgradeRequired }
+  // and omits the vehicle/recalls blocks. Detect it BEFORE the missing-vehicle
+  // error branch so a gated user sees the upgrade CTA instead of "couldn't
+  // reach NHTSA". Mirrors the dossier / movers / briefing teaser handling.
+  if (data && typeof data === "object" && data.entitled === false) {
+    return { kind: "upgrade" };
+  }
   const vehicle = data?.vehicle;
   if (!vehicle || typeof vehicle !== "object") return { kind: "error" };
   if (vehicle.status === "no_match") return { kind: "no_match" };

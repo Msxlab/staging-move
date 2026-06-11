@@ -15,15 +15,61 @@ vi.mock("@/lib/api", () => ({
   api: { post: vi.fn() },
 }));
 
+// Hoisted so the (hoisted) vi.mock factory below can reference it safely.
+const { isEnabled } = vi.hoisted(() => ({ isEnabled: vi.fn(() => true) }));
 vi.mock("@/lib/billing-flags", () => ({
-  isMobileStorePurchasesEnabledForPlatform: vi.fn(() => true),
+  isMobileStorePurchasesEnabledForPlatform: isEnabled,
 }));
 
 vi.mock("@/lib/sentry", () => ({
   captureException: vi.fn(),
 }));
 
-import { buildVerifyBodyForPurchase } from "./iap";
+import { buildReconcileVerifyBody, buildVerifyBodyForPurchase, reconcilePendingPurchases } from "./iap";
+
+// NOTE: the native store calls (initConnection / getAvailablePurchases /
+// finishTransaction) go through a CommonJS `require("expo-iap")` that can't be
+// intercepted in the node test env, so the reconciler's per-purchase decision
+// is covered via the extracted PURE helper `buildReconcileVerifyBody`, and the
+// orchestration via its store-disabled early-return (no native call). The
+// finish-after-verify ordering itself mirrors the reviewed restorePurchases path.
+describe("buildReconcileVerifyBody — which pending purchases are recoverable", () => {
+  it("keeps an iOS transaction that has a signed JWS payload", () => {
+    expect(
+      buildReconcileVerifyBody({ transactionId: "2000000123456789", purchaseToken: "signed-jws" }, "ios"),
+    ).toEqual({
+      platform: "ios",
+      signedTransaction: "signed-jws",
+      transactionId: "2000000123456789",
+    });
+  });
+
+  it("returns null for an iOS transaction with no signed payload (must NOT be finished)", () => {
+    // Skipping (null) leaves the transaction unfinished so the store re-delivers
+    // it — finishing an unverified transaction would forfeit that retry.
+    expect(buildReconcileVerifyBody({ transactionId: "x" }, "ios")).toBeNull();
+  });
+
+  it("backfills the Android productId from the purchase id list when absent", () => {
+    expect(
+      buildReconcileVerifyBody(
+        { ids: ["locateflow_individual_monthly"], purchaseTokenAndroid: "play-token" },
+        "android",
+      ),
+    ).toEqual({
+      platform: "android",
+      purchaseToken: "play-token",
+      productId: "locateflow_individual_monthly",
+    });
+  });
+});
+
+describe("reconcilePendingPurchases — store-disabled guard", () => {
+  it("no-ops (reconciled:0) without touching the store when purchases are disabled", async () => {
+    isEnabled.mockReturnValueOnce(false);
+    await expect(reconcilePendingPurchases()).resolves.toEqual({ reconciled: 0 });
+  });
+});
 
 describe("IAP verification payloads", () => {
   it("uses the StoreKit purchaseToken JWS for iOS verification", () => {

@@ -240,6 +240,67 @@ async function retrieveStripeSubscription(
   }
 }
 
+/**
+ * Finding (3): concurrent / successive Checkout sessions can leave a customer
+ * with TWO live Stripe subscriptions. The local Subscription row is unique per
+ * user and only stores the most-recent stripeSubscriptionId, so the older
+ * subscription keeps billing INVISIBLY — invoice.paid is scoped to the stored
+ * id, and stripe-reconcile only walks the stored id. Neither ever sees the
+ * orphaned sub → silent double-charge.
+ *
+ * On checkout.session.completed we list the customer's other active
+ * subscriptions and cancel every one that ISN'T the subscription this session
+ * just activated. Idempotent: already-canceled subs are skipped, and re-running
+ * the webhook simply finds nothing left to cancel.
+ */
+async function cancelDuplicateActiveStripeSubscriptions(
+  stripe: Stripe,
+  stripeCustomerId: string,
+  keepSubscriptionId: string,
+): Promise<void> {
+  let list: Stripe.ApiList<Stripe.Subscription>;
+  try {
+    list = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: "active",
+      limit: 100,
+    });
+  } catch (error: any) {
+    // Best-effort cleanup — never fail (and thus retry) the whole webhook over
+    // a duplicate-subscription sweep. A dropped sweep is re-attempted on the
+    // next checkout.session.completed and caught by the nightly reconcile.
+    captureMessage(
+      `[WEBHOOK] duplicate-subscription list failed for customer ${stripeCustomerId}: ${error?.message || "unknown"}`,
+      "warning",
+    );
+    return;
+  }
+
+  for (const sub of list.data) {
+    if (sub.id === keepSubscriptionId) continue;
+    if (sub.cancel_at_period_end) continue; // already winding down
+    try {
+      // Cancel immediately so the orphaned sub stops generating charges. This
+      // is a duplicate the user never intended to keep (they just completed a
+      // fresh checkout), so there is no period-end courtesy to honor.
+      await stripe.subscriptions.cancel(sub.id);
+      captureMessage(
+        `[WEBHOOK] canceled duplicate Stripe subscription ${sub.id} for customer ${stripeCustomerId} (kept ${keepSubscriptionId})`,
+        "warning",
+      );
+    } catch (error: any) {
+      // resource_missing / already-canceled → idempotent no-op. Anything else
+      // is logged but not fatal to webhook delivery.
+      const code = error?.code || error?.raw?.code;
+      if (code === "resource_missing") continue;
+      captureMessage(
+        `[WEBHOOK] failed to cancel duplicate Stripe subscription ${sub.id}: ${error?.message || "unknown"}`,
+        "warning",
+      );
+    }
+  }
+}
+
 function stripeDate(unixSeconds: number | null | undefined) {
   return unixSeconds ? new Date(unixSeconds * 1000) : null;
 }
@@ -307,6 +368,23 @@ async function syncLocalSubscriptionFromStripe(input: {
       localUserFound: false,
       stripeSubscriptionIdFound: Boolean(input.stripeSubscriptionId),
     });
+  }
+
+  // ADMIN manual-premium guard (symmetry with the deleted/invoice/refund/dispute
+  // handlers, which all filter `provider: { not: "ADMIN" }`). The main sync path
+  // was the one handler missing this: if a user whose Stripe sub was canceled is
+  // later given a manual admin grant, a stale `customer.subscription.updated`
+  // arriving inside Stripe's 72h retry window (matched by metadata.userId) would
+  // otherwise overwrite the ADMIN row with provider=STRIPE + CANCELED, silently
+  // revoking the manual premium. The lastStripeEventAt out-of-order guard does
+  // NOT save us here because the admin write doesn't advance that timestamp.
+  // Treat as a terminal no-op so Stripe stops retrying.
+  if (local.provider === "ADMIN") {
+    console.info("[WEBHOOK] Skipping Stripe sync for ADMIN manual-grant row", {
+      eventType: input.eventType,
+      userHint: safeUserHint(local.userId),
+    });
+    return { skipped: true as const, local, newStatus: local.status || null, priceId: null, trialEnd: null, currentPeriodEnd: null };
   }
 
   const stripeStatus = String(input.stripeSubscription.status);
@@ -629,7 +707,7 @@ export async function POST(request: NextRequest) {
         const priceId = stripeSubscription.items?.data?.[0]?.price?.id;
         const mappedPrice = await mapStripePriceIdToPlanAndInterval(priceId);
         const plan = resolveWebhookPlan(session.metadata?.plan as string, mappedPrice?.plan);
-        await syncLocalSubscriptionFromStripe({
+        const checkoutSync = await syncLocalSubscriptionFromStripe({
           eventType: event.type,
           eventDate,
           userId,
@@ -640,6 +718,15 @@ export async function POST(request: NextRequest) {
           plan,
           billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(session.metadata),
         });
+
+        // Finding (3): cancel any OTHER live Stripe subscriptions this customer
+        // accumulated from concurrent/successive Checkout sessions, so an
+        // orphaned duplicate can't keep billing invisibly. Only when this
+        // session's sync actually took effect (not a superseded stale replay)
+        // and only for STRIPE-managed rows (never touch an admin grant).
+        if (!checkoutSync.skipped && checkoutSync.local.provider !== "ADMIN") {
+          await cancelDuplicateActiveStripeSubscriptions(stripe, stripeCustomerId, stripeSubId);
+        }
 
         if (
           (session.metadata?.accessType === "FREE_TRIAL" || session.metadata?.accessType === "PAID") &&

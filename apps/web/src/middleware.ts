@@ -5,9 +5,11 @@ import {
   buildPolicyRateLimitKey,
   RATE_LIMIT_POLICIES,
   evaluateRateLimitPolicy,
+  stableRateLimitHash,
   type RateLimitRouteGroup,
 } from "@/lib/rate-limit-policy";
 import { checkIPAccess } from "@/lib/ip-rules";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 import { STATE_SLUGS } from "@/lib/states/data";
@@ -289,9 +291,28 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   // Cron and internal routes have their own auth (CRON_SECRET /
   // INTERNAL_WEBHOOK_SECRET) inside the route handler, but a leaked
   // secret should not let an attacker hammer them. Apply a coarse limit
-  // here BEFORE the route handler runs.
+  // here BEFORE the route handler runs — but ONLY to requests that actually
+  // present a cron credential, and key the counter by a hash of that
+  // credential. This closes a DoS: previously the counter was a single
+  // global `rl:cron:${pathname}` bucket with limit 1/60s, so any UNAUTHENTICATED
+  // attacker could GET each cron path once a minute and starve the real
+  // scheduler into a 429 before the route's CRON_SECRET check even ran.
+  // Credential-less requests now skip this pre-limit entirely and fall through
+  // to the route, where `guardCronRequest` rejects them with 401 (no global
+  // side effect); a bogus-credential flood only pollutes its OWN bucket, never
+  // the legitimate scheduler's. The route-level guard remains the primary gate.
   if (pathname.startsWith("/api/cron/")) {
-    const cronKey = `rl:cron:${pathname}`;
+    const cronCredential =
+      req.headers.get("authorization") ||
+      (req.headers.get("x-cron-secret")
+        ? `Bearer ${req.headers.get("x-cron-secret")}`
+        : null);
+    if (!cronCredential) {
+      // Anonymous caller: do not touch any shared counter. The route handler
+      // will return 401 via guardCronRequest.
+      return null;
+    }
+    const cronKey = `rl:cron:${pathname}:cred:${stableRateLimitHash(cronCredential)}`;
     const cronResult = await rateLimit(cronKey, { limit: 1, windowSeconds: 60 });
     if (!cronResult.success) {
       return NextResponse.json(
@@ -745,9 +766,14 @@ export default async function middleware(request: NextRequest) {
     !pathname.startsWith("/api/internal/") &&
     !pathname.startsWith("/api/health")
   ) {
-    const ip = (request.headers.get("x-forwarded-for") || "unknown")
-      .split(",")[0]
-      .trim();
+    // Resolve the client IP from the TRUSTED proxy hop (platform real-client-IP
+    // header) rather than the left-most x-forwarded-for entry, which is fully
+    // attacker-controlled behind a load balancer. Using the first XFF hop let a
+    // blocked IP spoof its way past checkIPAccess and let an attacker poison
+    // rate-limit/abuse keys with someone else's "IP". resolveClientIpFromHeaders
+    // is the single source of truth shared with the rate limiter and session
+    // fingerprint, so the IP bound here matches everywhere else.
+    const ip = resolveClientIpFromHeaders(request.headers);
     const baseUrl = request.nextUrl.origin;
     const ipCheck = await checkIPAccess(ip, baseUrl);
     if (ipCheck.blocked) {

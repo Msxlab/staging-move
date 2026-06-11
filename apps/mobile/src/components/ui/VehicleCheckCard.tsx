@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Car, ChevronDown, ChevronUp, ExternalLink } from "lucide-react-native";
+import { Car, ChevronDown, ChevronUp, ExternalLink, Lock, ArrowRight } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -46,6 +47,7 @@ export function VehicleCheckCard({ destinationState }: VehicleCheckCardProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [vin, setVin] = useState("");
@@ -165,6 +167,30 @@ export function VehicleCheckCard({ destinationState }: VehicleCheckCardProps) {
           {view?.kind === "no_match" && <Text style={styles.mutedLine}>{t("moving.vehicleCheckNoMatch")}</Text>}
           {view?.kind === "error" && <Text style={styles.mutedLine}>{t("moving.vehicleCheckError")}</Text>}
 
+          {/* Paid-gate teaser — a FREE/lapsed user hit the entitlement gate.
+              Show the upgrade CTA (same idiom as the briefing/dossier teasers),
+              NOT the NHTSA error line. */}
+          {view?.kind === "upgrade" && (
+            <View style={styles.upgrade}>
+              <Text style={styles.upgradeLabel}>{t("teaser.paidFeatureLabel")}</Text>
+              <Text style={styles.upgradePitch}>{t("moving.vehicleCheckUpgradePitch")}</Text>
+              <TouchableOpacity
+                style={styles.unlockBtn}
+                onPress={() => {
+                  hapticLight();
+                  router.push("/settings/subscription");
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={t("teaser.unlockCta")}
+              >
+                <Lock size={13} color="#fff" />
+                <Text style={styles.unlockBtnText}>{t("teaser.unlockCta")}</Text>
+                <ArrowRight size={13} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {view?.kind === "vehicle" && (
             <View style={styles.result}>
               <Text style={styles.headline}>
@@ -280,4 +306,29 @@ const makeStyles = (theme: Theme) =>
     linkRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8, alignSelf: "flex-start" },
     linkText: { fontSize: 11, fontWeight: "600", color: theme.colors.primary },
     finePrint: { fontSize: 10, color: theme.colors.textMuted, lineHeight: 15, marginTop: 10 },
+    // Paid-gate teaser — same CTA idiom as MoveBriefingCard / FreeMoveUpsellCard.
+    upgrade: { marginTop: 10 },
+    upgradeLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+      letterSpacing: 0.3,
+      color: theme.colors.textTertiary,
+    },
+    upgradePitch: {
+      fontSize: 11,
+      color: theme.colors.textTertiary,
+      lineHeight: 16,
+      marginTop: 4,
+    },
+    unlockBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 8,
+      paddingVertical: 9,
+      marginTop: 10,
+    },
+    unlockBtnText: { fontSize: 11, fontWeight: "800", color: "#fff", letterSpacing: -0.2 },
   });

@@ -427,6 +427,19 @@ export async function normalizeGoogleResult(
   const expiresAt = lineItem.expiryTime ? new Date(lineItem.expiryTime) : null;
   const status = mapGoogleSubscriptionState(result.response.subscriptionState) as SubscriptionStatus;
 
+  // Google grace ("in billing retry") and on-hold customers HAVE paid and
+  // Google requires they retain access during the grace window. The entitlement
+  // resolver gates GRACE_PERIOD/PAST_DUE access on `gracePeriodEndsAt`, so a
+  // null here would lock a paying customer out the instant the renewal card
+  // declines. Anchor the grace window to the store-reported expiry (or +7 days
+  // when Google does not report one) — symmetric with the Apple PAST_DUE
+  // backstop in normalizeAppleResult.
+  let gracePeriodEndsAt: Date | null = null;
+  if (status === "GRACE_PERIOD" || status === "PAST_DUE") {
+    const graceAnchor = expiresAt ?? new Date();
+    gracePeriodEndsAt = new Date(graceAnchor.getTime() + 7 * 24 * 60 * 60 * 1000);
+  }
+
   return {
     platform: "android",
     plan: resolved.plan,
@@ -438,7 +451,7 @@ export async function normalizeGoogleResult(
     latestTransactionId: result.response.latestOrderId || null,
     purchaseToken: result.purchaseToken,
     expiresAt,
-    gracePeriodEndsAt: null,
+    gracePeriodEndsAt,
     environment: result.response.testPurchase ? "Sandbox" : "Production",
     raw: result.response,
   };
@@ -480,6 +493,39 @@ async function assertGooglePlayTestPurchaseAllowedForUser(userId: string, state:
   const userEmail = user?.email?.trim().toLowerCase();
   if (!userEmail || !allowedEmails.has(userEmail)) {
     throw new Error("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+  }
+}
+
+function isAppleSandboxPurchaseState(state: NormalizedIapState): boolean {
+  return state.provider === "APP_STORE" && state.environment === "Sandbox";
+}
+
+/**
+ * Apple sandbox receipts (TestFlight / App Review / a tester's sandbox Apple
+ * ID) must not grant production entitlements to arbitrary users. Apple's App
+ * Review uses sandbox, so we can't reject sandbox outright — instead we mirror
+ * the Google test-purchase gate: in a production-like billing environment, only
+ * allowlisted QA/review emails may claim a sandbox subscription. Everyone else
+ * is refused, closing the "buy a $0 sandbox sub in TestFlight → real premium"
+ * hole that previously existed only on the Apple side (Google already had this).
+ */
+async function assertAppleSandboxPurchaseAllowedForUser(userId: string, state: NormalizedIapState) {
+  if (!isAppleSandboxPurchaseState(state) || !isBillingProductionLike()) return;
+
+  const [user, qaEmail, extraEmails] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    }),
+    getRuntimeConfigValue("QA_RESETTABLE_ACCOUNT_EMAIL"),
+    getRuntimeConfigValue("APPLE_SANDBOX_PURCHASE_USER_EMAILS"),
+  ]);
+  const allowedEmails = parseEmailAllowlist(extraEmails);
+  if (qaEmail) allowedEmails.add(qaEmail.trim().toLowerCase());
+
+  const userEmail = user?.email?.trim().toLowerCase();
+  if (!userEmail || !allowedEmails.has(userEmail)) {
+    throw new Error("APPLE_SANDBOX_PURCHASE_IN_PRODUCTION");
   }
 }
 
@@ -539,6 +585,7 @@ export async function applyIapStateToUser(opts: {
     throw new Error("ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE");
   }
   await assertGooglePlayTestPurchaseAllowedForUser(userId, state);
+  await assertAppleSandboxPurchaseAllowedForUser(userId, state);
 
   const now = new Date();
   // accessType is "PAID" once a real store transaction has cleared. Trial and

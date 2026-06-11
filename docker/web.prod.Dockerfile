@@ -23,6 +23,7 @@ COPY apps/admin/package.json               apps/admin/package.json
 COPY apps/mobile/package.json              apps/mobile/package.json
 COPY packages/db/package.json              packages/db/package.json
 COPY packages/shared/package.json          packages/shared/package.json
+COPY packages/connectors/package.json      packages/connectors/package.json
 COPY patches                               patches
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -71,6 +72,7 @@ COPY --from=deps /workspace/node_modules                       ./node_modules
 COPY --from=deps /workspace/apps/web/node_modules              ./apps/web/node_modules
 COPY --from=deps /workspace/packages/db/node_modules           ./packages/db/node_modules
 COPY --from=deps /workspace/packages/shared/node_modules       ./packages/shared/node_modules
+COPY --from=deps /workspace/packages/connectors/node_modules   ./packages/connectors/node_modules
 
 COPY . .
 

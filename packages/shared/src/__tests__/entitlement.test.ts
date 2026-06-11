@@ -160,6 +160,46 @@ describe("getEffectiveEntitlement", () => {
     expect(e.accessSource).toBe("PLAY_STORE");
   });
 
+  it("keeps GRACE_PERIOD access via currentPeriodEndsAt when gracePeriodEndsAt is null (finding 4)", () => {
+    // A paying Google grace-period customer whose row never got a
+    // gracePeriodEndsAt must not be instantly locked out — fall back to the
+    // period end so they keep access through the grace window.
+    const e = getEffectiveEntitlement(
+      {
+        plan: "INDIVIDUAL",
+        status: "GRACE_PERIOD",
+        provider: "PLAY_STORE",
+        platform: "android",
+        accessType: "PAID",
+        gracePeriodEndsAt: null,
+        currentPeriodEndsAt: FUTURE,
+        purchaseTokenHash: "abc",
+      },
+      NOW,
+    );
+    expect(e.hasAccess).toBe(true);
+    expect(e.hasPremium).toBe(true);
+    expect(e.effectiveStatus).toBe("PAID_GRACE_PERIOD");
+  });
+
+  it("revokes GRACE_PERIOD access when both grace and period end are past", () => {
+    const e = getEffectiveEntitlement(
+      {
+        plan: "INDIVIDUAL",
+        status: "GRACE_PERIOD",
+        provider: "PLAY_STORE",
+        platform: "android",
+        accessType: "PAID",
+        gracePeriodEndsAt: null,
+        currentPeriodEndsAt: PAST,
+        purchaseTokenHash: "abc",
+      },
+      NOW,
+    );
+    expect(e.hasAccess).toBe(false);
+    expect(e.effectiveStatus).toBe("PAID_PAST_DUE");
+  });
+
   it("treats PAST_DUE without grace as no access", () => {
     const e = getEffectiveEntitlement(
       {

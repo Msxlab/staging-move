@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   captureException: vi.fn(),
   refreshGoogleSubscriptionFor: vi.fn(),
+  applyIapStateToUser: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -22,7 +23,7 @@ vi.mock("@/lib/sentry", () => ({
 }));
 
 vi.mock("@/lib/iap-common", () => ({
-  applyIapStateToUser: vi.fn(),
+  applyIapStateToUser: mocks.applyIapStateToUser,
   normalizeAppleTransactionPayload: vi.fn(),
   refreshAppleSubscriptionFor: vi.fn(),
   refreshGoogleSubscriptionFor: mocks.refreshGoogleSubscriptionFor,
@@ -87,5 +88,59 @@ describe("mobile IAP verify route", () => {
     expect(body).toEqual({ error: "IAP_NOT_CONFIGURED" });
     expect(JSON.stringify(body)).not.toContain("do-not-leak");
     expect(mocks.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns TEST_PURCHASE_NOT_ALLOWED (400) for an Apple sandbox purchase in production (finding 2)", async () => {
+    (mocks.refreshGoogleSubscriptionFor as Mock).mockResolvedValue({
+      provider: "PLAY_STORE",
+      status: "ACTIVE",
+      productId: "locateflow.pro.yearly",
+    });
+    (mocks.applyIapStateToUser as Mock).mockRejectedValue(
+      new Error("APPLE_SANDBOX_PURCHASE_IN_PRODUCTION"),
+    );
+
+    const response = await POST(verifyRequest({
+      platform: "android",
+      purchaseToken: "fake_google_play_purchase_token_99999",
+      productId: "locateflow.pro.yearly",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: "TEST_PURCHASE_NOT_ALLOWED" });
+    expect(mocks.captureException).not.toHaveBeenCalled();
+  });
+
+  it("uses the if-redis-configured fail mode so a Redis outage can't block activation (finding 5)", async () => {
+    (mocks.refreshGoogleSubscriptionFor as Mock).mockResolvedValue({
+      provider: "PLAY_STORE",
+      status: "ACTIVE",
+      productId: "locateflow.pro.yearly",
+    });
+    (mocks.applyIapStateToUser as Mock).mockResolvedValue({
+      plan: "PRO",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      platform: "android",
+      currentPeriodEndsAt: null,
+      gracePeriodEndsAt: null,
+    });
+
+    await POST(verifyRequest({
+      platform: "android",
+      purchaseToken: "fake_google_play_purchase_token_11111",
+      productId: "locateflow.pro.yearly",
+    }));
+
+    // Both limiters must use the conditional mode, not strict fail-closed, so a
+    // missing Redis falls back to in-memory instead of 429ing a paid activation.
+    expect(mocks.rateLimit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ failClosed: "if-redis-configured" }),
+    );
+    for (const call of (mocks.rateLimit as Mock).mock.calls) {
+      expect(call[1]).toMatchObject({ failClosed: "if-redis-configured" });
+    }
   });
 });

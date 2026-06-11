@@ -54,12 +54,6 @@ jobs:
           # is enough (no database contact happens).
           DATABASE_URL: "mysql://placeholder:placeholder@localhost:3306/placeholder"
 
-      - name: Prisma migrate (deploy)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: pnpm --filter @locateflow/db exec prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
   security:
     name: Security Checks
     runs-on: ubuntu-latest
@@ -119,6 +113,32 @@ jobs:
 
       - name: Run tests (mobile)
         run: pnpm --filter @locateflow/mobile test
+
+  migrate:
+    name: Prisma Migrate (deploy)
+    runs-on: ubuntu-latest
+    # Only apply migrations to the production schema AFTER lint/typecheck,
+    # tests, and security checks have all passed. Previously this ran inside
+    # lint-and-typecheck with no dependency on `test`/`security`, so a red
+    # test suite could not stop an irreversible migration from hitting prod.
+    needs: [lint-and-typecheck, test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma migrate (deploy)
+        run: pnpm --filter @locateflow/db exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   provider-guards:
     name: Provider Data Guards

@@ -91,6 +91,7 @@ export default function PrivacyPage() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaBusy, setMfaBusy] = useState(false);
   const [disablePw, setDisablePw] = useState("");
+  const [disableCode, setDisableCode] = useState("");
 
   // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -242,12 +243,17 @@ export default function PrivacyPage() {
 
   const handleMfaDisable = async () => {
     if (!disablePw) { toast.error("Enter your password"); return; }
+    const code = disableCode.trim();
+    if (!code) { toast.error("Enter your authenticator code or a backup code"); return; }
     setMfaBusy(true);
     try {
+      // A 6-digit numeric value is treated as a TOTP code; anything else (e.g.
+      // a longer alphanumeric recovery code) is sent as a backup code.
+      const isTotp = /^\d{6}$/.test(code);
       const res = await fetch("/api/auth/mfa/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: disablePw }),
+        body: JSON.stringify({ password: disablePw, ...(isTotp ? { mfaCode: code } : { backupCode: code }) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -255,6 +261,7 @@ export default function PrivacyPage() {
       } else {
         toast.success("Two-factor authentication disabled");
         setDisablePw("");
+        setDisableCode("");
         await refresh();
       }
     } catch {
@@ -496,16 +503,22 @@ export default function PrivacyPage() {
         {/* Disable flow */}
         {twoFaEnabled && (
           <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
-            <label className="text-xs font-medium text-muted-foreground">Confirm your password to disable</label>
-            <div className="flex gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Confirm your password and a second factor to disable</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <PasswordInput
                 wrapperClassName="flex-1"
                 className={inputCls} placeholder="Current password"
                 value={disablePw} onChange={(e) => setDisablePw(e.target.value)}
               />
+              <input
+                className={`${inputCls} flex-1`}
+                inputMode="text" autoComplete="one-time-code"
+                placeholder="Authenticator or backup code"
+                value={disableCode} onChange={(e) => setDisableCode(e.target.value)}
+              />
               <button
                 onClick={handleMfaDisable}
-                disabled={!disablePw || mfaBusy}
+                disabled={!disablePw || !disableCode.trim() || mfaBusy}
                 className="px-4 py-2 rounded-xl border border-destructive text-destructive text-xs font-medium hover:bg-destructive/10 transition disabled:opacity-50 shrink-0"
               >
                 {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Disable"}

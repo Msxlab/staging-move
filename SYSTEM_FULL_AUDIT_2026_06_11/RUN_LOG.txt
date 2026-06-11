@@ -7,3 +7,9 @@
 2026-06-11 - Audited notification prefs/feed, support tickets, email verification resend/verify, unsubscribe, and Resend webhook; added unsubscribe mapping, support/notification gate, and preference rate-limit findings.
 2026-06-11 - Audited web cron guard, scheduler configs, reminder timezone gates, scheduled-delivery queue, provider stats, blog publish, connector-dispatch route, connector runtime, and connector HTTP allowlist; added scheduler/queue/provider/connector findings.
 2026-06-11 - Ran web Playwright public smoke. First run failed due missing Chromium; installed Chromium. Second parallel run exposed cold-start timeouts; warmed a 3100 dev server and reran single-worker e2e. Result: 5 passed, 8 failed (serious contrast violations, FAQ JSON-LD missing, robots env mismatch, auth selector ambiguity). Crawled 21 public pages and 27 internal links on localhost:3100: no broken internal links found.
+2026-06-11 - Completed shared/DB/connectors/deploy audit: runtime config parity, Docker/env templates, mobile IAP readiness, connector consent race, soft-delete side effects, scheduler parity.
+2026-06-11 - Verification: web tests 258 files / 2275 tests passed; admin tests 114 files / 717 tests passed; web/admin/shared/connectors tsc passed; connectors tests 15 files / 105 tests passed; db package has no lint script; mobile tests previously failed 4 IAP tests due __DEV__ ReferenceError.
+
+2026-06-11 - Wrote consolidated full audit report: FULL_AUDIT_REPORT.txt (99 findings; high-first ordering; health summary and prioritized action list included).
+
+2026-06-11 - Rewrote consolidated report with ASCII-safe static text and repaired finding rows to avoid terminal mojibake.

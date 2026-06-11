@@ -3,12 +3,15 @@
  * known soft-delete models, and rewrites `delete` / `deleteMany` into
  * `update` / `updateMany` that sets `deletedAt`.
  *
- * **Not applied globally by default.** The singleton `db` in src/index.ts
- * stays raw so admin flows, cron retention, and restore endpoints can see
- * and hard-delete soft-deleted rows. Import `withSoftDelete` and compose
- * where the filter is desired:
+ * **Applied to the default `db` singleton.** src/index.ts exports `db` as
+ * `dbUnsafe.$extends(withSoftDelete)`, so ordinary application code gets the
+ * filter for free. The RAW client is exported separately as `dbUnsafe` —
+ * use it ONLY for admin flows, cron retention, restore endpoints, and backup
+ * export that must see and hard-delete soft-deleted rows.
  *
- *   const prisma = db.$extends(withSoftDelete);
+ * To compose the extension onto another client explicitly:
+ *
+ *   const prisma = someClient.$extends(withSoftDelete);
  *
  * Or scope per-request by extending a request-local client.
  */
@@ -72,7 +75,17 @@ function isSoftDeletedRow(row: unknown): boolean {
     (row as { deletedAt?: Date | string | null }).deletedAt !== null;
 }
 
-export const withSoftDelete = Prisma.defineExtension({
+// NOTE: this is defined with the client-factory form of `defineExtension`
+// (`(client) => client.$extends({...})`) rather than the plain-object form.
+// In Prisma 5.x the `this` binding inside a `query` extension callback is NOT
+// the extended client (empirically it is an array-like internal object, so
+// `this[model]` is `undefined`). The `delete`/`deleteMany` rewrites below need
+// a real client to dispatch `update`/`updateMany`, so we capture `client` from
+// the factory closure and call `client[model].update(...)` instead of
+// `this[model].update(...)`. See apps/web/src/lib/soft-delete-delete-path.test.ts
+// for the regression guard that exercises the real extension.
+export const withSoftDelete = Prisma.defineExtension((client) =>
+  client.$extends({
   name: "softDelete",
   query: {
     $allModels: {
@@ -126,17 +139,17 @@ export const withSoftDelete = Prisma.defineExtension({
         if (!isSoftDeleteModel(model)) return query(args);
         // Rewrite to an update that marks the row soft-deleted. The caller
         // wanted "delete"; we return the post-update row, which matches the
-        // shape `delete` would have returned.
-        return (this as any)[model!].update({
+        // shape `delete` would have returned. We dispatch through `client`
+        // captured in the factory closure — `this` is NOT the client here.
+        void operation;
+        return (client as any)[model!].update({
           where: (args as any).where,
           data: { deletedAt: new Date() },
         });
-        // Unused bindings satisfy TS's exhaustiveness check.
-        void operation;
       },
       async deleteMany({ args, model, query }) {
         if (!isSoftDeleteModel(model)) return query(args);
-        return (this as any)[model!].updateMany({
+        return (client as any)[model!].updateMany({
           where: (args as any).where,
           data: { deletedAt: new Date() },
         });
@@ -158,7 +171,8 @@ export const withSoftDelete = Prisma.defineExtension({
       },
     },
   },
-});
+  }),
+);
 
 /**
  * Helper for admin "restore" flows: the only supported way to resurrect a

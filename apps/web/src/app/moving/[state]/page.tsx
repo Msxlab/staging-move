@@ -50,12 +50,16 @@ import {
 } from "@/lib/states/data";
 import { metrosForState } from "@/lib/states/metros";
 
-// Fully static: prerender all 51 at build, 404 anything else, and re-validate
-// daily so a seed-data refresh (rules change between elections / DMV updates)
-// rolls out without a full redeploy.
-export const dynamic = "force-static";
+// Dynamic render (like every other marketing page) so the per-request CSP
+// nonce that middleware sets is the SAME nonce baked into this response's
+// inline/bootstrap scripts. Under `force-static` the page was prerendered at
+// build time with no per-request nonce, so the production `script-src 'nonce-X'
+// 'strict-dynamic'` CSP blocked ALL scripts on these 51 state + metro pages —
+// killing hydration, the theme/locale toggles, and the cookie-consent banner
+// (hence GA). `dynamicParams = false` + `generateStaticParams` still pin the
+// route to the curated slug set, so an unknown slug hard-404s exactly as before.
+export const dynamic = "force-dynamic";
 export const dynamicParams = false;
-export const revalidate = 86400;
 
 export function generateStaticParams(): Array<{ state: string }> {
   return STATE_SLUGS.map((state) => ({ state }));

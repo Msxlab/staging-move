@@ -46,6 +46,7 @@ export default function TwoFactorScreen() {
   const [busy, setBusy] = useState(false);
 
   const [password, setPassword] = useState("");
+  const [disableCode, setDisableCode] = useState("");
   const [setup, setSetup] = useState<SetupData | null>(null);
   const [code, setCode] = useState("");
   const [done, setDone] = useState(false);
@@ -106,14 +107,22 @@ export default function TwoFactorScreen() {
 
   const disableMfa = async () => {
     if (!password) return;
+    const code = disableCode.trim();
+    if (!code) return;
     setBusy(true);
-    const res = await api.post<any>("/api/auth/mfa/disable", { password });
+    // 6-digit numeric = TOTP; anything else = backup recovery code.
+    const isTotp = /^\d{6}$/.test(code);
+    const res = await api.post<any>("/api/auth/mfa/disable", {
+      password,
+      ...(isTotp ? { mfaCode: code } : { backupCode: code }),
+    });
     setBusy(false);
     if (res.data?.success === true) {
       hapticSuccess();
       setMfaEnabled(false);
       setDone(false); // clear the "enabled" card so the disabled state renders
       setPassword("");
+      setDisableCode("");
       Alert.alert(
         t("settings.twoFactor", { defaultValue: "Two-factor authentication" }),
         t("settings.twoFactor_disabled", { defaultValue: "Two-factor authentication is now off." }),
@@ -152,7 +161,7 @@ export default function TwoFactorScreen() {
                 : t("settings.twoFactor_onDescription", { defaultValue: "2FA is on. Manage or turn it off." })}
             </Text>
             <Text style={styles.subheading}>{t("settings.twoFactor_turnOff", { defaultValue: "Turn off two-factor" })}</Text>
-            <Text style={styles.muted}>{t("settings.twoFactor_disableHint", { defaultValue: "Re-enter your password to disable." })}</Text>
+            <Text style={styles.muted}>{t("settings.twoFactor_disableHint2", { defaultValue: "Re-enter your password and a current authenticator (or backup) code to disable." })}</Text>
             <TextInput
               style={styles.input}
               value={password}
@@ -162,11 +171,20 @@ export default function TwoFactorScreen() {
               secureTextEntry
               autoCapitalize="none"
             />
+            <TextInput
+              style={styles.input}
+              value={disableCode}
+              onChangeText={setDisableCode}
+              placeholder={t("settings.twoFactor_codePlaceholder", { defaultValue: "Authenticator or backup code" })}
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+              autoComplete="one-time-code"
+            />
             <Button
               title={t("settings.twoFactor_disable", { defaultValue: "Disable two-factor" })}
               onPress={disableMfa}
               loading={busy}
-              disabled={!password}
+              disabled={!password || !disableCode.trim()}
               variant="outline"
               fullWidth
             />

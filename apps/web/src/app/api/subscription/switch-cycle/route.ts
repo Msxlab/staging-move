@@ -195,8 +195,11 @@ export async function POST(request: NextRequest) {
 
     const userId = await requireDbUserId();
 
+    // Fail closed only when a CONFIGURED Redis limiter is mid-outage; an
+    // unconfigured limiter falls back to in-memory rather than 429ing every
+    // cycle switch during a Redis outage (audit round-2 billing #5).
     const rlKey = getRateLimitKey(request, "subscription:switch-cycle", { userId });
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
+    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: "if-redis-configured" });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }

@@ -54,8 +54,13 @@ appear on a device, and — honestly — what is already verified here versus wh
   file carries the header: *"UNVERIFIED — requires a native EAS build + device
   test; native rendering not checked remotely."*
 - **The iOS App Group write bridge** — the JS→App Group UserDefaults hop
-  (`writeSnapshotToAppGroup`) is a documented **no-op placeholder** until a native
-  App Group module is wired in the build (see iOS step 3 below).
+  (`writeSnapshotToAppGroup`) now **probes (guarded + dynamic) for a native App
+  Group module and writes through it when present** — the same pattern the
+  Android bridge uses. It is no longer a hardcoded no-op: add a recognized
+  module to the native build (see iOS step 3 below) and the iOS widget starts
+  receiving data with **no further code change or OTA**. Without that module it
+  still degrades to a no-op (the snapshot stays in AsyncStorage, which the
+  extension can't read).
 
 ---
 
@@ -134,21 +139,25 @@ widget. After the first load it shows your real countdown / next task / readines
    shared container the extension reads. **App Groups require a paid Apple
    Developer account** and the group registered on the Apple Developer portal /
    in your EAS credentials.
-3. **The JS → App Group bridge (TODO on the native build).** The iOS WidgetKit
-   extension reads `UserDefaults(suiteName: "group.com.locateflow.mobile.widget")`
-   for key `locateflow.widget.snapshot.v1`. The data layer exposes
-   `writeSnapshotToAppGroup()` as the seam, but it is a **no-op placeholder**
-   today — React Native's default AsyncStorage does **not** write to an App Group.
-   To finish iOS, on the native build wire one of:
-   - a tiny native module (or `expo-app-group-storage`-style helper) that does
-     `UserDefaults(suiteName: WIDGET_APP_GROUP).set(json, forKey: WIDGET_SNAPSHOT_KEY)`
-     then `WidgetCenter.shared.reloadAllTimelines()`, and call it from
-     `writeSnapshotToAppGroup`; **or**
-   - configure AsyncStorage's iOS App Group support so its backing store is the
-     group container, then point the Swift `UserDefaults(suiteName:)` at the same
-     key.
-   Until that lands, the **Android** widget is fully driven by the JS snapshot and
-   the **iOS** widget renders its empty/placeholder state.
+3. **The JS → App Group bridge (native module needed; the JS side is wired).**
+   The iOS WidgetKit extension reads
+   `UserDefaults(suiteName: "group.com.locateflow.mobile.widget")` for key
+   `locateflow.widget.snapshot.v1`. React Native's default AsyncStorage does
+   **not** write to an App Group, so a native module is still required — but
+   `writeSnapshotToAppGroup()` no longer hardcodes `false`: it **probes at
+   runtime for a recognized App Group module and writes through it when
+   present** (guarded + dynamic, like the Android bridge). To finish iOS, add
+   ONE of these to the native build and the bridge picks it up automatically:
+   - install **`react-native-shared-group-preferences`** — its
+     `setItem(key, value, appGroup)` API is recognized as-is; **or**
+   - add a tiny project-local module at **`src/lib/native-app-group.ts`** (a
+     native/Expo module) exposing
+     `setAppGroupItem(appGroup, key, value)` that does
+     `UserDefaults(suiteName:).set(value, forKey:)` and an optional
+     `reloadAllTimelines()` calling `WidgetCenter.shared.reloadAllTimelines()`.
+   Until one of those exists in the build, the **Android** widget is fully
+   driven by the JS snapshot and the **iOS** widget renders its
+   empty/placeholder state (the bridge returns `false`, never throwing).
 4. **Keys must stay in sync** across three places:
    - `src/lib/widget-data.ts` → `WIDGET_APP_GROUP`, `WIDGET_SNAPSHOT_KEY`
    - `app.json` → `ios.entitlements[...application-groups]`

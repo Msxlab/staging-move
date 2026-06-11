@@ -381,7 +381,12 @@ export function getEffectiveEntitlement(
     }
 
     if (rawStatus === "GRACE_PERIOD") {
-      const graceActive = isAfter(gracePeriodEndsAt, now);
+      // A paying customer in grace must keep access for the grace window.
+      // Some providers (notably Google Play) don't always stamp an explicit
+      // gracePeriodEndsAt; fall back to the period end so a dropped/empty
+      // grace timestamp can't instantly lock out a customer who has paid.
+      const graceDeadline = gracePeriodEndsAt || periodEnd;
+      const graceActive = isAfter(graceDeadline, now);
       return finalize({
         hasAccess: graceActive,
         hasPremium: graceActive,
@@ -392,7 +397,7 @@ export function getEffectiveEntitlement(
         accessType: accessType || "PAID",
         rawStatus,
         platform: subscription.platform || null,
-        expiresAt: gracePeriodEndsAt || periodEnd,
+        expiresAt: graceDeadline,
         renewsAt: null,
         autoRenew: false,
         cancelAtPeriodEnd,
@@ -402,7 +407,8 @@ export function getEffectiveEntitlement(
     }
 
     if (rawStatus === "PAST_DUE") {
-      const graceActive = isAfter(gracePeriodEndsAt, now);
+      const graceDeadline = gracePeriodEndsAt || periodEnd;
+      const graceActive = isAfter(graceDeadline, now);
       return finalize({
         hasAccess: graceActive,
         hasPremium: graceActive,
@@ -413,7 +419,7 @@ export function getEffectiveEntitlement(
         accessType: accessType || "PAID",
         rawStatus,
         platform: subscription.platform || null,
-        expiresAt: gracePeriodEndsAt || periodEnd,
+        expiresAt: graceDeadline,
         renewsAt: null,
         autoRenew: false,
         cancelAtPeriodEnd,
