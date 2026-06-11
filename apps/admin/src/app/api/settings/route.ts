@@ -371,6 +371,37 @@ export async function GET(request: NextRequest) {
         "UPSTASH_REDIS_REST_URL",
         "UPSTASH_REDIS_REST_TOKEN",
       ]),
+      // ── Data integrations (address coverage · neighborhood · AI · movers) ──
+      // Each degrades gracefully when its key/flag is unset; surfacing them here
+      // means the owner can see which are actually live instead of guessing why
+      // a dossier section is empty. "configured" = the listed key(s)/flag(s) are
+      // present (a flag explicitly set to "false" still reads as present).
+      buildIntegrationStatus(runtimeConfigMap, "fcc_broadband", "FCC Broadband — ISP availability", [
+        "FCC_BDC_ENABLED",
+        "FCC_BDC_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "electric_utility", "Electric Utility — OpenEI URDB", [
+        "ELECTRIC_LOOKUP_ENABLED",
+        "OPENEI_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "census_acs", "Neighborhood economics — Census ACS", [
+        "CENSUS_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "airnow", "Air quality — AirNow", [
+        "AIRNOW_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "anthropic_ai", "AI move briefing — Anthropic", [
+        "ANTHROPIC_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "fmcsa", "Mover verification — FMCSA QCMobile", [
+        "FMCSA_WEBKEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "address_connectors", "Address-change connectors", [
+        "FEATURE_API_CONNECTORS",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "mover_registration", "Public mover registration", [
+        "MOVER_REGISTRATION_ENABLED",
+      ]),
     ];
 
     return NextResponse.json({
