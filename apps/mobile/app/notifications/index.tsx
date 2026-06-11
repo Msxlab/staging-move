@@ -17,9 +17,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 
 interface FeedNotification {
@@ -199,15 +200,16 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>{t("notifications.title")}</Text>
         {unreadCount > 0 ? (
-          <TouchableOpacity
+          <PressableScale
             onPress={markAllRead}
-            style={styles.markAllBtn}
+            style={[styles.markAllPill, markingAll && { opacity: 0.5 }]}
             disabled={markingAll}
             accessibilityRole="button"
             accessibilityLabel={t("notifications.markAllRead")}
           >
-            <CheckCheck size={18} color={theme.colors.primary} />
-          </TouchableOpacity>
+            <CheckCheck size={15} color={theme.colors.primary} />
+            <Text style={styles.markAllPillText}>{t("notifications.markAllReadShort", { defaultValue: "Mark all" })}</Text>
+          </PressableScale>
         ) : (
           <View style={{ width: 44 }} />
         )}
@@ -226,11 +228,12 @@ export default function NotificationsScreen() {
         {error && notifications.length === 0 ? (
           <ErrorState message={error} onRetry={load} />
         ) : notifications.length === 0 ? (
-          <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
-            <Bell size={32} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>{t("notifications.emptyTitle")}</Text>
-            <Text style={styles.emptySubtitle}>{t("notifications.emptySubtitle")}</Text>
-          </Card>
+          <EmptyState
+            mascot="kid"
+            icon={<Bell size={32} color={theme.colors.primary} />}
+            title={t("notifications.emptyTitle")}
+            description={t("notifications.emptySubtitle")}
+          />
         ) : (
           <>
             {unreadCount > 0 && (
@@ -267,13 +270,13 @@ export default function NotificationsScreen() {
               <Text style={styles.filterEmpty}>{t("notifications.filterEmpty")}</Text>
             ) : (
               <View style={styles.list}>
-                {visible.map((notif) => {
+                {visible.map((notif, index) => {
                   const body = notificationBody(notif);
                   const { Icon, tint } = presentationFor(notif.type, theme);
                   const dest = resolveMobileHref(notif.href);
                   return (
+                  <ListEntrance key={notif.id} index={index}>
                   <TouchableOpacity
-                    key={notif.id}
                     style={[styles.notifRow, !notif.read && styles.notifUnread]}
                     onPress={() => !notif.read && markRead(notif.id)}
                     activeOpacity={0.6}
@@ -316,6 +319,7 @@ export default function NotificationsScreen() {
                     </View>
                     {!notif.read ? <View style={styles.unreadDot} /> : null}
                   </TouchableOpacity>
+                  </ListEntrance>
                   );
                 })}
               </View>
@@ -331,7 +335,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  markAllBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center" },
+  // Mark-all-read pill (Aurora pill idiom — icon + mono label).
+  markAllPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: `${theme.colors.primary}30`,
+  },
+  markAllPillText: { fontSize: 11, letterSpacing: 0.6, fontWeight: "700", color: theme.colors.primary },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   list: { gap: 8 },
@@ -399,6 +415,4 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: `${theme.colors.primary}30`,
   },
   actionText: { fontSize: 12, fontWeight: "600", color: theme.colors.primary },
-  emptyTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4 },
 });

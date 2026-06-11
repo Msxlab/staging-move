@@ -144,3 +144,52 @@ jobs:
               ;;
           esac
           if [ "$fail" -ne 0 ]; then echo "::error::one or more cron endpoints returned a non-2xx status"; exit 1; fi
+
+  # ── Synthetic uptime monitor ───────────────────────────────────────────────
+  # Calls /api/cron/uptime-check, which probes the public surfaces server-side
+  # (locateflow.com home + marker, /api/health, admin login) with 5s timeouts,
+  # emails the admin-alert recipients on any failure (deduped to once per UTC
+  # day per target), and records availability telemetry under source "uptime".
+  #
+  # Rides the existing */5 slot and self-gates to ~every 15 minutes
+  # (:00/:15/:30/:45) instead of adding a new schedule entry — a new entry
+  # would also fire the `cron` job above, whose `*)` fallback smoke-tests
+  # trial-check/stripe-reconcile on unknown schedules.
+  #
+  # Deliberately NO continue-on-error and default failure visibility: when the
+  # web app is fully down, the route hosting the monitor cannot run (or email),
+  # this curl gets a non-2xx, the job FAILS, and GitHub's default
+  # workflow-failure notification email is the backstop alert for total outage.
+  uptime:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+    runs-on: ubuntu-latest
+    env:
+      WEB: https://locateflow.com
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Probe public surfaces via /api/cron/uptime-check
+        run: |
+          set -uo pipefail
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET repo secret is not set — uptime-check will 401. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          # Self-gate the 5-minute slot to quarter-hour boundaries. GH cron
+          # jitter can occasionally push a run past its window and skip one
+          # cycle — acceptable for a free monitor (next boundary catches up).
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] && [ $(( 10#$(date -u +%M) % 15 )) -ge 5 ]; then
+            echo "Not a quarter-hour boundary — skipping (runs at :00/:15/:30/:45)."
+            exit 0
+          fi
+          code=$(curl -sS -m 60 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -o /tmp/uptime.json -w "%{http_code}" "$WEB/api/cron/uptime-check" || echo "000")
+          echo "GET $WEB/api/cron/uptime-check -> $code"
+          cat /tmp/uptime.json 2>/dev/null || true; echo
+          case "$code" in
+            2*) ;;
+            *)
+              echo "::error::uptime-check call itself failed ($code) — the web app may be fully down. This job failure (GitHub's workflow-failure notification) is the backstop alert."
+              exit 1
+              ;;
+          esac

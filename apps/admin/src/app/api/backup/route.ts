@@ -68,6 +68,7 @@ function normalizeBackupRecord(backup: any, createdByLabel?: string) {
     errorMessage: metadata.error || null,
     archive: metadata.archive || null,
     offsite: metadata.offsite || null,
+    gdrive: metadata.gdrive || null,
     createdByLabel: createdByLabel || backup.createdBy,
   };
 }

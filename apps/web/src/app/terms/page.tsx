@@ -58,7 +58,7 @@ export default function TermsPage() {
       */}
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
-        <p>Terms effective date: June 7, 2026</p>
+        <p>Terms effective date: June 10, 2026</p>
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
