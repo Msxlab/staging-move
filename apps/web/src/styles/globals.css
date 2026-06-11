@@ -1571,3 +1571,471 @@ html[data-embed="mobile"] footer,
 html[data-embed="mobile"] .install-prompt {
   display: none !important;
 }
+
+/* =========================================================================
+   Dossier ambient — data-driven decorative scenes inside the home-dossier
+   section rows (apps/web/src/components/dashboard/dossier-ambient.tsx).
+   The .da-layer is aria-hidden + pointer-events-none, masked left -> right
+   so the row's text zone stays 100% clean, and z-indexed under the row
+   content (host row is `relative isolate`). Every animation is transform/
+   opacity only (GPU-cheap); continuous drifts run linear so loops stay
+   seamless, breathing/bobbing runs gentle ease-in-out. ALL of it is
+   disabled under prefers-reduced-motion at the end of this block — the
+   static scene keeps a settled, intentional composition. The component's
+   IntersectionObserver adds .da-paused while the layer is offscreen.
+   ========================================================================= */
+.da-layer {
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 30%);
+  mask-image: linear-gradient(to right, transparent, black 30%);
+}
+.da-layer.da-paused,
+.da-layer.da-paused * {
+  animation-play-state: paused !important;
+}
+
+/* — Flood: 2-3 stacked sine waves along the bottom, parallax drift.
+   Intensity 0 calm cool, 1 honey swells, 2 faster coral + level breathing. — */
+.da-layer[data-kind="flood"] { --da-wave-color: var(--foil-b); }
+.da-layer[data-kind="flood"][data-intensity="0"] { --da-wave-color: var(--rose); }
+.da-layer[data-kind="flood"][data-intensity="2"] { --da-wave-color: var(--danger); }
+.da-flood-group { position: absolute; inset: 0; }
+.da-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  fill: var(--da-wave-color);
+  will-change: transform;
+}
+.da-wave-back  { height: 16px; opacity: 0.10; animation: da-wave-drift 26s linear infinite; }
+.da-wave-mid   { height: 12px; opacity: 0.12; animation: da-wave-drift 19s linear infinite reverse; }
+.da-wave-front { height: 8px;  opacity: 0.14; animation: da-wave-drift 14s linear infinite; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-back  { animation-duration: 18s; opacity: 0.12; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-mid   { animation-duration: 13s; opacity: 0.15; }
+.da-layer[data-kind="flood"][data-intensity="2"] .da-wave-front { animation-duration: 9.5s; opacity: 0.18; }
+.da-layer[data-kind="flood"][data-intensity="0"] .da-flood-group {
+  animation: da-flood-breathe 16s ease-in-out infinite;
+}
+.da-layer[data-kind="flood"][data-intensity="2"] .da-flood-group {
+  animation: da-flood-breathe 10s ease-in-out infinite;
+  --da-breathe-y: -4px;
+}
+@keyframes da-wave-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes da-flood-breathe {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(var(--da-breathe-y, -1.5px)); }
+}
+
+/* — School: hairline sidewalk + small silhouettes walking across.
+   --da-kid-x is the settled spot so reduced motion shows kids spaced out. — */
+.da-sidewalk {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  height: 1px;
+  background: var(--fg);
+  opacity: 0.10;
+}
+.da-kid-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7px;
+  transform: translateX(var(--da-kid-x, 40%));
+  animation: da-walk-x 30s linear infinite;
+}
+.da-kid {
+  display: block;
+  fill: var(--fg);
+  animation: da-kid-bob 0.6s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
+}
+@keyframes da-walk-x {
+  from { transform: translateX(-6%); }
+  to   { transform: translateX(104%); }
+}
+@keyframes da-kid-bob {
+  from { transform: translateY(0) rotate(-2deg); }
+  to   { transform: translateY(-1.5px) rotate(2deg); }
+}
+
+/* — Hazard / lightning: soft cloud puff, quick double-flash bolt + sweep.
+   Cycle 10s / 7s / 5s by intensity. Bolt rests at opacity 0 (static = calm). — */
+.da-layer[data-kind="hazard"][data-intensity="1"] { --da-bolt-cycle: 7s; }
+.da-layer[data-kind="hazard"][data-intensity="2"] { --da-bolt-cycle: 5s; }
+.da-cloud {
+  position: absolute;
+  top: 6px;
+  right: 10%;
+  fill: var(--fg);
+  opacity: 0.06;
+}
+.da-bolt {
+  position: absolute;
+  top: 26px;
+  right: calc(10% + 22px);
+  stroke: var(--foil-b);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0;
+  animation: da-bolt-flash var(--da-bolt-cycle, 10s) linear infinite;
+}
+.da-flash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(75deg, transparent 10%, var(--fg) 50%, transparent 90%);
+  opacity: 0;
+  animation: da-flash-sweep var(--da-bolt-cycle, 10s) linear infinite;
+}
+@keyframes da-bolt-flash {
+  0%   { opacity: 0; }
+  1%   { opacity: 1; }
+  2%   { opacity: 0; }
+  3%   { opacity: 1; }
+  4.5% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes da-flash-sweep {
+  0%   { opacity: 0; }
+  1%   { opacity: 0.04; }
+  2%   { opacity: 0; }
+  3%   { opacity: 0.04; }
+  4.5% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* — Hazard / wind: thin rounded streaks drifting across at -8 degrees.
+   Track spans the layer so translateX percentages scale with row width. — */
+.da-streak-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateX(var(--da-streak-x, 40%));
+  animation: da-drift-x 9s linear infinite;
+}
+.da-streak {
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--fg), transparent);
+  opacity: 0.16;
+  transform: rotate(-8deg);
+}
+@keyframes da-drift-x {
+  from { transform: translateX(-12%); }
+  to   { transform: translateX(106%); }
+}
+
+/* — Hazard / winter: small dots falling with a gentle x-sway. — */
+.da-snow {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--fg);
+  opacity: 0.16;
+  animation: da-snow-fall 11s linear infinite;
+}
+@keyframes da-snow-fall {
+  0%   { transform: translate3d(0, -46px, 0); opacity: 0; }
+  12%  { opacity: 0.16; }
+  40%  { transform: translate3d(4px, 8px, 0); }
+  70%  { transform: translate3d(-3px, 62px, 0); opacity: 0.16; }
+  100% { transform: translate3d(2px, 116px, 0); opacity: 0; }
+}
+
+/* — Radon: faint honey bubbles rising from the bottom, fading at edges. — */
+.da-bubble {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--foil-b);
+  opacity: 0.15;
+  animation: da-bubble-rise 11s linear infinite;
+}
+@keyframes da-bubble-rise {
+  0%   { transform: translate3d(0, 30px, 0); opacity: 0; }
+  15%  { opacity: 0.15; }
+  55%  { transform: translate3d(3px, -28px, 0); }
+  85%  { opacity: 0.13; }
+  100% { transform: translate3d(-2px, -86px, 0); opacity: 0; }
+}
+
+/* — Air: long soft breeze streaks; mint / honey / coral by AQI band.
+   Intensity 0 adds one tumbling leaf, 2 adds a pulsing blurred haze. — */
+.da-layer[data-kind="air"] { --da-air-color: var(--sage); }
+.da-layer[data-kind="air"][data-intensity="1"] { --da-air-color: var(--foil-b); }
+.da-layer[data-kind="air"][data-intensity="2"] { --da-air-color: var(--danger); }
+.da-breeze-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateX(var(--da-streak-x, 40%));
+  animation: da-drift-x 14s linear infinite;
+}
+.da-breeze {
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--da-air-color), transparent);
+  opacity: 0.14;
+}
+.da-leaf-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34%;
+  transform: translateX(var(--da-leaf-x, 55%));
+  animation: da-drift-x 9s linear infinite;
+}
+.da-leaf {
+  display: block;
+  fill: var(--sage);
+  opacity: 0.3;
+  animation: da-leaf-tumble 2.6s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes da-leaf-tumble {
+  0%   { transform: rotate(0deg) translateY(0); }
+  50%  { transform: rotate(180deg) translateY(2px); }
+  100% { transform: rotate(360deg) translateY(0); }
+}
+.da-haze {
+  position: absolute;
+  top: 18%;
+  right: 6%;
+  width: 130px;
+  height: 46px;
+  border-radius: 9999px;
+  background: var(--danger);
+  opacity: 0.08;
+  filter: blur(14px);
+  animation: da-haze-pulse 9s ease-in-out infinite;
+}
+@keyframes da-haze-pulse {
+  0%, 100% { opacity: 0.06; }
+  50%      { opacity: 0.10; }
+}
+
+/* — Neighborhood: skyline silhouette, honey windows lighting up one by one,
+   dotted walk path with sequential footsteps. Cadence from the walk band:
+   intensity >= 1 (above_average/most) ~1.2s, else ~2.2s. — */
+.da-layer[data-kind="neighborhood"][data-intensity="0"] { --da-cadence: 2.2s; }
+.da-skyline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  width: 100%;
+  height: 36px;
+}
+.da-skyline .da-bld { fill: var(--fg); opacity: 0.06; }
+.da-window {
+  fill: var(--foil-b);
+  opacity: 0;
+  animation: da-window-glow 12s linear infinite;
+}
+@keyframes da-window-glow {
+  0%   { opacity: 0; }
+  4%   { opacity: 0.7; }
+  40%  { opacity: 0.7; }
+  50%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+.da-walkpath {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 4px;
+  border-top: 1px dotted var(--fg);
+  opacity: 0.12;
+}
+.da-step {
+  position: absolute;
+  bottom: 3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--fg);
+  opacity: 0.35;
+  animation: da-step-pulse calc(var(--da-cadence, 1.2s) * 3.2) linear infinite;
+}
+@keyframes da-step-pulse {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.45; }
+  40%  { opacity: 0.45; }
+  60%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* — Weather / sun: slow-rotating eight-ray disc, rays breathing. — */
+.da-sun {
+  position: absolute;
+  top: 6px;
+  right: 8%;
+  fill: var(--foil-b);
+  opacity: 0.16;
+  animation: da-sun-spin 60s linear infinite;
+}
+.da-sun-rays {
+  stroke: var(--foil-b);
+  stroke-width: 2;
+  stroke-linecap: round;
+  animation: da-sun-breathe 7s ease-in-out infinite;
+}
+@keyframes da-sun-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes da-sun-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* — Weather / cloud: two puffs drifting gently, offset loops. — */
+.da-wcloud { position: absolute; fill: var(--fg); opacity: 0.07; }
+.da-wcloud-a {
+  top: 10px;
+  right: 24%;
+  animation: da-cloud-drift-a 30s ease-in-out infinite;
+}
+.da-wcloud-b {
+  top: 32px;
+  right: 8%;
+  opacity: 0.05;
+  animation: da-cloud-drift-b 40s ease-in-out infinite;
+}
+@keyframes da-cloud-drift-a {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-18px); }
+}
+@keyframes da-cloud-drift-b {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(14px); }
+}
+
+/* — Weather / rain: short slanted drops falling, staggered. — */
+.da-rain {
+  position: absolute;
+  width: 1.5px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--rose);
+  opacity: 0.22;
+  animation: da-rain-fall 1.4s linear infinite;
+}
+@keyframes da-rain-fall {
+  0%   { transform: translate3d(0, -14px, 0) rotate(8deg); opacity: 0; }
+  18%  { opacity: 0.22; }
+  82%  { opacity: 0.22; }
+  100% { transform: translate3d(-5px, 64px, 0) rotate(8deg); opacity: 0; }
+}
+
+/* Reduced motion: every dossier-ambient animation off. Static fallbacks keep
+   the scene intentional — kids/streaks rest at their --da-*-x spots, the bolt
+   and flash stay hidden, and the skyline windows read as softly lit. */
+@media (prefers-reduced-motion: reduce) {
+  .da-layer,
+  .da-layer * {
+    animation: none !important;
+  }
+  .da-window { opacity: 0.5; }
+}
+
+/* =========================================================================
+   Aurora component polish — richer shadcn primitive variants
+   Backing styles for the additive Button/Card/Badge variants in
+   src/components/ui. Mirrors design-aurora/components.css (lf-btn--foil,
+   lf-card--glass/--hover, lf-badge tones). Everything here is opt-in via
+   new variant classes — default component rendering is untouched.
+   ========================================================================= */
+
+:root {
+  /* Champagne foil fill — tokens/effects.css `--gradient-foil`. The
+     --foil-a/b/c stops already flip per mode above. */
+  --gradient-foil: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+}
+
+/* Family plan tone — canonical plan hexes (design handoff, additions.css):
+   Family #4FD1B5 on dark, #1F9E78 on paper. Follows the tone-* ramp shape. */
+:root,
+.dark {
+  --tone-family-bg: rgba(79, 209, 181, 0.10);
+  --tone-family-br: rgba(79, 209, 181, 0.22);
+  --tone-family-fg: #4FD1B5;
+}
+.light {
+  --tone-family-bg: rgba(31, 158, 120, 0.10);
+  --tone-family-br: rgba(31, 158, 120, 0.22);
+  --tone-family-fg: #1F9E78;
+}
+
+/* — Button · foil variant (lf-btn--foil): champagne fill, dark ink, warm
+   glow on hover, warm focus ring. Sits after @tailwind utilities so the
+   ring-color override wins the focus-visible tie. — */
+.btn-foil {
+  background: var(--gradient-foil);
+  color: #0A0F18;
+}
+.btn-foil:hover {
+  box-shadow: var(--shadow-foil);
+}
+.btn-foil:focus-visible {
+  --tw-ring-color: rgba(242, 196, 108, 0.55);
+}
+
+/* — Button · press shimmer (primary + foil): CSS-only radial bloom on
+   :active, same recipe as .ob-cta--primary::after above (~line 1394).
+   inset:0 + border-radius:inherit keeps the sweep clipped to the button
+   without overflow-hidden. Transform/opacity only; off under reduced
+   motion (no ::after at all). — */
+.btn-press {
+  position: relative;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-press::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+      transform 0.5s ease-in-out,
+      opacity 0.6s ease-in-out;
+    pointer-events: none;
+  }
+  .btn-press:active:not(:disabled)::after {
+    opacity: 1;
+    transform: scale(1);
+    transition: none;
+  }
+}
+
+/* — Card · hover lift (lf-card--hover): cool border + shadow + 1px rise,
+   160ms. Reduced motion keeps the color/shadow feedback but drops the
+   translate and the transition. — */
+.lf-card-hover {
+  transition:
+    border-color 160ms ease-in-out,
+    box-shadow 160ms ease-in-out,
+    transform 160ms ease-in-out;
+}
+.lf-card-hover:hover {
+  border-color: var(--line-rose);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-card-hover {
+    transition: none;
+  }
+  .lf-card-hover:hover {
+    transform: none;
+  }
+}

@@ -249,8 +249,11 @@ export function MoveCommandCenter({
               {t("commandCenter_noPlanBody")}
             </p>
           </div>
+          {/* Plan-a-Move CTA wears the PLAN ACCENT (bg-primary), not the
+              always-cool tone-orange token — so Pro renders honey, Family
+              teal, etc., matching the sibling primary-button convention. */}
           <Link href="/moving/new" className="shrink-0">
-            <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
+            <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
               <Truck className="h-4 w-4" /> {t("commandCenter_noPlanCta")}
             </button>
           </Link>

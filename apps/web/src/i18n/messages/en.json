@@ -594,6 +594,8 @@
     "premiumBadge": "LocateFlow Premium",
     "widget_panel_title": "Dashboard Widgets",
     "widget_drag_label": "Drag to reorder widget",
+    "widget_collapse": "Collapse widget",
+    "widget_expand": "Expand widget",
     "widget_stats": "Stats Overview",
     "widget_nextCritical": "Next Critical Actions",
     "widget_spending": "Spending by Address",

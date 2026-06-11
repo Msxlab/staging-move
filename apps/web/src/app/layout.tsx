@@ -158,7 +158,15 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+        {/*
+         * 16/32px tab icon — simplified face-only mascot. The full mascot
+         * (favicon.svg) reads as a dark blob at 16px, so size-scoring
+         * browsers get this variant for small slots; declared last so
+         * last-wins browsers also prefer it in tabs. Larger contexts keep
+         * favicon.svg (sizes="any") plus the PNG apple-touch/manifest icons.
+         */}
+        <link rel="icon" type="image/svg+xml" href="/favicon-small.svg" sizes="16x16 32x32" />
         <link rel="mask-icon" href="/logo-mark.svg" color="#7FB6E8" />
         {/*
          * iOS Safari smart app banner. Shows a system-rendered "OPEN / VIEW

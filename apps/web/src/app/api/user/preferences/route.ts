@@ -12,6 +12,7 @@ const widgetPrefsSchema = z
   .object({
     order: z.array(z.string().min(1).max(40)).max(40).optional(),
     visibility: z.record(z.string().min(1).max(40), z.boolean()).optional(),
+    collapsed: z.record(z.string().min(1).max(40), z.boolean()).optional(),
   })
   .strict();
 

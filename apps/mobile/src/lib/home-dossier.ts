@@ -410,6 +410,125 @@ export function deriveHomeDossierView(
   return rows.hasContent ? { kind: "content", rows } : { kind: "hidden" };
 }
 
+// ── Dossier ambient mapping ─────────────────────────────────────────────
+// Pure scene-parameter derivation for the decorative DossierAmbient layer
+// (src/components/ui/DossierAmbient.tsx). Mirrors the web contract in
+// apps/web/src/components/dashboard/dossier-ambient.tsx EXACTLY so both
+// platforms read the same data the same way: intensity 0 calm / 1 moderate /
+// 2 elevated, always derived from REAL section data — honest ambience,
+// never fabricated information. Kept here (no react-native imports) so the
+// mapping unit-tests under the node vitest environment.
+
+export type AmbientKind =
+  | "flood"
+  | "school"
+  | "hazard"
+  | "radon"
+  | "air"
+  | "neighborhood"
+  | "weather";
+
+export type AmbientIntensity = 0 | 1 | 2;
+
+export type AmbientVariant = "lightning" | "wind" | "winter" | "sun" | "cloud" | "rain";
+
+export interface AmbientSpec {
+  kind: AmbientKind;
+  intensity: AmbientIntensity;
+  variant?: AmbientVariant;
+}
+
+/**
+ * Per-section inputs for the pure mapper. Shapes mirror the web mapper's
+ * (walkBand included for contract parity — the mobile payload carries no walk
+ * band yet, so the card passes null and gets the calm cadence).
+ */
+export type AmbientSectionInput =
+  | { kind: "flood"; isHighRisk: boolean | null }
+  | { kind: "school" }
+  | { kind: "hazard"; topRisks: ReadonlyArray<{ hazard: string; rating: string }> }
+  | { kind: "radon"; zone: 1 | 2 | 3 }
+  | { kind: "air"; aqi: number }
+  | { kind: "neighborhood"; walkBand: string | null }
+  | { kind: "weather"; summary: string | null; precipChancePct: number | null };
+
+/** NRI rating -> intensity: Relatively/Very High => 2, *Moderate => 1, else 0. */
+function hazardIntensity(rating: string | undefined): AmbientIntensity {
+  const r = (rating ?? "").toLowerCase();
+  if (r.includes("high")) return 2;
+  if (r.includes("moderate")) return 1;
+  return 0;
+}
+
+/** Top NRI hazard name -> scene variant. Wind streaks are the safe default. */
+function hazardVariant(hazard: string | undefined): AmbientVariant {
+  const h = (hazard ?? "").toLowerCase();
+  if (h.includes("lightning") || h.includes("thunder")) return "lightning";
+  if (
+    h.includes("winter") ||
+    h.includes("snow") ||
+    h.includes("ice") ||
+    h.includes("cold") ||
+    h.includes("hail") ||
+    h.includes("avalanche")
+  ) {
+    return "winter";
+  }
+  return "wind";
+}
+
+/**
+ * Map a dossier section's REAL data to its ambient scene parameters:
+ *  - flood: isHighRisk true => 2, false => 0, unknown => 1;
+ *  - school: fixed moderate ambience (directory data carries no risk signal);
+ *  - hazard: variant from the TOP risk chip, intensity from its NRI rating;
+ *  - radon: zone 1 => 2, zone 2 => 1, zone 3 => 0;
+ *  - air: AQI <= 50 => 0 (mint), 51-100 => 1 (amber), > 100 => 2 (coral);
+ *  - neighborhood: walk band most => 2, above_average => 1, else 0 (cadence);
+ *  - weather: precip >= 50 => rain (>= 80 elevated), summary mentions cloud
+ *    => cloud, else sun.
+ */
+export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
+  switch (section.kind) {
+    case "flood":
+      return {
+        kind: "flood",
+        intensity: section.isHighRisk === true ? 2 : section.isHighRisk === false ? 0 : 1,
+      };
+    case "school":
+      return { kind: "school", intensity: 1 };
+    case "hazard": {
+      const top = section.topRisks[0];
+      return {
+        kind: "hazard",
+        intensity: hazardIntensity(top?.rating),
+        variant: hazardVariant(top?.hazard),
+      };
+    }
+    case "radon":
+      return { kind: "radon", intensity: section.zone === 1 ? 2 : section.zone === 2 ? 1 : 0 };
+    case "air":
+      return { kind: "air", intensity: section.aqi <= 50 ? 0 : section.aqi <= 100 ? 1 : 2 };
+    case "neighborhood": {
+      const band = section.walkBand;
+      return {
+        kind: "neighborhood",
+        intensity: band === "most" ? 2 : band === "above_average" ? 1 : 0,
+      };
+    }
+    case "weather": {
+      const precip = section.precipChancePct;
+      if (typeof precip === "number" && precip >= 50) {
+        return { kind: "weather", intensity: precip >= 80 ? 2 : 1, variant: "rain" };
+      }
+      if ((section.summary ?? "").toLowerCase().includes("cloud")) {
+        return { kind: "weather", intensity: 1, variant: "cloud" };
+      }
+      return { kind: "weather", intensity: 0, variant: "sun" };
+    }
+  }
+}
+
 /**
  * Format the forecast date ("YYYY-MM-DD" or ISO datetime) as a short local
  * label, e.g. "Fri, Jun 12". Date-only strings are parsed as LOCAL calendar
