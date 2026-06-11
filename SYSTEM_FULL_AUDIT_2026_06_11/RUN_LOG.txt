@@ -1,0 +1,5 @@
+2026-06-11 - Audit restarted after context compaction. Existing project .md files are not used as evidence.
+2026-06-11 - Recreated audit folder and restored live todo/findings from active working summary.
+2026-06-11 - Completed code-only inventory and first web pass: public routes, pricing, blog, SEO/GEO, auth/account, addresses, services, moving, budget, providers.
+2026-06-11 - Added export/workspace mismatch finding from settings export page and export API route code.
+2026-06-11 - Audited workspace context, data scope, permissions, invitations, member management, transfer/delete/restore, sync, schema, and settings UI; added workspace privacy, invite verification, billing anchor, limit race, fallback, and validation findings.

@@ -1,0 +1,27 @@
+Initial cross-layer map
+
+Auth/account
+- Web middleware controls public/protected pages and public API routes.
+- Web API guards include requireDbUserId, requireVerifiedUser, and app-level mutation gates; use is not uniform.
+- Admin has a separate app/middleware/API surface and must be audited independently.
+- Mobile talks to web API surface; compatibility and environment targeting remain pending.
+
+Workspace/data scope
+- Workspace-aware helpers appear in web modules, but multiple routes still use userId-only queries.
+- Shared/family workspace visibility is a cross-cutting risk for addresses, services, moving, budget, providers, and exports.
+
+Billing/payments
+- Public pricing -> web checkout API -> Stripe checkout session -> Stripe webhook -> Prisma subscription/plan state -> app gating.
+- Need full webhook/idempotency/tax/refund/subscription lifecycle audit.
+
+Content/SEO/GEO
+- Public blog, sitemap, robots, canonical metadata, structured data, and llms.txt exist.
+- Need crawl/link/render validation after code pass.
+
+Admin coupling
+- Admin likely manages users/plans/content/providers/tickets/legal/flags/logs.
+- Needs role/authorization and destructive-action audit.
+
+Mobile coupling
+- Mobile depends on API base URL/environment config and mirrors core web modules.
+- Needs store/offline/permission/API parity audit.

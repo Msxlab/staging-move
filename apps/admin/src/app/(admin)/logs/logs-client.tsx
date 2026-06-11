@@ -292,7 +292,10 @@ export default function LogsClient() {
           // not read sortBy/sortDir, so leaving them in the params is inert.
           const res = await fetch(`/api/logs?${params}`, { signal });
           const data = await res.json();
-          if (data.filters) setFilterOptions(data.filters);
+          // Facets are only computed on unfiltered page 1 (facetsComputed) —
+          // keep the previously loaded dropdown options on paged/filtered
+          // responses instead of wiping them with the empty arrays.
+          if (data.filters && data.facetsComputed !== false) setFilterOptions(data.filters);
           // Capture the non-pagination query for the export step-up.
           const snap: Record<string, string> = {};
           ["search", "action", "entityType", "adminId", "dateFrom", "dateTo"].forEach((k) => {

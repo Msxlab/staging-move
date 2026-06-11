@@ -114,6 +114,50 @@ describe("audit log read API", () => {
     expect(JSON.parse(body.logs[0].changes)).toMatchObject({ redacted: true });
   });
 
+  it("computes facets only on unfiltered page 1, bounded to a recent window", async () => {
+    mocks.adminAuditGroupBy.mockResolvedValue([{ action: "LOGIN", _count: { id: 5 } }]);
+
+    const response = await GET(request("https://admin.locateflow.com/api/logs?tab=admin&page=1&perPage=30"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.facetsComputed).toBe(true);
+    // groupBy (action + entityType) AND the admin findMany all run when seeding facets.
+    expect(mocks.adminAuditGroupBy).toHaveBeenCalledTimes(2);
+    expect(mocks.adminFindMany).toHaveBeenCalledTimes(1);
+    // Aggregations must be bounded by a recent createdAt window, never the whole table.
+    for (const call of mocks.adminAuditGroupBy.mock.calls) {
+      expect(call[0].where.createdAt.gte).toBeInstanceOf(Date);
+    }
+    expect(body.filters.actions).toEqual([{ value: "LOGIN", count: 5 }]);
+  });
+
+  it("skips facet aggregations when a filter is active", async () => {
+    const response = await GET(
+      request("https://admin.locateflow.com/api/logs?tab=admin&page=1&perPage=30&action=LOGIN"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.facetsComputed).toBe(false);
+    expect(mocks.adminAuditGroupBy).not.toHaveBeenCalled();
+    expect(mocks.adminFindMany).not.toHaveBeenCalled();
+    // The main paginated read + count still run (correctly bounded by take/skip).
+    expect(mocks.adminAuditFindMany).toHaveBeenCalledTimes(1);
+    expect(mocks.adminAuditCount).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips facet aggregations past page 1 even with no filter", async () => {
+    const response = await GET(
+      request("https://admin.locateflow.com/api/logs?tab=admin&page=2&perPage=30"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.facetsComputed).toBe(false);
+    expect(mocks.adminAuditGroupBy).not.toHaveBeenCalled();
+  });
+
   it("writes AUDIT_LOGS_VIEWED with safe read metadata", async () => {
     await GET(request("https://admin.locateflow.com/api/logs?tab=admin&search=person@example.com&page=2&perPage=5"));
 

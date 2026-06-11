@@ -1,0 +1,47 @@
+LocateFlow full-stack audit live TODO
+Date: 2026-06-11
+Rule: project .md/memory files are not used as audit evidence; audit progresses by reading code/config/tests.
+
+[DONE] Setup audit workspace
+[DONE] Build code-only module inventory
+[DONE] Build initial cross-layer map
+
+Web
+[DONE] Public routes / homepage / middleware access map
+[DONE] Pricing and checkout entry points
+[DONE] Blog and content APIs
+[DONE] SEO / robots / sitemap / canonical / schema / llms
+[DONE] Auth and account security first pass
+[DONE] App modules: addresses, services, moving, budget, providers, settings/export
+[DONE] Workspace / family / RBAC / invitations
+[TODO] Billing portal / subscription lifecycle / Stripe webhook
+[TODO] Notifications / tickets / email flows
+[TODO] Cron / background / connector dispatch
+[TODO] Render and link checks
+
+Admin
+[TODO] Admin module inventory
+[TODO] Admin auth / middleware / RBAC
+[TODO] Admin CRUD/API modules
+[TODO] Admin audit logs and operational safety
+[TODO] Admin web-to-admin data coupling
+
+Mobile
+[TODO] Mobile module inventory
+[TODO] Mobile auth/session/bootstrap
+[TODO] Mobile route/API compatibility with web backend
+[TODO] Offline/cache/error flows
+[TODO] Permissions/store/build config
+[TODO] Mobile UI/navigation edge cases
+
+Shared / DB / Connectors
+[TODO] Shared package validation/helpers
+[TODO] Prisma schema integrity and indexes
+[TODO] Connector package dispatch/security/idempotency
+[TODO] Environment/deploy/runtime config
+[TODO] Tests and coverage gaps
+
+Final
+[TODO] Consolidate duplicate findings
+[TODO] Sort Critical/High first
+[TODO] Write health summary and prioritized action list

@@ -19,6 +19,11 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
   "locateflow.dashboard.snapshot.v1",
   // Home-screen widget snapshot (move countdown / next task). Same rationale.
   "locateflow.widget.snapshot.v1",
+  // Last-known plan hint (premium flag + tier) used to seed the dashboard hero
+  // on cold start so it doesn't flash the FREE upsell before the entitlement
+  // resolves. Device-keyed, so wipe it or the next account could briefly seed
+  // off the previous user's plan.
+  "locateflow.lastPlan.v1",
 ];
 
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {
