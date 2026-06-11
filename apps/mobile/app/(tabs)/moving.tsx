@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,12 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { OfflineChip } from "@/components/ui/OfflineChip";
+import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
+import { normalizeMovingPlanStatus, formatRelativeTime } from "@locateflow/shared";
+
+/** Offline-cache key for the Moving screen's last-known plan list. */
+const MOVING_CACHE = "moving";
 
 // ── Moving "Move history" recreation of the Aurora design (services-more /
 // MoveHistoryView): lifetime stat summary + left-accent route cards. ──
@@ -56,16 +61,51 @@ export default function MovingScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Offline fallback: true when the live fetch failed but we still have plans on
+  // screen (from cache or a prior load). Mirrors the dashboard's offline chip.
+  const [offline, setOffline] = useState(false);
+  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
+  const hasDataRef = useRef(false);
+
+  // Cold-start hydration: show the last-known plan list instantly (no skeleton/
+  // error wall) on a no-signal launch, then reconcile against the live fetch.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const cached = await readOfflineCache(MOVING_CACHE, asArray);
+      if (cancelled || !cached || hasDataRef.current) return;
+      setPlans(cached.data as any[]);
+      setCacheUpdatedAt(cached.updatedAt);
+      hasDataRef.current = true;
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fetchPlans = useCallback(async () => {
     const res = await api.get<any>("/api/moving");
     if (res.error) {
-      setError(res.error);
+      // OFFLINE FALLBACK: keep cached/prior plans + show the offline chip rather
+      // than the error wall when we have something to show.
+      if (hasDataRef.current) {
+        setOffline(true);
+        setError(null);
+      } else {
+        setError(res.error);
+      }
       return false;
     }
     if (res.data) {
-      setPlans(res.data.plans || []);
+      const nextPlans = res.data.plans || [];
+      setPlans(nextPlans);
       setError(null);
+      setOffline(false);
+      hasDataRef.current = true;
+      const now = new Date();
+      setCacheUpdatedAt(now.toISOString());
+      void writeOfflineCache(MOVING_CACHE, nextPlans, now);
     }
     return true;
   }, []);
@@ -154,6 +194,10 @@ export default function MovingScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
+        {/* Offline: live fetch failed but we hydrated the last-known plans. */}
+        {offline && (
+          <OfflineChip relativeAge={cacheUpdatedAt ? formatRelativeTime(cacheUpdatedAt, i18n.language) : ""} />
+        )}
         {error && plans.length > 0 ? (
           <View style={{ marginHorizontal: 16, marginBottom: 12, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.rose.text }}>
             <Text style={{ color: theme.colors.rose.text, fontSize: 12, textAlign: "center" }}>{error}</Text>

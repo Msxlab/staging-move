@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -43,6 +43,8 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ServicesMoodBoard } from "@/components/ui/ServicesMoodBoard";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { OfflineChip } from "@/components/ui/OfflineChip";
+import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
 import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
@@ -53,10 +55,23 @@ import {
   SERVICE_CATEGORIES,
   generateChecklist,
   RELOCATION_PHASES,
+  formatRelativeTime,
   type UserChecklistProfile,
   type RelocationChecklist,
   type ChecklistStateRuleContext,
 } from "@locateflow/shared";
+
+/** Offline-cache key for the Services screen's last-known list. */
+const SERVICES_CACHE = "services";
+
+/** Sanitize the persisted Services payload back to its two arrays (or null). */
+function readServicesCache(raw: unknown): { services: unknown[]; addresses: unknown[] } | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const o = raw as Record<string, unknown>;
+  const services = asArray(o.services);
+  const addresses = asArray(o.addresses);
+  return services && addresses ? { services, addresses } : null;
+}
 
 const catColors: Record<string, string> = {
   // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
@@ -119,8 +134,31 @@ export default function ServicesScreen() {
   const [costValue, setCostValue] = useState("");
   const [savingCost, setSavingCost] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Offline fallback: true when the live fetch failed but we still have data on
+  // screen (from cache or a prior load). Mirrors the dashboard's offline chip.
+  const [offline, setOffline] = useState(false);
+  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
+  const hasDataRef = useRef(false);
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
+
+  // Cold-start hydration: show the last-known list instantly (no skeleton/error
+  // wall) on a no-signal launch, then reconcile against the live fetch below.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const cached = await readOfflineCache(SERVICES_CACHE, readServicesCache);
+      if (cancelled || !cached || hasDataRef.current) return;
+      setServices(cached.data.services as any[]);
+      setAddresses(cached.data.addresses as any[]);
+      setCacheUpdatedAt(cached.updatedAt);
+      hasDataRef.current = true;
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSaveCost = async (serviceId: string) => {
     const parsed = parseFloat(costValue);
@@ -156,7 +194,15 @@ export default function ServicesScreen() {
       api.get<any>("/api/addresses", { limit: "200" }),
     ]);
     if (servicesRes.error || addressesRes.error) {
-      setError(servicesRes.error || addressesRes.error || "Could not load services.");
+      // OFFLINE FALLBACK: if we already have data on screen (cache or prior
+      // load), keep it and switch to the quiet offline chip instead of the
+      // error wall. Only show the hard error with nothing to fall back to.
+      if (hasDataRef.current) {
+        setOffline(true);
+        setError(null);
+      } else {
+        setError(servicesRes.error || addressesRes.error || "Could not load services.");
+      }
       return false;
     }
     const svcs = servicesRes.data?.services || [];
@@ -164,6 +210,12 @@ export default function ServicesScreen() {
     setServices(svcs);
     setAddresses(nextAddresses);
     setError(null);
+    // Live data landed → back online; persist the last-known list for next time.
+    setOffline(false);
+    hasDataRef.current = true;
+    const now = new Date();
+    setCacheUpdatedAt(now.toISOString());
+    void writeOfflineCache(SERVICES_CACHE, { services: svcs, addresses: nextAddresses }, now);
 
     if (nextAddresses.length === 0) {
       setSelectedAddressId(null);
@@ -450,6 +502,11 @@ export default function ServicesScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
+        {/* Offline: live fetch failed but we hydrated the last-known list. */}
+        {offline && (
+          <OfflineChip relativeAge={cacheUpdatedAt ? formatRelativeTime(cacheUpdatedAt, i18n.language) : ""} />
+        )}
+
         {/* Mood-reactive board: the raccoon's pose tracks the user's REAL
             tracked-service count (overall, not the active filter) — sad at 0,
             celebrate on the first service + at a healthy count, happy while
