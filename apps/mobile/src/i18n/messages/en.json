@@ -1009,6 +1009,8 @@
     "providers_addLater": "Add later",
     "providers_skipReassure": "Not ready? Tap “Add later” — we'll keep these on your move checklist and remind you.",
     "providers_loading": "Loading providers...",
+    "providers_scanning": "Scanning providers for your move…",
+    "providers_scanningState": "Scanning {{state}} providers for your move…",
     "providers_empty": "No providers found.",
     "moving_title": "Do you have a move planned?",
     "moving_description": "If yes, we'll build a personalized preview of your move — your countdown and top critical steps. If not, you can add one any time from the Moving tab.",
@@ -1044,7 +1046,18 @@
     "error_savePlan": "Failed to create moving plan",
     "error_planCleanup": "Failed to clean up moving plan setup.",
     "error_completeOnboarding": "Failed to complete onboarding. Please try again.",
-    "error_onboardingIncomplete": "Onboarding is not complete yet. Please review your profile and address information."
+    "error_onboardingIncomplete": "Onboarding is not complete yet. Please review your profile and address information.",
+    "cta_hint_names": "Add your first and last name to continue",
+    "coach_reopen": "Why this matters",
+    "coach_hideA11y": "Hide explanation",
+    "coach_eyebrow_profile": "Accurate profile → smarter checklist",
+    "coach_body_profile": "Your household details directly shape your AI move checklist and reminders. The more accurate this is, the better every suggestion fits your home — we never invent data.",
+    "coach_eyebrow_address": "Real address → real matches",
+    "coach_body_address": "We match providers, DMV deadlines, and local services to this exact address. A correct state and ZIP keep every AI suggestion grounded in where you actually live.",
+    "coach_eyebrow_services": "Confirm what's yours",
+    "coach_body_services": "Keep only the services you actually use. Clean data here keeps renewal reminders and AI suggestions accurate — and nothing gets forgotten when you move.",
+    "coach_eyebrow_moving": "Date + destination → exact deadlines",
+    "coach_body_moving": "Your move date and destination state drive the deadlines we compute — DMV, voter registration, utilities. Accurate details make your countdown and steps trustworthy."
   },
   "billingCycles": {
     "MONTHLY": "Monthly",

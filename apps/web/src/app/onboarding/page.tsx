@@ -4,13 +4,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { ONBOARDING_FUNNEL_STEPS } from "@/lib/onboarding-progress";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowRight, User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
+  User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
   Loader2, Globe, Phone, Search, Building2, Shield, X, ChevronDown, ChevronUp, Sparkles, Calendar,
   Lock, CalendarClock, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { AuroraAside } from "./aurora-aside";
+import { ObCta } from "@/components/onboarding/ob-cta";
+import {
+  ObCoach,
+  COACH_STEP_COPY_KEYS,
+  useCoachCollapsed,
+  type CoachStep,
+} from "@/components/onboarding/ob-coach";
+import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import {
   generateChecklist,
   type UserChecklistProfile,
@@ -126,6 +134,11 @@ export default function OnboardingPage() {
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
   const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
   const legalStepRequested = searchParams.get("step") === "legal";
+
+  // AI coach (bundle-3): per-step honest "why accurate data here helps"
+  // explainer. Open by default on a first onboarding; the dismissed state
+  // persists in localStorage so a returning user keeps their choice.
+  const coach = useCoachCollapsed();
 
   // Best-effort funnel telemetry: fire ONBOARDING_STARTED once when the wizard
   // mounts and ONBOARDING_STEP_VIEWED_<STEP> whenever the active step changes, so
@@ -1027,6 +1040,9 @@ export default function OnboardingPage() {
   // Editorial serif headings carry ONE italic <em> accent (cool gradient via
   // the .h1/.h2 helpers in globals.css). Messages embed the <em> tag.
   const richEm = { em: (chunks: React.ReactNode) => <em>{chunks}</em> };
+  // Coach copy is keyed by wizard step (Profile → Address → Services → Moving).
+  const coachStep: CoachStep =
+    (["profile", "address", "providers", "moving"] as const)[step] ?? "profile";
   const ritualPct = ritualRows.length > 0 ? Math.round((ritualRevealed / ritualRows.length) * 100) : 0;
   const ritualDone = ritualRows.length > 0 && ritualRevealed >= ritualRows.length;
   const ritualStateLabel = address.state || t("aurora_yourState");
@@ -1066,24 +1082,16 @@ export default function OnboardingPage() {
             onChange={setLegalConsents}
           />
 
-          <button
-            type="button"
+          <ObCta
+            className="mt-5 w-full"
             onClick={acceptLegal}
             disabled={saving || !hasRequiredLegalConsents(legalConsents)}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            disabledHint={t("cta_hint_legal")}
+            loading={saving}
+            loadingLabel="Saving..."
           >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+            Continue
+          </ObCta>
         </GlassCard>
       </div>
     );
@@ -1213,22 +1221,22 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
+            <ObCta
+              variant="back"
+              backArrow={false}
               onClick={() => finishFromTeaser("dashboard")}
               disabled={saving}
-              className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:opacity-50"
+              className="justify-center"
             >
               Keep organizing for free
-            </button>
-            <button
-              type="button"
+            </ObCta>
+            <ObCta
               onClick={() => finishFromTeaser("upgrade")}
-              disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              loading={saving}
+              loadingLabel="Finishing..."
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Unlock with Individual <ArrowRight className="h-4 w-4" /></>}
-            </button>
+              Unlock with Individual
+            </ObCta>
           </div>
           <p className="mt-3 text-[11px] text-tone-orange-fg/80">
             You can keep tracking up to 3 addresses, unlimited providers, and bill reminders on the free plan.
@@ -1288,6 +1296,23 @@ export default function OnboardingPage() {
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
+      )}
+
+      {/* AI coach — short, honest "why accurate data on this step improves
+          your suggestions" explainer (bundle-3 owner decision). Dismissible
+          to a "!" badge; hidden while the starter-plan reveal is playing so
+          the ritual keeps the stage. Purely presentational. */}
+      {!(step === 2 && ritualActive) && (
+        <ObCoach
+          key={coachStep}
+          eyebrow={t("coach_eyebrow")}
+          text={t(COACH_STEP_COPY_KEYS[coachStep])}
+          collapsed={coach.collapsed}
+          onDismiss={coach.dismiss}
+          onReopen={coach.reopen}
+          dismissLabel={t("coach_dismiss")}
+          reopenLabel={t("coach_reopen")}
+        />
       )}
 
       {/* Step 0: Profile */}
@@ -1596,8 +1621,10 @@ export default function OnboardingPage() {
                   style={{ transition: "stroke-dasharray .45s ease" }}
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-mono text-base font-bold text-foreground">
-                {ritualPct}%
+              {/* Raccoon studies the directory inside the progress ring —
+                  the design's staged-scan look, still 100% honest copy. */}
+              <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                <RaccoonReading size={52} />
               </span>
             </div>
             <div className="min-w-0">
@@ -1609,6 +1636,22 @@ export default function OnboardingPage() {
                   ? t("aurora_ritualDoneSub", { count: ritualRows.length, state: ritualStateLabel })
                   : t("aurora_ritualSub", { state: ritualStateLabel })}
               </p>
+              {/* Progress dots — one per assembled recommendation row. */}
+              <div className="mt-2.5 flex items-center gap-2">
+                <div className="flex items-center gap-1.5" aria-hidden="true">
+                  {ritualRows.map((row, i) => (
+                    <span
+                      key={row.id}
+                      className={`ob-ritual-dot h-1.5 w-5 rounded-full ${
+                        i < ritualRevealed ? "bg-primary" : "bg-foreground/10"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
+                  {ritualPct}%
+                </span>
+              </div>
             </div>
           </div>
           <div className="mt-5 space-y-2">
@@ -1626,8 +1669,8 @@ export default function OnboardingPage() {
                 </div>
                 <CheckCircle2
                   aria-hidden="true"
-                  className={`h-4 w-4 shrink-0 text-tone-emerald-fg transition-opacity duration-300 ${
-                    i < ritualRevealed ? "opacity-100" : "opacity-0"
+                  className={`h-4 w-4 shrink-0 text-tone-emerald-fg ${
+                    i < ritualRevealed ? "ob-ritual-check" : "opacity-0"
                   }`}
                 />
               </div>
@@ -1812,14 +1855,9 @@ export default function OnboardingPage() {
                 {providerEmptyState.description}
               </p>
               <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={saving}
-                  className="flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-                >
-                  Continue without listed providers <ArrowRight className="h-4 w-4" />
-                </button>
+                <ObCta onClick={next} loading={saving} loadingLabel="Saving...">
+                  Continue without listed providers
+                </ObCta>
                 <p className="text-xs text-foreground/45">
                   Add local/custom providers later from Services &gt; Add Service.
                 </p>
@@ -1940,17 +1978,13 @@ export default function OnboardingPage() {
           {wantsToMove === null && (
             <div className="flex flex-col items-center gap-4">
               <Truck className="h-14 w-14 text-tone-orange-fg/30" />
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setWantsToMove(true)}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  <Truck className="h-4 w-4" /> Yes, plan my move
-                </button>
-                <button
-                  onClick={() => { setWantsToMove(false); }}
-                  className="px-5 py-3 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
-                >Not right now</button>
+              <div className="flex items-center gap-3">
+                <ObCta onClick={() => setWantsToMove(true)} arrow={false}>
+                  <Truck className="h-4 w-4" aria-hidden="true" /> Yes, plan my move
+                </ObCta>
+                <ObCta variant="back" backArrow={false} onClick={() => { setWantsToMove(false); }}>
+                  Not right now
+                </ObCta>
               </div>
             </div>
           )}
@@ -1960,13 +1994,14 @@ export default function OnboardingPage() {
               <CheckCircle2 className="h-12 w-12 mx-auto text-tone-emerald-fg/50 mb-3" />
               <p className="text-muted-foreground text-sm mb-1">No problem! You can create a moving plan anytime.</p>
               <p className="text-foreground/40 text-xs">Go to Moving section from the sidebar when you&apos;re ready.</p>
-              <button
+              <ObCta
+                className="mt-5"
                 onClick={finishOnboarding}
-                disabled={saving}
-                className="mt-5 flex items-center gap-2 mx-auto px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                loading={saving}
+                loadingLabel="Finishing..."
               >
-                {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Finishing...</> : <>Go to Dashboard <ArrowRight className="h-4 w-4" /></>}
-              </button>
+                Go to Dashboard
+              </ObCta>
             </div>
           )}
 
@@ -2004,24 +2039,18 @@ export default function OnboardingPage() {
                   <input id="onb-move-date" aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button
+              <div className="flex items-center gap-3 pt-2">
+                <ObCta
+                  className="flex-1"
                   onClick={finishOnboarding}
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                  loading={saving}
+                  loadingLabel={isPremium ? "Creating Plan..." : "Building preview..."}
                 >
-                  {saving ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />{isPremium ? "Creating Plan..." : "Building preview..."}</>
-                  ) : isPremium ? (
-                    <>Create Plan &amp; Go <ArrowRight className="h-4 w-4" /></>
-                  ) : (
-                    <>Preview my move plan <ArrowRight className="h-4 w-4" /></>
-                  )}
-                </button>
-                <button
-                  onClick={() => { setWantsToMove(null); }}
-                  className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
-                >Cancel</button>
+                  {isPremium ? <>Create Plan &amp; Go</> : <>Preview my move plan</>}
+                </ObCta>
+                <ObCta variant="back" backArrow={false} onClick={() => { setWantsToMove(null); }}>
+                  Cancel
+                </ObCta>
               </div>
             </div>
           )}
@@ -2039,31 +2068,28 @@ export default function OnboardingPage() {
           <div className="max-w-2xl mx-auto px-4 py-3 lg:max-w-[min(100vw_-_3rem,76rem)] lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-10">
             <div className="hidden lg:block" aria-hidden="true" />
             <div className="flex items-center justify-between">
-              <button
-                onClick={prev}
-                disabled={step === 0 || saving}
-                className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
-              >Back</button>
-              <div className="flex items-center gap-2">
+              {/* Unified hierarchy: Primary (filled) > Back (quiet ghost) >
+                  Skip (lowest, mono link). Disabled/click semantics are
+                  byte-identical to the buttons these replace. */}
+              <ObCta variant="back" onClick={prev} disabled={step === 0 || saving}>
+                Back
+              </ObCta>
+              <div className="flex items-center gap-3">
                 {step === 2 && (
-                  <button
-                    onClick={next}
-                    disabled={saving}
-                    className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
-                  >Skip</button>
+                  <ObCta variant="skip" onClick={next} disabled={saving}>
+                    Skip
+                  </ObCta>
                 )}
                 {step < 3 && (
-                  <button
+                  <ObCta
                     onClick={next}
+                    loading={saving}
+                    loadingLabel="Saving..."
                     disabled={saving || (step === 0 && !legalAcceptedOnServer && !hasRequiredLegalConsents(legalConsents))}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                    disabledHint={step === 0 ? t("cta_hint_legal") : undefined}
                   >
-                    {saving ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" />Saving...</>
-                    ) : (
-                      <>Continue<ArrowRight className="h-4 w-4" /></>
-                    )}
-                  </button>
+                    Continue
+                  </ObCta>
                 )}
               </div>
             </div>

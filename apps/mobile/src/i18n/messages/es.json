@@ -1001,6 +1001,8 @@
     "providers_searchPlaceholder": "Buscar proveedores...",
     "providers_recommended": "Recomendados para ti",
     "providers_loading": "Cargando proveedores...",
+    "providers_scanning": "Buscando proveedores para tu mudanza…",
+    "providers_scanningState": "Buscando proveedores de {{state}} para tu mudanza…",
     "providers_empty": "No se encontraron proveedores.",
     "moving_title": "¿Tienes una mudanza planeada?",
     "moving_description": "Si sí, crearemos una vista previa personalizada de tu mudanza: tu cuenta regresiva y tus pasos críticos principales. Si no, puedes agregar una en cualquier momento desde la pestaña Mudanza.",
@@ -1044,7 +1046,18 @@
     "providers_addAllA11y": "Agregar los {{count}} esenciales recomendados",
     "providers_allAdded": "Todos agregados",
     "providers_addLater": "Agregar después",
-    "providers_skipReassure": "¿No estás listo? Toca “Agregar después” — los mantendremos en tu lista de mudanza y te lo recordaremos."
+    "providers_skipReassure": "¿No estás listo? Toca “Agregar después” — los mantendremos en tu lista de mudanza y te lo recordaremos.",
+    "cta_hint_names": "Agrega tu nombre y apellido para continuar",
+    "coach_reopen": "Por qué importa",
+    "coach_hideA11y": "Ocultar explicación",
+    "coach_eyebrow_profile": "Perfil preciso → lista más inteligente",
+    "coach_body_profile": "Los detalles de tu hogar dan forma directa a tu lista de mudanza y recordatorios de IA. Cuanto más precisos sean, mejor se ajustará cada sugerencia a tu hogar — nunca inventamos datos.",
+    "coach_eyebrow_address": "Dirección real → coincidencias reales",
+    "coach_body_address": "Conectamos proveedores, plazos del DMV y servicios locales con esta dirección exacta. Un estado y ZIP correctos mantienen cada sugerencia de IA anclada a donde realmente vives.",
+    "coach_eyebrow_services": "Confirma lo que es tuyo",
+    "coach_body_services": "Conserva solo los servicios que realmente usas. Datos limpios aquí mantienen precisos los recordatorios de renovación y las sugerencias de IA — y nada se olvida al mudarte.",
+    "coach_eyebrow_moving": "Fecha + destino → plazos exactos",
+    "coach_body_moving": "Tu fecha de mudanza y el estado de destino determinan los plazos que calculamos: DMV, registro de votantes, servicios. Detalles precisos hacen confiables tu cuenta regresiva y tus pasos."
   },
   "billingCycles": {
     "MONTHLY": "Mensual",

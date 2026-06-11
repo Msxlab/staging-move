@@ -1196,7 +1196,15 @@
     "aurora_ritualDoneTitle": "Starter plan <em>ready</em>",
     "aurora_ritualDoneSub": "{count} recommendations for {state} — pick only the ones you actually use.",
     "aurora_ritualSkip": "Skip animation",
-    "aurora_yourState": "your state"
+    "aurora_yourState": "your state",
+    "coach_eyebrow": "Why this matters",
+    "coach_profile": "Your household details tune your checklist and AI briefing — accurate answers here mean suggestions that actually fit your home.",
+    "coach_address": "A precise address unlocks address-level provider checks (FCC and utility coverage) and your home dossier.",
+    "coach_providers": "Confirming what you actually use makes recommendations smarter for you and your area.",
+    "coach_moving": "Your move date drives your deadlines, weather alerts, and the countdown.",
+    "coach_dismiss": "Hide this tip",
+    "coach_reopen": "Why this matters",
+    "cta_hint_legal": "Accept the legal terms to continue"
   },
   "legal": {
     "privacy_title": "Privacy Policy",
