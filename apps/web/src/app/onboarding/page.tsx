@@ -18,6 +18,12 @@ import {
   useCoachCollapsed,
   type CoachStep,
 } from "@/components/onboarding/ob-coach";
+import {
+  ObProShowcase,
+  selectProShowcaseFeatures,
+  hasProShowcaseContext,
+  type ProShowcaseFeatureId,
+} from "@/components/onboarding/ob-pro-showcase";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import {
   generateChecklist,
@@ -1047,6 +1053,32 @@ export default function OnboardingPage() {
   const ritualDone = ritualRows.length > 0 && ritualRevealed >= ritualRows.length;
   const ritualStateLabel = address.state || t("aurora_yourState");
 
+  // --- Pro showcase (final-moment, value-first; NO payment step) ---
+  // Personalized from the REAL entered move context: origin state (Step 1),
+  // destination state (Step 3), and household (profile). Only rendered once a
+  // destination state is typed so the headline stays concrete, and never for a
+  // user already on a paid plan.
+  const proShowcaseCtx = {
+    fromState: address.state || null,
+    toState: movingForm.state || null,
+    hasChildren: profile.hasChildren,
+    hasPets: profile.hasPets,
+  };
+  const proShowcaseContext = hasProShowcaseContext(proShowcaseCtx)
+    ? proShowcaseCtx
+    : null;
+  const proShowcaseFeatures = proShowcaseContext
+    ? selectProShowcaseFeatures(proShowcaseContext)
+    : [];
+  const proShowcaseFromLabel = address.state || t("aurora_yourState");
+  const proShowcaseToLabel = movingForm.state || t("aurora_yourState");
+  const proShowcaseFeatureLabel = (id: ProShowcaseFeatureId) =>
+    t(`proShowcase_feature_${id}`);
+  const handleSeePro = () => {
+    trackEvent("onboarding_pro_showcase_clicked", { source: "onboarding" });
+    router.push("/pricing");
+  };
+
   // --- Common input styles for glass theme ---
   const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-tone-orange-br transition";
   const selectCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
@@ -2039,6 +2071,30 @@ export default function OnboardingPage() {
                   <input id="onb-move-date" aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
+
+              {/* Aspirational "what Pro unlocks for YOUR move" showcase — built
+                  from the user's REAL entered context (origin → destination
+                  state + household). SHOWCASE, not a paywall: the only action is
+                  a quiet "See Pro" link to /pricing; the primary "Preview /
+                  Create plan" CTA below proceeds normally. Shown only once a
+                  destination state is typed so the copy stays concrete; never
+                  shown to users already on a paid plan. NO payment step here. */}
+              {!isPremium && proShowcaseContext && (
+                <ObProShowcase
+                  eyebrow={t("proShowcase_eyebrow")}
+                  headline={t.rich("proShowcase_headline", {
+                    ...richEm,
+                    from: proShowcaseFromLabel,
+                    to: proShowcaseToLabel,
+                  })}
+                  features={proShowcaseFeatures}
+                  featureLabel={proShowcaseFeatureLabel}
+                  footnote={t("proShowcase_footnote")}
+                  seeProLabel={t("proShowcase_cta")}
+                  onSeePro={handleSeePro}
+                />
+              )}
+
               <div className="flex items-center gap-3 pt-2">
                 <ObCta
                   className="flex-1"

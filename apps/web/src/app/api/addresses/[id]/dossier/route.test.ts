@@ -39,6 +39,9 @@ vi.mock("@/lib/epa-water", () => ({
 vi.mock("@/lib/airnow", () => ({
   lookupAirQuality: vi.fn(),
 }));
+vi.mock("@/lib/census-acs", () => ({
+  lookupNeighborhoodAcs: vi.fn(),
+}));
 
 // Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
 // the gate exercises the actual @locateflow/shared feature matrix.
@@ -56,6 +59,7 @@ import { lookupHazardRisks } from "@/lib/fema-nri";
 import { lookupRadonZone } from "@/lib/epa-radon";
 import { lookupWaterSystem } from "@/lib/epa-water";
 import { lookupAirQuality } from "@/lib/airnow";
+import { lookupNeighborhoodAcs } from "@/lib/census-acs";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -69,6 +73,7 @@ const mockLookupHazardRisks = lookupHazardRisks as unknown as Mock;
 const mockLookupRadonZone = lookupRadonZone as unknown as Mock;
 const mockLookupWaterSystem = lookupWaterSystem as unknown as Mock;
 const mockLookupAirQuality = lookupAirQuality as unknown as Mock;
+const mockLookupNeighborhoodAcs = lookupNeighborhoodAcs as unknown as Mock;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -154,6 +159,23 @@ const AIR_OK = {
   reason: null,
   source: { name: "AirNow", url: "https://www.airnow.gov/" },
 };
+// Carries EXTRA fields (tractName/tractFips/reason/source) to prove the route
+// strips the section down to its contract shape.
+const NEIGHBORHOOD_OK = {
+  status: "ok" as const,
+  geography: "tract" as const,
+  tractName: "Census Tract 11.03",
+  tractFips: "48453001103",
+  medianHomeValue: 420000,
+  medianGrossRent: 1500,
+  medianHouseholdIncome: 105000,
+  ownerOccupiedShare: 0.6,
+  incomeBand: "above_us" as const,
+  homeValueBand: "above_us" as const,
+  reason: null,
+  caveat: "These are American Community Survey 5-year medians for the surrounding census tract, not a valuation of this specific home. Treat them as neighborhood context.",
+  source: { name: "US Census Bureau ACS 5-Year Estimates", url: "https://www.census.gov/programs-surveys/acs/" },
+};
 
 describe("address dossier route", () => {
   beforeEach(() => {
@@ -169,6 +191,7 @@ describe("address dossier route", () => {
     mockLookupRadonZone.mockResolvedValue(RADON_OK);
     mockLookupWaterSystem.mockResolvedValue(WATER_OK);
     mockLookupAirQuality.mockResolvedValue(AIR_OK);
+    mockLookupNeighborhoodAcs.mockResolvedValue(NEIGHBORHOOD_OK);
   });
 
   it("returns a structured 401 when the DB-backed session is invalid", async () => {
@@ -296,7 +319,21 @@ describe("address dossier route", () => {
       radon: { status: "ok", zone: 3 },
       water: { status: "ok", systemName: "AUSTIN WATER", violations5y: 2 },
       air: { status: "ok", aqi: 52, category: "Moderate" },
+      // INDIVIDUAL is dossier-entitled but NOT Pro, so Neighborhood
+      // Intelligence is the per-section upgrade teaser (no Census lookup).
+      neighborhood: {
+        status: "upgrade_required",
+        upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED",
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedShare: null,
+        incomeBand: "unknown",
+        homeValueBand: "unknown",
+        caveat: null,
+      },
     });
+    expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
 
     expect(mockLookupFloodZone).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
     expect(mockLookupSchoolDistrict).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
@@ -380,6 +417,18 @@ describe("address dossier route", () => {
       radon: { status: "no_location", zone: null },
       water: { status: "no_location", systemName: null, violations5y: null },
       air: { status: "no_location", aqi: null, category: null },
+      // INDIVIDUAL is not Pro → the neighborhood teaser (not no_location).
+      neighborhood: {
+        status: "upgrade_required",
+        upgradeRequired: "NEIGHBORHOOD_UPGRADE_REQUIRED",
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedShare: null,
+        incomeBand: "unknown",
+        homeValueBand: "unknown",
+        caveat: null,
+      },
     });
     // No external lookups and no plan query are made without a location
     // (water included — an ungeocoded address is treated as incomplete).
@@ -390,7 +439,81 @@ describe("address dossier route", () => {
     expect(mockLookupRadonZone).not.toHaveBeenCalled();
     expect(mockLookupWaterSystem).not.toHaveBeenCalled();
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
+    expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
     expect(mockPlanFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("Pro populates the Neighborhood Intelligence section from Census ACS (stripped to contract)", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mockLookupNeighborhoodAcs).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    // Extra lib fields (geography/tractName/tractFips/reason/source) are stripped.
+    expect(body.neighborhood).toEqual({
+      status: "ok",
+      upgradeRequired: null,
+      medianHomeValue: 420000,
+      medianGrossRent: 1500,
+      medianHouseholdIncome: 105000,
+      ownerOccupiedShare: 0.6,
+      incomeBand: "above_us",
+      homeValueBand: "above_us",
+      caveat: NEIGHBORHOOD_OK.caveat,
+    });
+  });
+
+  it("Pro neighborhood degrades to error independently when the Census lookup rejects", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockLookupNeighborhoodAcs.mockRejectedValueOnce(new Error("boom"));
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.neighborhood).toEqual({
+      status: "error",
+      upgradeRequired: null,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedShare: null,
+      incomeBand: "unknown",
+      homeValueBand: "unknown",
+      caveat: null,
+    });
+    // The other sections are unaffected by the neighborhood failure.
+    expect(body.flood.status).toBe("ok");
+    expect(body.air.status).toBe("ok");
+  });
+
+  it("Pro neighborhood passes through not_configured (CENSUS_API_KEY unset) per the contract", async () => {
+    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockLookupNeighborhoodAcs.mockResolvedValueOnce({
+      status: "not_configured",
+      geography: null,
+      tractName: null,
+      tractFips: null,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedShare: null,
+      incomeBand: "unknown",
+      homeValueBand: "unknown",
+      reason: "census_api_key_missing",
+      caveat: NEIGHBORHOOD_OK.caveat,
+      source: NEIGHBORHOOD_OK.source,
+    });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(body.neighborhood.status).toBe("not_configured");
+    // Caveat only surfaces alongside actual figures, never on a degraded status.
+    expect(body.neighborhood.caveat).toBeNull();
+    expect(body.air.status).toBe("ok");
   });
 
   it("degrades a single section to error when its lookup rejects (others unaffected)", async () => {

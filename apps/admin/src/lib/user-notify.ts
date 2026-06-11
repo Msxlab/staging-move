@@ -48,7 +48,7 @@ function renderEmailHtml(opts: {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:32px 24px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#0E1420,#357A6C);padding:32px 24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">Account Updated by Support</h1>
     </div>
     <div style="padding:24px;">
@@ -58,7 +58,7 @@ function renderEmailHtml(opts: {
       <p style="color:#334155;font-size:14px;margin-top:16px;">
         If you did not request this, please reply to this email or contact support immediately.
       </p>
-      <a href="${opts.appUrl}/settings" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin-top:20px;">
+      <a href="${opts.appUrl}/settings" style="display:block;text-align:center;background:#357A6C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin-top:20px;">
         Review Account Settings
       </a>
     </div>

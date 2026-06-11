@@ -524,6 +524,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Optional. Only needed to enable the dossier's current-AQI section.",
   },
   {
+    key: "CENSUS_API_KEY",
+    label: "Census API Key",
+    description:
+      "U.S. Census Bureau API key used by the Pro Neighborhood Intelligence section of the New Home Dossier to show area median home value, gross rent, household income and owner-occupied share (ACS 5-year). Register (free) at https://api.census.gov/data/key_signup.html. Without it, the neighborhood section reports not_configured and the rest of the dossier is unaffected.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable the Pro neighborhood-economics section.",
+  },
+  {
     key: "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
     label: "Places Autocomplete Daily Limit",
     description: "Global daily cap for Places autocomplete calls when enabled.",

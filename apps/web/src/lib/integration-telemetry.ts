@@ -36,6 +36,10 @@ export type IntegrationSource =
   | "water"
   | "air"
   | "nws"
+  // Pro "Neighborhood Intelligence" dossier section (US Census ACS area
+  // economics). "ok" | "error" | "not_configured" | "no_location" |
+  // "upgrade_required" (the per-section Pro gate).
+  | "census"
   | "briefing"
   | "dossier"
   // Synthetic uptime monitor (api/cron/uptime-check) — "ok" | "error" per

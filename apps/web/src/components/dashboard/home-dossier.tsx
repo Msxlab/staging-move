@@ -6,9 +6,11 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   CloudSun,
   Compass,
+  Download,
   Droplets,
   FlaskConical,
   GraduationCap,
+  Home,
   Lock,
   MapPin,
   Mountain,
@@ -46,10 +48,28 @@ import {
 export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
+/**
+ * Neighborhood is a Pro-only section that lives ABOVE the rest of the dossier
+ * gate (Individual+ unlocks the other seven; Pro adds this one). Its status
+ * therefore adds "upgrade_required" — an entitled-to-the-dossier but non-Pro
+ * user gets a locked teaser for this one row while the others render real data.
+ * "not_configured" covers a deployment without the Census/ACS key.
+ */
+export type DossierNeighborhoodStatus =
+  | "ok"
+  | "upgrade_required"
+  | "not_configured"
+  | "no_location"
+  | "error";
 
 export interface DossierHazardRisk {
   hazard: string;
   rating: string;
+}
+
+export interface DossierSchool {
+  name: string;
+  rating: string | null;
 }
 
 export interface HomeDossierResponse {
@@ -64,6 +84,13 @@ export interface HomeDossierResponse {
   upgradeRequired?: boolean;
   /** Gate code (e.g. an *_UPGRADE_REQUIRED constant) — informational only here. */
   code?: string;
+  /**
+   * Pro-only PDF export entitlement (FEATURES.dossierPdf). When true the card
+   * shows the "Export PDF" affordance wired to the dossier PDF route. Absent
+   * on older payloads and on non-Pro tiers → the button stays hidden, so a
+   * non-entitled user never sees a button that would only return the teaser.
+   */
+  dossierPdf?: boolean;
   /** Sections are absent on gated payloads; the teaser never reads them. */
   address?: { id: string; city: string; state: string };
   flood?: { status: DossierSectionStatus; zone: string | null; isHighRisk: boolean | null };
@@ -86,6 +113,21 @@ export interface HomeDossierResponse {
   radon?: { status: DossierSectionStatus; zone: 1 | 2 | 3 | null };
   water?: { status: DossierSectionStatus; systemName: string | null; violations5y: number | null };
   air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
+  /**
+   * Neighborhood (Pro-only) — area medians from the Census/ACS for the
+   * surrounding tract, NOT a valuation of this specific home. `status:
+   * "upgrade_required"` is the per-section gate for an entitled-but-non-Pro
+   * user (locked teaser). Figures are whole-dollar (value/rent/income) or a
+   * 0–100 percent (owner-occupied share); schools is an optional nearby list.
+   */
+  neighborhood?: {
+    status: DossierNeighborhoodStatus;
+    medianHomeValue: number | null;
+    medianGrossRent: number | null;
+    medianHouseholdIncome: number | null;
+    ownerOccupiedPct: number | null;
+    schools?: DossierSchool[] | null;
+  };
 }
 
 /**
@@ -116,6 +158,21 @@ export interface HomeDossierView {
   radon: { zone: 1 | 2 | 3 } | null;
   water: { systemName: string; violations5y: number } | null;
   air: { aqi: number; category: string | null } | null;
+  /**
+   * Neighborhood (Pro). `locked` → render the in-card Pro teaser row;
+   * `data` → render the area-median stat rows; null → hide the row entirely.
+   */
+  neighborhood:
+    | { locked: true }
+    | {
+        locked: false;
+        medianHomeValue: number | null;
+        medianGrossRent: number | null;
+        medianHouseholdIncome: number | null;
+        ownerOccupiedPct: number | null;
+        schools: DossierSchool[];
+      }
+    | null;
   /** One honest "add a precise address to unlock local insights" row. */
   showLocationHint: boolean;
 }
@@ -129,6 +186,7 @@ const HIDDEN_VIEW: HomeDossierView = {
   radon: null,
   water: null,
   air: null,
+  neighborhood: null,
   showLocationHint: false,
 };
 
@@ -157,10 +215,16 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
   for (const status of [data.hazards?.status, data.radon?.status, data.water?.status, data.air?.status]) {
     if (typeof status === "string") statuses.push(status);
   }
-  // Whole card hidden when EVERY section is degraded — there is nothing honest
-  // to say and no actionable hint beyond what the address form already
-  // communicates.
-  if (statuses.every((s) => DEGRADED_STATUSES.has(s))) return HIDDEN_VIEW;
+  // Neighborhood (Pro) is derived BEFORE the whole-card-hide check: it is
+  // gated above the rest of the dossier, so a locked Pro teaser (or real Pro
+  // data) is actionable content that must keep the card alive even when every
+  // federal lookup degraded for this address.
+  const neighborhood = deriveNeighborhood(data.neighborhood);
+
+  // Whole card hidden when EVERY section is degraded AND the neighborhood row
+  // has nothing to show — there is nothing honest to say and no actionable hint
+  // beyond what the address form already communicates.
+  if (!neighborhood && statuses.every((s) => DEGRADED_STATUSES.has(s))) return HIDDEN_VIEW;
 
   const flood =
     data.flood.status === "ok" && typeof data.flood.zone === "string" && data.flood.zone.trim()
@@ -246,14 +310,72 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
         }
       : null;
 
+  // (8) Neighborhood (Pro) is already derived above the whole-card-hide check.
+
   // Honest hint when a section couldn't run for lack of a precise location
   // (e.g. primary address without lat/lng while weather is merely "too_far").
   const showLocationHint = statuses.some((s) => s === "no_location");
 
-  const visible = Boolean(flood || school || weather || hazards || radon || water || air || showLocationHint);
+  const visible = Boolean(
+    flood || school || weather || hazards || radon || water || air || neighborhood || showLocationHint,
+  );
   if (!visible) return HIDDEN_VIEW;
 
-  return { visible, flood, school, weather, hazards, radon, water, air, showLocationHint };
+  return { visible, flood, school, weather, hazards, radon, water, air, neighborhood, showLocationHint };
+}
+
+/** Positive whole-dollar/whole-number figure; null for absent/invalid/≤0. */
+function posInt(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+/** Integer 0–100 percent; null for absent/invalid (0 is meaningful, kept). */
+function clampPctValue(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+/**
+ * Neighborhood derivation (exported for tests). `upgrade_required` is the
+ * per-section Pro gate → locked teaser. "ok" renders stats only when at least
+ * one ACS figure or a named school survives; otherwise the row hides (never an
+ * empty shell). Schools are sanitized to a named list, capped at 3.
+ */
+export function deriveNeighborhood(
+  section: HomeDossierResponse["neighborhood"],
+): HomeDossierView["neighborhood"] {
+  if (!section) return null;
+  if (section.status === "upgrade_required") return { locked: true };
+  if (section.status !== "ok") return null;
+
+  const medianHomeValue = posInt(section.medianHomeValue);
+  const medianGrossRent = posInt(section.medianGrossRent);
+  const medianHouseholdIncome = posInt(section.medianHouseholdIncome);
+  const ownerOccupiedPct = clampPctValue(section.ownerOccupiedPct);
+  const schools = (Array.isArray(section.schools) ? section.schools : [])
+    .filter((s): s is DossierSchool => !!s && typeof s.name === "string" && !!s.name.trim())
+    .slice(0, 3)
+    .map((s) => ({
+      name: s.name.trim(),
+      rating: typeof s.rating === "string" && s.rating.trim() ? s.rating.trim() : null,
+    }));
+
+  const hasFigure =
+    medianHomeValue !== null ||
+    medianGrossRent !== null ||
+    medianHouseholdIncome !== null ||
+    ownerOccupiedPct !== null ||
+    schools.length > 0;
+  if (!hasFigure) return null;
+
+  return {
+    locked: false,
+    medianHomeValue,
+    medianGrossRent,
+    medianHouseholdIncome,
+    ownerOccupiedPct,
+    schools,
+  };
 }
 
 /** Plain-English flood label key for a zone, driven by the API's isHighRisk. */
@@ -308,6 +430,25 @@ export function formatForecastDate(iso: string | null | undefined, locale: strin
   }
 }
 
+/**
+ * Whole-dollar USD label for a neighborhood median (no cents). US-only product,
+ * so the currency is always USD; the locale only drives grouping/symbol
+ * placement. Falls back to a "$" + grouped integer if Intl currency is
+ * unavailable. null input → "" so the caller omits the figure.
+ */
+export function formatUsd(value: number | null, locale: string): string {
+  if (value === null || !Number.isFinite(value)) return "";
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `$${Math.round(value).toLocaleString("en-US")}`;
+  }
+}
+
 // ── Presentational card (exported for tests — render-pure, no fetching) ──────
 
 export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) {
@@ -351,11 +492,26 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
             {td.rich("dossier_title", { em: (chunks) => <em>{chunks}</em> })}
           </h3>
         </div>
-        {place && (
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
-            {place}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {place && (
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              {place}
+            </span>
+          )}
+          {/* Pro-only PDF export — only rendered when the payload says the user
+              is entitled to dossierPdf, so the link never lands on the teaser.
+              A plain GET link to the route triggers the attachment download. */}
+          {data.dossierPdf === true && data.address?.id && (
+            <a
+              href={`/api/addresses/${encodeURIComponent(data.address.id)}/dossier/pdf`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border bg-foreground/[0.04] text-[11px] font-semibold text-foreground hover:bg-foreground/[0.08] transition"
+              aria-label={td("dossier_pdf_ariaLabel")}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {td("dossier_pdf_button")}
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="px-5 pb-5 space-y-2">
@@ -536,6 +692,118 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               </div>
             </div>
             <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{td("dossier_air_disclaimer")}</p>
+          </div>
+        )}
+
+        {/* (8) Neighborhood — Pro-only area medians (Census/ACS). Either the
+            locked Pro teaser (entitled to the dossier but not to Pro) or the
+            real area-median stat rows. The fine print is the honest core: these
+            are tract medians, NOT a valuation of this specific home. */}
+        {view.neighborhood?.locked === true && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
+                <Home className="h-4 w-4 text-tone-honey-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_neighborhood_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {td("dossier_neighborhood_teaser_sub")}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-tone-honey-bg border border-tone-honey-br text-tone-honey-fg shrink-0">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                {td("dossier_neighborhood_proPill")}
+              </span>
+            </div>
+            <Link
+              href="/pricing"
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              {td("dossier_neighborhood_proCta")}
+            </Link>
+          </div>
+        )}
+
+        {view.neighborhood?.locked === false && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
+                <Home className="h-4 w-4 text-tone-honey-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_neighborhood_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {td("dossier_neighborhood_subtitle")}
+                </p>
+              </div>
+            </div>
+
+            {/* Stat rows — each renders only when its figure survived derivation. */}
+            <div className="mt-2 space-y-1.5">
+              {view.neighborhood.medianHomeValue !== null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_homeValue")}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {formatUsd(view.neighborhood.medianHomeValue, locale)}
+                  </span>
+                </div>
+              )}
+              {view.neighborhood.medianGrossRent !== null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_grossRent")}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {td("dossier_neighborhood_rentPerMonth", {
+                      amount: formatUsd(view.neighborhood.medianGrossRent, locale),
+                    })}
+                  </span>
+                </div>
+              )}
+              {view.neighborhood.medianHouseholdIncome !== null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_income")}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {formatUsd(view.neighborhood.medianHouseholdIncome, locale)}
+                  </span>
+                </div>
+              )}
+              {view.neighborhood.ownerOccupiedPct !== null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_ownerOccupied")}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {td("dossier_neighborhood_percent", { percent: view.neighborhood.ownerOccupiedPct })}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Optional nearby-schools list (NCES) — names + optional rating. */}
+            {view.neighborhood.schools.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground">{td("dossier_neighborhood_schools")}</p>
+                <ul className="mt-1 space-y-0.5">
+                  {view.neighborhood.schools.map((school) => (
+                    <li
+                      key={school.name}
+                      className="flex items-baseline justify-between gap-3 text-sm text-foreground"
+                    >
+                      <span className="truncate">{school.name}</span>
+                      {school.rating && (
+                        <span className="font-mono text-[11px] text-muted-foreground shrink-0">
+                          {school.rating}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* MANDATORY caveat — area medians, never a valuation of this home. */}
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              {td("dossier_neighborhood_disclaimer")}
+            </p>
           </div>
         )}
 

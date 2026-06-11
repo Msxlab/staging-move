@@ -14,6 +14,18 @@ const REQUIRED_KEYS = [
   "coach_dismiss",
   "coach_reopen",
   "cta_hint_legal",
+  // Final-moment Pro showcase (neighborhood-pro-wave). Rendered on Step 3
+  // once a destination is entered; a missing key in either catalog would
+  // crash the card at render time.
+  "proShowcase_eyebrow",
+  "proShowcase_headline",
+  "proShowcase_feature_movers",
+  "proShowcase_feature_neighborhood",
+  "proShowcase_feature_schools",
+  "proShowcase_feature_dossier",
+  "proShowcase_feature_ai",
+  "proShowcase_footnote",
+  "proShowcase_cta",
 ];
 
 type Catalog = Record<string, unknown>;

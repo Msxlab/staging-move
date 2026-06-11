@@ -6,8 +6,10 @@ import {
   HomeDossierCard,
   HomeDossierTeaser,
   deriveDossierView,
+  deriveNeighborhood,
   floodLabelKey,
   formatForecastDate,
+  formatUsd,
   isDossierGated,
   isHazardWarnRating,
   radonZoneLabelKey,
@@ -26,9 +28,11 @@ vi.mock("lucide-react", () => {
   return {
     CloudSun: icon("cloud-sun"),
     Compass: icon("compass"),
+    Download: icon("download"),
     Droplets: icon("droplets"),
     FlaskConical: icon("flask-conical"),
     GraduationCap: icon("graduation-cap"),
+    Home: icon("home"),
     Lock: icon("lock"),
     MapPin: icon("map-pin"),
     Mountain: icon("mountain"),
@@ -318,6 +322,28 @@ describe("deriveDossierView — extended sections", () => {
     );
     expect(view.visible).toBe(true);
     expect(view.air).toEqual({ aqi: 51, category: "Moderate" });
+    expect(view.flood).toBeNull();
+  });
+
+  it("a locked neighborhood (upgrade_required) keeps the card alive when every other section degrades", () => {
+    const view = deriveDossierView({
+      ...dossier({
+        flood: { status: "error", zone: null, isHighRisk: null },
+        school: { status: "error", districtName: null, ncesId: null },
+        weather: { status: "error", forecastDate: null, summary: null, tempHighF: null, tempLowF: null, precipChancePct: null },
+        ...degradedExtended("error"),
+      }),
+      neighborhood: {
+        status: "upgrade_required",
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: null,
+        schools: null,
+      },
+    });
+    expect(view.visible).toBe(true);
+    expect(view.neighborhood).toEqual({ locked: true });
     expect(view.flood).toBeNull();
   });
 });
@@ -624,6 +650,188 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     const markup = renderToStaticMarkup(<HomeDossierTeaser />);
     expect(markup).toContain('href="/pricing"');
     expect(markup).toContain("Unlock with Individual");
+  });
+});
+
+describe("deriveNeighborhood — Pro-only section", () => {
+  const ok = (
+    over: Partial<NonNullable<HomeDossierResponse["neighborhood"]>> = {},
+  ): HomeDossierResponse["neighborhood"] => ({
+    status: "ok",
+    medianHomeValue: 412000,
+    medianGrossRent: 1850,
+    medianHouseholdIncome: 96500,
+    ownerOccupiedPct: 58,
+    schools: [{ name: "Hill Elementary", rating: "8/10" }],
+    ...over,
+  });
+
+  it("returns the locked teaser variant on upgrade_required", () => {
+    expect(deriveNeighborhood(ok({ status: "upgrade_required" }))).toEqual({ locked: true });
+  });
+
+  it("sanitizes figures and caps schools at 3 when ok", () => {
+    const row = deriveNeighborhood(
+      ok({
+        medianHomeValue: 411999.6,
+        ownerOccupiedPct: 58.7,
+        schools: [
+          { name: " Hill Elementary ", rating: " 8/10 " },
+          { name: "Bryker Woods", rating: null },
+          { name: "", rating: "9/10" },
+          { name: "Casis", rating: "7/10" },
+          { name: "Extra", rating: "1/10" },
+        ],
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: 412000,
+      medianGrossRent: 1850,
+      medianHouseholdIncome: 96500,
+      ownerOccupiedPct: 59,
+      schools: [
+        { name: "Hill Elementary", rating: "8/10" },
+        { name: "Bryker Woods", rating: null },
+        { name: "Casis", rating: "7/10" },
+      ],
+    });
+  });
+
+  it("keeps a 0% ownership share but drops non-positive dollar figures", () => {
+    expect(
+      deriveNeighborhood(
+        ok({ medianHomeValue: 0, medianGrossRent: -1, medianHouseholdIncome: null, ownerOccupiedPct: 0, schools: null }),
+      ),
+    ).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: 0,
+      schools: [],
+    });
+  });
+
+  it("hides on degraded statuses and on a legacy omitted section", () => {
+    for (const status of ["no_location", "not_configured", "error"] as const) {
+      expect(deriveNeighborhood(ok({ status }))).toBeNull();
+    }
+    expect(deriveNeighborhood(undefined)).toBeNull();
+  });
+
+  it("hides an ok section with nothing honest to show", () => {
+    expect(
+      deriveNeighborhood(
+        ok({
+          medianHomeValue: null,
+          medianGrossRent: null,
+          medianHouseholdIncome: null,
+          ownerOccupiedPct: null,
+          schools: [],
+        }),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("formatUsd", () => {
+  it("formats whole dollars with grouping and no cents", () => {
+    expect(formatUsd(412000, "en-US")).toBe("$412,000");
+  });
+
+  it("returns empty string for null/invalid input", () => {
+    expect(formatUsd(null, "en-US")).toBe("");
+    expect(formatUsd(Number.NaN, "en-US")).toBe("");
+  });
+});
+
+describe("HomeDossierCard — neighborhood section rendering", () => {
+  const withNeighborhood = (n: HomeDossierResponse["neighborhood"]): HomeDossierResponse => ({
+    ...dossier(),
+    dossierPdf: false,
+    neighborhood: n,
+  });
+
+  it("renders the area medians, a school, and the not-this-home caveat", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard
+        data={withNeighborhood({
+          status: "ok",
+          medianHomeValue: 412000,
+          medianGrossRent: 1850,
+          medianHouseholdIncome: 96500,
+          ownerOccupiedPct: 58,
+          schools: [{ name: "Hill Elementary", rating: "8/10" }],
+        })}
+      />,
+    );
+    expect(markup).toContain("Neighborhood");
+    expect(markup).toContain("Median home value");
+    expect(markup).toContain("$412,000");
+    expect(markup).toContain("$1,850/mo");
+    expect(markup).toContain("Median household income");
+    expect(markup).toContain("$96,500");
+    expect(markup).toContain("58%");
+    expect(markup).toContain("Hill Elementary");
+    expect(markup).toContain("8/10");
+    // MANDATORY honesty caveat — area medians, not a valuation of this home.
+    expect(markup).toContain("not a valuation of this home");
+  });
+
+  it("renders the locked Pro teaser (no figures) on upgrade_required", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard
+        data={withNeighborhood({
+          status: "upgrade_required",
+          medianHomeValue: null,
+          medianGrossRent: null,
+          medianHouseholdIncome: null,
+          ownerOccupiedPct: null,
+          schools: null,
+        })}
+      />,
+    );
+    expect(markup).toContain("Neighborhood");
+    expect(markup).toContain("Unlock with Pro");
+    expect(markup).toContain('href="/pricing"');
+    expect(markup).toContain("Pro");
+    // No fabricated figures leak into the locked variant.
+    expect(markup).not.toContain("$");
+    expect(markup).not.toContain("Median home value");
+  });
+
+  it("omits the whole neighborhood row on a legacy payload without the section", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
+    expect(markup).not.toContain("Median home value");
+    expect(markup).not.toContain("Unlock with Pro");
+  });
+});
+
+describe("HomeDossierCard — Pro PDF export affordance", () => {
+  it("shows the Export PDF link wired to the dossier PDF route only when dossierPdf is true", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard data={{ ...dossier(), dossierPdf: true }} />,
+    );
+    expect(markup).toContain("Export PDF");
+    expect(markup).toContain('href="/api/addresses/addr-1/dossier/pdf"');
+    expect(markup).toContain("aria-label=");
+  });
+
+  it("hides the Export PDF link for non-Pro / older payloads (no dead click to the teaser)", () => {
+    expect(renderToStaticMarkup(<HomeDossierCard data={dossier()} />)).not.toContain("Export PDF");
+    expect(
+      renderToStaticMarkup(<HomeDossierCard data={{ ...dossier(), dossierPdf: false }} />),
+    ).not.toContain("Export PDF");
+  });
+
+  it("never shows the Export PDF link on the plan-gate teaser (non-entitled)", () => {
+    const markup = renderToStaticMarkup(
+      <HomeDossierCard
+        data={{ configured: true, entitled: false, upgradeRequired: true, dossierPdf: true } as HomeDossierResponse}
+      />,
+    );
+    expect(markup).not.toContain("Export PDF");
   });
 });
 

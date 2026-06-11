@@ -71,6 +71,10 @@ import {
   type ChecklistStateRuleContext,
 } from "@locateflow/shared";
 import { MoveTeaserCard } from "@/components/ui/MoveTeaserCard";
+import {
+  ProShowcaseCard,
+  hasProShowcaseContext,
+} from "@/components/onboarding/ProShowcaseCard";
 import { consumePendingInviteJoin } from "@/lib/workspace-invite";
 import {
   StepTransition,
@@ -1856,6 +1860,32 @@ export default function OnboardingScreen() {
                       </TouchableOpacity>
                     ) : null}
                   </View>
+                  {/* Aspirational "what Pro unlocks for YOUR move" showcase —
+                      built from the REAL entered context (origin → destination
+                      state + household). SHOWCASE, not a paywall: the only
+                      action is a quiet "See Pro" link to the upgrade surface;
+                      the primary CTA below proceeds normally. Only once a
+                      destination state is typed, never for paid users. NO
+                      payment step here. */}
+                  {!isPremium &&
+                    hasProShowcaseContext({
+                      fromState: address.state || null,
+                      toState: movingForm.state || null,
+                      hasChildren: profile.hasChildren,
+                      hasPets: profile.hasPets,
+                    }) && (
+                      <ProShowcaseCard
+                        context={{
+                          fromState: address.state || null,
+                          toState: movingForm.state || null,
+                          hasChildren: profile.hasChildren,
+                          hasPets: profile.hasPets,
+                        }}
+                        fromLabel={address.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
+                        toLabel={movingForm.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
+                        onSeePro={() => router.push("/settings/subscription")}
+                      />
+                    )}
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
                     <View style={{ flex: 1 }}>
                       {isPremium ? (
