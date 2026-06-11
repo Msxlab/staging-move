@@ -1,13 +1,8 @@
-Locateflow full system audit run log
-Date: 2026-06-11
-
-2026-06-11: Audit folder created.
-2026-06-11: Initial live todo created.
-2026-06-11: Code-only app/package manifest inventory read.
-2026-06-11: Route inventory counted: web 66 pages/161 APIs, admin 58 pages/112 APIs, mobile 53 screens.
-2026-06-11: Cross-layer dependency map drafted from imports/config/source routes.
-2026-06-11: Web pricing/blog/LLM discovery first-pass findings recorded in FINDINGS.csv.
-2026-06-11: Web public middleware route review found anonymous /unsubscribe and /offline allow-list gaps.
-2026-06-11: Web auth/account-security review recorded billing gate, password-change rate limit, and impersonation session-list findings.
-2026-06-11: Web addresses/services review recorded date validation, primary promotion race, legal gate, and renewal field consistency findings.
-2026-06-11: Web moving/move-task review recorded workspace migration, move-task mutation gate, and moveDate validation findings.
+2026-06-11 - Audit restarted after context compaction. Existing project .md files are not used as evidence.
+2026-06-11 - Recreated audit folder and restored live todo/findings from active working summary.
+2026-06-11 - Completed code-only inventory and first web pass: public routes, pricing, blog, SEO/GEO, auth/account, addresses, services, moving, budget, providers.
+2026-06-11 - Added export/workspace mismatch finding from settings export page and export API route code.
+2026-06-11 - Audited workspace context, data scope, permissions, invitations, member management, transfer/delete/restore, sync, schema, and settings UI; added workspace privacy, invite verification, billing anchor, limit race, fallback, and validation findings.
+2026-06-11 - Audited Stripe checkout, portal, webhook idempotency, subscription actions, plan/cycle change routes, tax parameters, API version, and subscription UI copy; added payment/tax/API/consent/portal/UX findings.
+2026-06-11 - Audited notification prefs/feed, support tickets, email verification resend/verify, unsubscribe, and Resend webhook; added unsubscribe mapping, support/notification gate, and preference rate-limit findings.
+2026-06-11 - Audited web cron guard, scheduler configs, reminder timezone gates, scheduled-delivery queue, provider stats, blog publish, connector-dispatch route, connector runtime, and connector HTTP allowlist; added scheduler/queue/provider/connector findings.

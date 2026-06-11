@@ -1117,6 +1117,11 @@ model AuditLog {
 
   @@index([userId, createdAt])
   @@index([entityType, entityId])
+  // The activity page defaults to a newest-first list with no filter
+  // (orderBy createdAt desc). Without a createdAt index that sort full-scans
+  // this append-only, high-volume table. Index createdAt so the default
+  // unfiltered page is index-backed.
+  @@index([createdAt])
 }
 
 // ==================== USER ANALYTICS ====================
@@ -1323,6 +1328,11 @@ model AdminAuditLog {
   // SECURITY_ALERT, *ERROR*, USER_INTERNAL_NOTE) — index it so an append-only,
   // high-volume audit log doesn't full-scan.
   @@index([action, createdAt])
+  // The logs page defaults to a newest-first list with no filter
+  // (orderBy createdAt desc). The composite indexes above don't help that
+  // sort because their leading column isn't createdAt, so index createdAt
+  // directly to keep the default unfiltered page index-backed.
+  @@index([createdAt])
 }
 
 // Single-use, attempt-limited, target-bound email OTP for the most

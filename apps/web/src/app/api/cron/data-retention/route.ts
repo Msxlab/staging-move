@@ -77,21 +77,23 @@ async function handleCron(request: NextRequest) {
     results.notifications = deletedNotifications.count;
 
     // ----- Audit / login / queue tables -----
-    // These grow unbounded without pruning. Audit trails get a GENEROUS 730-day
-    // (2-year) window so investigations and compliance lookbacks aren't starved;
+    // These grow unbounded without pruning. Audit trails get a still-generous
+    // 365-day (1-year) window so investigations and compliance lookbacks aren't
+    // starved while keeping these append-only, high-write tables from bloating
+    // the logs page (newest-first reads slow down once the table is huge);
     // login telemetry and the (already-sent) notification queue get shorter
     // windows. None of these models are soft-delete models, so deleteMany on the
     // default `prisma` client is a real hard delete — exactly what we want here.
 
-    // AuditLog — user-facing audit trail. Keep 730 days.
-    const auditCutoff = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+    // AuditLog — user-facing audit trail. Keep 365 days.
+    const auditCutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
     const deletedAuditLogs = await prisma.auditLog.deleteMany({
       where: { createdAt: { lt: auditCutoff } },
     });
     results.auditLogs = deletedAuditLogs.count;
 
-    // AdminAuditLog — admin action trail. Keep 730 days.
-    const adminAuditCutoff = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+    // AdminAuditLog — admin action trail. Keep 365 days.
+    const adminAuditCutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
     const deletedAdminAuditLogs = await prisma.adminAuditLog.deleteMany({
       where: { createdAt: { lt: adminAuditCutoff } },
     });

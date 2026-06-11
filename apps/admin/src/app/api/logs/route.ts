@@ -105,6 +105,28 @@ function adminLabel(admin: any, unmasked: boolean) {
   return `${name} (${unmasked ? admin.email : maskEmail(admin.email)})`;
 }
 
+// Facet dropdowns (action / entityType) are populated by groupBy aggregations.
+// Running them over the ENTIRE append-only audit table on every page load is
+// what made this page unloadable at high write volume. They're only needed to
+// seed the filter UI, so compute them at most ONCE per browsing session —
+// when the user is on page 1 with no active filter — and bound them to a
+// recent window so the aggregation is index-backed and cheap instead of a
+// full-table scan. When a filter is active or the user has paged in, the
+// dropdowns are already populated client-side, so we skip the facets entirely.
+const FACET_WINDOW_DAYS = 30;
+
+function shouldComputeFacets(page: number, hasActiveFilter: boolean): boolean {
+  return page === 1 && !hasActiveFilter;
+}
+
+function facetWindowCreatedAt() {
+  return { gte: new Date(Date.now() - FACET_WINDOW_DAYS * 24 * 60 * 60 * 1000) };
+}
+
+function mapFacet(rows: any[], key: "action" | "entityType") {
+  return rows.map((r: any) => ({ value: r[key], count: r._count.id }));
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN" });
@@ -152,6 +174,10 @@ export async function GET(request: NextRequest) {
         if (dateTo) where.createdAt.lte = dateTo;
       }
 
+      const hasActiveFilter = Boolean(search || action || entityType || adminId || dateFrom || dateTo);
+      const computeFacets = shouldComputeFacets(page, hasActiveFilter);
+      const facetWhere = { createdAt: facetWindowCreatedAt() };
+
       const [logs, total, actions, entityTypes, admins] = await Promise.all([
         prisma.adminAuditLog.findMany({
           where,
@@ -161,9 +187,15 @@ export async function GET(request: NextRequest) {
           skip,
         }),
         prisma.adminAuditLog.count({ where }),
-        prisma.adminAuditLog.groupBy({ by: ["action"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
-        prisma.adminAuditLog.groupBy({ by: ["entityType"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
-        prisma.adminUser.findMany({ select: { id: true, email: true, firstName: true, lastName: true }, orderBy: { email: "asc" } }),
+        computeFacets
+          ? prisma.adminAuditLog.groupBy({ by: ["action"], where: facetWhere, _count: { id: true }, orderBy: { _count: { id: "desc" } } })
+          : Promise.resolve([] as any[]),
+        computeFacets
+          ? prisma.adminAuditLog.groupBy({ by: ["entityType"], where: facetWhere, _count: { id: true }, orderBy: { _count: { id: "desc" } } })
+          : Promise.resolve([] as any[]),
+        computeFacets
+          ? prisma.adminUser.findMany({ select: { id: true, email: true, firstName: true, lastName: true }, orderBy: { email: "asc" } })
+          : Promise.resolve([] as any[]),
       ]);
 
       await writeAdminAudit(session, {
@@ -180,9 +212,10 @@ export async function GET(request: NextRequest) {
         page,
         perPage,
         tab: "admin",
+        facetsComputed: computeFacets,
         filters: {
-          actions: actions.map((a: any) => ({ value: a.action, count: a._count.id })),
-          entityTypes: entityTypes.map((e: any) => ({ value: e.entityType, count: e._count.id })),
+          actions: mapFacet(actions, "action"),
+          entityTypes: mapFacet(entityTypes, "entityType"),
           admins: admins.map((a: any) => ({ id: a.id, label: adminLabel(a, unmasked) })),
         },
       });
@@ -204,6 +237,10 @@ export async function GET(request: NextRequest) {
       if (dateTo) where.createdAt.lte = dateTo;
     }
 
+    const hasActiveFilter = Boolean(search || action || entityType || dateFrom || dateTo);
+    const computeFacets = shouldComputeFacets(page, hasActiveFilter);
+    const facetWhere = { createdAt: facetWindowCreatedAt() };
+
     const [logs, total, actions, entityTypes] = await Promise.all([
       prisma.auditLog.findMany({
         where,
@@ -212,8 +249,12 @@ export async function GET(request: NextRequest) {
         skip,
       }),
       prisma.auditLog.count({ where }),
-      prisma.auditLog.groupBy({ by: ["action"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
-      prisma.auditLog.groupBy({ by: ["entityType"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
+      computeFacets
+        ? prisma.auditLog.groupBy({ by: ["action"], where: facetWhere, _count: { id: true }, orderBy: { _count: { id: "desc" } } })
+        : Promise.resolve([] as any[]),
+      computeFacets
+        ? prisma.auditLog.groupBy({ by: ["entityType"], where: facetWhere, _count: { id: true }, orderBy: { _count: { id: "desc" } } })
+        : Promise.resolve([] as any[]),
     ]);
 
     const userIds = [...new Set(logs.map((l: any) => l.userId).filter(Boolean))];
@@ -240,9 +281,10 @@ export async function GET(request: NextRequest) {
       page,
       perPage,
       tab: "user",
+      facetsComputed: computeFacets,
       filters: {
-        actions: actions.map((a: any) => ({ value: a.action, count: a._count.id })),
-        entityTypes: entityTypes.map((e: any) => ({ value: e.entityType, count: e._count.id })),
+        actions: mapFacet(actions, "action"),
+        entityTypes: mapFacet(entityTypes, "entityType"),
       },
     });
   } catch (error: any) {

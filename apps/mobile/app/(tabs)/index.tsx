@@ -57,6 +57,10 @@ import {
 } from "@/lib/workspace-invite";
 import { computeAndPersistWidgetSnapshot } from "@/lib/widget-data";
 import {
+  persistLastPlanHint,
+  readLastPlanHint,
+} from "@/lib/last-plan-cache";
+import {
   buildAndPersistDashboardSnapshot,
   readDashboardSnapshot,
   snapshotRelativeAge,
@@ -74,7 +78,7 @@ import { computeSavingsInsights, type ServiceLike } from "@/lib/service-insights
 import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
+import { SkeletonBlock, SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
 import { CountUp } from "@/components/ui/CountUp";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { formatCurrency } from "@/lib/format";
@@ -211,6 +215,45 @@ function AuroraHeroRing({
 }
 
 /**
+ * NEUTRAL hero placeholder shown while the entitlement is still resolving and we
+ * have no active plan to paint. Tier-agnostic on purpose: it must NOT hint FREE
+ * or PRO (that swap-after-reveal IS the flash we're killing). Just a calm,
+ * card-shaped block matching the hero footprint. Reduce-motion is honoured by the
+ * shared SkeletonBlock shimmer.
+ */
+function HeroSkeleton({ theme }: { theme: Theme }) {
+  return (
+    <View
+      style={{
+        marginBottom: 16,
+        borderRadius: theme.radius.xl,
+        padding: theme.spacing.lg,
+        backgroundColor: theme.colors.card,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      }}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel=""
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <SkeletonBlock width={110} height={11} />
+        <SkeletonBlock width={92} height={22} radius={theme.radius.full} />
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 20 }}>
+        <SkeletonBlock width={96} height={96} radius={48} />
+        <View style={{ flex: 1 }}>
+          <SkeletonBlock width="55%" height={28} />
+          <SkeletonBlock width="40%" height={11} style={{ marginTop: 10 }} />
+        </View>
+      </View>
+      <SkeletonBlock width="70%" height={12} style={{ marginTop: 20 }} />
+    </View>
+  );
+}
+
+/**
  * Tone bucket for a service category — theme tone objects only (bg/border/
  * text), so the Connected Utilities tiles stay token-pure across plan accents
  * and light/dark.
@@ -276,6 +319,16 @@ export default function DashboardScreen() {
   const [hasOriginDestination, setHasOriginDestination] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [planTier, setPlanTier] = useState<string | null>(null);
+  // Whether the LIVE entitlement has resolved at least once this mount. Until it
+  // does we render a NEUTRAL hero skeleton instead of guessing FREE vs PRO — this
+  // is what kills the launch flash (FREE upsell card → Pro layout swap). The
+  // cached hint below seeds isPremium/planTier toward the likely-correct layout,
+  // but the skeleton still owns the hero until the live entitlement is authoritative.
+  const [entitlementResolved, setEntitlementResolved] = useState(false);
+  // Mirror of entitlementResolved readable synchronously inside the cache-hint
+  // seed effect, so a hint read that finishes AFTER the live entitlement resolved
+  // never clobbers the authoritative isPremium/planTier with a stale guess.
+  const entitlementResolvedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<{
     id: string;
@@ -407,6 +460,15 @@ export default function DashboardScreen() {
       const planValue = (ent?.plan ?? sub.plan ?? null) as string | null;
       setIsPremium(!!hasPremium);
       setPlanTier(planValue);
+      // The LIVE entitlement is now authoritative: stop showing the neutral hero
+      // skeleton and let the resolved isPremium/activePlan branch decide which
+      // hero to paint. This is the override the cached hint defers to.
+      entitlementResolvedRef.current = true;
+      setEntitlementResolved(true);
+      // Persist the resolved entitlement as a HINT for the next cold start so a
+      // returning Pro user seeds the correct layout instead of flashing the FREE
+      // upsell. Best-effort + fire-and-forget — never blocks or throws.
+      void persistLastPlanHint({ premium: !!hasPremium, planTier: planValue });
       // Mirror into the global auth store so ThemeProvider applies the
       // Family/Pro accent palette app-wide (not just on this screen).
       useAuthStore.getState().setPlanTier(planValue);
@@ -695,6 +757,32 @@ export default function DashboardScreen() {
       setRefreshing(false);
     }
   }, [fetchDashboard]);
+
+  // Mount: seed the plan hint from the last-known cache BEFORE the entitlement
+  // resolves, so a returning Pro user leans into the correct (Pro) hero instead
+  // of flashing the FREE upsell. The hint is purely a HINT — the live fetch's
+  // setEntitlementResolved(true) + setIsPremium(...) override it authoritatively.
+  // Until the live entitlement resolves, the hero renders a neutral skeleton
+  // (see the hero gate below), never a tier-specific card.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const hint = await readLastPlanHint();
+      if (cancelled) return;
+      // If the live entitlement already resolved while we were reading the cache,
+      // it's authoritative — don't let a stale hint clobber it.
+      if (hint && !entitlementResolvedRef.current) {
+        // Seed toward the cached layout. Still gated by entitlementResolved so we
+        // never commit to FreeMoveUpsellCard on a stale hint; a premium hint only
+        // biases the eventual reveal, the skeleton holds until the live resolve.
+        setIsPremium(hint.premium);
+        setPlanTier(hint.planTier);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Mount: hydrate from the snapshot FIRST (instant paint), THEN kick off the
   // live fetch which reconciles + overwrites + re-persists. The hydrate is
@@ -1143,8 +1231,19 @@ export default function DashboardScreen() {
             • ACTIVE PLAN → the Aurora hero module (Edition VII): move-status
               badge + big readiness ring + days-left numeral, carrying the same
               next-critical-action and view-plan navigation the command center
-              provided. */}
-        {!isPremium && !stats?.activePlan ? (
+              provided.
+
+            FLASH GUARD: when there's no active plan to paint AND the live
+            entitlement hasn't resolved yet, render a NEUTRAL skeleton — never the
+            FREE upsell or the paid start-hero. Committing to a tier-specific card
+            before we KNOW the tier is exactly the launch flash this fixes ("önce
+            unlock çıkıyor, sonra Pro olduğunu fark edip" → FREE→PRO swap). An
+            active plan IS real data, so that path skips the skeleton and paints
+            the Aurora hero immediately even mid-resolve. Offline (live fetch gave
+            up, showing last-known) also exits the skeleton so it never spins. */}
+        {!heroPlan && !offline && !entitlementResolved ? (
+          <HeroSkeleton theme={theme} />
+        ) : !isPremium && !stats?.activePlan ? (
           <View style={{ marginBottom: 16 }}>
             <FreeMoveUpsellCard onUnlock={() => router.push("/settings/subscription")} />
           </View>

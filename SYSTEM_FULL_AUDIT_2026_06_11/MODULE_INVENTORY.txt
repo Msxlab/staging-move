@@ -1,64 +1,25 @@
-Locateflow module inventory
-Date: 2026-06-11
+Code-only module inventory
 
-This file will be updated from direct code/config review.
-
-Initial code-only inventory
-
-Repository shape
+Runtime/package map
 - Monorepo: pnpm + turbo.
 - Apps: apps/web, apps/admin, apps/mobile.
-- Shared packages: packages/shared, packages/db, packages/connectors.
-- Operational layers: scripts, docker, root deployment/config files.
-- Audit source rule applied: repository .md and memory-like files were not read as audit inputs.
+- Packages: packages/shared, packages/db, packages/connectors.
+- Web: Next 16.2.6, React 19.2.6.
+- Admin: Next 16.2.6, React 19.2.6.
+- Mobile: Expo 55, React Native 0.83.6.
+- Data/payment/comms: Prisma 5.22, Stripe, Resend, Upstash, Sentry.
 
-Framework/runtime inventory from package manifests
-- Root: Node 22.x, pnpm 9.15.0, turbo 2.9.14.
-- Web: Next 16.2.6, React 19.2.6, Stripe SDK, Resend, Upstash Redis/rate limit, Sentry, TanStack Query, Playwright/Vitest.
-- Admin: Next 16.2.6, React 19.2.6, Prisma client, Stripe SDK, Resend, TipTap, Sentry, Vitest.
-- Mobile: Expo 55, React Native 0.83.6, Expo Router, expo-iap, expo-notifications, expo-secure-store, expo-local-authentication, Expo Updates, Vitest.
-- Shared: TypeScript + zod, exported to web and React Native via separate entrypoints.
-- DB: Prisma 5.22, MySQL-oriented migrations, seed scripts.
-- Connectors: connector core framework plus USPS connector.
+Counts from code scan
+- apps/web: 793 non-md files, 759 TS/TSX, 229 test files, 66 pages, 161 API route files.
+- apps/admin: 460 non-md files, 441 TS/TSX, 113 test files, 58 pages, 112 API route files.
+- apps/mobile: 4206 non-md files including native/generated/resources, 183 TS/TSX, 22 test files, 53 screen files.
+- packages/shared: 63 files, 61 TS, 26 test files.
+- packages/db: 95 files excluding dist/turbo, 25 TS.
+- packages/connectors: 37 files, 35 TS, 15 test files.
 
-File/test density
-- apps/web: 793 non-md files, 759 TS/TSX files, 229 test/spec files, 66 page routes, 161 API routes.
-- apps/admin: 460 non-md files, 441 TS/TSX files, 113 test/spec files, 58 page routes, 112 API routes.
-- apps/mobile: 4206 non-md files including generated/native resources, 183 TS/TSX files, 22 test/spec files, 53 Expo Router screens.
-- packages/shared: 63 non-md files, 61 TS files, 26 test files.
-- packages/db: 95 non-md files after excluding dist/turbo, 25 TS files, Prisma schema and migrations.
-- packages/connectors: 37 non-md files, 35 TS files, 15 test files.
-- scripts: 31 non-md operational files.
-- docker: 8 deploy/proxy/container files.
-
-Web module surface
-- Public/marketing pages: home, about, how-it-works, pricing, provider-coverage, expenses, FAQ/help/contact, legal policy pages, auth landing pages, offline page.
-- Programmatic SEO: /moving/[state], /moving/[state]/[city], sitemap, robots, llms.txt, llms-full.txt, blog feeds.
-- Auth/account API: register, login, logout, OAuth Google/Apple, password reset/change, email verification, MFA, account delete/restore, impersonation handoff.
-- App pages: dashboard, moving plans, addresses, budget, services, providers, notifications, support/tickets, settings, workspace.
-- Business APIs: addresses, moving, move-tasks, services, providers, recommendations, budget, custom providers, notifications, tickets, export/PDF.
-- Billing/payment APIs: Stripe checkout, checkout cancel, portal, subscription actions/change-plan/switch-cycle, Stripe/App Store/Play Store webhooks, mobile IAP products/verify.
-- Ops APIs: cron jobs, health/ready, internal IP/rate-limit/impersonate, connector dispatch and webhooks.
-- Blog APIs/pages: public blog index/category/post/preview/feed, admin-triggered revalidate/indexnow, image, view tracking.
-
-Admin module surface
-- Auth/admin security: login/logout/me, sessions, MFA, password/set-password, force password change, middleware CSRF/rate limit/security headers.
-- Admin pages: dashboard, analytics/intelligence, users, workspaces, team, subscriptions/plans/billing, providers, provider governance, state rules, movers/moving, support/tickets, notifications, logs/activity, backups, security, runtime config, feature flags, connectors, blog, email templates, acquisition/affiliate/sponsored/waitlist.
-- Admin APIs: CRUD and exports for users/workspaces/subscriptions/providers/blog/state rules/tickets/waitlist; backup download/import/retention/sql-dump/verify; key rotation; security dashboard; runtime config; connector health/test/fallbacks/metrics; acquisition campaign validation.
-
-Mobile module surface
-- Expo Router auth tabs: sign-in, sign-up, forgot/reset/setup password, OAuth callback, onboarding.
-- App tabs/screens: home, addresses, moving, services, more, budget, providers, custom providers, blog, notifications, reminders, help/tickets, settings, workspace invite.
-- Native integrations: Android manifest/resources, iOS widget target Swift, push notifications, secure storage, local authentication/app lock, IAP, deep links, Expo Updates.
-- Mobile data layer: shared API client/session/auth store, IAP helpers, push, analytics, local cleanup, workspace invite, recommendation engine, service/budget/provider helpers.
-
-Shared/backend foundations
-- packages/shared: billing, entitlement, workspace limits, acquisition, blog, budget planning, move lifecycle/local effect/transition classifier, migration engine, provider coverage/integrity/move domain, recommendation engine, relocation checklist, permissions, encryption, validators, runtime/env catalog, API client, i18n/timezone.
-- packages/db: Prisma schema, soft delete, optimistic locking, provider coverage metadata, many migrations covering auth, billing, blog, workspaces, connectors, mobile OAuth/IAP, acquisition, affiliate, notifications, provider coverage, recommendation feedback.
-- packages/connectors: connector registry/manifest/mode/state, dispatcher/executor, OAuth, retry, circuit breaker, HTTP client, logging, fields, contract tests, USPS connector.
-
-Immediate audit implications
-- Web and admin are broad enough that route coverage must be audited by module, not only by app.
-- Payment/subscription logic spans web APIs, admin APIs, shared billing/acquisition, Prisma schema, mobile IAP, and webhooks.
-- SEO/GEO has dedicated code paths: sitemap, robots, llms.txt, llms-full.txt, JSON-LD, public pages, programmatic city/state pages.
-- Admin-to-web coupling is direct through shared Prisma tables and some web internal/admin alert endpoints, so authorization and data integrity must be checked across both apps.
+Primary audit areas
+- Web public: homepage, pricing, blog, SEO metadata, sitemap, robots, llms.txt, middleware.
+- Web app: auth, workspaces, addresses, services, moving, budget, providers, settings/export, notifications, tickets.
+- Admin: auth, users, plans, billing, providers, tickets, blog, legal, audit logs, feature flags, health.
+- Mobile: auth, dashboard, addresses, services, moving, providers, settings, offline/cache, API compatibility.
+- Shared/DB/connectors: validation, workspace scoping, Prisma schema, idempotency, background dispatch.
