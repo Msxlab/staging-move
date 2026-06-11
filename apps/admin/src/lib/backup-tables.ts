@@ -172,6 +172,14 @@ export const BACKUP_TABLES = {
   // Marketing waitlist leads — externally irreplaceable contact data.
   // `userId` is a loose ref (no FK), so there is no ordering constraint.
   waitlistSignups: { model: "waitlistSignup", label: "Waitlist Signups" },
+  // Partner-submitted mover applications + the index of their uploaded
+  // compliance docs (USDOT cert / insurance COI — the files live in R2, backed
+  // up separately). Externally irreplaceable: the attestation, FMCSA review
+  // snapshot, and decision trail are NOT reconstructable from FMCSA (unlike
+  // MovingCompany, which IS, so it stays excluded). MoverDocument Cascade-
+  // children of the application.
+  moverApplications: { model: "moverApplication", label: "Mover Applications" },
+  moverDocuments: { model: "moverDocument", label: "Mover Documents" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
@@ -230,6 +238,10 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "stateRules",
   "ipRules",
   "waitlistSignups",
+  // MoverApplication carries only loose refs (no FK); MoverDocument FKs it
+  // (Cascade), so the application must be imported first.
+  "moverApplications",
+  "moverDocuments",
 ];
 
 // Exported so the colocated test can assert that BACKUP_TABLE_ORDER lists
@@ -300,6 +312,9 @@ export const BACKUP_TABLE_DEPENDENCIES: Partial<
   // importing conversions before clicks would null out the click linkage.
   affiliateConversions: ["providers", "affiliateClicks"],
   blogPosts: ["adminUsers", "blogCategories"],
+  // MoverDocument.applicationId → MoverApplication (Cascade). MoverApplication
+  // carries only loose refs (linkedMovingCompanyId / reviewedByAdminId, no FK).
+  moverDocuments: ["moverApplications"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
@@ -358,6 +373,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   adminUsers: ["adminPermissions", "adminLoginLogs", "adminAuditLogs"],
   acquisitionCampaigns: ["acquisitionRedemptions", "subscriptions"],
   blogCategories: ["blogPosts"],
+  // Deleting an application cascades into its uploaded documents.
+  moverApplications: ["moverDocuments"],
 };
 
 export function isSupportedBackupTable(

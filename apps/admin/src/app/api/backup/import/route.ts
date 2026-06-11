@@ -300,6 +300,18 @@ const IMPORT_MODEL_OPS = {
       prisma.waitlistSignup.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.waitlistSignup.create({ data }),
   },
+  moverApplications: {
+    count: () => prisma.moverApplication.count(),
+    findUniqueById: (id: string) =>
+      prisma.moverApplication.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.moverApplication.create({ data }),
+  },
+  moverDocuments: {
+    count: () => prisma.moverDocument.count(),
+    findUniqueById: (id: string) =>
+      prisma.moverDocument.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.moverDocument.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {
