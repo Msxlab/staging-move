@@ -66,3 +66,5 @@ LocateFlow Design System-handoff*.zip
 .claude/
 node-compile-cache/
 apps/mobile/dist/
+apps/web/test-results/
+apps/*/test-results/
