@@ -60,7 +60,7 @@ describe("hardDeleteUser", () => {
     mocks.reconcileWorkspaceSeats.mockResolvedValue(undefined);
   });
 
-  it("cancels Stripe only after the DB erasure transaction commits", async () => {
+  it("cancels Stripe BEFORE the DB erasure transaction commits", async () => {
     const order: string[] = [];
     mocks.rawTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
       await fn(makeTx(order));
@@ -73,14 +73,114 @@ describe("hardDeleteUser", () => {
 
     const result = await hardDeleteUser("user_1");
 
-    expect(result.stripeCanceled).toBe(true);
-    expect(order).toEqual(["db.delete", "db.commit", "stripe.cancel"]);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.stripeCanceled).toBe(true);
+    }
+    // Stripe must be canceled before anything irreversible happens in the DB.
+    expect(order).toEqual(["stripe.cancel", "db.delete", "db.commit"]);
   });
 
-  it("does not cancel Stripe when the DB erasure transaction fails", async () => {
+  it("BLOCKS the delete (no DB write) when a live subscription cannot be canceled", async () => {
+    mocks.stripeCancel.mockRejectedValueOnce(new Error("stripe boom"));
+
+    const result = await hardDeleteUser("user_1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.blocked).toBe(true);
+      expect(result.code).toBe("STRIPE_CANCEL_FAILED");
+      expect(result.stripeSubscriptionId).toBe("sub_live_1");
+      expect(result.maskedEmail).toBe("t***@e***.com");
+    }
+    // The irreversible DB transaction must NOT have run.
+    expect(mocks.rawTransaction).not.toHaveBeenCalled();
+  });
+
+  it("treats a missing/invalid Stripe key as a cancel failure and blocks (fail-closed)", async () => {
+    // Empty key makes requireStripeSecretKey throw inside tryCancel → false.
+    mocks.getAdminRuntimeConfigValue.mockResolvedValue("");
+
+    const result = await hardDeleteUser("user_1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("STRIPE_CANCEL_FAILED");
+    }
+    expect(mocks.stripeCancel).not.toHaveBeenCalled();
+    expect(mocks.rawTransaction).not.toHaveBeenCalled();
+  });
+
+  it("force=true proceeds with erasure even when the Stripe cancel fails", async () => {
+    mocks.stripeCancel.mockRejectedValueOnce(new Error("stripe boom"));
+    const order: string[] = [];
+    mocks.rawTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      await fn(makeTx(order));
+      order.push("db.commit");
+    });
+
+    const result = await hardDeleteUser("user_1", { force: true });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.stripeCanceled).toBe(false);
+    }
+    expect(order).toEqual(["db.delete", "db.commit"]);
+  });
+
+  it("succeeds then deletes when Stripe cancel succeeds", async () => {
+    const order: string[] = [];
+    mocks.rawTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      await fn(makeTx(order));
+      order.push("db.commit");
+    });
+
+    const result = await hardDeleteUser("user_1");
+
+    expect(mocks.stripeCancel).toHaveBeenCalledWith("sub_live_1");
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.stripeCanceled).toBe(true);
+    }
+    expect(order).toContain("db.delete");
+  });
+
+  it("deletes cleanly for a user with NO subscription (Stripe untouched)", async () => {
+    mocks.rawUserFindUnique.mockResolvedValue({
+      id: "user_2",
+      email: "nosub@example.com",
+      subscription: null,
+    });
+    const order: string[] = [];
+    mocks.rawTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      await fn(makeTx(order));
+      order.push("db.commit");
+    });
+
+    const result = await hardDeleteUser("user_2");
+
+    expect(mocks.stripeCancel).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.stripeCanceled).toBe(true);
+    }
+    expect(order).toEqual(["db.delete", "db.commit"]);
+  });
+
+  it("does not cancel Stripe again or commit when the DB erasure transaction fails", async () => {
+    // Stripe cancel succeeds first, then the DB transaction blows up. The
+    // already-canceled subscription is acceptable (the intent was to delete),
+    // and crucially the error propagates so the caller surfaces a failure.
     mocks.rawTransaction.mockRejectedValueOnce(new Error("db failed"));
 
     await expect(hardDeleteUser("user_1")).rejects.toThrow("db failed");
+    expect(mocks.stripeCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws USER_NOT_FOUND when the user does not exist", async () => {
+    mocks.rawUserFindUnique.mockResolvedValue(null);
+    await expect(hardDeleteUser("missing")).rejects.toThrow("USER_NOT_FOUND");
     expect(mocks.stripeCancel).not.toHaveBeenCalled();
+    expect(mocks.rawTransaction).not.toHaveBeenCalled();
   });
 });

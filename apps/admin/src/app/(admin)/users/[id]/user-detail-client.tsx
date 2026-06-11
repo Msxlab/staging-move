@@ -107,10 +107,14 @@ export default function UserDetailClient() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  // Hard delete (irreversible, SUPER_ADMIN only) is a two-phase flow:
-  //   phase "password" → PasswordConfirmModal (password + MFA) → POST .../otp
-  //   phase "otp"      → 6-digit code (emailed to the acting admin) → POST .../hard-delete
-  const [hardDeletePhase, setHardDeletePhase] = useState<null | "password" | "otp">(null);
+  // Hard delete (irreversible, SUPER_ADMIN only) is a phased flow:
+  //   phase "password"       → PasswordConfirmModal (password + MFA) → POST .../otp
+  //   phase "otp"            → 6-digit code (emailed) → POST .../hard-delete
+  //   phase "stripe_blocked" → shown when the server refused to erase because a
+  //                            live Stripe subscription could not be canceled;
+  //                            the operator resolves Stripe and retries, or opts
+  //                            to force (then restarts at "password" for a code).
+  const [hardDeletePhase, setHardDeletePhase] = useState<null | "password" | "otp" | "stripe_blocked">(null);
   const [hardDeleteBusy, setHardDeleteBusy] = useState(false);
   const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
   const [hardDeleteRequiresMfa, setHardDeleteRequiresMfa] = useState(false);
@@ -120,6 +124,13 @@ export default function UserDetailClient() {
   // call is self-contained even if the grace window lapses.
   const [hardDeleteStepUp, setHardDeleteStepUp] = useState<StepUpValues | null>(null);
   const [hardDeleteOtpCode, setHardDeleteOtpCode] = useState("");
+  // Set when the server BLOCKS the delete because a live Stripe subscription
+  // could not be canceled (reason STRIPE_CANCEL_FAILED). The operator can either
+  // resolve Stripe and retry, or explicitly opt to force the erasure and
+  // reconcile billing manually. Forcing requires a fresh code (the previous one
+  // was consumed), so `hardDeleteForce` persists across the restart to phase 1.
+  const [hardDeleteForce, setHardDeleteForce] = useState(false);
+  const [hardDeleteStripeBlocked, setHardDeleteStripeBlocked] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
@@ -253,6 +264,8 @@ export default function UserDetailClient() {
     setHardDeleteRequiresMfa(false);
     setHardDeleteStepUp(null);
     setHardDeleteOtpCode("");
+    setHardDeleteForce(false);
+    setHardDeleteStripeBlocked(false);
     setHardDeletePhase("password");
   }
 
@@ -263,6 +276,8 @@ export default function UserDetailClient() {
     setHardDeleteRequiresMfa(false);
     setHardDeleteStepUp(null);
     setHardDeleteOtpCode("");
+    setHardDeleteForce(false);
+    setHardDeleteStripeBlocked(false);
   }
 
   // Phase 1: password + MFA → request an emailed code. On success, swap to the
@@ -321,6 +336,9 @@ export default function UserDetailClient() {
           mfaCode: hardDeleteStepUp.mfaCode,
           backupCode: hardDeleteStepUp.backupCode,
           otpCode: hardDeleteOtpCode.trim(),
+          // Only sent when the operator has explicitly opted to force past a
+          // STRIPE_CANCEL_FAILED block (acknowledging manual billing cleanup).
+          ...(hardDeleteForce ? { force: true } : {}),
         }),
       });
       if (!res.ok) {
@@ -333,6 +351,17 @@ export default function UserDetailClient() {
             : typeof data?.error === "string"
               ? data.error
               : "Failed to permanently delete user.";
+        // Stripe cancel failed and NOTHING was deleted (409). The consumed code
+        // can't be reused, so route to the blocked screen where the operator
+        // chooses to resolve Stripe and retry, or force the erasure.
+        if (res.status === 409 && reason === "STRIPE_CANCEL_FAILED") {
+          setHardDeleteStripeBlocked(true);
+          setHardDeleteOtpCode("");
+          setHardDeletePhase("stripe_blocked");
+          setHardDeleteError(message);
+          toast.error(message);
+          return;
+        }
         // If the password/MFA step-up itself failed (grace window lapsed),
         // bounce back to phase 1 so the operator can re-enter credentials.
         if (data?.requiresPassword && reason !== "invalid_otp") {
@@ -352,6 +381,31 @@ export default function UserDetailClient() {
     } finally {
       setHardDeleteBusy(false);
     }
+  }
+
+  // From the Stripe-blocked screen: the operator cancelled the subscription in
+  // Stripe and wants to retry the normal (non-force) erasure. A fresh code is
+  // required (the previous one was consumed), so restart at phase 1.
+  function retryHardDeleteAfterStripe() {
+    setHardDeleteForce(false);
+    setHardDeleteStripeBlocked(false);
+    setHardDeleteError(null);
+    setHardDeleteRequiresMfa(false);
+    setHardDeleteStepUp(null);
+    setHardDeleteOtpCode("");
+    setHardDeletePhase("password");
+  }
+
+  // From the Stripe-blocked screen: the operator accepts they will reconcile
+  // billing manually and wants to force the erasure. Keep force=true through the
+  // restarted flow; a fresh code is still required.
+  function forceHardDeletePastStripe() {
+    setHardDeleteForce(true);
+    setHardDeleteError(null);
+    setHardDeleteRequiresMfa(false);
+    setHardDeleteStepUp(null);
+    setHardDeleteOtpCode("");
+    setHardDeletePhase("password");
   }
 
   async function handleRestore() {
@@ -2170,14 +2224,27 @@ export default function UserDetailClient() {
       {/* Hard delete — phase 1: password + MFA, then we email a 6-digit code. */}
       <PasswordConfirmModal
         open={hardDeletePhase === "password"}
-        title="Permanently delete user"
-        description={`This PERMANENTLY erases ${maskEmail(user.email)} and all of their data — it cannot be undone. Confirm your admin password and MFA; we'll then email a 6-digit code to your admin address to finish.`}
+        title={hardDeleteForce ? "Force-delete user (Stripe not canceled)" : "Permanently delete user"}
+        description={
+          hardDeleteForce
+            ? `FORCE MODE: this PERMANENTLY erases ${maskEmail(user.email)} and all of their data even though their Stripe subscription could NOT be canceled — you must cancel it in Stripe manually or billing will continue. Confirm your admin password and MFA; we'll email a fresh 6-digit code to finish.`
+            : `This PERMANENTLY erases ${maskEmail(user.email)} and all of their data — it cannot be undone. Confirm your admin password and MFA; we'll then email a 6-digit code to your admin address to finish.`
+        }
         confirmLabel="Email me a code"
         busy={hardDeleteBusy}
         error={hardDeleteError}
         requiresMfa={hardDeleteRequiresMfa}
         onClose={closeHardDelete}
         onConfirm={requestHardDeleteOtp}
+      />
+      {/* Hard delete — blocked: a live Stripe subscription could not be canceled. */}
+      <HardDeleteStripeBlockedModal
+        open={hardDeletePhase === "stripe_blocked"}
+        targetMaskedEmail={maskEmail(user.email)}
+        message={hardDeleteError}
+        onClose={closeHardDelete}
+        onRetry={retryHardDeleteAfterStripe}
+        onForce={forceHardDeletePastStripe}
       />
       {/* Hard delete — phase 2: enter the emailed 6-digit code to erase. */}
       <HardDeleteOtpModal
@@ -2387,6 +2454,102 @@ function HardDeleteOtpModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// Shown when the server REFUSED to erase the user because a live Stripe
+// subscription could not be canceled (reason STRIPE_CANCEL_FAILED). Nothing was
+// deleted. The operator either cancels the subscription in Stripe and retries
+// the normal flow, or explicitly forces the erasure (accepting that they must
+// reconcile billing manually). Either choice restarts at the password phase to
+// mint a fresh confirmation code (the previous one was consumed).
+function HardDeleteStripeBlockedModal({
+  open,
+  targetMaskedEmail,
+  message,
+  onClose,
+  onRetry,
+  onForce,
+}: {
+  open: boolean;
+  targetMaskedEmail: string;
+  message?: string | null;
+  onClose: () => void;
+  onRetry: () => void;
+  onForce: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hard-delete-stripe-blocked-title"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="hard-delete-stripe-blocked-title" className="text-base font-semibold text-foreground">
+              Stripe subscription not canceled
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {targetMaskedEmail} was <strong>NOT</strong> deleted. We could not cancel their Stripe
+              subscription, so the account would have kept billing after deletion.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {message || "Stripe subscription could not be canceled, so the user was not deleted."}
+        </div>
+
+        <p className="mt-4 text-sm text-muted-foreground">
+          Cancel the subscription in the Stripe dashboard, then retry — or force the deletion and
+          reconcile billing manually. Either choice will email you a fresh confirmation code.
+        </p>
+
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            I canceled it in Stripe — retry
+          </button>
+          <button
+            type="button"
+            onClick={onForce}
+            className="rounded-lg border border-destructive px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+          >
+            Force delete anyway (reconcile billing manually)
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
