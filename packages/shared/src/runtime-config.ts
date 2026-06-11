@@ -743,6 +743,56 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Defaults to false. Offsite delete failures and key/bucket mismatches preserve the DB row so the next retention run can retry.",
   },
   {
+    key: "GDRIVE_BACKUP_ENABLED",
+    label: "Google Drive Backup Mirror Enabled",
+    description:
+      "When 'true', every backup archive that successfully uploads to offsite S3/R2 storage is ALSO mirrored — fire-and-forget — to the owner's Google Drive folder via a service account (Drive REST v3, RS256 JWT, no extra dependencies). The mirror never blocks or fails a backup. Retention does NOT manage Drive: mirrored archives accumulate in the folder and are owner-managed (prune old files manually in Drive). Off by default.",
+    scope: "ADMIN",
+    category: "STORAGE",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    usedBy: ["admin app", "cron/worker"],
+    validation: "boolean",
+    note: "Requires GDRIVE_SERVICE_ACCOUNT_EMAIL, GDRIVE_SERVICE_ACCOUNT_KEY, and GDRIVE_BACKUP_FOLDER_ID. The target Drive folder must be shared with the service account email (Editor).",
+  },
+  {
+    key: "GDRIVE_SERVICE_ACCOUNT_EMAIL",
+    label: "Google Drive Service Account Email",
+    description:
+      "Service account email (…@<project>.iam.gserviceaccount.com) that uploads mirrored backup archives to Google Drive. Share the target Drive folder with this address (Editor role) so uploads land in it.",
+    scope: "ADMIN",
+    category: "STORAGE",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    usedBy: ["admin app", "cron/worker"],
+  },
+  {
+    key: "GDRIVE_SERVICE_ACCOUNT_KEY",
+    label: "Google Drive Service Account Private Key",
+    description:
+      "PEM contents of the service account's private key, used to mint RS256 JWTs for the Drive API OAuth token exchange. Include the BEGIN/END PRIVATE KEY lines.",
+    scope: "ADMIN",
+    category: "STORAGE",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    usedBy: ["admin app", "cron/worker"],
+  },
+  {
+    key: "GDRIVE_BACKUP_FOLDER_ID",
+    label: "Google Drive Backup Folder ID",
+    description:
+      "Drive folder ID (the long token at the end of the folder's URL) that receives mirrored backup archives. Mirrored files accumulate here — backup retention never deletes from Drive, so the owner prunes old archives manually.",
+    scope: "ADMIN",
+    category: "STORAGE",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+    usedBy: ["admin app", "cron/worker"],
+  },
+  {
     key: "UPSTASH_REDIS_REST_URL",
     label: "Upstash Redis URL",
     description: "Redis endpoint used for production rate limiting.",
@@ -1893,6 +1943,7 @@ export function validateRuntimeConfigValueShape(
     "WORKSPACE_MODEL_ENABLED",
     "ALLOW_PRODUCTION_REPLACE_RESTORE",
     "BACKUP_RETENTION_DELETE_OFFSITE",
+    "GDRIVE_BACKUP_ENABLED",
     "PLACES_AUTOCOMPLETE_ENABLED",
     "NOTIFICATION_PUSH_ENABLED",
     "KILL_SIGNUPS",
@@ -1969,6 +2020,7 @@ export function validateRuntimeConfigValueShape(
     key === "APPLE_OAUTH_PRIVATE_KEY" ||
     key === "APPLE_APP_STORE_PRIVATE_KEY" ||
     key === "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY" ||
+    key === "GDRIVE_SERVICE_ACCOUNT_KEY" ||
     key === "APPLE_IAP_PRIVATE_KEY"
   ) {
     const secretProblem = validateSecretStrength(value, 48);
@@ -2027,8 +2079,19 @@ export function validateRuntimeConfigValueShape(
   if (key === "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN") {
     return validateSecretStrength(value, 24) || valid();
   }
-  if (key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL" || key === "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL") {
+  if (
+    key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL" ||
+    key === "GDRIVE_SERVICE_ACCOUNT_EMAIL" ||
+    key === "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL"
+  ) {
     return validateServiceAccountEmail(value) || valid();
+  }
+  if (key === "GDRIVE_BACKUP_FOLDER_ID") {
+    return validateSafeToken(value, {
+      minLength: 10,
+      pattern: /^[A-Za-z0-9_-]{10,128}$/,
+      reason: "gdrive_folder_id_pattern",
+    }) || valid();
   }
 
   if (key === "RECOMMENDATION_SCORING_WEIGHTS") {

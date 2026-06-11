@@ -24,17 +24,17 @@ describe("planFeatures", () => {
     expect(planFeatures("WHATEVER").manualConnectors).toBe(false);
   });
 
-  it("AI briefing matrix: every paid tier yes, free trial no", () => {
+  it("AI briefing matrix: Family + Pro only (Individual loses it; cap is cost control, not a tier line)", () => {
     expect(planFeatures("PRO").aiBriefing).toBe(true);
     expect(planFeatures("FAMILY").aiBriefing).toBe(true);
-    expect(planFeatures("INDIVIDUAL").aiBriefing).toBe(true);
+    expect(planFeatures("INDIVIDUAL").aiBriefing).toBe(false);
     expect(planFeatures("FREE_TRIAL").aiBriefing).toBe(false);
     // Unknown / missing plans fall to the Free Trial floor (no AI briefing).
     expect(planFeatures(null).aiBriefing).toBe(false);
     expect(planFeatures("WHATEVER").aiBriefing).toBe(false);
   });
 
-  it("Home Dossier matrix: every paid tier yes, free trial no", () => {
+  it("Home Dossier matrix: Individual and up, free trial no", () => {
     expect(planFeatures("PRO").homeDossier).toBe(true);
     expect(planFeatures("FAMILY").homeDossier).toBe(true);
     expect(planFeatures("INDIVIDUAL").homeDossier).toBe(true);
@@ -42,6 +42,25 @@ describe("planFeatures", () => {
     // Unknown / missing plans fall to the Free Trial floor (no dossier).
     expect(planFeatures(null).homeDossier).toBe(false);
     expect(planFeatures("WHATEVER").homeDossier).toBe(false);
+  });
+
+  it("Pro-only differentiators: movers, dossier PDF, priority support, multi-plan", () => {
+    expect(planFeatures("PRO").moverSuggestions).toBe(true);
+    expect(planFeatures("FAMILY").moverSuggestions).toBe(false);
+    expect(planFeatures("PRO").dossierPdf).toBe(true);
+    expect(planFeatures("FAMILY").dossierPdf).toBe(false);
+    expect(planFeatures("PRO").prioritySupport).toBe(true);
+    expect(planFeatures("PRO").concurrentPlanLimit).toBe(3);
+    expect(planFeatures("FAMILY").concurrentPlanLimit).toBe(1);
+  });
+
+  it("VIN check + weather/digest: Individual and up; real map: Family and up", () => {
+    expect(planFeatures("INDIVIDUAL").vehicleCheck).toBe(true);
+    expect(planFeatures("FREE_TRIAL").vehicleCheck).toBe(false);
+    expect(planFeatures("INDIVIDUAL").weatherDigest).toBe(true);
+    expect(planFeatures("FREE_TRIAL").weatherDigest).toBe(false);
+    expect(planFeatures("INDIVIDUAL").realMap).toBe(false);
+    expect(planFeatures("FAMILY").realMap).toBe(true);
   });
 });
 

@@ -375,9 +375,25 @@ export default function ProvidersScreen() {
             onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
           />
         ) : null}
+
+        {/* Directory section kicker — separates the recommended rail from the
+            full browse list (Aurora section idiom). */}
+        {filtered.length > 0 ? (
+          <View style={styles.secRow}>
+            <Text style={styles.secKicker}>
+              {(search
+                ? t("providers.resultsKicker", { defaultValue: "Results" })
+                : selectedCat && selectedLabel
+                  ? selectedLabel
+                  : t("providers.directoryKicker", { defaultValue: "All providers" })
+              ).toUpperCase()}
+            </Text>
+            <Text style={styles.secCount}>{filtered.length}</Text>
+          </View>
+        ) : null}
       </View>
     );
-  }, [recommended, primaryAddress, addresses, router, search, t, theme, gapChips, selectGap, styles]);
+  }, [recommended, primaryAddress, addresses, router, search, t, theme, gapChips, selectGap, styles, filtered.length, selectedCat, selectedLabel]);
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
@@ -590,18 +606,30 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   searchRow: { paddingHorizontal: 20, marginBottom: 8 },
+  // Aurora glass chrome — matches the Edition VII hero panes.
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.glass.bg,
+    borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.glass.highlight,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
+  // Directory section kicker (Aurora section idiom).
+  secRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
+  secCount: { fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent, fontVariant: ["tabular-nums"] },
   truthBanner: {
     flexDirection: "row",
     alignItems: "flex-start",

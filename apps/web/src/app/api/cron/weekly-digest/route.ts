@@ -8,7 +8,8 @@ import {
   getNextBillingDate,
   groupNotificationPreferencesByUser,
 } from "@/lib/notification-preferences";
-import { DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone } from "@locateflow/shared";
+import { getUserPlan } from "@/lib/plan-limits";
+import { DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone, planFeatures } from "@locateflow/shared";
 
 // A local-midnight date (new Date(y, m, d)) reprojected onto its UTC calendar
 // day so it formats in a tz-stable way (never leaks the server's process tz).
@@ -76,7 +77,22 @@ export async function GET(req: Request) {
         ok: true, users: users.length, eligible: 0, sent: 0, timestamp: now.toISOString(),
       });
     }
-    const eligibleUserIds = eligibleUsers.map((u) => u.id);
+
+    // ── STEP 2b: Plan gate (owner decision) ──
+    // The weekly digest email is a paid `weatherDigest` feature (Individual and
+    // up). Resolve the plan only for the already-narrowed digest-day-eligible
+    // set (kept small by the day match), in parallel, and drop free/free-trial
+    // users before any per-user data is fetched or any email is sent.
+    const entitledFlags = await Promise.all(
+      eligibleUsers.map((user) => getUserPlan(user.id).then((p) => planFeatures(p.plan).weatherDigest)),
+    );
+    const gatedEligibleUsers = eligibleUsers.filter((_, i) => entitledFlags[i]);
+    if (gatedEligibleUsers.length === 0) {
+      return NextResponse.json({
+        ok: true, users: users.length, eligible: 0, sent: 0, timestamp: now.toISOString(),
+      });
+    }
+    const eligibleUserIds = gatedEligibleUsers.map((u) => u.id);
 
     // ── STEP 3: Bulk-fetch all per-user data in parallel ──
     const [allServices, newServiceGroups] = await Promise.all([
@@ -105,8 +121,8 @@ export async function GET(req: Request) {
     let sentCount = 0;
     const errors: string[] = [];
 
-    for (let i = 0; i < eligibleUsers.length; i += BATCH_SIZE) {
-      const batch = eligibleUsers.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < gatedEligibleUsers.length; i += BATCH_SIZE) {
+      const batch = gatedEligibleUsers.slice(i, i + BATCH_SIZE);
       await Promise.all(batch.map(async (user) => {
         try {
           const services = servicesByUser.get(user.id) || [];
@@ -151,7 +167,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       users: users.length,
-      eligible: eligibleUsers.length,
+      eligible: gatedEligibleUsers.length,
       sent: sentCount,
       errors: errors.length > 0 ? errors : undefined,
       timestamp: now.toISOString(),

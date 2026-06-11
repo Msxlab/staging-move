@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check } from "lucide-react-native";
+import { ArrowLeft, Check, Mail, Smartphone } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -115,6 +115,9 @@ export default function NotificationSettingsScreen() {
     {
       title: t("notifications.section_email"),
       hint: t("notifications.section_email_hint"),
+      Icon: Mail,
+      tint: theme.colors.sky.text,
+      tintBg: theme.colors.sky.bg,
       items: [
         {
           key: "emailTaskReminders" as keyof Prefs,
@@ -151,6 +154,9 @@ export default function NotificationSettingsScreen() {
     {
       title: t("notifications.section_push"),
       hint: t("notifications.section_push_hint"),
+      Icon: Smartphone,
+      tint: theme.colors.emerald.text,
+      tintBg: theme.colors.emerald.bg,
       items: [
         {
           key: "pushTaskReminders" as keyof Prefs,
@@ -182,9 +188,22 @@ export default function NotificationSettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {sections.map((section) => (
+        {sections.map((section) => {
+          const SectionIcon = section.Icon;
+          const enabledCount = section.items.filter((item) => prefs[item.key]).length;
+          return (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            {/* Aurora grouped-card header — icon chip + kicker + on-count */}
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: section.tintBg }]}>
+                <SectionIcon size={14} color={section.tint} />
+              </View>
+              <Text style={styles.sectionTitle}>{section.title.toUpperCase()}</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={styles.sectionCount}>
+                {enabledCount}/{section.items.length}
+              </Text>
+            </View>
             {section.hint ? <Text style={styles.sectionHint}>{section.hint}</Text> : null}
             <View style={styles.card}>
               {section.items.map((item, i) => (
@@ -206,7 +225,8 @@ export default function NotificationSettingsScreen() {
               ))}
             </View>
           </View>
-        ))}
+          );
+        })}
 
         <TouchableOpacity
           style={[styles.saveBtn, saving && { opacity: 0.6 }]}
@@ -242,13 +262,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   section: { marginTop: 20 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, marginLeft: 2 },
+  sectionIcon: {
+    width: 26, height: 26, borderRadius: 9,
+    alignItems: "center", justifyContent: "center",
+  },
   sectionTitle: {
-    fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
+    fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary,
+  },
+  sectionCount: {
+    fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent,
+    fontVariant: ["tabular-nums"],
   },
   sectionHint: {
     fontSize: 12, color: theme.colors.textMuted, lineHeight: 16,
-    marginLeft: 4, marginBottom: 8,
+    marginLeft: 2, marginBottom: 8,
   },
   card: {
     backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,

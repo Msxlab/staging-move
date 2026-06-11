@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ListEntrance } from "@/components/ui/ListEntrance";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import {
   getCategoryIcon,

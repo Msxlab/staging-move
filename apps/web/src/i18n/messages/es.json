@@ -468,7 +468,14 @@
       "unlimited": "Ilimitados",
       "included": "Incluido",
       "notIncluded": "No incluido",
-      "footnote": "Precios mensuales — la facturación anual está disponible con descuento. Las sugerencias reflejan cobertura reportada a la FCC a nivel de área — datos de cobertura reportados, no una garantía de servicio en tu dirección."
+      "footnote": "Precios mensuales — la facturación anual está disponible con descuento. Las sugerencias reflejan cobertura reportada a la FCC a nivel de área — datos de cobertura reportados, no una garantía de servicio en tu dirección.",
+      "rowWeatherDigest": "Alertas de clima de la semana de mudanza y resumen semanal por correo",
+      "rowConcurrentPlans": "Planes de mudanza simultáneos",
+      "rowRealMap": "Mapa real en las tarjetas de ruta y dirección",
+      "rowPrioritySupport": "Soporte prioritario",
+      "rowVehicleCheck": "Decodificación de VIN del vehículo y verificación de retiros de la NHTSA",
+      "rowDossierPdf": "Exportación en PDF del Dossier del nuevo hogar",
+      "rowMoverSuggestions": "Sugerencias de transportistas registrados ante la FMCSA"
     }
   },
   "auth": {
@@ -516,15 +523,11 @@
     "resetPassword_successDescription": "Ya puedes iniciar sesión con tu nueva contraseña.",
     "resetPassword_invalid": "Este enlace de restablecimiento es inválido o expiró.",
     "setupPasswordTitle": "Protege tu cuenta",
-    "setupPasswordSubtitle": "Agrega una contrasena para iniciar sesion con correo y contrasena, ademas de Google o Apple. Por tu seguridad, te enviaremos un enlace de configuracion de un solo uso por correo.",
+    "setupPasswordSubtitle": "Te enviaremos un enlace seguro para agregar inicio de sesion con correo y contrasena.",
     "setupPasswordHelper": "Usa al menos 12 caracteres con mayuscula, minuscula, numero y caracter especial.",
-    "setupPasswordCta": "Enviarme un enlace seguro de configuracion",
+    "setupPasswordCta": "Enviar enlace",
     "setupPasswordMismatch": "Primero introduce contrasenas que coincidan.",
-    "setupPasswordFailed": "No se pudo enviar tu enlace de configuracion.",
-    "setupPasswordSentTitle": "Revisa tu correo",
-    "setupPasswordSentBody": "Te enviamos un enlace seguro de un solo uso para configurar tu contrasena. Abrelo en este dispositivo para terminar.",
-    "setupPasswordResend": "Enviar otro enlace",
-    "setupPasswordSkip": "Continuar sin contrasena",
+    "setupPasswordFailed": "No se pudo enviar el enlace.",
     "mfaRequired_title": "Autenticación de dos factores",
     "mfaRequired_subtitle": "Introduce el código de 6 dígitos de tu app de autenticación.",
     "mfaCode": "Código de verificación",
@@ -556,7 +559,14 @@
     "verifyEmailSignInFirst": "Inicia sesión con la cuenta que acabas de crear y luego verifica tu correo antes de abrir la app.",
     "verificationAlreadyVerified": "Esta cuenta ya está verificada.",
     "verificationSent": "Correo de verificación enviado. Revisa tu bandeja de entrada.",
-    "verificationResendFailed": "No se pudo reenviar el correo de verificación."
+    "verificationResendFailed": "No se pudo reenviar el correo de verificación.",
+    "setupPasswordLinkHelper": "Por seguridad, la configuracion de contrasena se completa desde el enlace enviado a tu correo verificado.",
+    "setupPasswordSentTitle": "Revisa tu correo",
+    "setupPasswordSent": "Enviamos un enlace seguro para configurar la contrasena a tu correo.",
+    "setupPasswordSentBody": "Te enviamos un enlace seguro de un solo uso para configurar tu contrasena. Abrelo en este dispositivo para terminar.",
+    "setupPasswordResend": "Enviar otro enlace",
+    "setupPasswordContinue": "Continuar",
+    "setupPasswordSkip": "Continuar sin contrasena"
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",

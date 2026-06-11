@@ -13,10 +13,20 @@ const webInput = {
   hasAvailableNativeSku: () => false,
 };
 
-function featuresOf(entries: PlanComparisonEntry[], key: string): string[] {
+/** Feature i18n keys present for a plan (order-preserving). */
+function featureKeysOf(entries: PlanComparisonEntry[], key: string): string[] {
   const entry = entries.find((e) => e.key === key);
   if (!entry) throw new Error(`missing plan ${key}`);
-  return entry.features;
+  return entry.features.map((f) => f.key);
+}
+
+function hasFeature(entries: PlanComparisonEntry[], plan: string, key: string): boolean {
+  return featureKeysOf(entries, plan).includes(key);
+}
+
+function valueOf(entries: PlanComparisonEntry[], plan: string, key: string): number | undefined {
+  const entry = entries.find((e) => e.key === plan);
+  return entry?.features.find((f) => f.key === key)?.value;
 }
 
 describe("buildPlanComparison", () => {
@@ -35,41 +45,97 @@ describe("buildPlanComparison", () => {
     }
   });
 
-  it("puts AI move briefing and New Home Dossier in every paid tier but not Free", () => {
+  // Mirrors the web compare table exactly: AI move briefing is Family+Pro only
+  // (the cost-control cap, not an Individual feature).
+  it("puts AI move briefing in Family and Pro only", () => {
+    const entries = buildPlanComparison(webInput);
+    expect(hasFeature(entries, "FAMILY", "subscription_featAiBriefing")).toBe(true);
+    expect(hasFeature(entries, "PRO", "subscription_featAiBriefing")).toBe(true);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featAiBriefing")).toBe(false);
+    expect(hasFeature(entries, "INDIVIDUAL", "subscription_featAiBriefing")).toBe(false);
+  });
+
+  // New Home Dossier (the dossier screen) + VIN/weather/digest start at Individual.
+  it("puts New Home Dossier, vehicle check and weather digest in Individual and up, not Free", () => {
     const entries = buildPlanComparison(webInput);
     for (const paid of ["INDIVIDUAL", "FAMILY", "PRO"]) {
-      const features = featuresOf(entries, paid);
-      expect(features.some((f) => f.includes("AI move briefing"))).toBe(true);
-      expect(features.some((f) => f.includes("New Home Dossier"))).toBe(true);
+      expect(hasFeature(entries, paid, "subscription_featHomeDossier")).toBe(true);
+      expect(hasFeature(entries, paid, "subscription_featVehicleCheck")).toBe(true);
+      expect(hasFeature(entries, paid, "subscription_featWeatherDigest")).toBe(true);
     }
-    const free = featuresOf(entries, "FREE_TRIAL");
-    expect(free.some((f) => f.includes("AI move briefing"))).toBe(false);
-    expect(free.some((f) => f.includes("New Home Dossier"))).toBe(false);
+    for (const k of ["subscription_featHomeDossier", "subscription_featVehicleCheck", "subscription_featWeatherDigest"]) {
+      expect(hasFeature(entries, "FREE_TRIAL", k)).toBe(false);
+    }
+  });
+
+  // Real map is Family+Pro only.
+  it("puts the real map in Family and Pro only", () => {
+    const entries = buildPlanComparison(webInput);
+    expect(hasFeature(entries, "FAMILY", "subscription_featRealMap")).toBe(true);
+    expect(hasFeature(entries, "PRO", "subscription_featRealMap")).toBe(true);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featRealMap")).toBe(false);
+    expect(hasFeature(entries, "INDIVIDUAL", "subscription_featRealMap")).toBe(false);
+  });
+
+  // Movers, dossier PDF, multiple concurrent plans and priority support are Pro-only.
+  it("puts movers, dossier PDF, multi-plan and priority support in Pro only", () => {
+    const entries = buildPlanComparison(webInput);
+    const proOnly = [
+      "subscription_featMovers",
+      "subscription_featDossierPdf",
+      "subscription_featConcurrentPlans",
+      "subscription_featPrioritySupport",
+      "subscription_featPartnerHub",
+      "subscription_featTaxExport",
+    ];
+    for (const k of proOnly) {
+      expect(hasFeature(entries, "PRO", k)).toBe(true);
+      for (const lower of ["FREE_TRIAL", "INDIVIDUAL", "FAMILY"]) {
+        expect(hasFeature(entries, lower, k)).toBe(false);
+      }
+    }
+    // Pro advertises running 3 move plans at once.
+    expect(valueOf(entries, "PRO", "subscription_featConcurrentPlans")).toBe(3);
   });
 
   it("includes smart provider suggestions with FCC & utility data in every tier, including Free", () => {
     const entries = buildPlanComparison(webInput);
     for (const key of ["FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"]) {
-      expect(
-        featuresOf(entries, key).some((f) => f.includes("Smart provider suggestions")),
-      ).toBe(true);
+      expect(hasFeature(entries, key, "subscription_featSmartSuggestions")).toBe(true);
     }
   });
 
-  it("keeps existing differentiators honest: move plan, members, Partner Hub, exports", () => {
+  // Caps and seats mirror the web compare table — drift fails CI here.
+  it("mirrors web address/service caps (3/10/15/25 · 25/100/500/1000) and seats (1/1/5/10)", () => {
     const entries = buildPlanComparison(webInput);
-    // Free previews the move plan; Individual unlocks the full one.
-    expect(featuresOf(entries, "FREE_TRIAL").some((f) => f.includes("Preview your move plan"))).toBe(true);
-    expect(featuresOf(entries, "INDIVIDUAL").some((f) => f.includes("Full personalized move plan"))).toBe(true);
-    // Member counts come from the shared definitions (6 / 10 seats).
-    expect(featuresOf(entries, "FAMILY").some((f) => f.includes("Up to 6 members"))).toBe(true);
-    expect(featuresOf(entries, "PRO").some((f) => f.includes("up to 10 members"))).toBe(true);
-    // Partner Hub is Pro-only; CSV/PDF export is paid-tier.
-    expect(featuresOf(entries, "PRO").some((f) => f.includes("Partner Hub"))).toBe(true);
-    for (const key of ["FREE_TRIAL", "INDIVIDUAL", "FAMILY"]) {
-      expect(featuresOf(entries, key).some((f) => f.includes("Partner Hub"))).toBe(false);
+    expect(valueOf(entries, "FREE_TRIAL", "subscription_featAddresses")).toBe(3);
+    expect(valueOf(entries, "INDIVIDUAL", "subscription_featAddresses")).toBe(10);
+    expect(valueOf(entries, "FAMILY", "subscription_featAddresses")).toBe(15);
+    expect(valueOf(entries, "PRO", "subscription_featAddresses")).toBe(25);
+
+    expect(valueOf(entries, "FREE_TRIAL", "subscription_featServices")).toBe(25);
+    expect(valueOf(entries, "INDIVIDUAL", "subscription_featServices")).toBe(100);
+    expect(valueOf(entries, "FAMILY", "subscription_featServices")).toBe(500);
+    expect(valueOf(entries, "PRO", "subscription_featServices")).toBe(1000);
+
+    // Members only listed on shared tiers (seatLimit > 1): Family 5, Pro 10.
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featMembers")).toBe(false);
+    expect(hasFeature(entries, "INDIVIDUAL", "subscription_featMembers")).toBe(false);
+    expect(valueOf(entries, "FAMILY", "subscription_featMembers")).toBe(5);
+    expect(valueOf(entries, "PRO", "subscription_featMembers")).toBe(10);
+  });
+
+  it("keeps move plan and export differentiators honest", () => {
+    const entries = buildPlanComparison(webInput);
+    // Free previews the move plan; paid tiers unlock the full one.
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featMovePlanPreview")).toBe(true);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featMovePlanFull")).toBe(false);
+    for (const paid of ["INDIVIDUAL", "FAMILY", "PRO"]) {
+      expect(hasFeature(entries, paid, "subscription_featMovePlanFull")).toBe(true);
+      expect(hasFeature(entries, paid, "subscription_featExport")).toBe(true);
     }
-    expect(featuresOf(entries, "INDIVIDUAL").some((f) => f.includes("CSV, PDF"))).toBe(true);
+    // CSV/PDF export is paid-only.
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featExport")).toBe(false);
   });
 
   it("marks the effective plan as current and falls back to Free for unknown plans", () => {

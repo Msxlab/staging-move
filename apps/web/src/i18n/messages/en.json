@@ -468,7 +468,14 @@
       "unlimited": "Unlimited",
       "included": "Included",
       "notIncluded": "Not included",
-      "footnote": "Monthly prices shown — annual billing is available at a discount. Smart suggestions reflect coverage reported to the FCC at the area level — reported coverage data, not a guarantee of service at your address."
+      "footnote": "Monthly prices shown — annual billing is available at a discount. Smart suggestions reflect coverage reported to the FCC at the area level — reported coverage data, not a guarantee of service at your address.",
+      "rowWeatherDigest": "Move-week weather alerts & weekly digest email",
+      "rowConcurrentPlans": "Concurrent move plans",
+      "rowRealMap": "Real map on route & address cards",
+      "rowPrioritySupport": "Priority support",
+      "rowVehicleCheck": "Vehicle VIN decode & NHTSA recall check",
+      "rowDossierPdf": "New Home Dossier PDF export",
+      "rowMoverSuggestions": "FMCSA-registered mover suggestions"
     }
   },
   "auth": {
@@ -516,15 +523,11 @@
     "resetPassword_successDescription": "You can now sign in with your new password.",
     "resetPassword_invalid": "This reset link is invalid or expired.",
     "setupPasswordTitle": "Secure your account",
-    "setupPasswordSubtitle": "Add a password so you can sign in with email and password as well as Google or Apple. For your security, we'll email you a single-use setup link.",
+    "setupPasswordSubtitle": "We will email a secure setup link so you can add email and password sign-in.",
     "setupPasswordHelper": "Use at least 12 characters with uppercase, lowercase, a number, and a special character.",
-    "setupPasswordCta": "Send me a secure setup link",
+    "setupPasswordCta": "Email setup link",
     "setupPasswordMismatch": "Enter matching passwords first.",
-    "setupPasswordFailed": "Could not send your setup link.",
-    "setupPasswordSentTitle": "Check your email",
-    "setupPasswordSentBody": "We sent a secure, single-use link to set your password. Open it on this device to finish.",
-    "setupPasswordResend": "Send another link",
-    "setupPasswordSkip": "Continue without a password",
+    "setupPasswordFailed": "Could not send the setup link.",
     "mfaRequired_title": "Two-factor authentication",
     "mfaRequired_subtitle": "Enter the 6-digit code from your authenticator app.",
     "mfaCode": "Verification code",
@@ -556,7 +559,14 @@
     "verifyEmailSignInFirst": "Sign in with the account you just created, then verify your email before opening the app.",
     "verificationAlreadyVerified": "This account is already verified.",
     "verificationSent": "Verification email sent. Check your inbox.",
-    "verificationResendFailed": "Could not resend verification email."
+    "verificationResendFailed": "Could not resend verification email.",
+    "setupPasswordLinkHelper": "For your security, password setup is completed from the link sent to your verified email.",
+    "setupPasswordSentTitle": "Check your email",
+    "setupPasswordSent": "We sent a secure password setup link to your email.",
+    "setupPasswordSentBody": "We sent a secure, single-use link to set your password. Open it on this device to finish.",
+    "setupPasswordResend": "Send another link",
+    "setupPasswordContinue": "Continue",
+    "setupPasswordSkip": "Continue without a password"
   },
   "dashboard": {
     "welcome": "Welcome back",

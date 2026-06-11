@@ -51,9 +51,25 @@ export interface BackupArchiveRecordMetadata {
   compatibility?: BackupCompatibilityMetadata | null;
 }
 
+/**
+ * Outcome of the optional Google Drive mirror that runs AFTER a
+ * successful offsite upload. Strictly informational: the mirror is
+ * fire-and-forget and never affects backup status, and retention never
+ * touches Drive (the owner manages accumulated mirror files manually).
+ */
+export interface BackupGdriveMirrorMetadata {
+  status: "stored" | "disabled" | "failed";
+  fileId: string | null;
+  fileName: string | null;
+  folderId: string | null;
+  uploadedAt: string | null;
+  reason: string | null;
+}
+
 export interface BackupRecordMetadata {
   offsite?: BackupOffsiteMetadata | null;
   archive?: BackupArchiveRecordMetadata | null;
+  gdrive?: BackupGdriveMirrorMetadata | null;
   error?: string | null;
 }
 
@@ -282,6 +298,21 @@ function normalizeOffsiteMetadata(input: any): BackupOffsiteMetadata | null {
   };
 }
 
+function normalizeGdriveMirrorMetadata(
+  input: any,
+): BackupGdriveMirrorMetadata | null {
+  if (!input || typeof input !== "object") return null;
+  if (!["stored", "disabled", "failed"].includes(input.status)) return null;
+  return {
+    status: input.status,
+    fileId: typeof input.fileId === "string" ? input.fileId : null,
+    fileName: typeof input.fileName === "string" ? input.fileName : null,
+    folderId: typeof input.folderId === "string" ? input.folderId : null,
+    uploadedAt: typeof input.uploadedAt === "string" ? input.uploadedAt : null,
+    reason: typeof input.reason === "string" ? input.reason : null,
+  };
+}
+
 function normalizeArchiveRecordMetadata(
   input: any,
 ): BackupArchiveRecordMetadata | null {
@@ -383,6 +414,7 @@ export function parseBackupRecordMetadata(
     return {
       offsite: normalizeOffsiteMetadata((parsed as any).offsite),
       archive: normalizeArchiveRecordMetadata((parsed as any).archive),
+      gdrive: normalizeGdriveMirrorMetadata((parsed as any).gdrive),
       error:
         typeof (parsed as any).error === "string"
           ? (parsed as any).error
@@ -400,6 +432,7 @@ export function serializeBackupRecordMetadata(
   const payload: BackupRecordMetadata = {};
   if (safeMetadata.offsite) payload.offsite = safeMetadata.offsite;
   if (safeMetadata.archive) payload.archive = safeMetadata.archive;
+  if (safeMetadata.gdrive) payload.gdrive = safeMetadata.gdrive;
   if (safeMetadata.error) payload.error = safeMetadata.error;
   return Object.keys(payload).length > 0 ? JSON.stringify(payload) : null;
 }

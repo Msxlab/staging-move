@@ -15,11 +15,14 @@ vi.mock("lucide-react", () => {
     Baby: Icon,
     Bell: Icon,
     Building2: Icon,
+    Car: Icon,
     Check: Icon,
     CheckCircle2: Icon,
+    CloudRain: Icon,
     Crown: Icon,
     Download: Icon,
     FileText: Icon,
+    Headset: Icon,
     Home: Icon,
     Languages: Icon,
     Map: Icon,
@@ -112,23 +115,47 @@ describe("PricingSection", () => {
     expect(html).toContain("Individual");
   });
 
-  it("lists AI move briefing and New Home Dossier on every paid card, smart suggestions everywhere", () => {
+  it("lists AI briefing on Family+Pro only, the dossier on every paid card, smart suggestions everywhere", () => {
     const html = renderToStaticMarkup(
       <PricingSection ctaHref="/sign-up" ctaLabelLoggedIn={false} />,
     );
 
-    // One bullet per paid card (Individual, Family, Pro) + one compare-table
-    // row label each. Assert on substrings without "&" —
+    // AI move briefing is Family+Pro only now (FEATURES.aiBriefing) — Individual
+    // does NOT list it. The Family card states it; the Pro card rolls it up under
+    // "Everything in Family". So: Family card bullet + one compare-table row = 2.
+    expect(html.match(/AI move briefing/g)).toHaveLength(2);
+    // New Home Dossier appears on all three paid cards (Individual/Family screen,
+    // Pro lists the PDF export) + two compare rows (the dossier screen + the
+    // Pro-only PDF export). Assert on substrings without "&" —
     // renderToStaticMarkup escapes it to &amp;.
-    expect(html.match(/AI move briefing/g)).toHaveLength(4);
-    expect(html.match(/New Home Dossier/g)).toHaveLength(4);
-    // 3 card bullets + the Free mention in the subscription-terms area (the
-    // compare-table row label is worded without "with", so it's not counted).
-    expect(html.match(/Smart provider suggestions with FCC broadband/g)).toHaveLength(4);
+    expect(html.match(/New Home Dossier/g)).toHaveLength(5);
+    // Individual + Family card bullets + the Free mention in the
+    // subscription-terms area = 3 (the Pro card rolls it up under "Everything in
+    // Family"; the compare-table row label is worded without "with", so neither
+    // is counted).
+    expect(html.match(/Smart provider suggestions with FCC broadband/g)).toHaveLength(3);
     expect(html).toContain("including Free");
     // Honesty guardrail: reported coverage data, never a guarantee.
     expect(html).toContain("reported coverage data");
     expect(html).toContain("not a guarantee of service at your address");
+  });
+
+  it("surfaces the new Individual-tier and Pro-only differentiators on the cards", () => {
+    const html = renderToStaticMarkup(
+      <PricingSection ctaHref="/sign-up" ctaLabelLoggedIn={false} />,
+    );
+
+    // Individual+ value (FEATURES.vehicleCheck / weatherDigest).
+    expect(html).toContain("Vehicle VIN decode");
+    expect(html).toContain("Move-week weather alerts");
+    // Family+ real map (FEATURES.realMap).
+    expect(html).toContain("Real map on route");
+    // Pro-only differentiators (FEATURES.moverSuggestions / dossierPdf /
+    // concurrentPlanLimit / prioritySupport).
+    expect(html).toContain("FMCSA-registered mover suggestions");
+    expect(html).toContain("New Home Dossier PDF export");
+    expect(html).toContain("Up to 3 concurrent move plans");
+    expect(html).toContain("Priority support");
   });
 
   it("keeps card bullets in sync with BILLING_PLAN_DEFINITIONS marketing features", () => {
