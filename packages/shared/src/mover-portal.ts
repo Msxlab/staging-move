@@ -88,12 +88,14 @@ export function moverStatusLabel(status: string): string {
 // ── Upload limits (shared by the web upload route + the apply form UI) ────────
 export const MOVER_DOC_MAX_BYTES = 10 * 1024 * 1024; // 10 MB per file
 export const MOVER_DOC_MAX_COUNT = 8; // total documents per application
+// Kept in lockstep with the web R2 client's ALLOWED_UPLOAD_CONTENT_TYPES
+// (apps/web/src/lib/storage/r2-client.ts) — the upload would be rejected there
+// anyway, so advertising a type the storage layer refuses would be a lie.
 export const MOVER_DOC_ALLOWED_CONTENT_TYPES: readonly string[] = [
   "application/pdf",
   "image/jpeg",
   "image/png",
   "image/webp",
-  "image/heic",
 ] as const;
 
 export function isAllowedMoverDocContentType(contentType: string): boolean {
