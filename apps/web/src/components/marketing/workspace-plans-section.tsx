@@ -23,8 +23,8 @@ type PlanBullet = { icon: typeof Users; label: string };
 
 const FAMILY_BULLETS: PlanBullet[] = [
   { icon: Users, label: "Up to 6 members (1 owner + 5)" },
-  { icon: Building2, label: "17 addresses" },
-  { icon: Wrench, label: "250 services" },
+  { icon: Building2, label: "15 addresses" },
+  { icon: Wrench, label: "500 services" },
   { icon: Users, label: "Shared household workspace — invite members, assign roles" },
   { icon: Baby, label: "Child accounts (no financial visibility)" },
 ];

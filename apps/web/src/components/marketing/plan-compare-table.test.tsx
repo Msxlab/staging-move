@@ -46,22 +46,22 @@ const excluded = { kind: "excluded" } as const;
 const value = (v: number) => ({ kind: "value", value: v }) as const;
 
 describe("COMPARE_GROUPS — every cell pinned to the enforced ground truth", () => {
-  it("addresses mirror PLAN_LIMITS.maxAddresses (3/10/17/25)", () => {
+  it("addresses mirror PLAN_LIMITS.maxAddresses (3/10/15/25)", () => {
     // Mirrored literals: PLAN_LIMITS in apps/web/src/lib/plan-limits.ts is
     // server-only (prisma import) and unexported, so this test is the drift
     // guard for the copies inside plan-compare-table.tsx.
-    expect(cells("rowAddresses")).toEqual([value(3), value(10), value(17), value(25)]);
+    expect(cells("rowAddresses")).toEqual([value(3), value(10), value(15), value(25)]);
   });
 
-  it("services mirror PLAN_LIMITS.maxServices (Free unlimited / 100 / 250 / 1000)", () => {
-    expect(cells("rowServices")).toEqual([{ kind: "unlimited" }, value(100), value(250), value(1000)]);
+  it("services mirror PLAN_LIMITS.maxServices (10 / 100 / 500 / 1000 — Free is a thin tier now)", () => {
+    expect(cells("rowServices")).toEqual([value(10), value(100), value(500), value(1000)]);
   });
 
-  it("providers/reminders and smart suggestions (FCC + utility data) are on every tier, including Free", () => {
+  it("providers/reminders on every tier; data-checked smart suggestions are Individual and up (Free is catalog-only)", () => {
     expect(cells("rowProvidersReminders")).toEqual([included, included, included, included]);
-    // Derived from BILLING_PLAN_DEFINITIONS[*].features — a copy change in
-    // packages/shared/src/billing.ts that drops the line flips this cell.
-    expect(cells("rowSmartSuggestions")).toEqual([included, included, included, included]);
+    // Derived from FEATURES[plan].addressValidation — Free has no data-checked
+    // (FCC/utility) suggestions, so the cell is honestly excluded for Free.
+    expect(cells("rowSmartSuggestions")).toEqual([excluded, included, included, included]);
   });
 
   it("move plan, New Home Dossier, VIN check, weather digest, address validation, CSV/PDF export: Individual and up", () => {
@@ -124,10 +124,9 @@ describe("PlanCompareTable markup", () => {
 
   it("renders value cells, checks, and dashes honestly", () => {
     // Limits as plain values (1,000 is locale-formatted).
-    for (const valueCell of [">3<", ">10<", ">17<", ">25<", ">100<", ">250<", ">1,000<", ">6<"]) {
+    for (const valueCell of [">3<", ">10<", ">15<", ">25<", ">100<", ">500<", ">1,000<", ">6<"]) {
       expect(html).toContain(valueCell);
     }
-    expect(html).toContain("Unlimited");
     // Paid-only rows leave honest dashes in the Free column, with sr text.
     expect(html).toContain("Included");
     expect(html).toContain("Not included");

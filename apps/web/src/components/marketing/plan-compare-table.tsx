@@ -47,23 +47,18 @@ const PLAN_HEADER: Record<BillingPlan, { nameKey: string; accentClass: string }>
 const MAX_ADDRESSES: Record<BillingPlan, number> = {
   FREE_TRIAL: 3,
   INDIVIDUAL: 10,
-  FAMILY: 17,
+  FAMILY: 15,
   PRO: 25,
 };
 
 // Source: PLAN_LIMITS[plan].maxServices — apps/web/src/lib/plan-limits.ts.
-// `null` mirrors the UNLIMITED sentinel on the Free tier.
+// Free is a thin teaser tier (10 services); no UNLIMITED tier remains.
 const MAX_SERVICES: Record<BillingPlan, number | null> = {
-  FREE_TRIAL: null,
+  FREE_TRIAL: 10,
   INDIVIDUAL: 100,
-  FAMILY: 250,
+  FAMILY: 500,
   PRO: 1000,
 };
-
-// The exact marketing line shipped in BILLING_PLAN_DEFINITIONS[*].features
-// (packages/shared/src/billing.ts). The cell derives from `features.includes`,
-// so if the copy is ever removed from a tier the check honestly disappears.
-const SMART_SUGGESTIONS_LINE = "Smart provider suggestions with FCC broadband & utility data";
 
 export type CompareCell =
   | { kind: "included" }
@@ -104,11 +99,12 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       // tracking + bill/renewal reminders ship on every tier ("Bill & renewal reminders" on
       // Free/Individual, "Consolidated household reminders" on Family, "Everything in Family" on Pro).
       { labelKey: "rowProvidersReminders", cell: () => INCLUDED },
-      // Row source: BILLING_PLAN_DEFINITIONS[plan].features contains SMART_SUGGESTIONS_LINE
-      // (packages/shared/src/billing.ts) — on every tier, including Free.
+      // Row source: FEATURES[plan].addressValidation (packages/shared/src/workspace-entitlements.ts)
+      // — the FCC-broadband + utility DATA-CHECK is Individual and up; Free gets catalog-only
+      // suggestions (covered by rowProvidersReminders), so this row is honestly off for Free.
       {
         labelKey: "rowSmartSuggestions",
-        cell: (plan) => onOff(BILLING_PLAN_DEFINITIONS[plan].features.includes(SMART_SUGGESTIONS_LINE)),
+        cell: (plan) => onOff(planFeatures(plan).addressValidation),
       },
     ],
   },

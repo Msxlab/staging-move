@@ -73,8 +73,8 @@ const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
   ],
   FAMILY: [
     { icon: Users, label: "Up to 6 members (you + 5)" },
-    { icon: Building2, label: "17 addresses" },
-    { icon: Wrench, label: "250 services" },
+    { icon: Building2, label: "15 addresses" },
+    { icon: Wrench, label: "500 services" },
     { icon: Sparkles, label: "AI move briefing — your move, explained" },
     { icon: Map, label: "Real map on route & address cards" },
     { icon: Map, label: "New Home Dossier: flood zone, school district & moving-day weather" },

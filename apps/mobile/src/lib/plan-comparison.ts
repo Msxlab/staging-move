@@ -51,7 +51,7 @@ export interface PlanComparisonInput {
  * The web table pins these against ground truth in its own test; the colocated
  * plan-comparison.test.ts pins the mirrored values here so drift fails CI
  * instead of shipping a contradictory cell. Caps: addresses 3/10/15/25,
- * services 25/100/500/1000. Seats (members): 1/1/5/10.
+ * services 10/100/500/1000. Seats (members): 1/1/5/10.
  */
 const MAX_ADDRESSES: Record<BillingPlan, number> = {
   FREE_TRIAL: 3,
@@ -61,7 +61,7 @@ const MAX_ADDRESSES: Record<BillingPlan, number> = {
 };
 
 const MAX_SERVICES: Record<BillingPlan, number> = {
-  FREE_TRIAL: 25,
+  FREE_TRIAL: 10,
   INDIVIDUAL: 100,
   FAMILY: 500,
   PRO: 1000,
