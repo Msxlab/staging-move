@@ -17,17 +17,17 @@ Web
 [DONE] Billing portal / subscription lifecycle / Stripe webhook
 [DONE] Notifications / tickets / email flows
 [DONE] Cron / background / connector dispatch
-[DOING] Render and link checks
+[DONE] Render and link checks
 
 Admin
-[TODO] Admin module inventory
-[TODO] Admin auth / middleware / RBAC
-[TODO] Admin CRUD/API modules
-[TODO] Admin audit logs and operational safety
-[TODO] Admin web-to-admin data coupling
+[DONE] Admin module inventory
+[DONE] Admin auth / middleware / RBAC
+[DONE] Admin CRUD/API modules
+[DONE] Admin audit logs and operational safety
+[DONE] Admin web-to-admin data coupling
 
 Mobile
-[TODO] Mobile module inventory
+[DOING] Mobile module inventory
 [TODO] Mobile auth/session/bootstrap
 [TODO] Mobile route/API compatibility with web backend
 [TODO] Offline/cache/error flows
