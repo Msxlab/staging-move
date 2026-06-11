@@ -93,9 +93,21 @@ async function handleCron(request: NextRequest) {
     results.auditLogs = deletedAuditLogs.count;
 
     // AdminAuditLog — admin action trail. Keep 365 days.
+    //
+    // EXCEPTION: `BLOG_UPLOAD_IMAGE` rows are NOT purged by age. The
+    // blog-image-cleanup cron (admin) discovers orphaned R2 objects ONLY by
+    // iterating these upload rows (each carries the R2 object key in
+    // `changes.key`). If an upload row is purged before its image is cleaned
+    // up, the orphaned object becomes permanently undiscoverable and leaks R2
+    // storage forever. These rows are bounded by actual upload volume and are
+    // the cleanup job's index, so they are retained until a corresponding
+    // delete is recorded (the cleanup writes a `BLOG_DELETE_IMAGE` row).
     const adminAuditCutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
     const deletedAdminAuditLogs = await prisma.adminAuditLog.deleteMany({
-      where: { createdAt: { lt: adminAuditCutoff } },
+      where: {
+        createdAt: { lt: adminAuditCutoff },
+        action: { not: "BLOG_UPLOAD_IMAGE" },
+      },
     });
     results.adminAuditLogs = deletedAdminAuditLogs.count;
 

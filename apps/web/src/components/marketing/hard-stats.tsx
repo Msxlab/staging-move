@@ -12,8 +12,8 @@ export async function HardStats() {
 
   const stats = [
     { value: "$273", labelKey: "stat_subs_label", sourceKey: "stat_subs_source" },
-    { value: "1 in 3", labelKey: "stat_movers_label", sourceKey: "stat_movers_source" },
-    { value: "30M+", labelKey: "stat_households_label", sourceKey: "stat_households_source" },
+    { value: "11+", labelKey: "stat_movers_label", sourceKey: "stat_movers_source" },
+    { value: "28M", labelKey: "stat_households_label", sourceKey: "stat_households_source" },
   ] as const;
 
   return (

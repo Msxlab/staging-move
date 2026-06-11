@@ -43,8 +43,18 @@ export async function verifyUserStepUp(input: {
     return { ok: false, code: "STEP_UP_REQUIRED", message: "Re-authentication is required." };
   }
 
+  // When the user has MFA enabled, step-up MUST be satisfied by the second
+  // factor (TOTP / backup code) — a correct password alone is NOT enough.
+  // Otherwise an attacker who only has the password (phishing / stuffing)
+  // could export all data or transfer a workspace, defeating the point of
+  // MFA. For non-MFA users, the password remains a valid step-up proof.
   const confirmPassword = input.confirmPassword?.trim();
-  if (confirmPassword && user.passwordHash && await verifyPassword(confirmPassword, user.passwordHash)) {
+  if (
+    !user.mfaEnabled &&
+    confirmPassword &&
+    user.passwordHash &&
+    (await verifyPassword(confirmPassword, user.passwordHash))
+  ) {
     return { ok: true, method: "password" };
   }
 
@@ -95,7 +105,19 @@ export async function verifyUserStepUp(input: {
     return {
       ok: false,
       code: "STEP_UP_REQUIRED",
-      message: `Enter your password or a valid MFA code before ${operationLabel}.`,
+      message: user.mfaEnabled
+        ? `Enter a code from your authenticator app (or a backup code) before ${operationLabel}.`
+        : `Enter your password or a valid MFA code before ${operationLabel}.`,
+    };
+  }
+
+  // MFA user who only proved a password: the second factor is mandatory, so
+  // fail closed and tell them exactly what is still missing.
+  if (user.mfaEnabled && !mfaCode && !backupCode) {
+    return {
+      ok: false,
+      code: "STEP_UP_REQUIRED",
+      message: `Enter a code from your authenticator app (or a backup code) before ${operationLabel}.`,
     };
   }
 

@@ -180,6 +180,26 @@ describe("App Store webhook idempotency", () => {
     expect(processedMock.create).toHaveBeenCalledTimes(2);
   });
 
+  it("terminally skips (200, keeps reservation) when a sandbox purchase reaches production (finding 2)", async () => {
+    mockNotification();
+    // applyIapStateToUser raises the sentinel for a sandbox receipt reaching
+    // production for a non-allowlisted user.
+    mocks.applyIapStateToUser.mockRejectedValueOnce(
+      new Error("APPLE_SANDBOX_PURCHASE_IN_PRODUCTION"),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      skipped: "sandbox_purchase_production",
+    });
+    // Terminal skip — the reservation is NOT released, so Apple's redelivery is
+    // treated as a duplicate rather than reprocessed (retrying can't turn a
+    // sandbox purchase into a real one).
+    expect(processedMock.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("emits a safe security event when outer JWS verification fails", async () => {
     mocks.verifyAppleJws.mockImplementationOnce(() => {
       throw new Error("bad jws");

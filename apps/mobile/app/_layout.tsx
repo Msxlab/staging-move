@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform, StatusBar as NativeStatusBar, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,6 +12,8 @@ import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { ThemeProvider, useThemePreference } from "@/lib/theme";
 import { createQueryClient } from "@/lib/query-client";
+import { clearSensitiveLocalState } from "@/lib/local-cleanup";
+import { setSessionCleanupHook } from "@/lib/session-cleanup-hook";
 import * as SplashScreen from "expo-splash-screen";
 import {
   useFonts as useFraunces,
@@ -43,6 +45,7 @@ import {
 } from "@/lib/legal";
 import { exchangeMobileOAuthCallbackUrl } from "@/lib/mobile-oauth-handoff";
 import { consumePendingInviteJoin, extractInviteToken, setPendingInviteToken } from "@/lib/workspace-invite";
+import { reconcilePendingPurchases } from "@/lib/iap";
 
 // Cache the last known onboarding-completion flag so a transient /api/profile
 // failure does not silently route a brand-new account into (tabs). Cache hits
@@ -124,6 +127,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  // Guards the once-per-launch IAP pending-purchase reconciler (effect 6).
+  const reconciledPurchasesRef = useRef(false);
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {
@@ -352,6 +357,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     };
   }, [token, user, needsOnboarding, router]);
 
+  // 6) Recover charged-but-unverified IAP purchases on app start.
+  //
+  // If a purchase's verify failed mid-flow last session (transient network /
+  // 120s timeout), the StoreKit/Play transaction is still pending and the user
+  // was charged without an entitlement. Once an authenticated session exists,
+  // run the reconciler ONCE per launch: it finishes/verifies any pending
+  // transactions in the background so the user doesn't have to discover the
+  // manual "Restore purchases" button. Fully best-effort and non-blocking —
+  // never throws, never disturbs routing.
+  useEffect(() => {
+    if (!token || !user || reconciledPurchasesRef.current) return;
+    reconciledPurchasesRef.current = true;
+    void reconcilePendingPurchases().catch(() => {
+      // Swallow: recovery is opportunistic; manual Restore remains the backstop.
+    });
+  }, [token, user]);
+
   return (
     <>
       <AppLockGate>
@@ -420,6 +442,17 @@ export default function RootLayout() {
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
+
+  // Route forced logouts (401 → clearSession from onUnauthorized / refreshUser)
+  // through the SAME sensitive-state teardown the manual sign-out uses, so an
+  // expired session never leaves the prior user's PII (dashboard/widget
+  // snapshots, last-plan hint, onboarding cache) on the device. Registered here
+  // because clearSensitiveLocalState needs the queryClient; auth-store invokes
+  // it via the hook to avoid an import cycle.
+  useEffect(() => {
+    setSessionCleanupHook(() => clearSensitiveLocalState(queryClient));
+    return () => setSessionCleanupHook(null);
+  }, [queryClient]);
 
   // Edition VII · Aurora. Fraunces is the display face (Locate*flow*
   // wordmark, hero copy); Geist is the UI face. Both are loaded on first

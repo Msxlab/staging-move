@@ -183,6 +183,72 @@ describe("rateLimit fail-closed mode", () => {
   });
 });
 
+describe('rateLimit failClosed: "if-redis-configured" (billing #5)', () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.doUnmock("@upstash/ratelimit");
+    vi.doUnmock("@upstash/redis");
+    vi.resetModules();
+  });
+
+  it("falls back to in-memory (does NOT 429) in production when Redis is UNCONFIGURED", async () => {
+    // The core finding-5 fix: an unconfigured limiter must not turn a Redis
+    // outage into a revenue/access outage. Strict failClos:true still 429s
+    // (covered above); this conditional mode degrades to in-memory instead.
+    const { rateLimit: freshRateLimit } = await importFreshRateLimit({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+    });
+
+    const result = await freshRateLimit(`billing:checkout:${Math.random()}`, {
+      limit: 5,
+      windowSeconds: 60,
+      failClosed: "if-redis-configured",
+    });
+
+    // In-memory fallback admits the first request rather than denying it.
+    expect(result.success).toBe(true);
+  });
+
+  it("still fails CLOSED when a CONFIGURED Redis limiter is erroring", async () => {
+    vi.doMock("@upstash/ratelimit", () => {
+      class MockRatelimit {
+        static slidingWindow = () => ({});
+        async limit() {
+          throw new Error("redis connection refused");
+        }
+      }
+      return { Ratelimit: MockRatelimit };
+    });
+    vi.doMock("@upstash/redis", () => ({
+      Redis: class MockRedis {
+        constructor(_config: unknown) {}
+      },
+    }));
+    vi.resetModules();
+    process.env = {
+      ...originalEnv,
+      NODE_ENV: "production",
+      APP_ENV: "production",
+      UPSTASH_REDIS_REST_URL: "https://configured.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "configured-token-1234567890",
+    };
+
+    const mod = await import("./rate-limit");
+    mod.__resetLimiterHealthForTests();
+    const result = await mod.rateLimit("billing:checkout:configured-erroring", {
+      limit: 5,
+      windowSeconds: 60,
+      failClosed: "if-redis-configured",
+    });
+
+    // A configured-but-broken limiter mid-outage still denies write/checkout
+    // traffic for the short degrade window — write-path safety is preserved.
+    expect(result.success).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
+});
+
 describe("getLimiterHealth", () => {
   afterEach(() => {
     process.env = { ...originalEnv };

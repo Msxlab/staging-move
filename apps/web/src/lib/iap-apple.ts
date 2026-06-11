@@ -50,6 +50,55 @@ function pemFromDerBase64(derBase64: string): string {
   return `-----BEGIN CERTIFICATE-----\n${chunks.join("\n")}\n-----END CERTIFICATE-----`;
 }
 
+// Apple-specific certificate-extension OIDs. The official
+// app-store-server-library requires the leaf to carry the WWDR
+// "App Store" marker OID and the intermediate to carry Apple's
+// "Worldwide Developer Relations" marker OID — proving the chain was
+// minted by Apple's App Store CA branch, not just *any* certificate that
+// happens to chain up to AppleRootCA-G3 (Apple issues many such certs for
+// unrelated purposes). Without this, a different Apple-rooted leaf could
+// forge a "valid transaction" JWS → free premium.
+// Encoded as their DER OID byte sequences for a raw-DER scan (Node's
+// X509Certificate exposes no by-OID extension accessor).
+export const APPLE_LEAF_OID = "1.2.840.113635.100.6.11.1";
+export const APPLE_INTERMEDIATE_OID = "1.2.840.113635.100.6.2.1";
+
+// Encode a dotted OID string into its DER value-octet byte sequence (the
+// bytes that follow the 0x06/length tag inside a certificate). We scan the
+// certificate's raw DER for this sequence — present iff the extension OID
+// appears anywhere in the cert, which is exactly Apple's check.
+export function oidToDerBytes(oid: string): Buffer {
+  const parts = oid.split(".").map((p) => Number.parseInt(p, 10));
+  if (parts.length < 2 || parts.some((n) => !Number.isFinite(n) || n < 0)) {
+    throw new Error("APPLE_OID_INVALID");
+  }
+  const bytes: number[] = [40 * parts[0] + parts[1]];
+  for (let i = 2; i < parts.length; i++) {
+    let value = parts[i];
+    const stack: number[] = [value & 0x7f];
+    value = Math.floor(value / 128);
+    while (value > 0) {
+      stack.unshift((value & 0x7f) | 0x80);
+      value = Math.floor(value / 128);
+    }
+    bytes.push(...stack);
+  }
+  return Buffer.from(bytes);
+}
+
+const APPLE_LEAF_OID_DER = oidToDerBytes(APPLE_LEAF_OID);
+const APPLE_INTERMEDIATE_OID_DER = oidToDerBytes(APPLE_INTERMEDIATE_OID);
+
+export function certContainsOid(cert: X509Certificate, oidDer: Buffer): boolean {
+  // `cert.raw` is the full DER-encoded certificate. The extension's OID
+  // appears verbatim as these value octets, prefixed by an 0x06 (OBJECT
+  // IDENTIFIER) tag and the length. Match tag+length+value so an unrelated
+  // coincidental byte run can't satisfy the check.
+  const raw = cert.raw;
+  const needle = Buffer.concat([Buffer.from([0x06, oidDer.length]), oidDer]);
+  return raw.includes(needle);
+}
+
 // ────────────────────────────────────────────────────────────────
 // JWS verification (used for BOTH Server Notifications v2 and the
 // signedTransactionInfo/signedRenewalInfo returned from the API).
@@ -152,7 +201,23 @@ export function verifyAppleJws<T = unknown>(jws: string): T {
     throw new Error("APPLE_JWS_UNTRUSTED_ROOT");
   }
 
-  // 3. Time-bound leaf + intermediates.
+  // 3. Apple-specific OID enforcement (matches app-store-server-library).
+  //    The chain must be the App Store branch under AppleRootCA-G3:
+  //      - leaf carries 1.2.840.113635.100.6.11.1
+  //      - the intermediate immediately above the leaf carries
+  //        1.2.840.113635.100.6.2.1
+  //    Chaining up to the G3 root alone is NOT sufficient — Apple issues
+  //    many unrelated leaves under that root.
+  const leafCert = certs[0];
+  const intermediateCert = certs[1];
+  if (!certContainsOid(leafCert, APPLE_LEAF_OID_DER)) {
+    throw new Error("APPLE_JWS_LEAF_OID_MISSING");
+  }
+  if (!certContainsOid(intermediateCert, APPLE_INTERMEDIATE_OID_DER)) {
+    throw new Error("APPLE_JWS_INTERMEDIATE_OID_MISSING");
+  }
+
+  // 4. Time-bound leaf + intermediates.
   const now = new Date();
   for (const cert of certs) {
     const notBefore = new Date(cert.validFrom);
@@ -162,7 +227,7 @@ export function verifyAppleJws<T = unknown>(jws: string): T {
     }
   }
 
-  // 4. Verify the JWS signature using the leaf cert's public key.
+  // 5. Verify the JWS signature using the leaf cert's public key.
   const leaf = certs[0];
   const signingInput = Buffer.from(`${parts[0]}.${parts[1]}`, "utf8");
   const sigDerJose = base64UrlDecode(parts[2]);

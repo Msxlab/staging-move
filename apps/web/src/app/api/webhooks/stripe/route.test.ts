@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   captureMessage: vi.fn(),
   constructEvent: vi.fn(),
   subscriptionsRetrieve: vi.fn(),
+  subscriptionsList: vi.fn(),
+  subscriptionsCancel: vi.fn(),
   invoicesRetrieve: vi.fn(),
   stripeConstructor: vi.fn(),
   sendSubscriptionActivatedEmail: vi.fn(),
@@ -217,7 +219,12 @@ function localSubscription(overrides: Record<string, unknown> = {}) {
     userId: "user_1",
     status: "PENDING_CHECKOUT",
     accessType: "FREE_ACCESS",
-    provider: "ADMIN",
+    // Default to a Stripe-managed row — these fixtures back the normal
+    // webhook sync path. ADMIN manual-grant rows take a dedicated branch
+    // (they are intentionally NOT clobbered by Stripe sync — see the
+    // "skips Stripe sync for an ADMIN manual-grant row" test) and must be
+    // opted into explicitly via an override.
+    provider: "STRIPE",
     stripeCustomerId: "cus_1",
     stripeSubscriptionId: null,
     user: { id: "user_1", deletedAt: null },
@@ -239,7 +246,11 @@ describe("Stripe webhook idempotency and livemode", () => {
     mocks.stripeConstructor.mockImplementation(function StripeMock() {
       return {
       webhooks: { constructEvent: mocks.constructEvent },
-      subscriptions: { retrieve: mocks.subscriptionsRetrieve },
+      subscriptions: {
+        retrieve: mocks.subscriptionsRetrieve,
+        list: mocks.subscriptionsList,
+        cancel: mocks.subscriptionsCancel,
+      },
       invoices: { retrieve: mocks.invoicesRetrieve },
       };
     });
@@ -259,6 +270,10 @@ describe("Stripe webhook idempotency and livemode", () => {
     redemptionMock.updateMany.mockResolvedValue({ count: 0 });
     campaignMock.update.mockResolvedValue({});
     mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
+    // Default: customer has no other live subscriptions, so the duplicate-sub
+    // sweep is a no-op for tests that don't opt into a duplicate scenario.
+    mocks.subscriptionsList.mockResolvedValue({ data: [] });
+    mocks.subscriptionsCancel.mockResolvedValue({ id: "sub_canceled", status: "canceled" });
     mocks.invoicesRetrieve.mockResolvedValue({ id: "in_1", subscription: "sub_trial_1" });
     mocks.sendSubscriptionActivatedEmail.mockResolvedValue({});
     mocks.sendSubscriptionCanceledEmail.mockResolvedValue({});
@@ -831,5 +846,85 @@ describe("Stripe webhook idempotency and livemode", () => {
 
     expect(response.status).toBe(200);
     expect(subscriptionMock.update).not.toHaveBeenCalled();
+  });
+
+  it("skips Stripe sync for an ADMIN manual-grant row (finding 6)", async () => {
+    // A user whose Stripe sub was canceled is later given an admin manual
+    // premium grant (provider=ADMIN). A stale customer.subscription.updated
+    // arriving in Stripe's 72h retry window must NOT overwrite the ADMIN row
+    // with provider=STRIPE + CANCELED and silently revoke the manual premium.
+    mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(
+      localSubscription({
+        provider: "ADMIN",
+        status: "ACTIVE",
+        accessType: "PAID",
+        stripeSubscriptionId: null,
+        premiumGrantedBy: "admin_1",
+      }),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    // The guard short-circuits BEFORE any write — the ADMIN row is untouched.
+    expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
+    // Reservation stays marked (terminal no-op), so it is NOT released for retry.
+    expect(processedMock.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("cancels duplicate live Stripe subscriptions on checkout completion (finding 3)", async () => {
+    // A customer accumulated two live subscriptions from concurrent Checkout
+    // sessions. After the new one is synced, the OTHER live sub must be
+    // canceled so it can't keep billing invisibly.
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(
+      localSubscription({ provider: "STRIPE", stripeSubscriptionId: "sub_old" }),
+    );
+    mocks.subscriptionsList.mockResolvedValue({
+      data: [
+        { id: "sub_trial_1", cancel_at_period_end: false }, // the one we keep
+        { id: "sub_orphan", cancel_at_period_end: false }, // duplicate → cancel
+        { id: "sub_winding_down", cancel_at_period_end: true }, // already ending → skip
+      ],
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionsList).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: "cus_1", status: "active" }),
+    );
+    // Only the orphan is canceled — never the kept sub, never an already-ending one.
+    expect(mocks.subscriptionsCancel).toHaveBeenCalledTimes(1);
+    expect(mocks.subscriptionsCancel).toHaveBeenCalledWith("sub_orphan");
+  });
+
+  it("does not run the duplicate sweep for an ADMIN row on checkout completion", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(
+      localSubscription({ provider: "ADMIN", status: "ACTIVE", accessType: "PAID" }),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    // ADMIN row is skipped by the sync guard → no sweep, no cancels.
+    expect(mocks.subscriptionsList).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsCancel).not.toHaveBeenCalled();
+  });
+
+  it("never fails the webhook if the duplicate-subscription sweep errors", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(
+      localSubscription({ provider: "STRIPE", stripeSubscriptionId: "sub_old" }),
+    );
+    mocks.subscriptionsList.mockRejectedValue(new Error("stripe list failed"));
+
+    const response = await POST(request());
+
+    // Best-effort cleanup must never turn into a webhook retry storm.
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionsCancel).not.toHaveBeenCalled();
   });
 });

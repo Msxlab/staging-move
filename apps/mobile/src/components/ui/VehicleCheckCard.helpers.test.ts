@@ -107,6 +107,23 @@ describe("deriveVehicleCheckView", () => {
     expect(deriveVehicleCheckView({} as VehicleDecodeResponse)).toEqual({ kind: "error" });
   });
 
+  it("maps the paid-gate teaser (entitled:false) to an upgrade view, not an error", () => {
+    expect(
+      deriveVehicleCheckView({
+        configured: true,
+        entitled: false,
+        upgradeRequired: "VEHICLE_CHECK_UPGRADE_REQUIRED",
+      }),
+    ).toEqual({ kind: "upgrade" });
+  });
+
+  it("treats a paid response (no entitled field) as entitled and still decodes", () => {
+    // Paid responses omit `entitled` entirely; the upgrade branch must not
+    // swallow them.
+    expect(deriveVehicleCheckView(okResponse())).toMatchObject({ kind: "vehicle" });
+    expect(deriveVehicleCheckView(okResponse({ entitled: true }))).toMatchObject({ kind: "vehicle" });
+  });
+
   it("reports unavailable recalls as a null count (vehicle still renders)", () => {
     const view = deriveVehicleCheckView(
       okResponse({ recalls: { status: "unavailable", count: null, items: [] } }),

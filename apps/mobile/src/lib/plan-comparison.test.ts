@@ -106,7 +106,7 @@ describe("buildPlanComparison", () => {
   });
 
   // Caps and seats mirror the web compare table — drift fails CI here.
-  it("mirrors web address/service caps (3/10/15/25 · 10/100/500/1000) and seats (1/1/5/10)", () => {
+  it("mirrors web address/service caps (3/10/15/25 · 10/100/500/1000) and seats (1/1/6/10)", () => {
     const entries = buildPlanComparison(webInput);
     expect(valueOf(entries, "FREE_TRIAL", "subscription_featAddresses")).toBe(3);
     expect(valueOf(entries, "INDIVIDUAL", "subscription_featAddresses")).toBe(10);
@@ -118,10 +118,11 @@ describe("buildPlanComparison", () => {
     expect(valueOf(entries, "FAMILY", "subscription_featServices")).toBe(500);
     expect(valueOf(entries, "PRO", "subscription_featServices")).toBe(1000);
 
-    // Members only listed on shared tiers (seatLimit > 1): Family 5, Pro 10.
+    // Members only listed on shared tiers (seatLimit > 1): Family 6 (owner + 5),
+    // Pro 10 — pinned against FEATURES[plan].seatLimit and the web compare table.
     expect(hasFeature(entries, "FREE_TRIAL", "subscription_featMembers")).toBe(false);
     expect(hasFeature(entries, "INDIVIDUAL", "subscription_featMembers")).toBe(false);
-    expect(valueOf(entries, "FAMILY", "subscription_featMembers")).toBe(5);
+    expect(valueOf(entries, "FAMILY", "subscription_featMembers")).toBe(6);
     expect(valueOf(entries, "PRO", "subscription_featMembers")).toBe(10);
   });
 

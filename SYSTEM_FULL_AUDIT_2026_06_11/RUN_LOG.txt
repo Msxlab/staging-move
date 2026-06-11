@@ -1,8 +1,0 @@
-2026-06-11 - Audit restarted after context compaction. Existing project .md files are not used as evidence.
-2026-06-11 - Recreated audit folder and restored live todo/findings from active working summary.
-2026-06-11 - Completed code-only inventory and first web pass: public routes, pricing, blog, SEO/GEO, auth/account, addresses, services, moving, budget, providers.
-2026-06-11 - Added export/workspace mismatch finding from settings export page and export API route code.
-2026-06-11 - Audited workspace context, data scope, permissions, invitations, member management, transfer/delete/restore, sync, schema, and settings UI; added workspace privacy, invite verification, billing anchor, limit race, fallback, and validation findings.
-2026-06-11 - Audited Stripe checkout, portal, webhook idempotency, subscription actions, plan/cycle change routes, tax parameters, API version, and subscription UI copy; added payment/tax/API/consent/portal/UX findings.
-2026-06-11 - Audited notification prefs/feed, support tickets, email verification resend/verify, unsubscribe, and Resend webhook; added unsubscribe mapping, support/notification gate, and preference rate-limit findings.
-2026-06-11 - Audited web cron guard, scheduler configs, reminder timezone gates, scheduled-delivery queue, provider stats, blog publish, connector-dispatch route, connector runtime, and connector HTTP allowlist; added scheduler/queue/provider/connector findings.

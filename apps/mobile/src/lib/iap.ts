@@ -381,6 +381,95 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
   return results;
 }
 
+/**
+ * Cold-start "pending purchase reconciler".
+ *
+ * The per-purchase listener in `purchaseSubscription` is only registered for
+ * the duration of an active buy. If verify fails on a transient network error
+ * or the 120s timeout fires, the listener is torn down with the StoreKit/Play
+ * transaction still UNFINISHED — the user has been charged but holds no
+ * entitlement, and nothing in the app is listening when the store re-delivers
+ * it next session. (Manual "Restore purchases" is the only recovery, and it
+ * deliberately does NOT finishTransaction.)
+ *
+ * Call this once on app start (when a session exists). It asks the store for
+ * everything currently owned/pending, pushes each to /api/mobile/iap/verify,
+ * and — CRUCIALLY — calls `finishTransaction` after a successful verify so the
+ * store stops re-delivering it. Best-effort and total: it never throws, returns
+ * how many transactions it successfully reconciled, and a single failure does
+ * not abort the rest.
+ *
+ * Distinct from `restorePurchases` (user-initiated, surfaces per-item UI
+ * results, leaves transactions unfinished): this is the silent background
+ * settle-up of charged-but-unverified purchases.
+ */
+/**
+ * Pure decision for the reconciler: build the verify body for a pending
+ * purchase, or return `null` when it can't be safely verified.
+ *
+ * An iOS transaction with no signed payload (JWS) is unverifiable — we must
+ * NOT finish it (that would forfeit the store's retry), so it's skipped. On
+ * Android we backfill the productId from the purchase's own id list when the
+ * primary field is absent. Extracted + exported so the skip/keep logic is
+ * unit-testable without the native `require("expo-iap")` (which can't be mocked
+ * in the node test env).
+ */
+export function buildReconcileVerifyBody(
+  purchase: any,
+  platform: "ios" | "android" | string = Platform.OS,
+): Record<string, unknown> | null {
+  const body = buildVerifyBodyForPurchase(purchase, platform);
+  if (platform === "ios" && !body.signedTransaction) return null;
+  if (platform === "android" && !body.productId) {
+    const pid = getPurchaseProductId(purchase);
+    if (pid) body.productId = pid;
+  }
+  return body;
+}
+
+export async function reconcilePendingPurchases(): Promise<{ reconciled: number }> {
+  if (!isMobileStorePurchasesEnabledForPlatform()) return { reconciled: 0 };
+
+  const ok = await ensureConnection();
+  if (!ok) return { reconciled: 0 };
+  const IAP = getIapModule();
+  if (!IAP) return { reconciled: 0 };
+
+  let items: any[] = [];
+  try {
+    // Active items only: a finished/expired transaction has nothing left to
+    // settle, and on iOS this avoids re-processing the full purchase history.
+    items = (await IAP.getAvailablePurchases({ onlyIncludeActiveItemsIOS: true })) || [];
+  } catch (err) {
+    reportIapIssue("[IAP] reconcile getAvailablePurchases failed", err);
+    return { reconciled: 0 };
+  }
+
+  let reconciled = 0;
+  for (const purchase of items) {
+    const body = buildReconcileVerifyBody(purchase, Platform.OS);
+    // null ⇒ unverifiable (e.g. iOS transaction missing its signed payload).
+    // Skip rather than finishing it, so the store re-delivers it later.
+    if (!body) continue;
+
+    try {
+      const res = await api.post<VerifyResponse>("/api/mobile/iap/verify", body);
+      // Only finish once the server actually owns the entitlement. On failure
+      // leave the transaction UNFINISHED so the store re-delivers it later.
+      if (res.error || !res.data?.success) continue;
+      try {
+        await IAP.finishTransaction({ purchase, isConsumable: false });
+        reconciled += 1;
+      } catch (err) {
+        reportIapIssue("[IAP] reconcile finishTransaction failed", err);
+      }
+    } catch (err) {
+      reportIapIssue("[IAP] reconcile verify failed", err);
+    }
+  }
+  return { reconciled };
+}
+
 export async function openNativeSubscriptionSettings(productId?: string) {
   if (!isMobileStorePurchasesEnabledForPlatform()) return;
 

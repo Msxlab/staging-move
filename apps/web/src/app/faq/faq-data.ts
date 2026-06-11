@@ -27,7 +27,7 @@ export const faqCopyGroups: Array<{ title: string; items: FaqCopy[] }> = [
       {
         q: "What is included in the free plan?",
         plain:
-          "The free plan organizes your home: up to 3 addresses, unlimited providers and services, and bill and renewal reminders. When you have a move planned, the free plan shows a preview of your personalized plan — your countdown and top critical steps. Creating and tracking the full move plan (checklist, state guide, provider migration, and move tasks) requires the Individual, Family, or Pro plan.",
+          "The free plan organizes your home: up to 3 addresses, up to 10 service providers, and bill and renewal reminders. When you have a move planned, the free plan shows a preview of your personalized plan — your countdown and top critical steps. Creating and tracking the full move plan (checklist, state guide, provider migration, and move tasks) requires the Individual, Family, or Pro plan.",
       },
     ],
   },

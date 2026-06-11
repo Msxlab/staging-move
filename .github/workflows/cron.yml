@@ -19,7 +19,7 @@ name: Scheduled cron jobs
 on:
   schedule:
     - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch + scheduled-delivery (10m); blog-publish (hourly)
-    - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup
+    - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup, blog-image-cleanup (R2 orphan prune)
     - cron: "0 6 * * *" # daily 06:00: non-user-facing daily jobs (trial-check, admin digest, admin backup, data-retention)
     # ── Daily user-facing reminder batch, fired once per US-zone-hour so each
     # user is reminded at ~8am LOCAL instead of 1–3am. Each run scans all
@@ -77,15 +77,29 @@ jobs:
           case "${SCHED:-manual}" in
             "*/5 * * * *")
               hit "$WEB/api/cron/checkout-cleanup"
-              if [ $(( 10#$(date -u +%M) % 10 )) -eq 0 ]; then hit "$WEB/api/cron/connector-dispatch"; fi
-              if [ $(( 10#$(date -u +%M) % 10 )) -eq 0 ]; then hit "$WEB/api/cron/scheduled-delivery"; fi
-              if [ "$(date -u +%M)" = "00" ]; then hit "$WEB/api/cron/blog-publish"; fi
+              # These sub-jobs ride the */5 slot but must run on a coarser
+              # cadence. Use a WINDOW (`% 10 -lt 5`, `% 60 -lt 5`) instead of an
+              # exact-minute equality: GitHub cron is routinely delayed 1–10 min,
+              # so a `== :00` / `% 10 == 0` gate almost never matches the delayed
+              # wall-clock minute and the jobs STARVE (connector outbox and
+              # scheduled blog posts can go untriggered for hours). The window
+              # matches the delayed run to the first 5-minute bucket of each
+              # period; routes are idempotent/dedupe'd so an occasional double
+              # fire is a no-op. (Mirrors the uptime job's quarter-hour gate.)
+              if [ $(( 10#$(date -u +%M) % 10 )) -lt 5 ]; then hit "$WEB/api/cron/connector-dispatch"; fi
+              if [ $(( 10#$(date -u +%M) % 10 )) -lt 5 ]; then hit "$WEB/api/cron/scheduled-delivery"; fi
+              if [ $(( 10#$(date -u +%M) % 60 )) -lt 5 ]; then hit "$WEB/api/cron/blog-publish"; fi
               ;;
             "15 3 * * *")
               hit "$WEB/api/cron/stripe-reconcile"
               hit "$WEB/api/cron/workspace-purge"
               hit "$WEB/api/cron/provider-stats" POST
               hit "$WEB/api/cron/blog-cleanup"
+              # Prune orphaned R2 blog images (admin host). Without this entry
+              # the cleanup never runs in prod (DigitalOcean does not run the
+              # self-hosted ofelia scheduler) and unreferenced R2 objects
+              # accumulate without bound.
+              hit "$ADMIN/api/cron/blog-image-cleanup" POST
               ;;
             "0 6 * * *")
               # Non-user-facing daily jobs. These are NOT time-of-day sensitive

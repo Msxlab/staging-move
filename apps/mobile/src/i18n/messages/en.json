@@ -680,7 +680,8 @@
     "vehicleCheckRecallsUnavailable": "Recall info is unavailable right now.",
     "vehicleCheckRecallsLink": "Recall details at nhtsa.gov",
     "vehicleCheckDmvLink": "{{state}} DMV: {{name}}",
-    "vehicleCheckFinePrint": "Specs and recalls from NHTSA — registration requirements come from your state DMV."
+    "vehicleCheckFinePrint": "Specs and recalls from NHTSA — registration requirements come from your state DMV.",
+    "vehicleCheckUpgradePitch": "Decode your VIN and check for open recalls before you register in your new state — unlocks with Individual."
   },
   "dossier": {
     "title": "Your new home",

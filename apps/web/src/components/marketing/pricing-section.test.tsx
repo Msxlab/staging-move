@@ -129,12 +129,15 @@ describe("PricingSection", () => {
     // Pro-only PDF export). Assert on substrings without "&" —
     // renderToStaticMarkup escapes it to &amp;.
     expect(html.match(/New Home Dossier/g)).toHaveLength(5);
-    // Individual + Family card bullets + the Free mention in the
-    // subscription-terms area = 3 (the Pro card rolls it up under "Everything in
-    // Family"; the compare-table row label is worded without "with", so neither
-    // is counted).
+    // Individual + Family card bullets + the subscription-terms box line = 3
+    // (the Pro card rolls it up under "Everything in Family"; the compare-table
+    // row label is worded without "with", so neither is counted).
     expect(html.match(/Smart provider suggestions with FCC broadband/g)).toHaveLength(3);
-    expect(html).toContain("including Free");
+    // Honesty guardrail: the FCC data-check is Individual and up; Free gets
+    // catalog suggestions only. Must NOT claim FCC suggestions on the Free tier.
+    expect(html).toContain("included on Individual and up");
+    expect(html).toContain("Free gets");
+    expect(html).not.toContain("including Free");
     // Honesty guardrail: reported coverage data, never a guarantee.
     expect(html).toContain("reported coverage data");
     expect(html).toContain("not a guarantee of service at your address");

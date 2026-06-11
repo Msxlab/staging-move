@@ -3,13 +3,50 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 import { maskEmail } from "@/lib/privacy";
 import {
   sanitizeEmailHtml,
   sanitizeEmailSubject,
 } from "@/lib/email-template-sanitizer";
+
+// Email templates back security emails (password-reset, email-verify,
+// payment-failed) that reach ALL users, so mutating them is a high-trust
+// action. A compromised / grace-window ADMIN session must re-prove identity
+// with password + MFA before it can swap a reset link for a phishing link.
+// Mirrors feature-flags / runtime-config / notification-broadcast.
+const stepUpSchema = {
+  confirmPassword: z.string().max(256).optional(),
+  mfaCode: z.string().trim().max(16).optional(),
+  backupCode: z.string().trim().max(64).optional(),
+};
+
+function emailTemplateStepUpOptions(
+  req: NextRequest,
+  data: { mfaCode?: string; backupCode?: string },
+) {
+  const meta = getAuditRequestMeta(req);
+  return {
+    operation: "email_template_write",
+    requireMfa: true,
+    mfaCode: data.mfaCode,
+    backupCode: data.backupCode,
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+  };
+}
+
+function stepUpResponse(confirm: {
+  error?: string;
+  requiresMfa?: boolean;
+  rateLimited?: boolean;
+}) {
+  return NextResponse.json(
+    { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+    { status: confirm.rateLimited ? 429 : 403 },
+  );
+}
 
 // Mass-assignment hardening. POST and PUT bodies both go through these
 // allowlists — `id`, `slug` (on PUT), `createdAt`, `createdBy`, and any
@@ -44,13 +81,26 @@ const templateCreateSchema = z
     category: templateCategorySchema,
     variables: variablesSchema,
     isActive: z.boolean().optional(),
+    ...stepUpSchema,
   })
   .strict();
 
 // Slug is intentionally omitted from update — renaming a template slug
 // silently breaks every send-by-slug call site. Slug rename should be a
-// dedicated migration, not a stealth field on the regular PUT.
-const templateUpdateSchema = templateCreateSchema.omit({ slug: true }).partial().strict();
+// dedicated migration, not a stealth field on the regular PUT. Step-up
+// fields are re-added (the .omit + .partial would otherwise make them
+// optional already, but keeping them explicit documents intent).
+const templateUpdateSchema = templateCreateSchema
+  .omit({ slug: true })
+  .partial()
+  .strict();
+
+const templateDeleteSchema = z
+  .object({
+    id: z.string().trim().min(1).max(60),
+    ...stepUpSchema,
+  })
+  .strict();
 
 function parseMetadata(value: string | null | undefined): Record<string, unknown> {
   if (!value) return {};
@@ -175,6 +225,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid template payload" }, { status: 400 });
     }
     const { slug, name, subject, body, category, variables, isActive } = parsed.data;
+
+    const confirm = await requirePasswordConfirm(
+      session,
+      parsed.data.confirmPassword,
+      emailTemplateStepUpOptions(req, parsed.data),
+    );
+    if (!confirm.confirmed) return stepUpResponse(confirm);
+
     // Sanitize at write time so the stored row is never a stored-XSS
     // primitive — a future change to the renderer or a preview iframe
     // can't accidentally execute scripts that snuck through. Render
@@ -227,10 +285,27 @@ export async function PUT(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid template payload" }, { status: 400 });
     }
+
+    const confirm = await requirePasswordConfirm(
+      session,
+      parsed.data.confirmPassword,
+      emailTemplateStepUpOptions(req, parsed.data),
+    );
+    if (!confirm.confirmed) return stepUpResponse(confirm);
+
     const existing = await prisma.emailTemplate.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
 
-    const { variables, subject, body, ...updateRest } = parsed.data;
+    // Strip step-up fields so they are never written as template columns.
+    const {
+      variables,
+      subject,
+      body,
+      confirmPassword: _confirmPassword,
+      mfaCode: _mfaCode,
+      backupCode: _backupCode,
+      ...updateRest
+    } = parsed.data;
     // Sanitize body/subject on update — same rationale as POST.
     const safeUpdate: Record<string, unknown> = { ...updateRest };
     if (subject !== undefined) safeUpdate.subject = sanitizeEmailSubject(subject);
@@ -262,7 +337,20 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canDelete", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { id } = await req.json();
+    const raw = await req.json().catch(() => null);
+    const parsed = templateDeleteSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    const { id } = parsed.data;
+
+    const confirm = await requirePasswordConfirm(
+      session,
+      parsed.data.confirmPassword,
+      emailTemplateStepUpOptions(req, parsed.data),
+    );
+    if (!confirm.confirmed) return stepUpResponse(confirm);
+
     const existing = await prisma.emailTemplate.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
     if (isRequiredEmailTemplate(existing)) {

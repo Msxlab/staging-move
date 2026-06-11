@@ -82,10 +82,24 @@ function memoryRateLimit(key: string, limit: number, windowSeconds: number): Rat
 
 // ── Public API ───────────────────────────────────────────────
 
+/**
+ * Fail-mode when the distributed limiter can't answer:
+ *   - `true`  — fail CLOSED: deny (429) whenever Redis is unavailable
+ *               (unconfigured OR erroring). Strictest; use for auth/abuse.
+ *   - `false` — fail OPEN: silently fall back to the in-memory limiter.
+ *   - `"if-redis-configured"` — fail closed ONLY when Redis is configured
+ *               but erroring/degraded; fail OPEN (in-memory) when Redis is
+ *               not configured at all. Mirrors the cron-guard contract: a
+ *               *missing* limiter must not permanently 429 a whole tier
+ *               (e.g. all billing endpoints), while a transient outage of a
+ *               *configured* limiter still fails closed for the short window.
+ */
+type RateLimitFailMode = boolean | "if-redis-configured";
+
 interface RateLimitConfig {
   limit: number;
   windowSeconds: number;
-  failClosed?: boolean;
+  failClosed?: RateLimitFailMode;
 }
 
 interface RateLimitResult {
@@ -176,6 +190,20 @@ function normalizeLimitConfig(config: RateLimitConfig): Required<Pick<RateLimitC
   };
 }
 
+// Fail closed when Redis is entirely UNCONFIGURED? Only for the strict
+// `failClosed: true` mode. `"if-redis-configured"` deliberately fails OPEN
+// here so a never-configured limiter can't permanently 429 a whole tier.
+function failClosedWhenUnconfigured(mode: RateLimitFailMode | undefined): boolean {
+  return mode === true;
+}
+
+// Fail closed when Redis IS configured but erroring / in its degraded window?
+// Both `true` and `"if-redis-configured"` fail closed here — a configured
+// limiter that's mid-outage still denies for the short degrade window.
+function failClosedWhenConfiguredErroring(mode: RateLimitFailMode | undefined): boolean {
+  return mode === true || mode === "if-redis-configured";
+}
+
 function redisDuration(windowSeconds: number): Duration {
   return `${windowSeconds} s` as Duration;
 }
@@ -210,7 +238,7 @@ export async function rateLimit(
     console.error("[RATE-LIMIT] Redis is not configured in production, using in-memory degraded mode");
   }
 
-  if (!hasRedis && isProduction && normalizedConfig.failClosed) {
+  if (!hasRedis && isProduction && failClosedWhenUnconfigured(normalizedConfig.failClosed)) {
     return {
       success: false,
       remaining: 0,
@@ -231,7 +259,7 @@ export async function rateLimit(
       };
     } catch (err) {
       enterRedisDegradedMode((err as Error)?.message || "Unknown Redis error", err);
-      if (isProduction && normalizedConfig.failClosed) {
+      if (isProduction && failClosedWhenConfiguredErroring(normalizedConfig.failClosed)) {
         return {
           success: false,
           remaining: 0,
@@ -241,7 +269,12 @@ export async function rateLimit(
     }
   }
 
-  if (hasRedis && isProduction && normalizedConfig.failClosed && Date.now() < redisDegradedUntil) {
+  if (
+    hasRedis &&
+    isProduction &&
+    failClosedWhenConfiguredErroring(normalizedConfig.failClosed) &&
+    Date.now() < redisDegradedUntil
+  ) {
     return {
       success: false,
       remaining: 0,

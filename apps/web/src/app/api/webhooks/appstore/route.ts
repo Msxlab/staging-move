@@ -214,7 +214,19 @@ export async function POST(request: NextRequest) {
         type: outer.notificationType,
         subtype: outer.subtype || null,
       });
-    } catch (err) {
+    } catch (err: any) {
+      // A sandbox receipt reaching production for a non-allowlisted user is a
+      // TERMINAL "skip" outcome, not a transient failure — retrying can't turn
+      // a sandbox purchase into a real one. KEEP the reservation (don't fall
+      // through to the release below) so Apple's redelivery is treated as a
+      // duplicate, and surface a 200 so Apple stops retrying. Mirrors the
+      // Play Store GOOGLE_TEST_PURCHASE_IN_PRODUCTION terminal-skip handling.
+      if (err?.message === "APPLE_SANDBOX_PURCHASE_IN_PRODUCTION") {
+        console.warn(
+          `[APPSTORE WEBHOOK] sandbox purchase in production rejected for ${outer.notificationUUID}`,
+        );
+        return NextResponse.json({ received: true, skipped: "sandbox_purchase_production" });
+      }
       // Processing failed after the notification was reserved — release the
       // reservation so Apple's retry re-processes it instead of seeing a
       // duplicate and dropping the work.

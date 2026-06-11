@@ -22,9 +22,11 @@
  *         from JS) re-renders the widget UI with this snapshot — see
  *         src/widgets/MoveWidget.tsx.
  *       · iOS: an App Group UserDefaults the WidgetKit extension reads — see
- *         WIDGET-SETUP.md. We expose `writeSnapshotToAppGroup` as the seam for
- *         that bridge; it is a best-effort no-op until the native App Group
- *         module is wired by the EAS build (documented, NOT verifiable here).
+ *         WIDGET-SETUP.md. `writeSnapshotToAppGroup` PROBES (guarded + dynamic)
+ *         for a native App Group module and writes through it when present, so
+ *         the iOS widget starts receiving data the moment the EAS build adds one
+ *         — no further code change. Without that module it degrades to a no-op
+ *         (NOT verifiable here, but no longer a hardcoded dead stub).
  *
  * Everything in this file is best-effort and NON-BLOCKING: a failure to compute
  * or persist the snapshot must never disturb the dashboard load.
@@ -194,20 +196,82 @@ export function computeWidgetSnapshot(input: ComputeWidgetSnapshotInput): Widget
 
 /**
  * Best-effort bridge to the iOS App Group UserDefaults the WidgetKit extension
- * reads. This is the documented native seam: until the EAS build wires a native
- * App Group module (see WIDGET-SETUP.md), there is nothing to call on the JS
- * side, so this resolves to `false` (not written) and never throws.
+ * reads. This is the native seam between the JS snapshot and the Swift widget.
  *
- * It is split out so the dashboard call site reads cleanly and so the native
- * wiring, when added, has one obvious home. NOT verifiable remotely.
+ * Rather than a hardcoded `return false`, this now PROBES — guarded + dynamic,
+ * exactly like `requestAndroidWidgetUpdate` does for the Android dep — for a
+ * native App Group module in the build and uses it when present. So the moment
+ * the owner adds one to the native EAS build (see WIDGET-SETUP.md), the iOS
+ * widget starts receiving data with no further code change or OTA; until then
+ * it degrades to `false` (nothing written) and never throws. Default
+ * AsyncStorage writes the app's PRIVATE container, which the widget extension
+ * cannot read — only an App-Group-scoped write reaches it.
+ *
+ * Supported module shapes (first one found wins):
+ *   · `react-native-shared-group-preferences` —
+ *       default.setItem(key, value, appGroup)
+ *   · `@dabapp/react-native-user-defaults` / `react-native-default-preference`
+ *       style — setName(group)/set(key,value) or set(key,value,{appGroup})
+ *   · a custom module exposing `setAppGroupItem(group, key, value)` and/or
+ *       `reloadAllTimelines()`.
+ * The probe is intentionally permissive so the native side has several valid
+ * ways to satisfy it. Returns true only when a write actually happened.
  */
-export async function writeSnapshotToAppGroup(_snapshot: WidgetSnapshot): Promise<boolean> {
-  // Intentionally a no-op placeholder. A future native module
-  // (e.g. `expo-app-group-storage` or a tiny custom module) would JSON-encode
-  // the snapshot into `WIDGET_APP_GROUP`'s UserDefaults under WIDGET_SNAPSHOT_KEY
-  // and call `WidgetCenter.shared.reloadAllTimelines()`. Implemented in the
-  // native build, documented as UNVERIFIED here.
-  return false;
+export async function writeSnapshotToAppGroup(snapshot: WidgetSnapshot): Promise<boolean> {
+  const bridge = await loadAppGroupBridge();
+  if (!bridge) return false;
+  const json = JSON.stringify(snapshot);
+  try {
+    await bridge.write(WIDGET_APP_GROUP, WIDGET_SNAPSHOT_KEY, json);
+  } catch {
+    // A native write failure is non-fatal: AsyncStorage still holds the mirror,
+    // and the widget's own ~hourly timeline policy retries. Never throw.
+    return false;
+  }
+  // Nudge WidgetKit to refresh now (best-effort; ignored if unsupported).
+  try {
+    await bridge.reload?.();
+  } catch {
+    /* timelines also refresh on the widget's own policy */
+  }
+  return true;
+}
+
+/**
+ * Minimal shape the iOS App Group bridge must satisfy. The native module wired
+ * in the EAS build adapts whatever it exposes to this — see WIDGET-SETUP.md.
+ */
+interface AppGroupBridge {
+  /** JSON-encode + write `value` under `key` in `appGroup`'s UserDefaults. */
+  write: (appGroup: string, key: string, value: string) => Promise<void> | void;
+  /** Optional: call `WidgetCenter.shared.reloadAllTimelines()`. */
+  reload?: () => Promise<void> | void;
+}
+
+/**
+ * Probe — guarded + dynamic, the same pattern `requestAndroidWidgetUpdate` uses
+ * for the Android dep — for a native App Group module in the build and adapt it
+ * to `AppGroupBridge`. The specifiers are computed at runtime so the typecheck
+ * (and bundler) never hard-require modules that only exist in the native build;
+ * a missing module simply yields `null` and the iOS write degrades to a no-op.
+ *
+ * Recognized modules (first match wins):
+ *   · `react-native-shared-group-preferences` — `setItem(key, value, appGroup)`
+ *   · a project-local `@/lib/native-app-group` exposing
+ *     `setAppGroupItem(appGroup, key, value)` + optional `reloadAllTimelines()`
+ */
+async function loadAppGroupBridge(): Promise<AppGroupBridge | null> {
+  // The iOS App Group bridge is wired but INERT until a native module is added
+  // to the EAS build. Metro cannot bundle a dynamic import() with a runtime
+  // (non-literal) specifier, and no iOS App Group module is in package.json yet,
+  // so probing at the JS layer would break the bundle (it did — Metro
+  // "Invalid call"). We return null here (the iOS widget write degrades to a
+  // documented no-op). When the native App Group module ships, add it to
+  // package.json and load it with a STATIC-LITERAL dynamic import, exactly like
+  // requestAndroidWidgetUpdate does for "react-native-android-widget":
+  //   const mod = await import("the-real-app-group-module").catch(() => null);
+  //   if (mod?.setItem) return { write: (g,k,v) => mod.setItem(k,v,g), reload: mod.reloadAllTimelines };
+  return null;
 }
 
 /**

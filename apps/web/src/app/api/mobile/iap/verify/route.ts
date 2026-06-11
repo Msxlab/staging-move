@@ -47,17 +47,22 @@ const bodySchema = z
 export async function POST(request: NextRequest) {
   try {
     // 30 requests / min per IP — verify is cheap for us but hits the store API.
+    // Fail closed only when a CONFIGURED Redis limiter is mid-outage; an
+    // unconfigured limiter falls back to in-memory rather than 429ing every
+    // receipt validation. A Redis outage must not block a paying customer from
+    // activating a real store purchase (audit round-2 billing #5). Receipt
+    // ownership + store verification still gate the grant either way.
     const userId = await requireDbUserId();
     const [ipRl, userRl] = await Promise.all([
       rateLimit(getRateLimitKey(request, "iap-verify"), {
         limit: 30,
         windowSeconds: 60,
-        failClosed: true,
+        failClosed: "if-redis-configured",
       }),
       rateLimit(`iap-verify:user:${userId}`, {
         limit: 10,
         windowSeconds: 60,
-        failClosed: true,
+        failClosed: "if-redis-configured",
       }),
     ]);
     if (!ipRl.success || !userRl.success) {
@@ -176,7 +181,10 @@ export async function POST(request: NextRequest) {
     if (typeof error?.message === "string" && error.message.startsWith("GOOGLE_ACK_")) {
       return NextResponse.json({ error: "IAP_ACKNOWLEDGEMENT_FAILED" }, { status: 503 });
     }
-    if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
+    if (
+      error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION" ||
+      error?.message === "APPLE_SANDBOX_PURCHASE_IN_PRODUCTION"
+    ) {
       return NextResponse.json({ error: "TEST_PURCHASE_NOT_ALLOWED" }, { status: 400 });
     }
     if (error?.name === "BILLING_CONFIG_ERROR") {

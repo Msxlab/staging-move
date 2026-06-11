@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
+  requirePasswordConfirm: vi.fn(),
   emailTemplateFindMany: vi.fn(),
   emailLogGroupBy: vi.fn(),
   emailLogFindMany: vi.fn(),
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mocks.requirePermission(...args),
+  requirePasswordConfirm: (...args: unknown[]) => mocks.requirePasswordConfirm(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -39,6 +41,7 @@ describe("email templates admin API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.emailTemplateFindMany.mockResolvedValue([
       {
         id: "tpl_verify",
@@ -203,7 +206,7 @@ describe("email templates admin API", () => {
     const response = await DELETE(new Request("http://localhost/api/email-templates", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: "tpl_reset" }),
+      body: JSON.stringify({ id: "tpl_reset", confirmPassword: "pw" }),
     }) as any);
     const body = await response.json();
 
@@ -224,11 +227,35 @@ describe("email templates admin API", () => {
     const response = await DELETE(new Request("http://localhost/api/email-templates", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: "tpl_optional" }),
+      body: JSON.stringify({ id: "tpl_optional", confirmPassword: "pw" }),
     }) as any);
 
     expect(response.status).toBe(200);
     expect(mocks.emailTemplateDelete).toHaveBeenCalledWith({ where: { id: "tpl_optional" } });
     expect(mocks.adminAuditCreate).toHaveBeenCalled();
+  });
+
+  it("requires step-up before deleting a template", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+    });
+    mocks.emailTemplateFindUnique.mockResolvedValue({
+      id: "tpl_optional",
+      slug: "optional-newsletter",
+      name: "Optional Newsletter",
+      isDefault: false,
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/email-templates", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "tpl_optional" }),
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.requiresPassword).toBe(true);
+    expect(mocks.emailTemplateDelete).not.toHaveBeenCalled();
   });
 });

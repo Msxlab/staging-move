@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
 
     const userId = await requireDbUserId();
 
-    // Rate limit: 5 portal sessions per minute
+    // Rate limit: 5 portal sessions per minute. Fail closed only when a
+    // CONFIGURED Redis limiter is mid-outage; an unconfigured limiter must not
+    // permanently 429 the billing-management path (audit round-2 billing #5).
     const rlKey = getRateLimitKey(request, "stripe:portal", { userId });
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
+    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: "if-redis-configured" });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }

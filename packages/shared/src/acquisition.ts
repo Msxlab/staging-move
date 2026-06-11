@@ -1,10 +1,17 @@
+import { LEGAL_CONSENT_VERSION } from "./legal";
+
 export const INDIVIDUAL_ANNUAL_TRIAL_DAYS = 90;
 export const INDIVIDUAL_ANNUAL_PRICE_LABEL = "$39.99/year";
 export const INDIVIDUAL_MONTHLY_PRICE_LABEL = "$3.99/month";
 export const INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE = "INDIVIDUAL90";
 export const SUBSCRIPTION_POLICY_VERSION = "2026-05-01";
 export const REFUND_POLICY_VERSION = "2026-05-01";
-export const TERMS_VERSION = "2026-05-01";
+// Terms-of-service version stamped into consent snapshots (Subscription /
+// AcquisitionRedemption). This MUST track the canonical legal consent version
+// (packages/shared/src/legal.ts) so checkout/redemption records reflect the
+// Terms a user actually accepted — a forked literal would weaken the evidentiary
+// value of those snapshots after the Terms are republished.
+export const TERMS_VERSION = LEGAL_CONSENT_VERSION;
 
 export const ACQUISITION_CAMPAIGN_STATUS_VALUES = [
   "DRAFT",
