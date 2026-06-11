@@ -10,6 +10,7 @@ import {
   DEFAULT_APP_URL,
   emailVerificationContent,
   escapeHtml,
+  type EmailAttachment,
   type EmailContent,
   htmlToPlainText,
   normalizeBaseUrl,
@@ -160,7 +161,12 @@ function buildMarketingUnsubscribe(
   try {
     const token = signUnsubscribeToken(userId);
     const url = buildUnsubscribeUrl(appUrl, token, kind);
-    const headers = buildUnsubscribeHeaders(url);
+    // RFC 8058 one-click clients POST `List-Unsubscribe=One-Click` to the
+    // List-Unsubscribe URL, so the header must target the API POST route.
+    // The /unsubscribe PAGE is a human confirm step that never mutates on
+    // GET (link-scanner safety) — only the email-body link points there.
+    const oneClickUrl = url.replace("/unsubscribe?", "/api/unsubscribe?");
+    const headers = buildUnsubscribeHeaders(oneClickUrl);
     return { url, headers };
   } catch (err) {
     // Missing secret in dev — not worth blocking the email; log once.
@@ -193,6 +199,7 @@ export async function sendLoggedEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
   headers?: Record<string, string>;
+  attachments?: EmailAttachment[];
 }): Promise<{ success: boolean; skipped: boolean }> {
   const templateId = await resolveTemplateId(opts.templateId, opts.templateSlug);
   const metadataInput = {
@@ -256,6 +263,7 @@ export async function sendLoggedEmail(opts: {
     html: opts.html,
     text: opts.text,
     ...(opts.headers ? { headers: opts.headers } : {}),
+    ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
   });
   const resultMetadata = buildEmailMetadata({
     ...metadataInput,

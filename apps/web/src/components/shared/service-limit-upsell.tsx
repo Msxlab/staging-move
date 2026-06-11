@@ -48,6 +48,16 @@ interface ServiceLimitUpsellProps {
 
 const DEFAULT_LIMIT = 10;
 
+// Address-limit reuse: the addresses flow funnels its 403 limit responses
+// through this same polished modal instead of a raw error box. Pro's real cap
+// (25 addresses) keeps the upsell honest — never advertise "unlimited".
+const ADDRESS_LIMIT_CODES = new Set(["ADDRESS_LIMIT_REACHED", "SETUP_ADDRESS_LIMIT_REACHED"]);
+const PRO_MAX_ADDRESSES = 25;
+
+export function isAddressLimitCode(code?: string | null): boolean {
+  return Boolean(code && ADDRESS_LIMIT_CODES.has(code));
+}
+
 function formatTrialLabel(days?: number | null) {
   const normalizedDays = Number(days || 0);
   if (normalizedDays <= 0) return null;
@@ -74,6 +84,25 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
       title: "Unlock your full move plan",
       body: "Your free plan organizes your home. Upgrade to Individual to unlock your full personalized move plan — checklist, countdown, state guide, provider migration, and move tracking.",
       primary: "Unlock with Individual",
+      secondary: "Maybe later",
+    };
+  }
+
+  // Address-limit paywall: copy is address-specific (never "active services")
+  // and stays friendly even when the API sends no numbers — the caller maps
+  // unknown upgrade-required codes onto ADDRESS_LIMIT_REACHED defensively, so
+  // raw server enums never leak into the UI.
+  if (isAddressLimitCode(details?.code)) {
+    const addressLimit = typeof details?.limit === "number" ? details.limit : null;
+    const atTopTier = addressLimit !== null && addressLimit >= PRO_MAX_ADDRESSES;
+    return {
+      title: "You've reached your address limit",
+      body: atTopTier
+        ? `Your plan includes up to ${addressLimit} saved addresses — our highest cap. Contact support if you need additional capacity.`
+        : addressLimit !== null
+          ? `Your current plan includes up to ${addressLimit} saved address${addressLimit === 1 ? "" : "es"}. Upgrade to keep adding addresses — up to ${PRO_MAX_ADDRESSES} on Pro.`
+          : `You've reached the address limit for your current plan. Upgrade to keep adding addresses — up to ${PRO_MAX_ADDRESSES} on Pro.`,
+      primary: "Upgrade",
       secondary: "Maybe later",
     };
   }
@@ -188,7 +217,7 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
 
         {typeof details?.current === "number" && typeof details?.limit === "number" ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Services tracked: {details.current} / {details.limit}
+            {isAddressLimitCode(details?.code) ? "Addresses saved" : "Services tracked"}: {details.current} / {details.limit}
           </p>
         ) : null}
 

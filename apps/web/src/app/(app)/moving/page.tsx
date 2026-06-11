@@ -1,5 +1,5 @@
 ﻿import Link from "next/link";
-import { Plus, Truck, Calendar, ArrowRight } from "lucide-react";
+import { Plus, Sparkles, Truck, Calendar, ArrowRight } from "lucide-react";
 import { headers } from "next/headers";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
@@ -7,7 +7,12 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
-import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { canCreateMovingPlan } from "@/lib/plan-limits";
+import {
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +24,24 @@ export default async function MovingPage() {
   // request so Spanish users see "Planificando" instead of "Planning".
   const t = await getTranslations("moving");
   const tEmpty = await getTranslations("empty");
+  const td = await getTranslations("dashboard");
   const locale = await getLocale();
+
+  // Freemium gate parity with the dashboard: free users cannot create a
+  // MovingPlan (POST /api/moving 403s), so both the "New plan" button and the
+  // empty-state CTA route them to the same value-first upgrade flow the
+  // dashboard uses instead of letting them fill the full form into a 403.
+  // Fail open on gate errors — the API stays the enforcement point, and a
+  // transient failure must never lock paid users out of plan creation.
+  let canStartPlan = true;
+  try {
+    const gate = await canCreateMovingPlan(userId, planLimitScopeForDataScope(scope));
+    canStartPlan = gate.allowed;
+  } catch {
+    canStartPlan = true;
+  }
+  const newPlanHref = canStartPlan ? "/moving/new" : "/settings/subscription?returnTo=%2Fmoving";
+  const newPlanLabel = canStartPlan ? t("newPlanTitle") : td("commandCenter_freeCta");
 
   const statusBadge: Record<string, { label: string; cls: string }> = {
     PLANNING: { label: t("status_planning"), cls: "bg-foreground/5 text-muted-foreground border-border" },
@@ -46,9 +68,9 @@ export default async function MovingPage() {
           </h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
-        <Link href="/moving/new">
+        <Link href={newPlanHref}>
           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-            <Plus className="h-4 w-4" /> {t("newPlanTitle")}
+            {canStartPlan ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {newPlanLabel}
           </button>
         </Link>
       </div>
@@ -58,9 +80,9 @@ export default async function MovingPage() {
           icon={Truck}
           illustration={<RaccoonReading size={148} className="text-foreground/45" />}
           title={tEmpty("movingPlans")}
-          description={tEmpty("movingPlansDescription")}
-          actionLabel={tEmpty("startMove")}
-          actionHref="/moving/new"
+          description={canStartPlan ? tEmpty("movingPlansDescription") : td("commandCenter_freeBody")}
+          actionLabel={canStartPlan ? tEmpty("startMove") : td("commandCenter_freeCta")}
+          actionHref={newPlanHref}
         />
       ) : (
         <div className="space-y-4">

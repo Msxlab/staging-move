@@ -182,7 +182,7 @@
     "groupAccount": "Account",
     "unreadCount": "{count, plural, one {# unread notification} other {# unread notifications}}",
     "proUpsellTitle": "LocateFlow Pro",
-    "proUpsellBody": "Unlimited addresses and priority renewal alerts."
+    "proUpsellBody": "Up to 25 addresses and 1,000 services, plus priority renewal alerts."
   },
   "theme": {
     "toggle": "Theme",
@@ -646,6 +646,7 @@
     "routeMap_oldHome": "Old home",
     "routeMap_newHome": "New home",
     "routeMap_stylized": "Stylized view",
+    "routeMap_imageAlt": "Map of your relocation route from {from} to {to}",
     "donut_center": "per month",
     "donut_rest": "Other categories",
     "spark_sub": "Tracked monthly spend · last 6 months",

@@ -1,4 +1,5 @@
 import { requirePagePermission } from "@/lib/page-guard";
+import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
 import SponsoredClient from "./sponsored-client";
 
 // Sponsored placements are paid ad inventory rendered on public directory
@@ -16,5 +17,14 @@ export default async function SponsoredPage() {
   await requirePagePermission("providers", "canRead", {
     minimumRole: "VIEWER",
   });
-  return <SponsoredClient />;
+  // Honest flag status for the policy banner, resolved server-side via the
+  // admin runtime-config read path (same ENV-over-DB resolution the public
+  // surfaces use). The /api/runtime-config catalog is SUPER_ADMIN-only while
+  // this page has a VIEWER floor, so the page reads the single value here
+  // instead of having the client hit that endpoint. null = read failed →
+  // the banner omits the status line rather than claiming a state.
+  const sponsoredEnabled = await getAdminRuntimeConfigValue("SPONSORED_ENABLED")
+    .then((raw) => raw?.trim().toLowerCase() === "true")
+    .catch(() => null);
+  return <SponsoredClient sponsoredEnabled={sponsoredEnabled} />;
 }
