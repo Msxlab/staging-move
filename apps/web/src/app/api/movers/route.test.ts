@@ -72,7 +72,9 @@ const MOVER = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.requireDbUserId.mockResolvedValue("user-1");
-  mocks.getUserPlan.mockResolvedValue({ plan: "FAMILY" });
+  // moverSuggestions is Pro-only under the overhauled entitlement matrix
+  // (2026-06-10 ladder) — the entitled-path tests below need a Pro plan.
+  mocks.getUserPlan.mockResolvedValue({ plan: "PRO" });
   mocks.getRuntimeConfigValue.mockResolvedValue(null); // SPONSORED_ENABLED off
   mocks.getMoversByState.mockResolvedValue([MOVER]);
   mocks.getActiveSponsoredMover.mockResolvedValue(null);
@@ -105,8 +107,8 @@ describe("GET /api/movers", () => {
     expect(mocks.getActiveSponsoredMover).not.toHaveBeenCalled();
   });
 
-  it("gates INDIVIDUAL too (Family/Pro feature)", async () => {
-    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL" });
+  it.each(["INDIVIDUAL", "FAMILY"])("gates %s too (moverSuggestions is Pro-only)", async (plan) => {
+    mocks.getUserPlan.mockResolvedValue({ plan });
     const body = await (await GET(getRequest("?state=TX"))).json();
     expect(body.entitled).toBe(false);
     expect(body.upgradeRequired).toBe("MOVER_SUGGESTIONS_UPGRADE_REQUIRED");

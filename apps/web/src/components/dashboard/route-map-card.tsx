@@ -224,7 +224,21 @@ function StylizedCanvas() {
 const MAP_IMG_WIDTH = 640;
 const MAP_IMG_HEIGHT = 224;
 
-export function RouteMapCard({ fromCity, toCity }: { fromCity: string; toCity: string }) {
+export function RouteMapCard({
+  fromCity,
+  toCity,
+  realMap = true,
+}: {
+  fromCity: string;
+  toCity: string;
+  /**
+   * `realMap` plan entitlement (Family and up). When false — Free/Individual —
+   * the card never requests the Google Static proxy and renders the EXISTING
+   * stylized canvas only. Defaults to true so callers that don't thread the
+   * flag keep the prior behavior byte-identically.
+   */
+  realMap?: boolean;
+}) {
   const td = useTranslations("dashboard");
   const { theme } = useTheme();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -232,6 +246,9 @@ export function RouteMapCard({ fromCity, toCity }: { fromCity: string; toCity: s
   const [imgState, setImgState] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
+    // Plan gate: lower tiers see the stylized canvas only — skip the feeds and
+    // the /api/maps/static proxy entirely (no wasted fetch, no real basemap).
+    if (!realMap) return;
     let cancelled = false;
     (async () => {
       try {
@@ -265,7 +282,7 @@ export function RouteMapCard({ fromCity, toCity }: { fromCity: string; toCity: s
     return () => {
       cancelled = true;
     };
-  }, [theme]);
+  }, [theme, realMap]);
 
   const showStylized = !src || imgState !== "ready";
 

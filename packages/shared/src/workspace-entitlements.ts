@@ -22,19 +22,36 @@ export interface WorkspacePlanFeatures {
   advancedExport: boolean;
   /** USPS address validation / standardization / ZIP+4 (Tier 2). Paid plans. */
   addressValidation: boolean;
-  /** AI move briefing (LLM situation summary on the dashboard). Paid plans. */
+  /** AI move briefing (LLM situation summary on the dashboard). Family and up. */
   aiBriefing: boolean;
-  /** New Home Dossier (flood / school district / move-day weather). Paid plans. */
+  /** New Home Dossier (flood / school district / move-day weather). Individual and up. */
   homeDossier: boolean;
-  /** FMCSA-registered household-goods mover suggestions on the moving plan. Family and up. */
+  /** FMCSA-registered household-goods mover suggestions on the moving plan. Pro only. */
   moverSuggestions: boolean;
+  /** VIN decode + NHTSA recall check on vehicle tasks. Individual and up. */
+  vehicleCheck: boolean;
+  /** Move-week weather/flood push + weekly digest email. Individual and up. */
+  weatherDigest: boolean;
+  /** Real (Google Static) map on route/address cards; lower tiers see the stylized canvas. Family and up. */
+  realMap: boolean;
+  /** New Home Dossier PDF export. Pro only. */
+  dossierPdf: boolean;
+  /** Priority support queue/label. Pro only. */
+  prioritySupport: boolean;
+  /** Max concurrent (non-archived) move plans. Pro runs several at once. */
+  concurrentPlanLimit: number;
 }
 
+// Owner-ratified tier ladder (2026-06-10): Free is a thin teaser tier; the
+// data-checked recommendations, VIN check, weather/digest, dossier and AI
+// live behind paid plans; AI is Family+Pro only (same experience — the cap
+// is cost control, not a tier line); movers, dossier-PDF, multi-plan and
+// priority support are Pro-only so Pro is meaningfully differentiated.
 const FEATURES: Record<string, WorkspacePlanFeatures> = {
-  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true },
-  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true },
-  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false },
-  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false },
+  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: true, prioritySupport: true, concurrentPlanLimit: 3 },
+  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: false, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: false, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false, vehicleCheck: false, weatherDigest: false, realMap: false, dossierPdf: false, prioritySupport: false, concurrentPlanLimit: 1 },
 };
 
 const DEFAULT_FEATURES: WorkspacePlanFeatures = FEATURES.FREE_TRIAL;

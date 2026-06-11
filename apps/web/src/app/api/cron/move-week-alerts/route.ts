@@ -6,6 +6,8 @@ import { sendNotification } from "@/lib/notifications";
 import { groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { lookupMoveDayForecast } from "@/lib/nws-weather";
+import { getUserPlan } from "@/lib/plan-limits";
+import { planFeatures } from "@locateflow/shared";
 
 export const runtime = "nodejs";
 
@@ -102,7 +104,19 @@ async function handleCron(request: NextRequest) {
     let pushSent = 0;
     let skippedNoCoords = 0;
     let skippedNoForecast = 0;
+    let skippedNotEntitled = 0;
     const errors: string[] = [];
+
+    // Per-user plan resolution is cached for the run so a user with several
+    // plans only costs one entitlement read (multiple plans share a plan tier).
+    const weatherDigestByUser = new Map<string, boolean>();
+    async function userHasWeatherDigest(userId: string): Promise<boolean> {
+      const cached = weatherDigestByUser.get(userId);
+      if (cached !== undefined) return cached;
+      const entitled = planFeatures((await getUserPlan(userId)).plan).weatherDigest;
+      weatherDigestByUser.set(userId, entitled);
+      return entitled;
+    }
 
     for (const plan of plans) {
       const userTimeZone = resolveReminderTimeZone(plan.user.profile?.timezone);
@@ -117,6 +131,15 @@ async function handleCron(request: NextRequest) {
       // (no orphaned in-app row either — this alert exists FOR the push).
       const userPreferences = preferencesByUser.get(plan.userId) || [];
       if (!isPushTypeEnabled(userPreferences, "MOVE_ALERT")) continue;
+
+      // Plan gate (owner decision): move-week weather alerts are a paid
+      // `weatherDigest` feature (Individual and up). A free/free-trial owner is
+      // skipped before any NWS lookup or dedupe-key burn, exactly like a muted
+      // user — nothing is sent and nothing is consumed.
+      if (!(await userHasWeatherDigest(plan.userId))) {
+        skippedNotEntitled++;
+        continue;
+      }
 
       // Belt and braces — the query already filters NULL coordinates.
       const { latitude, longitude } = plan.toAddress;
@@ -199,6 +222,7 @@ async function handleCron(request: NextRequest) {
       pushSent,
       skippedNoCoords,
       skippedNoForecast,
+      skippedNotEntitled,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
