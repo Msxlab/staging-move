@@ -2293,6 +2293,8 @@ model MovingCompany {
   dataAsOf         DateTime
   active           Boolean  @default(true)
 
+  portalTokens MoverPortalToken[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2410,4 +2412,25 @@ model MoverDocument {
   createdAt DateTime @default(now())
 
   @@index([applicationId])
+}
+
+// Mover self-service portal v2 — a magic-link "session" for an approved mover
+// to manage its own listing. The emailed link carries an opaque token (sha256
+// hash stored here, plaintext never persisted, same pattern as
+// EmailVerificationToken); the portal stores the raw token in an httpOnly
+// cookie and validates it per request. NOT single-use — it is the session, so
+// it has a multi-day TTL and is invalidated via revokedAt (logout) or expiry.
+model MoverPortalToken {
+  id              String        @id @default(cuid()) @db.VarChar(30)
+  movingCompanyId String        @db.VarChar(30)
+  movingCompany   MovingCompany @relation(fields: [movingCompanyId], references: [id], onDelete: Cascade)
+  email           String        @db.VarChar(191)
+  tokenHash       String        @unique @db.VarChar(64)
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  lastUsedAt      DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([movingCompanyId])
+  @@index([expiresAt])
 }
