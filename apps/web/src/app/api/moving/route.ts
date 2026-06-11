@@ -4,10 +4,10 @@ import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse, entitlementErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { movingPlanSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { canCreateMovingDestinationAddress, canCreateMovingPlan } from "@/lib/plan-limits";
+import { canCreateMovingDestinationAddress, canCreateMovingPlan, getPlanForLimitScope } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { MOVING_PLAN_STATUS, normalizeMovingPlanStatus, planFeatures } from "@locateflow/shared";
 import {
   normalizeMovingState,
   validateMovingAddressStates,
@@ -84,6 +84,37 @@ export async function POST(request: NextRequest) {
     if (!limitCheck.allowed) {
       return entitlementErrorResponse(limitCheck, "MOVING_PLAN_LIMIT_REACHED");
     }
+
+    // Concurrent-plan gate (owner decision): Pro runs several active plans at
+    // once (concurrentPlanLimit 3); every other paid tier is capped at 1.
+    // Counts only ACTIVE (non-archived) plans — soft-deleted and terminal
+    // (COMPLETED/CANCELED) plans don't occupy a slot, so a user can always plan
+    // their next move once an old one wraps up. Reached only by paid users
+    // (free users are stopped by canCreateMovingPlan above). Returns the
+    // value-first teaser contract at HTTP 200 — never 403 — so the client
+    // renders an "upgrade to Pro for multiple moves" CTA.
+    // Plan resolves from the workspace OWNER in a shared workspace (same as
+    // canCreateMovingPlan), so a member's concurrency cap follows the owner's tier.
+    const ownerPlan = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
+    const concurrentPlanLimit = planFeatures(ownerPlan.plan).concurrentPlanLimit;
+    const activePlanCount = await prisma.movingPlan.count({
+      where: scopedRecordWhere(
+        scope,
+        {
+          deletedAt: null,
+          status: { in: [MOVING_PLAN_STATUS.PLANNING, MOVING_PLAN_STATUS.IN_PROGRESS] },
+        },
+        { childSelfOnly: true },
+      ),
+    });
+    if (activePlanCount >= concurrentPlanLimit) {
+      return NextResponse.json({
+        configured: true,
+        entitled: false,
+        upgradeRequired: "CONCURRENT_PLAN_LIMIT",
+      });
+    }
+
     if (needsNewDestinationAddress) {
       const addressLimitCheck = await canCreateMovingDestinationAddress(userId, planLimitScopeForDataScope(scope));
       if (!addressLimitCheck.allowed) {

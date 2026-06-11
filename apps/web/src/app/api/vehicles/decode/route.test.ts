@@ -4,6 +4,12 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
 
+// getUserPlan is mocked (no DB); planFeatures stays REAL so the vehicleCheck
+// gate exercises the actual @locateflow/shared feature matrix (Individual+).
+vi.mock("@/lib/plan-limits", () => ({
+  getUserPlan: vi.fn(),
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "vehicles:decode:user:user-1"),
   rateLimit: vi.fn(),
@@ -17,11 +23,13 @@ vi.mock("@/lib/nhtsa", () => ({
 }));
 
 import { requireDbUserId } from "@/lib/auth";
+import { getUserPlan } from "@/lib/plan-limits";
 import { rateLimit } from "@/lib/rate-limit";
 import { lookupVehicleByVin } from "@/lib/nhtsa";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockGetUserPlan = getUserPlan as unknown as Mock;
 const mockRateLimit = rateLimit as unknown as Mock;
 const mockLookup = lookupVehicleByVin as unknown as Mock;
 
@@ -53,8 +61,47 @@ describe("vehicle decode route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user-1");
+    // Default to an entitled tier so the existing contract tests below exercise
+    // the decode path; the gate-specific tests override the plan.
+    mockGetUserPlan.mockResolvedValue({ plan: "INDIVIDUAL" });
     mockRateLimit.mockResolvedValue({ success: true, remaining: 9, resetAt: Date.now() + 60000 });
     mockLookup.mockResolvedValue(LOOKUP_OK);
+  });
+
+  describe("vehicleCheck plan gate", () => {
+    it("answers 200 entitled:false for FREE_TRIAL without touching the rate limiter or NHTSA", async () => {
+      mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL" });
+      const response = await GET(decodeRequest(VIN));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        configured: true,
+        entitled: false,
+        upgradeRequired: "VEHICLE_CHECK_UPGRADE_REQUIRED",
+      });
+      expect(mockRateLimit).not.toHaveBeenCalled();
+      expect(mockLookup).not.toHaveBeenCalled();
+    });
+
+    it("gates before the plan read is even reached when unauthenticated (401 wins)", async () => {
+      mockRequireDbUserId.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+      const response = await GET(decodeRequest(VIN));
+      expect(response.status).toBe(401);
+      expect(mockGetUserPlan).not.toHaveBeenCalled();
+    });
+
+    it("entitles INDIVIDUAL, FAMILY and PRO (decode runs)", async () => {
+      for (const plan of ["INDIVIDUAL", "FAMILY", "PRO"] as const) {
+        vi.clearAllMocks();
+        mockRequireDbUserId.mockResolvedValue("user-1");
+        mockGetUserPlan.mockResolvedValue({ plan });
+        mockRateLimit.mockResolvedValue({ success: true, remaining: 9, resetAt: Date.now() + 60000 });
+        mockLookup.mockResolvedValue(LOOKUP_OK);
+        const response = await GET(decodeRequest(VIN));
+        expect(response.status).toBe(200);
+        expect((await response.json()).vehicle.status).toBe("ok");
+        expect(mockLookup).toHaveBeenCalledWith(VIN);
+      }
+    });
   });
 
   it("returns a structured 401 when the DB-backed session is invalid", async () => {

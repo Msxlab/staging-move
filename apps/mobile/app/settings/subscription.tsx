@@ -22,7 +22,14 @@ import {
   Zap,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import {
+  useAppTheme,
+  useThemePreference,
+  applyPlanPalette,
+  theme as baseDarkTheme,
+  lightTheme as baseLightTheme,
+  type Theme,
+} from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
 import { Card } from "@/components/ui/Card";
@@ -245,11 +252,27 @@ function formatDateLabel(value?: string | null) {
   return date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
+/**
+ * Per-tier accent for the compare-accordion check marks, mirroring the web
+ * compare table's per-column plan accent (.plan-free pink / Individual base
+ * cool / .plan-family teal / .plan-pro honey). Derived from the canonical
+ * `applyPlanPalette` accents in theme.ts against the BASE scheme theme — never
+ * the viewer's plan-tinted theme — so each row reads in its own plan color
+ * regardless of who is signed in. No hex lives here; Aurora tokens only.
+ */
+function planAccentColor(scheme: "light" | "dark", planKey: string): string {
+  const base = scheme === "light" ? baseLightTheme : baseDarkTheme;
+  // Individual (and unknown) carry no plan tint — base Aurora cool primary,
+  // matching the web table where Individual gets no .plan-* class.
+  return applyPlanPalette(base, scheme, planKey).colors.primary;
+}
+
 function LegacySubscriptionScreen() {
 
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
@@ -1291,9 +1314,11 @@ function LegacySubscriptionScreen() {
                   <View style={styles.compareFeatureList}>
                     <Text style={styles.compareDescription}>{entry.shortDescription}</Text>
                     {entry.features.map((f) => (
-                      <View key={f} style={styles.planFeatureRow}>
-                        <Check size={14} color={theme.colors.emerald.text} />
-                        <Text style={styles.planFeatureText}>{f}</Text>
+                      <View key={f.key} style={styles.planFeatureRow}>
+                        <Check size={14} color={planAccentColor(resolvedScheme, entry.key)} />
+                        <Text style={styles.planFeatureText}>
+                          {t(`settings.${f.key}`, { value: f.value })}
+                        </Text>
                       </View>
                     ))}
                   </View>

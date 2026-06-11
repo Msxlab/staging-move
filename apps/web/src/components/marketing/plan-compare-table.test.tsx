@@ -64,13 +64,28 @@ describe("COMPARE_GROUPS — every cell pinned to the enforced ground truth", ()
     expect(cells("rowSmartSuggestions")).toEqual([included, included, included, included]);
   });
 
-  it("move plan, AI move briefing, New Home Dossier, address validation, CSV/PDF export: paid tiers only", () => {
+  it("move plan, New Home Dossier, VIN check, weather digest, address validation, CSV/PDF export: Individual and up", () => {
     const paidOnly = [excluded, included, included, included];
     expect(cells("rowMovePlan")).toEqual(paidOnly); // canCreateMovingPlan gate
-    expect(cells("rowAiBriefing")).toEqual(paidOnly); // FEATURES.aiBriefing
-    expect(cells("rowHomeDossier")).toEqual(paidOnly); // FEATURES.homeDossier
+    expect(cells("rowHomeDossier")).toEqual(paidOnly); // FEATURES.homeDossier (the dossier screen)
+    expect(cells("rowVehicleCheck")).toEqual(paidOnly); // FEATURES.vehicleCheck
+    expect(cells("rowWeatherDigest")).toEqual(paidOnly); // FEATURES.weatherDigest
     expect(cells("rowAddressValidation")).toEqual(paidOnly); // FEATURES.addressValidation
     expect(cells("rowExport")).toEqual(paidOnly); // "Export anytime (CSV, PDF)"
+  });
+
+  it("AI move briefing and real map are Family and Pro only (Individual does NOT get AI)", () => {
+    const familyUp = [excluded, excluded, included, included];
+    expect(cells("rowAiBriefing")).toEqual(familyUp); // FEATURES.aiBriefing — cost-control cap, not a tier line
+    expect(cells("rowRealMap")).toEqual(familyUp); // FEATURES.realMap
+  });
+
+  it("movers, dossier-PDF, and priority support are Pro only; concurrent plans are 1/1/1/3", () => {
+    const proOnly = [excluded, excluded, excluded, included];
+    expect(cells("rowMoverSuggestions")).toEqual(proOnly); // FEATURES.moverSuggestions
+    expect(cells("rowDossierPdf")).toEqual(proOnly); // FEATURES.dossierPdf
+    expect(cells("rowPrioritySupport")).toEqual(proOnly); // FEATURES.prioritySupport
+    expect(cells("rowConcurrentPlans")).toEqual([value(1), value(1), value(1), value(3)]); // FEATURES.concurrentPlanLimit
   });
 
   it("members mirror FEATURES.seatLimit (1/1/6/10); sharing and child accounts are Family and up", () => {

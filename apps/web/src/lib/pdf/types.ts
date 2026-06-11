@@ -28,6 +28,30 @@ export type PdfAddress = {
   services: PdfAddressService[];
 };
 
+/**
+ * New Home Dossier shape for the Pro PDF export. Mirrors the section payload
+ * returned by GET /api/addresses/:id/dossier (the entitled branch) so the PDF
+ * generator and the data route stay aligned — the route is the single source
+ * of the aggregation; the PDF only renders what it returns.
+ */
+export type PdfDossier = {
+  address: { id: string; city: string; state: string };
+  flood: { status: string; zone: string | null; isHighRisk: boolean | null };
+  school: { status: string; districtName: string | null; ncesId: string | null };
+  weather: {
+    status: string;
+    forecastDate: string | null;
+    summary: string | null;
+    tempHighF: number | null;
+    tempLowF: number | null;
+    precipChancePct: number | null;
+  };
+  hazards: { status: string; topRisks: Array<{ hazard: string; rating: string }>; overallRating: string | null };
+  radon: { status: string; zone: string | null };
+  water: { status: string; systemName: string | null; violations5y: number | null };
+  air: { status: string; aqi: number | null; category: string | null };
+};
+
 export type PdfAccountSnapshot = {
   user: {
     firstName?: string | null;

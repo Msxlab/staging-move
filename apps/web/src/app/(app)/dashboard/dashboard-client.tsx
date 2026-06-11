@@ -33,6 +33,7 @@ import {
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { planFeatures } from "@locateflow/shared";
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 const categoryColors: Record<string, string> = {
@@ -859,6 +860,10 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     key={key}
                     fromCity={stats.activePlan.fromCity}
                     toCity={stats.activePlan.toCity}
+                    // Real (Google Static) basemap is Family/Pro; Free/Individual
+                    // get the stylized canvas fallback. premiumPlan already flows
+                    // from the entitlement resolved at load — no extra fetch.
+                    realMap={planFeatures(premiumPlan).realMap}
                   />
                 ) : null;
               case "milestones":

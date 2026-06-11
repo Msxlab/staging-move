@@ -15,7 +15,11 @@ import { BILLING_PLAN_DEFINITIONS, planFeatures, type BillingPlan } from "@locat
  *       the marketing feature lines (smart suggestions presence).
  *   - packages/shared/src/workspace-entitlements.ts
  *       FEATURES via planFeatures() → seatLimit, partnerHub, advancedExport,
- *       addressValidation, aiBriefing, homeDossier.
+ *       addressValidation, aiBriefing, homeDossier, vehicleCheck, weatherDigest,
+ *       realMap, moverSuggestions, dossierPdf, prioritySupport,
+ *       concurrentPlanLimit. This is the same matrix the server gates read, so
+ *       a row here flips exactly when the entitlement flips for a real user
+ *       ("what you see is what the plan enforces").
  *   - apps/web/src/lib/plan-limits.ts
  *       PLAN_LIMITS → address/service caps. That module is server-only (it
  *       imports prisma) and PLAN_LIMITS is not exported, so the caps are
@@ -114,10 +118,30 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       // Row source: canCreateMovingPlan / canGenerateMoveTasks (apps/web/src/lib/plan-limits.ts)
       // gate the move plan on paid tiers only — mirrored via BILLING_PLAN_DEFINITIONS[plan].isPaid.
       { labelKey: "rowMovePlan", cell: (plan) => onOff(BILLING_PLAN_DEFINITIONS[plan].isPaid) },
-      // Row source: FEATURES[plan].aiBriefing (packages/shared/src/workspace-entitlements.ts) — paid plans.
-      { labelKey: "rowAiBriefing", cell: (plan) => onOff(planFeatures(plan).aiBriefing) },
-      // Row source: FEATURES[plan].homeDossier (packages/shared/src/workspace-entitlements.ts) — paid plans.
+      // Row source: FEATURES[plan].homeDossier (packages/shared/src/workspace-entitlements.ts) —
+      // Individual and up (the dossier *screen*; the PDF export is a separate Pro-only row below).
       { labelKey: "rowHomeDossier", cell: (plan) => onOff(planFeatures(plan).homeDossier) },
+      // Row source: FEATURES[plan].vehicleCheck (packages/shared/src/workspace-entitlements.ts) —
+      // VIN decode + NHTSA recall check on vehicle tasks, Individual and up.
+      { labelKey: "rowVehicleCheck", cell: (plan) => onOff(planFeatures(plan).vehicleCheck) },
+      // Row source: FEATURES[plan].weatherDigest (packages/shared/src/workspace-entitlements.ts) —
+      // move-week weather/flood push + weekly digest email, Individual and up.
+      { labelKey: "rowWeatherDigest", cell: (plan) => onOff(planFeatures(plan).weatherDigest) },
+      // Row source: FEATURES[plan].aiBriefing (packages/shared/src/workspace-entitlements.ts) —
+      // Family and Pro only (same AI experience; the cap is cost control, not a tier line).
+      { labelKey: "rowAiBriefing", cell: (plan) => onOff(planFeatures(plan).aiBriefing) },
+      // Row source: FEATURES[plan].realMap (packages/shared/src/workspace-entitlements.ts) —
+      // real Google Static map on route/address cards, Family and Pro (lower tiers see the canvas).
+      { labelKey: "rowRealMap", cell: (plan) => onOff(planFeatures(plan).realMap) },
+      // Row source: FEATURES[plan].moverSuggestions (packages/shared/src/workspace-entitlements.ts) —
+      // FMCSA-registered household-goods mover suggestions on the moving plan, Pro only.
+      { labelKey: "rowMoverSuggestions", cell: (plan) => onOff(planFeatures(plan).moverSuggestions) },
+      // Row source: FEATURES[plan].dossierPdf (packages/shared/src/workspace-entitlements.ts) —
+      // New Home Dossier PDF export, Pro only.
+      { labelKey: "rowDossierPdf", cell: (plan) => onOff(planFeatures(plan).dossierPdf) },
+      // Row source: FEATURES[plan].concurrentPlanLimit (packages/shared/src/workspace-entitlements.ts) —
+      // max concurrent (non-archived) move plans, 1/1/1/3. Pro runs several at once.
+      { labelKey: "rowConcurrentPlans", cell: (plan) => ({ kind: "value", value: planFeatures(plan).concurrentPlanLimit }) },
     ],
   },
   {
@@ -147,6 +171,8 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       { labelKey: "rowPartnerHub", cell: (plan) => onOff(planFeatures(plan).partnerHub) },
       // Row source: FEATURES[plan].addressValidation (packages/shared/src/workspace-entitlements.ts) — paid plans.
       { labelKey: "rowAddressValidation", cell: (plan) => onOff(planFeatures(plan).addressValidation) },
+      // Row source: FEATURES[plan].prioritySupport (packages/shared/src/workspace-entitlements.ts) — Pro only.
+      { labelKey: "rowPrioritySupport", cell: (plan) => onOff(planFeatures(plan).prioritySupport) },
     ],
   },
 ];

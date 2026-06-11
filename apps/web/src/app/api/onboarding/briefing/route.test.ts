@@ -117,7 +117,9 @@ describe("/api/onboarding/briefing", () => {
     mocks.requireDbUserId.mockResolvedValue(`user_${userSeq}`);
     mocks.rateLimit.mockResolvedValue({ success: true });
     mocks.getRuntimeConfigValue.mockResolvedValue("test-api-key");
-    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
+    // aiBriefing is Family+Pro under the overhauled matrix (Individual loses AI),
+    // so the entitled-path default is FAMILY — the lowest tier with the feature.
+    mocks.getUserPlan.mockResolvedValue({ plan: "FAMILY", hasPremium: true, isActive: true });
     mocks.resolveWorkspaceDataScope.mockResolvedValue({
       workspaceId: null,
       memberRole: "OWNER",
@@ -204,8 +206,8 @@ describe("/api/onboarding/briefing", () => {
     }
     expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
 
-    // Same user upgrades the same day → full budget still available.
-    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
+    // Same user upgrades the same day to an AI tier → full budget still available.
+    mocks.getUserPlan.mockResolvedValue({ plan: "FAMILY", hasPremium: true, isActive: true });
     const body = await (await POST(makeRequest())).json();
     expect(body.cached).toBe(false);
     expect(body.source).toBe("ai");

@@ -150,4 +150,17 @@ describe("RouteMapCard markup", () => {
     expect(html).toContain("Stylized view");
     expect(html).not.toContain("<img");
   });
+
+  it("renders the stylized fallback when realMap is gated off (Free/Individual)", () => {
+    // realMap=false short-circuits the map-fetch effect entirely, so lower tiers
+    // see ONLY the stylized canvas and the /api/maps/static proxy is never hit.
+    const html = renderToStaticMarkup(
+      <RouteMapCard fromCity="Chicago" toCity="Austin" realMap={false} />,
+    );
+    expect(html).toContain("Stylized view");
+    expect(html).not.toContain("<img");
+    // Card chrome stays identical to the entitled card (only the basemap differs).
+    expect(html).toContain("Chicago");
+    expect(html).toContain("Austin");
+  });
 });

@@ -8,10 +8,16 @@ const mocks = vi.hoisted(() => ({
   lookupMoveDayForecast: vi.fn(),
   createInAppNotification: vi.fn(),
   sendNotification: vi.fn(),
+  getUserPlan: vi.fn(),
 }));
 
 vi.mock("@/lib/cron-guard", () => ({
   guardCronRequest: (...a: unknown[]) => mocks.guardCronRequest(...a),
+}));
+// getUserPlan mocked (no DB); planFeatures stays REAL so the weatherDigest gate
+// exercises the actual @locateflow/shared feature matrix (Individual+).
+vi.mock("@/lib/plan-limits", () => ({
+  getUserPlan: (...a: unknown[]) => mocks.getUserPlan(...a),
 }));
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -81,6 +87,9 @@ describe("move-week-alerts cron", () => {
     mocks.lookupMoveDayForecast.mockResolvedValue(OK_FORECAST);
     mocks.createInAppNotification.mockResolvedValue(true);
     mocks.sendNotification.mockResolvedValue(true);
+    // Default to an entitled tier so the existing delivery tests are unaffected;
+    // the gate-specific tests override the plan.
+    mocks.getUserPlan.mockResolvedValue({ plan: "INDIVIDUAL" });
   });
 
   afterEach(() => {
@@ -253,5 +262,43 @@ describe("move-week-alerts cron", () => {
     expect(mocks.lookupMoveDayForecast).not.toHaveBeenCalled();
     expect(mocks.createInAppNotification).not.toHaveBeenCalled();
     expect(mocks.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("skips a FREE_TRIAL owner (no weatherDigest) before any NWS call or dedupe-key burn", async () => {
+    mocks.getUserPlan.mockResolvedValue({ plan: "FREE_TRIAL" });
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    expect(body.skippedNotEntitled).toBe(1);
+    expect(body.alerted).toBe(0);
+    expect(mocks.lookupMoveDayForecast).not.toHaveBeenCalled();
+    expect(mocks.createInAppNotification).not.toHaveBeenCalled();
+    expect(mocks.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("resolves each owner's plan only once even with multiple plans (run cache)", async () => {
+    mocks.movingPlanFindMany.mockResolvedValue([
+      makePlan({ id: "plan_a" }),
+      makePlan({ id: "plan_b" }),
+    ]);
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    expect(body.alerted).toBe(2);
+    // Both plans share user_1 → one entitlement read for the run.
+    expect(mocks.getUserPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("still alerts an entitled FAMILY owner (weatherDigest on)", async () => {
+    mocks.getUserPlan.mockResolvedValue({ plan: "FAMILY" });
+
+    const res = await GET(makeRequest());
+    const body = await res.json();
+
+    expect(body.alerted).toBe(1);
+    expect(body.skippedNotEntitled).toBe(0);
+    expect(mocks.sendNotification).toHaveBeenCalled();
   });
 });
