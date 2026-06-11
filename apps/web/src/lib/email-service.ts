@@ -230,9 +230,13 @@ export async function sendLoggedEmail(opts: {
         return { success: false, skipped: true };
       }
 
-      if (existing.status === "FAILED") {
+      // FAILED rows are retryable; SKIPPED rows (suppressed by the
+      // KILL_OUTBOUND_EMAIL kill switch) are too — once the switch is
+      // lifted, a re-send with the same dedupe key must go through
+      // instead of being permanently swallowed by the dedupe guard.
+      if (existing.status === "FAILED" || existing.status === "SKIPPED") {
         const claimed = await prisma.emailLog.updateMany({
-          where: { id: existing.id, status: "FAILED" },
+          where: { id: existing.id, status: { in: ["FAILED", "SKIPPED"] } },
           data: {
             status: "PENDING",
             error: null,
@@ -277,7 +281,10 @@ export async function sendLoggedEmail(opts: {
     await prisma.emailLog.update({
       where: { id: logId },
       data: {
-        status: result.success ? "SENT" : "FAILED",
+        // SKIPPED = deliberately suppressed by the KILL_OUTBOUND_EMAIL
+        // operator kill switch (error carries reason "kill_switch") — the
+        // status column is a free-form varchar so no migration is needed.
+        status: result.success ? "SENT" : result.killSwitch ? "SKIPPED" : "FAILED",
         error: result.error,
         providerMessageId: result.providerMessageId,
         sentAt: result.success ? new Date() : null,

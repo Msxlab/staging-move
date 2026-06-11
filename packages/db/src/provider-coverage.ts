@@ -1,4 +1,4 @@
-import { expandCoverageRows } from "@locateflow/shared";
+import { expandCoverageRows } from "@locateflow/shared/provider-coverage";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 type TxClient = Prisma.TransactionClient | PrismaClient;

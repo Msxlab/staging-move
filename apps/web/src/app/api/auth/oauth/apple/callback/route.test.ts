@@ -205,4 +205,14 @@ describe("Apple OAuth callback nonce protection", () => {
     expect(mocks.exchangeAppleCode).not.toHaveBeenCalled();
     expect(mocks.jwtVerify).not.toHaveBeenCalled();
   });
+
+  it("redirects to the polite signups-paused message when KILL_SIGNUPS blocks a new account", async () => {
+    mocks.findOrLinkOAuthUserWithStatus.mockRejectedValue(new Error("SIGNUPS_PAUSED"));
+
+    const response = await POST(callbackRequest({ nonceCookie: "nonce-1" }));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/sign-in?error=signups-paused");
+    expect(mocks.createUserSession).not.toHaveBeenCalled();
+  });
 });

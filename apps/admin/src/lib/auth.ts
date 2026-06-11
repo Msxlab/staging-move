@@ -427,10 +427,14 @@ function stepUpGraceMs(operation: string, maxAgeMs?: number): number {
   return DEFAULT_CONFIRM_GRACE_MS;
 }
 
-async function checkStepUpFailureLimit(key: string): Promise<{ allowed: boolean; retryAfterSec: number }> {
+async function checkStepUpFailureLimit(key: string): Promise<{ allowed: boolean; retryAfterSec: number; unavailable?: boolean }> {
   const lock = await getStepUpLockout(key);
   if (lock.locked) {
-    return { allowed: false, retryAfterSec: lock.retryAfterSec };
+    // `unavailable` means the distributed store is configured but erroring
+    // and the limiter failed closed (see auth-step-up-store.ts) — surfaced
+    // so the operator sees "temporarily unavailable" instead of being told
+    // they typo'd too often.
+    return { allowed: false, retryAfterSec: lock.retryAfterSec, unavailable: lock.unavailable };
   }
   return { allowed: true, retryAfterSec: 0 };
 }
@@ -492,12 +496,14 @@ export async function requirePasswordConfirm(
   const failureLimit = await checkStepUpFailureLimit(failureKey);
   if (!failureLimit.allowed) {
     await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, {
-      reason: "rate_limited",
+      reason: failureLimit.unavailable ? "limiter_unavailable" : "rate_limited",
       retryAfterSec: failureLimit.retryAfterSec,
     });
     return {
       confirmed: false,
-      error: "Too many confirmation attempts. Please wait and try again.",
+      error: failureLimit.unavailable
+        ? "Confirmation is temporarily unavailable. Please try again shortly."
+        : "Too many confirmation attempts. Please wait and try again.",
       rateLimited: true,
       retryAfterSec: failureLimit.retryAfterSec,
     };

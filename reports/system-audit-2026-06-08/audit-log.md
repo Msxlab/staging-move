@@ -1,0 +1,66 @@
+# Audit Log
+
+## 2026-06-08
+
+- Baslangic teyidi alindi: sistem web, mobile, admin, anasayfa ve tum bagli moduller icin koddan incelenecek.
+- Mevcut `.md` rapor/memory dosyalarini kaynak olarak okumama kurali benimsendi.
+- Calisma dizini dogrulandi: `c:\Users\Kutay\Desktop\move-main\move-main`.
+- Ilk repo kok listelemesi yapildi: `.git`, `apps`, `packages`, `scripts`, `docker`, `docs`, `reports`, `node_modules` ve ana konfig dosyalari goruldu.
+- `.md` dosyalari ve eski `reports/**` icerigi dislanarak kod dosyalari listelendi.
+- Git durumu kontrol edildi; onceden var olan untracked rapor dosyalari ve `SYSTEM_AUDIT_REPORT/` goruldu, bunlara dokunulmadi.
+- Yeni audit klasoru olusturuldu: `reports/system-audit-2026-06-08/`.
+- Baslangic rapor dosyalari eklendi.
+- Root, web, admin, mobile, shared, db ve connectors package manifestleri okundu.
+- Next.js web/admin konfigleri ve Expo mobile `app.json` okundu.
+- Route envanteri cikarildi:
+  - Web API: 142 `route.ts`, 67 sibling `route.test.ts`, 75 sibling test eksigi, toplam 86 `route.test.ts`.
+  - Admin API: 107 `route.ts`, 36 sibling `route.test.ts`, 71 sibling test eksigi, toplam 52 `route.test.ts`.
+- Prisma schema model/enum basliklari tarandi; 50+ ana veri modeli goruldu.
+- Mobile Expo route dosyalari ve mobile API cagri yuzeyi listelendi.
+- Workspace paket import kullanimi sayildi:
+  - `apps/web/src`: `@locateflow/shared` 86, `@locateflow/db` 11, `@locateflow/connectors` 10.
+  - `apps/admin/src`: `@locateflow/shared` 27, `@locateflow/db` 6, `@locateflow/connectors` 4.
+  - `apps/mobile`: sadece `@locateflow/shared` kullaniyor; DB/connectors mobile'a dogrudan girmiyor.
+- Web middleware, user auth, app layout ve API gate katmani okundu.
+- Admin middleware, auth, page guard ve layout katmani okundu.
+- Mobile API client, auth store, SecureStore token cache ve workspace ekranlari okundu.
+- Cron route guard taramasi yapildi. Ilk regex `guardCronRequest` helperini yakalamadigi icin yanlis alarm verdi; tekrar taramada web/admin cron dosyalarinin hepsinde guard metni bulundu.
+- Admin API route-level guard taramasi yapildi. Tek aday `apps/admin/src/app/api/blog/image/route.ts` idi; admin middleware tarafindan korunan public image redirect mirror oldugu goruldu.
+- Web API guard/public yuzey taramasi yapildi. Ozel public/secret-auth endpointler ayrildi.
+- Ilk dogrulanmis bulgular:
+  - `apps/web/src/app/api/partner-consents/[id]/refresh/route.ts` cron/system auth bekliyor ama web middleware public/cron listesinde degil; CRON_SECRET bearer route'a ulasmadan user JWT kontrolunde 401 olabilir.
+  - `apps/web/src/app/api/providers/popular/route.ts` public GET ve kullanici adres/service verisinden eyalet bazli provider popularitesi donduruyor; k-anonimlik eşiği yok, kucuk orneklem mahremiyet riski var.
+- Eski docs/audits CSV ciktilari `TODO` taramasinda goruldu; onceki audit/memory kaynagi olarak kullanilmadi ve sonraki taramalarda rapor/dokuman kaynaklari dislanacak.
+- Bir PowerShell regex komutu parantezli path quoting nedeniyle hata verdi; sade komutla tekrar calistirildi.
+- Web/admin/mobile route ve page sayimlari yeniden dogrulandi:
+  - Web route handler: 146 toplam; bunun 142'si `apps/web/src/app/api/**` API route'u.
+  - Admin route handler: 107.
+  - Web page/layout: 69.
+  - Admin page/layout: 56.
+  - Mobile Expo route dosyasi: 53.
+- API route aileleri gruplandi:
+  - Web en buyuk aileler: auth 21, cron 20, workspaces 13, blog 6, invitations/mobile/partner-consents/providers 5'er.
+  - Admin en buyuk aileler: providers 11, auth 11, blog 10, subscriptions 8, workspaces/users 7'ser.
+- Mobile endpoint kullanimlari dosya/line seviyesinde listelendi. Direct mobile `/api/*` cagri yuzeyinde bariz route karsiligi olmayan endpoint bulunmadi.
+- Web/admin istemci endpointleri orneklendi; admin operasyon panellerinin backup, provider, subscription, team, workspace, runtime-config ve security API ailelerine baglandigi goruldu.
+- Billing/IAP/webhook akislari incelendi:
+  - `/api/mobile/iap/verify` StoreKit/Play Billing sonucunu server-side dogruluyor, kullaniciya bagliyor ve receipt sharing'i engelliyor.
+  - Stripe webhook raw body cap, Stripe signature, idempotency, out-of-order event korumasi ve workspace seat reconciliation iceriyor.
+  - App Store webhook Apple JWS dogrulamasi, stale notification ve idempotency kullaniyor.
+  - Play Store RTDN OIDC audience/identity/package kontrolu ve idempotency kullaniyor.
+- Admin operasyon modulleri incelendi:
+  - Backup create/download: SUPER_ADMIN, MFA step-up, audit log, encryption/signature/offsite policy.
+  - Runtime config: SUPER_ADMIN, MFA step-up, value shape validation, audit metadata-only logging.
+  - Key rotation: SUPER_ADMIN, MFA step-up, distributed lock, dry-run, audit log.
+  - Security readiness: config, alerting, backup freshness/offsite, DB transport kontrolleri.
+- Workspace + connector akisi derinlestirildi. Legacy `/api/connector-dispatch`, catalog ve OAuth initiation/callback akislari kullanici subscription'ini kontrol ederken workspace-aware `/api/workspaces/[id]/sync` owner entitlement ve `workspaceId` ile calisiyor.
+- `.env.example` drift taramasi yapildi:
+  - Kaynak `process.env.*` anahtar sayisi: 85.
+  - `.env.example` anahtar sayisi: 111.
+  - Runtime-config katalog anahtari: 103.
+  - Kaynakta kullanilip `.env.example` icinde olmayan anahtar: 35.
+  - Runtime-config katalogunda olup `.env.example` icinde olmayan anahtar: 28.
+- TODO/FIXME/HACK taramasi yapildi. Uygulama cekirdeginde yeni TODO bulunmadi; gercek isaretler `scripts/new-connector.mjs` ve `scripts/ingest/fcc-bulk-ingest.ts` placeholder'larinda.
+- Birden fazla komutta PowerShell path/pipe sentaksi duzeltildi:
+  - `(app)` klasoru quote edilmeden calisinca shell bunu komut gibi yorumladi.
+  - Windows path separatorlari nedeniyle `rg --files | rg "route\\.ts$"` yerine `Where-Object`/`Select-String` ile dogrulama yapildi.

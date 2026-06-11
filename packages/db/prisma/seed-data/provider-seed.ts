@@ -5,7 +5,7 @@ import {
 } from "./providers";
 import { applyProviderCoverageOverrides } from "./provider-coverage-overrides";
 import { STATE_PROVIDER_EXPANSIONS } from "./state-provider-catalog";
-import { sanitizeProviderSeedRecords } from "@locateflow/shared";
+import { sanitizeProviderSeedRecords } from "@locateflow/shared/provider-integrity";
 
 export const FEDERAL_NEW = sanitizeProviderSeedRecords(
   applyProviderCoverageOverrides(RAW_FEDERAL_NEW),

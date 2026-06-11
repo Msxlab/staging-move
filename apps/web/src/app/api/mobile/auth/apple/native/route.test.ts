@@ -261,4 +261,17 @@ describe("native Apple Sign-In mobile route", () => {
     expect(response.status).toBe(409);
     expect(body.code).toBe("LEGAL_ACCEPTANCE_REQUIRED");
   });
+
+  it("returns a polite 503 when the KILL_SIGNUPS switch pauses new-account creation", async () => {
+    mocks.findOrLinkOAuthUserWithStatus.mockRejectedValueOnce(
+      new Error("SIGNUPS_PAUSED"),
+    );
+    const response = await POST(request(VALID_BODY));
+    const body = await response.json();
+    expect(response.status).toBe(503);
+    expect(body.code).toBe("SIGNUPS_PAUSED");
+    expect(body.error).toContain("temporarily paused");
+    expect(response.headers.get("Retry-After")).toBe("3600");
+    expect(mocks.createUserSession).not.toHaveBeenCalled();
+  });
 });

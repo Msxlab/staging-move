@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LocateFlow — Raccoon Mascot (Draft 3, kawaii)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px; background:#0A0F18;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif; color:#ECF1F8; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:#8A98AC; font-size:13px; margin:0 0 22px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1180px; }
+  .hero { border-radius:24px; padding:20px; display:flex; align-items:center; gap:14px;
+    border:1px solid rgba(255,255,255,.12); position:relative; overflow:hidden; min-height:185px; }
+  .hero .label { position:absolute; top:12px; right:14px; font-size:11px; font-weight:800;
+    letter-spacing:.8px; padding:5px 11px; border-radius:999px; }
+  .fam { background:linear-gradient(135deg,#0E2A22 0%,#12382C 60%,#0E2A22 100%); }
+  .fam .label { background:#34D8A6; color:#04140E; }
+  .pro { background:linear-gradient(135deg,#1B1430 0%,#241a45 55%,#15102a 100%); }
+  .pro .label { background:linear-gradient(135deg,#E9C46A,#caa24a); color:#1a1330; }
+  .copy h2 { margin:0 0 4px; font-size:17px; }
+  .copy p { margin:0; font-size:12.5px; color:rgba(236,241,248,.72); max-width:210px; }
+  .crew { display:flex; align-items:flex-end; }
+  .crew > svg { margin-left:-12px; filter:drop-shadow(0 8px 12px rgba(0,0,0,.4)); }
+  .crew > svg:first-child { margin-left:0; }
+  .variants { margin:30px 0 8px; font-size:13px; color:#8A98AC; }
+  .vrow { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap;
+    background:#0E1521; border:1px solid #1c2536; border-radius:16px; padding:18px 22px; max-width:1180px; }
+  .vrow figure { margin:0; text-align:center; }
+  .vrow figcaption { font-size:11px; color:#8A98AC; margin-top:6px; }
+  .note { color:#5d6b80; font-size:12px; margin-top:18px; max-width:1180px; line-height:1.5; }
+</style>
+</head>
+<body>
+  <h1>🦝 Household maskot — Draft 3 (kawaii / sempatik)</h1>
+  <p class="sub">Büyük kafa · iri parlak gözler · pembe allık · yumuşak maske · tüylü halkalı kuyruk. Aile: anne/baba/çocuk ayrı.</p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="rac" viewBox="0 0 124 134">
+        <!-- fluffy ringed tail -->
+        <g>
+          <ellipse cx="96" cy="112" rx="21" ry="18" fill="var(--fur,#aeb9c6)"/>
+          <ellipse cx="108" cy="92" rx="18.5" ry="15.5" fill="#3a4350"/>
+          <ellipse cx="113" cy="71" rx="16" ry="14" fill="var(--fur,#aeb9c6)"/>
+          <ellipse cx="113" cy="53" rx="13.5" ry="12.5" fill="#3a4350"/>
+          <ellipse cx="109" cy="38" rx="11.5" ry="11" fill="var(--fur,#aeb9c6)"/>
+          <ellipse cx="102" cy="27" rx="9" ry="9" fill="#3a4350"/>
+        </g>
+        <!-- feet -->
+        <ellipse cx="46" cy="128" rx="11" ry="6.5" fill="#3a4350"/>
+        <ellipse cx="78" cy="128" rx="11" ry="6.5" fill="#3a4350"/>
+        <!-- round body + belly -->
+        <ellipse cx="62" cy="106" rx="27" ry="23" fill="var(--fur,#aeb9c6)"/>
+        <ellipse cx="62" cy="110" rx="16" ry="16" fill="#eef3f8"/>
+        <!-- little hands -->
+        <ellipse cx="36" cy="102" rx="7.5" ry="9" fill="var(--fur,#aeb9c6)"/>
+        <ellipse cx="88" cy="100" rx="7.5" ry="9" fill="var(--fur,#aeb9c6)"/>
+        <!-- soft rounded ears w/ dark tips -->
+        <path d="M40 26 Q26 0 50 16 Q46 23 40 26 Z" fill="var(--fur,#aeb9c6)"/>
+        <path d="M84 26 Q98 0 74 16 Q78 23 84 26 Z" fill="var(--fur,#aeb9c6)"/>
+        <path d="M41 21 Q33 7 47 15 Q44 19 41 21 Z" fill="#3a4350"/>
+        <path d="M83 21 Q91 7 77 15 Q80 19 83 21 Z" fill="#3a4350"/>
+        <!-- BIG round head -->
+        <ellipse cx="62" cy="58" rx="41" ry="38" fill="var(--fur,#aeb9c6)"/>
+        <!-- big soft dark eye-patches (kawaii mask) -->
+        <ellipse cx="45" cy="55" rx="16" ry="17.5" fill="#3a4350"/>
+        <ellipse cx="79" cy="55" rx="16" ry="17.5" fill="#3a4350"/>
+        <!-- white blaze + muzzle -->
+        <path d="M62 30 Q55 48 62 62 Q69 48 62 30 Z" fill="#f4f8fc"/>
+        <ellipse cx="62" cy="76" rx="19" ry="16" fill="#f4f8fc"/>
+        <!-- BIG sparkly eyes -->
+        <circle cx="45" cy="55" r="12" fill="#fff"/>
+        <circle cx="79" cy="55" r="12" fill="#fff"/>
+        <circle cx="46" cy="57" r="7" fill="#171d25"/>
+        <circle cx="78" cy="57" r="7" fill="#171d25"/>
+        <circle cx="49" cy="53.5" r="2.9" fill="#fff"/>
+        <circle cx="82" cy="53.5" r="2.9" fill="#fff"/>
+        <circle cx="43" cy="59.5" r="1.5" fill="#fff"/>
+        <circle cx="75" cy="59.5" r="1.5" fill="#fff"/>
+        <!-- tiny nose + cute mouth -->
+        <path d="M62 68 q-4.5 0 -4.5 3.8 q0 3.8 4.5 4.4 q4.5 -0.6 4.5 -4.4 q0 -3.8 -4.5 -3.8 z" fill="#2a3038"/>
+        <path d="M62 76 q-4.5 4.5 -9 2 M62 76 q4.5 4.5 9 2" stroke="#9aa7b5" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+        <!-- pink blush -->
+        <ellipse cx="32" cy="70" rx="6.5" ry="4.2" fill="#F58FB4" opacity="0.7"/>
+        <ellipse cx="92" cy="70" rx="6.5" ry="4.2" fill="#F58FB4" opacity="0.7"/>
+      </symbol>
+
+      <!-- MOM: eyelashes + flower -->
+      <symbol id="mom" viewBox="0 0 124 134">
+        <path d="M33 48 l-5 -3 M32.5 53 l-6 -1 M33 58 l-5 2" stroke="#171d25" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M91 48 l5 -3 M91.5 53 l6 -1 M91 58 l5 2" stroke="#171d25" stroke-width="1.5" stroke-linecap="round"/>
+        <g transform="translate(40,12)">
+          <circle cx="0" cy="-5.5" r="3" fill="#FBC8DB"/><circle cx="5.2" cy="-1.7" r="3" fill="#FBC8DB"/>
+          <circle cx="3.2" cy="4.5" r="3" fill="#FBC8DB"/><circle cx="-3.2" cy="4.5" r="3" fill="#FBC8DB"/>
+          <circle cx="-5.2" cy="-1.7" r="3" fill="#FBC8DB"/><circle r="2.4" fill="#FFD86B"/>
+        </g>
+      </symbol>
+
+      <!-- DAD: little cowlick tuft -->
+      <symbol id="dad" viewBox="0 0 124 134">
+        <path d="M62 18 q-3 -10 3 -12 M62 18 q0 -11 7 -10 M62 18 q3 -9 10 -7"
+          stroke="var(--fur,#9aa7b5)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- KID: tiny single cowlick -->
+      <symbol id="kid" viewBox="0 0 124 134">
+        <path d="M62 19 q-2 -9 4 -10 q-2 5 0 9 z" fill="var(--fur,#b8c3ce)"/>
+      </symbol>
+
+      <!-- PRO: top hat + bow tie -->
+      <symbol id="suit" viewBox="0 0 124 134">
+        <ellipse cx="62" cy="22" rx="31" ry="6.5" fill="#15171c"/>
+        <rect x="44" y="-5" width="36" height="24" rx="3.5" fill="#15171c"/>
+        <rect x="44" y="6" width="36" height="6.5" fill="#E9C46A"/>
+        <path d="M62 90 l-15 -8 v16 z" fill="#E9C46A"/>
+        <path d="M62 90 l15 -8 v16 z" fill="#E9C46A"/>
+        <circle cx="62" cy="90" r="4.8" fill="#caa24a"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="grid">
+    <div class="hero fam">
+      <span class="label">FAMILY</span>
+      <div class="crew">
+        <svg width="112" height="121" style="--fur:#9aa7b5"><use href="#rac"/><use href="#dad"/></svg>
+        <svg width="98" height="106" style="--fur:#aeb9c6"><use href="#rac"/><use href="#mom"/></svg>
+        <svg width="70" height="76" style="--fur:#bcc6d1"><use href="#rac"/><use href="#kid"/></svg>
+      </div>
+      <div class="copy"><h2>Family household</h2><p>Anne, baba, çocuk — tek çatı altında 💚</p></div>
+    </div>
+
+    <div class="hero pro">
+      <span class="label">PRO</span>
+      <div class="crew">
+        <svg width="112" height="121" style="--fur:#95a3b6"><use href="#rac"/><use href="#dad"/><use href="#suit"/></svg>
+        <svg width="98" height="106" style="--fur:#abb7c4"><use href="#rac"/><use href="#mom"/><use href="#suit"/></svg>
+        <svg width="70" height="76" style="--fur:#bac5d0"><use href="#rac"/><use href="#kid"/><use href="#suit"/></svg>
+      </div>
+      <div class="copy"><h2>Pro household</h2><p>Tüm ekibe premium, şık & hazır ✨</p></div>
+    </div>
+  </div>
+
+  <p class="variants">Tekil — baba / anne / çocuk / Pro:</p>
+  <div class="vrow">
+    <figure><svg width="118" height="128" style="--fur:#9aa7b5"><use href="#rac"/><use href="#dad"/></svg><figcaption>Baba</figcaption></figure>
+    <figure><svg width="118" height="128" style="--fur:#aeb9c6"><use href="#rac"/><use href="#mom"/></svg><figcaption>Anne</figcaption></figure>
+    <figure><svg width="118" height="128" style="--fur:#bcc6d1"><use href="#rac"/><use href="#kid"/></svg><figcaption>Çocuk</figcaption></figure>
+    <figure><svg width="118" height="128" style="--fur:#abb7c4"><use href="#rac"/><use href="#dad"/><use href="#suit"/></svg><figcaption>Pro</figcaption></figure>
+  </div>
+
+  <p class="note">v3 (kawaii): büyük kafa + iri sparkle gözler + allık + yumuşak maske. Kod-tabanlı SVG, OTA-güvenli. — Beğenirsen PlanHero'ya gömerim. Daha da sevimli/farklı istersen tur atarız; ya da paylaştığın gibi hazır bir "cute raccoon" clipart (Etsy/PNG) satın alıp verirsen onu birebir gömerim (en yüksek kalite).</p>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   compare: vi.fn(),
   verifyTOTP: vi.fn(),
   verifyBackupCode: vi.fn(),
+  getRuntimeConfigValues: vi.fn(() => Promise.resolve({} as Record<string, string | null>)),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -55,7 +56,7 @@ vi.mock("@/lib/shared-encryption", () => ({
 }));
 
 vi.mock("@/lib/runtime-config", () => ({
-  getAdminRuntimeConfigValues: vi.fn(() => Promise.resolve({})),
+  getAdminRuntimeConfigValues: mocks.getRuntimeConfigValues,
 }));
 
 import { POST } from "./route";
@@ -101,6 +102,7 @@ describe("admin login rate limiting", () => {
     mocks.adminUpdateMany.mockResolvedValue({ count: 1 });
     mocks.verifyTOTP.mockReturnValue(false);
     mocks.verifyBackupCode.mockResolvedValue(-1);
+    mocks.getRuntimeConfigValues.mockResolvedValue({});
   });
 
   it("does not block a different admin email only because it shares the same IP", async () => {
@@ -207,6 +209,115 @@ describe("admin login rate limiting", () => {
     expect(mocks.adminAuditLogCreate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ action: "BACKUP_CODE_USED", adminUserId: "admin-backup" }),
     }));
+  });
+
+  describe("distributed limiter (Upstash configured)", () => {
+    const REDIS_CONFIG = {
+      UPSTASH_REDIS_REST_URL: "https://redis.example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "test-token-1234567890",
+    };
+
+    function upstashResponse(result: unknown) {
+      return {
+        ok: true,
+        json: () => Promise.resolve({ result }),
+      } as unknown as Response;
+    }
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("counts attempts through Redis instead of the in-process Map", async () => {
+      mocks.getRuntimeConfigValues.mockResolvedValue(REDIS_CONFIG);
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/get/")) return Promise.resolve(upstashResponse(null));
+        if (url.includes("/incr/")) return Promise.resolve(upstashResponse(1));
+        if (url.includes("/expire/")) return Promise.resolve(upstashResponse(1));
+        return Promise.resolve(upstashResponse("OK"));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await POST(request("redis-counting-admin@example.com"));
+
+      expect(response.status).toBe(401);
+      const calledUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+      expect(calledUrls.some((url) => url.includes("/incr/") && url.includes(encodeURIComponent("admin:login")))).toBe(true);
+    });
+
+    it("locks the bucket via Redis once the counter exceeds the limit", async () => {
+      mocks.getRuntimeConfigValues.mockResolvedValue(REDIS_CONFIG);
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/get/")) return Promise.resolve(upstashResponse(null));
+        if (url.includes("/incr/")) return Promise.resolve(upstashResponse(6));
+        return Promise.resolve(upstashResponse("OK"));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await POST(request("redis-locked-admin@example.com"));
+      const body = await response.json();
+
+      expect(response.status).toBe(429);
+      expect(response.headers.get("Retry-After")).toBe("1800");
+      expect(body.error).toBe("Too many login attempts. Please try again later.");
+      const calledUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+      expect(calledUrls.some((url) => url.includes("/set/") && url.includes(encodeURIComponent("admin:login:lock")))).toBe(true);
+    });
+
+    it("fails closed with 503 when Redis is configured but erroring", async () => {
+      mocks.getRuntimeConfigValues.mockResolvedValue(REDIS_CONFIG);
+      vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("ECONNREFUSED"))));
+
+      const response = await POST(request("redis-down-admin@example.com"));
+      const body = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(response.headers.get("Retry-After")).toBe("60");
+      expect(body.error).toBe("Login temporarily unavailable. Please try again later.");
+      // The in-process fallback must NOT have been consulted: no password
+      // verification ever ran (the request was denied before auth).
+      expect(mocks.compare).not.toHaveBeenCalled();
+      expect(mocks.adminAuditLogCreate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ action: "LOGIN_BLOCKED" }),
+      }));
+    });
+
+    it("fails closed with 503 on the MFA limiter when Redis errors mid-login", async () => {
+      mocks.getRuntimeConfigValues.mockResolvedValue(REDIS_CONFIG);
+      mocks.compare.mockResolvedValue(true);
+      mocks.adminFindUnique.mockResolvedValue({
+        id: "admin-mfa-degraded",
+        email: "mfa-degraded@example.com",
+        password: "hash",
+        firstName: "Mfa",
+        lastName: "Degraded",
+        role: "SUPER_ADMIN",
+        isActive: true,
+        mfaEnabled: true,
+        mfaSecret: "encrypted-secret",
+        mfaBackupCodes: "[]",
+      });
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes(encodeURIComponent("admin:mfa"))) {
+          return Promise.reject(new Error("ECONNRESET"));
+        }
+        if (url.includes("/get/")) return Promise.resolve(upstashResponse(null));
+        if (url.includes("/incr/")) return Promise.resolve(upstashResponse(1));
+        return Promise.resolve(upstashResponse("OK"));
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await POST(request("mfa-degraded@example.com", { mfaCode: "123456" }));
+      const body = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(body.error).toBe("Login temporarily unavailable. Please try again later.");
+      expect(mocks.verifyTOTP).not.toHaveBeenCalled();
+      expect(mocks.adminSessionCreate).not.toHaveBeenCalled();
+    });
   });
 
   it("rejects backup code reuse and does not create a session", async () => {

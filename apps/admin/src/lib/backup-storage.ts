@@ -153,7 +153,7 @@ function getSignatureKey(
 
 function buildSignedStorageRequest(input: {
   config: BackupStorageConfig;
-  method: "PUT" | "GET";
+  method: "PUT" | "GET" | "DELETE";
   objectKey: string;
   payloadHash: string;
   requestDate?: Date;
@@ -508,6 +508,138 @@ export async function uploadBackupArchive(input: {
       location: `s3://${config.bucket}/${objectKey}`,
       reason: error?.message || "Backup upload failed.",
     });
+  }
+}
+
+export const BACKUP_RETENTION_DELETE_OFFSITE_KEY =
+  "BACKUP_RETENTION_DELETE_OFFSITE";
+
+// Object keys written by uploadBackupArchive always live under this
+// prefix; the retention delete path refuses anything else.
+export const BACKUP_OBJECT_KEY_PREFIX = "backups/";
+
+export interface BackupOffsiteDeleteResult {
+  outcome: "deleted" | "refused" | "failed";
+  objectKey: string | null;
+  reason: string | null;
+}
+
+/**
+ * Runtime flag gating offsite object deletion during retention.
+ * Defaults to false (preserve offsite archives) so the owner has to
+ * enable deletion deliberately. Only the exact string "true" enables
+ * it — typos ("TRUE", "1", "yes") stay off, matching the catalog's
+ * strict boolean validation.
+ */
+export async function isOffsiteRetentionDeleteEnabled(): Promise<boolean> {
+  const values = await getAdminRuntimeConfigValues([
+    BACKUP_RETENTION_DELETE_OFFSITE_KEY,
+  ]);
+  return values[BACKUP_RETENTION_DELETE_OFFSITE_KEY]?.trim() === "true";
+}
+
+/**
+ * Delete a single offsite backup archive object.
+ *
+ * Hard safety rails:
+ * - Deletes ONLY the exact object key stored on the BackupRecord, and
+ *   only when it validates as a key under the configured backups/
+ *   prefix for that backupId. Never lists, never derives keys.
+ * - Refuses cross-bucket deletes: if the record says its archive lives
+ *   in a different bucket than the currently configured one, the same
+ *   key in the configured bucket would be a different object.
+ * - Any failure (including missing storage config) is reported as
+ *   "failed" so the caller preserves the DB row and retries next run.
+ */
+export async function deleteBackupArchive(input: {
+  backupId: string;
+  offsite: BackupOffsiteMetadata;
+}): Promise<BackupOffsiteDeleteResult> {
+  const objectKey = input.offsite.objectKey;
+  if (
+    !objectKey ||
+    !objectKey.startsWith(BACKUP_OBJECT_KEY_PREFIX) ||
+    !isValidBackupObjectKey(objectKey, input.backupId)
+  ) {
+    return {
+      outcome: "refused",
+      objectKey: objectKey ?? null,
+      reason:
+        "Object key is missing, outside the configured backup prefix, or does not belong to this backup record.",
+    };
+  }
+
+  const config = await resolveBackupStorageConfig();
+  const provider = normalizeProvider(config.provider);
+  if (
+    !provider ||
+    !config.bucket ||
+    !config.region ||
+    !config.accessKeyId ||
+    !config.secretAccessKey
+  ) {
+    return {
+      outcome: "failed",
+      objectKey,
+      reason:
+        "Backup storage is not fully configured; offsite delete skipped.",
+    };
+  }
+
+  if (input.offsite.bucket && input.offsite.bucket !== config.bucket) {
+    return {
+      outcome: "refused",
+      objectKey,
+      reason: `Record bucket "${input.offsite.bucket}" does not match the configured backup bucket.`,
+    };
+  }
+
+  const payloadHash = sha256Hex("");
+  const signedRequest = buildSignedStorageRequest({
+    config,
+    method: "DELETE",
+    objectKey,
+    payloadHash,
+  });
+
+  try {
+    const response = await fetch(signedRequest.requestUrl, {
+      method: "DELETE",
+      headers: {
+        Authorization: signedRequest.authorization,
+        "x-amz-content-sha256": payloadHash,
+        "x-amz-date": signedRequest.amzDate,
+      },
+    });
+
+    // S3 answers 204 for successful deletes (including already-missing
+    // keys); some S3-compatible stores answer 404 for a missing key.
+    // Both mean the object no longer exists offsite.
+    if (response.ok || response.status === 404) {
+      return {
+        outcome: "deleted",
+        objectKey,
+        reason:
+          response.status === 404
+            ? "Object was already absent offsite."
+            : null,
+      };
+    }
+
+    const detail = (await response.text().catch(() => "")).slice(0, 300).trim();
+    return {
+      outcome: "failed",
+      objectKey,
+      reason: detail
+        ? `Delete failed (${response.status}): ${detail}`
+        : `Delete failed with status ${response.status}.`,
+    };
+  } catch (error: any) {
+    return {
+      outcome: "failed",
+      objectKey,
+      reason: error?.message || "Backup offsite delete failed.",
+    };
   }
 }
 

@@ -13,6 +13,17 @@
  * same env wiring rate-limit.ts already uses), and falls back to an
  * in-memory store for local dev and tests so nothing else has to change.
  *
+ * Degradation contract (SEC-RL; mirrors apps/web/src/lib/cron-guard.ts):
+ *   - Redis NOT configured  -> in-memory store + loud warn. Failing closed
+ *     here would block every sensitive admin action on deployments that
+ *     simply have no Redis (documented availability fallback).
+ *   - Redis configured but ERRORING -> the LIMITER reads/writes FAIL CLOSED:
+ *     `getFailureLockout`/`registerFailure` report a temporary lockout
+ *     (`unavailable: true`, short retry) and `hasRecentConfirm` denies the
+ *     grace window. Falling back to per-instance Maps would let an attacker
+ *     who can induce (or wait for) Redis errors dodge the distributed
+ *     bad-attempt counters.
+ *
  * The interface is intentionally tiny:
  *   - rememberConfirm(key, ttlSec)
  *   - hasRecentConfirm(key, maxAgeMs)
@@ -43,6 +54,11 @@ const IS_PRODUCTION =
 const KEY_PREFIX = "admin-stepup:";
 const FAILURE_PREFIX = "admin-stepup-fail:";
 const LOCK_PREFIX = "admin-stepup-lock:";
+
+// Retry hint surfaced when Redis is configured but erroring and the limiter
+// fails closed. Short on purpose: a transient Redis blip should not lock
+// operators out for the full lockout window.
+const DEGRADED_RETRY_AFTER_SEC = 60;
 
 // Local fallback. Used when Redis is not configured (dev/test) or as a
 // short-window fallback when Redis is briefly unavailable. We never relax
@@ -132,6 +148,10 @@ export async function rememberConfirm(key: string, ttlSec: number): Promise<void
 
 /**
  * Returns true when the key was confirmed within `maxAgeMs`.
+ *
+ * Fail-closed: when Redis is configured but erroring we deny the grace
+ * window instead of consulting the per-instance memory map — the caller
+ * then demands a fresh confirmation (which the failed-closed limiter gates).
  */
 export async function hasRecentConfirm(key: string, maxAgeMs: number): Promise<boolean> {
   if (HAS_REDIS) {
@@ -143,6 +163,7 @@ export async function hasRecentConfirm(key: string, maxAgeMs: number): Promise<b
       return Date.now() - ts < maxAgeMs;
     } catch (err) {
       warnRedisOnce(err);
+      return false;
     }
   }
   const ts = memConfirms.get(key);
@@ -160,7 +181,7 @@ export async function registerFailure(input: {
   windowSec: number;
   maxFailures: number;
   lockoutSec: number;
-}): Promise<{ locked: boolean; retryAfterSec: number }> {
+}): Promise<{ locked: boolean; retryAfterSec: number; unavailable?: boolean }> {
   const failureKey = `${FAILURE_PREFIX}${input.key}`;
   const lockKey = `${LOCK_PREFIX}${input.key}`;
 
@@ -177,7 +198,10 @@ export async function registerFailure(input: {
       }
       return { locked: false, retryAfterSec: 0 };
     } catch (err) {
+      // Fail closed: don't fall back to per-instance counters while the
+      // configured distributed store is erroring (see module doc).
       warnRedisOnce(err);
+      return { locked: true, retryAfterSec: DEGRADED_RETRY_AFTER_SEC, unavailable: true };
     }
   }
 
@@ -198,8 +222,13 @@ export async function registerFailure(input: {
 
 /**
  * Returns retryAfterSec > 0 if the key is currently locked out.
+ *
+ * Fail-closed: when Redis is configured but erroring this reports a
+ * temporary lockout (`unavailable: true`) instead of consulting the
+ * per-instance memory map, so a Redis outage can't be used to bypass
+ * distributed bad-attempt counters.
  */
-export async function getFailureLockout(key: string): Promise<{ locked: boolean; retryAfterSec: number }> {
+export async function getFailureLockout(key: string): Promise<{ locked: boolean; retryAfterSec: number; unavailable?: boolean }> {
   const lockKey = `${LOCK_PREFIX}${key}`;
   if (HAS_REDIS) {
     try {
@@ -212,6 +241,7 @@ export async function getFailureLockout(key: string): Promise<{ locked: boolean;
       return { locked: true, retryAfterSec: Math.ceil(remaining / 1000) };
     } catch (err) {
       warnRedisOnce(err);
+      return { locked: true, retryAfterSec: DEGRADED_RETRY_AFTER_SEC, unavailable: true };
     }
   }
   const until = memLocks.get(key);

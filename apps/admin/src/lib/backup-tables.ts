@@ -82,6 +82,19 @@ export const BACKUP_TABLES = {
   oauthAccounts: { model: "oAuthAccount", label: "OAuth Accounts" },
   profiles: { model: "profile", label: "Profiles" },
   dataConsents: { model: "dataConsent", label: "Data Consents" },
+  // Family/Pro workspaces have launched — these stopped being the empty,
+  // flag-off skeleton they were when first excluded. Workspace rows anchor
+  // the isolation axis (addresses/services/movingPlans/budgets carry a
+  // workspaceId FK); members carry roles and managed-sync consent.
+  workspaces: { model: "workspace", label: "Workspaces" },
+  workspaceMembers: { model: "workspaceMember", label: "Workspace Members" },
+  // Per-user channel/type opt-outs (including MARKETING). A restore that
+  // drops these silently resets everyone to default-enabled, undoing
+  // explicit user opt-outs — consent-adjacent, so always recover.
+  notificationPreferences: {
+    model: "notificationPreference",
+    label: "Notification Preferences",
+  },
   providers: { model: "serviceProvider", label: "Service Providers" },
   providerLogoCandidates: {
     model: "providerLogoCandidate",
@@ -96,10 +109,14 @@ export const BACKUP_TABLES = {
   movingPlans: { model: "movingPlan", label: "Moving Plans" },
   customProviders: { model: "userCustomProvider", label: "User Custom Providers" },
   services: { model: "service", label: "Services" },
+  // User-created reminders hang off services (Cascade FK) — user data.
+  reminders: { model: "reminder", label: "Reminders" },
   moveTasks: { model: "moveTask", label: "Move Tasks" },
   budgets: { model: "budget", label: "Budgets" },
   subscriptions: { model: "subscription", label: "Subscriptions" },
   notifications: { model: "notification", label: "Notifications" },
+  // Admin-authored email content; EmailLog.templateId references these.
+  emailTemplates: { model: "emailTemplate", label: "Email Templates" },
   emailLogs: { model: "emailLog", label: "Email Logs" },
   auditLogs: { model: "auditLog", label: "Audit Logs" },
   providerGovernanceIssues: {
@@ -110,6 +127,10 @@ export const BACKUP_TABLES = {
     model: "connectorFallbackAction",
     label: "Connector Fallback Actions",
   },
+  // User support history. senderId/assignedTo are loose admin refs (no
+  // FK), so `users` is the only hard parent of the ticket thread.
+  supportTickets: { model: "supportTicket", label: "Support Tickets" },
+  ticketMessages: { model: "ticketMessage", label: "Ticket Messages" },
   adminUsers: { model: "adminUser", label: "Admin Users" },
   adminPermissions: { model: "adminPermission", label: "Admin Permissions" },
   adminLoginLogs: { model: "adminLoginLog", label: "Admin Login Logs" },
@@ -140,15 +161,44 @@ export const BACKUP_TABLES = {
     model: "sponsoredPlacement",
     label: "Sponsored Placements",
   },
+  // Admin-curated content with no FK parents. StateRule's seed script only
+  // provides initial values — admin edits make the DB the source of truth.
+  helpArticles: { model: "helpArticle", label: "Help Articles" },
+  faqs: { model: "fAQ", label: "FAQs" },
+  stateRules: { model: "stateRule", label: "State Rules" },
+  // Accumulated allow/block list. Losing the blacklist in a disaster would
+  // fail open for known-abusive IPs, so it is part of the recovery set.
+  ipRules: { model: "iPRule", label: "IP Rules" },
+  // Marketing waitlist leads — externally irreplaceable contact data.
+  // `userId` is a loose ref (no FK), so there is no ordering constraint.
+  waitlistSignups: { model: "waitlistSignup", label: "Waitlist Signups" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
 
+// Restore order == FK order: every table appears after all of its FK
+// parents so MERGE/REPLACE imports can create rows table-by-table without
+// tripping referential integrity. Notable constraints:
+//   - the admin block leads because AcquisitionCampaign (admin-created)
+//     must exist before Subscription rows that reference it (campaignId);
+//   - workspaces sit right after users (owner FK) and before every table
+//     carrying a workspaceId FK (addresses/services/movingPlans/budgets);
+//   - emailTemplates precede emailLogs (templateId FK).
 export const BACKUP_TABLE_ORDER: BackupTableName[] = [
+  "adminUsers",
+  "adminPermissions",
+  "adminLoginLogs",
+  "adminAuditLogs",
   "users",
+  "workspaces",
+  "workspaceMembers",
   "oauthAccounts",
   "profiles",
   "dataConsents",
+  "notificationPreferences",
+  "acquisitionCampaigns",
+  "subscriptions",
+  "acquisitionRedemptions",
   "providers",
   "providerLogoCandidates",
   "providerCoverages",
@@ -157,40 +207,60 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "movingPlans",
   "customProviders",
   "services",
+  "reminders",
   "moveTasks",
   "budgets",
-  "subscriptions",
   "notifications",
+  "emailTemplates",
   "emailLogs",
   "auditLogs",
   "providerGovernanceIssues",
   "connectorFallbackActions",
-  "adminUsers",
-  "adminPermissions",
-  "adminLoginLogs",
-  "adminAuditLogs",
-  "acquisitionCampaigns",
-  "acquisitionRedemptions",
+  "supportTickets",
+  "ticketMessages",
   "affiliateClicks",
   "affiliateConversions",
   "blogCategories",
   "blogTags",
   "blogPosts",
+  "sponsoredPlacements",
+  // FK-free admin content/config — relative order here is irrelevant.
+  "helpArticles",
+  "faqs",
+  "stateRules",
+  "ipRules",
+  "waitlistSignups",
 ];
 
-const BACKUP_TABLE_DEPENDENCIES: Partial<
+// Exported so the colocated test can assert that BACKUP_TABLE_ORDER lists
+// every dependency before its dependent (the FK-ordering invariant above).
+export const BACKUP_TABLE_DEPENDENCIES: Partial<
   Record<BackupTableName, BackupTableName[]>
 > = {
   oauthAccounts: ["users"],
   profiles: ["users"],
   dataConsents: ["users"],
+  // Workspace.ownerUserId → User (Restrict); members FK both axes. The
+  // member's parentMemberId self-FK stays within the table.
+  workspaces: ["users"],
+  workspaceMembers: ["users", "workspaces"],
+  notificationPreferences: ["users"],
   providerLogoCandidates: ["providers"],
   providerCoverages: ["providers"],
-  addresses: ["users"],
+  // workspaceId FKs (nullable, Cascade) on the four workspace-scoped
+  // domain tables: rows with the FK set need the workspace row present.
+  addresses: ["users", "workspaces"],
   addressChangeEvents: ["users"],
-  movingPlans: ["users", "addresses"],
+  movingPlans: ["users", "addresses", "workspaces"],
   customProviders: ["users", "providers"],
-  services: ["users", "addresses", "providers", "customProviders"],
+  services: [
+    "users",
+    "addresses",
+    "providers",
+    "customProviders",
+    "workspaces",
+  ],
+  reminders: ["services"],
   moveTasks: [
     "users",
     "movingPlans",
@@ -199,13 +269,20 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
     "providers",
     "customProviders",
   ],
-  budgets: ["users"],
-  subscriptions: ["users"],
+  budgets: ["users", "workspaces"],
+  // Subscription.campaignId is a SetNull FK, but an INSERT with the field
+  // set still requires the campaign row — soft dependency, same pattern as
+  // affiliateConversions below.
+  subscriptions: ["users", "acquisitionCampaigns"],
   notifications: ["users"],
-  emailLogs: [],
+  // EmailLog.templateId (SetNull FK) — the template must exist at insert
+  // time whenever the field is populated.
+  emailLogs: ["emailTemplates"],
   auditLogs: ["users"],
   providerGovernanceIssues: ["providers", "customProviders"],
   connectorFallbackActions: [],
+  supportTickets: ["users"],
+  ticketMessages: ["supportTickets"],
   adminPermissions: ["adminUsers"],
   adminLoginLogs: ["adminUsers"],
   adminAuditLogs: ["adminUsers"],
@@ -232,6 +309,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "oauthAccounts",
     "profiles",
     "dataConsents",
+    "workspaceMembers",
+    "notificationPreferences",
     "addresses",
     "addressChangeEvents",
     "movingPlans",
@@ -240,9 +319,20 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "moveTasks",
     "budgets",
     "subscriptions",
+    "acquisitionRedemptions",
     "notifications",
     "providerGovernanceIssues",
     "affiliateClicks",
+    "supportTickets",
+  ],
+  // Deleting a workspace cascades down the workspaceId FK into the four
+  // workspace-scoped domain tables and into its membership rows.
+  workspaces: [
+    "workspaceMembers",
+    "addresses",
+    "services",
+    "movingPlans",
+    "budgets",
   ],
   providers: [
     "providerLogoCandidates",
@@ -258,9 +348,15 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   addresses: ["movingPlans", "services", "moveTasks", "budgets"],
   movingPlans: ["moveTasks"],
   customProviders: ["services", "moveTasks", "providerGovernanceIssues"],
-  services: ["moveTasks"],
+  services: ["moveTasks", "reminders"],
+  supportTickets: ["ticketMessages"],
+  // SetNull fan-out: deleting these parents mutates (nulls FK columns on)
+  // rows in the child table, so the child must be selected for re-import
+  // too — same rationale the campaigns → redemptions pair already used.
+  emailTemplates: ["emailLogs"],
+  affiliateClicks: ["affiliateConversions"],
   adminUsers: ["adminPermissions", "adminLoginLogs", "adminAuditLogs"],
-  acquisitionCampaigns: ["acquisitionRedemptions"],
+  acquisitionCampaigns: ["acquisitionRedemptions", "subscriptions"],
   blogCategories: ["blogPosts"],
 };
 

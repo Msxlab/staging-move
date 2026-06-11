@@ -14,6 +14,11 @@ import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { isAllowlistedQaEmail, resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
+import {
+  areSignupsKilled,
+  SIGNUPS_PAUSED_CODE,
+  SIGNUPS_PAUSED_MESSAGE,
+} from "@/lib/kill-switches";
 
 export const runtime = "nodejs";
 
@@ -58,6 +63,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { code: rl.policy.userFacingErrorCode, error: "Too many requests. Please wait." },
       { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
+  // SEC-KILL: operator kill switch. Runtime-editable (admin Runtime Config),
+  // so an incident responder can pause new signups without a deploy. Checked
+  // after rate limiting so the existing abuse control still meters this
+  // endpoint, and before any account work so nothing is created. Existing
+  // users are unaffected (sign-in does not pass through here).
+  if (await areSignupsKilled()) {
+    return NextResponse.json(
+      { error: SIGNUPS_PAUSED_MESSAGE, code: SIGNUPS_PAUSED_CODE },
+      { status: 503, headers: { "Retry-After": "3600" } },
     );
   }
 

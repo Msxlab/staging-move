@@ -54,6 +54,12 @@ vi.mock("@/lib/admin-alerts", () => ({
   sendAdminSignupAlert: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock("@/lib/kill-switches", () => ({
+  areSignupsKilled: vi.fn(() => Promise.resolve(false)),
+  SIGNUPS_PAUSED_CODE: "SIGNUPS_PAUSED",
+  SIGNUPS_PAUSED_MESSAGE: "New signups are temporarily paused. Please try again later.",
+}));
+
 vi.mock("@/lib/legal-acceptance", () => ({
   normalizeAcceptedLegalConsents: vi.fn((consents) =>
     consents?.termsAccepted && consents?.disclaimerAccepted
@@ -75,6 +81,7 @@ import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
+import { areSignupsKilled } from "@/lib/kill-switches";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -91,6 +98,7 @@ const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as 
 const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
+const areSignupsKilledMock = areSignupsKilled as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -118,6 +126,7 @@ describe("register route", () => {
     userMock.create.mockResolvedValue({ id: "user-new", email: "new@example.com" });
     tokenMock.create.mockResolvedValue({});
     resetAllowlistedQaAccountForSignupMock.mockResolvedValue({ reset: true });
+    areSignupsKilledMock.mockResolvedValue(false);
     delete process.env.COPPA_AGE_GATE_ENABLED;
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
   });
@@ -387,6 +396,33 @@ describe("register route", () => {
       });
     },
   );
+
+  // SEC-KILL: KILL_SIGNUPS operator kill switch.
+  it("returns a polite 503 and creates nothing when KILL_SIGNUPS is on", async () => {
+    areSignupsKilledMock.mockResolvedValue(true);
+
+    const response = await POST(makeRequest(validBody));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body.code).toBe("SIGNUPS_PAUSED");
+    expect(body.error).toContain("temporarily paused");
+    expect(response.headers.get("Retry-After")).toBe("3600");
+    expect(userMock.create).not.toHaveBeenCalled();
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).not.toHaveBeenCalled();
+  });
+
+  it("signs up normally when KILL_SIGNUPS is off (default)", async () => {
+    areSignupsKilledMock.mockResolvedValue(false);
+
+    const response = await POST(makeRequest(validBody));
+
+    expect(response.status).toBe(201);
+    expect(userMock.create).toHaveBeenCalled();
+  });
 
   // COPPA / minimum-age gate — inert unless COPPA_AGE_GATE_ENABLED is on.
   it("COPPA gate OFF (default): age confirmation is ignored, signup proceeds", async () => {

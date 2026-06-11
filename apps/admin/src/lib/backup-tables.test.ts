@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Prisma } from "@locateflow/db";
 import {
   BACKUP_TABLES,
+  BACKUP_TABLE_DEPENDENCIES,
   BACKUP_TABLE_ORDER,
   fetchAllRecords,
   MAX_BACKUP_ROWS_PER_TABLE,
@@ -34,34 +35,21 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "BlogView", // analytics, ephemeral
   "BlogRevision", // editorial history; large; not part of recovery scope
   "PushDevice", // device tokens rotate; restore is harmful
-  "Notification", // user-facing notifications; intentionally excluded
-  "NotificationQueue",
-  "NotificationPreference",
-  "WaitlistSignup",
-  "BlogPostTag", // composite-key join table; reconstructed from BlogPost rebuild
-  "HelpArticle",
-  "FAQ",
-  "EmailTemplate",
-  "FeatureFlag",
-  "IPRule",
-  "StateRule",
-  "SupportTicket",
-  "TicketMessage",
-  "Reminder",
+  "NotificationQueue", // pending-send queue; restoring stale unsent rows would re-fire old notifications (same re-trigger rationale as ConnectorDispatch)
+  "BlogPostTag", // composite-key join table (no string `id` for the cursor pipeline); tag links are re-attachable editorially
+  "FeatureFlag", // runtime control-plane toggles managed via the admin UI; restoring stale flag state could silently re-enable gated features (ConnectorConfig cites this precedent)
   "PartnerConsent", // holds encrypted OAuth tokens — restoring stale grants re-grants revoked partner access (same rationale as session/token tables)
   "ConnectorConfig", // runtime control-plane config managed via the admin UI, not restored (same as FeatureFlag)
   "ConnectorDispatch", // operational connector-sync ledger; restoring stale rows could re-trigger processing and carries stale encrypted confirmations
-  // Workspace foundation (Family/Pro). Empty + flag-off in Phase 1. TODO: when
-  // the workspace backfill runs and the feature launches, promote Workspace and
-  // WorkspaceMember to BACKUP_TABLES (ordered after `users`); they are core data.
-  "Workspace",
-  "WorkspaceMember",
+  // Workspace and WorkspaceMember were promoted to BACKUP_TABLES once the
+  // Family/Pro launch made them live core data; only the token-ish
+  // workspace tables stay excluded.
   "WorkspaceInvitation", // pending invites with hashed tokens — transient/expiring, not restored (token-table rationale)
   "WorkspaceAuthChallenge", // short-lived step-up challenges — never restore live auth state
   "AdminSetPasswordToken", // single-use, expiring admin invite/set-password tokens — never restore live token state (same rationale as PasswordResetToken)
   "AdminActionOtp", // single-use, expiring admin step-up OTP hashes — never restore live token state (same token-table rationale)
   "ServiceCostLog", // per-service monthly cost history; derived budget telemetry rebuilt as services accrue — PITR covers point-in-time recovery
-  "SavedProvider", // convenience provider shortlist; user-rebuildable, low disaster-recovery value (same rationale as NotificationPreference)
+  "SavedProvider", // convenience provider shortlist; user-rebuildable, low disaster-recovery value (same rationale as RecommendationFeedback)
   "RecommendationFeedback", // per-user recommendation dismiss/snooze signal; regenerates through use, low recovery value (same rationale as UserEvent)
   "IntegrationDailyStat", // rebuildable telemetry counters (trend-grade observability); PITR covers recovery (same rationale as RateLimitLog)
   "MovingCompany", // re-importable from the public FMCSA census via scripts/etl-fmcsa-movers.mjs — source of truth is external
@@ -96,6 +84,58 @@ describe("backup table catalog", () => {
     expect(tableNames.has("userLoginSessions" as never)).toBe(false);
     expect(tableNames.has("runtimeConfigEntries" as never)).toBe(false);
     expect(tableNames.has("passwordResetTokens" as never)).toBe(false);
+  });
+
+  it("includes launched workspace tables and the user/business data promoted by the coverage audit", () => {
+    // Workspace + WorkspaceMember carried a "promote when Family/Pro
+    // launches" TODO — the feature has launched, so they are core data now.
+    expect(BACKUP_TABLES.workspaces.model).toBe("workspace");
+    expect(BACKUP_TABLES.workspaceMembers.model).toBe("workspaceMember");
+    expect(BACKUP_TABLES.notificationPreferences.model).toBe(
+      "notificationPreference",
+    );
+    expect(BACKUP_TABLES.supportTickets.model).toBe("supportTicket");
+    expect(BACKUP_TABLES.ticketMessages.model).toBe("ticketMessage");
+    expect(BACKUP_TABLES.reminders.model).toBe("reminder");
+    expect(BACKUP_TABLES.emailTemplates.model).toBe("emailTemplate");
+    expect(BACKUP_TABLES.helpArticles.model).toBe("helpArticle");
+    expect(BACKUP_TABLES.faqs.model).toBe("fAQ");
+    expect(BACKUP_TABLES.stateRules.model).toBe("stateRule");
+    expect(BACKUP_TABLES.ipRules.model).toBe("iPRule");
+    expect(BACKUP_TABLES.waitlistSignups.model).toBe("waitlistSignup");
+  });
+
+  it("lists every catalog table in BACKUP_TABLE_ORDER exactly once", () => {
+    // Guards against the sponsoredPlacements class of bug: a table present
+    // in BACKUP_TABLES (and the import delegate map) but missing from the
+    // ORDER list is silently dropped by normalizeBackupTables and never
+    // exported at all.
+    const catalogKeys = Object.keys(BACKUP_TABLES).sort();
+    const orderedKeys = [...BACKUP_TABLE_ORDER].sort();
+    expect(orderedKeys).toEqual(catalogKeys);
+    expect(new Set(BACKUP_TABLE_ORDER).size).toBe(BACKUP_TABLE_ORDER.length);
+  });
+
+  it("orders every table after all of its FK parents", () => {
+    // The import routes create rows table-by-table in this order; a child
+    // appearing before its parent makes a full restore fail on FK checks
+    // (this is how subscriptions-before-acquisitionCampaigns broke).
+    const position = new Map(
+      BACKUP_TABLE_ORDER.map((table, index) => [table, index] as const),
+    );
+    const violations: string[] = [];
+    for (const [table, parents] of Object.entries(BACKUP_TABLE_DEPENDENCIES)) {
+      for (const parent of parents ?? []) {
+        const childIdx = position.get(table as never);
+        const parentIdx = position.get(parent);
+        if (childIdx === undefined || parentIdx === undefined) {
+          violations.push(`${table} or ${parent} missing from ORDER`);
+        } else if (parentIdx > childIdx) {
+          violations.push(`${table} is ordered before its parent ${parent}`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
   });
 
   it("accounts for every Prisma model — included or explicitly excluded", () => {

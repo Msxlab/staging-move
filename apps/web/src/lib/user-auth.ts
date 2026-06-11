@@ -22,6 +22,7 @@ import {
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
+import { areSignupsKilled, SIGNUPS_PAUSED_CODE } from "@/lib/kill-switches";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -903,6 +904,20 @@ export async function findOrLinkOAuthUserWithStatus(input: {
 
   if (input.allowNewAccount === false) {
     throw new Error("LEGAL_ACCEPTANCE_REQUIRED");
+  }
+
+  // SEC-KILL: operator kill switch — blocks ONLY brand-new account creation.
+  // Branches 1 and 2 above (existing OAuth link / link to existing email)
+  // have already returned, so existing users are unaffected by design. This
+  // is the single OAuth signup funnel: web Google/Apple callbacks and the
+  // mobile native Apple route all pass through here. Callers map
+  // SIGNUPS_PAUSED to a polite 503 / sign-in redirect.
+  if (await areSignupsKilled()) {
+    logSafeOAuthEvent("oauth_signup_blocked_kill_switch", {
+      provider: input.provider,
+      emailHash: hashForOAuthLog(input.email),
+    });
+    throw new Error(SIGNUPS_PAUSED_CODE);
   }
 
   // 3) Brand new account

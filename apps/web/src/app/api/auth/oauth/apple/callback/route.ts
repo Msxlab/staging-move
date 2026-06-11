@@ -230,6 +230,13 @@ export async function POST(request: NextRequest) {
         NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-create-failed")),
       );
     }
+    if (err?.message === "SIGNUPS_PAUSED") {
+      // SEC-KILL: operator kill switch paused new signups. Browser redirect
+      // flow, so the polite "temporarily paused" message renders on sign-in.
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=signups-paused")),
+      );
+    }
     logAppleOAuthFailure("user_link", err);
     return clearAppleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),

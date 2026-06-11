@@ -105,6 +105,13 @@ RUN apt-get update \
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/static     ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/public           ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/package.json  ./packages/db/package.json
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/prisma        ./packages/db/prisma
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/src           ./packages/db/src
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/shared/src       ./packages/shared/src
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/shared/package.json ./node_modules/@locateflow/shared/package.json
+COPY --from=builder --chown=nextjs:nodejs /workspace/packages/shared/src       ./node_modules/@locateflow/shared/src
 
 USER nextjs
 

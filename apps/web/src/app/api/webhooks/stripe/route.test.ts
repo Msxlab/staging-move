@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   sendPaymentFailedEmail: vi.fn(),
   sendAdminPurchaseAlert: vi.fn(),
   emitSecurityEvent: vi.fn(),
+  alertWebhookSignatureFailure: vi.fn(),
   prisma: {
     processedWebhookEvent: {
       findUnique: vi.fn(),
@@ -55,6 +56,12 @@ vi.mock("@/lib/admin-alerts", () => ({
 }));
 vi.mock("@/lib/security-events", () => ({
   emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
+}));
+vi.mock("@/lib/security-alerts", () => ({
+  alertWebhookSignatureFailure: (...args: any[]) => {
+    mocks.alertWebhookSignatureFailure(...args);
+    return Promise.resolve();
+  },
 }));
 vi.mock("stripe", () => ({ default: mocks.stripeConstructor }));
 
@@ -277,6 +284,11 @@ describe("Stripe webhook idempotency and livemode", () => {
       }),
     }));
     expect(mocks.emitSecurityEvent).toHaveBeenCalledTimes(1);
+    // The operator email alarm fires alongside the structured event.
+    expect(mocks.alertWebhookSignatureFailure).toHaveBeenCalledWith({
+      provider: "stripe",
+      reason: "signature_verification_failed",
+    });
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 
