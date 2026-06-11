@@ -11,7 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Edit, Trash2, Plus, AlertTriangle, ChevronRight } from "lucide-react-native";
+import { ArrowLeft, Edit, Trash2, Plus, AlertTriangle, ChevronRight, Truck } from "lucide-react-native";
 import { monthlyAmountForCycle } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -155,7 +155,12 @@ export default function AddressDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("addresses.title")}
+        >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>
@@ -278,10 +283,10 @@ export default function AddressDetailScreen() {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.cta, styles.ctaGhost]}
-            onPress={() => router.push({ pathname: "/addresses/[id]/edit", params: { id: String(id) } })}
+            onPress={() => router.push({ pathname: "/moving/new", params: { fromAddressId: String(id) } })}
           >
-            <Edit size={15} color={theme.colors.textSecondary} />
-            <Text style={[styles.ctaText, { color: theme.colors.textSecondary }]}>{t("common.edit")}</Text>
+            <Truck size={15} color={theme.colors.textSecondary} />
+            <Text style={[styles.ctaText, { color: theme.colors.textSecondary }]}>{t("addresses.moveOut")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.cta, styles.ctaPrimary]}

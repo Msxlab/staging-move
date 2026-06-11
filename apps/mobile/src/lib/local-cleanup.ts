@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { QueryClient } from "@tanstack/react-query";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
+import { clearAllOfflineCaches } from "@/lib/offline-cache";
 
 const SENSITIVE_ASYNC_STORAGE_KEYS = [
   "locateflow.handledOAuthCodes",
@@ -34,4 +35,7 @@ export async function clearSensitiveLocalState(queryClient?: QueryClient) {
   // device-keyed, not user-keyed.
   await useAppLockStore.getState().disable().catch(() => {});
   await Promise.all(SENSITIVE_ASYNC_STORAGE_KEYS.map((key) => AsyncStorage.removeItem(key))).catch(() => {});
+  // Offline list caches (Services/Moving "last-known data") are device-keyed
+  // and echo the prior user's data — wipe them all by prefix on logout/delete.
+  await clearAllOfflineCaches();
 }

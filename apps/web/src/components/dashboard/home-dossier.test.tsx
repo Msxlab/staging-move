@@ -662,7 +662,9 @@ describe("deriveNeighborhood — Pro-only section", () => {
     medianGrossRent: 1850,
     medianHouseholdIncome: 96500,
     ownerOccupiedPct: 58,
-    schools: [{ name: "Hill Elementary", rating: "8/10" }],
+    walkScore: 18.8,
+    walkBand: "most",
+    schools: [{ name: "Hill Elementary", level: "Elementary" }],
     ...over,
   });
 
@@ -670,17 +672,19 @@ describe("deriveNeighborhood — Pro-only section", () => {
     expect(deriveNeighborhood(ok({ status: "upgrade_required" }))).toEqual({ locked: true });
   });
 
-  it("sanitizes figures and caps schools at 3 when ok", () => {
+  it("sanitizes figures, normalizes the walk band, and caps schools at 3 when ok", () => {
     const row = deriveNeighborhood(
       ok({
         medianHomeValue: 411999.6,
         ownerOccupiedPct: 58.7,
+        walkScore: 18.83,
+        walkBand: "most",
         schools: [
-          { name: " Hill Elementary ", rating: " 8/10 " },
-          { name: "Bryker Woods", rating: null },
-          { name: "", rating: "9/10" },
-          { name: "Casis", rating: "7/10" },
-          { name: "Extra", rating: "1/10" },
+          { name: " Hill Elementary ", level: " Elementary " },
+          { name: "Bryker Woods", level: null },
+          { name: "", level: "High" },
+          { name: "Casis", level: "Elementary" },
+          { name: "Extra", level: "Middle" },
         ],
       }),
     );
@@ -690,10 +694,12 @@ describe("deriveNeighborhood — Pro-only section", () => {
       medianGrossRent: 1850,
       medianHouseholdIncome: 96500,
       ownerOccupiedPct: 59,
+      walkScore: 18.8,
+      walkBand: "most",
       schools: [
-        { name: "Hill Elementary", rating: "8/10" },
-        { name: "Bryker Woods", rating: null },
-        { name: "Casis", rating: "7/10" },
+        { name: "Hill Elementary", level: "Elementary" },
+        { name: "Bryker Woods", level: null },
+        { name: "Casis", level: "Elementary" },
       ],
     });
   });
@@ -701,7 +707,15 @@ describe("deriveNeighborhood — Pro-only section", () => {
   it("keeps a 0% ownership share but drops non-positive dollar figures", () => {
     expect(
       deriveNeighborhood(
-        ok({ medianHomeValue: 0, medianGrossRent: -1, medianHouseholdIncome: null, ownerOccupiedPct: 0, schools: null }),
+        ok({
+          medianHomeValue: 0,
+          medianGrossRent: -1,
+          medianHouseholdIncome: null,
+          ownerOccupiedPct: 0,
+          walkScore: null,
+          walkBand: null,
+          schools: null,
+        }),
       ),
     ).toEqual({
       locked: false,
@@ -709,8 +723,40 @@ describe("deriveNeighborhood — Pro-only section", () => {
       medianGrossRent: null,
       medianHouseholdIncome: null,
       ownerOccupiedPct: 0,
+      walkScore: null,
+      walkBand: null,
       schools: [],
     });
+  });
+
+  it("keeps the card alive on walkability alone (an unset Census key still has walkability)", () => {
+    const row = deriveNeighborhood(
+      ok({
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: null,
+        walkScore: 12.4,
+        walkBand: "above_average",
+        schools: [],
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: null,
+      walkScore: 12.4,
+      walkBand: "above_average",
+      schools: [],
+    });
+  });
+
+  it("drops an unknown walk band to null (no fabricated label)", () => {
+    const row = deriveNeighborhood(ok({ walkScore: 9, walkBand: "weird" as never }));
+    expect(row && !row.locked && row.walkBand).toBe(null);
+    expect(row && !row.locked && row.walkScore).toBe(9);
   });
 
   it("hides on degraded statuses and on a legacy omitted section", () => {
@@ -728,6 +774,8 @@ describe("deriveNeighborhood — Pro-only section", () => {
           medianGrossRent: null,
           medianHouseholdIncome: null,
           ownerOccupiedPct: null,
+          walkScore: null,
+          walkBand: null,
           schools: [],
         }),
       ),
@@ -753,7 +801,7 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
     neighborhood: n,
   });
 
-  it("renders the area medians, a school, and the not-this-home caveat", () => {
+  it("renders the area medians, walkability, a school, and the not-this-home caveat", () => {
     const markup = renderToStaticMarkup(
       <HomeDossierCard
         data={withNeighborhood({
@@ -762,7 +810,9 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
           medianGrossRent: 1850,
           medianHouseholdIncome: 96500,
           ownerOccupiedPct: 58,
-          schools: [{ name: "Hill Elementary", rating: "8/10" }],
+          walkScore: 18.8,
+          walkBand: "most",
+          schools: [{ name: "Hill Elementary", level: "Elementary" }],
         })}
       />,
     );
@@ -773,8 +823,13 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
     expect(markup).toContain("Median household income");
     expect(markup).toContain("$96,500");
     expect(markup).toContain("58%");
+    // EPA walkability row — score + band label.
+    expect(markup).toContain("Walkability");
+    expect(markup).toContain("18.8/20");
+    expect(markup).toContain("Most walkable");
+    // Nearby schools — directory data only (name + level), never a rating.
     expect(markup).toContain("Hill Elementary");
-    expect(markup).toContain("8/10");
+    expect(markup).toContain("Elementary");
     // MANDATORY honesty caveat — area medians, not a valuation of this home.
     expect(markup).toContain("not a valuation of this home");
   });

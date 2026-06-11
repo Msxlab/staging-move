@@ -144,11 +144,61 @@ export async function generateDossierReportPdf(
   y = drawKeyValueRow(doc, "Category", ok(dossier.air.status) ? dash(dossier.air.category) : "—", y);
   y += 10;
 
+  // ── Neighborhood (Pro: Census ACS + EPA walkability + NCES schools) ──
+  // Present on Pro payloads — the only tier that reaches this PDF. Area
+  // medians for the surrounding census tract, NOT a valuation of this home.
+  const neighborhood = dossier.neighborhood;
+  if (neighborhood && ok(neighborhood.status)) {
+    const usd = (v: number | null | undefined): string =>
+      typeof v === "number" && Number.isFinite(v) && v > 0 ? `$${Math.round(v).toLocaleString("en-US")}` : "—";
+    const pct = (v: number | null | undefined): string =>
+      typeof v === "number" && Number.isFinite(v) ? `${Math.round(v)}%` : "—";
+    const walkBandLabel: Record<string, string> = {
+      least: "Least walkable",
+      below_average: "Below average",
+      above_average: "Above average",
+      most: "Most walkable",
+    };
+    const walk =
+      typeof neighborhood.walkScore === "number" && Number.isFinite(neighborhood.walkScore) && neighborhood.walkScore > 0
+        ? `${Math.round(neighborhood.walkScore * 10) / 10}/20${
+            neighborhood.walkBand && walkBandLabel[neighborhood.walkBand]
+              ? ` — ${walkBandLabel[neighborhood.walkBand]}`
+              : ""
+          }`
+        : "—";
+
+    y = ensureRoom(doc, 90, y);
+    y = drawSectionHeading(doc, "Neighborhood (Census ACS, EPA, NCES)", y);
+    y = drawKeyValueRow(doc, "Median home value", usd(neighborhood.medianHomeValue), y);
+    y = drawKeyValueRow(
+      doc,
+      "Median gross rent",
+      neighborhood.medianGrossRent ? `${usd(neighborhood.medianGrossRent)}/mo` : "—",
+      y,
+    );
+    y = drawKeyValueRow(doc, "Median household income", usd(neighborhood.medianHouseholdIncome), y);
+    y = drawKeyValueRow(doc, "Owner-occupied homes", pct(neighborhood.ownerOccupiedPct), y);
+    y = drawKeyValueRow(doc, "Walkability", walk, y);
+    const schools = Array.isArray(neighborhood.schools) ? neighborhood.schools.slice(0, 5) : [];
+    if (schools.length > 0) {
+      y = drawKeyValueRow(doc, "Nearby schools", "", y);
+      for (const school of schools) {
+        const name = (school?.name || "").trim();
+        if (!name) continue;
+        const level = (school?.level || "").trim();
+        y = ensureRoom(doc, 16, y);
+        y = drawKeyValueRow(doc, `  ${name}`, level || "—", y);
+      }
+    }
+    y += 10;
+  }
+
   // ── Sources footnote ────────────────────────────────────────────────
   y = ensureRoom(doc, 40, y);
   doc.fillColor(PDF_THEME.muted).font("Helvetica").fontSize(8)
     .text(
-      "Sources: FEMA National Flood Hazard Layer & National Risk Index, NCES EDGE, National Weather Service, EPA (radon & SDWIS), AirNow. Public data for informational purposes only — not professional advice. Forecasts and ratings can change.",
+      "Sources: FEMA National Flood Hazard Layer & National Risk Index, NCES EDGE & Public Schools, National Weather Service, EPA (radon, SDWIS & National Walkability Index), AirNow, U.S. Census Bureau (ACS). Public data for informational purposes only — not professional advice, not a valuation of this home. Figures, forecasts, and ratings can change.",
       PAGE_MARGIN,
       y,
       { width: doc.page.width - PAGE_MARGIN * 2 },

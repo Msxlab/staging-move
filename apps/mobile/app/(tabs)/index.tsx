@@ -14,7 +14,7 @@ import {
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   Easing,
@@ -67,6 +67,7 @@ import {
   type DashboardSnapshot,
 } from "@/lib/dashboard-snapshot";
 import { Card } from "@/components/ui/Card";
+import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { PlanHero } from "@/components/ui/PlanHero";
@@ -159,12 +160,15 @@ function AuroraHeroRing({
   track,
   label,
   size = 96,
+  gradientFrom,
 }: {
   percent: number;
   color: string;
   track: string;
   label: string;
   size?: number;
+  /** When set, the progress arc sweeps gradientFrom→color (Aurora glow look). */
+  gradientFrom?: string;
 }) {
   const stroke = 9;
   const r = (size - stroke) / 2;
@@ -191,18 +195,31 @@ function AuroraHeroRing({
     strokeDasharray: `${progress.value * c}, ${c}`,
   }));
 
+  // Aurora "glow look" arc — a sage→accent sweep when gradientFrom is set
+  // (mirrors the design bundle's Ring grad variant); solid accent otherwise.
+  const useGradient = !!gradientFrom;
+  const gradientId = "auroraHeroRingGrad";
+
   return (
     <View
       style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
       accessibilityLabel={label}
     >
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
+        {useGradient && (
+          <Defs>
+            <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={gradientFrom} />
+              <Stop offset="1" stopColor={color} />
+            </SvgLinearGradient>
+          </Defs>
+        )}
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
         <AnimatedRingCircle
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={color}
+          stroke={useGradient ? `url(#${gradientId})` : color}
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"
@@ -1064,16 +1081,26 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={styles.title}>{t("tabs.dashboard")}</Text>
-            {isPremium && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: planBadge.bg, borderWidth: 1, borderColor: planBadge.border }}>
-                <Text style={{ fontSize: 10, color: planBadge.fg }}>{planBadge.glyph}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: planBadge.fg, letterSpacing: 0.3 }}>{planBadge.label}</Text>
-              </View>
-            )}
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/more")}
+            accessibilityRole="button"
+            accessibilityLabel={t("dashboard.openProfile", { defaultValue: "Profile" })}
+            activeOpacity={0.8}
+          >
+            <LogoBrand size="sm" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={styles.title}>{t("tabs.dashboard")}</Text>
+              {isPremium && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: planBadge.bg, borderWidth: 1, borderColor: planBadge.border }}>
+                  <Text style={{ fontSize: 10, color: planBadge.fg }}>{planBadge.glyph}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: planBadge.fg, letterSpacing: 0.3 }}>{planBadge.label}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
         <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications")}>
@@ -1285,6 +1312,7 @@ export default function DashboardScreen() {
               <AuroraHeroRing
                 percent={heroReadiness}
                 color={theme.colors.primary}
+                gradientFrom={theme.colors.success}
                 track={`${theme.colors.text}1A`}
                 label={t("dashboard.commandCenter_readinessLabel", { percent: heroReadiness })}
               />
@@ -1815,6 +1843,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, paddingRight: 12 },
   greeting: { fontSize: 14, color: theme.colors.textTertiary },
   title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
   notifButton: {

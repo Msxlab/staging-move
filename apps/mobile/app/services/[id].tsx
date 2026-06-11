@@ -223,6 +223,22 @@ export default function ServiceDetailScreen() {
       ? theme.colors.amber.text
       : theme.colors.primary;
 
+  // Honest, action-oriented nudge — only inside the soon/overdue window, and
+  // only from signals we actually have (contract vs billing, auto-renewal). We
+  // never claim to know a card is bad; we tell you what to confirm.
+  const renewalGuidance =
+    renewal && (renewalSoon || renewalOverdue)
+      ? renewalOverdue
+        ? renewal.source === "contract"
+          ? t("services.guidanceContractEnded", { defaultValue: "Confirm whether it renewed or lapsed — and update the address if you've moved." })
+          : t("services.guidanceOverdue", { defaultValue: "Check that the last payment went through — and update the address if you've moved." })
+        : renewal.source === "contract"
+          ? t("services.guidanceContractSoon", { defaultValue: "Decide whether to renew or cancel before the contract ends." })
+          : service.autoRenewal
+            ? t("services.guidanceAutoSoon", { defaultValue: "It renews automatically — confirm the card and billing address are current." })
+            : t("services.guidanceBillingSoon", { defaultValue: "Confirm the billing details before it renews." })
+      : "";
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -329,6 +345,9 @@ export default function ServiceDetailScreen() {
                   : t("services.renewalOnBilling", { date: renewalDateStr, defaultValue: `Next bill · ${renewalDateStr}` })}
                 {service.autoRenewal ? ` · ${t("services.autoRenews", { defaultValue: "auto-renews" })}` : ""}
               </Text>
+              {renewalGuidance ? (
+                <Text style={styles.renewalGuidance} numberOfLines={2}>{renewalGuidance}</Text>
+              ) : null}
             </View>
             {(renewalSoon || renewalOverdue) && (
               <UiBadge
@@ -486,6 +505,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   renewalHeadline: { fontSize: 15, fontWeight: "700" },
   renewalDate: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  renewalGuidance: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 5, lineHeight: 16 },
   infoRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 4,
   },

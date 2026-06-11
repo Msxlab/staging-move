@@ -12,7 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check, MapPin, ArrowRight, Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -45,13 +45,16 @@ export default function NewMovingPlanScreen() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
+  const params = useLocalSearchParams<{ fromAddressId?: string }>();
   const { t, i18n } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [form, setForm] = useState({
-    fromAddressId: "",
+    // Seeded when arriving from an address's "Move out" CTA so the origin is
+    // pre-selected; the loader effect falls back to the primary address.
+    fromAddressId: typeof params.fromAddressId === "string" ? params.fromAddressId : "",
     destinationMode: "new" as DestinationMode,
     toAddressId: "",
     destinationNickname: "",

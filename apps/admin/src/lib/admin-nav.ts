@@ -35,6 +35,7 @@ import {
   Ticket,
   FileText,
   PlusCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
 
@@ -98,6 +99,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Movers", nameKey: "movers", href: "/movers", icon: Boxes, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Mover Applications", nameKey: "moverApplications", href: "/movers/applications", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
@@ -124,6 +126,7 @@ export const navGroups: NavGroup[] = [
     railLabel: "System",
     items: [
       { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Cog, show: ({ role }) => meetsRole(role, "SUPER_ADMIN") },
       { name: "Connectors", nameKey: "connectors", href: "/connectors", icon: Plug, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Connector Metrics", nameKey: "connectorMetrics", href: "/connector-metrics", icon: BarChart3, show: ({ permissions }) => permissions.connectors.canRead },
       { name: "Connector Fallbacks", nameKey: "connectorFallbacks", href: "/connector-fallbacks", icon: Link2, show: ({ permissions }) => permissions.connectors.canRead },

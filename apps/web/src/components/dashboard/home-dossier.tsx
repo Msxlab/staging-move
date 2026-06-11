@@ -62,6 +62,9 @@ export type DossierNeighborhoodStatus =
   | "no_location"
   | "error";
 
+/** Coarse EPA walkability band (1–20 index binned per the EPA methodology). */
+export type WalkBand = "least" | "below_average" | "above_average" | "most";
+
 export interface DossierHazardRisk {
   hazard: string;
   rating: string;
@@ -69,7 +72,12 @@ export interface DossierHazardRisk {
 
 export interface DossierSchool {
   name: string;
-  rating: string | null;
+  /**
+   * Grade level (e.g. "Elementary"/"Middle"/"High"/"Other"), or null when the
+   * federal directory didn't report one. This is DIRECTORY data only — there is
+   * deliberately no quality rating here, and one is never fabricated.
+   */
+  level: string | null;
 }
 
 export interface HomeDossierResponse {
@@ -126,6 +134,10 @@ export interface HomeDossierResponse {
     medianGrossRent: number | null;
     medianHouseholdIncome: number | null;
     ownerOccupiedPct: number | null;
+    /** EPA National Walkability Index (1–20); area context, not a per-home score. */
+    walkScore?: number | null;
+    /** Coarse walkability band: least | below_average | above_average | most. */
+    walkBand?: string | null;
     schools?: DossierSchool[] | null;
   };
 }
@@ -170,6 +182,8 @@ export interface HomeDossierView {
         medianGrossRent: number | null;
         medianHouseholdIncome: number | null;
         ownerOccupiedPct: number | null;
+        walkScore: number | null;
+        walkBand: WalkBand | null;
         schools: DossierSchool[];
       }
     | null;
@@ -335,6 +349,27 @@ function clampPctValue(value: number | null | undefined): number | null {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+/** EPA walkability index (1–20) rounded to one decimal; null when absent/≤0. */
+function clampWalkScore(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return Math.min(20, Math.round(value * 10) / 10);
+}
+
+/** Narrow an API band string to a known WalkBand; null otherwise (no label). */
+export function normalizeWalkBand(raw: string | null | undefined): WalkBand | null {
+  return raw === "least" || raw === "below_average" || raw === "above_average" || raw === "most" ? raw : null;
+}
+
+/** Plain-English label key for a walkability band. */
+export function walkBandLabelKey(
+  band: WalkBand,
+): "dossier_neighborhood_walk_least" | "dossier_neighborhood_walk_below" | "dossier_neighborhood_walk_above" | "dossier_neighborhood_walk_most" {
+  if (band === "least") return "dossier_neighborhood_walk_least";
+  if (band === "below_average") return "dossier_neighborhood_walk_below";
+  if (band === "above_average") return "dossier_neighborhood_walk_above";
+  return "dossier_neighborhood_walk_most";
+}
+
 /**
  * Neighborhood derivation (exported for tests). `upgrade_required` is the
  * per-section Pro gate → locked teaser. "ok" renders stats only when at least
@@ -352,12 +387,14 @@ export function deriveNeighborhood(
   const medianGrossRent = posInt(section.medianGrossRent);
   const medianHouseholdIncome = posInt(section.medianHouseholdIncome);
   const ownerOccupiedPct = clampPctValue(section.ownerOccupiedPct);
+  const walkScore = clampWalkScore(section.walkScore);
+  const walkBand = normalizeWalkBand(section.walkBand);
   const schools = (Array.isArray(section.schools) ? section.schools : [])
     .filter((s): s is DossierSchool => !!s && typeof s.name === "string" && !!s.name.trim())
     .slice(0, 3)
     .map((s) => ({
       name: s.name.trim(),
-      rating: typeof s.rating === "string" && s.rating.trim() ? s.rating.trim() : null,
+      level: typeof s.level === "string" && s.level.trim() ? s.level.trim() : null,
     }));
 
   const hasFigure =
@@ -365,6 +402,7 @@ export function deriveNeighborhood(
     medianGrossRent !== null ||
     medianHouseholdIncome !== null ||
     ownerOccupiedPct !== null ||
+    walkScore !== null ||
     schools.length > 0;
   if (!hasFigure) return null;
 
@@ -374,6 +412,8 @@ export function deriveNeighborhood(
     medianGrossRent,
     medianHouseholdIncome,
     ownerOccupiedPct,
+    walkScore,
+    walkBand,
     schools,
   };
 }
@@ -776,6 +816,19 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   </span>
                 </div>
               )}
+              {view.neighborhood.walkScore !== null && (
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_walkability")}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {view.neighborhood.walkBand
+                      ? td("dossier_neighborhood_walkValue", {
+                          score: view.neighborhood.walkScore,
+                          label: td(walkBandLabelKey(view.neighborhood.walkBand)),
+                        })
+                      : td("dossier_neighborhood_walkScoreOnly", { score: view.neighborhood.walkScore })}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Optional nearby-schools list (NCES) — names + optional rating. */}
@@ -789,9 +842,9 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                       className="flex items-baseline justify-between gap-3 text-sm text-foreground"
                     >
                       <span className="truncate">{school.name}</span>
-                      {school.rating && (
+                      {school.level && (
                         <span className="font-mono text-[11px] text-muted-foreground shrink-0">
-                          {school.rating}
+                          {school.level}
                         </span>
                       )}
                     </li>
