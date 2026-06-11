@@ -13,6 +13,10 @@ import {
   serializeBackupRecordMetadata,
   uploadBackupArchive,
 } from "@/lib/backup-storage";
+import {
+  getGdriveMirrorFileName,
+  mirrorBackupArchiveToGdrive,
+} from "@/lib/backup-gdrive";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { dispatchAlert } from "@/lib/alert-dispatcher";
@@ -228,6 +232,19 @@ export async function POST(request: NextRequest) {
         errorMessage: metadata,
       },
     });
+
+    // Optional Google Drive mirror — strictly fire-and-forget. It only
+    // runs after the offsite copy is stored and the record is already
+    // COMPLETED; a Drive failure is logged/recorded but can never fail
+    // (or delay) the scheduled backup. Retention below never touches
+    // Drive: mirrored archives accumulate and are owner-managed.
+    if (offsite.status === "stored") {
+      void mirrorBackupArchiveToGdrive({
+        backupId: backup.id,
+        fileName: getGdriveMirrorFileName(offsite.objectKey, fileName),
+        archiveBody,
+      });
+    }
 
     // Run retention cleanup
     const retentionCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);

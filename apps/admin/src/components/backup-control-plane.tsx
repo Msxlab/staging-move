@@ -94,6 +94,14 @@ interface BackupRecord {
     uploadedAt?: string | null;
     reason?: string | null;
   } | null;
+  gdrive?: {
+    status: "stored" | "disabled" | "failed";
+    fileId?: string | null;
+    fileName?: string | null;
+    folderId?: string | null;
+    uploadedAt?: string | null;
+    reason?: string | null;
+  } | null;
 }
 
 interface BackupStorageSummary {
@@ -2333,6 +2341,21 @@ export function BackupControlPlane() {
                       <SummaryItem
                         label="Region"
                         value={selectedBackup.offsite?.region || "—"}
+                      />
+                      <SummaryItem
+                        label="Google Drive mirror"
+                        value={
+                          selectedBackup.gdrive?.status === "stored"
+                            ? `Mirrored${
+                                selectedBackup.gdrive?.uploadedAt
+                                  ? ` · ${formatDateTime(selectedBackup.gdrive.uploadedAt)}`
+                                  : ""
+                              }`
+                            : selectedBackup.gdrive?.status === "failed"
+                              ? selectedBackup.gdrive?.reason ||
+                                "Mirror failed"
+                              : "Not mirrored"
+                        }
                       />
                     </div>
                     <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">

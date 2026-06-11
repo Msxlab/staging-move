@@ -441,6 +441,23 @@ export default function BudgetScreen() {
           )
         ) : null}
 
+        {!error && services.length === 0 && budgets.length === 0 ? (
+          /* First-run: nothing costed and no budgets yet — friendly mascot
+             empty state instead of an all-zero dashboard. */
+          <EmptyState
+            mascot="kid"
+            icon={<Wallet size={28} color={theme.colors.primary} />}
+            title={t("budget.emptyHeroTitle", { defaultValue: "Nothing to budget yet" })}
+            description={t("budget.emptyHeroDescription", {
+              defaultValue: "Track a service with a monthly cost and we'll project your spending here — then set a limit to stay on top of it.",
+            })}
+            actionLabel={t("services.newTitle")}
+            onAction={() => router.push("/services/new")}
+            secondaryActionLabel={t("budget.setMonthlyBudget", { defaultValue: "Set Monthly Budget" })}
+            onSecondaryAction={() => router.push("/budget/new")}
+          />
+        ) : (
+        <>
         {/* ── Filters: month stepper + address picker ── */}
         <View style={styles.filterRow}>
           <View style={styles.monthStepper}>
@@ -557,6 +574,38 @@ export default function BudgetScreen() {
             </Text>
           </View>
         ) : null}
+
+        {/* ── Aurora glass hero — the month's projected spend at a glance ── */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <Text style={styles.heroKicker}>{monthLabel(selectedMonth, locale).toUpperCase()}</Text>
+            <View style={styles.heroBadge}>
+              <Wallet size={12} color={theme.colors.accent} />
+              <Text style={styles.heroBadgeText} numberOfLines={1}>
+                {addressLabel(addresses, selectedAddressId).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+          <CountUp value={plan.projectedThisMonth} format={fmt} style={styles.heroBig} />
+          <Text style={styles.heroSub}>
+            {t("budget.projectedThisMonth", { defaultValue: "Projected this month" })}
+            {budgetLimit > 0
+              ? ` · ${t("budget.monthlyLimit", { defaultValue: "Budget limit" })} ${fmt(budgetLimit)}`
+              : ` · ${t("budget.noLimitYet", { defaultValue: "No monthly limit yet" })}`}
+          </Text>
+          {budgetLimit > 0 ? (
+            <GradientProgress
+              progress={budgetUsedPercent}
+              height={9}
+              style={styles.heroBar}
+              colors={
+                plan.projectedThisMonth > budgetLimit
+                  ? [theme.colors.rose.text, theme.colors.rose.border]
+                  : [theme.colors.emerald.text, theme.colors.emerald.border]
+              }
+            />
+          ) : null}
+        </View>
 
         {/* ── Overview stat grid (parity with web's 4 stat cards) ── */}
         <View style={styles.statGrid}>
@@ -1199,6 +1248,8 @@ export default function BudgetScreen() {
             </View>
           )}
         </CollapsibleCard>
+        </>
+        )}
       </ScrollView>
       <SuccessToast
         visible={showActualSaved}
@@ -1319,6 +1370,35 @@ const makeStyles = (theme: Theme) =>
     nudgeWarn: { backgroundColor: theme.colors.amber.bg, borderColor: theme.colors.amber.border },
     nudgeInfo: { backgroundColor: theme.colors.cyan.bg, borderColor: theme.colors.cyan.border },
     nudgeText: { flex: 1, fontSize: 12.5, lineHeight: 18 },
+
+    // ── Aurora glass hero ──
+    heroCard: {
+      marginBottom: 14,
+      padding: 16,
+      borderRadius: theme.radius["2xl"],
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.border,
+      ...theme.shadow.glow,
+    },
+    heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 },
+    heroKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
+    heroBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      maxWidth: "55%",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: theme.colors.warningFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.amber.border,
+    },
+    heroBadgeText: { flexShrink: 1, fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
+    heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: -1, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+    heroSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 16 },
+    heroBar: { marginTop: 12 },
 
     statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
     statCard: {

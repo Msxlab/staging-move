@@ -37,7 +37,10 @@ export type IntegrationSource =
   | "air"
   | "nws"
   | "briefing"
-  | "dossier";
+  | "dossier"
+  // Synthetic uptime monitor (api/cron/uptime-check) — "ok" | "error" per
+  // probed public surface, charted by the admin Insights health panel.
+  | "uptime";
 
 /** Flush at most this often when events trickle in slowly. */
 const FLUSH_INTERVAL_MS = 30_000;

@@ -13,7 +13,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
-  Zap,
+  ChevronRight,
   Globe,
   Phone,
   Mail,
@@ -33,13 +33,37 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { PressableScale } from "@/components/ui/PressableScale";
+import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { formatCurrency } from "@/lib/format";
-import { getCategoryLabel, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  getCategoryIcon,
+  getCategoryLabel,
+  getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryLabel,
+} from "@/lib/recommendation-engine";
 import { resolveServiceRenewal, RENEWAL_SOON_DAYS } from "@/lib/service-insights";
 
 function getServiceCategoryLabel(category: string): string {
   return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
+}
+
+// Aurora categorical palette — the same hue map the Services tab hero uses, so
+// a category reads as the same color on the list and on its detail screen.
+const catColors: Record<string, string> = {
+  GOVERNMENT: "#F08C8E", UTILITY: "#F2C46C", FINANCIAL: "#87DDC0",
+  HOUSING: "#7FB6E8", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#5C9DDC",
+  KIDS: "#D99A4E", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
+};
+
+function getServiceCategoryColor(category: string): string {
+  if (!category) return catColors.OTHER;
+  return catColors[category] || catColors[category.split("_")[0] || "OTHER"] || catColors.OTHER;
+}
+
+function getServiceFallbackIcon(category: string): string {
+  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "⚡";
 }
 
 export default function ServiceDetailScreen() {
@@ -218,29 +242,68 @@ export default function ServiceDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        {/* Hero Card */}
-        <Card variant="glow">
+        {/* ── Aurora glass hero — category glyph + provider identity + ministats ── */}
+        <View style={styles.hero}>
           <View style={styles.heroRow}>
-            <View style={styles.heroIcon}>
-              <Zap size={24} color={theme.colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroName}>{service.providerName}</Text>
-              <Text style={styles.heroCat}>
-                {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
-              </Text>
+            <ServiceLogoMark
+              service={service}
+              fallbackIcon={getServiceFallbackIcon(service.category)}
+              size={56}
+              logoSize={40}
+              borderRadius={18}
+              fallbackFontSize={24}
+              backgroundColor={getServiceCategoryColor(service.category) + "30"}
+              borderColor={getServiceCategoryColor(service.category) + "50"}
+            />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.heroName} numberOfLines={2}>{service.providerName}</Text>
+              <View style={styles.heroCatRow}>
+                <View style={[styles.heroCatDot, { backgroundColor: getServiceCategoryColor(service.category) }]} />
+                <Text style={styles.heroCat} numberOfLines={1}>
+                  {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
+                </Text>
+              </View>
             </View>
           </View>
           <View style={styles.heroBadges}>
             <UiBadge
               label={service.isActive ? t("services.statusActive") : t("services.statusInactive")}
               variant={service.isActive ? "success" : "neutral"}
+              dot
+              mono
             />
             {service.billingCycle && (
-              <UiBadge label={t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") })} variant="info" />
+              <UiBadge label={t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") })} variant="info" mono />
             )}
           </View>
-        </Card>
+          {/* Ministats — cost / renewal / address, derived from existing fields only */}
+          <View style={styles.miniStats}>
+            <View style={styles.miniStat}>
+              <Text style={[styles.miniStatValue, service.monthlyCost > 0 && { color: theme.colors.emerald.text }]} numberOfLines={1}>
+                {service.monthlyCost > 0 ? formatCurrency(service.monthlyCost, i18n.language) : "—"}
+              </Text>
+              <Text style={styles.miniStatLabel}>{t("services.detailStatMonthly", { defaultValue: "Per month" }).toUpperCase()}</Text>
+            </View>
+            <View style={styles.miniStat}>
+              <Text style={[styles.miniStatValue, renewal != null && { color: renewalTone }]} numberOfLines={1}>
+                {renewal == null
+                  ? "—"
+                  : renewal.days < 0
+                    ? t("services.renewalOverdueBadge", { defaultValue: "Overdue" })
+                    : renewal.days === 0
+                      ? t("services.renewalToday", { defaultValue: "Due today" })
+                      : t("services.renewalDaysShort", { count: renewal.days, defaultValue: `${renewal.days}d` })}
+              </Text>
+              <Text style={styles.miniStatLabel}>{t("services.detailStatRenewal", { defaultValue: "Renewal" }).toUpperCase()}</Text>
+            </View>
+            <View style={styles.miniStat}>
+              <Text style={styles.miniStatValue} numberOfLines={1}>
+                {service.address ? service.address.nickname || service.address.city : "—"}
+              </Text>
+              <Text style={styles.miniStatLabel}>{t("services.detailStatAddress", { defaultValue: "Address" }).toUpperCase()}</Text>
+            </View>
+          </View>
+        </View>
 
         {/* Renewal tracking — derived from contractEndDate or billingDay/cycle.
             Only renders when the service carries a date signal. */}
@@ -317,16 +380,47 @@ export default function ServiceDetailScreen() {
           </>
         ) : null}
 
-        {/* Actions */}
-        <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: "/services/[id]/edit", params: { id: String(id) } })}>
-          <Edit size={16} color={theme.colors.primary} />
-          <Text style={styles.editText}>{t("services.editTitle")}</Text>
-        </TouchableOpacity>
+        {/* Actions — Aurora list-rows */}
+        <Text style={styles.sectionKicker}>{t("services.actionsKicker", { defaultValue: "Manage" }).toUpperCase()}</Text>
+        <PressableScale
+          style={styles.actionRow}
+          onPress={() => router.push({ pathname: "/services/[id]/edit", params: { id: String(id) } })}
+          accessibilityRole="button"
+          accessibilityLabel={t("services.editTitle")}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: theme.colors.primaryFaded }]}>
+            <Edit size={16} color={theme.colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.actionTitle}>{t("services.editTitle")}</Text>
+            <Text style={styles.actionDesc} numberOfLines={1}>
+              {t("services.editRowDesc", { defaultValue: "Update cost, billing, and contact details." })}
+            </Text>
+          </View>
+          <ChevronRight size={16} color={theme.colors.textTertiary} />
+        </PressableScale>
 
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-          <Trash2 size={16} color={theme.colors.error} />
-          <Text style={styles.deleteText}>{t("services.deleteService")}</Text>
-        </TouchableOpacity>
+        {/* Danger zone */}
+        <Text style={[styles.sectionKicker, { color: theme.colors.error }]}>
+          {t("services.dangerZone", { defaultValue: "Danger zone" }).toUpperCase()}
+        </Text>
+        <PressableScale
+          style={[styles.actionRow, styles.dangerRow]}
+          onPress={handleDelete}
+          accessibilityRole="button"
+          accessibilityLabel={t("services.deleteService")}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: theme.colors.errorFaded }]}>
+            <Trash2 size={16} color={theme.colors.error} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.actionTitle, { color: theme.colors.error }]}>{t("services.deleteService")}</Text>
+            <Text style={styles.actionDesc} numberOfLines={2}>
+              {t("services.dangerZoneHint", { defaultValue: "Removes this service from your tracking. This cannot be undone." })}
+            </Text>
+          </View>
+          <ChevronRight size={16} color={theme.colors.error + "99"} />
+        </PressableScale>
       </ScrollView>
     </SafeAreaView>
   );
@@ -345,14 +439,35 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroIcon: {
-    width: 52, height: 52, borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center",
+  // ── Aurora glass hero ──
+  hero: {
+    padding: 16,
+    borderRadius: theme.radius["2xl"],
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    ...theme.shadow.glow,
   },
-  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text },
-  heroCat: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
-  heroBadges: { flexDirection: "row", gap: 6, marginTop: 14 },
+  heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.4 },
+  heroCatRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
+  heroCatDot: { width: 7, height: 7, borderRadius: 4 },
+  heroCat: { flexShrink: 1, fontSize: 13, color: theme.colors.textTertiary },
+  heroBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+  // Ministat chips — cost / renewal / address
+  miniStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  miniStat: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 13,
+    alignItems: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  miniStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  miniStatLabel: { fontSize: 8, letterSpacing: 0.8, fontWeight: "700", color: theme.colors.textTertiary, marginTop: 3 },
   renewalCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -383,16 +498,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   infoValue: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text, textAlign: "right" },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 10 },
   notes: { fontSize: 14, color: theme.colors.textSecondary, lineHeight: 20 },
-  editBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    marginTop: 24, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)",
+  // ── Aurora action list-rows + danger zone ──
+  sectionKicker: {
+    fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary,
+    marginTop: 24, marginBottom: 9, marginLeft: 2,
   },
-  editText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
-  deleteBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    marginTop: 12, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)",
+  actionRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    padding: 14, borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },
+  dangerRow: {
+    backgroundColor: theme.colors.errorFaded,
+    borderColor: theme.colors.error + "38",
+  },
+  actionIcon: {
+    width: 36, height: 36, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
+  },
+  actionTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  actionDesc: { fontSize: 11.5, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 16 },
 });

@@ -19,6 +19,10 @@ import {
   serializeBackupRecordMetadata,
   uploadBackupArchive,
 } from "@/lib/backup-storage";
+import {
+  getGdriveMirrorFileName,
+  mirrorBackupArchiveToGdrive,
+} from "@/lib/backup-gdrive";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import {
   acquireBackupRunLock,
@@ -208,6 +212,18 @@ export async function createBackupJob(input: {
         errorMessage: metadata,
       },
     });
+
+    // Optional Google Drive mirror — strictly fire-and-forget. It only
+    // runs after the offsite copy is stored and the record is already
+    // COMPLETED; a Drive failure is logged/recorded but can never fail
+    // (or delay) the backup itself.
+    if (offsite.status === "stored") {
+      void mirrorBackupArchiveToGdrive({
+        backupId: backup.id,
+        fileName: getGdriveMirrorFileName(offsite.objectKey, fileName),
+        archiveBody: downloadData,
+      });
+    }
 
     return {
       backup: {

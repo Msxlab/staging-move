@@ -10,8 +10,8 @@ export const LEGAL_INFO = {
   companyAddress:
     process.env.NEXT_PUBLIC_COMPANY_ADDRESS?.trim() ||
     COMPANY_ADDRESS_PLACEHOLDER,
-  lastUpdated: "May 1, 2026",
-  lastUpdatedIso: "2026-05-01",
+  lastUpdated: "June 10, 2026",
+  lastUpdatedIso: "2026-06-10",
 } as const;
 
 function publicEmail(envName: string, fallback: string) {
