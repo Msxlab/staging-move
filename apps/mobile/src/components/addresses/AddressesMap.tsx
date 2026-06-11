@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { MapPin, ChevronRight } from "lucide-react-native";
+import { MapPin, ChevronRight, Plus, Minus } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import type { Address } from "@locateflow/shared";
@@ -58,6 +58,9 @@ export function AddressesMap({ addresses, onOpen }: { addresses: Address[]; onOp
 
   const [selId, setSelId] = useState<string | null>(geo[0]?.id ?? null);
   const selected = geo.find((a) => a.id === selId) ?? geo[0] ?? null;
+  // Stylized zoom (1×–2×) — scales the decorative canvas + pin positions in
+  // place; there's no real basemap to pan, so this just spreads clustered pins.
+  const [zoom, setZoom] = useState(1);
 
   if (geo.length === 0) {
     return (
@@ -77,37 +80,62 @@ export function AddressesMap({ addresses, onOpen }: { addresses: Address[]; onOp
     <View>
       {/* Stylized canvas */}
       <View style={styles.canvas}>
-        {[0.25, 0.5, 0.75].map((p) => (
-          <View key={`h${p}`} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, height: 1, backgroundColor: grid }} />
-        ))}
-        {[0.3, 0.6, 0.85].map((p) => (
-          <View key={`v${p}`} style={{ position: "absolute", top: 0, bottom: 0, left: `${p * 100}%`, width: 1, backgroundColor: grid }} />
-        ))}
-        <View style={{ position: "absolute", left: "-5%", right: "-5%", top: "46%", height: 2, backgroundColor: "rgba(236,241,248,0.06)", transform: [{ rotate: "-6deg" }] }} />
-        <View style={{ position: "absolute", top: 0, bottom: 0, left: "44%", width: 2, backgroundColor: "rgba(236,241,248,0.06)", transform: [{ rotate: "8deg" }] }} />
+        <View style={[StyleSheet.absoluteFill, { transform: [{ scale: zoom }] }]}>
+          {[0.25, 0.5, 0.75].map((p) => (
+            <View key={`h${p}`} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, height: 1, backgroundColor: grid }} />
+          ))}
+          {[0.3, 0.6, 0.85].map((p) => (
+            <View key={`v${p}`} style={{ position: "absolute", top: 0, bottom: 0, left: `${p * 100}%`, width: 1, backgroundColor: grid }} />
+          ))}
+          <View style={{ position: "absolute", left: "-5%", right: "-5%", top: "46%", height: 2, backgroundColor: "rgba(236,241,248,0.06)", transform: [{ rotate: "-6deg" }] }} />
+          <View style={{ position: "absolute", top: 0, bottom: 0, left: "44%", width: 2, backgroundColor: "rgba(236,241,248,0.06)", transform: [{ rotate: "8deg" }] }} />
 
-        {geo.map((a) => {
-          const pos = positions.get(a.id)!;
-          const tk = tone(addressStatus(a).kind, theme);
-          const sel = a.id === selId;
-          return (
-            <TouchableOpacity
-              key={a.id}
-              style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, marginLeft: -15, marginTop: -30 }}
-              onPress={() => setSelId(a.id)}
-              accessibilityLabel={a.nickname || a.city}
-            >
-              <View
-                style={[
-                  styles.pin,
-                  { borderColor: tk.text, backgroundColor: tk.text + "33", transform: [{ rotate: "-45deg" }, { scale: sel ? 1.18 : 1 }] },
-                ]}
+          {geo.map((a) => {
+            const pos = positions.get(a.id)!;
+            const tk = tone(addressStatus(a).kind, theme);
+            const sel = a.id === selId;
+            return (
+              <TouchableOpacity
+                key={a.id}
+                style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, marginLeft: -15, marginTop: -30 }}
+                onPress={() => setSelId(a.id)}
+                accessibilityLabel={a.nickname || a.city}
               >
-                <MapPin size={13} color={tk.text} style={{ transform: [{ rotate: "45deg" }] }} />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                <View
+                  style={[
+                    styles.pin,
+                    { borderColor: tk.text, backgroundColor: tk.text + "33", transform: [{ rotate: "-45deg" }, { scale: sel ? 1.18 : 1 }] },
+                  ]}
+                >
+                  <MapPin size={13} color={tk.text} style={{ transform: [{ rotate: "45deg" }] }} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Zoom controls (Aurora ad-mapui) — pinned, not part of the scaled canvas */}
+        <View style={styles.zoomCtl}>
+          <TouchableOpacity
+            style={styles.zoomBtn}
+            onPress={() => setZoom((z) => Math.min(2, +(z + 0.4).toFixed(2)))}
+            disabled={zoom >= 2}
+            accessibilityRole="button"
+            accessibilityLabel="Zoom in"
+          >
+            <Plus size={16} color={zoom >= 2 ? theme.colors.textMuted : theme.colors.text} />
+          </TouchableOpacity>
+          <View style={styles.zoomDiv} />
+          <TouchableOpacity
+            style={styles.zoomBtn}
+            onPress={() => setZoom((z) => Math.max(1, +(z - 0.4).toFixed(2)))}
+            disabled={zoom <= 1}
+            accessibilityRole="button"
+            accessibilityLabel="Zoom out"
+          >
+            <Minus size={16} color={zoom <= 1 ? theme.colors.textMuted : theme.colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {noGeoCount > 0 && (
@@ -159,7 +187,7 @@ export function AddressesMap({ addresses, onOpen }: { addresses: Address[]; onOp
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     canvas: {
-      height: 320,
+      height: 340,
       borderRadius: 18,
       overflow: "hidden",
       // Intentionally dark-fixed (Aurora navy au-base): the map canvas is a
@@ -182,6 +210,18 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
     },
+    zoomCtl: {
+      position: "absolute",
+      top: 10,
+      right: 10,
+      borderRadius: 12,
+      backgroundColor: "rgba(10,15,24,0.72)",
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      overflow: "hidden",
+    },
+    zoomBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+    zoomDiv: { height: 1, backgroundColor: theme.colors.border },
     noGeo: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2, marginBottom: 4 },
     selCard: {
       flexDirection: "row",

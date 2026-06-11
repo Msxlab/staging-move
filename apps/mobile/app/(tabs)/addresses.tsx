@@ -78,6 +78,16 @@ function statusTone(kind: StatusKind, theme: Theme) {
   }
 }
 
+/** The health ring's color reflects link HEALTH, not address status (recreates
+ *  the design's ADHealth 3-tier sage/cool/foil): sage when accounts are
+ *  correctly tied to a live address, foil/honey when a past address still holds
+ *  accounts that should have moved, cool when there's no linked-account signal. */
+function healthTone(address: Address, theme: Theme): string {
+  const sig = addressSignal(address);
+  if (!sig) return theme.colors.primary; // cool — neutral / no signal yet
+  return sig.ok ? theme.colors.success : theme.colors.accent; // sage healthy · foil needs-attention
+}
+
 /** Stylized mini-map tile with a teardrop pin colored by status (recreates the
  *  design's .ad-thumb — no real map needed). */
 function AddressThumb({ color, size = 60, theme }: { color: string; size?: number; theme: Theme }) {
@@ -320,7 +330,7 @@ export default function AddressesScreen() {
               )}
             </View>
           </View>
-          <AddressHealthRing count={count} color={tone.text} size={cur ? 56 : 46} theme={theme} />
+          <AddressHealthRing count={count} color={healthTone(address, theme)} size={cur ? 56 : 46} theme={theme} />
         </PressableScale>
       </ListEntrance>
     );
