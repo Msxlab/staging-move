@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -58,6 +59,13 @@ interface ObCoachProps {
   eyebrow: string;
   /** One-or-two sentence honest explainer (already translated). */
   body: string;
+  /**
+   * Optional 0-100 data-quality score (design `.ob-quality`): a thin bar +
+   * "Data quality N%" under the body. Honest profile-completeness only —
+   * computed by computeOnboardingDataQuality, never invented here. Omit to
+   * render the classic copy-only coach.
+   */
+  quality?: number;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -85,10 +93,16 @@ function CoachReveal({ children }: { children: React.ReactNode }) {
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
-export function ObCoach({ eyebrow, body, style }: ObCoachProps) {
+export function ObCoach({ eyebrow, body, quality, style }: ObCoachProps) {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
+  // Defensive display clamp — the mapper already returns 0-100, but a bad
+  // caller must never paint a bar wider than its track.
+  const qualityPct =
+    typeof quality === "number" && Number.isFinite(quality)
+      ? Math.max(0, Math.min(100, Math.round(quality)))
+      : null;
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const storageKey = coachStorageKey(userId);
 
@@ -167,6 +181,29 @@ export function ObCoach({ eyebrow, body, style }: ObCoachProps) {
               <Text style={styles.eyebrow}>{eyebrow}</Text>
             </View>
             <Text style={styles.bodyText}>{body}</Text>
+            {qualityPct !== null && (
+              <View
+                style={styles.qualityRow}
+                accessibilityRole="text"
+                accessibilityLabel={t("onboarding.coach_quality", {
+                  defaultValue: "Data quality {{quality}}%",
+                  quality: qualityPct,
+                })}
+              >
+                <View style={styles.qualityTrack}>
+                  {/* Static width per render — no animation, so no
+                      reduce-motion concern; the bar simply reflects the
+                      latest honest completeness number. */}
+                  <View style={[styles.qualityFill, { width: `${qualityPct}%` }]} />
+                </View>
+                <Text style={styles.qualityLabel}>
+                  {t("onboarding.coach_quality", {
+                    defaultValue: "Data quality {{quality}}%",
+                    quality: qualityPct,
+                  })}
+                </Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity
             style={styles.close}
@@ -229,11 +266,40 @@ const makeStyles = (theme: Theme) =>
       textTransform: "uppercase",
       color: theme.colors.primary,
       flexShrink: 1,
+      // Mono-uppercase eyebrow (design `.ob-coach-ey`); system mono keeps it
+      // dependency-free + Hermes-safe, mirroring the onboarding skip link.
+      fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     },
     bodyText: {
       fontSize: 13,
       lineHeight: 18,
       color: theme.colors.textSecondary,
+    },
+    // Data-quality meter (design `.ob-quality`): thin track + tiny mono label.
+    qualityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+    },
+    qualityTrack: {
+      flex: 1,
+      height: 4,
+      borderRadius: theme.radius.full,
+      backgroundColor: theme.colors.border,
+      overflow: "hidden",
+    },
+    qualityFill: {
+      height: "100%",
+      borderRadius: theme.radius.full,
+      backgroundColor: theme.colors.primary,
+    },
+    qualityLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: theme.colors.textTertiary,
+      fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
+      flexShrink: 0,
     },
     close: {
       position: "absolute",

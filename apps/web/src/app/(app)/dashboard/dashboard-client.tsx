@@ -17,6 +17,7 @@ import { RouteMapCard } from "@/components/dashboard/route-map-card";
 import { HomeDossier } from "@/components/dashboard/home-dossier";
 import { MoveCommandCenter, type CommandCenterAction } from "./move-command-center";
 import { MoveBriefingCard } from "@/components/dashboard/move-briefing-card";
+import { HouseholdActivationCard } from "@/components/dashboard/household-activation-card";
 import { UpNext } from "./up-next";
 import { formatCurrency } from "@/lib/utils";
 import { monthlyAmountForCycle, cycleLabel } from "@/lib/budget-planning";
@@ -954,6 +955,14 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           Parity with mobile; renders nothing when not configured or already seen
           for this move stage. */}
       <MoveBriefingCard />
+      {/* HOUSEHOLD ACTIVATION — Family/Pro owners with a member-empty household
+          get a one-time guided "invite your household" card. A top-level card
+          like the pending-invite banner, NOT a widget key (never part of the
+          order/visibility/collapse prefs). Self-hides when the workspace flag
+          is off, members or invites already exist, or after dismissal
+          (localStorage, same pattern as the briefing card). Also handles the
+          ?household=setup deep link from checkout success. */}
+      <HouseholdActivationCard plan={premiumPlan} />
       {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next action.
           When there's no active move it renders a warm "start your move" hero
           instead of a cold empty grid. */}

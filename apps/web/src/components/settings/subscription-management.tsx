@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Check, Crown, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   BILLING_PLAN_DEFINITIONS,
@@ -181,9 +182,23 @@ export default function SubscriptionManagementPage({
   const [monthlyOffer, setMonthlyOffer] = useState<PublicTrialCampaign | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const tReveal = useTranslations("premiumReveal");
   const successFlag = searchParams.get("success") === "true";
   const justUpgradedPlan = successFlag ? searchParams.get("plan") : null;
   const justUpgradedTier = planToStickerTier(justUpgradedPlan);
+  // Snapshot the upgraded plan so the celebration modal (and the Family/Pro
+  // household handoff CTA on it) survives the router.replace below, which
+  // strips ?success&plan and would otherwise null out justUpgradedTier.
+  const [celebratedPlan, setCelebratedPlan] = useState<string | null>(null);
+  useEffect(() => {
+    if (justUpgradedPlan) setCelebratedPlan(justUpgradedPlan.toUpperCase());
+  }, [justUpgradedPlan]);
+  const celebratedTier = justUpgradedTier ?? planToStickerTier(celebratedPlan);
+  // Family/Pro include household seats — checkout success hands off to the
+  // dashboard's household activation card (?household=setup auto-opens the
+  // guided invite modal there).
+  const upgradedPlanCode = (justUpgradedPlan ?? celebratedPlan ?? "").toUpperCase();
+  const isHouseholdUpgrade = upgradedPlanCode === "FAMILY" || upgradedPlanCode === "PRO";
   const [revealOpen, setRevealOpen] = useState(false);
   const [cancelSurvey, setCancelSurvey] = useState<{
     open: boolean;
@@ -1009,12 +1024,20 @@ export default function SubscriptionManagementPage({
         </>
       )}
 
-      {justUpgradedTier && (
+      {celebratedTier && (
         <RevealModal
           open={revealOpen}
-          tier={justUpgradedTier}
+          tier={celebratedTier}
           stickerStyle="medal"
           onClose={() => setRevealOpen(false)}
+          {...(isHouseholdUpgrade
+            ? {
+                // Family/Pro handoff: deep-link to the dashboard household
+                // activation card, which auto-opens its guided invite modal.
+                primaryLabel: tReveal("primaryHousehold"),
+                onPrimary: () => router.push("/dashboard?household=setup"),
+              }
+            : {})}
         />
       )}
 

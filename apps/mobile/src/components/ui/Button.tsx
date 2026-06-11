@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import { Lock } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticLight } from "@/lib/haptics";
 import { usePressScale } from "@/lib/use-press-scale";
@@ -167,7 +168,10 @@ export function Button({
     />
   ) : (
     <>
-      {neutralDisabled ? null : icon}
+      {/* Locked read (design `.obc.is-locked`): the caller's icons are swapped
+          for a small lock glyph so the button itself says "not yet" instead of
+          merely looking dimmer. Legacy opacity-disabled call sites unchanged. */}
+      {neutralDisabled ? <Lock size={15} color={theme.colors.textMuted} /> : icon}
       <Text style={textStyles}>{title}</Text>
       {neutralDisabled ? null : trailingIcon}
     </>
