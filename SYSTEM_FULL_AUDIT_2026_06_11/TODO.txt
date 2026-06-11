@@ -14,10 +14,10 @@ Web
 [DONE] Auth and account security first pass
 [DONE] App modules: addresses, services, moving, budget, providers, settings/export
 [DONE] Workspace / family / RBAC / invitations
-[TODO] Billing portal / subscription lifecycle / Stripe webhook
-[TODO] Notifications / tickets / email flows
-[TODO] Cron / background / connector dispatch
-[TODO] Render and link checks
+[DONE] Billing portal / subscription lifecycle / Stripe webhook
+[DONE] Notifications / tickets / email flows
+[DONE] Cron / background / connector dispatch
+[DOING] Render and link checks
 
 Admin
 [TODO] Admin module inventory
