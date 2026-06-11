@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePagePermission } from "@/lib/page-guard";
 import { prisma } from "@/lib/db";
+import { AffiliateConversionsClient } from "./affiliate-conversions-client";
 
 // Affiliate revenue overview (Layer 1). Read-only analytics over AffiliateClick
 // + the provider rows that carry an active offer. Offers themselves are managed
@@ -133,6 +134,11 @@ export default async function AffiliatePage() {
           </div>
         ))}
       </div>
+
+      {/* Conversion reconciliation — advance commissions PENDING → APPROVED →
+          PAID (or REJECTED) as each network settles. Mutations are step-up
+          (password + MFA) gated and audited. */}
+      <AffiliateConversionsClient />
 
       <div className="rounded-xl border border-border bg-card p-6">
         <h2 className="mb-4 font-semibold text-foreground">Active offers ({offersWithCounts.length})</h2>
