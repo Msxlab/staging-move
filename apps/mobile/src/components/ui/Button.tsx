@@ -26,9 +26,22 @@ interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "ghost" | "danger" | "outline" | "gradient";
-  size?: "sm" | "md" | "lg";
+  /**
+   * `cta` — the unified onboarding CTA size (design bundle-3 `.obc`):
+   * 54px tall, 14px radius, 16px/700 label. Additive; existing call sites
+   * on sm/md/lg are untouched.
+   */
+  size?: "sm" | "md" | "lg" | "cta";
   loading?: boolean;
   disabled?: boolean;
+  /**
+   * How a disabled button reads. `opacity` is the legacy 0.5-dim (default,
+   * preserves every existing call site). `neutral` is the design bundle's
+   * REAL locked state (`.obc.is-locked`): flat neutral fill + muted label,
+   * no glow, no icons, no opacity hack. Applies to the solid variants;
+   * `gradient` keeps its legacy dim.
+   */
+  disabledTone?: "opacity" | "neutral";
   icon?: React.ReactNode;
   iconRight?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -46,6 +59,7 @@ export function Button({
   size = "md",
   loading = false,
   disabled = false,
+  disabledTone = "opacity",
   icon,
   iconRight,
   rightIcon,
@@ -64,6 +78,9 @@ export function Button({
   const { animatedStyle, onPressIn, onPressOut } = usePressScale();
   const interactive = !disabled && !loading;
   const trailingIcon = rightIcon || iconRight;
+  // Real locked state (`.is-locked`): neutral fill, muted label, icons hidden
+  // (the design swaps the arrow out entirely rather than ghosting it).
+  const neutralDisabled = disabledTone === "neutral" && disabled;
 
   // Aurora shimmer sweep — a one-shot highlight strip that sweeps across
   // primary CTAs on press (Edition VII handoff, additions.css
@@ -131,7 +148,7 @@ export function Button({
     styles[variant],
     styles[`size_${size}`],
     fullWidth && styles.fullWidth,
-    (disabled || loading) && styles.disabled,
+    neutralDisabled ? styles.disabledNeutral : (disabled || loading) && styles.disabled,
     style,
   ];
 
@@ -139,7 +156,7 @@ export function Button({
     styles.text,
     styles[`text_${variant}`],
     styles[`textSize_${size}`],
-    (disabled || loading) && styles.textDisabled,
+    neutralDisabled ? styles.textDisabledNeutral : (disabled || loading) && styles.textDisabled,
     textStyle,
   ];
 
@@ -150,9 +167,9 @@ export function Button({
     />
   ) : (
     <>
-      {icon}
+      {neutralDisabled ? null : icon}
       <Text style={textStyles}>{title}</Text>
-      {trailingIcon}
+      {neutralDisabled ? null : trailingIcon}
     </>
   );
 
@@ -262,11 +279,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 16,
     borderRadius: theme.radius.xl,
   },
+  // Unified onboarding CTA (`.obc`): ~54px tall, 14px radius. minHeight (not
+  // a fixed height) so large font-scale settings can still grow the button.
+  size_cta: {
+    minHeight: 54,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: theme.radius.lg,
+  },
   fullWidth: {
     width: "100%",
   },
   disabled: {
     opacity: 0.5,
+  },
+  // Real locked state (`.obc.is-locked`) — flat neutral surface, no glow, no
+  // opacity hack. Shadow fields zeroed to cancel the primary variant's glow.
+  disabledNeutral: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
   },
   text: {
     fontWeight: "600",
@@ -298,8 +335,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   textSize_lg: {
     fontSize: 17,
   },
+  // Unified onboarding CTA label: 16px / 700, slight tightening (`.obc`).
+  textSize_cta: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
   textDisabled: {
     opacity: 0.7,
+  },
+  textDisabledNeutral: {
+    color: theme.colors.textMuted,
   },
   // Aurora shimmer sweep strip — sized/positioned at render time
   // (width is ~45% of the measured button, per additions.css).

@@ -1196,7 +1196,15 @@
     "aurora_ritualDoneTitle": "Plan inicial <em>listo</em>",
     "aurora_ritualDoneSub": "{count} recomendaciones para {state} — elige solo las que realmente usas.",
     "aurora_ritualSkip": "Saltar animación",
-    "aurora_yourState": "tu estado"
+    "aurora_yourState": "tu estado",
+    "coach_eyebrow": "Por qué importa",
+    "coach_profile": "Los detalles de tu hogar ajustan tu checklist y el informe de IA — respuestas precisas aquí significan sugerencias que realmente encajan con tu hogar.",
+    "coach_address": "Una dirección precisa desbloquea verificaciones de proveedores a nivel de dirección (cobertura FCC y de servicios) y el expediente de tu hogar.",
+    "coach_providers": "Confirmar lo que realmente usas hace las recomendaciones más inteligentes para ti y tu zona.",
+    "coach_moving": "Tu fecha de mudanza define tus plazos, alertas de clima y la cuenta regresiva.",
+    "coach_dismiss": "Ocultar este consejo",
+    "coach_reopen": "Por qué importa",
+    "cta_hint_legal": "Acepta los términos legales para continuar"
   },
   "legal": {
     "privacy_title": "Política de privacidad",

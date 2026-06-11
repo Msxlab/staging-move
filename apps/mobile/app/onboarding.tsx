@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -79,7 +78,19 @@ import {
   OnboardingProgressBar,
   useShake,
 } from "@/components/onboarding/onboarding-motion";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { ObCoach } from "@/components/ui/ObCoach";
+import { coachCopyKeys } from "@/components/ui/ob-coach-state";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -153,6 +164,60 @@ const IMMIGRATION_STATUSES = [
 ];
 
 type OnboardingProgressEvent = "SERVICES_SKIPPED" | "MOVING_SKIPPED" | "COMPLETED";
+
+/**
+ * ScanDot / ScanDots — the providers-step "scanning" pulse (design bundle-3
+ * onb-flows.jsx scan ritual, mobile-sized). Three dots breathe in sequence
+ * while recommendations load, then the result rows stagger in. Pure
+ * decoration: runs on the Reanimated UI thread, loops are cancelled on
+ * unmount, and reduce-motion renders calm static dots.
+ */
+function ScanDot({ index, color }: { index: number; color: string }) {
+  const reduceMotion = useReducedMotion();
+  const pulse = useSharedValue(reduceMotion ? 0.6 : 0.35);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 0.6;
+      return;
+    }
+    pulse.value = withDelay(
+      index * 150,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }),
+          withTiming(0.35, { duration: 440, easing: Easing.in(Easing.quad) }),
+        ),
+        -1,
+        false,
+      ),
+    );
+    return () => {
+      cancelAnimation(pulse);
+    };
+  }, [index, reduceMotion, pulse]);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: pulse.value,
+    transform: [{ scale: 0.8 + pulse.value * 0.3 }],
+  }));
+
+  return (
+    <Animated.View
+      style={[{ width: 7, height: 7, borderRadius: 999, backgroundColor: color }, dotStyle]}
+    />
+  );
+}
+
+function ScanDots({ color }: { color: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      {[0, 1, 2].map((i) => (
+        <ScanDot key={i} index={i} color={color} />
+      ))}
+    </View>
+  );
+}
 
 export default function OnboardingScreen() {
 
@@ -1025,7 +1090,11 @@ export default function OnboardingScreen() {
     const isSelected = selectedProviders.has(provider.id);
     const reason = getLocalizedProviderReason(t, i18n.language, provider, categoryLabel(provider.category));
     return (
-      <StaggerItem key={keyId} index={index}>
+      // Slower per-row cascade than the default StaggerItem rhythm — after the
+      // scan dots, the recommendation rows "land" one by one (the bundle's
+      // reveal feel) instead of appearing as a block. Reduce-motion settles
+      // instantly via StaggerItem itself.
+      <StaggerItem key={keyId} index={index} baseDelay={56} maxDelay={420}>
         <PressableScale
           style={[styles.recoCard, isSelected && styles.recoCardActive]}
           onPress={() => { hapticLight(); toggleProvider(provider as any); }}
@@ -1092,6 +1161,24 @@ export default function OnboardingScreen() {
     return labels;
   }, [missingCritical, selectedCategories, categoryLabel]);
 
+  // COACH layer (owner decision, design bundle-3): every onboarding step
+  // carries a short honest explainer of why accurate data on this step makes
+  // the AI's suggestions better ("accurate data → accurate recommendations").
+  // ObCoach owns the per-user collapse persistence; this only picks the copy.
+  const coachKeysForStep = coachCopyKeys(step);
+  const coachCallout = coachKeysForStep ? (
+    <ObCoach
+      eyebrow={t(coachKeysForStep.eyebrowKey)}
+      body={t(coachKeysForStep.bodyKey)}
+      style={{ marginTop: 16 }}
+    />
+  ) : null;
+
+  // Real disabled state for the bottom CTA (no opacity hack): neutral fill +
+  // a short inline hint explaining what unlocks it. Same gate as before —
+  // only step 0's required names — so no validation path changes.
+  const continueDisabled = step === 0 && (!profile.firstName || !profile.lastName);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -1131,6 +1218,7 @@ export default function OnboardingScreen() {
               <View style={styles.stepIcon}><User size={28} color={theme.colors.primary} /></View>
               <Text style={styles.stepTitle}>{t("onboarding.profile_title")}</Text>
               <Text style={styles.stepDesc}>{t("onboarding.profile_description")}</Text>
+              {coachCallout}
 
               <View style={[styles.row, { marginTop: 24 }]}>
                 <View style={{ flex: 1 }}>
@@ -1336,6 +1424,7 @@ export default function OnboardingScreen() {
               <View style={styles.stepIcon}><MapPin size={28} color={theme.colors.primary} /></View>
               <Text style={styles.stepTitle}>{t("onboarding.address_title")}</Text>
               <Text style={styles.stepDesc}>{t("onboarding.address_description")}</Text>
+              {coachCallout}
               <View style={{ width: "100%", marginTop: 16 }}>
                 <EmailVerificationBanner context={t("addresses.title")} />
               </View>
@@ -1395,6 +1484,7 @@ export default function OnboardingScreen() {
                   : t("onboarding.providers_allStates")}
                 {selectedProviders.size > 0 ? t("onboarding.providers_selectedSuffix", { count: selectedProviders.size }) : ""}
               </Text>
+              {coachCallout}
 
               <View style={styles.searchRow}>
                 <Search size={16} color={theme.colors.textMuted} />
@@ -1476,13 +1566,23 @@ export default function OnboardingScreen() {
               )}
 
               {loadingProviders ? (
-                // Calmer load: a labelled spinner over a few placeholder cards so
-                // the list settles in place and fades to real content instead of
-                // popping from an empty spinner. Skeletons honour reduce-motion.
+                // Staged scan ritual (design bundle-3 scan step): three pulsing
+                // dots + an honest "scanning" line over placeholder cards, then
+                // the recommendation rows stagger in below once the fetch lands.
+                // Dots and skeletons both honour reduce-motion.
                 <View style={{ width: "100%", marginTop: 16 }}>
                   <View style={styles.loadingBox}>
-                    <ActivityIndicator color={theme.colors.primary} />
-                    <Text style={styles.loadingText}>{t("onboarding.providers_loading")}</Text>
+                    <ScanDots color={theme.colors.primary} />
+                    <Text style={styles.loadingText}>
+                      {address.state
+                        ? t("onboarding.providers_scanningState", {
+                            defaultValue: "Scanning {{state}} providers for your move…",
+                            state: address.state,
+                          })
+                        : t("onboarding.providers_scanning", {
+                            defaultValue: "Scanning providers for your move…",
+                          })}
+                    </Text>
                   </View>
                   <View style={{ gap: 10, marginTop: 4 }}>
                     {[0, 1, 2, 3].map((i) => (
@@ -1618,6 +1718,7 @@ export default function OnboardingScreen() {
               <Text style={styles.stepDesc}>
                 {t("onboarding.moving_description")}
               </Text>
+              {coachCallout}
 
               {joinedAsMember && (
                 <View style={styles.memberBanner}>
@@ -1637,12 +1738,12 @@ export default function OnboardingScreen() {
                       action and "plan a move" the secondary one. */}
                   {joinedAsMember ? (
                     <>
-                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} fullWidth size="lg" />
+                      <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} fullWidth size="cta" />
                       <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} variant="ghost" fullWidth size="lg" />
                     </>
                   ) : (
                     <>
-                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
+                      <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="cta" />
                       <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
                     </>
                   )}
@@ -1653,7 +1754,7 @@ export default function OnboardingScreen() {
                 <View style={{ marginTop: 24, alignItems: "center", gap: 12, width: "100%" }}>
                   <Check size={40} color={theme.colors.success} style={{ opacity: 0.5 }} />
                   <Text style={[styles.stepDesc, { marginTop: 0 }]}>{t("onboarding.moving_skipped")}</Text>
-                  <Button title={t("onboarding.goToDashboard")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                  <Button title={t("onboarding.goToDashboard")} onPress={handleComplete} loading={saving} fullWidth size="cta" />
                 </View>
               )}
 
@@ -1759,7 +1860,7 @@ export default function OnboardingScreen() {
                     <View style={{ flex: 1 }}>
                       {isPremium ? (
                         // Paid user → the unchanged create-the-plan flow.
-                        <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                        <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="cta" />
                       ) : (
                         // Free user → compute the value-first teaser (no plan persisted).
                         <Button
@@ -1767,7 +1868,7 @@ export default function OnboardingScreen() {
                           onPress={buildTeaser}
                           loading={buildingTeaser}
                           fullWidth
-                          size="lg"
+                          size="cta"
                           iconRight={<Sparkles size={16} color="#fff" />}
                         />
                       )}
@@ -1782,29 +1883,51 @@ export default function OnboardingScreen() {
           </Animated.View>
         </ScrollView>
 
-        {/* Bottom Actions */}
+        {/* Bottom Actions — unified onboarding CTA hierarchy (owner decision):
+            Primary (filled, 54px, plan-accent, full width) > Back (quiet
+            ghost) > Skip (lowest, mono link). The primary's disabled state is
+            REAL — neutral fill + a short inline hint — never an opacity dim.
+            Gating/submit logic is byte-for-byte the old behaviour: the same
+            step-0 names condition, the same next/back/skipServices handlers. */}
         {step < 3 && (
           <View style={styles.bottomBar}>
-            {step > 0 ? (
-              <Button title={t("common.back")} onPress={back} variant="ghost"
-                icon={<ArrowLeft size={16} color={theme.colors.textSecondary} />} />
-            ) : <View />}
-            <View style={styles.bottomRight}>
-              {step === 2 && (
-                <Button
-                  title={t("onboarding.providers_addLater", { defaultValue: "Add later" })}
-                  onPress={skipServices}
-                  variant="ghost"
-                  loading={saving}
-                />
-              )}
-              <Button
-                title={saving ? t("common.loading") : t("common.continue")}
-                onPress={next} loading={saving}
-                disabled={step === 0 && (!profile.firstName || !profile.lastName)}
-                iconRight={<ArrowRight size={16} color="#fff" />}
-              />
-            </View>
+            {continueDisabled && (
+              <Text style={styles.ctaHint} accessibilityLiveRegion="polite">
+                {t("onboarding.cta_hint_names", {
+                  defaultValue: "Add your first and last name to continue",
+                })}
+              </Text>
+            )}
+            <Button
+              title={saving ? t("common.loading") : t("common.continue")}
+              onPress={next} loading={saving}
+              disabled={continueDisabled}
+              disabledTone="neutral"
+              size="cta"
+              fullWidth
+              iconRight={<ArrowRight size={16} color="#fff" />}
+            />
+            {step > 0 && (
+              <View style={styles.bottomSecondaryRow}>
+                <Button title={t("common.back")} onPress={back} variant="ghost"
+                  icon={<ArrowLeft size={16} color={theme.colors.textSecondary} />} />
+                {step === 2 ? (
+                  <TouchableOpacity
+                    onPress={() => { if (!saving) skipServices(); }}
+                    disabled={saving}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("onboarding.providers_addLater", { defaultValue: "Add later" })}
+                    accessibilityState={{ disabled: saving }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.skipLink}
+                  >
+                    <Text style={styles.skipLinkText}>
+                      {t("onboarding.providers_addLater", { defaultValue: "Add later" })}
+                    </Text>
+                  </TouchableOpacity>
+                ) : <View />}
+              </View>
+            )}
           </View>
         )}
       </KeyboardAvoidingView>
@@ -1948,10 +2071,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   recoCardActive: { borderColor: theme.colors.borderFocus, backgroundColor: theme.colors.primaryFaded },
   recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  // Unified CTA bar: hint (when locked) → full-width 54px primary →
+  // Back (quiet ghost, left) + Skip (mono link, right) underneath.
   bottomBar: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 24, paddingVertical: 16,
+    paddingHorizontal: 24, paddingVertical: 14, gap: 10,
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  bottomRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ctaHint: {
+    fontSize: 12, lineHeight: 16, color: theme.colors.textTertiary, textAlign: "center",
+  },
+  bottomSecondaryRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+  },
+  skipLink: { paddingVertical: 6, paddingHorizontal: 4 },
+  // Lowest-emphasis action of the hierarchy — small uppercase mono link
+  // (design `.ob-skip`); system mono keeps it dependency-free + Hermes-safe.
+  skipLinkText: {
+    fontSize: 11, fontWeight: "600", letterSpacing: 1.4, textTransform: "uppercase",
+    color: theme.colors.textTertiary,
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
+  },
 });
