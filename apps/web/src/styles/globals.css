@@ -1518,12 +1518,23 @@
     transform 0.3s ease;
 }
 
+/* — Pro showcase: gentle staggered reveal of the value rows — */
+.ob-pro-showcase-row {
+  animation: ob-reveal 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: calc(0.05s + var(--ob-pro-i, 0) * 0.07s);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ob-cta,
   .ob-cta .ob-cta-arrow,
   .ob-cta--back .ob-cta-arrow-back,
   .ob-ritual-dot {
     transition: none;
+  }
+  .ob-pro-showcase-row {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
   .ob-cta--primary::after {
     display: none;

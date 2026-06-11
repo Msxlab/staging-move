@@ -1,0 +1,76 @@
+Locateflow full system audit live todo
+Date: 2026-06-11
+Rule: project .md and memory files are not used as audit sources; code and config are reviewed directly.
+
+Status legend:
+- TODO: not started
+- DOING: currently under review
+- DONE: reviewed and reported
+- DEFERRED: requires external credential/runtime/store access; exact blocker must be written
+
+00. Audit setup
+- DONE Create audit folder: SYSTEM_FULL_AUDIT_2026_06_11
+- DONE Build code-only module inventory
+- DONE Build cross-layer dependency map
+- TODO Record test commands and runtime blockers
+
+01. Web
+- DOING Web public homepage and marketing pages
+- DOING Web auth flows
+- TODO Web authenticated app shell and dashboard
+- DOING Web moving plan module
+- DOING Web addresses module
+- DOING Web services module
+- TODO Web providers/recommendations module
+- TODO Web notifications/tickets/support module
+- TODO Web settings/profile/privacy/export/workspace module
+- DOING Web pricing/subscription/Stripe checkout/portal/change-plan/switch-cycle
+- DOING Web blog public/API/view tracking/revalidation/indexing
+- DOING Web SEO/GEO: metadata, sitemap, robots, canonical, hreflang, schema, Open Graph, broken links
+- TODO Web cron/internal/webhook endpoints
+- TODO Web responsive/a11y/performance/error states
+
+02. Admin
+- TODO Admin auth, middleware, step-up, RBAC, page guard
+- TODO Admin dashboard/analytics/activity intelligence
+- TODO Admin users/workspaces/subscriptions/billing/refund/cancel/change-plan/resync
+- TODO Admin providers, logos, coverage, merge, bulk, exports
+- TODO Admin blog posts/categories/tags/uploads/preview/publish
+- TODO Admin backup/restore/import/export/retention/verify/download/sql-dump
+- TODO Admin security dashboard/key rotation/rate limits/IP rules/internal secrets
+- TODO Admin connector metrics/fallbacks/alerts/notifications
+- TODO Admin audit logs/error handling/CRUD consistency
+
+03. Mobile
+- TODO Mobile app shell/navigation/screens/components
+- TODO Mobile auth/API session flows
+- TODO Mobile onboarding/moving/addresses/services/providers flows
+- TODO Mobile offline/error/loading/null states
+- TODO Mobile push notifications/widgets
+- TODO Mobile permissions, Android manifest, iOS/store compliance files
+- TODO Mobile IAP product/verify/webhook integration
+- TODO Mobile crash/performance/responsive device checks
+
+04. Shared packages and backend foundations
+- TODO packages/shared billing/entitlement/workspace limits
+- TODO packages/shared blog/legal/audit-redaction/runtime-config
+- TODO packages/shared move lifecycle/checklist/migration/recommendation/provider engines
+- TODO packages/shared validators/encryption/API client/permissions/i18n/timezone
+- TODO packages/db Prisma schema/migrations/seeds/soft-delete/optimistic locking
+- TODO packages/connectors registry/dispatcher/oauth/http-client/retry/circuit breaker
+- TODO scripts and cron operational consistency
+- TODO Docker/deploy/env config consistency
+
+05. Security scan phases
+- TODO Threat model from code/config only
+- TODO Finding discovery
+- TODO Validation
+- TODO Attack-path analysis
+- TODO Security final report artifacts
+
+06. Final synthesis
+- TODO Critical and High findings sorted first
+- TODO All findings in required one-line format
+- TODO Per-layer five-question answers
+- TODO Overall health summary
+- TODO Prioritized action list
