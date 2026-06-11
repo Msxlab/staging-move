@@ -38,8 +38,11 @@ on:
     - cron: "0 16 * * *" # local 8am at UTC-8 (Pacific PST / Alaska AKDT)
     - cron: "0 17 * * *" # local 8am at UTC-9 (Alaska AKST)
     - cron: "0 18 * * *" # local 8am at UTC-10 (Hawaii HST, no DST)
-    - cron: "0 9 * * 1" # Mondays: weekly-digest
-    - cron: "0 10 1 * *" # 1st of month: monthly-report
+    # Weekly digest fires DAILY: users can pick ANY weekday as their digest
+    # day, and the route self-gates (digestDay === today's US weekday), so a
+    # Monday-only schedule silently skipped every non-Monday preference.
+    - cron: "0 9 * * *" # daily 09:00: weekly-digest (route gates per-user digestDay)
+    - cron: "0 10 1 * *" # 1st of month: monthly-report (user emails) + admin-monthly-report (owner PDF)
     - cron: "0 4 * * 0" # Sundays: data-retention
   workflow_dispatch: {}
 
@@ -126,8 +129,13 @@ jobs:
               # keeps it at-most-once across the multiple zone runs.
               hit "$WEB/api/cron/daily-digest"
               ;;
-            "0 9 * * 1") hit "$WEB/api/cron/weekly-digest" ;;
-            "0 10 1 * *") hit "$WEB/api/cron/monthly-report" ;;
+            "0 9 * * *") hit "$WEB/api/cron/weekly-digest" ;;
+            "0 10 1 * *")
+              hit "$WEB/api/cron/monthly-report"
+              # Owner's monthly business report PDF, emailed to the
+              # admin-digest recipient set (per-recipient monthly dedupe).
+              hit "$WEB/api/cron/admin-monthly-report"
+              ;;
             "0 4 * * 0") hit "$WEB/api/cron/data-retention" ;;
             *)
               echo "Manual/dispatch run — smoke-testing the critical jobs:"

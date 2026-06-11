@@ -182,7 +182,7 @@
     "groupAccount": "Cuenta",
     "unreadCount": "{count, plural, one {# notificación sin leer} other {# notificaciones sin leer}}",
     "proUpsellTitle": "LocateFlow Pro",
-    "proUpsellBody": "Direcciones ilimitadas y alertas de renovación prioritarias."
+    "proUpsellBody": "Hasta 25 direcciones y 1,000 servicios, además de alertas de renovación prioritarias."
   },
   "theme": {
     "toggle": "Tema",
@@ -646,6 +646,7 @@
     "routeMap_oldHome": "Casa anterior",
     "routeMap_newHome": "Casa nueva",
     "routeMap_stylized": "Vista estilizada",
+    "routeMap_imageAlt": "Mapa de tu ruta de mudanza de {from} a {to}",
     "donut_center": "al mes",
     "donut_rest": "Otras categorías",
     "spark_sub": "Gasto mensual registrado · últimos 6 meses",

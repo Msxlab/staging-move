@@ -201,7 +201,7 @@ export function Sidebar({
             plan styling always flows through .plan-*, never via props. */}
         {isCollapsed ? (
           <Link
-            href="/settings"
+            href="/pricing"
             onClick={onNavigate}
             title={t("proUpsellTitle")}
             className="flex h-10 w-full items-center justify-center rounded-xl border border-tone-foil-br bg-tone-foil-bg text-tone-foil-fg transition hover:opacity-90 [.plan-pro_&]:hidden"
@@ -211,7 +211,7 @@ export function Sidebar({
           </Link>
         ) : (
           <Link
-            href="/settings"
+            href="/pricing"
             onClick={onNavigate}
             className="block rounded-2xl border border-tone-foil-br bg-tone-foil-bg p-3 transition hover:opacity-90 [.plan-pro_&]:hidden"
           >

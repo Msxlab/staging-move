@@ -256,7 +256,8 @@
       "fromRole": "Old · moving out",
       "toRole": "New · current",
       "stillAtOld_one": "{{count}} account still at the old address",
-      "stillAtOld_other": "{{count}} accounts still at the old address"
+      "stillAtOld_other": "{{count}} accounts still at the old address",
+      "mapAlt": "Map of your relocation route from {{from}} to {{to}}"
     }
   },
   "services": {

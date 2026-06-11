@@ -23,6 +23,7 @@ import { GradientProgress } from "@/components/ui/GradientProgress";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { AddressesMap } from "@/components/addresses/AddressesMap";
+import { TransitRouteMap } from "@/components/addresses/TransitRouteMap";
 import type { Address } from "@locateflow/shared";
 
 // ── Addresses "Hub" recreation of the Aurora design (explore/Mobile Addresses) ──
@@ -418,6 +419,15 @@ export default function AddressesScreen() {
                   )}. ${transitToCity} ${t("addresses.transit.toRole")}.`}
                 >
                   <Text style={styles.transitKicker}>{t("addresses.transit.title", { pct: transitPct })}</Text>
+                  {/* Real route map (Google Static Maps via the authed proxy).
+                      Renders null on any failure — the stylized dashed route
+                      below remains the graceful fallback. */}
+                  <TransitRouteMap
+                    activeMove={activeMove}
+                    addresses={addresses}
+                    fromCity={transitFromCity}
+                    toCity={transitToCity}
+                  />
                   <View style={styles.transitRoute}>
                     <View style={styles.transitNode}>
                       <Text style={styles.transitCity} numberOfLines={1}>

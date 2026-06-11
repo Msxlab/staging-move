@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { MailX, MailCheck } from "lucide-react";
+import { MailX, MailCheck, MailQuestion } from "lucide-react";
 import { Wordmark } from "@/components/marketing/logo";
 import { prisma } from "@/lib/db";
 import {
   parseUnsubscribeKind,
   verifyUnsubscribeToken,
 } from "@/lib/unsubscribe";
-import {
-  loadEmailOptOutState,
-  processUnsubscribe,
-} from "@/lib/unsubscribe-actions";
+import { loadEmailOptOutState } from "@/lib/unsubscribe-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +17,16 @@ function readParam(value: string | string[] | undefined): string | null {
 
 /**
  * Public unsubscribe landing. The link in marketing emails opens this
- * page; we verify the HMAC token, opt the user out of the requested
- * kind immediately (so the click itself counts as consent — matches
- * Gmail/Apple expectations), then show the resulting state with a link
- * back to the in-app preference page for finer control.
+ * page; we verify the HMAC token and render a CONFIRM step — the
+ * opt-out itself only happens when the visitor presses the button,
+ * which POSTs to /api/unsubscribe. A bare GET never mutates anything,
+ * so email link-scanners and prefetchers that follow the link cannot
+ * silently opt users out. (Mail-client one-click unsubscribe is
+ * unaffected: RFC 8058 targets the POST endpoint directly.)
+ *
+ * After the POST the API 303-redirects back here with `done=1` and we
+ * show the resulting state (read-only) with a link to the in-app
+ * preference page for finer control.
  *
  * No auth required: the token is the proof that the holder controls
  * the email address we sent the message to.
@@ -31,11 +34,12 @@ function readParam(value: string | string[] | undefined): string | null {
 export default async function UnsubscribePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ t?: string | string[]; k?: string | string[] }>;
+  searchParams?: Promise<{ t?: string | string[]; k?: string | string[]; done?: string | string[] }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const token = readParam(params.t);
   const kindParam = readParam(params.k);
+  const done = readParam(params.done) === "1";
 
   const userId = verifyUnsubscribeToken(token);
   if (!userId) {
@@ -74,9 +78,45 @@ export default async function UnsubscribePage({
   }
 
   const kind = parseUnsubscribeKind(kindParam);
-  await processUnsubscribe({ userId, kind, source: "click" });
-  const state = await loadEmailOptOutState(userId);
 
+  if (!done) {
+    // Confirm step — intentionally NO mutation on GET (see doc comment).
+    return (
+      <Shell>
+        <MailQuestion className="mx-auto h-11 w-11 text-muted-foreground" aria-hidden />
+        <h1 className="text-2xl font-bold text-foreground">Unsubscribe from these emails?</h1>
+        <p className="text-sm text-muted-foreground">{describeIntent(kind)}</p>
+        <div className="rounded-lg border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+          <span className="block font-medium text-foreground">Email on file</span>
+          <span className="break-all">{user.email}</span>
+        </div>
+        <form method="POST" action="/api/unsubscribe" className="space-y-2">
+          <input type="hidden" name="t" value={token!} />
+          {kindParam ? <input type="hidden" name="k" value={kindParam} /> : null}
+          <input type="hidden" name="redirect" value="1" />
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+          >
+            Confirm unsubscribe
+          </button>
+        </form>
+        <Link
+          href="/settings/notifications"
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Manage individual preferences instead
+        </Link>
+        <Link href="/" className="block text-xs text-muted-foreground hover:text-foreground">
+          Keep my emails — back to home
+        </Link>
+      </Shell>
+    );
+  }
+
+  // Done step — the POST already processed the opt-out; this view only
+  // READS the resulting state so refreshes and prefetches stay harmless.
+  const state = await loadEmailOptOutState(userId);
   const summary = describeState(kind, state);
 
   return (
@@ -102,6 +142,16 @@ export default async function UnsubscribePage({
       </Link>
     </Shell>
   );
+}
+
+function describeIntent(kind: ReturnType<typeof parseUnsubscribeKind>): string {
+  if (kind === "marketing") {
+    return "This will stop marketing and digest emails to this address.";
+  }
+  if (kind === "reminder") {
+    return "This will stop bill, contract, and move reminder emails to this address.";
+  }
+  return "This will stop all marketing and reminder emails to this address.";
 }
 
 function describeState(

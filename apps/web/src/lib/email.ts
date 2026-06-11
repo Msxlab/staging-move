@@ -56,6 +56,14 @@ const BRAND_DIVIDER = "#e0e5ec";
 const BRAND_FOOT_MUTED = "#98a2b3";
 const LOGO_ICON_URL = "https://locateflow.com/icons/icon-192.png";
 
+export interface EmailAttachment {
+  filename: string;
+  /** Raw bytes or a base64-encoded string — both shapes Resend accepts. */
+  content: Buffer | string;
+  /** Optional MIME type; Resend derives it from the filename when omitted. */
+  contentType?: string;
+}
+
 export interface EmailOptions {
   to: string;
   subject: string;
@@ -63,6 +71,7 @@ export interface EmailOptions {
   text?: string;
   replyTo?: string | string[];
   headers?: Record<string, string>;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -199,6 +208,7 @@ export async function sendEmailWithResult(
       text,
       replyTo: options.replyTo || replyTo,
       ...(options.headers ? { headers: options.headers } : {}),
+      ...(options.attachments?.length ? { attachments: options.attachments } : {}),
     });
 
     if (error) {

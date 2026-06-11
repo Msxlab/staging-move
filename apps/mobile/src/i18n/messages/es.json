@@ -256,7 +256,8 @@
       "fromRole": "Anterior · saliendo",
       "toRole": "Nueva · actual",
       "stillAtOld_one": "{{count}} cuenta sigue en la dirección anterior",
-      "stillAtOld_other": "{{count}} cuentas siguen en la dirección anterior"
+      "stillAtOld_other": "{{count}} cuentas siguen en la dirección anterior",
+      "mapAlt": "Mapa de tu ruta de mudanza de {{from}} a {{to}}"
     }
   },
   "services": {

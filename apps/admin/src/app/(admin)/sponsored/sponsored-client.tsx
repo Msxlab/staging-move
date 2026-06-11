@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   BadgeDollarSign,
@@ -132,7 +133,16 @@ const STATUS_PILL_CLASS: Record<PlacementStatus, string> = {
   inactive: "bg-muted text-muted-foreground",
 };
 
-export default function SponsoredClient() {
+export default function SponsoredClient({
+  sponsoredEnabled = null,
+}: {
+  /**
+   * SPONSORED_ENABLED resolved server-side by page.tsx via the admin
+   * runtime-config read path; null = the read failed (unknown), in which
+   * case the banner omits the status line instead of guessing.
+   */
+  sponsoredEnabled?: boolean | null;
+}) {
   const t = useTranslations("sponsored");
 
   const [placements, setPlacements] = useState<Placement[]>([]);
@@ -379,13 +389,38 @@ export default function SponsoredClient() {
       />
 
       {/* Policy banner — the non-negotiables every operator must see before
-          touching ad inventory. */}
+          touching ad inventory, plus the honest SPONSORED_ENABLED status so
+          nobody publishes a placement believing it is live while the flag is
+          off. The status line is omitted when the flag read failed. */}
       <div
         role="note"
         className="flex items-start gap-3 rounded-xl border border-tone-honey-br bg-tone-honey-bg px-4 py-3 text-sm text-foreground"
       >
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        <p>{t("policyBanner")}</p>
+        <div className="space-y-1.5">
+          <p>{t("policyBanner")}</p>
+          {sponsoredEnabled === null ? null : sponsoredEnabled ? (
+            <p className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex rounded-full border border-tone-sage-br bg-tone-sage-bg px-2 py-0.5 font-medium text-tone-sage-fg">
+                {t("flag.on")}
+              </span>
+              <span className="text-muted-foreground">{t("flag.onHint")}</span>
+            </p>
+          ) : (
+            <p className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex rounded-full border border-tone-honey-br bg-background/70 px-2 py-0.5 font-medium text-tone-honey-fg">
+                {t("flag.off")}
+              </span>
+              <span className="text-tone-honey-fg">{t("flag.offHint")}</span>
+              <Link
+                href="/runtime-config"
+                className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+              >
+                {t("flag.openRuntimeConfig")}
+              </Link>
+            </p>
+          )}
+        </div>
       </div>
 
       <AdminPanel

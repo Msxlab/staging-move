@@ -47,6 +47,7 @@
     "acquisitionCampaigns": "Acquisition Campaigns",
     "billing": "Billing",
     "providers": "Providers",
+    "movers": "Movers",
     "sponsored": "Sponsored",
     "providerGovernance": "Provider Governance",
     "stateRules": "State Rules",
@@ -256,6 +257,13 @@
     "title": "Sponsored Placements",
     "subtitle": "Labeled ad slots on directory surfaces — movers list and provider catalog.",
     "policyBanner": "Sponsored placements render in a separate labeled slot, never inside organic rankings. SPONSORED_ENABLED runtime flag must be on; FTC clear-and-conspicuous labeling is mandatory.",
+    "flag": {
+      "on": "SPONSORED_ENABLED is ON",
+      "onHint": "Live placements render publicly within their date windows.",
+      "off": "SPONSORED_ENABLED is OFF",
+      "offHint": "placements will not render — enable SPONSORED_ENABLED in Runtime Config.",
+      "openRuntimeConfig": "Open Runtime Config"
+    },
     "newPlacement": "New placement",
     "filters": {
       "statusLabel": "Filter by status",
@@ -354,6 +362,112 @@
       "loadFailed": "Failed to load placements.",
       "actionFailed": "Action failed.",
       "hasTraffic": "Cannot delete a placement with recorded impressions or clicks — deactivate it instead."
+    }
+  },
+  "movers": {
+    "eyebrow": "Content",
+    "title": "Licensed Movers",
+    "subtitle": "FMCSA household-goods carrier catalog — rows are filled by the ETL; only corrections are editable here.",
+    "etlNote": "Catalog is filled by scripts/etl-fmcsa-movers.mjs — download the FMCSA census CSV and run it; see script header. Bulk complaint counts are not public (NCCDB), so complaintCount2y stays 0 unless corrected per row from protectyourmove.gov.",
+    "freshness": {
+      "totalRows": "Catalog rows",
+      "activeRows": "Active",
+      "newestDataAsOf": "Newest data as of",
+      "statesCovered": "States covered",
+      "never": "No imports yet",
+      "stale": "Stale",
+      "staleHint": "The newest snapshot is older than 90 days — download a fresh FMCSA census CSV and rerun the ETL."
+    },
+    "filters": {
+      "searchLabel": "Search movers",
+      "searchPlaceholder": "USDOT number or name…",
+      "stateLabel": "Filter by state",
+      "allStates": "All states",
+      "statusLabel": "Filter by status",
+      "allStatuses": "All statuses",
+      "hhgLabel": "Filter by household-goods authorization",
+      "allHhg": "HHG: all",
+      "hhgAuthorized": "HHG authorized",
+      "hhgNotAuthorized": "No HHG authorization"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "safety": {
+      "satisfactory": "Satisfactory",
+      "conditional": "Conditional",
+      "unsatisfactory": "Unsatisfactory"
+    },
+    "table": {
+      "title": "Movers",
+      "caption": "Identity fields come from the FMCSA census snapshot and are read-only here — only the activation switch and verified corrections are editable.",
+      "loading": "Loading movers…",
+      "name": "Carrier",
+      "usdot": "USDOT",
+      "location": "Location",
+      "hhg": "HHG",
+      "fleet": "Fleet",
+      "complaints": "Complaints (2y)",
+      "safety": "Safety rating",
+      "dataAsOf": "Data as of",
+      "status": "Status",
+      "actions": "Actions",
+      "hhgYes": "Authorized",
+      "hhgNo": "No",
+      "edit": "Edit mover",
+      "activateHint": "Click to activate",
+      "deactivateHint": "Click to deactivate",
+      "pageOf": "Page {page} of {totalPages}",
+      "previousPage": "Previous page",
+      "nextPage": "Next page"
+    },
+    "empty": {
+      "title": "The mover catalog is empty",
+      "description": "Catalog is filled by scripts/etl-fmcsa-movers.mjs — download the FMCSA census CSV and run it; see script header.",
+      "filteredTitle": "No movers match these filters",
+      "filteredDescription": "The catalog has rows — they are just filtered out. Adjust or clear the filters.",
+      "clearFilters": "Clear filters"
+    },
+    "drawer": {
+      "title": "Edit mover",
+      "subtitle": "FMCSA identity fields are read-only — rerun the ETL to refresh them. Only activation and verified corrections are editable.",
+      "close": "Close",
+      "registry": "FMCSA registry snapshot",
+      "usdot": "USDOT number",
+      "legalName": "Legal name",
+      "dbaName": "DBA name",
+      "location": "Location",
+      "phone": "Phone",
+      "fleetSize": "Fleet size",
+      "hhgAuthorization": "Household-goods authorization",
+      "dataAsOf": "Data as of",
+      "corrections": "Corrections",
+      "active": "Active in catalog",
+      "activeHint": "Inactive movers stay in the catalog (links never 404) but stop rendering on public surfaces.",
+      "complaintCount2y": "Complaints (trailing 2 years)",
+      "complaintHint": "The NCCDB has no public bulk feed, so the ETL leaves this at 0 — only enter a count you verified on protectyourmove.gov.",
+      "safetyRating": "FMCSA safety rating",
+      "safetyNone": "Not rated",
+      "invalidComplaints": "Complaint count must be a whole number of 0 or more.",
+      "cancel": "Cancel",
+      "save": "Save corrections"
+    },
+    "stepUp": {
+      "saveTitle": "Save mover corrections",
+      "saveDescription": "Saving rewrites the public record for \"{name}\" — the complaint count and safety rating render on public mover surfaces. Enter your admin password and MFA code or backup code to confirm.",
+      "saveConfirm": "Save corrections",
+      "activateTitle": "Activate mover",
+      "activateDescription": "Activating \"{name}\" returns it to public mover surfaces. Enter your admin password and MFA code or backup code to confirm.",
+      "activateConfirm": "Activate",
+      "deactivateTitle": "Deactivate mover",
+      "deactivateDescription": "Deactivating \"{name}\" removes it from public mover surfaces (the row is kept so links never 404). Enter your admin password and MFA code or backup code to confirm.",
+      "deactivateConfirm": "Deactivate"
+    },
+    "toast": {
+      "updated": "Mover updated",
+      "loadFailed": "Failed to load movers.",
+      "actionFailed": "Action failed."
     }
   },
   "theme": {

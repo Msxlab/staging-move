@@ -999,7 +999,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     key: "RECOMMENDATION_SCORING_WEIGHTS",
     label: "Recommendation Scoring Weights",
     description:
-      "Optional JSON overriding the provider recommendation engine's scoring weights (keys: urgencyTier, coverageScore, addressSensitivePenalty, essentialCategories). Leave blank to use built-in defaults. Lets product tune ranking without a redeploy.",
+      "Optional JSON overriding the provider recommendation engine's scoring weights (override groups: urgencyTier, coverageScore, addressSensitivePenalty, essentialCategories, signalBoosts). signalBoosts tunes the additive onboarding-signal boosts — e.g. {\"signalBoosts\":{\"petTypesListed\":6}} raises the boost for users with listed pets. Leave blank to use built-in defaults. Lets product tune ranking without a redeploy.",
     scope: "WEB",
     category: "APP",
     isSecret: false,

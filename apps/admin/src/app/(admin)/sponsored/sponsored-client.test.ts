@@ -56,6 +56,27 @@ describe("sponsored placements admin page", () => {
     expect(es.sponsored.policyBanner).toContain("FTC");
   });
 
+  it("shows an honest SPONSORED_ENABLED status line in the policy banner", () => {
+    // Resolved server-side via the admin runtime-config read path (the
+    // /api/runtime-config catalog is SUPER_ADMIN-only; this page is VIEWER).
+    expect(pageSource).toContain('getAdminRuntimeConfigValue("SPONSORED_ENABLED")');
+    expect(pageSource).toContain("sponsoredEnabled={sponsoredEnabled}");
+    // ON renders the mint (sage) pill; OFF renders the amber warning + a
+    // link to Runtime Config where the flag lives.
+    expect(clientSource).toContain('t("flag.on")');
+    expect(clientSource).toContain('t("flag.off")');
+    expect(clientSource).toContain('t("flag.offHint")');
+    expect(clientSource).toContain('href="/runtime-config"');
+    expect(clientSource).toContain("text-tone-sage-fg");
+    expect(clientSource).toContain("text-tone-honey-fg");
+    // A failed flag read degrades to no status line — never a wrong claim.
+    expect(clientSource).toContain("sponsoredEnabled === null ? null :");
+    // The OFF copy is explicit that nothing renders publicly.
+    expect(en.sponsored.flag.offHint).toContain("placements will not render");
+    expect(en.sponsored.flag.offHint).toContain("SPONSORED_ENABLED");
+    expect(es.sponsored.flag.offHint).toContain("SPONSORED_ENABLED");
+  });
+
   it("keeps en/es sponsored catalogs in key parity", () => {
     const enKeys = leafPaths((en as any).sponsored).sort();
     const esKeys = leafPaths((es as any).sponsored).sort();

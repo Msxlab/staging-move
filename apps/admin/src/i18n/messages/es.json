@@ -47,6 +47,7 @@
     "acquisitionCampaigns": "Campañas de adquisición",
     "billing": "Facturación",
     "providers": "Proveedores",
+    "movers": "Empresas de mudanza",
     "sponsored": "Patrocinados",
     "providerGovernance": "Gobernanza de proveedores",
     "stateRules": "Reglas estatales",
@@ -256,6 +257,13 @@
     "title": "Espacios patrocinados",
     "subtitle": "Espacios publicitarios etiquetados en superficies de directorio — lista de mudanzas y catálogo de proveedores.",
     "policyBanner": "Los espacios patrocinados se muestran en un bloque separado y etiquetado, nunca dentro del ranking orgánico. La bandera de ejecución SPONSORED_ENABLED debe estar activada; el etiquetado claro y visible exigido por la FTC es obligatorio.",
+    "flag": {
+      "on": "SPONSORED_ENABLED está ACTIVADA",
+      "onHint": "Los espacios en vivo se muestran públicamente dentro de su ventana de fechas.",
+      "off": "SPONSORED_ENABLED está DESACTIVADA",
+      "offHint": "los espacios no se mostrarán — activa SPONSORED_ENABLED en Runtime Config.",
+      "openRuntimeConfig": "Abrir Runtime Config"
+    },
     "newPlacement": "Nuevo espacio",
     "filters": {
       "statusLabel": "Filtrar por estado",
@@ -354,6 +362,112 @@
       "loadFailed": "No se pudieron cargar los espacios.",
       "actionFailed": "La acción falló.",
       "hasTraffic": "No se puede eliminar un espacio con impresiones o clics registrados — desactívalo en su lugar."
+    }
+  },
+  "movers": {
+    "eyebrow": "Contenido",
+    "title": "Empresas de mudanza con licencia",
+    "subtitle": "Catálogo FMCSA de transportistas de enseres domésticos — las filas las llena el ETL; aquí solo se editan correcciones.",
+    "etlNote": "El catálogo se llena con scripts/etl-fmcsa-movers.mjs — descarga el CSV del censo FMCSA y ejecútalo; consulta el encabezado del script. Los recuentos de quejas no son públicos en bloque (NCCDB), así que complaintCount2y queda en 0 salvo corrección por fila verificada en protectyourmove.gov.",
+    "freshness": {
+      "totalRows": "Filas del catálogo",
+      "activeRows": "Activas",
+      "newestDataAsOf": "Datos más recientes",
+      "statesCovered": "Estados cubiertos",
+      "never": "Sin importaciones aún",
+      "stale": "Desactualizado",
+      "staleHint": "La instantánea más reciente tiene más de 90 días — descarga un CSV del censo FMCSA nuevo y vuelve a ejecutar el ETL."
+    },
+    "filters": {
+      "searchLabel": "Buscar empresas",
+      "searchPlaceholder": "Número USDOT o nombre…",
+      "stateLabel": "Filtrar por estado",
+      "allStates": "Todos los estados",
+      "statusLabel": "Filtrar por estatus",
+      "allStatuses": "Todos los estatus",
+      "hhgLabel": "Filtrar por autorización de enseres domésticos",
+      "allHhg": "HHG: todas",
+      "hhgAuthorized": "HHG autorizada",
+      "hhgNotAuthorized": "Sin autorización HHG"
+    },
+    "status": {
+      "active": "Activa",
+      "inactive": "Inactiva"
+    },
+    "safety": {
+      "satisfactory": "Satisfactoria",
+      "conditional": "Condicional",
+      "unsatisfactory": "Insatisfactoria"
+    },
+    "table": {
+      "title": "Empresas",
+      "caption": "Los campos de identidad provienen de la instantánea del censo FMCSA y aquí son de solo lectura — solo se editan el interruptor de activación y las correcciones verificadas.",
+      "loading": "Cargando empresas…",
+      "name": "Transportista",
+      "usdot": "USDOT",
+      "location": "Ubicación",
+      "hhg": "HHG",
+      "fleet": "Flota",
+      "complaints": "Quejas (2 años)",
+      "safety": "Calificación de seguridad",
+      "dataAsOf": "Datos al",
+      "status": "Estatus",
+      "actions": "Acciones",
+      "hhgYes": "Autorizada",
+      "hhgNo": "No",
+      "edit": "Editar empresa",
+      "activateHint": "Haz clic para activar",
+      "deactivateHint": "Haz clic para desactivar",
+      "pageOf": "Página {page} de {totalPages}",
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente"
+    },
+    "empty": {
+      "title": "El catálogo de empresas está vacío",
+      "description": "El catálogo se llena con scripts/etl-fmcsa-movers.mjs — descarga el CSV del censo FMCSA y ejecútalo; consulta el encabezado del script.",
+      "filteredTitle": "Ninguna empresa coincide con estos filtros",
+      "filteredDescription": "El catálogo tiene filas — solo están filtradas. Ajusta o limpia los filtros.",
+      "clearFilters": "Limpiar filtros"
+    },
+    "drawer": {
+      "title": "Editar empresa",
+      "subtitle": "Los campos de identidad FMCSA son de solo lectura — vuelve a ejecutar el ETL para actualizarlos. Solo se editan la activación y las correcciones verificadas.",
+      "close": "Cerrar",
+      "registry": "Instantánea del registro FMCSA",
+      "usdot": "Número USDOT",
+      "legalName": "Nombre legal",
+      "dbaName": "Nombre comercial (DBA)",
+      "location": "Ubicación",
+      "phone": "Teléfono",
+      "fleetSize": "Tamaño de flota",
+      "hhgAuthorization": "Autorización de enseres domésticos",
+      "dataAsOf": "Datos al",
+      "corrections": "Correcciones",
+      "active": "Activa en el catálogo",
+      "activeHint": "Las empresas inactivas permanecen en el catálogo (los enlaces nunca dan 404) pero dejan de mostrarse en superficies públicas.",
+      "complaintCount2y": "Quejas (últimos 2 años)",
+      "complaintHint": "La NCCDB no tiene un feed público en bloque, así que el ETL deja esto en 0 — ingresa solo un recuento que hayas verificado en protectyourmove.gov.",
+      "safetyRating": "Calificación de seguridad FMCSA",
+      "safetyNone": "Sin calificación",
+      "invalidComplaints": "El recuento de quejas debe ser un número entero de 0 o más.",
+      "cancel": "Cancelar",
+      "save": "Guardar correcciones"
+    },
+    "stepUp": {
+      "saveTitle": "Guardar correcciones de la empresa",
+      "saveDescription": "Guardar reescribe el registro público de \"{name}\" — el recuento de quejas y la calificación de seguridad se muestran en superficies públicas. Ingresa tu contraseña de administrador y código MFA o código de respaldo para confirmar.",
+      "saveConfirm": "Guardar correcciones",
+      "activateTitle": "Activar empresa",
+      "activateDescription": "Activar \"{name}\" la devuelve a las superficies públicas de mudanzas. Ingresa tu contraseña de administrador y código MFA o código de respaldo para confirmar.",
+      "activateConfirm": "Activar",
+      "deactivateTitle": "Desactivar empresa",
+      "deactivateDescription": "Desactivar \"{name}\" la retira de las superficies públicas de mudanzas (la fila se conserva para que los enlaces nunca den 404). Ingresa tu contraseña de administrador y código MFA o código de respaldo para confirmar.",
+      "deactivateConfirm": "Desactivar"
+    },
+    "toast": {
+      "updated": "Empresa actualizada",
+      "loadFailed": "No se pudieron cargar las empresas.",
+      "actionFailed": "La acción falló."
     }
   },
   "theme": {

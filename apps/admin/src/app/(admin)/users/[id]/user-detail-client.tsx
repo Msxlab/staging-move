@@ -93,8 +93,7 @@ export default function UserDetailClient() {
   const [saving, setSaving] = useState(false);
   const [showProfileConfirm, setShowProfileConfirm] = useState(false);
   const [profileConfirmError, setProfileConfirmError] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", plan: "" });
-  const [changingPlan, setChangingPlan] = useState(false);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "" });
   const [premiumForm, setPremiumForm] = useState({
     subscriptionStatus: "", accessType: "", premiumUntil: "", trialEndsAt: "", freeAccessEndsAt: "", premiumNote: "", cancelAtPeriodEnd: false, autoRenew: false,
   });
@@ -124,9 +123,7 @@ export default function UserDetailClient() {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
-  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [pendingSubscriptionAction, setPendingSubscriptionAction] = useState<"cancel_trial" | "cancel_renewal" | "resume_renewal" | null>(null);
-  const [planConfirmError, setPlanConfirmError] = useState<string | null>(null);
   const [subscriptionActionError, setSubscriptionActionError] = useState<string | null>(null);
   const [subscriptionActionBusy, setSubscriptionActionBusy] = useState(false);
   const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
@@ -153,7 +150,6 @@ export default function UserDetailClient() {
   const [loginSessionRevokeRequiresMfa, setLoginSessionRevokeRequiresMfa] = useState(false);
   const [deleteRequiresMfa, setDeleteRequiresMfa] = useState(false);
   const [restoreRequiresMfa, setRestoreRequiresMfa] = useState(false);
-  const [planRequiresMfa, setPlanRequiresMfa] = useState(false);
   const [subscriptionActionRequiresMfa, setSubscriptionActionRequiresMfa] = useState(false);
   const [premiumRequiresMfa, setPremiumRequiresMfa] = useState(false);
 
@@ -164,13 +160,41 @@ export default function UserDetailClient() {
       .catch(() => null);
   }, []);
 
+  // Hydrates every piece of state that mirrors the /api/users/:id user
+  // payload — header plan badge, stat cards, name edit form, premium raw
+  // fields, grant-panel plan select. Used by the initial load AND by
+  // post-mutation refetches (Grant/Revoke Premium) so nothing the header
+  // binds to can go stale after a write.
+  function applyUserData(data: any) {
+    if (!data?.user) return;
+    setUser(data.user);
+    setEditForm({
+      firstName: data.user.firstName || "",
+      lastName: data.user.lastName || "",
+    });
+    const sub = data.user.subscription || {};
+    setPremiumForm({
+      subscriptionStatus: sub.status || "TRIALING",
+      accessType: sub.accessType || "",
+      premiumUntil: sub.premiumUntil ? new Date(sub.premiumUntil).toISOString().slice(0, 10) : "",
+      trialEndsAt: sub.trialEndsAt ? new Date(sub.trialEndsAt).toISOString().slice(0, 10) : "",
+      freeAccessEndsAt: sub.freeAccessEndsAt ? new Date(sub.freeAccessEndsAt).toISOString().slice(0, 10) : "",
+      premiumNote: sub.premiumNote || "",
+      cancelAtPeriodEnd: Boolean(sub.cancelAtPeriodEnd),
+      autoRenew: Boolean(sub.autoRenew),
+    });
+    if (GRANT_PLANS.some((plan) => plan.value === sub.plan)) {
+      setGrantPlan(sub.plan as GrantPlan);
+    }
+  }
+
   useEffect(() => {
     async function load() {
       try {
         const res = await fetch(`/api/users/${params.id}`);
         if (!res.ok) { toast.error("User not found"); window.location.assign("/users"); return; }
         const data = await res.json();
-        setUser(data.user);
+        applyUserData(data);
         setAuditLogs(data.auditLogs || []);
         setSessions(data.sessions || []);
         setLoginSessions(data.loginSessions || []);
@@ -180,31 +204,11 @@ export default function UserDetailClient() {
         setSupportTickets(data.user?.supportTickets || []);
         setGdprRequests(data.gdprRequests || []);
         setAdminNotes(data.adminNotes || []);
-        if (data.user) {
-          setEditForm({
-            firstName: data.user.firstName || "",
-            lastName: data.user.lastName || "",
-            plan: data.user.subscription?.plan || "FREE_TRIAL",
-          });
-          setPremiumForm({
-            subscriptionStatus: data.user.subscription?.status || "TRIALING",
-            accessType: data.user.subscription?.accessType || "",
-            premiumUntil: data.user.subscription?.premiumUntil ? new Date(data.user.subscription.premiumUntil).toISOString().slice(0, 10) : "",
-            trialEndsAt: data.user.subscription?.trialEndsAt ? new Date(data.user.subscription.trialEndsAt).toISOString().slice(0, 10) : "",
-            freeAccessEndsAt: data.user.subscription?.freeAccessEndsAt ? new Date(data.user.subscription.freeAccessEndsAt).toISOString().slice(0, 10) : "",
-            premiumNote: data.user.subscription?.premiumNote || "",
-            cancelAtPeriodEnd: Boolean(data.user.subscription?.cancelAtPeriodEnd),
-            autoRenew: Boolean(data.user.subscription?.autoRenew),
-          });
-          const currentPlan = data.user.subscription?.plan;
-          if (GRANT_PLANS.some((plan) => plan.value === currentPlan)) {
-            setGrantPlan(currentPlan as GrantPlan);
-          }
-        }
       } catch { toast.error("Failed to load user"); }
       finally { setLoading(false); }
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   async function handleDelete() {
@@ -395,36 +399,6 @@ export default function UserDetailClient() {
     }
   }
 
-  async function confirmPlanChange(_confirmPassword: string, stepUp: StepUpValues) {
-    if (!user || !pendingPlan) return;
-    setChangingPlan(true);
-    setPlanConfirmError(null);
-    try {
-      const res = await fetch(`/api/users/${params.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: pendingPlan, ...stepUp }),
-      });
-      if (res.ok) {
-        setEditForm({ ...editForm, plan: pendingPlan });
-        setUser({ ...user, subscription: { ...user.subscription, plan: pendingPlan } });
-        toast.success(`Plan changed to ${pendingPlan}`);
-        setPendingPlan(null);
-        setPlanRequiresMfa(false);
-      } else {
-        const { message, requiresMfa } = await readAdminApiError(res, "Failed to change plan.");
-        setPlanConfirmError(message);
-        setPlanRequiresMfa(requiresMfa);
-        toast.error(message);
-      }
-    } catch {
-      setPlanConfirmError("Failed to change plan.");
-      toast.error("Failed to change plan.");
-    } finally {
-      setChangingPlan(false);
-    }
-  }
-
   async function confirmSubscriptionAction(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user || !pendingSubscriptionAction) return;
     setSubscriptionActionBusy(true);
@@ -589,24 +563,16 @@ export default function UserDetailClient() {
         toast.error(message);
         return;
       }
-      // Refetch the user so the Effective Access summary, raw subscription
-      // row, and the Advanced form all reflect the post-write state from
-      // a single source of truth.
-      const refetch = await fetch(`/api/users/${params.id}`);
-      if (refetch.ok) {
-        const data = await refetch.json();
-        setUser(data.user);
-        const sub = data.user?.subscription || {};
-        setPremiumForm({
-          subscriptionStatus: sub.status || "",
-          accessType: sub.accessType || "",
-          premiumUntil: sub.premiumUntil ? new Date(sub.premiumUntil).toISOString().slice(0, 10) : "",
-          trialEndsAt: sub.trialEndsAt ? new Date(sub.trialEndsAt).toISOString().slice(0, 10) : "",
-          freeAccessEndsAt: sub.freeAccessEndsAt ? new Date(sub.freeAccessEndsAt).toISOString().slice(0, 10) : "",
-          premiumNote: sub.premiumNote || "",
-          cancelAtPeriodEnd: Boolean(sub.cancelAtPeriodEnd),
-          autoRenew: Boolean(sub.autoRenew),
-        });
+      // Refetch the user so the header plan badge, Effective Access summary,
+      // raw subscription row, the Advanced form, and the grant panel all
+      // reflect the post-write state from a single source of truth.
+      const refetch = await fetch(`/api/users/${params.id}`).catch(() => null);
+      if (refetch?.ok) {
+        applyUserData(await refetch.json());
+      } else {
+        // The write succeeded but the refresh didn't — say so instead of
+        // silently leaving stale plan/status data on screen.
+        toast.warning("Change saved, but the page failed to refresh — reload to see the latest state.");
       }
       setPendingGrantAction(null);
       setGrantActionRequiresMfa(false);
@@ -618,6 +584,20 @@ export default function UserDetailClient() {
     } finally {
       setGrantActionBusy(false);
     }
+  }
+
+  // The header plan badge is read-only; clicking it jumps to the Billing
+  // tab's Grant Premium panel — the entitlement-aware flow the backend
+  // actually honors. (A bare Subscription.plan PATCH is ignored by the
+  // entitlement resolver for free users and silently desyncs Stripe payers,
+  // which is why the header no longer offers a plan <select>.)
+  function goToGrantPremiumPanel() {
+    setActiveTab("billing");
+    // The billing section is display:none until the tab state commits, so
+    // scroll on the next tick after React re-renders it visible.
+    window.setTimeout(() => {
+      document.getElementById("grant-premium-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
   }
 
   async function confirmProfileUpdate(_confirmPassword: string, stepUp: StepUpValues) {
@@ -891,26 +871,32 @@ export default function UserDetailClient() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Plan Change */}
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={editForm.plan}
-              onChange={(e) => {
-                const newPlan = e.target.value;
-                if (newPlan === editForm.plan) return;
-                setPendingPlan(newPlan);
-                setPlanConfirmError(null);
-              }}
-              disabled={changingPlan || isDeleted}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-            >
-              <option value="FREE_TRIAL">Free Trial</option>
-              <option value="INDIVIDUAL">Individual</option>
-              <option value="FAMILY">Family</option>
-              <option value="PRO">Pro</option>
-            </select>
-          </div>
+          {/* Effective plan — READ-ONLY. The old header <select> PATCHed only
+              Subscription.plan, which the entitlement resolver ignores for
+              free users and which silently desyncs Stripe payers. Plan
+              changes go through the Billing tab's Grant Premium panel. */}
+          {(() => {
+            const eff = getEffectiveEntitlement(user.subscription || null);
+            const statusPill = eff.hasPremium
+              ? "bg-tone-sage-bg text-tone-sage-fg"
+              : eff.hasAccess
+                ? "bg-muted text-muted-foreground"
+                : "bg-tone-honey-bg text-tone-honey-fg";
+            return (
+              <button
+                type="button"
+                onClick={goToGrantPremiumPanel}
+                title="Effective plan (read-only). Opens the Billing tab's Grant Premium panel — the supported way to change access."
+                className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-accent"
+              >
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{getBillingPlanDefinition(eff.effectivePlan).displayName}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusPill}`}>
+                  {effectiveStatusLabel(eff.effectiveStatus)}
+                </span>
+              </button>
+            );
+          })()}
           {isDeleted ? (
             currentAdminRole === "SUPER_ADMIN" ? (
               <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
@@ -1405,7 +1391,7 @@ export default function UserDetailClient() {
           })();
           const previewLabel = previewIso ? new Date(previewIso + "T00:00:00").toLocaleDateString() : "—";
           return (
-            <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <div id="grant-premium-panel" className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Grant Premium Access</h3>
@@ -2220,23 +2206,6 @@ export default function UserDetailClient() {
           }
         }}
         onConfirm={confirmRestore}
-      />
-      <PasswordConfirmModal
-        open={Boolean(pendingPlan)}
-        title="Change user plan"
-        description={`Enter your admin password and MFA code or backup code to change ${maskEmail(user.email)} from ${editForm.plan || "current plan"} to ${pendingPlan || "the selected plan"}.`}
-        confirmLabel="Change Plan"
-        busy={changingPlan}
-        error={planConfirmError}
-        requiresMfa={planRequiresMfa}
-        onClose={() => {
-          if (!changingPlan) {
-            setPendingPlan(null);
-            setPlanConfirmError(null);
-            setPlanRequiresMfa(false);
-          }
-        }}
-        onConfirm={confirmPlanChange}
       />
       <PasswordConfirmModal
         open={Boolean(pendingSubscriptionAction)}

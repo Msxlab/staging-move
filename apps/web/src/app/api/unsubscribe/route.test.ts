@@ -95,6 +95,50 @@ describe("POST /api/unsubscribe", () => {
     expect(prefMock.upsert).toHaveBeenCalled();
   });
 
+  it("303-redirects the page confirm form back to the done view", async () => {
+    const { POST, signUnsubscribeToken } = await loadModule();
+    const token = signUnsubscribeToken("user_1");
+
+    const formBody = new URLSearchParams();
+    formBody.set("t", token);
+    formBody.set("k", "marketing");
+    formBody.set("redirect", "1");
+    const request = new NextRequest("https://locateflow.com/api/unsubscribe", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: formBody.toString(),
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/unsubscribe");
+    expect(location.searchParams.get("done")).toBe("1");
+    expect(location.searchParams.get("t")).toBe(token);
+    expect(location.searchParams.get("k")).toBe("marketing");
+    // The opt-out still happened before the redirect.
+    expect(prefMock.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the plain-text contract for RFC 8058 one-click even with a redirect flag", async () => {
+    const { POST, signUnsubscribeToken } = await loadModule();
+    const token = signUnsubscribeToken("user_1");
+
+    const formBody = new URLSearchParams();
+    formBody.set("List-Unsubscribe", "One-Click");
+    formBody.set("redirect", "1");
+    const request = new NextRequest(`https://locateflow.com/api/unsubscribe?t=${token}`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: formBody.toString(),
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("Unsubscribed");
+    expect(prefMock.upsert).toHaveBeenCalled();
+  });
+
   it("rejects an invalid token", async () => {
     const { POST } = await loadModule();
     const request = new NextRequest("https://locateflow.com/api/unsubscribe?t=garbage", {

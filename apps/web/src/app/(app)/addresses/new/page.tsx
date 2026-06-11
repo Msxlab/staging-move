@@ -11,6 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata } from "@/lib/shared-address-autocomplete";
+import {
+  ServiceLimitUpsell,
+  type ServiceLimitDetails,
+} from "@/components/shared/service-limit-upsell";
+import { resolveAddressCreateError } from "./address-create-error";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -66,6 +71,9 @@ export default function NewAddressPage() {
   });
 
   const [error, setError] = useState<string | null>(null);
+  // Plan-gate failures render the same polished upsell modal the services
+  // flow uses (friendly copy + Upgrade CTA) instead of a raw red error box.
+  const [addressLimit, setAddressLimit] = useState<ServiceLimitDetails | null>(null);
   const [uspsSuggestion, setUspsSuggestion] = useState<{
     street1: string; street2: string | null; city: string; state: string; zip: string; zipPlus4: string | null;
   } | null>(null);
@@ -80,12 +88,20 @@ export default function NewAddressPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create address");
+        // Body parsing is defensive — a non-JSON error response still
+        // degrades to the friendly fallback message, never a crash.
+        const data = await res.json().catch(() => null);
+        const resolution = resolveAddressCreateError(res.status, data, "Failed to create address");
+        if (resolution.kind === "limit") {
+          setAddressLimit(resolution.details);
+          setLoading(false);
+          return;
+        }
+        throw new Error(resolution.message);
       }
       router.push("/addresses");
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.message || "Failed to create address");
       setLoading(false);
     }
   };
@@ -133,6 +149,12 @@ export default function NewAddressPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <ServiceLimitUpsell
+        open={Boolean(addressLimit)}
+        details={addressLimit}
+        onClose={() => setAddressLimit(null)}
+      />
+
       <div className="flex items-center gap-4">
         <Link href="/addresses">
           <Button variant="ghost" size="icon">

@@ -17,6 +17,12 @@
  * Single-tick jobs that can pass `limit: 1`; heavier per-second jobs
  * (e.g. webhooks reconciliation) can pass `limit: 60`.
  *
+ * Degradation contract: if the distributed limiter (Upstash) is not
+ * configured at all, the guard proceeds WITHOUT rate limiting (with a
+ * warn) — CRON_SECRET auth alone still gates the route, and failing
+ * closed there would silently 429 every scheduled job. When Upstash IS
+ * configured but erroring, the limiter fails closed (429) as before.
+ *
  * Use this in cron route handlers BEFORE doing any DB or email work:
  *
  *   const guard = await guardCronRequest(request, "blog-publish");
@@ -24,7 +30,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { rateLimit } from "@/lib/rate-limit";
+import { getLimiterHealth, rateLimit } from "@/lib/rate-limit";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 interface CronGuardOptions {
@@ -55,6 +61,20 @@ export async function guardCronRequest(
       ok: false,
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
+  }
+
+  // Single-point-of-silence fix: when the distributed limiter is not
+  // configured AT ALL (no Upstash URL/token), the old fail-closed path
+  // turned every authenticated cron request into a 429 — no scheduled
+  // job ran, silently. The CRON_SECRET check above is the primary gate;
+  // the rate limit is only defense-in-depth against a LEAKED secret, so
+  // an unconfigured limiter must not take the whole cron tier down.
+  // Fail-closed is kept below for actual Redis errors when configured.
+  if (!getLimiterHealth().distributedLimiterConfigured) {
+    console.warn(
+      `[CRON-GUARD] Upstash rate limiter not configured — running "${routeName}" with CRON_SECRET auth only (no rate limit)`,
+    );
+    return { ok: true };
   }
 
   // Per-route window. The key is the route slug + a coarse caller bucket
