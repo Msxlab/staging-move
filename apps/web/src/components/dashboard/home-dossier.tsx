@@ -17,6 +17,7 @@ import {
   Sparkles,
   Waves,
   Wind,
+  Zap,
 } from "lucide-react";
 import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-ambient";
 
@@ -31,8 +32,11 @@ import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-
  *   3. Moving-day weather (NWS forecast; only when the move is ≤7 days out),
  *   4. Natural hazard profile (FEMA National Risk Index — relative, tract-level),
  *   5. EPA radon zone by county (+ mandatory "test regardless of zone" fine print),
- *   6. Drinking-water system record (EPA SDWIS health-based violations, 5 yrs), and
- *   7. Current air quality (AirNow AQI snapshot; absent when not configured).
+ *   6. Drinking-water system record (EPA SDWIS health-based violations, 5 yrs),
+ *   7. Current air quality (AirNow AQI snapshot; absent when not configured),
+ *   8. HUD housing context (FMR + income limits),
+ *   9. public active EV charging near the destination (NLR/AFDC), and
+ *   10. Pro-only neighborhood intelligence.
  *
  * GRACEFUL DEGRADATION (same contract style as apps/web/src/lib/fcc-isp.ts):
  * the card consumes GET /api/addresses/{id}/dossier, whose sections each carry
@@ -49,6 +53,8 @@ import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-
 export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
+export type DossierHousingStatus = "ok" | "disabled" | "not_configured" | "no_location" | "no_zip" | "not_found" | "error";
+export type DossierEvChargingStatus = "ok" | "disabled" | "not_configured" | "no_location" | "error";
 /**
  * Neighborhood is a Pro-only section that lives ABOVE the rest of the dossier
  * gate (Individual+ unlocks the other seven; Pro adds this one). Its status
@@ -122,6 +128,43 @@ export interface HomeDossierResponse {
   radon?: { status: DossierSectionStatus; zone: 1 | 2 | 3 | null };
   water?: { status: DossierSectionStatus; systemName: string | null; violations5y: number | null };
   air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
+  housing?: {
+    status: DossierHousingStatus;
+    zip: string | null;
+    countyName: string | null;
+    metroName: string | null;
+    areaName: string | null;
+    fairMarketRent: {
+      year: number | null;
+      efficiency: number | null;
+      oneBedroom: number | null;
+      twoBedroom: number | null;
+      threeBedroom: number | null;
+      fourBedroom: number | null;
+      zipSpecific: boolean;
+    } | null;
+    incomeLimits: {
+      year: number | null;
+      medianIncome: number | null;
+      extremelyLowIncome4Person: number | null;
+      veryLowIncome4Person: number | null;
+      lowIncome4Person: number | null;
+    } | null;
+    caveat: string | null;
+  };
+  evCharging?: {
+    status: DossierEvChargingStatus;
+    radiusMiles: number;
+    totalResults: number | null;
+    stationCount: number;
+    nearestDistanceMiles: number | null;
+    dcFastPortCount: number;
+    level2PortCount: number;
+    teslaCompatibleCount: number;
+    ccsCompatibleCount: number;
+    stations: Array<{ name: string; distanceMiles: number | null; city: string | null; state: string | null }>;
+    caveat: string | null;
+  };
   /**
    * Neighborhood (Pro-only) — area medians from the Census/ACS for the
    * surrounding tract, NOT a valuation of this specific home. `status:
@@ -171,6 +214,23 @@ export interface HomeDossierView {
   radon: { zone: 1 | 2 | 3 } | null;
   water: { systemName: string; violations5y: number } | null;
   air: { aqi: number; category: string | null } | null;
+  housing: {
+    areaName: string | null;
+    countyName: string | null;
+    zip: string | null;
+    twoBedroomFmr: number | null;
+    fmrYear: number | null;
+    medianIncome: number | null;
+    lowIncome4Person: number | null;
+    incomeYear: number | null;
+  } | null;
+  evCharging: {
+    radiusMiles: number;
+    stationCount: number;
+    nearestDistanceMiles: number | null;
+    dcFastPortCount: number;
+    level2PortCount: number;
+  } | null;
   /**
    * Neighborhood (Pro). `locked` → render the in-card Pro teaser row;
    * `data` → render the area-median stat rows; null → hide the row entirely.
@@ -201,6 +261,8 @@ const HIDDEN_VIEW: HomeDossierView = {
   radon: null,
   water: null,
   air: null,
+  housing: null,
+  evCharging: null,
   neighborhood: null,
   showLocationHint: false,
 };
@@ -212,7 +274,7 @@ const HIDDEN_VIEW: HomeDossierView = {
  * "too_far" deliberately stays OUT — the forecast becomes available as the
  * move approaches, so the card may still show the location hint.
  */
-const DEGRADED_STATUSES = new Set(["no_location", "error", "not_configured"]);
+const DEGRADED_STATUSES = new Set(["no_location", "error", "not_configured", "disabled", "no_zip", "not_found"]);
 
 /**
  * Decide what (if anything) the card shows. Defensive against partial/missing
@@ -228,6 +290,9 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
   const statuses: string[] = [data.flood.status, data.school.status, data.weather.status];
   // Extended sections are optional — older payloads simply don't vote.
   for (const status of [data.hazards?.status, data.radon?.status, data.water?.status, data.air?.status]) {
+    if (typeof status === "string") statuses.push(status);
+  }
+  for (const status of [data.housing?.status, data.evCharging?.status]) {
     if (typeof status === "string") statuses.push(status);
   }
   // Neighborhood (Pro) is derived BEFORE the whole-card-hide check: it is
@@ -325,18 +390,24 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
         }
       : null;
 
-  // (8) Neighborhood (Pro) is already derived above the whole-card-hide check.
+  // (8) HUD housing context - area-level FMR / income limits.
+  const housing = deriveHousing(data.housing);
+
+  // (9) NLR/AFDC public EV charging around the destination.
+  const evCharging = deriveEvCharging(data.evCharging);
+
+  // (10) Neighborhood (Pro) is already derived above the whole-card-hide check.
 
   // Honest hint when a section couldn't run for lack of a precise location
   // (e.g. primary address without lat/lng while weather is merely "too_far").
   const showLocationHint = statuses.some((s) => s === "no_location");
 
   const visible = Boolean(
-    flood || school || weather || hazards || radon || water || air || neighborhood || showLocationHint,
+    flood || school || weather || hazards || radon || water || air || housing || evCharging || neighborhood || showLocationHint,
   );
   if (!visible) return HIDDEN_VIEW;
 
-  return { visible, flood, school, weather, hazards, radon, water, air, neighborhood, showLocationHint };
+  return { visible, flood, school, weather, hazards, radon, water, air, housing, evCharging, neighborhood, showLocationHint };
 }
 
 /** Positive whole-dollar/whole-number figure; null for absent/invalid/≤0. */
@@ -417,6 +488,70 @@ export function deriveNeighborhood(
     walkBand,
     schools,
   };
+}
+
+export function deriveHousing(
+  section: HomeDossierResponse["housing"],
+): HomeDossierView["housing"] {
+  if (!section || section.status !== "ok") return null;
+  const twoBedroomFmr = posInt(section.fairMarketRent?.twoBedroom);
+  const medianIncome = posInt(section.incomeLimits?.medianIncome);
+  const lowIncome4Person = posInt(section.incomeLimits?.lowIncome4Person);
+  const areaName =
+    typeof section.areaName === "string" && section.areaName.trim()
+      ? section.areaName.trim()
+      : typeof section.metroName === "string" && section.metroName.trim()
+        ? section.metroName.trim()
+        : null;
+  const countyName =
+    typeof section.countyName === "string" && section.countyName.trim()
+      ? section.countyName.trim()
+      : null;
+  const zip =
+    typeof section.zip === "string" && section.zip.trim()
+      ? section.zip.trim()
+      : null;
+
+  if (!twoBedroomFmr && !medianIncome && !lowIncome4Person && !areaName && !countyName) return null;
+
+  return {
+    areaName,
+    countyName,
+    zip,
+    twoBedroomFmr,
+    fmrYear: posInt(section.fairMarketRent?.year),
+    medianIncome,
+    lowIncome4Person,
+    incomeYear: posInt(section.incomeLimits?.year),
+  };
+}
+
+export function deriveEvCharging(
+  section: HomeDossierResponse["evCharging"],
+): HomeDossierView["evCharging"] {
+  if (!section || section.status !== "ok") return null;
+  const radiusMiles =
+    typeof section.radiusMiles === "number" && Number.isFinite(section.radiusMiles) && section.radiusMiles > 0
+      ? Math.round(section.radiusMiles)
+      : 10;
+  const stationCount =
+    typeof section.stationCount === "number" && Number.isFinite(section.stationCount) && section.stationCount >= 0
+      ? Math.round(section.stationCount)
+      : 0;
+  const nearestDistanceMiles =
+    typeof section.nearestDistanceMiles === "number" && Number.isFinite(section.nearestDistanceMiles) && section.nearestDistanceMiles >= 0
+      ? Math.round(section.nearestDistanceMiles * 10) / 10
+      : null;
+  const dcFastPortCount =
+    typeof section.dcFastPortCount === "number" && Number.isFinite(section.dcFastPortCount) && section.dcFastPortCount >= 0
+      ? Math.round(section.dcFastPortCount)
+      : 0;
+  const level2PortCount =
+    typeof section.level2PortCount === "number" && Number.isFinite(section.level2PortCount) && section.level2PortCount >= 0
+      ? Math.round(section.level2PortCount)
+      : 0;
+
+  return { radiusMiles, stationCount, nearestDistanceMiles, dcFastPortCount, level2PortCount };
 }
 
 /** Plain-English flood label key for a zone, driven by the API's isHighRisk. */
@@ -762,7 +897,89 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           </div>
         )}
 
-        {/* (8) Neighborhood — Pro-only area medians (Census/ACS). Either the
+        {/* (8) Housing affordability context - HUD User FMR / Income Limits. */}
+        {view.housing && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
+                <Home className="h-4 w-4 text-tone-honey-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_housing_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {view.housing.twoBedroomFmr !== null
+                    ? td("dossier_housing_fmr", { amount: formatUsd(view.housing.twoBedroomFmr, locale) })
+                    : view.housing.medianIncome !== null
+                      ? td("dossier_housing_income", { amount: formatUsd(view.housing.medianIncome, locale) })
+                      : view.housing.areaName || view.housing.countyName || td("dossier_housing_area_fallback")}
+                </p>
+              </div>
+              {view.housing.zip && (
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
+                  {view.housing.zip}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {view.housing.medianIncome !== null && (
+                <div className="rounded-lg border border-border bg-foreground/[0.025] px-2.5 py-2">
+                  <p className="text-[10px] text-muted-foreground">{td("dossier_housing_ami")}</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    {formatUsd(view.housing.medianIncome, locale)}
+                  </p>
+                </div>
+              )}
+              {view.housing.lowIncome4Person !== null && (
+                <div className="rounded-lg border border-border bg-foreground/[0.025] px-2.5 py-2">
+                  <p className="text-[10px] text-muted-foreground">{td("dossier_housing_lowIncome")}</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    {formatUsd(view.housing.lowIncome4Person, locale)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              {td("dossier_housing_disclaimer")}
+              {view.housing.areaName ? ` ${td("dossier_housing_area", { area: view.housing.areaName })}` : ""}
+            </p>
+          </div>
+        )}
+
+        {/* (9) EV charging - NLR/AFDC public active stations near destination. */}
+        {view.evCharging && (
+          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
+                <Zap className="h-4 w-4 text-tone-sky-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{td("dossier_ev_title")}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {td("dossier_ev_summary", {
+                    count: view.evCharging.stationCount,
+                    radius: view.evCharging.radiusMiles,
+                  })}
+                </p>
+              </div>
+              {view.evCharging.nearestDistanceMiles !== null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-tone-sky-bg border border-tone-sky-br text-tone-sky-fg shrink-0">
+                  {td("dossier_ev_nearest", { distance: view.evCharging.nearestDistanceMiles })}
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {td("dossier_ev_ports", {
+                level2: view.evCharging.level2PortCount,
+                dcFast: view.evCharging.dcFastPortCount,
+              })}
+            </p>
+            <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{td("dossier_ev_disclaimer")}</p>
+          </div>
+        )}
+
+        {/* (10) Neighborhood — Pro-only area medians (Census/ACS). Either the
             locked Pro teaser (entitled to the dossier but not to Pro) or the
             real area-median stat rows. The fine print is the honest core: these
             are tract medians, NOT a valuation of this specific home. */}
@@ -913,7 +1130,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
 /**
  * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
- * Same card chrome as the real dossier, with the seven insight rows shown as
+ * Same card chrome as the real dossier, with the nine insight rows shown as
  * honest locked line-items (lock glyphs, no fabricated data) and an "Unlock
  * with Individual" CTA to /pricing. Visual language mirrors the existing
  * MOVING_PLAN upgrade teaser (move-command-center free hero).
@@ -967,6 +1184,20 @@ const TEASER_ROWS = [
     iconClass: "text-tone-sage-fg",
     titleKey: "dossier_air_title",
     subKey: "dossier_teaser_air_sub",
+  },
+  {
+    Icon: Home,
+    boxClass: "bg-tone-honey-bg border-tone-honey-br",
+    iconClass: "text-tone-honey-fg",
+    titleKey: "dossier_housing_title",
+    subKey: "dossier_teaser_housing_sub",
+  },
+  {
+    Icon: Zap,
+    boxClass: "bg-tone-sky-bg border-tone-sky-br",
+    iconClass: "text-tone-sky-fg",
+    titleKey: "dossier_ev_title",
+    subKey: "dossier_teaser_ev_sub",
   },
 ] as const;
 

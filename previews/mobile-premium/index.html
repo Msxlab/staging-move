@@ -2230,6 +2230,21 @@
           var(--surface);
       }
 
+      .state-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(105deg, transparent 8%, rgba(238, 243, 250, 0.08) 46%, transparent 74%);
+        opacity: 0.42;
+        transform: translateX(-72%);
+        animation: stateSweep 4400ms cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+      }
+
+      .state-hero > * {
+        position: relative;
+        z-index: 1;
+      }
+
       .state-hero-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 78px;
@@ -2325,12 +2340,55 @@
         border-color: rgba(242, 196, 108, 0.2);
       }
 
+      .state-card.error,
       .state-card.recovery {
         border-color: rgba(241, 141, 144, 0.22);
       }
 
+      .state-card.offline {
+        border-color: rgba(170, 178, 255, 0.22);
+      }
+
+      .state-card.stale {
+        border-color: rgba(242, 196, 108, 0.2);
+      }
+
+      .state-card.permission {
+        border-color: rgba(127, 182, 232, 0.24);
+      }
+
       .state-card.success {
         border-color: rgba(136, 222, 192, 0.22);
+      }
+
+      .state-card.active {
+        background:
+          linear-gradient(90deg, rgba(238, 243, 250, 0.075), transparent 68%),
+          rgba(17, 26, 41, 0.88);
+        box-shadow: inset 3px 0 0 currentColor;
+      }
+
+      .state-card.loading.active,
+      .state-card.permission.active {
+        color: var(--blue);
+      }
+
+      .state-card.empty.active,
+      .state-card.stale.active {
+        color: var(--gold);
+      }
+
+      .state-card.error.active,
+      .state-card.recovery.active {
+        color: #f18d90;
+      }
+
+      .state-card.offline.active {
+        color: #aab2ff;
+      }
+
+      .state-card.success.active {
+        color: var(--green);
       }
 
       .state-visual {
@@ -2346,6 +2404,18 @@
         color: var(--blue);
       }
 
+      .state-card .state-visual {
+        display: grid;
+        margin-top: 0;
+      }
+
+      .state-visual svg {
+        position: relative;
+        z-index: 1;
+        width: 21px;
+        height: 21px;
+      }
+
       .state-visual.gold {
         color: var(--gold);
         border-color: rgba(242, 196, 108, 0.22);
@@ -2356,6 +2426,12 @@
         color: #f18d90;
         border-color: rgba(241, 141, 144, 0.22);
         background: rgba(241, 141, 144, 0.08);
+      }
+
+      .state-visual.violet {
+        color: #aab2ff;
+        border-color: rgba(170, 178, 255, 0.22);
+        background: rgba(170, 178, 255, 0.08);
       }
 
       .state-visual.green {
@@ -2456,6 +2532,167 @@
         color: #f18d90;
         border-color: rgba(241, 141, 144, 0.24);
         background: rgba(241, 141, 144, 0.08);
+      }
+
+      .state-action.warn {
+        color: var(--gold);
+        border-color: rgba(242, 196, 108, 0.24);
+        background: rgba(242, 196, 108, 0.08);
+      }
+
+      .state-action.info {
+        color: var(--blue);
+        border-color: rgba(127, 182, 232, 0.24);
+        background: rgba(127, 182, 232, 0.08);
+      }
+
+      .state-action.violet {
+        color: #aab2ff;
+        border-color: rgba(170, 178, 255, 0.24);
+        background: rgba(170, 178, 255, 0.08);
+      }
+
+      .state-console {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .state-console span {
+        min-width: 0;
+        min-height: 38px;
+        padding: 7px;
+        border-radius: 13px;
+        border: 1px solid rgba(238, 243, 250, 0.08);
+        background: rgba(238, 243, 250, 0.04);
+      }
+
+      .state-console strong,
+      .state-console small {
+        display: block;
+        line-height: 1.05;
+      }
+
+      .state-console strong {
+        color: var(--text);
+        font-size: 11.2px;
+        font-weight: 880;
+      }
+
+      .state-console small {
+        margin-top: 4px;
+        color: var(--soft);
+        font-size: 8.4px;
+        font-weight: 760;
+      }
+
+      .concept:nth-child(7) .content {
+        padding: 6px 14px 86px;
+      }
+
+      .concept:nth-child(7) .topbar {
+        margin-bottom: 8px;
+      }
+
+      .concept:nth-child(7) .title.small {
+        font-size: 22px;
+      }
+
+      .concept:nth-child(7) .subtitle {
+        margin-top: 2px;
+        font-size: 10.5px;
+      }
+
+      .concept:nth-child(7) .state-hero {
+        padding: 11px;
+        border-radius: 20px;
+      }
+
+      .concept:nth-child(7) .state-hero-grid {
+        grid-template-columns: minmax(0, 1fr) 66px;
+        gap: 10px;
+      }
+
+      .concept:nth-child(7) .large-value {
+        margin-top: 6px;
+        font-size: 25px;
+      }
+
+      .concept:nth-child(7) .route {
+        margin-top: 5px;
+        font-size: 10px;
+        line-height: 1.28;
+      }
+
+      .concept:nth-child(7) .state-orb {
+        width: 66px;
+        height: 66px;
+        border-radius: 21px;
+      }
+
+      .concept:nth-child(7) .state-orb strong {
+        font-size: 17px;
+      }
+
+      .concept:nth-child(7) .state-strip {
+        gap: 5px;
+        margin-top: 8px;
+      }
+
+      .concept:nth-child(7) .state-strip span {
+        min-height: 25px;
+        border-radius: 10px;
+        font-size: 7.8px;
+      }
+
+      .concept:nth-child(7) .state-console {
+        gap: 5px;
+        margin-top: 7px;
+      }
+
+      .concept:nth-child(7) .state-console span {
+        min-height: 35px;
+        padding: 6px;
+        border-radius: 12px;
+      }
+
+      .concept:nth-child(7) .state-stack {
+        gap: 5px;
+        margin-top: 8px;
+      }
+
+      .concept:nth-child(7) .state-card {
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        gap: 8px;
+        min-height: 54px;
+        padding: 7px 9px;
+        border-radius: 15px;
+      }
+
+      .concept:nth-child(7) .state-visual {
+        width: 36px;
+        height: 36px;
+        border-radius: 13px;
+      }
+
+      .concept:nth-child(7) .state-card strong {
+        font-size: 11.2px;
+      }
+
+      .concept:nth-child(7) .state-card span {
+        margin-top: 3px;
+        font-size: 8.7px;
+      }
+
+      .concept:nth-child(7) .state-card .state-visual {
+        margin-top: 0;
+      }
+
+      .concept:nth-child(7) .state-action {
+        min-height: 23px;
+        padding: 0 7px;
+        font-size: 8.2px;
       }
 
       .create-hero {
@@ -6326,6 +6563,15 @@
         }
       }
 
+      @keyframes stateSweep {
+        0%, 38% {
+          transform: translateX(-72%);
+        }
+        72%, 100% {
+          transform: translateX(72%);
+        }
+      }
+
       @keyframes stateSpin {
         to {
           transform: rotate(360deg);
@@ -7633,7 +7879,7 @@
                 <div class="topbar">
                   <div class="topbar-left">
                     <h2 class="title small">System States</h2>
-                    <p class="subtitle">Loading, empty, recovery and success</p>
+                    <p class="subtitle">Live fallbacks for move flow</p>
                   </div>
                   <button class="icon-button" type="button" aria-label="Preview states">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
@@ -7645,57 +7891,104 @@
                 <section class="state-hero">
                   <div class="state-hero-grid">
                     <div>
-                      <span class="label">Resilient UX</span>
-                      <p class="large-value">4 states</p>
-                      <p class="route">Every fallback gives context and a next action.</p>
+                      <span class="label" id="stateKicker">Move health</span>
+                      <p class="large-value" id="stateTitle">7 guarded states</p>
+                      <p class="route" id="stateRoute">Plan, services, dossier, HUD and EV signals stay recoverable.</p>
                     </div>
-                    <div class="state-orb" aria-label="Four system states">
-                      <strong>4</strong>
+                    <div class="state-orb" aria-label="Seven system states">
+                      <strong id="stateOrb">7</strong>
                     </div>
                   </div>
                   <div class="state-strip" aria-label="State types">
-                    <span>Loading</span>
+                    <span>Load</span>
                     <span>Empty</span>
-                    <span>Recover</span>
-                    <span>Success</span>
+                    <span>Error</span>
+                    <span>Offline</span>
+                    <span>Stale</span>
+                    <span>Perm</span>
+                    <span>Done</span>
+                  </div>
+                  <div class="state-console" aria-label="Current system state summary">
+                    <span><strong id="stateSync">2m</strong><small>last sync</small></span>
+                    <span><strong id="stateScope">10</strong><small>signals</small></span>
+                    <span><strong id="stateNext">Retry</strong><small>next action</small></span>
                   </div>
                 </section>
 
                 <section class="state-stack" aria-label="Mobile fallback state examples">
-                  <div class="state-card loading" style="--d: 520ms">
+                  <div class="state-card loading active" data-state-mode="loading" style="--d: 520ms">
                     <span class="state-visual">
                       <span class="state-spinner"></span>
                     </span>
                     <span>
                       <strong>Building move plan</strong>
-                      <span>Checking address, services and dossier signals.</span>
+                      <span>Address, services, HUD and EV signals are syncing.</span>
                     </span>
                     <span class="state-action">48 sec</span>
                   </div>
 
-                  <div class="state-card empty" style="--d: 620ms">
+                  <div class="state-card empty" data-state-mode="empty" style="--d: 600ms">
                     <span class="state-visual gold">
                       <span class="empty-spark"></span>
                     </span>
                     <span>
-                      <strong>No services yet</strong>
-                      <span>Add internet, utilities or cleaning to track cost.</span>
+                      <strong>No saved services</strong>
+                      <span>Start with internet, electric or cleaning.</span>
                     </span>
                     <span class="state-action primary">Add</span>
                   </div>
 
-                  <div class="state-card recovery" style="--d: 720ms">
+                  <div class="state-card error recovery" data-state-mode="error" style="--d: 680ms">
                     <span class="state-visual red">
                       <span class="error-pulse">!</span>
                     </span>
                     <span>
-                      <strong>Address not verified</strong>
-                      <span>Suite number or ZIP needs a quick correction.</span>
+                      <strong>Address needs suite</strong>
+                      <span>USPS match is blocked until unit is confirmed.</span>
                     </span>
                     <span class="state-action danger">Fix</span>
                   </div>
 
-                  <div class="state-card success" style="--d: 820ms">
+                  <div class="state-card offline" data-state-mode="offline" style="--d: 760ms">
+                    <span class="state-visual violet">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 9.5a11 11 0 0 1 14 0M8.5 13a6 6 0 0 1 7 0M12 17h.01M5 19 19 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <span>
+                      <strong>Offline mode</strong>
+                      <span>Showing cached dossier and plan from 2 min ago.</span>
+                    </span>
+                    <span class="state-action violet">Retry</span>
+                  </div>
+
+                  <div class="state-card stale" data-state-mode="stale" style="--d: 840ms">
+                    <span class="state-visual gold">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 7v5l3 2M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                    <span>
+                      <strong>Dossier data is stale</strong>
+                      <span>Weather and charger signals need refresh.</span>
+                    </span>
+                    <span class="state-action warn">Refresh</span>
+                  </div>
+
+                  <div class="state-card permission" data-state-mode="permission" style="--d: 920ms">
+                    <span class="state-visual">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6v-9ZM12 15v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                    <span>
+                      <strong>Location permission off</strong>
+                      <span>Enable location to estimate nearby services.</span>
+                    </span>
+                    <span class="state-action info">Enable</span>
+                  </div>
+
+                  <div class="state-card success" data-state-mode="success" style="--d: 1000ms">
                     <span class="state-visual green">
                       <span class="success-check">
                         <svg viewBox="0 0 24 24" fill="none">
@@ -7704,8 +7997,8 @@
                       </span>
                     </span>
                     <span>
-                      <strong>Dossier exported</strong>
-                      <span>Shareable report is ready for your move folder.</span>
+                      <strong>Move plan ready</strong>
+                      <span>22 tasks and 10 dossier signals are packaged.</span>
                     </span>
                     <span class="state-action safe">Share</span>
                   </div>
@@ -8133,6 +8426,104 @@
       if (moreScreen) {
         const syncWorkspace = moreScreen.querySelector(".settings-row.sync");
         syncWorkspace?.addEventListener("click", setWorkspaceSynced);
+      }
+
+      const stateScreen = document.querySelector(".concept:nth-child(7)");
+      const stateModes = {
+        loading: {
+          kicker: "Syncing",
+          title: "Building move plan",
+          route: "Address, services, HUD housing and EV charging are being checked.",
+          sync: "Now",
+          scope: "10",
+          next: "Wait",
+          orb: "48s",
+        },
+        empty: {
+          kicker: "Start clean",
+          title: "No saved services",
+          route: "Add internet, electric or cleaning to start the move workspace.",
+          sync: "Live",
+          scope: "0",
+          next: "Add",
+          orb: "0",
+        },
+        error: {
+          kicker: "Needs fix",
+          title: "Address needs suite",
+          route: "Suite or ZIP is missing, so services and plan tasks stay paused.",
+          sync: "Held",
+          scope: "3",
+          next: "Fix",
+          orb: "!",
+        },
+        offline: {
+          kicker: "Cached",
+          title: "Offline mode",
+          route: "The app keeps the last move plan and dossier snapshot visible while reconnecting.",
+          sync: "2m",
+          scope: "10",
+          next: "Retry",
+          orb: "2m",
+        },
+        stale: {
+          kicker: "Refresh",
+          title: "Dossier data is stale",
+          route: "Weather, EV and local risk signals need a fresh check.",
+          sync: "Old",
+          scope: "10",
+          next: "Refresh",
+          orb: "Old",
+        },
+        permission: {
+          kicker: "Permission",
+          title: "Location access is off",
+          route: "Nearby services and charger distance wait for a clear permission decision.",
+          sync: "Live",
+          scope: "8",
+          next: "Enable",
+          orb: "Off",
+        },
+        success: {
+          kicker: "Ready",
+          title: "Move plan ready",
+          route: "Tasks, services, housing context and local dossier signals are packaged.",
+          sync: "Now",
+          scope: "10",
+          next: "Share",
+          orb: "OK",
+        },
+      };
+
+      function setSystemState(mode) {
+        if (!stateScreen) return;
+        const data = stateModes[mode] || stateModes.loading;
+        stateScreen.querySelectorAll("[data-state-mode]").forEach((card) => {
+          card.classList.toggle("active", card.dataset.stateMode === mode);
+        });
+        const pairs = [
+          ["stateKicker", data.kicker],
+          ["stateTitle", data.title],
+          ["stateRoute", data.route],
+          ["stateOrb", data.orb],
+          ["stateSync", data.sync],
+          ["stateScope", data.scope],
+          ["stateNext", data.next],
+        ];
+        pairs.forEach(([id, value]) => {
+          const node = document.getElementById(id);
+          if (node) node.textContent = value;
+        });
+      }
+
+      if (stateScreen) {
+        stateScreen.querySelectorAll("[data-state-mode]").forEach((card) => {
+          card.addEventListener("click", () => {
+            setSystemState(card.dataset.stateMode);
+            triggerCompletion(card);
+          });
+        });
+        setSystemState("loading");
       }
 
       const createScreen = document.querySelector(".concept:nth-child(8)");

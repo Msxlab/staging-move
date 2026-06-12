@@ -11,6 +11,7 @@ import {
   Download,
   ExternalLink,
   HardDrive,
+  Home,
   Lock,
   Mail,
   MapPin,
@@ -18,6 +19,7 @@ import {
   Shield,
   Smartphone,
   Users,
+  Zap,
 } from "lucide-react";
 import { PasswordChangeForm } from "./password-form";
 import { InfoHint } from "@/components/info-hint";
@@ -62,7 +64,22 @@ const INTEGRATION_ICONS: Record<string, typeof Shield> = {
   mobile_play: Smartphone,
   backup_storage: HardDrive,
   redis: Activity,
+  fcc_broadband: Server,
+  electric_utility: Zap,
+  census_acs: Database,
+  airnow: Activity,
+  hud_housing: Home,
+  ev_charging: Zap,
+  fmcsa: Shield,
+  address_connectors: Server,
 };
+
+const DOSSIER_INTEGRATION_IDS = new Set([
+  "airnow",
+  "census_acs",
+  "hud_housing",
+  "ev_charging",
+]);
 
 type SettingsResponse = {
   counts: Record<string, number>;
@@ -252,6 +269,29 @@ export default function SettingsClient() {
         0,
       ),
     [counts],
+  );
+
+  const dossierIntegrations = useMemo(
+    () =>
+      data?.integrations.filter((integration) =>
+        DOSSIER_INTEGRATION_IDS.has(integration.id),
+      ) ?? [],
+    [data],
+  );
+
+  const otherIntegrations = useMemo(
+    () =>
+      data?.integrations.filter(
+        (integration) => !DOSSIER_INTEGRATION_IDS.has(integration.id),
+      ) ?? [],
+    [data],
+  );
+
+  const dossierReadyCount = useMemo(
+    () =>
+      dossierIntegrations.filter((integration) => integration.configured)
+        .length,
+    [dossierIntegrations],
   );
 
   if (loading) {
@@ -460,15 +500,92 @@ export default function SettingsClient() {
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Database className="h-5 w-5" /> Dossier Data Integrations
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Source readiness for air quality, Census area context, HUD housing, and public EV charging.
+                </p>
+              </div>
+              <Link
+                href="/provider-quality"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Open Quality <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <InfoCard
+                label="Dossier Ready"
+                value={`${dossierReadyCount}/${dossierIntegrations.length}`}
+                hint="Configured public data sources that can enrich the New Home Dossier."
+              />
+              <InfoCard
+                label="Needs Config"
+                value={dossierIntegrations.length - dossierReadyCount}
+                hint="Sources with a missing enablement flag or API credential."
+              />
+            </div>
+
+            <div className="space-y-3">
+              {dossierIntegrations.map((integration) => {
+                const Icon = INTEGRATION_ICONS[integration.id] || Shield;
+                return (
+                  <div
+                    key={integration.id}
+                    className="rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-lg bg-background p-2">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {integration.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {integration.configured
+                              ? "Ready for dossier enrichment"
+                              : `Missing ${integration.missingKeys.length} setting${integration.missingKeys.length === 1 ? "" : "s"}`}
+                          </p>
+                          {!integration.configured &&
+                            integration.missingKeys.length > 0 && (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {integration.missingKeys.join(", ")}
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
+                          integration.configured
+                            ? "bg-tone-sage-bg text-tone-sage-fg"
+                            : "bg-tone-honey-bg text-tone-honey-fg"
+                        }`}
+                      >
+                        {integration.configured ? "Ready" : "Needs config"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
                   <Shield className="h-5 w-5" /> Integration Readiness
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Provider availability across OAuth, billing, mobile verification, alerts, and backups.
+                  OAuth, billing, infrastructure, movers, and remaining operational integrations.
                 </p>
               </div>
             </div>
             <div className="space-y-3">
-              {data.integrations.map((integration) => {
+              {otherIntegrations.map((integration) => {
                 const Icon = INTEGRATION_ICONS[integration.id] || Shield;
                 return (
                   <div

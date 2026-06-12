@@ -283,7 +283,7 @@ describe("teaser catalog parity (en/es)", () => {
     const teaserKeys = (cat: Record<string, Record<string, string>>) =>
       Object.keys(cat.dashboard).filter((k) => k.startsWith("briefing_teaser_") || k.startsWith("dossier_teaser_"));
     expect(teaserKeys(en).sort()).toEqual(teaserKeys(es).sort());
-    // 5 briefing + 9 dossier teaser keys (pitch + 7 row subs + cta) must exist
-    expect(teaserKeys(en)).toHaveLength(14);
+    // 5 briefing + 11 dossier teaser keys (pitch + 9 row subs + cta) must exist.
+    expect(teaserKeys(en)).toHaveLength(16);
   });
 });

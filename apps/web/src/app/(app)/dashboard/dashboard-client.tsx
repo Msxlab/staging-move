@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   MapPin, Zap, DollarSign, Truck, ArrowRight,
-  Home, Briefcase, Palmtree, TrendingUp, Edit, Plus,
+  Home, Briefcase, Palmtree, TrendingUp, Edit,
   Calendar, PieChart, Loader2, SlidersHorizontal, X, GripVertical,
   AlertTriangle, Clock, Sparkles, Star, ChevronDown,
 } from "lucide-react";
@@ -65,9 +65,9 @@ interface DashboardStats {
 const WIDGET_KEYS = [
   { key: "stats", default: true },
   { key: "nextCritical", default: true },
-  { key: "spending", default: true },
   { key: "moving", default: true },
   { key: "homeDossier", default: true },
+  { key: "spending", default: true },
   { key: "routeMap", default: true },
   { key: "milestones", default: true },
   { key: "recent", default: true },
@@ -90,12 +90,12 @@ const DEFAULT_VISIBILITY = Object.fromEntries(
 // `collapsed` prefs (existing users get the smart default exactly once); after
 // the first toggle their choices persist via persistPrefs.
 const DEFAULT_COLLAPSED: Record<WidgetKey, boolean> = {
-  stats: false,
+  stats: true,
   nextCritical: false,
-  spending: false,
+  spending: true,
   moving: false,
   homeDossier: false,
-  bills: false,
+  bills: true,
   routeMap: true,
   milestones: true,
   recent: true,
@@ -317,7 +317,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const w = (key: WidgetKey) => widgets[key] !== false;
 
   // Which column each widget belongs to
-  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "routeMap", "milestones", "homeDossier", "recent"];
+  const leftWidgets: WidgetKey[] = ["nextCritical", "moving", "homeDossier", "spending", "routeMap", "milestones", "recent"];
   const rightWidgets: WidgetKey[] = ["bills", "budgetDonut", "monthlySpark", "categories", "topSpending"];
   const orderedLeft = widgetOrder.filter((k) => leftWidgets.includes(k));
   const orderedRight = widgetOrder.filter((k) => rightWidgets.includes(k));
@@ -1033,20 +1033,6 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             </button>
           </Link>
         </div>
-      </div>
-
-      {/* Quick Actions Bar */}
-      <div className="flex flex-wrap gap-2">
-        <Link href="/services/new">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-foreground/[0.06] bg-foreground/[0.02] text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <Plus className="h-3 w-3" /> {td("addServiceBtn")}
-          </button>
-        </Link>
-        <Link href="/budget">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-foreground/[0.06] bg-foreground/[0.02] text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <DollarSign className="h-3 w-3" /> {td("budgetBtn")}
-          </button>
-        </Link>
       </div>
 
       {/* Widget Customization Panel */}
