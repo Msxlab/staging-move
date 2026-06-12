@@ -57,6 +57,10 @@ export interface ProviderItem {
   subCategory: string | null;
   description: string | null;
   website: string | null;
+  /** Stable grouping key for sibling services of the same company (e.g. Chase). */
+  brandKey?: string;
+  /** Human brand label for the cluster chip ("Chase"). */
+  brandLabel?: string;
   phone: string | null;
   logoUrl: string | null;
   scope: string;
@@ -385,6 +389,19 @@ export function ProvidersClient({
     }
     return list;
   }, [providers, categoryFilter, showSavedOnly, shortlist]);
+
+  // Brand keys shared by 2+ currently-visible providers, so sibling services of
+  // one company (e.g. "Chase" + "Chase Credit Cards") get a small brand chip and
+  // read as one brand's offerings rather than an accidental duplicate.
+  const siblingBrandKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of visibleProviders) {
+      if (p.brandKey) counts.set(p.brandKey, (counts.get(p.brandKey) ?? 0) + 1);
+    }
+    const keys = new Set<string>();
+    for (const [key, n] of counts) if (n >= 2) keys.add(key);
+    return keys;
+  }, [visibleProviders]);
 
   // Per-user "not relevant" dismissals — optimistically hidden here and persisted
   // server-side so the engine stops re-surfacing them on future loads.
@@ -734,6 +751,14 @@ export function ProvidersClient({
                   <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                     Listed provider
                   </span>
+                  {p.brandKey && p.brandLabel && siblingBrandKeys.has(p.brandKey) && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-foreground/5 text-muted-foreground"
+                      title={`Part of ${p.brandLabel} — one of several ${p.brandLabel} services`}
+                    >
+                      {p.brandLabel}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]

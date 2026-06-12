@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { compareCoverageConfidence, getProviderTrustSummary } from "@locateflow/shared";
+import { compareCoverageConfidence, getProviderTrustSummary, getProviderBrand } from "@locateflow/shared";
 import { getProviderCoverageConfidenceFromDb, getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
@@ -191,6 +191,10 @@ export async function GET(request: NextRequest) {
         requiresPolygonCheck,
       });
 
+      // Brand identity for clustering sibling services of the same company (e.g.
+      // "Chase" + "Chase Credit Cards") so search doesn't read them as dupes.
+      const brand = getProviderBrand({ website: p.website, name: p.name });
+
       return {
         id: p.id,
         name: p.name,
@@ -199,6 +203,8 @@ export async function GET(request: NextRequest) {
         subCategory: p.subCategory,
         description: p.description,
         website: p.website,
+        brandKey: brand.brandKey,
+        brandLabel: brand.brandLabel,
         phone: p.phone,
         logoUrl: p.logoUrl,
         scope: p.scope,
