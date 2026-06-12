@@ -64,6 +64,8 @@ export interface ProviderTrustRecord extends ProviderIntegrityRecord {
   updatedAt?: Date | string | number | null;
 }
 
+export type ProviderCoverageModelName = "state" | "zip_prefix" | "polygon" | "live_address";
+
 export interface ProviderCoverageConfidence {
   confidence: CoverageConfidence;
   level: ProviderCoverageConfidenceLevel;
@@ -131,6 +133,30 @@ export const ADDRESS_QUALIFIED_FEDERAL_CATEGORIES = new Set([
   "LOCAL_DINING",
   "FITNESS_GYM",
 ]);
+
+function isProviderCoverageModelName(value: unknown): value is ProviderCoverageModelName {
+  return value === "state" || value === "zip_prefix" || value === "polygon" || value === "live_address";
+}
+
+export function inferProviderCoverageModel(record: {
+  scope?: string | null;
+  category?: string | null;
+  zipCodes?: string[] | string | null;
+  coverageModel?: string | null;
+}): ProviderCoverageModelName {
+  if (isProviderCoverageModelName(record.coverageModel)) return record.coverageModel;
+  if (normalizeZipCodes(record.zipCodes).length > 0) return "zip_prefix";
+
+  const category = (record.category || "").toUpperCase();
+  if (
+    LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(category) ||
+    ADDRESS_QUALIFIED_FEDERAL_CATEGORIES.has(category)
+  ) {
+    return "live_address";
+  }
+
+  return "state";
+}
 
 const MARKETING_DESCRIPTION_PATTERN =
   /\b(best|best-in-class|largest|leading|most convenient|number one|premium|premier|trusted|top-rated|world-class|#1)\b/i;
@@ -243,12 +269,13 @@ const COVERAGE_CONFIDENCE_LEVEL: Record<
 export function getProviderCoverageConfidence(
   record: ProviderTrustRecord,
 ): ProviderCoverageConfidence {
+  const coverageModel = inferProviderCoverageModel(record);
   const matchLevel = (record.coverageMatchLevel ||
-    (record.coverageModel === "live_address" ? "live_address" : null) ||
+    (coverageModel === "live_address" ? "live_address" : null) ||
     "state") as ProviderCoverageMatchLevel;
   const confidence = mapCoverageMatchToConfidence(matchLevel, {
     scope: record.scope,
-    coverageModel: record.coverageModel,
+    coverageModel,
     requiresAddressCheck: record.requiresAddressCheck,
     requiresPolygonCheck: record.requiresPolygonCheck,
   });
@@ -276,8 +303,9 @@ export function getProviderQualityWarnings(
   const states = normalizeStates(record.states);
   const zipCodes = normalizeZipCodes(record.zipCodes);
   const domain = normalizeProviderUrlDomain(record.website);
+  const coverageModel = inferProviderCoverageModel(record);
   const hasExternalCoverageModel =
-    record.coverageModel === "live_address" || record.coverageModel === "polygon";
+    coverageModel === "live_address" || coverageModel === "polygon";
 
   if (!record.logoUrl) {
     warnings.push({
@@ -370,7 +398,7 @@ export function getProviderQualityWarnings(
     });
   }
 
-  if (record.requiresAddressCheck || record.coverageModel === "live_address") {
+  if (record.requiresAddressCheck || coverageModel === "live_address") {
     warnings.push({
       code: "address_check_required",
       label: "Address check required",
@@ -379,7 +407,7 @@ export function getProviderQualityWarnings(
     });
   }
 
-  if (record.requiresPolygonCheck || record.coverageModel === "polygon") {
+  if (record.requiresPolygonCheck || coverageModel === "polygon") {
     warnings.push({
       code: "polygon_check_required",
       label: "Mapped coverage",

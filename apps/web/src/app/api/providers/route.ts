@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, zipCentroid, type ProviderCoverageModel } from "@locateflow/db";
-import { compareCoverageConfidence, getProviderBrand, getProviderTrustSummary } from "@locateflow/shared";
+import { compareCoverageConfidence, getProviderBrand, getProviderTrustSummary, inferProviderCoverageModel } from "@locateflow/shared";
 import { getProviderCoverageConfidenceFromDb, getProviderPresentationMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import {
   applyProviderServiceabilityConfidence,
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
       const coverageModel: ProviderCoverageModel =
         (overrideModel as ProviderCoverageModel | undefined) ||
         metadata?.coverageModel ||
-        (zipCodes.length > 0 ? "zip_prefix" : "state");
+        inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
 
       return {
         ...p,
@@ -197,7 +197,8 @@ export async function GET(request: NextRequest) {
       const states = safeJsonArray(p.states);
       const zipCodes = Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes);
       const tags = safeJsonArray(p.tags);
-      const coverageModel = p.coverageModel || "state";
+      const coverageModel =
+        p.coverageModel || inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
       const coverageMatchLevel = coverageByProvider.get(p)!.matchLevel;
       const serviceabilityFlags = p as typeof p & { fccServiceable?: boolean; utilityServiceable?: boolean };
       const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;

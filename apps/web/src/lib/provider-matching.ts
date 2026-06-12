@@ -22,6 +22,7 @@ import { getProviderCoverageMetadata, type ProviderCoverageModel, type ProviderC
 import {
   normalizeZip,
   resolveEffectiveState,
+  inferProviderCoverageModel,
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
 } from "@locateflow/shared";
@@ -100,8 +101,10 @@ function resolvePolygonCoverageMatch(
 export interface ProviderWithCoverages {
   id: string;
   slug?: string | null;
+  category?: string | null;
   scope: string;
   coverageModel?: ProviderCoverageModel | null;
+  zipCodes?: string[] | string | null;
   coverages: Array<{
     state: string | null;
     zipPrefix: string | null;
@@ -112,7 +115,11 @@ export interface ProviderWithCoverages {
 function getEffectiveProviderCoverageModel<T extends ProviderWithCoverages>(
   provider: T,
 ): ProviderCoverageModel | undefined {
-  return provider.coverageModel || getProviderCoverageMetadata(provider.slug)?.coverageModel;
+  return (
+    provider.coverageModel ||
+    getProviderCoverageMetadata(provider.slug)?.coverageModel ||
+    inferProviderCoverageModel(provider)
+  );
 }
 
 function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(

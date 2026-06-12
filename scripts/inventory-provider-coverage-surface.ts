@@ -22,6 +22,7 @@ const { FEDERAL_NEW, STATE_DMVS, STATE_PROVIDERS } = providersModule as {
 const {
   sanitizeProviderSeedRecords,
   normalizeProviderRecord,
+  inferProviderCoverageModel,
 } = integrityModule;
 
 const { expandCoverageRows } = coverageModule;
@@ -113,7 +114,7 @@ function getEffectiveCoverageModel(provider: NormalizedProvider): ProviderCovera
   if (isProviderCoverageModel(provider.coverageModel)) return provider.coverageModel;
   const metadataModel = getProviderCoverageMetadata(provider.slug)?.coverageModel;
   if (metadataModel) return metadataModel;
-  return provider.zipCodes.length > 0 ? "zip_prefix" : "state";
+  return inferProviderCoverageModel(provider);
 }
 
 function hasExternalCoverageCheck(provider: NormalizedProvider): boolean {

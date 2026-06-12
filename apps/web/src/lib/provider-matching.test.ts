@@ -278,6 +278,21 @@ describe("tierProvidersFromDb", () => {
     );
   });
 
+  it("infers live_address for location-sensitive DB providers without coverage metadata", () => {
+    const provider = {
+      id: "fiber-inferred",
+      category: "UTILITY_INTERNET",
+      scope: "STATE",
+      coverageModel: null,
+      coverages: [{ state: "TX", zipPrefix: null, zipExact: null }],
+    };
+
+    expect(getProviderMatchLevelFromDb(provider, { state: "TX", zip: "78759" })).toBe("live_address");
+    expect(getProviderCoverageConfidenceFromDb(provider, { state: "TX", zip: "78759" })).toBe(
+      "ADDRESS_CHECK_REQUIRED",
+    );
+  });
+
   it("sorts high-confidence local providers above broad national providers", () => {
     const providers = [
       {

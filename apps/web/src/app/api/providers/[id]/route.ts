@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { getProviderTrustSummary } from "@locateflow/shared";
+import { getProviderTrustSummary, inferProviderCoverageModel } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getProviderPresentationMatchLevelFromDb, resolveEffectiveState } from "@/lib/provider-matching";
 import {
@@ -130,7 +130,7 @@ function shape(p: ProviderRow, coverageContext: CoverageContext) {
   const coverageModel: ProviderCoverageModel =
     (p.coverageModel as ProviderCoverageModel | null | undefined) ||
     metadata?.coverageModel ||
-    (zipCodes.length > 0 ? "zip_prefix" : "state");
+    inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
   const coverageMatchLevel = applyProviderServiceabilityMatchLevel(
     p,
     getProviderPresentationMatchLevelFromDb(
