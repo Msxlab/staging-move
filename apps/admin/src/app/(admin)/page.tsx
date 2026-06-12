@@ -19,10 +19,20 @@ import Link from "next/link";
 import { HealthCard } from "./health-card";
 import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 import { ADMIN_ROLE_HIERARCHY, requirePageAdmin } from "@/lib/page-guard";
+import { getIntegrationStatuses } from "@/lib/integration-status";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminPanel } from "@/components/admin-panel";
-import { AuditFeed, AuroraStatCard, RevenueTrendCard } from "@/components/aurora";
-import type { AuditFeedItem, AuditFeedTone } from "@/components/aurora";
+import {
+  AuditFeed,
+  AuroraStatCard,
+  OverviewTrendsCard,
+  PlanDonut,
+} from "@/components/aurora";
+import type {
+  AuditFeedItem,
+  AuditFeedTone,
+  SignupWeekPoint,
+} from "@/components/aurora";
 import { TierMedallion } from "@/components/premium/tier-medallion";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,10 +42,63 @@ const REVENUE_WINDOW_DAYS = 90;
 const SPARK_DAYS = 30;
 /** Rows shown in the dashboard audit feed. */
 const AUDIT_FEED_COUNT = 8;
+/** ISO weeks shown in the signups-by-plan chart. */
+const SIGNUP_WEEKS = 8;
+const WEEK_MS = 7 * DAY_MS;
 
 /** UTC day key ("2026-06-09") — all dashboard buckets use UTC days. */
 function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** UTC ms of the Monday starting the ISO week that contains `d`. */
+function isoWeekStartMs(d: Date): number {
+  const dayStartMs = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+  );
+  // getUTCDay: Sun=0 … Sat=6 — shift so Monday is 0 (ISO week start).
+  return dayStartMs - ((d.getUTCDay() + 6) % 7) * DAY_MS;
+}
+
+/**
+ * New-user signups per ISO week (Monday-start, UTC) for the last
+ * SIGNUP_WEEKS weeks, split by plan tier. Subscription is 1:1 with user so
+ * this is one bounded, indexed range scan with a tiny relation select.
+ * Buckets: INDIVIDUAL / FAMILY / PRO, with FREE_TRIAL and missing
+ * subscription rows folded into "free".
+ */
+async function getSignupsByPlanSeries(now: Date): Promise<SignupWeekPoint[]> {
+  const windowStartMs = isoWeekStartMs(now) - (SIGNUP_WEEKS - 1) * WEEK_MS;
+  const rows = await prisma.user.findMany({
+    where: { createdAt: { gte: new Date(windowStartMs) } },
+    select: { createdAt: true, subscription: { select: { plan: true } } },
+    take: 20000,
+  });
+
+  const weeks: SignupWeekPoint[] = Array.from(
+    { length: SIGNUP_WEEKS },
+    (_, i) => ({
+      weekStart: dayKey(new Date(windowStartMs + i * WEEK_MS)),
+      individual: 0,
+      family: 0,
+      pro: 0,
+      free: 0,
+    }),
+  );
+  for (const row of rows) {
+    const i = Math.floor(
+      (isoWeekStartMs(row.createdAt) - windowStartMs) / WEEK_MS,
+    );
+    if (i < 0 || i >= SIGNUP_WEEKS) continue;
+    const plan = String(row.subscription?.plan ?? "").toUpperCase();
+    if (plan === "INDIVIDUAL") weeks[i].individual += 1;
+    else if (plan === "FAMILY") weeks[i].family += 1;
+    else if (plan === "PRO") weeks[i].pro += 1;
+    else weeks[i].free += 1;
+  }
+  return weeks;
 }
 
 /**
@@ -202,6 +265,7 @@ async function getStats() {
     activeAt30DaysAgo,
     revenueSeries,
     recentSignupDates,
+    signupSeries,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
@@ -265,6 +329,9 @@ async function getStats() {
       select: { createdAt: true },
       take: 5000,
     }),
+    // Weekly signups split by plan tier — feeds the Signups tab of the
+    // overview trends chart.
+    getSignupsByPlanSeries(now),
   ]);
 
   const weeklyTrend = newUsersLastWeek > 0
@@ -324,7 +391,7 @@ async function getStats() {
     recentUsers, newUsersThisWeek, weeklyTrend, upcomingMoves,
     activeSessions, totalSessions,
     mrrUsd, arpuUsd, churnPct, paidSubCount,
-    revenueSeries, usersSpark,
+    revenueSeries, usersSpark, signupSeries,
     // Plan distribution feeds the new "Plan distribution" panel — counts
     // by tier so we can render foil-stamped tier medallions with shares.
     paidSubsByPlan: paidSubsByPlan as Array<{ plan: string; _count: { id: number } }>,
@@ -339,10 +406,17 @@ export default async function DashboardPage() {
   const canReadAuditLogs =
     ADMIN_ROLE_HIERARCHY[ctx.role] >= ADMIN_ROLE_HIERARCHY.ADMIN &&
     ctx.permissions.audit_logs?.canRead === true;
+  // Integration statuses reveal which keys are configured (names only,
+  // never values) — same gate shape as the audit feed: ADMIN role floor
+  // plus the resource read grant the /settings surfaces require.
+  const canReadIntegrations =
+    ADMIN_ROLE_HIERARCHY[ctx.role] >= ADMIN_ROLE_HIERARCHY.ADMIN &&
+    ctx.permissions.settings?.canRead === true;
 
-  const [stats, auditFeed] = await Promise.all([
+  const [stats, auditFeed, integrations] = await Promise.all([
     getStats(),
     canReadAuditLogs ? getAuditFeed() : Promise.resolve(null),
+    canReadIntegrations ? getIntegrationStatuses() : Promise.resolve(null),
   ]);
 
   // KPI mini-trends sliced from the same daily series the trend chart uses.
@@ -410,6 +484,12 @@ export default async function DashboardPage() {
       mrr: count * (def?.monthlyPriceUsd ?? 0),
     };
   });
+  // Donut/legend tier ramp — Individual cool, Family mint, Pro honey.
+  const tierDotColor: Record<(typeof tierOrder)[number], string> = {
+    INDIVIDUAL: "var(--au-cool)",
+    FAMILY: "var(--au-family)",
+    PRO: "var(--au-violet)",
+  };
 
   return (
     <div className="space-y-6">
@@ -484,11 +564,13 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Revenue trend — daily estimated-MRR series with crosshair hover
-          and 7D/30D/QTR range control. The full 90-day series ships once;
-          range switches slice client-side without refetching. */}
-      <RevenueTrendCard
-        points={stats.revenueSeries.map((p) => ({ date: p.date, value: p.mrr }))}
+      {/* Overview trends — two-tab chart card. "Revenue" keeps the daily
+          estimated-MRR series with crosshair hover and 7D/30D/QTR range
+          control; "Signups" adds weekly new users split by plan tier. Both
+          series ship once; tab/range switches never refetch. */}
+      <OverviewTrendsCard
+        revenue={stats.revenueSeries.map((p) => ({ date: p.date, value: p.mrr }))}
+        signups={stats.signupSeries}
       />
 
       {/* System Health */}
@@ -506,6 +588,40 @@ export default async function DashboardPage() {
           </p>
         ) : (
           <div className="space-y-5">
+            {/* Donut — tier share at a glance, total paying in the center.
+                Per-tier detail (counts, MRR, medallions) stays below. */}
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
+              <PlanDonut
+                total={tierTotal}
+                segments={tierRows.map((row) => ({
+                  tier: row.tier,
+                  label: row.label,
+                  count: row.count,
+                }))}
+              />
+              <div className="w-full min-w-0 flex-1 space-y-2">
+                {tierRows.map((row) => (
+                  <div
+                    key={row.tier}
+                    className="flex items-center gap-2.5 text-sm"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: tierDotColor[row.tier] }}
+                    />
+                    <span className="min-w-0 truncate text-foreground">
+                      {row.label}
+                    </span>
+                    <span className="ml-auto shrink-0 text-xs text-muted-foreground au-num">
+                      {row.count.toLocaleString()}
+                    </span>
+                    <span className="w-9 shrink-0 text-right text-xs font-medium text-foreground au-num">
+                      {row.share}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="tier-bar">
               {tierRows.map((row) => (
                 <div
@@ -652,6 +768,57 @@ export default async function DashboardPage() {
           </div>
         </AdminPanel>
       </div>
+
+      {/* External integrations — configuration presence per connector,
+          straight from the same builder the /settings API uses. Status is
+          configured-or-not only: we do not measure uptime or latency, so
+          none is shown. ADMIN floor + settings:canRead, mirroring the
+          audit feed gate below. */}
+      {integrations && (
+        <AdminPanel
+          title="External integrations"
+          caption={`${integrations.filter((i) => i.configured).length} of ${integrations.length} configured · status reflects key presence only`}
+          dense
+        >
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            {[
+              integrations.slice(0, Math.ceil(integrations.length / 2)),
+              integrations.slice(Math.ceil(integrations.length / 2)),
+            ].map((column, columnIndex) => (
+              <div key={columnIndex}>
+                {column.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
+                  >
+                    <p className="min-w-0 truncate text-sm text-foreground">
+                      {item.label}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!item.configured && (
+                        <span className="text-[11px] text-muted-foreground au-num">
+                          {item.missingKeys.length}{" "}
+                          {item.missingKeys.length === 1 ? "key" : "keys"} missing
+                        </span>
+                      )}
+                      <span
+                        className={`au-pill ${item.configured ? "mint" : "amber"}`}
+                      >
+                        {item.configured ? "Ready" : "Needs config"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 border-t border-border pt-3 text-right">
+            <Link href="/settings" className="text-xs text-primary hover:underline">
+              Configure →
+            </Link>
+          </div>
+        </AdminPanel>
+      )}
 
       {/* Audit feed — latest admin/system actions; rendered only for admins
           who clear the same gate as /logs (ADMIN floor + audit_logs:canRead). */}

@@ -19,7 +19,9 @@ import { api } from "@/lib/api";
 import { hapticLight } from "@/lib/haptics";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { DossierAmbient } from "@/components/ui/DossierAmbient";
 import {
+  ambientForSection,
   deriveHomeDossierView,
   formatForecastDate,
   type HomeDossierResponse,
@@ -83,6 +85,13 @@ function formatUsd(value: number | null): string {
  * Intl.RelativeTimeFormat / ListFormat / PluralRules). All row/teaser gating
  * lives in @/lib/home-dossier so it unit-tests under the node vitest
  * environment.
+ *
+ * Ambient scenes: each DATA row hosts a decorative DossierAmbient layer in
+ * its right zone, with scene intensity derived from the row's REAL data via
+ * ambientForSection (also in @/lib/home-dossier — pure and unit-tested).
+ * Decoration only: pointerEvents none, hidden from assistive tech, faded out
+ * toward the text side, and fully static under reduce-motion. Teaser and
+ * locked rows stay scene-free.
  */
 export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
   const theme = useAppTheme();
@@ -224,6 +233,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {rows.flood && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({ kind: "flood", isHighRisk: rows.flood.isHighRisk })}
+          />
           <View style={styles.rowIcon}>
             <Waves size={14} color={theme.colors.sky.text} />
           </View>
@@ -244,6 +256,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {rows.school && (
         <View style={styles.row}>
+          <DossierAmbient {...ambientForSection({ kind: "school" })} />
           <View style={styles.rowIcon}>
             <GraduationCap size={14} color={theme.colors.emerald.text} />
           </View>
@@ -261,6 +274,13 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {weather && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({
+              kind: "weather",
+              summary: weather.summary,
+              precipChancePct: weather.precipChancePct,
+            })}
+          />
           <View style={styles.rowIcon}>
             <CloudSun size={14} color={theme.colors.amber.text} />
           </View>
@@ -290,6 +310,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {rows.hazards && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({ kind: "hazard", topRisks: rows.hazards.topRisks })}
+          />
           <View style={styles.rowIcon}>
             <TriangleAlert size={14} color={theme.colors.orange.text} />
           </View>
@@ -320,6 +343,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {rows.radon && (
         <View style={styles.row}>
+          <DossierAmbient {...ambientForSection({ kind: "radon", zone: rows.radon.zone })} />
           <View style={styles.rowIcon}>
             <Radiation size={14} color={theme.colors.amber.text} />
           </View>
@@ -353,6 +377,11 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {air && (
         <View style={styles.row}>
+          {/* AQI bands drive the scene; a category-only row stays scene-free
+              rather than inventing an intensity AirNow never published. */}
+          {air.aqi !== null && (
+            <DossierAmbient {...ambientForSection({ kind: "air", aqi: air.aqi })} />
+          )}
           <View style={styles.rowIcon}>
             <Wind size={14} color={theme.colors.sky.text} />
           </View>
@@ -385,6 +414,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {neighborhood?.locked === false && (
         <View style={styles.row}>
+          {/* The mobile payload carries no walk band yet — null keeps the
+              footstep cadence at its honest calm default. */}
+          <DossierAmbient {...ambientForSection({ kind: "neighborhood", walkBand: null })} />
           <View style={styles.rowIcon}>
             <Home size={14} color={theme.colors.amber.text} />
           </View>

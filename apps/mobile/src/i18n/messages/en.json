@@ -1116,7 +1116,16 @@
     "coach_eyebrow_services": "Confirm what's yours",
     "coach_body_services": "Keep only the services you actually use. Clean data here keeps renewal reminders and AI suggestions accurate — and nothing gets forgotten when you move.",
     "coach_eyebrow_moving": "Date + destination → exact deadlines",
-    "coach_body_moving": "Your move date and destination state drive the deadlines we compute — DMV, voter registration, utilities. Accurate details make your countdown and steps trustworthy."
+    "coach_body_moving": "Your move date and destination state drive the deadlines we compute — DMV, voter registration, utilities. Accurate details make your countdown and steps trustworthy.",
+    "coach_quality": "Data quality {{quality}}%",
+    "cta_hint_address": "Add your street, city, state, and ZIP to continue",
+    "notifPriming_title": "One last thing",
+    "notifPriming_body": "We'll remind you before renewals and deadlines — that's the whole point of tracking them.",
+    "notifPriming_rowTitle": "Notifications",
+    "notifPriming_rowDesc": "A heads-up before renewals and key move dates.",
+    "notifPriming_toggleA11y": "Enable notifications",
+    "notifPriming_denied": "Notifications are turned off for LocateFlow in your device settings. You can enable them there any time.",
+    "notifPriming_later": "Maybe later"
   },
   "billingCycles": {
     "MONTHLY": "Monthly",

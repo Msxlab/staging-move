@@ -95,6 +95,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { ObCoach } from "@/components/ui/ObCoach";
 import { coachCopyKeys } from "@/components/ui/ob-coach-state";
+import { computeOnboardingDataQuality } from "@/lib/onboarding-data-quality";
+import { NotificationPrimingCard } from "@/components/onboarding/NotificationPrimingCard";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -1170,18 +1172,54 @@ export default function OnboardingScreen() {
   // the AI's suggestions better ("accurate data → accurate recommendations").
   // ObCoach owns the per-user collapse persistence; this only picks the copy.
   const coachKeysForStep = coachCopyKeys(step);
+
+  // DATA QUALITY (design `.ob-quality`): honest profile-completeness only —
+  // every point maps to a signal the recommendation/checklist engines really
+  // use (household profile, address, kept providers, destination + date).
+  // Pure mapper, unit-tested in src/lib/onboarding-data-quality.test.ts.
+  const dataQuality = useMemo(
+    () =>
+      computeOnboardingDataQuality({
+        hasName: Boolean(profile.firstName.trim() && profile.lastName.trim()),
+        hasAgeRange: Boolean(profile.ageRange),
+        householdSignals:
+          [
+            profile.hasChildren,
+            profile.hasPets,
+            profile.hasSenior,
+            profile.needsStorage,
+            profile.hasMotorcycle,
+            profile.hasBoatRV,
+          ].filter(Boolean).length + (profile.carCount > 0 ? 1 : 0),
+        hasAddress: Boolean(
+          address.street.trim() && address.city.trim() && address.state.trim() && address.zip.trim(),
+        ),
+        providersKept: selectedProviders.size,
+        hasDestinationState: wantsToMove === true && movingForm.state.trim().length === 2,
+        hasMoveDate: wantsToMove === true && Boolean(movingForm.moveDate),
+      }),
+    [profile, address, selectedProviders, wantsToMove, movingForm.state, movingForm.moveDate],
+  );
+
   const coachCallout = coachKeysForStep ? (
     <ObCoach
       eyebrow={t(coachKeysForStep.eyebrowKey)}
       body={t(coachKeysForStep.bodyKey)}
+      quality={dataQuality}
       style={{ marginTop: 16 }}
     />
   ) : null;
 
   // Real disabled state for the bottom CTA (no opacity hack): neutral fill +
-  // a short inline hint explaining what unlocks it. Same gate as before —
-  // only step 0's required names — so no validation path changes.
-  const continueDisabled = step === 0 && (!profile.firstName || !profile.lastName);
+  // lock glyph + a short inline hint explaining what unlocks it. Gates mirror
+  // each step's REQUIRED fields only (names on step 0, the four required
+  // address parts on step 1) — deeper checks (state/ZIP mismatch, legal
+  // consents) still run on submit with the same error + shake as before.
+  const missingRequiredAddress =
+    !address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zip.trim();
+  const continueDisabled =
+    (step === 0 && (!profile.firstName || !profile.lastName)) ||
+    (step === 1 && missingRequiredAddress);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1907,6 +1945,14 @@ export default function OnboardingScreen() {
                   </View>
                 </View>
               )}
+
+              {/* Final-step notification priming (design bundle-3 PermissionBody,
+                  notifications row ONLY — location is owner-vetoed). Explicit
+                  toggle-on records the soft-prompt decision and runs the
+                  existing push registration path, so the one-shot OS prompt
+                  fires here and the completion-time Alert stays silent.
+                  "Maybe later" never blocks finishing. */}
+              <NotificationPrimingCard style={{ marginTop: 24 }} />
             </View>
           )}
           </StepTransition>
@@ -1923,9 +1969,13 @@ export default function OnboardingScreen() {
           <View style={styles.bottomBar}>
             {continueDisabled && (
               <Text style={styles.ctaHint} accessibilityLiveRegion="polite">
-                {t("onboarding.cta_hint_names", {
-                  defaultValue: "Add your first and last name to continue",
-                })}
+                {step === 0
+                  ? t("onboarding.cta_hint_names", {
+                      defaultValue: "Add your first and last name to continue",
+                    })
+                  : t("onboarding.cta_hint_address", {
+                      defaultValue: "Add your street, city, state, and ZIP to continue",
+                    })}
               </Text>
             )}
             <Button

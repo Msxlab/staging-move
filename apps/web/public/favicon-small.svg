@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="LocateFlow">
+  <!--
+    Small-size favicon variant (16x16 / 32x32). Face only: ears + head +
+    mask band + eyes. The full mascot (favicon.svg) carries the box, body,
+    whiskers and blaze, which collapse into a dark blob at tab size — this
+    variant drops sub-2px detail, brightens the mask, and lifts the tile
+    so the silhouette stays readable.
+  -->
+  <defs>
+    <linearGradient id="fs-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E2B42"></stop>
+      <stop offset="100%" stop-color="#0C1424"></stop>
+    </linearGradient>
+    <linearGradient id="fs-mask" x1="10" y1="40" x2="54" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#56A8F0"></stop>
+      <stop offset="100%" stop-color="#9CCBF2"></stop>
+    </linearGradient>
+    <linearGradient id="fs-fur" x1="32" y1="6" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E2EAF4"></stop>
+      <stop offset="100%" stop-color="#A6B3C9"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#fs-bg)"></rect>
+
+  <path d="M19 23 Q10 5 29 13 Q26 20 19 23 Z" fill="url(#fs-fur)"></path>
+  <path d="M45 23 Q54 5 35 13 Q38 20 45 23 Z" fill="url(#fs-fur)"></path>
+
+  <path d="M32 12 C17 12 11 25 11 36 C11 49 21 58 32 58 C43 58 53 49 53 36 C53 25 47 12 32 12 Z" fill="url(#fs-fur)"></path>
+
+  <path d="M12 30 Q21 24 32 25 Q43 24 52 30 Q53 42 32 44 Q11 42 12 30 Z" fill="url(#fs-mask)"></path>
+
+  <circle cx="23" cy="34" r="6" fill="#0B1018"></circle>
+  <circle cx="41" cy="34" r="6" fill="#0B1018"></circle>
+  <circle cx="24.8" cy="32.2" r="2.2" fill="#EEF3FA"></circle>
+  <circle cx="42.8" cy="32.2" r="2.2" fill="#EEF3FA"></circle>
+</svg>

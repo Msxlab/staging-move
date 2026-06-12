@@ -1428,6 +1428,16 @@ html:not(.dark) .adm-aurora .au-tip {
   padding: 6px 2px 0;
 }
 
+/* Plan-distribution donut — segments draw in once on mount (the component
+   flips strokeDasharray from collapsed to final); reduced-motion users get
+   the final state immediately. */
+.adm-aurora .au-donut-seg {
+  transition: stroke-dasharray 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .au-donut-seg { transition: none; }
+}
+
 /* Audit feed — halo dot + "actor action target" + mono when */
 .adm-aurora .au-fitem { display: flex; gap: 12px; padding: 11px 2px; }
 .adm-aurora .au-fitem + .au-fitem { border-top: 1px solid var(--au-rule); }

@@ -7,6 +7,7 @@ import {
   listRuntimeConfigCatalog,
   type RuntimeConfigCatalogItem,
 } from "@/lib/runtime-config";
+import { buildIntegrations } from "@/lib/integration-status";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // grant_premium is a manual subscription override — billing accounting
@@ -156,57 +157,9 @@ function validateStripeSecretKey(key: string | null | undefined) {
   return { ok: true as const, key };
 }
 
-function buildIntegrationStatus(
-  catalogMap: Map<string, RuntimeConfigCatalogItem>,
-  id: string,
-  label: string,
-  keys: string[],
-) {
-  const missingKeys = keys.filter((key) => !catalogMap.get(key)?.configured);
-  return {
-    id,
-    label,
-    configured: missingKeys.length === 0,
-    missingKeys,
-  };
-}
-
-function buildGooglePlayBillingStatus(catalogMap: Map<string, RuntimeConfigCatalogItem>) {
-  const baseKeys = [
-    "GOOGLE_PLAY_PACKAGE_NAME",
-    "GOOGLE_PLAY_RTDN_AUDIENCE",
-    "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
-    "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
-    "MOBILE_ANDROID_PRODUCT_FAMILY",
-    "MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY",
-    "MOBILE_ANDROID_PRODUCT_PRO",
-    "MOBILE_ANDROID_PRODUCT_PRO_YEARLY",
-  ];
-  const serviceAccountKeys = [
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
-  ];
-  const oauthKeys = [
-    "GOOGLE_PLAY_OAUTH_CLIENT_ID",
-    "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
-  ];
-
-  const missingBaseKeys = baseKeys.filter((key) => !catalogMap.get(key)?.configured);
-  const missingServiceAccountKeys = serviceAccountKeys.filter((key) => !catalogMap.get(key)?.configured);
-  const missingOAuthKeys = oauthKeys.filter((key) => !catalogMap.get(key)?.configured);
-  const hasApiAuth = missingServiceAccountKeys.length === 0 || missingOAuthKeys.length === 0;
-  const missingKeys = [
-    ...missingBaseKeys,
-    ...(hasApiAuth ? [] : [...missingServiceAccountKeys, ...missingOAuthKeys]),
-  ];
-
-  return {
-    id: "mobile_play",
-    label: "Google Play Billing",
-    configured: missingKeys.length === 0,
-    missingKeys,
-  };
-}
+// Integration status builders live in @/lib/integration-status so the
+// dashboard's "External integrations" card renders the same list without
+// an HTTP self-call. The GET below keeps the exact same response shape.
 
 const CURRENT_PRODUCT_READINESS_MODES = [
   {
@@ -318,91 +271,7 @@ export async function GET(request: NextRequest) {
         .map((item: RuntimeConfigCatalogItem) => item.key),
     };
 
-    const integrations = [
-      buildIntegrationStatus(runtimeConfigMap, "google_oauth", "Google OAuth", [
-        "GOOGLE_OAUTH_CLIENT_ID",
-        "GOOGLE_OAUTH_CLIENT_SECRET",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "apple_oauth", "Apple OAuth", [
-        "APPLE_OAUTH_CLIENT_ID",
-        "APPLE_OAUTH_TEAM_ID",
-        "APPLE_OAUTH_KEY_ID",
-        "APPLE_OAUTH_PRIVATE_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "stripe", "Stripe Billing", [
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-        "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
-        "STRIPE_PRICE_INDIVIDUAL_YEARLY",
-        "STRIPE_PRICE_FAMILY_MONTHLY",
-        "STRIPE_PRICE_FAMILY_YEARLY",
-        "STRIPE_PRICE_PRO_MONTHLY",
-        "STRIPE_PRICE_PRO_YEARLY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "resend", "Transactional Email", [
-        "RESEND_API_KEY",
-        "EMAIL_FROM",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "google_maps", "Google Maps", [
-        "GOOGLE_MAPS_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "mobile_app_store", "Apple Mobile Billing", [
-        "APPLE_BUNDLE_ID",
-        "APPLE_APP_STORE_ISSUER_ID",
-        "APPLE_APP_STORE_KEY_ID",
-        "APPLE_APP_STORE_PRIVATE_KEY",
-        "MOBILE_IOS_PRODUCT_INDIVIDUAL",
-        "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY",
-        "MOBILE_IOS_PRODUCT_FAMILY",
-        "MOBILE_IOS_PRODUCT_FAMILY_YEARLY",
-        "MOBILE_IOS_PRODUCT_PRO",
-        "MOBILE_IOS_PRODUCT_PRO_YEARLY",
-      ]),
-      buildGooglePlayBillingStatus(runtimeConfigMap),
-      buildIntegrationStatus(runtimeConfigMap, "backup_storage", "Encrypted Backup Storage", [
-        "BACKUP_STORAGE_PROVIDER",
-        "BACKUP_STORAGE_BUCKET",
-        "BACKUP_STORAGE_REGION",
-        "BACKUP_STORAGE_ACCESS_KEY_ID",
-        "BACKUP_STORAGE_SECRET_ACCESS_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "redis", "Rate Limit Redis", [
-        "UPSTASH_REDIS_REST_URL",
-        "UPSTASH_REDIS_REST_TOKEN",
-      ]),
-      // ── Data integrations (address coverage · neighborhood · AI · movers) ──
-      // Each degrades gracefully when its key/flag is unset; surfacing them here
-      // means the owner can see which are actually live instead of guessing why
-      // a dossier section is empty. "configured" = the listed key(s)/flag(s) are
-      // present (a flag explicitly set to "false" still reads as present).
-      buildIntegrationStatus(runtimeConfigMap, "fcc_broadband", "FCC Broadband — ISP availability", [
-        "FCC_BDC_ENABLED",
-        "FCC_BDC_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "electric_utility", "Electric Utility — OpenEI URDB", [
-        "ELECTRIC_LOOKUP_ENABLED",
-        "OPENEI_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "census_acs", "Neighborhood economics — Census ACS", [
-        "CENSUS_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "airnow", "Air quality — AirNow", [
-        "AIRNOW_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "anthropic_ai", "AI move briefing — Anthropic", [
-        "ANTHROPIC_API_KEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "fmcsa", "Mover verification — FMCSA QCMobile", [
-        "FMCSA_WEBKEY",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "address_connectors", "Address-change connectors", [
-        "FEATURE_API_CONNECTORS",
-      ]),
-      buildIntegrationStatus(runtimeConfigMap, "mover_registration", "Public mover registration", [
-        "MOVER_REGISTRATION_ENABLED",
-      ]),
-    ];
+    const integrations = buildIntegrations(runtimeConfigMap);
 
     return NextResponse.json({
       counts: {

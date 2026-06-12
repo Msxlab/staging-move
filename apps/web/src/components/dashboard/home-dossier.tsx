@@ -18,6 +18,7 @@ import {
   Waves,
   Wind,
 } from "lucide-react";
+import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-ambient";
 
 /**
  * NEW HOME DOSSIER — Aurora dashboard widget.
@@ -496,6 +497,18 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
   const locale = useLocale();
   const view = deriveDossierView(data);
 
+  // Neighborhood medians count up (~800ms ease-out) when the row first enters
+  // the viewport. The hook's first render returns the FINAL figures, so SSR
+  // markup, no-JS, and reduced-motion all read the honest values immediately.
+  // Called unconditionally (rules of hooks) — null targets are a no-op.
+  const nhoodStats = view.neighborhood?.locked === false ? view.neighborhood : null;
+  const nhoodCount = useDossierCountUp([
+    nhoodStats?.medianHomeValue ?? null,
+    nhoodStats?.medianGrossRent ?? null,
+    nhoodStats?.medianHouseholdIncome ?? null,
+    nhoodStats?.ownerOccupiedPct ?? null,
+  ]);
+
   // Plan-gated (entitled:false on a configured deployment) → value-first teaser
   // with the three insight rows shown as locked line-items. Checked BEFORE the
   // data-driven view so a gated payload never renders real-looking rows.
@@ -555,9 +568,12 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
       </div>
 
       <div className="px-5 pb-5 space-y-2">
-        {/* (1) Flood zone — FEMA */}
+        {/* (1) Flood zone — FEMA. Each rendered row carries a DossierAmbient
+            scene layer (aria-hidden, masked, under the content) whose
+            parameters derive from the row's REAL data. */}
         {view.flood && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "flood", isHighRisk: view.flood.isHighRisk })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
                 <Waves className="h-4 w-4 text-tone-sky-fg" />
@@ -591,7 +607,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (2) School district — NCES boundaries */}
         {view.school && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "school" })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
                 <GraduationCap className="h-4 w-4 text-tone-sage-fg" />
@@ -610,7 +627,14 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {/* (3) Moving-day weather — only when the API says "ok" (≤7 days out,
             destination address). "too_far" renders nothing by design. */}
         {view.weather && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient
+              {...ambientForSection({
+                kind: "weather",
+                summary: view.weather.summary,
+                precipChancePct: view.weather.precipChancePct,
+              })}
+            />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-cyan-bg border border-tone-cyan-br flex items-center justify-center shrink-0">
                 <CloudSun className="h-4 w-4 text-tone-cyan-fg" />
@@ -633,7 +657,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {/* (4) Natural hazard profile — FEMA National Risk Index. Per-risk
             pills; honey warn tone ONLY for "Relatively High"/"Very High". */}
         {view.hazards && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "hazard", topRisks: view.hazards.topRisks })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-umber-bg border border-tone-umber-br flex items-center justify-center shrink-0">
                 <Mountain className="h-4 w-4 text-tone-umber-fg" />
@@ -668,7 +693,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (5) EPA radon zone — MANDATORY "test regardless of zone" fine print */}
         {view.radon && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "radon", zone: view.radon.zone })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-slate-bg border border-tone-slate-br flex items-center justify-center shrink-0">
                 <FlaskConical className="h-4 w-4 text-tone-slate-fg" />
@@ -717,7 +743,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (7) Air quality now — AirNow snapshot; hidden when not_configured */}
         {view.air && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "air", aqi: view.air.aqi })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
                 <Wind className="h-4 w-4 text-tone-sage-fg" />
@@ -767,7 +794,13 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         )}
 
         {view.neighborhood?.locked === false && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div
+            ref={nhoodCount.ref}
+            className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]"
+          >
+            <DossierAmbient
+              {...ambientForSection({ kind: "neighborhood", walkBand: view.neighborhood.walkBand })}
+            />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
                 <Home className="h-4 w-4 text-tone-honey-fg" />
@@ -780,13 +813,15 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               </div>
             </div>
 
-            {/* Stat rows — each renders only when its figure survived derivation. */}
+            {/* Stat rows — each renders only when its figure survived derivation.
+                Displayed figures come from the count-up hook (final values on
+                first render; brief 0 → target count once the row is visible). */}
             <div className="mt-2 space-y-1.5">
               {view.neighborhood.medianHomeValue !== null && (
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_homeValue")}</span>
                   <span className="text-sm font-semibold text-foreground">
-                    {formatUsd(view.neighborhood.medianHomeValue, locale)}
+                    {formatUsd(nhoodCount.values[0] ?? view.neighborhood.medianHomeValue, locale)}
                   </span>
                 </div>
               )}
@@ -795,7 +830,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                   <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_grossRent")}</span>
                   <span className="text-sm font-semibold text-foreground">
                     {td("dossier_neighborhood_rentPerMonth", {
-                      amount: formatUsd(view.neighborhood.medianGrossRent, locale),
+                      amount: formatUsd(nhoodCount.values[1] ?? view.neighborhood.medianGrossRent, locale),
                     })}
                   </span>
                 </div>
@@ -804,7 +839,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_income")}</span>
                   <span className="text-sm font-semibold text-foreground">
-                    {formatUsd(view.neighborhood.medianHouseholdIncome, locale)}
+                    {formatUsd(nhoodCount.values[2] ?? view.neighborhood.medianHouseholdIncome, locale)}
                   </span>
                 </div>
               )}
@@ -812,7 +847,9 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs text-muted-foreground">{td("dossier_neighborhood_ownerOccupied")}</span>
                   <span className="text-sm font-semibold text-foreground">
-                    {td("dossier_neighborhood_percent", { percent: view.neighborhood.ownerOccupiedPct })}
+                    {td("dossier_neighborhood_percent", {
+                      percent: nhoodCount.values[3] ?? view.neighborhood.ownerOccupiedPct,
+                    })}
                   </span>
                 </div>
               )}

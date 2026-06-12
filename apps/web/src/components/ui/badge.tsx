@@ -14,6 +14,20 @@ const badgeVariants = cva(
         success: "border-transparent bg-success text-white",
         warning: "border-transparent bg-warning text-white",
         info: "border-transparent bg-info text-white",
+        // Aurora tonal badges (design lf-badge--*): soft tone fill, matching
+        // hairline border, tone ink. Track light/dark via the tone-* vars.
+        rose: "border-tone-rose-br bg-tone-rose-bg text-tone-rose-fg",
+        foil: "border-tone-foil-br bg-tone-foil-bg text-tone-foil-fg",
+        sage: "border-tone-sage-br bg-tone-sage-bg text-tone-sage-fg",
+        honey: "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg",
+        danger: "border-danger bg-danger-light text-danger",
+        // Plan badges — Individual (cool) · Family (teal) · Pro (honey).
+        // proSolid is the champagne foil fill reserved for upgrade moments.
+        individual: "border-tone-rose-br bg-tone-rose-bg text-tone-rose-fg",
+        family:
+          "border-[color:var(--tone-family-br)] bg-[color:var(--tone-family-bg)] text-[color:var(--tone-family-fg)]",
+        pro: "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg",
+        proSolid: "border-transparent bg-foil font-bold text-[#2A1E06]",
       },
     },
     defaultVariants: {
@@ -29,7 +43,16 @@ export type BadgeVariant =
   | "outline"
   | "success"
   | "warning"
-  | "info";
+  | "info"
+  | "rose"
+  | "foil"
+  | "sage"
+  | "honey"
+  | "danger"
+  | "individual"
+  | "family"
+  | "pro"
+  | "proSolid";
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,

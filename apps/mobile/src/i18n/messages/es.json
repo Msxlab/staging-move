@@ -1116,7 +1116,16 @@
     "coach_eyebrow_services": "Confirma lo que es tuyo",
     "coach_body_services": "Conserva solo los servicios que realmente usas. Datos limpios aquí mantienen precisos los recordatorios de renovación y las sugerencias de IA — y nada se olvida al mudarte.",
     "coach_eyebrow_moving": "Fecha + destino → plazos exactos",
-    "coach_body_moving": "Tu fecha de mudanza y el estado de destino determinan los plazos que calculamos: DMV, registro de votantes, servicios. Detalles precisos hacen confiables tu cuenta regresiva y tus pasos."
+    "coach_body_moving": "Tu fecha de mudanza y el estado de destino determinan los plazos que calculamos: DMV, registro de votantes, servicios. Detalles precisos hacen confiables tu cuenta regresiva y tus pasos.",
+    "coach_quality": "Calidad de datos {{quality}}%",
+    "cta_hint_address": "Agrega tu calle, ciudad, estado y código postal para continuar",
+    "notifPriming_title": "Una última cosa",
+    "notifPriming_body": "Te recordaremos antes de las renovaciones y fechas límite — justamente para eso las registras.",
+    "notifPriming_rowTitle": "Notificaciones",
+    "notifPriming_rowDesc": "Un aviso antes de renovaciones y fechas clave de tu mudanza.",
+    "notifPriming_toggleA11y": "Activar notificaciones",
+    "notifPriming_denied": "Las notificaciones están desactivadas para LocateFlow en los ajustes de tu dispositivo. Puedes activarlas ahí en cualquier momento.",
+    "notifPriming_later": "Quizás más tarde"
   },
   "billingCycles": {
     "MONTHLY": "Mensual",

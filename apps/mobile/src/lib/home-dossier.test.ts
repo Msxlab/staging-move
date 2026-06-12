@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ambientForSection,
   clampPct,
   deriveHomeDossier,
   deriveHomeDossierView,
@@ -717,5 +718,166 @@ describe("getNeighborhoodRow", () => {
 
   it("hides on a legacy payload that omits the section entirely", () => {
     expect(getNeighborhoodRow(dossier())).toBeNull();
+  });
+});
+
+// Ambient scene mapping for DossierAmbient — must stay in lockstep with the
+// web mapper (apps/web/src/components/dashboard/dossier-ambient.tsx) so both
+// platforms read the same data into the same scene parameters.
+describe("ambientForSection — flood", () => {
+  it("maps FEMA high-risk to elevated, low-risk to calm, unknown to moderate", () => {
+    expect(ambientForSection({ kind: "flood", isHighRisk: true })).toEqual({
+      kind: "flood",
+      intensity: 2,
+    });
+    expect(ambientForSection({ kind: "flood", isHighRisk: false })).toEqual({
+      kind: "flood",
+      intensity: 0,
+    });
+    expect(ambientForSection({ kind: "flood", isHighRisk: null })).toEqual({
+      kind: "flood",
+      intensity: 1,
+    });
+  });
+});
+
+describe("ambientForSection — school", () => {
+  it("is a fixed moderate ambience (directory data carries no risk signal)", () => {
+    expect(ambientForSection({ kind: "school" })).toEqual({ kind: "school", intensity: 1 });
+  });
+});
+
+describe("ambientForSection — hazard", () => {
+  const risk = (hazard: string, rating: string) => ({
+    kind: "hazard" as const,
+    topRisks: [{ hazard, rating }],
+  });
+
+  it("takes intensity from the TOP risk chip's NRI rating", () => {
+    expect(ambientForSection(risk("Strong Wind", "Relatively High")).intensity).toBe(2);
+    expect(ambientForSection(risk("Strong Wind", "Very High")).intensity).toBe(2);
+    expect(ambientForSection(risk("Strong Wind", "Relatively Moderate")).intensity).toBe(1);
+    expect(ambientForSection(risk("Strong Wind", "Relatively Low")).intensity).toBe(0);
+    expect(ambientForSection(risk("Strong Wind", "Very Low")).intensity).toBe(0);
+  });
+
+  it("maps the TOP hazard name to the lightning / winter / wind variant", () => {
+    expect(ambientForSection(risk("Lightning", "Relatively High")).variant).toBe("lightning");
+    expect(ambientForSection(risk("Winter Weather", "Relatively Moderate")).variant).toBe("winter");
+    expect(ambientForSection(risk("Ice Storm", "Relatively Moderate")).variant).toBe("winter");
+    expect(ambientForSection(risk("Hail", "Relatively Moderate")).variant).toBe("winter");
+    expect(ambientForSection(risk("Cold Wave", "Relatively Low")).variant).toBe("winter");
+    expect(ambientForSection(risk("Strong Wind", "Relatively High")).variant).toBe("wind");
+    expect(ambientForSection(risk("Tornado", "Relatively High")).variant).toBe("wind");
+  });
+
+  it("falls back to a calm wind scene for unknown hazards and empty lists", () => {
+    expect(ambientForSection(risk("Wildfire", "Relatively High")).variant).toBe("wind");
+    expect(ambientForSection({ kind: "hazard", topRisks: [] })).toEqual({
+      kind: "hazard",
+      intensity: 0,
+      variant: "wind",
+    });
+  });
+
+  it("only reads the FIRST (top) risk", () => {
+    const spec = ambientForSection({
+      kind: "hazard",
+      topRisks: [
+        { hazard: "Hail", rating: "Relatively Low" },
+        { hazard: "Lightning", rating: "Very High" },
+      ],
+    });
+    expect(spec).toEqual({ kind: "hazard", intensity: 0, variant: "winter" });
+  });
+});
+
+describe("ambientForSection — radon", () => {
+  it("maps EPA zones to intensity (zone 1 = highest potential)", () => {
+    expect(ambientForSection({ kind: "radon", zone: 1 }).intensity).toBe(2);
+    expect(ambientForSection({ kind: "radon", zone: 2 }).intensity).toBe(1);
+    expect(ambientForSection({ kind: "radon", zone: 3 }).intensity).toBe(0);
+  });
+});
+
+describe("ambientForSection — air", () => {
+  it("bands AQI at 50 and 100", () => {
+    expect(ambientForSection({ kind: "air", aqi: 12 }).intensity).toBe(0);
+    expect(ambientForSection({ kind: "air", aqi: 50 }).intensity).toBe(0);
+    expect(ambientForSection({ kind: "air", aqi: 51 }).intensity).toBe(1);
+    expect(ambientForSection({ kind: "air", aqi: 100 }).intensity).toBe(1);
+    expect(ambientForSection({ kind: "air", aqi: 101 }).intensity).toBe(2);
+    expect(ambientForSection({ kind: "air", aqi: 180 }).intensity).toBe(2);
+  });
+});
+
+describe("ambientForSection — neighborhood", () => {
+  it("derives footstep cadence intensity from the walk band", () => {
+    expect(ambientForSection({ kind: "neighborhood", walkBand: "most" }).intensity).toBe(2);
+    expect(ambientForSection({ kind: "neighborhood", walkBand: "above_average" }).intensity).toBe(1);
+    expect(ambientForSection({ kind: "neighborhood", walkBand: "below_average" }).intensity).toBe(0);
+    expect(ambientForSection({ kind: "neighborhood", walkBand: "least" }).intensity).toBe(0);
+    // The mobile payload carries no walk band yet — the card passes null and
+    // must land on the calm cadence.
+    expect(ambientForSection({ kind: "neighborhood", walkBand: null }).intensity).toBe(0);
+  });
+});
+
+describe("ambientForSection — weather", () => {
+  it("precip >= 50 wins as rain, elevated at >= 80, even when the summary mentions clouds", () => {
+    expect(
+      ambientForSection({ kind: "weather", summary: "Cloudy", precipChancePct: 60 }),
+    ).toEqual({ kind: "weather", intensity: 1, variant: "rain" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Showers", precipChancePct: 85 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "rain" });
+  });
+
+  it("summary mentioning cloud (any case) maps to the cloud scene", () => {
+    expect(
+      ambientForSection({ kind: "weather", summary: "Partly Cloudy", precipChancePct: 20 }),
+    ).toEqual({ kind: "weather", intensity: 1, variant: "cloud" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "clouds increasing", precipChancePct: null }),
+    ).toEqual({ kind: "weather", intensity: 1, variant: "cloud" });
+  });
+
+  it("defaults to the calm sun scene", () => {
+    expect(ambientForSection({ kind: "weather", summary: "Sunny", precipChancePct: 10 })).toEqual({
+      kind: "weather",
+      intensity: 0,
+      variant: "sun",
+    });
+    expect(ambientForSection({ kind: "weather", summary: null, precipChancePct: null })).toEqual({
+      kind: "weather",
+      intensity: 0,
+      variant: "sun",
+    });
+  });
+
+  it("derives the rows the card actually renders (end-to-end with the getters)", () => {
+    // Wire-through sanity: the same derived rows the card passes in map to
+    // honest scene params.
+    const rows = deriveHomeDossier(extendedDossier());
+    expect(rows.flood && ambientForSection({ kind: "flood", isHighRisk: rows.flood.isHighRisk }))
+      .toEqual({ kind: "flood", intensity: 2 });
+    expect(
+      rows.hazards && ambientForSection({ kind: "hazard", topRisks: rows.hazards.topRisks }),
+    ).toEqual({ kind: "hazard", intensity: 2, variant: "wind" });
+    expect(rows.radon && ambientForSection({ kind: "radon", zone: rows.radon.zone })).toEqual({
+      kind: "radon",
+      intensity: 2,
+    });
+    expect(
+      rows.air && rows.air.aqi !== null && ambientForSection({ kind: "air", aqi: rows.air.aqi }),
+    ).toEqual({ kind: "air", intensity: 0 });
+    expect(
+      rows.weather &&
+        ambientForSection({
+          kind: "weather",
+          summary: rows.weather.summary,
+          precipChancePct: rows.weather.precipChancePct,
+        }),
+    ).toEqual({ kind: "weather", intensity: 0, variant: "sun" });
   });
 });

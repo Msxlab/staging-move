@@ -9,13 +9,20 @@ export interface TrendPoint {
   value: number;
 }
 
-type RangeKey = "7d" | "30d" | "qtr";
+export type RangeKey = "7d" | "30d" | "qtr";
 
-const RANGES: ReadonlyArray<{ key: RangeKey; label: string }> = [
+export const RANGES: ReadonlyArray<{ key: RangeKey; label: string }> = [
   { key: "7d", label: "7D" },
   { key: "30d", label: "30D" },
   { key: "qtr", label: "QTR" },
 ];
+
+/** Header captions per range — shared with the tabbed overview card. */
+export const RANGE_CAPTIONS: Record<RangeKey, string> = {
+  "7d": "Estimated MRR · daily · last 7 days",
+  "30d": "Estimated MRR · daily · last 30 days",
+  qtr: "Estimated MRR · weekly · last quarter",
+};
 
 /* Chart geometry — mirrors the corporate design handoff (admin-pro). The
  * viewBox is fixed; width stretches via preserveAspectRatio="none" while
@@ -54,6 +61,51 @@ function weekday(key: string): string {
  */
 export function RevenueTrendCard({ points }: { points: TrendPoint[] }) {
   const [range, setRange] = useState<RangeKey>("30d");
+
+  return (
+    <section className="admin-panel">
+      <header className="admin-panel-head">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">
+            Revenue trend
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {RANGE_CAPTIONS[range]}
+          </p>
+        </div>
+        <div className="shrink-0">
+          <div className="au-seg" role="group" aria-label="Date range">
+            {RANGES.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                className={range === r.key ? "on" : ""}
+                aria-pressed={range === r.key}
+                onClick={() => setRange(r.key)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+      <RevenueTrendBody points={points} range={range} />
+    </section>
+  );
+}
+
+/**
+ * Chart body only (range slicing + crosshair hover + SVG) — used by both
+ * the standalone card above and the tabbed overview card, which renders
+ * its own header and owns the range state.
+ */
+export function RevenueTrendBody({
+  points,
+  range,
+}: {
+  points: TrendPoint[];
+  range: RangeKey;
+}) {
   const [idx, setIdx] = useState<number | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
@@ -61,30 +113,18 @@ export function RevenueTrendCard({ points }: { points: TrendPoint[] }) {
   const view = useMemo(() => {
     if (range === "7d") {
       const pts = points.slice(-7);
-      return {
-        pts,
-        labels: pts.map((p) => weekday(p.date)),
-        caption: "Estimated MRR · daily · last 7 days",
-      };
+      return { pts, labels: pts.map((p) => weekday(p.date)) };
     }
     if (range === "30d") {
       const pts = points.slice(-30);
-      return {
-        pts,
-        labels: pts.map((p) => shortDate(p.date)),
-        caption: "Estimated MRR · daily · last 30 days",
-      };
+      return { pts, labels: pts.map((p) => shortDate(p.date)) };
     }
     // QTR — weekly buckets sampled from the daily series, anchored on the
     // most recent day so the right edge is always "now".
     const daily = points.slice(-90);
     const pts: TrendPoint[] = [];
     for (let i = daily.length - 1; i >= 0; i -= 7) pts.unshift(daily[i]);
-    return {
-      pts,
-      labels: pts.map((p) => shortDate(p.date)),
-      caption: "Estimated MRR · weekly · last quarter",
-    };
+    return { pts, labels: pts.map((p) => shortDate(p.date)) };
   }, [points, range]);
 
   const n = view.pts.length;
@@ -115,143 +155,117 @@ export function RevenueTrendCard({ points }: { points: TrendPoint[] }) {
     setIdx(Math.max(0, Math.min(n - 1, i)));
   };
 
-  const leftPct = idx == null || n < 2 ? 0 : (idx / (n - 1)) * 100;
-  const hovered = idx == null ? null : view.pts[idx];
+  // Bounds-guard: the parent owns the range, so a 30d→7d switch can leave a
+  // stale hover index pointing past the shorter series until the next move.
+  const safeIdx = idx != null && idx < n ? idx : null;
+  const leftPct = safeIdx == null || n < 2 ? 0 : (safeIdx / (n - 1)) * 100;
+  const hovered = safeIdx == null ? null : view.pts[safeIdx];
 
   return (
-    <section className="admin-panel">
-      <header className="admin-panel-head">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">
-            Revenue trend
-          </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{view.caption}</p>
-        </div>
-        <div className="shrink-0">
-          <div className="au-seg" role="group" aria-label="Date range">
-            {RANGES.map((r) => (
-              <button
-                key={r.key}
-                type="button"
-                className={range === r.key ? "on" : ""}
-                aria-pressed={range === r.key}
-                onClick={() => {
-                  setRange(r.key);
-                  setIdx(null);
-                }}
-              >
-                {r.label}
-              </button>
+    <div className="px-6 pb-5 pt-4">
+      {n < 2 ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          Not enough history yet — the trend fills in as subscriptions come
+          and go.
+        </p>
+      ) : (
+        <>
+          <div
+            ref={wrapRef}
+            className="au-chartwrap"
+            onMouseMove={onMove}
+            onMouseLeave={() => setIdx(null)}
+          >
+            <svg
+              viewBox={`0 0 ${W} ${H}`}
+              preserveAspectRatio="none"
+              width="100%"
+              height={H}
+              style={{ display: "block" }}
+              role="img"
+              aria-label="Estimated monthly recurring revenue over time"
+            >
+              {[0.25, 0.5, 0.75, 1].map((g) => (
+                <line
+                  key={g}
+                  x1="0"
+                  x2={W}
+                  y1={py(max * g)}
+                  y2={py(max * g)}
+                  stroke="var(--au-rule)"
+                  strokeWidth="1"
+                />
+              ))}
+              <defs>
+                <linearGradient
+                  id={gradientId}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="var(--au-accent)"
+                    stopOpacity="0.20"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--au-accent)"
+                    stopOpacity="0"
+                  />
+                </linearGradient>
+              </defs>
+              <path
+                d={`${line} L${px(n - 1).toFixed(1)} ${H} L${px(0).toFixed(1)} ${H} Z`}
+                fill={`url(#${gradientId})`}
+              />
+              <path
+                d={line}
+                fill="none"
+                stroke="var(--au-accent)"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            {hovered != null && (
+              <>
+                <div
+                  className="au-chart-cross"
+                  style={{ left: `${leftPct}%` }}
+                />
+                <span
+                  className="au-chart-pt"
+                  style={{
+                    left: `${leftPct}%`,
+                    top: `${py(hovered.value)}px`,
+                  }}
+                />
+                <div
+                  className={"au-tip" + (leftPct > 60 ? " flip" : "")}
+                  style={{ left: `${leftPct}%` }}
+                >
+                  <div className="lb">
+                    {weekday(hovered.date)} · {shortDate(hovered.date)}
+                  </div>
+                  <div className="vl">
+                    <i />
+                    MRR
+                    <b className="au-num">{fmtUsd(hovered.value)}</b>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="au-xaxis" aria-hidden>
+            {axisLabels.map((label, i) => (
+              <span key={`${label}-${i}`}>{label}</span>
             ))}
           </div>
-        </div>
-      </header>
-
-      <div className="px-6 pb-5 pt-4">
-        {n < 2 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            Not enough history yet — the trend fills in as subscriptions come
-            and go.
-          </p>
-        ) : (
-          <>
-            <div
-              ref={wrapRef}
-              className="au-chartwrap"
-              onMouseMove={onMove}
-              onMouseLeave={() => setIdx(null)}
-            >
-              <svg
-                viewBox={`0 0 ${W} ${H}`}
-                preserveAspectRatio="none"
-                width="100%"
-                height={H}
-                style={{ display: "block" }}
-                role="img"
-                aria-label="Estimated monthly recurring revenue over time"
-              >
-                {[0.25, 0.5, 0.75, 1].map((g) => (
-                  <line
-                    key={g}
-                    x1="0"
-                    x2={W}
-                    y1={py(max * g)}
-                    y2={py(max * g)}
-                    stroke="var(--au-rule)"
-                    strokeWidth="1"
-                  />
-                ))}
-                <defs>
-                  <linearGradient
-                    id={gradientId}
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor="var(--au-accent)"
-                      stopOpacity="0.20"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--au-accent)"
-                      stopOpacity="0"
-                    />
-                  </linearGradient>
-                </defs>
-                <path
-                  d={`${line} L${px(n - 1).toFixed(1)} ${H} L${px(0).toFixed(1)} ${H} Z`}
-                  fill={`url(#${gradientId})`}
-                />
-                <path
-                  d={line}
-                  fill="none"
-                  stroke="var(--au-accent)"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              {hovered != null && (
-                <>
-                  <div
-                    className="au-chart-cross"
-                    style={{ left: `${leftPct}%` }}
-                  />
-                  <span
-                    className="au-chart-pt"
-                    style={{
-                      left: `${leftPct}%`,
-                      top: `${py(hovered.value)}px`,
-                    }}
-                  />
-                  <div
-                    className={"au-tip" + (leftPct > 60 ? " flip" : "")}
-                    style={{ left: `${leftPct}%` }}
-                  >
-                    <div className="lb">
-                      {weekday(hovered.date)} · {shortDate(hovered.date)}
-                    </div>
-                    <div className="vl">
-                      <i />
-                      MRR
-                      <b className="au-num">{fmtUsd(hovered.value)}</b>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="au-xaxis" aria-hidden>
-              {axisLabels.map((label, i) => (
-                <span key={`${label}-${i}`}>{label}</span>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </section>
+        </>
+      )}
+    </div>
   );
 }

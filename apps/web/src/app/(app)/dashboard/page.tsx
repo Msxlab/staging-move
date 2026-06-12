@@ -12,7 +12,7 @@ async function loadWidgetPrefs(): Promise<DashboardWidgetPrefs | null> {
 
   const raw = user?.dashboardWidgetPrefs;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const prefs = raw as { order?: unknown; visibility?: unknown };
+  const prefs = raw as { order?: unknown; visibility?: unknown; collapsed?: unknown };
 
   const order = Array.isArray(prefs.order)
     ? (prefs.order.filter((k) => typeof k === "string") as string[])
@@ -25,8 +25,18 @@ async function loadWidgetPrefs(): Promise<DashboardWidgetPrefs | null> {
           ) as Array<[string, boolean]>
         )
       : undefined;
+  // `collapsed` stays undefined (not {}) when the user has never toggled, so
+  // the client applies the smart collapse defaults exactly once.
+  const collapsed =
+    prefs.collapsed && typeof prefs.collapsed === "object" && !Array.isArray(prefs.collapsed)
+      ? Object.fromEntries(
+          Object.entries(prefs.collapsed as Record<string, unknown>).filter(
+            ([, v]) => typeof v === "boolean"
+          ) as Array<[string, boolean]>
+        )
+      : undefined;
 
-  return { order, visibility };
+  return { order, visibility, collapsed };
 }
 
 export default async function DashboardPage() {

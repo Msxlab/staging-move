@@ -288,7 +288,13 @@ function PlanCard({
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{copy.kicker}</p>
           {badge ? (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                planId === "PRO"
+                  ? "bg-tone-foil-bg text-tone-foil-fg"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
               {badge}
             </span>
           ) : null}
@@ -326,7 +332,12 @@ function PlanCard({
 
       <div className="mt-6">
         <Link href={planHref(ctaHref, planId, cycle)} className="block">
-          <Button variant={isHighlighted ? "default" : "outline"} className="w-full">
+          {/* Pro wears the champagne foil — the one premium moment on this
+              grid. Individual keeps the highlighted primary fill. */}
+          <Button
+            variant={planId === "PRO" ? "foil" : isHighlighted ? "default" : "outline"}
+            className="w-full"
+          >
             {ctaLabel}
           </Button>
         </Link>

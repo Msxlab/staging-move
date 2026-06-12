@@ -49,6 +49,7 @@ import { RaccoonReading } from "@/components/illustrations/RaccoonReading";
 import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-storm";
 import { HardStats } from "@/components/marketing/hard-stats";
 import { MovingMomentMock } from "@/components/marketing/moving-moment-mock";
+import { DossierShowcase } from "@/components/marketing/dossier-showcase";
 import { BilingualShowcase } from "@/components/marketing/bilingual-showcase";
 import { SocialProof } from "@/components/marketing/social-proof";
 import { EarlyAccessCapture } from "@/components/marketing/early-access-capture";
@@ -337,6 +338,13 @@ export default async function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* New home dossier showcase — animated EXAMPLE report (sample data,
+          clearly labelled) with the same data-driven ambient scenes as the
+          dashboard card. Sits right after the features grid so it reads as
+          the deep-dive on the dossier feature tile above; CTA goes to
+          /pricing (Pro pitch). Client component, no data fetching. */}
+      <DossierShowcase />
 
       {/* How It Works */}
       <section id="how-it-works" className="bg-muted/50 py-20">
