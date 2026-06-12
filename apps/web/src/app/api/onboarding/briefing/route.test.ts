@@ -112,13 +112,28 @@ function expectActionsWithTargets(actions: BriefingAction[]) {
 
 // The route caches per user+day in module state; a fresh user per test isolates.
 let userSeq = 0;
+// Per-key call counts for the shared daily-AI-cap limiter (briefing-gen:*), so a
+// per-user+day key gets exactly 3 successful generations before it caps — the
+// same behavior the old in-process counter had, now via the shared rate limiter.
+const genCounts = new Map<string, number>();
 
 describe("/api/onboarding/briefing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userSeq += 1;
+    genCounts.clear();
     mocks.requireDbUserId.mockResolvedValue(`user_${userSeq}`);
-    mocks.rateLimit.mockResolvedValue({ success: true });
+    // Per-minute throttle (rl-key) → success by default. The daily-AI-cap limiter
+    // (briefing-gen:<user>:<scope>:<utcDay>) counts per key so the 3/day cap fires
+    // after 3 generation attempts and resets when the UTC-day key changes.
+    mocks.rateLimit.mockImplementation((key: unknown) => {
+      if (typeof key === "string" && key.startsWith("briefing-gen:")) {
+        const n = (genCounts.get(key) ?? 0) + 1;
+        genCounts.set(key, n);
+        return Promise.resolve({ success: n <= 3, remaining: Math.max(0, 3 - n), resetAt: 0 });
+      }
+      return Promise.resolve({ success: true });
+    });
     mocks.getRuntimeConfigValue.mockResolvedValue("test-api-key");
     // aiBriefing is Family+Pro under the overhauled matrix (Individual loses AI),
     // so the entitled-path default is FAMILY — the lowest tier with the feature.
@@ -357,6 +372,30 @@ describe("/api/onboarding/briefing", () => {
     expect(body.aiGenerated).toBe(false);
     expect(typeof body.briefing).toBe("string");
     // No AI generation spent when there is nothing essential to surface.
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
+  });
+
+  it("caps via the SHARED limiter on a cold cache (another instance spent the budget) — rule-based, no AI", async () => {
+    // The shared daily-cap limiter reports exhausted from the first attempt, as if
+    // another instance already spent today's 3 generations. With no in-memory entry
+    // on this instance, the route must still cap: serve a deterministic rule-based
+    // briefing, no Anthropic call. This is the per-instance-cap leak the move to a
+    // shared counter closes.
+    mocks.rateLimit.mockImplementation((key: unknown) => {
+      if (typeof key === "string" && key.startsWith("briefing-gen:")) {
+        return Promise.resolve({ success: false, remaining: 0, resetAt: 0 });
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    const response = await POST(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.configured).toBe(true);
+    expect(body.source).toBe("rule_based");
+    expect(body.cached).toBe(true);
+    expectActionsWithTargets(body.actions);
     expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
   });
 

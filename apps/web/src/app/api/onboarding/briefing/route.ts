@@ -45,12 +45,16 @@ interface CachedBriefing {
   moveStage: MoveStage;
   daysToMoveBucket: DaysToMoveBucket;
   source: "ai" | "rule_based";
-  /** AI generation attempts consumed for this user today (UTC). */
-  generationCount: number;
   cachedAt: number;
 }
 const briefingCache = new Map<string, CachedBriefing>();
-/** Hard per-user cap on Anthropic API attempts per UTC day. */
+/**
+ * Hard per-user cap on Anthropic API attempts per UTC day. Enforced via the
+ * shared (Upstash-backed) rate limiter keyed by user + UTC day, NOT an in-process
+ * counter — so the 3/day budget is GLOBAL across instances and survives a restart
+ * (the cap is the only thing guarding real Anthropic spend). The in-memory cache
+ * below still serves same-day unchanged requests and the last briefing for free.
+ */
 const DAILY_AI_GENERATION_CAP = 3;
 /** LRU bound — day-scoped entries, so this is purely a memory guard. */
 const BRIEFING_CACHE_MAX_ENTRIES = 2000;
@@ -336,11 +340,37 @@ export async function POST(request: NextRequest) {
     return cachedResponse(cached);
   }
 
-  // Inputs changed but today's AI budget is spent → keep serving today's last
-  // briefing rather than burning another generation. Never an error; the next
-  // UTC day (new cache key) restores the budget.
-  if (cached && cached.generationCount >= DAILY_AI_GENERATION_CAP) {
-    return cachedResponse(cached);
+  // Inputs changed → this is a generation attempt. Consume one unit of today's
+  // GLOBAL budget via the shared limiter (Upstash, with in-memory fallback),
+  // keyed by user + UTC day so the 3/day cap holds across instances and restarts.
+  // One attempt = one unit, success or not — the hammering guard. Same-day
+  // unchanged requests above never reach here, so they cost nothing.
+  const genGate = await rateLimit(`briefing-gen:${cacheKey}`, {
+    limit: DAILY_AI_GENERATION_CAP,
+    windowSeconds: 24 * 60 * 60,
+  });
+  if (!genGate.success) {
+    // Budget spent: serve today's last briefing if this instance still has it,
+    // otherwise a deterministic rule-based briefing (no AI call, no extra spend).
+    // Never an error; the next UTC day restores the budget.
+    if (cached) return cachedResponse(cached);
+    const cappedActions = buildBriefingActions(signals);
+    recordIntegrationOutcome("briefing", "cached");
+    return NextResponse.json({
+      configured: true,
+      source: "rule_based",
+      aiGenerated: false,
+      briefing: encodeBriefingString({
+        briefing: buildFallbackBriefing(signals),
+        actions: cappedActions,
+        moveStage: signals.moveStage,
+        daysToMoveBucket: signals.daysToMoveBucket,
+      }),
+      actions: cappedActions,
+      moveStage: signals.moveStage,
+      daysToMoveBucket: signals.daysToMoveBucket,
+      cached: true,
+    });
   }
 
   // Structured, deep-linked actions (each with a machine-readable `target`) are
@@ -350,9 +380,8 @@ export async function POST(request: NextRequest) {
   const actions = buildBriefingActions(signals);
 
   // ── Try the LLM for the situation SUMMARY; degrade to the rule-based summary ──
-  // One attempt = one unit of today's budget, success or not — that is the
-  // hammering guard. generateLlmBriefing never throws; null means "fall back".
-  const generationCount = (cached?.generationCount ?? 0) + 1;
+  // The budget unit was already consumed by the gen gate above (success or not).
+  // generateLlmBriefing never throws; null means "fall back".
   const aiSummary = await generateLlmBriefing(apiKey, signals);
   let source: "ai" | "rule_based" = "ai";
   let prose: string;
@@ -382,7 +411,6 @@ export async function POST(request: NextRequest) {
     moveStage: signals.moveStage,
     daysToMoveBucket: signals.daysToMoveBucket,
     source,
-    generationCount,
     cachedAt: Date.now(),
   });
 
