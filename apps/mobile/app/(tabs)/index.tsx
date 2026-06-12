@@ -38,7 +38,6 @@ import {
   Users,
   Mail,
   X,
-  CalendarClock,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
@@ -71,7 +70,6 @@ import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
-import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
 import { UpNext } from "@/components/ui/UpNext";
@@ -359,9 +357,6 @@ export default function DashboardScreen() {
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
   // id of the invite currently being accepted/declined (disables its buttons).
   const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
-  // Bumped on a successful invite-accept to fire the PlanHero crew's one-shot
-  // celebration bounce. A plain counter keeps the trigger decoupled from PlanHero.
-  const [celebrateTick, setCelebrateTick] = useState(0);
   // Push re-prompt card: shown only to users who never accepted push and
   // haven't dismissed the card. `null` = still deciding (render nothing).
   const [showPushPrompt, setShowPushPrompt] = useState<boolean | null>(null);
@@ -933,17 +928,14 @@ export default function DashboardScreen() {
       try {
         const result = await acceptPendingInvitation(invite.id);
         if (result.ok) {
-          // Celebrate: success haptic + bump the tick so the PlanHero crew does a
-          // one-shot bounce. Haptics are best-effort (no-op on web / unsupported
-          // devices) and reduce-motion-safe (notification haptics are tactile,
-          // not motion, so they're appropriate even when animations are off).
+          // Celebrate with haptics only; the dashboard stays focused on real
+          // plan/service/dossier modules instead of decorative empty states.
           hapticSuccess();
-          setCelebrateTick((n) => n + 1);
           // Drop the accepted invite immediately, then refresh the dashboard.
           // acceptPendingInvitation already wrote the resolved plan tier into the
           // auth store (via refreshPlanTierFromProfile) so ThemeProvider repaints
-          // the Family/Pro accent + raccoon mascots app-wide; the refresh also
-          // surfaces the new Household/Workspace card.
+          // the Family/Pro accent; the refresh also surfaces the new
+          // Household/Workspace card.
           setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
           await fetchDashboard();
         } else {
@@ -1636,10 +1628,6 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {/* Plan welcome hero — mascots + plan identity (Family/Pro only).
-            celebrateTick fires a one-shot bounce when an invite is accepted. */}
-        <PlanHero celebrateTick={celebrateTick} />
-
         {/* Savings / insights — computed client-side from tracked services.
             Self-hides when there are no active services to summarize. */}
         <SavingsInsightsCard services={services} />
@@ -1712,38 +1700,6 @@ export default function DashboardScreen() {
           </>
         )}
 
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
-        <View style={styles.quickActions}>
-          {([
-            { label: t("addresses.newTitle"), icon: MapPin, route: "/addresses/new" as Href },
-            { label: t("services.newTitle"), icon: Zap, route: "/services/new" as Href },
-            { label: t("moving.newPlan"), icon: Truck, route: "/moving/new" as Href },
-            { label: t("reminders.title", { defaultValue: "Reminders" }), icon: CalendarClock, route: "/reminders" as Href },
-          ]).map((action) => {
-            const Icon = action.icon;
-            return (
-              <TouchableOpacity
-                key={action.label}
-                style={styles.quickAction}
-                onPress={() => {
-                  // Light tactile confirmation on the primary "create" entry
-                  // points. Best-effort + reduce-motion-safe (impact haptics
-                  // are tactile, not visual motion); no-op on web.
-                  hapticLight();
-                  router.push(action.route);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.quickActionIcon}>
-                  <Icon size={18} color={theme.colors.primary} />
-                </View>
-                <Text style={styles.quickActionLabel}>{action.label}</Text>
-                <ArrowRight size={14} color={theme.colors.textMuted} />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
       </ScrollView>
 
       {/* UTILITY QUICK-LOOK SHEET — bottom sheet over the tapped Connected
@@ -1893,26 +1849,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 28,
     marginBottom: 12,
   },
-  quickActions: { gap: 8 },
-  quickAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-  },
-  quickActionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: theme.colors.primaryFaded,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quickActionLabel: { flex: 1, fontSize: 15, fontWeight: "600", color: theme.colors.text },
   inviteRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   inviteIcon: {
     width: 40,

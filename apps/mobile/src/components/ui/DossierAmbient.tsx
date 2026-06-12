@@ -1009,8 +1009,8 @@ function clampIntensity(value: number): AmbientIntensity {
 }
 
 /**
- * The ambient layer for one HomeDossierCard section row. Fills the row's
- * right 55% (the host row clips it implicitly via this layer's own
+ * The ambient layer for one HomeDossierCard section row. Fills most of the row
+ * from the right side (the host row clips it implicitly via this layer's own
  * overflow:hidden), never intercepts touches, and is hidden from assistive
  * tech. A card-colored gradient fades the scene's left edge so the row's
  * text zone stays crisp — the RN stand-in for the web layer's
@@ -1080,15 +1080,15 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     right: 0,
-    width: "55%",
+    width: "74%",
     overflow: "hidden",
   },
-  // Fades the scene out toward the text side (left 30% of the layer).
+  // Fades the scene out toward the text side.
   fade: {
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    width: "30%",
+    width: "44%",
   },
 });
