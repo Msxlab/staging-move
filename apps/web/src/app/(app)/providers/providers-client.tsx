@@ -93,6 +93,10 @@ interface RecommendationsResponse {
     totalCount: number;
   }>;
   nextCriticalActions: ScoredProvider[];
+  /** The user's region (from their address city/state) — heads the recommendations. */
+  region?: { city: string | null; state: string | null; label: string | null };
+  /** Top-N region-relevant providers per pending CRITICAL/IMPORTANT category. */
+  regionGroups?: Array<{ category: string; label: string; tier: UrgencyTier; providers: ScoredProvider[] }>;
   meta?: {
     state?: string;
     currentPhase?: number;
@@ -513,9 +517,16 @@ export function ProvidersClient({
         <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-tone-orange-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Recommended for you</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {recs?.region?.label ? `Top picks for ${recs.region.label}` : "Recommended for you"}
+            </h2>
             {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </div>
+          {recs?.region?.label && (
+            <p className="text-[11px] text-muted-foreground -mt-1.5">
+              Ranked for your area — locally-confirmed providers first.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {highlightProviders.map((p) => (
               <Link

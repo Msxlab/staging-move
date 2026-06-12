@@ -40,12 +40,23 @@ vi.mock("@locateflow/db", () => ({
 }));
 
 vi.mock("@/lib/recommendation-engine", () => ({
-  scoreProviders: vi.fn((providers: unknown[]) => providers),
+  // Attach a tier + score so the region-grouped top-picks block (which reads
+  // urgencyTier/recommendationScore) is exercised; spreads keep enrichment fields
+  // like utilityServiceable that the FCC/electric blocks set before scoring.
+  scoreProviders: vi.fn((providers: any[]) =>
+    providers.map((p) => ({
+      ...p,
+      urgencyTier: p.urgencyTier ?? "CRITICAL",
+      recommendationScore: p.recommendationScore ?? 50,
+    })),
+  ),
   buildRecommendationClusters: vi.fn((providers: unknown[]) => ({
     recommended: [],
     clusters: [],
     allProviders: providers,
   })),
+  getMergedDisplayCategoryLabel: vi.fn((c: string) => c),
+  getMergedDisplayCategoryOrder: vi.fn(() => 0),
 }));
 
 // Electric-utility enrichment is mocked so the route tests can drive each
@@ -80,6 +91,7 @@ const mockAddress = prisma.address as unknown as { findMany: Mock };
 const mockService = prisma.service as unknown as { findMany: Mock };
 const mockMovingPlan = prisma.movingPlan as unknown as { findFirst: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Mock };
+const mockStateRule = prisma.stateRule as unknown as { findUnique: Mock };
 const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
 const rateLimitMock = rateLimit as unknown as Mock;
 const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
@@ -138,6 +150,7 @@ describe("provider recommendations route", () => {
     mockService.findMany.mockResolvedValue([]);
     mockMovingPlan.findFirst.mockResolvedValue(null);
     mockServiceProvider.findMany.mockResolvedValue([]);
+    mockStateRule.findUnique.mockResolvedValue(null);
     mockRecFeedback.findMany.mockResolvedValue([]);
     lookupElectricUtilitiesMock.mockResolvedValue(electricLookupResult());
     isElectricUtilityServiceableMock.mockReturnValue(false);
@@ -172,6 +185,29 @@ describe("provider recommendations route", () => {
       expect.any(String),
       expect.objectContaining({ limit: 120, windowSeconds: 60 }),
     );
+  });
+
+  it("heads recommendations with the user's region and groups top picks per category (#3a)", async () => {
+    mockAddress.findMany.mockResolvedValue([
+      { id: "addr-1", isPrimary: true, city: "Austin", state: "TX", zip: "78701", latitude: null, longitude: null, deletedAt: null },
+    ]);
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "Austin Energy", category: "UTILITY_ELECTRIC" }),
+      dbProvider({ id: "electric-2", name: "Reliant", category: "UTILITY_ELECTRIC" }),
+    ]);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // Region label comes straight from the address (no dataset needed).
+    expect(body.region).toEqual({ city: "Austin", state: "TX", label: "Austin, TX" });
+    // Pending CRITICAL/IMPORTANT category gets a region group with top-N providers.
+    expect(Array.isArray(body.regionGroups)).toBe(true);
+    const electricGroup = body.regionGroups.find((g: { category: string }) => g.category === "UTILITY_ELECTRIC");
+    expect(electricGroup).toBeTruthy();
+    expect(electricGroup.providers.length).toBe(2);
+    expect(electricGroup.providers.length).toBeLessThanOrEqual(3);
   });
 
   it("returns the auth gate response instead of a generic 500 when unauthenticated", async () => {
