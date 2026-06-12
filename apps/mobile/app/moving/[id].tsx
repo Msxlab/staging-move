@@ -32,7 +32,6 @@ import {
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { Avatar } from "@/components/ui/Avatar";
-import { RaccoonMascot } from "@/components/ui/RaccoonMascot";
 import { GradientProgress } from "@/components/ui/GradientProgress";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -71,6 +70,7 @@ export default function MovingDetailScreen() {
   const [migration, setMigration] = useState<any>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
+  const [showAllTasks, setShowAllTasks] = useState(false);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Move-focused "what's still tied to the old address" — services on the from/to
@@ -166,6 +166,7 @@ export default function MovingDetailScreen() {
     }
     hapticSuccess();
     setMoveTasks(res.data?.tasks || []);
+    setShowAllTasks(false);
   };
 
   const updateMoveTask = async (taskId: string, event: "ACCEPT" | "COMPLETE" | "DISMISS" | "REOPEN") => {
@@ -412,6 +413,25 @@ export default function MovingDetailScreen() {
   const trackedTaskCount = moveTasks.filter((tk) => tk.status !== "DISMISSED").length;
   const taskProgressPct = trackedTaskCount > 0 ? Math.round((doneTaskCount / trackedTaskCount) * 100) : 0;
   const allTasksDone = trackedTaskCount > 0 && doneTaskCount === trackedTaskCount;
+  const taskFocusLimit = 5;
+  const taskDueTime = (task: any) => {
+    const due = task.dueDate ? new Date(task.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    return Number.isNaN(due) ? Number.POSITIVE_INFINITY : due;
+  };
+  const focusMoveTasks = [...moveTasks]
+    .filter((task) => task.status !== "COMPLETED" && task.status !== "DISMISSED")
+    .sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const fallbackMoveTasks = [...moveTasks]
+    .filter((task) => task.status !== "DISMISSED")
+    .sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const focusedMoveTasks = focusMoveTasks.length > 0
+    ? focusMoveTasks
+    : fallbackMoveTasks.length > 0
+      ? fallbackMoveTasks
+      : [...moveTasks].sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const visibleMoveTasks = showAllTasks ? moveTasks : focusedMoveTasks.slice(0, taskFocusLimit);
+  const hasTaskOverflow = moveTasks.length > taskFocusLimit;
+  const hiddenMoveTaskCount = Math.max(0, moveTasks.length - visibleMoveTasks.length);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -533,7 +553,7 @@ export default function MovingDetailScreen() {
                   <Text style={styles.moveSplitN}>{moveAccounts.atOld.length}</Text>
                 </View>
                 {moveAccounts.atOld.length === 0 ? (
-                  <Text style={styles.moveEmpty}>All clear 🎉</Text>
+                  <Text style={styles.moveEmpty}>All clear</Text>
                 ) : (
                   moveAccounts.atOld.slice(0, 6).map((s: any) => (
                     <TouchableOpacity
@@ -614,7 +634,7 @@ export default function MovingDetailScreen() {
               {/* Aurora vertical timeline — date gutter · rail · node dot · glass card */}
               <View style={styles.timeline}>
                 <View style={styles.timelineRail} />
-                {moveTasks.map((task) => {
+                {visibleMoveTasks.map((task) => {
                 const done = task.status === "COMPLETED";
                 const dismissed = task.status === "DISMISSED";
                 const open = !done && !dismissed;
@@ -630,13 +650,13 @@ export default function MovingDetailScreen() {
                         <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
                       </View>
                       <View style={styles.taskTitleRow}>
-                        <Text style={[styles.taskTitle, { flex: 1 }]}>{task.title}</Text>
+                        <Text style={[styles.taskTitle, { flex: 1 }]} numberOfLines={2}>{task.title}</Text>
                         {/* Assignee avatar — multi-member workspaces only. */}
                         {assignmentEnabled && task.assignee ? (
                           <Avatar initials={task.assignee.initials} size={24} style={{ marginLeft: 8 }} />
                         ) : null}
                       </View>
-                      {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
+                      {!!task.description && <Text style={styles.taskDescription} numberOfLines={3}>{task.description}</Text>}
                       {formatTaskDueDate(task.dueDate) && (
                         <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
                       )}
@@ -734,12 +754,36 @@ export default function MovingDetailScreen() {
                 );
               })}
               </View>
+              {hasTaskOverflow && (
+                <TouchableOpacity
+                  style={styles.taskRevealBtn}
+                  onPress={() => setShowAllTasks((value) => !value)}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.taskRevealText}>
+                    {showAllTasks
+                      ? t("moving.showFocusTasks", { defaultValue: "Show focus tasks" })
+                      : t("moving.showAllTasks", {
+                          count: hiddenMoveTaskCount,
+                          defaultValue: `Show all ${moveTasks.length} tasks`,
+                        })}
+                  </Text>
+                  <ChevronRight
+                    size={14}
+                    color={theme.colors.primary}
+                    style={{ transform: [{ rotate: showAllTasks ? "-90deg" : "90deg" }] }}
+                  />
+                </TouchableOpacity>
+              )}
             </GestureHandlerRootView>
           )}
           {/* 100% — every tracked task checked off: celebrate (Aurora ca-celebrate) */}
           {allTasksDone && (
             <View style={styles.celebrateCard}>
-              <RaccoonMascot size={88} variant="kid" pose="celebrate" />
+              <View style={styles.celebrateIcon}>
+                <Check size={24} color={theme.colors.emerald.text} />
+              </View>
               <Text style={styles.celebrateTitle}>{t("moving.celebrateTitle")}</Text>
               <Text style={styles.celebrateBody}>{t("moving.celebrateBody")}</Text>
             </View>
@@ -1223,13 +1267,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   tlCardWrap: { flex: 1 },
   celebrateCard: {
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 8,
     marginTop: 14,
-    paddingVertical: 22,
-    paddingHorizontal: 18,
+    padding: 16,
     borderRadius: 18,
     backgroundColor: theme.colors.successFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.emerald.border,
+  },
+  celebrateIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.emerald.bg,
     borderWidth: 1,
     borderColor: theme.colors.emerald.border,
   },
@@ -1238,19 +1291,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: "700",
     letterSpacing: -0.2,
     color: theme.colors.text,
-    textAlign: "center",
   },
   celebrateBody: {
     fontSize: 12.5,
     lineHeight: 19,
     color: theme.colors.textSecondary,
-    textAlign: "center",
-    maxWidth: 250,
   },
   taskRow: {
-    flexDirection: "row",
     gap: 10,
-    padding: 12,
+    padding: 13,
     borderRadius: 14,
     backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
@@ -1305,9 +1354,29 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 15,
   },
   taskActions: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 6,
-    maxWidth: 92,
+    marginTop: 10,
+  },
+  taskRevealBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginLeft: 66,
+    marginTop: 4,
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.22)",
+  },
+  taskRevealText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.primary,
   },
   swipeAction: {
     flexDirection: "row",

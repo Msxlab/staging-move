@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Download,
   FileText,
-  Table,
   Database,
   MapPin,
   Zap,
@@ -171,9 +170,19 @@ export default function ExportScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.subtitle}>
-          {t("settings.export_description")}
-        </Text>
+        <View style={styles.exportHero}>
+          <View style={styles.exportHeroIcon}>
+            <Database size={22} color={theme.colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.exportHeroTitle}>
+              {t("settings.exportSecureTitle", { defaultValue: "Secure data export" })}
+            </Text>
+            <Text style={styles.exportHeroText}>
+              {t("settings.export_description")}
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.stepUpCard}>
           <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
@@ -216,7 +225,7 @@ export default function ExportScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>{opt.title}</Text>
-                  <Text style={styles.cardDesc}>{opt.desc}</Text>
+                  {!!opt.desc && <Text style={styles.cardDesc}>{opt.desc}</Text>}
                 </View>
               </View>
               <View style={styles.formatRow}>
@@ -262,19 +271,42 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  subtitle: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginBottom: 20 },
+  exportHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    padding: 16,
+    marginBottom: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    ...theme.shadow.sm,
+  },
+  exportHeroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.24)",
+  },
+  exportHeroTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
+  exportHeroText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginTop: 3 },
   noticeBox: { marginBottom: 16, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(242, 196, 108,0.08)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.2)" },
   noticeText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
-  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 20 },
+  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 14 },
   stepUpTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginBottom: 4 },
   stepUpHint: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18 },
-  card: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 12 },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  cardIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+  card: { backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14, marginBottom: 10 },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
+  cardIconBox: { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", alignItems: "center", justifyContent: "center" },
+  cardTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
   cardDesc: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
   formatRow: { flexDirection: "row", gap: 8 },
-  formatBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)" },
+  formatBtn: { flex: 1, minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)" },
   formatBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.primary },
   gdprNote: { marginTop: 12, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: theme.colors.border },
   gdprText: { fontSize: 12, color: theme.colors.textMuted, lineHeight: 18 },

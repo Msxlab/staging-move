@@ -41,7 +41,6 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ServicesMoodBoard } from "@/components/ui/ServicesMoodBoard";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
@@ -353,6 +352,18 @@ export default function ServicesScreen() {
     const r = renewalById.get(s.id);
     return r != null && r.days <= RENEWAL_SOON_DAYS; // includes overdue (days < 0)
   });
+  const missingCostCount = services.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
+  const pricedServiceCount = services.length - missingCostCount;
+  const serviceHealthPct = activeServiceCount > 0
+    ? Math.max(0, Math.round(((activeServiceCount - attentionItems.length) / activeServiceCount) * 100))
+    : services.length > 0
+      ? 100
+      : 0;
+  const serviceHealthTone = attentionItems.length > 0
+    ? theme.colors.amber
+    : missingCostCount > 0
+      ? theme.colors.sky
+      : theme.colors.emerald;
 
   // Same headline copy as the detail screen (services/[id].tsx), reusing its keys.
   const renewalHeadline = (renewal: ServiceRenewal) =>
@@ -507,12 +518,72 @@ export default function ServicesScreen() {
           <OfflineChip relativeAge={cacheUpdatedAt ? formatRelativeTime(cacheUpdatedAt, i18n.language) : ""} />
         )}
 
-        {/* Mood-reactive board: the raccoon's pose tracks the user's REAL
-            tracked-service count (overall, not the active filter) — sad at 0,
-            celebrate on the first service + at a healthy count, happy while
-            building. Hidden only when the screen is in a hard-error state. */}
-        {!(error && services.length === 0) && (
-          <ServicesMoodBoard count={services.length} />
+        {!(error && services.length === 0) && services.length > 0 && (
+          <View style={styles.systemPanel}>
+            <View style={styles.systemHead}>
+              <View
+                style={[
+                  styles.systemGlyph,
+                  { backgroundColor: serviceHealthTone.bg, borderColor: serviceHealthTone.border },
+                ]}
+              >
+                {attentionItems.length > 0 ? (
+                  <AlertTriangle size={18} color={serviceHealthTone.text} />
+                ) : (
+                  <Check size={18} color={serviceHealthTone.text} />
+                )}
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.systemTitle}>
+                  {t("services.healthTitle", { defaultValue: "Service health" })}
+                </Text>
+                <Text style={styles.systemMeta} numberOfLines={2}>
+                  {attentionItems.length > 0
+                    ? t("services.healthAttention", {
+                        count: attentionItems.length,
+                        defaultValue: `${attentionItems.length} service needs attention`,
+                      })
+                    : missingCostCount > 0
+                      ? t("services.healthCosts", {
+                          count: missingCostCount,
+                          defaultValue: `${missingCostCount} services are missing monthly costs`,
+                        })
+                      : t("services.healthGood", { defaultValue: "Everything important is tracked cleanly." })}
+                </Text>
+              </View>
+              <Text style={[styles.systemScore, { color: serviceHealthTone.text }]}>
+                {serviceHealthPct}%
+              </Text>
+            </View>
+
+            <View style={styles.systemMeter}>
+              <View
+                style={[
+                  styles.systemMeterFill,
+                  { width: `${serviceHealthPct}%`, backgroundColor: serviceHealthTone.text },
+                ]}
+              />
+            </View>
+
+            <View style={styles.systemGrid}>
+              <View style={styles.systemStat}>
+                <Text style={styles.systemStatValue}>{activeServiceCount}</Text>
+                <Text style={styles.systemStatLabel}>{t("services.statusActive")}</Text>
+              </View>
+              <View style={styles.systemStat}>
+                <Text style={styles.systemStatValue}>{pricedServiceCount}</Text>
+                <Text style={styles.systemStatLabel}>
+                  {t("services.priced", { defaultValue: "Priced" })}
+                </Text>
+              </View>
+              <View style={styles.systemStat}>
+                <Text style={styles.systemStatValue}>{attentionItems.length}</Text>
+                <Text style={styles.systemStatLabel}>
+                  {t("services.needsAttention")}
+                </Text>
+              </View>
+            </View>
+          </View>
         )}
 
         {/* Phase-Aware Checklist Widget */}
@@ -627,9 +698,6 @@ export default function ServicesScreen() {
           if (selectedAddressId) suggestParams.addressId = selectedAddressId;
           return (
             <EmptyState
-              // No mascot here: the ServicesMoodBoard above already shows the
-              // (sad) raccoon, so the empty state uses its icon disc to avoid
-              // two stacked raccoons.
               icon={<Zap size={32} color={theme.colors.primary} />}
               title={filterCat ? t("services.emptyCategory") : t("services.empty")}
               description={
@@ -823,6 +891,52 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   heroChipName: { fontSize: 8, letterSpacing: 0.8, fontWeight: "700", color: theme.colors.textSecondary },
   heroChipValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
   heroHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 12, lineHeight: 16 },
+  // ── Operational health panel ──
+  systemPanel: {
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    ...theme.shadow.sm,
+  },
+  systemHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  systemGlyph: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  systemTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
+  systemMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 17 },
+  systemScore: { fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] },
+  systemMeter: {
+    height: 6,
+    marginTop: 13,
+    borderRadius: 999,
+    backgroundColor: theme.colors.glass.highlight,
+    overflow: "hidden",
+  },
+  systemMeterFill: { height: "100%", borderRadius: 999 },
+  systemGrid: { flexDirection: "row", gap: 8, marginTop: 12 },
+  systemStat: {
+    flex: 1,
+    minHeight: 58,
+    padding: 10,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.025)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  systemStatValue: { fontSize: 18, fontWeight: "900", color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  systemStatLabel: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 3, fontWeight: "700" },
   // ── Needs attention ──
   secRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 },
   secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },

@@ -184,6 +184,18 @@ export default function ProfileSettingsScreen() {
     );
   }
 
+  const displayName = [form.firstName, form.lastName].filter(Boolean).join(" ").trim()
+    || t("settings.profile_editTitle");
+  const profileInitials = [form.firstName, form.lastName]
+    .map((value) => value.trim()[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "LF";
+  const selectedFamilyLabel = FAMILY_STATUSES.find((item) => item.value === form.familyStatus)?.label
+    || t("settings.familyStatus_SINGLE");
+  const selectedMoveLabel = t(`settings.moveType_${form.moveType}`);
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -201,23 +213,37 @@ export default function ProfileSettingsScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <Text style={styles.label}>{t("auth.firstName")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="John"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.firstName}
-          onChangeText={(v) => update("firstName", v)}
-        />
+        <View style={styles.profileHero}>
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>{profileInitials}</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.profileHeroTitle} numberOfLines={1}>{displayName}</Text>
+            <Text style={styles.profileHeroMeta} numberOfLines={1}>
+              {selectedFamilyLabel} · {selectedMoveLabel}
+            </Text>
+          </View>
+        </View>
 
-        <Text style={styles.label}>{t("auth.lastName")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Doe"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.lastName}
-          onChangeText={(v) => update("lastName", v)}
-        />
+        <View style={styles.formCard}>
+          <Text style={styles.label}>{t("auth.firstName")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="John"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.firstName}
+            onChangeText={(v) => update("firstName", v)}
+          />
+
+          <Text style={styles.label}>{t("auth.lastName")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Doe"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.lastName}
+            onChangeText={(v) => update("lastName", v)}
+          />
+        </View>
 
         <Text style={styles.sectionLabel}>{t("common.details")}</Text>
         <View style={styles.chipRow}>
@@ -446,6 +472,38 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  profileHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    padding: 16,
+    marginBottom: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    ...theme.shadow.sm,
+  },
+  profileAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: "rgba(127, 182, 232,0.25)",
+  },
+  profileAvatarText: { fontSize: 16, fontWeight: "900", color: theme.colors.primary },
+  profileHeroTitle: { fontSize: 18, fontWeight: "900", color: theme.colors.text },
+  profileHeroMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  formCard: {
+    padding: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   sectionLabel: {
     fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
     textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 10,
@@ -454,7 +512,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 15, color: theme.colors.text,
   },
@@ -471,7 +529,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     marginTop: 16, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
     borderWidth: 1, borderColor: theme.colors.border,
   },
   switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
