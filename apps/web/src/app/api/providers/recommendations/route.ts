@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderCoverageMetadata, zipCentroid, type ProviderCoverageModel } from "@locateflow/db";
 import { CANCELED_MOVING_PLAN_STATUSES, getCurrentRelocationPhase } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
@@ -124,8 +124,19 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
-    const fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
-    const fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    let fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
+    let fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    // No stored/queried coordinates but we have a ZIP → resolve its ZCTA centroid
+    // (Census gazetteer) so distance-based provider ranking still works for ANY
+    // address with a ZIP, instead of only those with geocoded lat/lng. This is the
+    // finer alternative to the coarse 3-digit-prefix heuristic.
+    if ((fallbackLatitude === null || fallbackLongitude === null) && fallbackZip) {
+      const centroid = zipCentroid(fallbackZip);
+      if (centroid) {
+        fallbackLatitude = fallbackLatitude ?? centroid.latitude;
+        fallbackLongitude = fallbackLongitude ?? centroid.longitude;
+      }
+    }
 
     const providers = await prisma.serviceProvider.findMany({
       where: {

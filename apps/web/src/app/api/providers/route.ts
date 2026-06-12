@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderCoverageMetadata, zipCentroid, type ProviderCoverageModel } from "@locateflow/db";
 import { compareCoverageConfidence, getProviderTrustSummary, getProviderBrand } from "@locateflow/shared";
 import { getProviderCoverageConfidenceFromDb, getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
@@ -57,8 +57,17 @@ export async function GET(request: NextRequest) {
     const tagsParam = searchParams.get("tags");
     const latitude = latitudeParam !== null ? Number(latitudeParam) : null;
     const longitude = longitudeParam !== null ? Number(longitudeParam) : null;
-    const normalizedLatitude = Number.isFinite(latitude) ? latitude : null;
-    const normalizedLongitude = Number.isFinite(longitude) ? longitude : null;
+    let normalizedLatitude = Number.isFinite(latitude) ? latitude : null;
+    let normalizedLongitude = Number.isFinite(longitude) ? longitude : null;
+    // No coordinates supplied but we have a ZIP → resolve its ZCTA centroid so the
+    // directory can still rank by distance (finer than the 3-digit-prefix heuristic).
+    if ((normalizedLatitude === null || normalizedLongitude === null) && zip) {
+      const centroid = zipCentroid(zip);
+      if (centroid) {
+        normalizedLatitude = normalizedLatitude ?? centroid.latitude;
+        normalizedLongitude = normalizedLongitude ?? centroid.longitude;
+      }
+    }
 
     const effectiveState = resolveEffectiveState(state, zip);
 

@@ -37,6 +37,7 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@locateflow/db", () => ({
   getProviderCoverageMetadata: vi.fn(() => null),
+  zipCentroid: vi.fn(() => null),
 }));
 
 vi.mock("@/lib/recommendation-engine", () => ({
