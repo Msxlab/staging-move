@@ -18,10 +18,11 @@ export {
   type CoverageRow,
 } from "@locateflow/shared";
 
-import { getProviderCoverageMetadata, type ProviderCoveragePolygon } from "@locateflow/db";
+import { getProviderCoverageMetadata, type ProviderCoverageModel, type ProviderCoveragePolygon } from "@locateflow/db";
 import {
   normalizeZip,
   resolveEffectiveState,
+  inferProviderCoverageModel,
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
 } from "@locateflow/shared";
@@ -100,13 +101,25 @@ function resolvePolygonCoverageMatch(
 export interface ProviderWithCoverages {
   id: string;
   slug?: string | null;
+  category?: string | null;
   scope: string;
-  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
+  coverageModel?: ProviderCoverageModel | null;
+  zipCodes?: string[] | string | null;
   coverages: Array<{
     state: string | null;
     zipPrefix: string | null;
     zipExact: string | null;
   }>;
+}
+
+function getEffectiveProviderCoverageModel<T extends ProviderWithCoverages>(
+  provider: T,
+): ProviderCoverageModel | undefined {
+  return (
+    provider.coverageModel ||
+    getProviderCoverageMetadata(provider.slug)?.coverageModel ||
+    inferProviderCoverageModel(provider)
+  );
 }
 
 function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
@@ -115,6 +128,7 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
 ): ResolvedZipMatchLevel {
   const effectiveState = resolveEffectiveState(options.state, options.zip);
   const normalizedZip = normalizeZip(options.zip);
+  const coverageModel = getEffectiveProviderCoverageModel(provider);
 
   let hasPrefix = false;
   let hasZipScopedCoverage = false;
@@ -155,7 +169,7 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
   if (effectiveState && provider.scope !== "FEDERAL" && hasAnyStateCoverage && !hasMatchingStateCoverage) return "none";
   if (hasZipScopedCoverage && normalizedZip && !hasStateCoverage) return "none";
   if (hasZipScopedCoverage && !hasMatchingStateCoverage) return "none";
-  if (provider.coverageModel === "polygon") {
+  if (coverageModel === "polygon") {
     const polygonMatch = resolvePolygonCoverageMatch(provider.slug, options.latitude, options.longitude);
     if (polygonMatch === true) return "polygon";
     if (polygonMatch === false) return "none";
@@ -164,7 +178,7 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
     // than optimistically claiming a polygon match the user can't rely on.
     return "live_address";
   }
-  if (provider.coverageModel === "live_address") return "live_address";
+  if (coverageModel === "live_address") return "live_address";
   return "state";
 }
 
@@ -205,12 +219,13 @@ export function getProviderCoverageConfidenceFromDb<T extends ProviderWithCovera
   options: ProviderMatchOptions
 ): CoverageConfidence {
   const matchLevel = resolveProviderMatchLevelFromDb(provider, options);
+  const coverageModel = getEffectiveProviderCoverageModel(provider);
   if (matchLevel === "none") return "UNKNOWN";
   return mapCoverageMatchToConfidence(matchLevel, {
     scope: provider.scope,
-    coverageModel: provider.coverageModel,
-    requiresAddressCheck: provider.coverageModel === "live_address",
-    requiresPolygonCheck: provider.coverageModel === "polygon",
+    coverageModel,
+    requiresAddressCheck: coverageModel === "live_address",
+    requiresPolygonCheck: coverageModel === "polygon",
   });
 }
 

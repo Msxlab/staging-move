@@ -288,8 +288,7 @@ export async function rateLimit(
 
 /**
  * Extracts the most reliable client IP from the request.
- * Priority: x-vercel-forwarded-for on Vercel only > x-real-ip > x-forwarded-for > cf-connecting-ip > fallback.
- * Each platform sets its trusted header — we check the most reliable first.
+ * TRUSTED_PROXY_HEADERS selects which proxy header family is trusted.
  */
 export function resolveClientIP(request: Request): string {
   // Delegates to the shared resolver so the rate-limit key and the session

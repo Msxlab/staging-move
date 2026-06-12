@@ -217,6 +217,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Deployment env only. This key must never contain a comma-separated allowlist.",
   },
   {
+    key: "TRUSTED_PROXY_HEADERS",
+    label: "Trusted Proxy Headers",
+    description: "Controls which edge proxy IP header family the web and admin apps trust for rate limits, audit logs, cron guards, and auth telemetry. Use cloudflare behind Cloudflare, vercel behind Vercel, standard behind a trusted reverse proxy, or none to ignore forwarded headers.",
+    scope: "GLOBAL",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app"],
+    validation: "one of compat, none, vercel, cloudflare, standard",
+    note: "Deployment env only. Leaving it unset preserves compat precedence but is intentionally less explicit for production.",
+  },
+  {
     key: "STRIPE_SECRET_KEY",
     label: "Stripe Secret Key",
     description: "Server-side Stripe key for checkout, portal, and recurring billing operations.",
@@ -536,6 +550,64 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     runtimeEditable: true,
     usedBy: ["web app dossier"],
     note: "Optional. Only needed to enable the Pro neighborhood-economics section.",
+  },
+  {
+    key: "HUD_HOUSING_DATA_ENABLED",
+    label: "HUD Housing Data Enabled",
+    description:
+      "Master flag for HUD User housing-data enrichment in the New Home Dossier. When 'true' AND HUD_USER_API_TOKEN is set, the dossier can show ZIP-to-county/metro context plus HUD Fair Market Rent and Income Limits data. Off by default; the dossier falls back gracefully when disabled.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    validation: "boolean",
+    note: "Requires HUD_USER_API_TOKEN. Uses the saved address ZIP/state; no ZIP means a graceful no-op.",
+  },
+  {
+    key: "HUD_USER_API_TOKEN",
+    label: "HUD User API Token",
+    description:
+      "HUD User API access token used by the New Home Dossier for ZIP Crosswalk, Fair Market Rent, and Income Limits lookups. Register free at huduser.gov. Without it, HUD housing enrichment stays disabled and the rest of the dossier is unaffected.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable HUD housing context.",
+  },
+  {
+    key: "NLR_ALT_FUEL_STATIONS_ENABLED",
+    label: "NLR EV Charging Data Enabled",
+    description:
+      "Master flag for NLR Alternative Fuel Stations EV charging enrichment in the New Home Dossier. When 'true' AND NLR_API_KEY is set, the dossier can show nearby public active EV charging availability. Off by default; the dossier falls back gracefully when disabled.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    validation: "boolean",
+    note: "Requires NLR_API_KEY. Needs address coordinates; no coordinates means a graceful no-op.",
+  },
+  {
+    key: "NLR_API_KEY",
+    label: "NLR API Key",
+    description:
+      "NLR Developer Network API key used by the New Home Dossier to query the Alternative Fuel Stations nearest-stations endpoint for public active EV charging near an address.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable nearby EV charging context.",
   },
   {
     key: "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
@@ -1893,6 +1965,25 @@ export function validateRuntimeConfigValueShape(
   if (key === "APP_ENV" && !["production", "staging", "preview"].includes(value.toLowerCase())) {
     return invalid("production_like_required");
   }
+  if (key === "TRUSTED_PROXY_HEADERS") {
+    return [
+      "auto",
+      "compat",
+      "none",
+      "false",
+      "0",
+      "off",
+      "vercel",
+      "cloudflare",
+      "cf",
+      "standard",
+      "true",
+      "1",
+      "on",
+    ].includes(value.toLowerCase())
+      ? valid()
+      : invalid("trusted_proxy_header_mode");
+  }
   if (key === "DATABASE_URL") {
     const reason = validateUrl(value, { allowDatabaseScheme: true });
     return reason ? invalid(reason) : valid();
@@ -1992,6 +2083,10 @@ export function validateRuntimeConfigValueShape(
     "NOTIFICATION_PUSH_ENABLED",
     "KILL_SIGNUPS",
     "KILL_OUTBOUND_EMAIL",
+    "FCC_BDC_ENABLED",
+    "ELECTRIC_LOOKUP_ENABLED",
+    "HUD_HOUSING_DATA_ENABLED",
+    "NLR_ALT_FUEL_STATIONS_ENABLED",
   ]);
   if (BOOLEAN_KEYS.has(key)) {
     return value === "true" || value === "false"

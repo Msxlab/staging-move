@@ -116,6 +116,8 @@ describe("buildIntegrations", () => {
       "electric_utility",
       "census_acs",
       "airnow",
+      "hud_housing",
+      "ev_charging",
       "anthropic_ai",
       "fmcsa",
       "address_connectors",
@@ -131,5 +133,12 @@ describe("buildIntegrations", () => {
         "missingKeys",
       ]);
     }
+  });
+
+  it("requires the FCC username with the FCC BDC key for configured serviceability", () => {
+    const integrations = buildIntegrations(catalogMap(["FCC_BDC_ENABLED", "FCC_BDC_API_KEY"]));
+    const fcc = integrations.find((item) => item.id === "fcc_broadband");
+    expect(fcc?.configured).toBe(false);
+    expect(fcc?.missingKeys).toEqual(["FCC_BDC_USERNAME"]);
   });
 });

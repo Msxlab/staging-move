@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { isHttpsUrl } from "@/lib/url-safety";
 import { parseClampedPositiveInt, parsePaginationParams } from "@/lib/pagination";
 import { validateCsvFileMetadata } from "@/lib/privacy";
@@ -320,7 +321,7 @@ export async function PUT(request: NextRequest) {
         entityType: "ServiceProvider",
         entityId: "bulk",
         changes: JSON.stringify({ created, skipped, errors: errors.length }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 
@@ -401,7 +402,7 @@ export async function POST(request: NextRequest) {
         entityType: "ServiceProvider",
         entityId: provider.id,
         changes: JSON.stringify({ name: provider.name }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

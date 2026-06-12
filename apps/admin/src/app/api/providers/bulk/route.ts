@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { PROVIDER_CATEGORY_VALUES } from "@locateflow/shared";
 import { isHttpsUrl } from "@/lib/url-safety";
 import { z } from "zod";
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         requireMfa: true,
         mfaCode,
         backupCode,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
         userAgent: request.headers.get("user-agent") || "unknown",
       });
       if (!confirm.confirmed) {
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
         entityType: "ServiceProvider",
         entityId: "bulk",
         changes: JSON.stringify({ ids, action, data, affected: result.count, skipped }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

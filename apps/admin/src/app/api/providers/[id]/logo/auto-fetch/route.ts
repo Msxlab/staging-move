@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import {
   ingestLogoFromWebsite,
   LogoIngestError,
@@ -215,7 +216,7 @@ export async function POST(
             contentType: result.contentType,
             contentHash: result.contentHash,
           }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
         },
       })
       .catch((error) => {

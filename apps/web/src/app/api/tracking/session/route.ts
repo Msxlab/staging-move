@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { getConsentedTrackingSession } from "@/lib/tracking-consent";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const ua = request.headers.get("user-agent") || "unknown";
-    const ip = (request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
+    const ip = resolveClientIpFromHeaders(request.headers);
 
     const session = await prisma.userSession.create({
       data: {

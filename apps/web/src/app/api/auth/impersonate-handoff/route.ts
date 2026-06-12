@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { hashSessionToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import {
@@ -125,7 +126,8 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
     .setExpirationTime(`${maxAgeSec}s`)
     .sign(getUserJwtSecretKey());
   const browserTokenHash = await hashSessionToken(browserToken);
-  const sessionIpAddress = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  const resolvedIp = resolveClientIpFromHeaders(request.headers);
+  const sessionIpAddress = resolvedIp === "anonymous" ? null : resolvedIp;
   const sessionUserAgent = request.headers.get("user-agent")?.trim() || "unknown";
   try {
     await prisma.userLoginSession.create({
@@ -155,9 +157,6 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
   // Audit breadcrumb for successful exchanges. The admin app logs ticket
   // creation; this confirms the browser cookie was actually issued.
   if (session.impersonatedByAdminId) {
-    const ipAddress = (request.headers.get("x-forwarded-for") || "")
-      .split(",")[0]
-      .trim();
     await prisma.adminAuditLog
       .create({
         data: {
@@ -169,7 +168,7 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
             sessionId: session.id,
             expiresAt: session.expiresAt.toISOString(),
           }),
-          ipAddress: ipAddress || null,
+          ipAddress: sessionIpAddress,
         },
       })
       .catch(() => null);

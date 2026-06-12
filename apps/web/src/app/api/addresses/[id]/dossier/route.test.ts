@@ -15,7 +15,7 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
 
-// The seven dossier lookups are unit-tested in their own colocated suites —
+// The nine dossier lookups are unit-tested in their own colocated suites —
 // here they are mocked so the route tests pin auth, 404 behavior, the weather
 // window decision, and the EXACT response contract shape.
 vi.mock("@/lib/fema-flood", () => ({
@@ -48,6 +48,12 @@ vi.mock("@/lib/epa-walkability", () => ({
 vi.mock("@/lib/nces-schools", () => ({
   lookupNearbySchools: vi.fn(),
 }));
+vi.mock("@/lib/hud-housing", () => ({
+  lookupHudHousing: vi.fn(),
+}));
+vi.mock("@/lib/nlr-alt-fuel-stations", () => ({
+  lookupEvCharging: vi.fn(),
+}));
 
 // Plan entitlement: getPlanForLimitScope is mocked (no DB); planFeatures stays REAL so
 // the gate exercises the actual @locateflow/shared feature matrix.
@@ -73,6 +79,8 @@ import { lookupAirQuality } from "@/lib/airnow";
 import { lookupNeighborhoodAcs } from "@/lib/census-acs";
 import { lookupWalkability } from "@/lib/epa-walkability";
 import { lookupNearbySchools } from "@/lib/nces-schools";
+import { lookupHudHousing } from "@/lib/hud-housing";
+import { lookupEvCharging } from "@/lib/nlr-alt-fuel-stations";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -89,6 +97,8 @@ const mockLookupAirQuality = lookupAirQuality as unknown as Mock;
 const mockLookupNeighborhoodAcs = lookupNeighborhoodAcs as unknown as Mock;
 const mockLookupWalkability = lookupWalkability as unknown as Mock;
 const mockLookupNearbySchools = lookupNearbySchools as unknown as Mock;
+const mockLookupHudHousing = lookupHudHousing as unknown as Mock;
+const mockLookupEvCharging = lookupEvCharging as unknown as Mock;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -107,6 +117,7 @@ const BASE_ADDRESS = {
   deletedAt: null,
   city: "Austin",
   state: "TX",
+  zip: "78701",
   latitude: 30.2672,
   longitude: -97.7431,
 };
@@ -174,6 +185,41 @@ const AIR_OK = {
   reason: null,
   source: { name: "AirNow", url: "https://www.airnow.gov/" },
 };
+const HUD_DISABLED = {
+  status: "disabled" as const,
+  zip: null,
+  entityId: null,
+  countyFips: null,
+  cbsaCode: null,
+  countyName: null,
+  metroName: null,
+  areaName: null,
+  fairMarketRent: null,
+  incomeLimits: null,
+  reason: "disabled",
+  caveat:
+    "This product uses the HUD User Data API but is not endorsed or certified by HUD User. HUD rent and income-limit figures describe HUD geographies and program thresholds, not a quote, appraisal, or eligibility decision for a specific home.",
+  source: { name: "HUD User Data API", url: "https://www.huduser.gov/portal/dataset/fmr-api.html" },
+};
+const EV_DISABLED = {
+  status: "disabled" as const,
+  radiusMiles: 10,
+  totalResults: null,
+  stationCount: 0,
+  nearestDistanceMiles: null,
+  dcFastPortCount: 0,
+  level2PortCount: 0,
+  teslaCompatibleCount: 0,
+  ccsCompatibleCount: 0,
+  stations: [],
+  reason: "disabled",
+  caveat:
+    "EV charging results are nearby public active station listings from NLR/AFDC. Verify access, pricing, connector compatibility, and real-time availability with the station or charging network before relying on it.",
+  source: {
+    name: "NLR Alternative Fuel Stations",
+    url: "https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/nearest/",
+  },
+};
 // Carries EXTRA fields (tractName/tractFips/reason/source) to prove the route
 // strips the section down to its contract shape.
 const NEIGHBORHOOD_OK = {
@@ -224,6 +270,8 @@ describe("address dossier route", () => {
     mockLookupRadonZone.mockResolvedValue(RADON_OK);
     mockLookupWaterSystem.mockResolvedValue(WATER_OK);
     mockLookupAirQuality.mockResolvedValue(AIR_OK);
+    mockLookupHudHousing.mockResolvedValue(HUD_DISABLED);
+    mockLookupEvCharging.mockResolvedValue(EV_DISABLED);
     mockLookupNeighborhoodAcs.mockResolvedValue(NEIGHBORHOOD_OK);
     mockLookupWalkability.mockResolvedValue(WALKABILITY_OK);
     mockLookupNearbySchools.mockResolvedValue(SCHOOLS_OK);
@@ -314,7 +362,7 @@ describe("address dossier route", () => {
 
       expect(response.status).toBe(200);
       expect(body.upgradeRequired).toBeUndefined();
-      expect(body.address).toEqual({ id: "address-1", city: "Austin", state: "TX" });
+      expect(body.address).toEqual({ id: "address-1", city: "Austin", state: "TX", zip: "78701" });
       expect(body.flood.status).toBe("ok");
     }
   });
@@ -332,7 +380,7 @@ describe("address dossier route", () => {
     // must NOT leak into the response.
     expect(body).toEqual({
       configured: true,
-      address: { id: "address-1", city: "Austin", state: "TX" },
+      address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "ok", zone: "AE", isHighRisk: true },
       school: { status: "ok", districtName: "Austin Independent School District", ncesId: "4808940" },
       weather: {
@@ -354,6 +402,32 @@ describe("address dossier route", () => {
       radon: { status: "ok", zone: 3 },
       water: { status: "ok", systemName: "AUSTIN WATER", violations5y: 2 },
       air: { status: "ok", aqi: 52, category: "Moderate" },
+      housing: {
+        status: "disabled",
+        zip: null,
+        entityId: null,
+        countyFips: null,
+        cbsaCode: null,
+        countyName: null,
+        metroName: null,
+        areaName: null,
+        fairMarketRent: null,
+        incomeLimits: null,
+        caveat: HUD_DISABLED.caveat,
+      },
+      evCharging: {
+        status: "disabled",
+        radiusMiles: 10,
+        totalResults: null,
+        stationCount: 0,
+        nearestDistanceMiles: null,
+        dcFastPortCount: 0,
+        level2PortCount: 0,
+        teslaCompatibleCount: 0,
+        ccsCompatibleCount: 0,
+        stations: [],
+        caveat: EV_DISABLED.caveat,
+      },
       // INDIVIDUAL is dossier-entitled but NOT Pro, so Neighborhood
       // Intelligence is the per-section upgrade teaser (no Census lookup).
       neighborhood: {
@@ -387,6 +461,8 @@ describe("address dossier route", () => {
     // Water matches by the SDWIS-registered service area, not coordinates.
     expect(mockLookupWaterSystem).toHaveBeenCalledWith({ city: "Austin", state: "TX" });
     expect(mockLookupAirQuality).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    expect(mockLookupHudHousing).toHaveBeenCalledWith({ zip: "78701", state: "TX" });
+    expect(mockLookupEvCharging).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
     // The weather window is decided by the earliest upcoming active plan that
     // moves TO this address (destination only, owned scope).
     expect(mockPlanFindFirst).toHaveBeenCalledWith({
@@ -442,7 +518,7 @@ describe("address dossier route", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       configured: true,
-      address: { id: "address-1", city: "Austin", state: "TX" },
+      address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "no_location", zone: null, isHighRisk: null },
       school: { status: "no_location", districtName: null, ncesId: null },
       weather: {
@@ -457,6 +533,32 @@ describe("address dossier route", () => {
       radon: { status: "no_location", zone: null },
       water: { status: "no_location", systemName: null, violations5y: null },
       air: { status: "no_location", aqi: null, category: null },
+      housing: {
+        status: "no_location",
+        zip: "78701",
+        entityId: null,
+        countyFips: null,
+        cbsaCode: null,
+        countyName: null,
+        metroName: null,
+        areaName: null,
+        fairMarketRent: null,
+        incomeLimits: null,
+        caveat: null,
+      },
+      evCharging: {
+        status: "no_location",
+        radiusMiles: 10,
+        totalResults: null,
+        stationCount: 0,
+        nearestDistanceMiles: null,
+        dcFastPortCount: 0,
+        level2PortCount: 0,
+        teslaCompatibleCount: 0,
+        ccsCompatibleCount: 0,
+        stations: [],
+        caveat: null,
+      },
       // INDIVIDUAL is not Pro → the neighborhood teaser (not no_location).
       neighborhood: {
         status: "upgrade_required",
@@ -482,6 +584,8 @@ describe("address dossier route", () => {
     expect(mockLookupRadonZone).not.toHaveBeenCalled();
     expect(mockLookupWaterSystem).not.toHaveBeenCalled();
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
+    expect(mockLookupHudHousing).not.toHaveBeenCalled();
+    expect(mockLookupEvCharging).not.toHaveBeenCalled();
     expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
     expect(mockLookupWalkability).not.toHaveBeenCalled();
     expect(mockLookupNearbySchools).not.toHaveBeenCalled();

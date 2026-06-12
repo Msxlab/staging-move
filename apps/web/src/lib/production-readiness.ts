@@ -85,6 +85,15 @@ export const READINESS_CONFIG_KEYS = [
   "GOOGLE_PLAY_RTDN_AUDIENCE",
   "APPLE_BUNDLE_ID",
   "APPLE_TEAM_ID",
+  "TRUSTED_PROXY_HEADERS",
+  "FCC_BDC_ENABLED",
+  "FCC_BDC_API_KEY",
+  "FCC_BDC_USERNAME",
+  "FCC_BDC_API_BASE",
+  "ELECTRIC_LOOKUP_ENABLED",
+  "OPENEI_API_KEY",
+  "AIRNOW_API_KEY",
+  "CENSUS_API_KEY",
 ] as const;
 
 export function getReadinessConfigKeys(): string[] {
@@ -120,6 +129,10 @@ function hasMinSecret(value: string | undefined, minLength = 32): boolean {
   if (value.includes("REPLACE")) return false;
   if (/^(test|dev|dummy|changeme)/i.test(value)) return false;
   return value.length >= minLength;
+}
+
+function isEnabledFlag(value: string | undefined): boolean {
+  return ["true", "1", "yes", "on"].includes((value || "").trim().toLowerCase());
 }
 
 export type ReadinessSeverity = "ok" | "warn" | "fail";
@@ -404,6 +417,33 @@ export function buildReadinessReport(
   }
 
   if (productionLike) {
+    const trustedProxyHeaders = (readConfig("TRUSTED_PROXY_HEADERS") || "").trim().toLowerCase();
+    if (!trustedProxyHeaders || trustedProxyHeaders === "auto" || trustedProxyHeaders === "compat") {
+      warn(
+        "TRUSTED_PROXY_HEADERS",
+        "TRUSTED_PROXY_HEADERS is unset/compat in production; set cloudflare, vercel, standard, or none explicitly so rate-limit and audit IPs use the intended edge header.",
+      );
+    } else if (
+      ![
+        "none",
+        "false",
+        "0",
+        "off",
+        "vercel",
+        "cloudflare",
+        "cf",
+        "standard",
+        "true",
+        "1",
+        "on",
+      ].includes(trustedProxyHeaders)
+    ) {
+      warn(
+        "TRUSTED_PROXY_HEADERS",
+        "TRUSTED_PROXY_HEADERS has an unknown value and will fall back to compat header precedence.",
+      );
+    }
+
     if ((env.NEXT_PUBLIC_DEBUG || "").toLowerCase() === "true") {
       warn("NEXT_PUBLIC_DEBUG", "NEXT_PUBLIC_DEBUG=true in production-like environment.");
     }
@@ -413,6 +453,56 @@ export function buildReadinessReport(
         "ALLOW_PRODUCTION_REPLACE_RESTORE=true: production REPLACE backup restore is unlocked. Disable when not actively restoring.",
       );
     }
+  }
+
+  const fccEnabled = isEnabledFlag(readConfig("FCC_BDC_ENABLED"));
+  const fccApiKey = readConfig("FCC_BDC_API_KEY");
+  const fccUsername = readConfig("FCC_BDC_USERNAME");
+  if (fccEnabled && !fccApiKey) {
+    warn(
+      "FCC_BDC_API_KEY",
+      "FCC_BDC_ENABLED=true but FCC_BDC_API_KEY is missing; ISP recommendations fall back to catalog-only availability.",
+    );
+  }
+  if (fccEnabled && fccApiKey && !fccUsername) {
+    warn(
+      "FCC_BDC_USERNAME",
+      "FCC_BDC_API_KEY is configured without FCC_BDC_USERNAME; the documented FCC header auth may fail, so ISP confirmation may fall back to catalog data.",
+    );
+  }
+  if (!fccEnabled && fccApiKey) {
+    warn(
+      "FCC_BDC_ENABLED",
+      "FCC_BDC_API_KEY is present but FCC_BDC_ENABLED is not true; confirmed ISP serviceability will not run.",
+    );
+  }
+
+  const electricEnabled = isEnabledFlag(readConfig("ELECTRIC_LOOKUP_ENABLED"));
+  const openeiApiKey = readConfig("OPENEI_API_KEY");
+  if (electricEnabled && !openeiApiKey) {
+    warn(
+      "OPENEI_API_KEY",
+      "ELECTRIC_LOOKUP_ENABLED=true but OPENEI_API_KEY is missing; electric recommendations fall back to catalog-only availability.",
+    );
+  }
+  if (!electricEnabled && openeiApiKey) {
+    warn(
+      "ELECTRIC_LOOKUP_ENABLED",
+      "OPENEI_API_KEY is present but ELECTRIC_LOOKUP_ENABLED is not true; confirmed electric-utility serviceability will not run.",
+    );
+  }
+
+  if (productionLike && !readConfig("AIRNOW_API_KEY")) {
+    warn(
+      "AIRNOW_API_KEY",
+      "AIRNOW_API_KEY is unset; the dossier air-quality section will return not_configured while the rest of the dossier continues.",
+    );
+  }
+  if (productionLike && !readConfig("CENSUS_API_KEY")) {
+    warn(
+      "CENSUS_API_KEY",
+      "CENSUS_API_KEY is unset; Pro neighborhood economics will return not_configured while the rest of the dossier continues.",
+    );
   }
 
   const failCount = issues.filter((i) => i.severity === "fail").length;

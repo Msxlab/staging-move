@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { getProviderTrustSummary } from "@locateflow/shared";
+import { getProviderTrustSummary, inferProviderCoverageModel } from "@locateflow/shared";
 import {
   getProviderPresentationMatchLevelFromDb,
   safeJsonArray,
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
       const coverageModel: ProviderCoverageModel =
         (p.coverageModel as ProviderCoverageModel | null | undefined) ||
         metadata?.coverageModel ||
-        (zipCodes.length > 0 ? "zip_prefix" : "state");
+        inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
 
       const matchInput = {
         id: p.id,

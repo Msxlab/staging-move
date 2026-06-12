@@ -98,6 +98,7 @@ export const navGroups: NavGroup[] = [
     railLabel: "Content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Provider Quality", nameKey: "providerQuality", href: "/provider-quality", icon: Activity, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Movers", nameKey: "movers", href: "/movers", icon: Boxes, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Mover Applications", nameKey: "moverApplications", href: "/movers/applications", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },

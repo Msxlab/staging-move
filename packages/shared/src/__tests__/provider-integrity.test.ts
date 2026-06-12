@@ -3,6 +3,7 @@ import {
   getProviderCoverageConfidence,
   getProviderQualityWarnings,
   getProviderTrustSummary,
+  inferProviderCoverageModel,
   sanitizeProviderSeedRecords,
 } from "../provider-integrity";
 
@@ -75,6 +76,9 @@ describe("provider trust helpers", () => {
     expect(summary.manualTrackingLabel).toBe("Manual tracking only");
     expect(summary.verificationLabel).toBe("Unverified directory data");
     expect(summary.qualityWarnings.map((warning) => warning.code)).toContain(
+      "address_check_required",
+    );
+    expect(summary.qualityWarnings.map((warning) => warning.code)).not.toContain(
       "broad_national_coverage",
     );
   });
@@ -85,6 +89,7 @@ describe("provider trust helpers", () => {
         name: "Metro Water",
         category: "UTILITY_WATER",
         scope: "STATE",
+        coverageModel: "state",
         coverageMatchLevel: "state",
       }).label,
     ).toBe("State-level listing");
@@ -105,6 +110,7 @@ describe("provider trust helpers", () => {
       category: "UTILITY_WATER",
       scope: "STATE",
       states: ["CA"],
+      coverageModel: "state",
       description: "Best provider",
       website: "https://example.com",
       duplicateDomainCount: 2,
@@ -120,6 +126,50 @@ describe("provider trust helpers", () => {
         "broad_state_coverage",
       ]),
     );
+  });
+
+  it("does not double-flag address-qualified or polygon coverage as broad state coverage", () => {
+    const liveAddressWarnings = getProviderQualityWarnings({
+      name: "Metro Water",
+      category: "UTILITY_WATER",
+      scope: "STATE",
+      states: ["CA"],
+      coverageModel: "live_address",
+      description: "Metro Water provides residential water service in selected communities.",
+      website: "https://example.com",
+    }).map((warning) => warning.code);
+
+    expect(liveAddressWarnings).toContain("address_check_required");
+    expect(liveAddressWarnings).not.toContain("broad_state_coverage");
+
+    const polygonWarnings = getProviderQualityWarnings({
+      name: "Metro Tollway",
+      category: "TRANSPORTATION_TOLL",
+      scope: "STATE",
+      states: ["CA"],
+      coverageModel: "polygon",
+      description: "Metro Tollway operates a mapped regional toll road network.",
+      website: "https://example.com",
+    }).map((warning) => warning.code);
+
+    expect(polygonWarnings).toContain("polygon_check_required");
+    expect(polygonWarnings).not.toContain("broad_state_coverage");
+  });
+
+  it("infers address-check coverage for location-sensitive providers without local rules", () => {
+    expect(
+      inferProviderCoverageModel({
+        category: "UTILITY_INTERNET",
+        scope: "FEDERAL",
+      }),
+    ).toBe("live_address");
+
+    expect(
+      inferProviderCoverageModel({
+        category: "COMMUNITY_LIBRARY",
+        scope: "STATE",
+      }),
+    ).toBe("state");
   });
 
   it("flags a stale record only when last review is older than the freshness window", () => {

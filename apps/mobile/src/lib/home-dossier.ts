@@ -12,6 +12,15 @@ export type DossierSectionStatus = "ok" | "no_location" | "error";
 export type DossierWeatherStatus = "ok" | "no_location" | "too_far" | "error";
 /** Air adds "not_configured" (AirNow needs an API key) — hidden like configured:false. */
 export type DossierAirStatus = "ok" | "not_configured" | "no_location" | "error";
+export type DossierHousingStatus =
+  | "ok"
+  | "disabled"
+  | "not_configured"
+  | "no_location"
+  | "no_zip"
+  | "not_found"
+  | "error";
+export type DossierEvChargingStatus = "ok" | "disabled" | "not_configured" | "no_location" | "error";
 /**
  * Neighborhood is a Pro-only section gated ABOVE the dossier itself (the other
  * sections unlock at Individual+; this one needs Pro). "upgrade_required" is
@@ -80,6 +89,34 @@ export interface HomeDossierResponse {
     violations5y: number | null;
   };
   air?: { status: DossierAirStatus; aqi: number | null; category: string | null };
+  housing?: {
+    status: DossierHousingStatus;
+    zip: string | null;
+    countyName: string | null;
+    metroName: string | null;
+    areaName: string | null;
+    fairMarketRent: {
+      year: number | null;
+      oneBedroom: number | null;
+      twoBedroom: number | null;
+      threeBedroom: number | null;
+      fourBedroom: number | null;
+      zipSpecific: boolean;
+    } | null;
+    incomeLimits: {
+      year: number | null;
+      medianIncome: number | null;
+      lowIncome4Person: number | null;
+    } | null;
+  };
+  evCharging?: {
+    status: DossierEvChargingStatus;
+    radiusMiles: number;
+    stationCount: number;
+    nearestDistanceMiles: number | null;
+    dcFastPortCount: number;
+    level2PortCount: number;
+  };
   /**
    * Neighborhood (Pro-only) — Census/ACS area medians for the surrounding
    * tract, NOT a valuation of this home. "upgrade_required" → locked teaser.
@@ -145,6 +182,24 @@ export interface AirRow {
   category: string | null;
 }
 
+export interface HousingRow {
+  areaName: string | null;
+  zip: string | null;
+  fmrYear: number | null;
+  twoBedroomFmr: number | null;
+  medianIncome: number | null;
+  lowIncome4Person: number | null;
+  zipSpecific: boolean;
+}
+
+export interface EvChargingRow {
+  radiusMiles: number;
+  stationCount: number;
+  nearestDistanceMiles: number | null;
+  dcFastPortCount: number;
+  level2PortCount: number;
+}
+
 export interface NeighborhoodSchool {
   name: string;
   level: string | null;
@@ -177,6 +232,8 @@ export interface HomeDossierRows {
   radon: RadonRow | null;
   water: WaterRow | null;
   air: AirRow | null;
+  housing: HousingRow | null;
+  evCharging: EvChargingRow | null;
   neighborhood: NeighborhoodRow | null;
   /** False ⇒ the card renders nothing at all. */
   hasContent: boolean;
@@ -190,6 +247,8 @@ const EMPTY_ROWS: HomeDossierRows = {
   radon: null,
   water: null,
   air: null,
+  housing: null,
+  evCharging: null,
   neighborhood: null,
   hasContent: false,
 };
@@ -319,7 +378,58 @@ export function getAirRow(d: HomeDossierResponse): AirRow | null {
   return { aqi, category };
 }
 
-/** Positive whole figure (dollars/count); null for absent/invalid/≤0. */
+/** HUD housing row renders only from real HUD data; any degraded status hides it. */
+export function getHousingRow(d: HomeDossierResponse): HousingRow | null {
+  const housing = d.housing;
+  if (!housing || housing.status !== "ok") return null;
+  const fmr = housing.fairMarketRent ?? null;
+  const income = housing.incomeLimits ?? null;
+  const twoBedroomFmr = posInt(fmr?.twoBedroom);
+  const medianIncome = posInt(income?.medianIncome);
+  const lowIncome4Person = posInt(income?.lowIncome4Person);
+  if (twoBedroomFmr === null && medianIncome === null && lowIncome4Person === null) return null;
+  return {
+    areaName: nonEmpty(housing.areaName)
+      ? housing.areaName.trim()
+      : nonEmpty(housing.metroName)
+        ? housing.metroName.trim()
+        : nonEmpty(housing.countyName)
+          ? housing.countyName.trim()
+          : null,
+    zip: nonEmpty(housing.zip) ? housing.zip.trim() : null,
+    fmrYear: posInt(fmr?.year),
+    twoBedroomFmr,
+    medianIncome,
+    lowIncome4Person,
+    zipSpecific: fmr?.zipSpecific === true,
+  };
+}
+
+/** NLR EV row renders for an authoritative ok response, including zero nearby stations. */
+export function getEvChargingRow(d: HomeDossierResponse): EvChargingRow | null {
+  const ev = d.evCharging;
+  if (!ev || ev.status !== "ok") return null;
+  const radiusMiles = posInt(ev.radiusMiles) ?? 10;
+  const stationCount =
+    typeof ev.stationCount === "number" && Number.isFinite(ev.stationCount) && ev.stationCount >= 0
+      ? Math.round(ev.stationCount)
+      : 0;
+  const nearestDistanceMiles =
+    typeof ev.nearestDistanceMiles === "number" &&
+    Number.isFinite(ev.nearestDistanceMiles) &&
+    ev.nearestDistanceMiles >= 0
+      ? Math.round(ev.nearestDistanceMiles * 10) / 10
+      : null;
+  return {
+    radiusMiles,
+    stationCount,
+    nearestDistanceMiles,
+    dcFastPortCount: posInt(ev.dcFastPortCount) ?? 0,
+    level2PortCount: posInt(ev.level2PortCount) ?? 0,
+  };
+}
+
+/** Positive whole figure (dollars/count); null for absent/invalid/<=0. */
 function posInt(value: number | null | undefined): number | null {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
@@ -428,6 +538,8 @@ export function deriveHomeDossier(
   const radon = getRadonRow(dossier);
   const water = getWaterRow(dossier);
   const air = getAirRow(dossier);
+  const housing = getHousingRow(dossier);
+  const evCharging = getEvChargingRow(dossier);
   const neighborhood = getNeighborhoodRow(dossier);
   return {
     flood,
@@ -437,9 +549,11 @@ export function deriveHomeDossier(
     radon,
     water,
     air,
+    housing,
+    evCharging,
     neighborhood,
     hasContent: Boolean(
-      flood || school || weather || hazards || radon || water || air || neighborhood,
+      flood || school || weather || hazards || radon || water || air || housing || evCharging || neighborhood,
     ),
   };
 }

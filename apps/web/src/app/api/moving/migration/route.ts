@@ -6,6 +6,7 @@ import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
+  inferProviderCoverageModel,
   providerNameMentionsOtherState,
   safeJsonArray,
   type MoveTransitionProviderInput,
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
       const coverageModel: ProviderCoverageModel =
         (p.coverageModel as ProviderCoverageModel | null | undefined) ||
         metadata?.coverageModel ||
-        (zipCodes.length > 0 ? "zip_prefix" : "state");
+        inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
       const coverageConfidence = applyProviderServiceabilityConfidence(
         p,
         getProviderCoverageConfidenceFromDb(

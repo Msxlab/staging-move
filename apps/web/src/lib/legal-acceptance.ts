@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import {
   LEGAL_CONSENT_VERSION,
   LEGAL_CONSENT_EVENT,
@@ -10,11 +11,8 @@ import {
 } from "@/lib/legal";
 
 export function getRequestIp(request: NextRequest): string | null {
-  return (
-    (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    null
-  );
+  const ip = resolveClientIpFromHeaders(request.headers);
+  return ip === "anonymous" ? null : ip;
 }
 
 export function normalizeAcceptedLegalConsents(

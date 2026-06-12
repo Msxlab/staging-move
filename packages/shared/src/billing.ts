@@ -81,7 +81,7 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
     isPaid: true,
     features: [
       "Full personalized move plan + tracking",
-      "Data-checked provider suggestions (FCC broadband & utility data)",
+      "Data-checked provider suggestions with confidence labels",
       "New Home Dossier: flood zone, school district & moving-day weather",
       "VIN recall check for your vehicles",
       "Moving-day weather alerts & weekly digest",
@@ -128,12 +128,13 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
     features: [
       "Everything in Family, up to 10 members",
       "25 addresses & 1,000 services",
-      "Licensed mover suggestions (FMCSA-registered)",
-      "New Home Dossier PDF export",
+      "Provider confidence reports across every saved address",
+      "Licensed mover suggestions (FMCSA-registered where available)",
+      "New Home Dossier PDF exports",
       "Up to 3 move plans at once",
       "Priority support",
       "Partner Hub - guided partner updates",
-      "Tax & property export (CSV + PDF)",
+      "Tax, property & home-office exports (CSV + PDF)",
     ],
   },
 };

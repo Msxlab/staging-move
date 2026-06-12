@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { renderBlogContent } from "@/lib/blog-content";
 import { revalidatePublicBlog } from "@/lib/blog-revalidate";
 import {
@@ -261,7 +262,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         entityType: "BlogPost",
         entityId: id,
         changes: JSON.stringify(auditChanges),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
       },
     });
 
@@ -322,7 +323,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         entityType: "BlogPost",
         entityId: id,
         changes: JSON.stringify({ slug: existing.slug, locale: existing.locale }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
       },
     });
   });

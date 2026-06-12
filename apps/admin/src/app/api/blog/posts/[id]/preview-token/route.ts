@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 const PREVIEW_TTL_SECONDS = 60 * 10; // 10 minutes
 const AUDIENCE = "blog-preview";
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       entityType: "BlogPost",
       entityId: post.id,
       changes: JSON.stringify({ ttlSeconds: PREVIEW_TTL_SECONDS }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+      ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
     },
   });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { isHttpsUrl } from "@/lib/url-safety";
 import {
   rebuildProviderCoverage,
@@ -286,7 +287,7 @@ export async function PATCH(
         entityType: "ServiceProvider",
         entityId: id,
         changes: JSON.stringify(updateData),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 
@@ -339,7 +340,7 @@ export async function DELETE(
       requireMfa: true,
       mfaCode,
       backupCode,
-      ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       userAgent: request.headers.get("user-agent") || "unknown",
     });
     if (!confirm.confirmed) {
@@ -366,7 +367,7 @@ export async function DELETE(
         entityType: "ServiceProvider",
         entityId: id,
         changes: JSON.stringify({ name: provider.name, mode: "soft_delete", isActive: false }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

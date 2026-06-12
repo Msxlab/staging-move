@@ -2,6 +2,7 @@ import { getProviderCoverageMetadata, type Prisma, type ProviderCoverageModel } 
 import {
   classifyMoveServiceTransition,
   safeJsonArray,
+  inferProviderCoverageModel,
   buildChecklistTaskTemplates,
   composeChecklistTaskDescription,
   type MoveServiceTransitionPlan,
@@ -126,7 +127,7 @@ export async function buildMoveTransitionContext(
     const coverageModel: ProviderCoverageModel =
       (p.coverageModel as ProviderCoverageModel | null | undefined) ||
       metadata?.coverageModel ||
-      (zipCodes.length > 0 ? "zip_prefix" : "state");
+      inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
     const coverageConfidence = applyProviderServiceabilityConfidence(
       p,
       getProviderCoverageConfidenceFromDb(

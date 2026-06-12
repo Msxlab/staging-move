@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import {
   buildCampaignSnapshot,
   buildCheckoutDisclosureText,
@@ -37,10 +38,9 @@ export function hashForSnapshot(value: string | null | undefined) {
 }
 
 export function getRequestHashSnapshot(request: Request) {
+  const ip = resolveClientIpFromHeaders(request.headers);
   return {
-    consentIpHash: hashForSnapshot(
-      request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
-    ),
+    consentIpHash: hashForSnapshot(ip === "anonymous" ? null : ip),
     consentUserAgentHash: hashForSnapshot(request.headers.get("user-agent")),
   };
 }

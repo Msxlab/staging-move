@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { buildCsv } from "@/lib/csv-safety";
 
 // GET /api/affiliate/export?type=clicks|conversions
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
         entityType: "AffiliateClick",
         entityId: type,
         changes: JSON.stringify({ type }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 
 /**
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       requireMfa: true,
       mfaCode,
       backupCode,
-      ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       userAgent: request.headers.get("user-agent") || "unknown",
     });
     if (!confirm.confirmed) {
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
           mergedName: duplicate.name,
           mergedUserCount: duplicate.userCount || 0,
         }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

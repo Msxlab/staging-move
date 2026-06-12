@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { renderBlogContent } from "@/lib/blog-content";
 import {
   BLOG_LOCALES,
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
         entityType: "BlogPost",
         entityId: created.id,
         changes: JSON.stringify({ title: created.title, slug: created.slug, locale: created.locale }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
       },
     });
 

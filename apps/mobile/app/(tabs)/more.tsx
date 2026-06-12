@@ -56,6 +56,21 @@ interface MenuItem {
   onPress?: () => void;
 }
 
+interface MobileBuildInfo {
+  commit?: string | null;
+  profile?: string | null;
+  builtAt?: string | null;
+}
+
+function mobileBuildInfo(): MobileBuildInfo {
+  const extra = Constants.expoConfig?.extra as { build?: MobileBuildInfo } | undefined;
+  return extra?.build || {};
+}
+
+function shortBuildCommit(commit: string | null | undefined) {
+  return commit ? commit.slice(0, 8) : null;
+}
+
 export default function MoreScreen() {
 
   // theme: hook-injected styles
@@ -69,6 +84,12 @@ export default function MoreScreen() {
   const user = useAuthStore((s) => s.user);
   const planTier = useAuthStore((s) => s.planTier);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const buildInfo = mobileBuildInfo();
+  const buildCommit = shortBuildCommit(buildInfo.commit);
+  const buildLabel = [
+    buildCommit ? `#${buildCommit}` : null,
+    buildInfo.profile || null,
+  ].filter(Boolean).join(" - ");
 
   const initials =
     ((user?.firstName?.[0] || "") + (user?.lastName?.[0] || "")).toUpperCase() ||
@@ -263,6 +284,7 @@ export default function MoreScreen() {
         </TouchableOpacity>
 
         <Text style={styles.version}>LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
+        {buildLabel ? <Text style={styles.buildMeta}>{buildLabel}</Text> : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -381,5 +403,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textMuted,
     marginTop: 24,
+  },
+  buildMeta: {
+    textAlign: "center",
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 4,
   },
 });

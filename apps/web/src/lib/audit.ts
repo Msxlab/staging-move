@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { redactAuditPayload } from "@locateflow/shared";
 
 export interface AuditLogParams {
@@ -34,8 +35,9 @@ export async function createAuditLog(params: AuditLogParams): Promise<void> {
 }
 
 export function extractRequestMeta(request: Request): { ipAddress: string; userAgent: string } {
+  const ip = resolveClientIpFromHeaders(request.headers);
   return {
-    ipAddress: (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim(),
+    ipAddress: ip === "anonymous" ? "unknown" : ip,
     userAgent: request.headers.get("user-agent") ?? "unknown",
   };
 }

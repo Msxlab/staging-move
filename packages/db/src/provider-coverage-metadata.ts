@@ -866,9 +866,9 @@ const CURATED_RESEARCH_MODELS: ProviderCoverageMetadata[] = [
   },
   {
     slug: "ezpass-va",
-    coverageModel: "state",
+    coverageModel: "live_address",
     officialUrl: "https://www.ezpassva.com/",
-    note: "E-ZPass Virginia is a statewide toll account issuer; recommendation relevance depends on toll-road use rather than utility service territory.",
+    note: "E-ZPass Virginia is a statewide toll account issuer; recommendation relevance depends on address and toll-road use rather than utility-style state coverage.",
     source: "catalog",
   },
   {
