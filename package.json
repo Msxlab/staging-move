@@ -23,6 +23,7 @@
     "summarize:providers:coverage-state": "pnpm exec tsx scripts/summarize-provider-coverage-by-state.ts",
     "check:prod-data-readiness": "pnpm exec tsx scripts/check-prod-data-readiness.ts",
     "diagnose:provider-data": "pnpm exec tsx scripts/diagnose-provider-data-flow.ts",
+    "report:providers:growth-priorities": "pnpm exec tsx scripts/report-provider-growth-priorities.ts",
     "verify:provider-guards": "pnpm audit:providers && pnpm audit:providers:coverage && pnpm audit:providers:state-completeness && pnpm --filter @locateflow/web test",
     "verify:typecheck": "pnpm --filter @locateflow/web exec tsc --noEmit && pnpm --filter @locateflow/admin exec tsc --noEmit && pnpm --filter @locateflow/mobile exec tsc --noEmit && pnpm --filter @locateflow/db exec tsc --noEmit && pnpm --filter @locateflow/connectors exec tsc --noEmit",
     "verify:tests": "pnpm --filter @locateflow/web test && pnpm --filter @locateflow/admin test && pnpm --filter @locateflow/mobile test && pnpm --filter @locateflow/connectors test",

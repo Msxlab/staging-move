@@ -19,6 +19,7 @@ export * from "./runtime-config";
 export * from "./env-catalog";
 export * from "./provider-coverage";
 export * from "./provider-integrity";
+export * from "./provider-quality-report";
 export * from "./provider-move-domain";
 export * from "./isp";
 export * from "./move-transition-classifier";
