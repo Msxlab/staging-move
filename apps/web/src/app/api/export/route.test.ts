@@ -56,6 +56,21 @@ vi.mock("@/lib/plan-limits", () => ({
   ),
 }));
 
+vi.mock("@/lib/request-entitlements", async () => {
+  const { planFeatures } = await vi.importActual<typeof import("@locateflow/shared")>("@locateflow/shared");
+  return {
+    getRequestEntitlement: async (_request: Request, userId: string) => {
+      const { getUserPlan } = await vi.importMock<typeof import("@/lib/plan-limits")>("@/lib/plan-limits");
+      const plan = await getUserPlan(userId);
+      return {
+        scope: { kind: "user", userId },
+        plan,
+        features: planFeatures(plan.plan),
+      };
+    },
+  };
+});
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";

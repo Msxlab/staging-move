@@ -482,6 +482,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
       return NextResponse.json({
         configured: true,
+        dossierPdf: features.dossierPdf,
         address: addressPayload,
         flood: { status: "no_location", zone: null, isHighRisk: null } satisfies FloodSection,
         school: { status: "no_location", districtName: null, ncesId: null } satisfies SchoolSection,
@@ -570,6 +571,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const dossier = {
       configured: true,
+      dossierPdf: features.dossierPdf,
       address: addressPayload,
       flood: floodSection(floodSettled),
       school: schoolSection(schoolSettled),

@@ -6,7 +6,7 @@ import { sendNotification } from "@/lib/notifications";
 import { groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { daysUntilDateOnly, isReminderDeliveryHour, resolveReminderTimeZone } from "@/lib/reminder-timezone";
 import { lookupMoveDayForecast } from "@/lib/nws-weather";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { planFeatures } from "@locateflow/shared";
 
 export const runtime = "nodejs";
@@ -85,6 +85,7 @@ async function handleCron(request: NextRequest) {
       },
       include: {
         user: { select: { id: true, profile: { select: { timezone: true } } } },
+        workspace: { select: { ownerUserId: true } },
         toAddress: { select: { city: true, state: true, latitude: true, longitude: true } },
       },
       orderBy: { moveDate: "asc" },
@@ -107,14 +108,21 @@ async function handleCron(request: NextRequest) {
     let skippedNotEntitled = 0;
     const errors: string[] = [];
 
-    // Per-user plan resolution is cached for the run so a user with several
-    // plans only costs one entitlement read (multiple plans share a plan tier).
-    const weatherDigestByUser = new Map<string, boolean>();
-    async function userHasWeatherDigest(userId: string): Promise<boolean> {
-      const cached = weatherDigestByUser.get(userId);
+    // Per-owner plan resolution is cached for the run so several plans in the
+    // same family workspace cost one entitlement read.
+    const weatherDigestByOwner = new Map<string, boolean>();
+    async function planHasWeatherDigest(
+      userId: string,
+      workspaceId: string | null,
+      ownerUserId: string | null | undefined,
+    ): Promise<boolean> {
+      const key = ownerUserId || userId;
+      const cached = weatherDigestByOwner.get(key);
       if (cached !== undefined) return cached;
-      const entitled = planFeatures((await getUserPlan(userId)).plan).weatherDigest;
-      weatherDigestByUser.set(userId, entitled);
+      const entitled = planFeatures(
+        (await getPlanForLimitScope(userId, { workspaceId, planOwnerUserId: ownerUserId })).plan,
+      ).weatherDigest;
+      weatherDigestByOwner.set(key, entitled);
       return entitled;
     }
 
@@ -136,7 +144,7 @@ async function handleCron(request: NextRequest) {
       // `weatherDigest` feature (Individual and up). A free/free-trial owner is
       // skipped before any NWS lookup or dedupe-key burn, exactly like a muted
       // user — nothing is sent and nothing is consumed.
-      if (!(await userHasWeatherDigest(plan.userId))) {
+      if (!(await planHasWeatherDigest(plan.userId, plan.workspaceId, plan.workspace?.ownerUserId))) {
         skippedNotEntitled++;
         continue;
       }

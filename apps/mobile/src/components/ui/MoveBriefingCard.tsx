@@ -66,7 +66,7 @@ const BRIEFING_TEASER_SEEN_KEY = "locateflow.moveBriefing.teaserSeen";
  * Freemium packaging: the AI briefing is paid-plans-only. With
  * `entitled={false}` the card renders a value-first teaser instead — an
  * honest pitch + three locked rows naming what the briefing actually does +
- * an "Unlock with Individual" CTA routed to the existing subscription screen
+ * an "Unlock with Family" CTA routed to the existing subscription screen
  * (the same destination every mobile upsell uses). The teaser keeps the X
  * (its own one-time "seen" key) and the long-press permanent dismissal, so
  * an upsell never becomes an un-dismissable banner.
@@ -269,10 +269,10 @@ export function MoveBriefingCard({
           onPress={handleUnlock}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={t("teaser.unlockCta", "Unlock with Individual")}
+          accessibilityLabel={t("teaser.briefingUnlockCta", "Unlock with Family")}
         >
           <Lock size={14} color="#fff" />
-          <Text style={styles.unlockBtnText}>{t("teaser.unlockCta", "Unlock with Individual")}</Text>
+          <Text style={styles.unlockBtnText}>{t("teaser.briefingUnlockCta", "Unlock with Family")}</Text>
           <ArrowRight size={14} color="#fff" />
         </TouchableOpacity>
       </Card>

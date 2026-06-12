@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireDbUserId } from "@/lib/user-auth";
-import { getUserPlan } from "@/lib/plan-limits";
-import { planFeatures, ADDRESS_VALIDATION_UNAVAILABLE } from "@locateflow/shared";
+import { ADDRESS_VALIDATION_UNAVAILABLE } from "@locateflow/shared";
 import { validateAddressWithUsps, isAddressValidationConfigured } from "@/lib/usps-address-validation";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 
 export const runtime = "nodejs";
 
@@ -46,8 +46,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Entitlement gate (Tier 2 is paid-plans only) + configuration gate.
-    const plan = await getUserPlan(userId);
-    if (!planFeatures(String(plan.plan)).addressValidation) return safe();
+    if (!(await requestHasPlanFeature(request, userId, "addressValidation"))) return safe();
     if (!(await isAddressValidationConfigured())) return safe();
 
     const result = await validateAddressWithUsps(parsed.data);

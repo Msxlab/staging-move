@@ -16,16 +16,33 @@ export type ServiceabilityProvider = {
 
 export type ServiceabilityMeta = {
   fcc: {
-    status: FccLookupResult["status"] | "skipped" | "not_configured";
+    status: FccLookupResult["status"] | "skipped" | "not_configured" | "gated";
     confirmedCount: number;
     blockGeoid: string | null;
   };
   electric: {
-    status: ElectricLookupResult["status"] | "skipped" | "not_configured";
+    status: ElectricLookupResult["status"] | "skipped" | "not_configured" | "gated";
     confirmedCount: number;
     utilityCount: number;
   };
 };
+
+export function providerServiceabilityGatedMeta(providers: ServiceabilityProvider[]): ServiceabilityMeta {
+  const hasInternetCandidates = providers.some((provider) => provider.category === "UTILITY_INTERNET");
+  const hasElectricCandidates = providers.some((provider) => provider.category === "UTILITY_ELECTRIC");
+  return {
+    fcc: {
+      status: hasInternetCandidates ? "gated" : "skipped",
+      confirmedCount: 0,
+      blockGeoid: null,
+    },
+    electric: {
+      status: hasElectricCandidates ? "gated" : "skipped",
+      confirmedCount: 0,
+      utilityCount: 0,
+    },
+  };
+}
 
 export function hasConfirmedProviderServiceability(provider: ServiceabilityProvider): boolean {
   return provider.fccServiceable === true || provider.utilityServiceable === true;

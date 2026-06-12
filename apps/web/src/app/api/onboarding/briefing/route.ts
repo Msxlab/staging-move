@@ -3,10 +3,10 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
-import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import { scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
-import { getUserPlan } from "@/lib/plan-limits";
 import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
+import { getRequestEntitlement } from "@/lib/request-entitlements";
 import { getMergedDisplayCategoryLabel, getEssentialSetupCategories, type UserProfile } from "@/lib/recommendation-engine";
 import { recordIntegrationOutcome } from "@/lib/integration-telemetry";
 import {
@@ -148,10 +148,7 @@ export async function POST(request: NextRequest) {
   // deployment; the caller's plan decides whether THIS user gets it. Both are
   // resolved up front so a gated request never gathers signals, touches the
   // cache, or consumes daily AI budget.
-  const [apiKeyValue, userPlan] = await Promise.all([
-    getRuntimeConfigValue("ANTHROPIC_API_KEY").catch(() => null),
-    getUserPlan(userId),
-  ]);
+  const apiKeyValue = await getRuntimeConfigValue("ANTHROPIC_API_KEY").catch(() => null);
   const apiKey = apiKeyValue?.trim() || null;
 
   // Not configured → tell the UI to hide the AI section. We do NOT 500; the
@@ -162,7 +159,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ configured: false });
   }
 
-  // Paid-plan gate (owner decision): the AI briefing is INDIVIDUAL and up.
+  const { scope, plan: userPlan } = await getRequestEntitlement(request, userId);
+
+  // Paid-plan gate (owner decision): the AI briefing is Family and Pro.
   // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 — never
   // 403 — so old clients (which require a string `briefing`) fail soft to the
   // deterministic dashboard instead of erroring.
@@ -178,8 +177,6 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Gather coarse, non-PII signals from the user's own data ──
-  const scope = await resolveWorkspaceDataScope(request, userId);
-
   const [user, activePlan, activeServices, savedProviders] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },

@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Boundary mocks. notification-preferences is mocked so every test user is
 // digest-day-eligible regardless of the wall clock — the focus here is the new
-// weatherDigest plan gate. getUserPlan is mocked (no DB); planFeatures stays
-// REAL so the gate exercises the actual @locateflow/shared matrix (Individual+).
+// weatherDigest plan gate. getUserPlanForDefaultWorkspace is mocked (no DB);
+// planFeatures stays REAL so the gate exercises the actual @locateflow/shared
+// matrix (Individual+).
 const mocks = vi.hoisted(() => ({
   guardCronRequest: vi.fn(),
   userFindMany: vi.fn(),
@@ -34,7 +35,7 @@ vi.mock("@/lib/email-service", () => ({
 }));
 
 vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: (...a: unknown[]) => mocks.getUserPlan(...a),
+  getUserPlanForDefaultWorkspace: (...a: unknown[]) => mocks.getUserPlan(...a),
 }));
 
 // Every user is eligible (email + weekly summary on, digest day = today).

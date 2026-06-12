@@ -14,10 +14,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/cron-guard", () => ({
   guardCronRequest: (...a: unknown[]) => mocks.guardCronRequest(...a),
 }));
-// getUserPlan mocked (no DB); planFeatures stays REAL so the weatherDigest gate
-// exercises the actual @locateflow/shared feature matrix (Individual+).
+// getPlanForLimitScope mocked (no DB); planFeatures stays REAL so the
+// weatherDigest gate exercises the actual @locateflow/shared feature matrix
+// (Individual+).
 vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: (...a: unknown[]) => mocks.getUserPlan(...a),
+  getPlanForLimitScope: (...a: unknown[]) => mocks.getUserPlan(...a),
 }));
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -57,9 +58,11 @@ function makePlan(overrides: Record<string, unknown> = {}) {
   return {
     id: "plan_1",
     userId: "user_1",
+    workspaceId: null,
     // Date-only at UTC midnight, 2 days after the frozen local "today".
     moveDate: new Date("2026-06-14T00:00:00.000Z"),
     user: { id: "user_1", profile: { timezone: null } },
+    workspace: null,
     toAddress: { city: "Austin", state: "TX", latitude: 30.2672, longitude: -97.7431 },
     ...overrides,
   };

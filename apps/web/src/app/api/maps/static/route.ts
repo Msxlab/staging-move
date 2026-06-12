@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireDbUserId } from "@/lib/auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 
 /**
  * GET /api/maps/static — authenticated Google Static Maps proxy.
@@ -245,6 +246,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: "Too many requests. Please wait.", code: "MAPS_RATE_LIMITED" },
         { status: 429 },
+      );
+    }
+
+    if (!(await requestHasPlanFeature(request, userId, "realMap"))) {
+      return NextResponse.json(
+        { error: "Real route maps require Family or Pro.", code: "REAL_MAP_UPGRADE_REQUIRED" },
+        { status: 403 },
       );
     }
 

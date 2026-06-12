@@ -7,12 +7,12 @@ import { generateAddressReportPdf } from "@/lib/pdf/address-report";
 import { generateFullAccountPdf } from "@/lib/pdf/full-account";
 import { generateTaxReportPdf } from "@/lib/pdf/tax-report";
 import { buildTaxReportData } from "@/lib/tax-report-data";
-import { getUserPlan } from "@/lib/plan-limits";
 import { planFeatures } from "@locateflow/shared";
 import type { PdfAccountSnapshot, PdfAddress } from "@/lib/pdf/types";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
+import { getRequestEntitlement } from "@/lib/request-entitlements";
 
 /**
  * GET /api/export/pdf?type=address&addressId=xxx
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     if (type === "tax") {
       // Pro-gated, like the CSV/JSON tax export. Inactive/expired Pro resolves
       // to FREE_TRIAL here, so this also blocks lapsed Pro.
-      const userPlan = await getUserPlan(userId);
+      const { plan: userPlan } = await getRequestEntitlement(request, userId);
       if (!planFeatures(userPlan.plan).advancedExport) {
         await createAuditLog({
           userId,

@@ -260,7 +260,7 @@ describe("MoveBriefingTeaser rendering", () => {
 
     // CTA → /pricing
     expect(markup).toContain('href="/pricing"');
-    expect(markup).toContain("Unlock with Individual");
+    expect(markup).toContain("Unlock with Family");
   });
 
   it("shows the dismiss affordance only when a handler is provided", () => {
