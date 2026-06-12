@@ -5,7 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   HomeDossierCard,
   HomeDossierTeaser,
+  deriveEvCharging,
   deriveDossierView,
+  deriveHousing,
   deriveNeighborhood,
   floodLabelKey,
   formatForecastDate,
@@ -39,6 +41,7 @@ vi.mock("lucide-react", () => {
     Sparkles: icon("sparkles"),
     Waves: icon("waves"),
     Wind: icon("wind"),
+    Zap: icon("zap"),
   };
 });
 
@@ -71,7 +74,13 @@ vi.mock("next-intl", async () => {
       const raw = resolve(key);
       const m = /^(.*)<em>(.*)<\/em>(.*)$/.exec(raw);
       if (!m || typeof vars?.em !== "function") return raw;
-      return [m[1], vars.em(m[2]), m[3]];
+      return (
+        <>
+          {m[1]}
+          {vars.em(m[2])}
+          {m[3]}
+        </>
+      );
     };
     return t;
   };
@@ -87,6 +96,8 @@ function dossier(overrides: {
   radon?: Partial<NonNullable<HomeDossierResponse["radon"]>>;
   water?: Partial<NonNullable<HomeDossierResponse["water"]>>;
   air?: Partial<NonNullable<HomeDossierResponse["air"]>>;
+  housing?: Partial<NonNullable<HomeDossierResponse["housing"]>>;
+  evCharging?: Partial<NonNullable<HomeDossierResponse["evCharging"]>>;
 } = {}): HomeDossierResponse {
   return {
     configured: overrides.configured ?? true,
@@ -111,16 +122,78 @@ function dossier(overrides: {
     radon: { status: "ok", zone: 1, ...overrides.radon },
     water: { status: "ok", systemName: "Austin Water", violations5y: 0, ...overrides.water },
     air: { status: "ok", aqi: 42, category: "Good", ...overrides.air },
+    housing: {
+      status: "ok",
+      zip: "78701",
+      countyName: "Travis County",
+      metroName: "Austin-Round Rock-Georgetown, TX",
+      areaName: "Austin-Round Rock-Georgetown, TX HUD Metro FMR Area",
+      fairMarketRent: {
+        year: 2026,
+        efficiency: 1350,
+        oneBedroom: 1540,
+        twoBedroom: 1840,
+        threeBedroom: 2380,
+        fourBedroom: 2860,
+        zipSpecific: false,
+      },
+      incomeLimits: {
+        year: 2026,
+        medianIncome: 126000,
+        extremelyLowIncome4Person: 37800,
+        veryLowIncome4Person: 63000,
+        lowIncome4Person: 100800,
+      },
+      caveat: "HUD area context",
+      ...overrides.housing,
+    },
+    evCharging: {
+      status: "ok",
+      radiusMiles: 10,
+      totalResults: 14,
+      stationCount: 14,
+      nearestDistanceMiles: 0.8,
+      dcFastPortCount: 4,
+      level2PortCount: 18,
+      teslaCompatibleCount: 3,
+      ccsCompatibleCount: 4,
+      stations: [{ name: "Downtown Garage", distanceMiles: 0.8, city: "Austin", state: "TX" }],
+      caveat: "Public active stations",
+      ...overrides.evCharging,
+    },
   };
 }
 
 /** Every extended section degraded — for the card-hide tests. */
-function degradedExtended(status: "no_location" | "error"): Pick<HomeDossierResponse, "hazards" | "radon" | "water" | "air"> {
+function degradedExtended(status: "no_location" | "error"): Pick<HomeDossierResponse, "hazards" | "radon" | "water" | "air" | "housing" | "evCharging"> {
   return {
     hazards: { status, topRisks: [], overallRating: null },
     radon: { status, zone: null },
     water: { status, systemName: null, violations5y: null },
     air: { status, aqi: null, category: null },
+    housing: {
+      status,
+      zip: null,
+      countyName: null,
+      metroName: null,
+      areaName: null,
+      fairMarketRent: null,
+      incomeLimits: null,
+      caveat: null,
+    },
+    evCharging: {
+      status,
+      radiusMiles: 10,
+      totalResults: null,
+      stationCount: 0,
+      nearestDistanceMiles: null,
+      dcFastPortCount: 0,
+      level2PortCount: 0,
+      teslaCompatibleCount: 0,
+      ccsCompatibleCount: 0,
+      stations: [],
+      caveat: null,
+    },
   };
 }
 
@@ -426,7 +499,7 @@ describe("HomeDossierCard rendering", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
     expect(markup).toContain("Zone X — minimal flood risk");
     // Default hazards rating is "Relatively Moderate" — neutral, never honey.
-    expect(markup).not.toContain("bg-tone-honey-bg");
+    expect(markup).not.toMatch(/bg-tone-honey-bg[^>]*>Riverine Flooding · Relatively Moderate/);
   });
 
   it("renders the honest no-location hint instead of fabricated rows", () => {
@@ -494,7 +567,8 @@ describe("HomeDossierCard — extended rows rendering", () => {
     expect(markup).toContain("Wildfire · Relatively High");
     expect(markup).toContain("Hail · Relatively Moderate");
     // Honey warn tone ONLY on the Relatively High pill (flood default is low-risk).
-    expect(markup.match(/bg-tone-honey-bg/g)).toHaveLength(1);
+    expect(markup).toMatch(/bg-tone-honey-bg[^>]*>Wildfire · Relatively High/);
+    expect(markup).not.toMatch(/bg-tone-honey-bg[^>]*>Hail · Relatively Moderate/);
     // MANDATORY fine print — relative, tract-level, not a property score.
     expect(markup).toContain("FEMA National Risk Index — relative, tract-level context, not a property score.");
   });
@@ -506,7 +580,7 @@ describe("HomeDossierCard — extended rows rendering", () => {
       />,
     );
     expect(markup).toContain("Tornado · Very High");
-    expect(markup.match(/bg-tone-honey-bg/g)).toHaveLength(1);
+    expect(markup).toMatch(/bg-tone-honey-bg[^>]*>Tornado · Very High/);
   });
 
   it("renders the radon zone with the MANDATORY test-regardless fine print", () => {
@@ -559,6 +633,45 @@ describe("HomeDossierCard — extended rows rendering", () => {
     expect(markup).not.toContain("Air quality now:");
     expect(markup).toContain("Zone X — minimal flood risk");
   });
+
+  it("derives and renders HUD housing context", () => {
+    const view = deriveDossierView(dossier());
+    expect(view.housing).toEqual(
+      expect.objectContaining({
+        zip: "78701",
+        twoBedroomFmr: 1840,
+        medianIncome: 126000,
+        lowIncome4Person: 100800,
+      }),
+    );
+    expect(deriveHousing(dossier().housing)).toEqual(view.housing);
+
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
+    expect(markup).toContain("Housing context");
+    expect(markup).toContain("$1,840/mo HUD 2BR FMR");
+    expect(markup).toContain("Area median income");
+    expect(markup).toContain("HUD User Fair Market Rent and Income Limits");
+  });
+
+  it("derives and renders nearby public EV charging context", () => {
+    const view = deriveDossierView(dossier());
+    expect(view.evCharging).toEqual(
+      expect.objectContaining({
+        stationCount: 14,
+        nearestDistanceMiles: 0.8,
+        dcFastPortCount: 4,
+        level2PortCount: 18,
+      }),
+    );
+    expect(deriveEvCharging(dossier().evCharging)).toEqual(view.evCharging);
+
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier()} />);
+    expect(markup).toContain("EV charging nearby");
+    expect(markup).toContain("14 public active stations within 10 mi");
+    expect(markup).toContain("0.8 mi nearest");
+    expect(markup).toContain("18 Level 2");
+    expect(markup).toContain("NLR Alternative Fuel Stations");
+  });
 });
 
 describe("isDossierGated — GATE-API plan gate (entitled:false, HTTP 200)", () => {
@@ -590,16 +703,16 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     code: "DOSSIER_UPGRADE_REQUIRED",
   } as HomeDossierResponse;
 
-  it("renders the seven locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
+  it("renders the nine locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={gated} />);
 
     // Card chrome (serif dossier title) + pitch
     expect(markup).toContain("<em>new home</em>");
     expect(markup).toContain(
-      "Seven sourced insights about your next home — from FEMA, EPA, NCES, and National Weather Service data.",
+      "Nine sourced insights about your next home — from FEMA, HUD, EPA, NCES, NLR, and National Weather Service data.",
     );
 
-    // The seven insight rows as locked line-items
+    // The nine insight rows as locked line-items
     expect(markup).toContain("Flood zone");
     expect(markup).toContain("School district");
     expect(markup).toContain("Moving-day weather");
@@ -607,7 +720,9 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     expect(markup).toContain("Radon");
     expect(markup).toContain("Drinking water");
     expect(markup).toContain("Air quality");
-    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(7);
+    expect(markup).toContain("Housing context");
+    expect(markup).toContain("EV charging nearby");
+    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(9);
 
     // CTA → /pricing
     expect(markup).toContain('href="/pricing"');
@@ -851,8 +966,10 @@ describe("HomeDossierCard — neighborhood section rendering", () => {
     expect(markup).toContain("Unlock with Pro");
     expect(markup).toContain('href="/pricing"');
     expect(markup).toContain("Pro");
-    // No fabricated figures leak into the locked variant.
-    expect(markup).not.toContain("$");
+    // No fabricated neighborhood figures leak into the locked variant.
+    expect(markup).not.toContain("$412,000");
+    expect(markup).not.toContain("$1,850");
+    expect(markup).not.toContain("$96,500");
     expect(markup).not.toContain("Median home value");
   });
 
@@ -902,7 +1019,8 @@ describe("dashboard wiring regression", () => {
     expect(source).toContain('{ key: "homeDossier", default: true }');
     expect(source).toContain('homeDossier: td("widget_homeDossier")');
     expect(source).toContain('case "homeDossier":');
-    expect(source).toContain('"homeDossier", "recent"');
+    expect(source).toContain('"moving", "homeDossier", "spending"');
+    expect(source).toContain("stats: true");
   });
 
   it("uses the plan-accent primary classes on the header Plan-a-Move CTA (not the always-cool orange tone)", () => {

@@ -8,12 +8,14 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Database,
+  Home,
   Loader2,
   MapPin,
   RefreshCw,
   Search,
   ShieldCheck,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import type {
@@ -75,6 +77,13 @@ const MATCH_LABELS: Record<ProviderQueryMatchLevel, string> = {
   federal: "Federal",
   unknown: "Unknown",
 };
+
+const DOSSIER_READINESS_IDS = new Set([
+  "airnow",
+  "census",
+  "hud-housing",
+  "nlr-ev-charging",
+]);
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
@@ -189,6 +198,18 @@ export default function ProviderQualityClient() {
     return data?.liveDataReadiness.filter((item) => item.status === "ready" || item.status === "keyless").length ?? 0;
   }, [data]);
 
+  const dossierReadiness = useMemo(() => {
+    return data?.liveDataReadiness.filter((item) => DOSSIER_READINESS_IDS.has(item.id)) ?? [];
+  }, [data]);
+
+  const otherReadiness = useMemo(() => {
+    return data?.liveDataReadiness.filter((item) => !DOSSIER_READINESS_IDS.has(item.id)) ?? [];
+  }, [data]);
+
+  const dossierReadyCount = useMemo(() => {
+    return dossierReadiness.filter((item) => item.status === "ready" || item.status === "keyless").length;
+  }, [dossierReadiness]);
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -245,14 +266,71 @@ export default function ProviderQualityClient() {
             />
           </div>
 
+          {dossierReadiness.length > 0 && (
+            <AdminPanel
+              title="Dossier Source Readiness"
+              caption="Runtime gates for air, Census, HUD housing, and public EV charging sections."
+              flagship
+            >
+              <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase text-muted-foreground">New Home Dossier</p>
+                      <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+                        {dossierReadyCount}/{dossierReadiness.length}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">source gates ready</p>
+                    </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg">
+                      <Database className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-lg border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
+                      <p className="font-semibold">{dossierReadyCount}</p>
+                      <p className="mt-0.5 opacity-80">ready or keyless</p>
+                    </div>
+                    <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
+                      <p className="font-semibold">{dossierReadiness.length - dossierReadyCount}</p>
+                      <p className="mt-0.5 opacity-80">needs config</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {dossierReadiness.map((item) => {
+                    const SourceIcon = item.id === "hud-housing" ? Home : item.id === "nlr-ev-charging" ? Zap : statusIcon(item.status);
+                    return (
+                      <div key={item.id} className={`rounded-lg border p-4 ${STATUS_STYLES[item.status]}`}>
+                        <div className="flex items-start gap-3">
+                          <SourceIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold">{item.label}</p>
+                              <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                                {item.status}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs opacity-80">{item.detail}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </AdminPanel>
+          )}
+
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <AdminPanel
-              title="Live Data Readiness"
-              caption="Runtime gates for data-backed recommendations and dossier enrichment."
+              title="Other Live Data Readiness"
+              caption="Runtime gates for provider recommendations, utilities, and mover verification."
               className="xl:col-span-2"
             >
               <div className="grid gap-3 md:grid-cols-2">
-                {data.liveDataReadiness.map((item) => {
+                {otherReadiness.map((item) => {
                   const Icon = statusIcon(item.status);
                   return (
                     <div key={item.id} className={`rounded-lg border p-4 ${STATUS_STYLES[item.status]}`}>
