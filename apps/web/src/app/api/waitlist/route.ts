@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getUserSession } from "@/lib/user-auth";
 
@@ -54,11 +55,8 @@ export async function POST(request: NextRequest) {
   const { email, target, source, note, locale } = parsed.data;
 
   const userAgent = request.headers.get("user-agent")?.slice(0, 500) || null;
-  const ip =
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    null;
+  const resolvedIp = resolveClientIpFromHeaders(request.headers);
+  const ip = resolvedIp === "anonymous" ? null : resolvedIp;
   const ipHash = ip ? createHash("sha256").update(ip).digest("hex") : null;
 
   // Tie to the logged-in user if we have a session — outreach is simpler.

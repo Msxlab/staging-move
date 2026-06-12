@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -104,7 +105,7 @@ export async function PATCH(
               contentHash: candidate.contentHash,
               bytes: candidate.bytes,
             }),
-            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+            ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
           },
         });
       });
@@ -143,7 +144,7 @@ export async function PATCH(
             bytes: candidate.bytes,
             notes,
           }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
         },
       }),
     ]);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 // State-rule edits are bulk-editorial — an operator authoring DMV / tax /
 // voter text for a state often saves dozens of fields back-to-back. The
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
         entityType: "StateRule",
         entityId: rule.id,
         changes: JSON.stringify({ stateCode: rule.stateCode }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

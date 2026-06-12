@@ -5,6 +5,7 @@ import {
   getUserSession,
   generateOpaqueToken,
 } from "@/lib/user-auth";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { sendPasswordResetEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
@@ -139,11 +140,8 @@ async function loadSecurityState(userId: string, currentSessionId?: string) {
 }
 
 function getRequestIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "unknown"
-  );
+  const ip = resolveClientIpFromHeaders(request.headers);
+  return ip === "anonymous" ? "unknown" : ip;
 }
 
 export async function GET() {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
 
@@ -92,10 +93,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ip =
-      (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      null;
+    const resolvedIp = resolveClientIpFromHeaders(request.headers);
+    const ip = resolvedIp === "anonymous" ? null : resolvedIp;
     const userAgent = request.headers.get("user-agent") || null;
 
     // Append rows rather than upsert — we keep the full history for audit,

@@ -153,6 +153,33 @@ describe("tierProvidersFromDb", () => {
     expect(result.providers.map((provider) => provider.id)).toEqual(["polygon", "state"]);
   });
 
+  it("uses curated polygon metadata when the DB coverage model is missing", () => {
+    const provider = {
+      id: "polygon-from-metadata",
+      slug: "wmata",
+      scope: "STATE",
+      coverageModel: null,
+      coverages: [{ state: "DC", zipPrefix: null, zipExact: null }],
+    };
+
+    expect(
+      getProviderPresentationMatchLevelFromDb(provider, {
+        state: "DC",
+        zip: "20001",
+        latitude: 38.9072,
+        longitude: -77.0369,
+      }),
+    ).toBe("polygon");
+    expect(
+      getProviderCoverageConfidenceFromDb(provider, {
+        state: "DC",
+        zip: "20001",
+        latitude: 38.9072,
+        longitude: -77.0369,
+      }),
+    ).toBe("MAPPED_SERVICE_AREA");
+  });
+
   it("drops polygon providers when the address sits outside their service envelope", () => {
     const result = tierProvidersFromDb(
       [
@@ -174,6 +201,29 @@ describe("tierProvidersFromDb", () => {
 
     expect(result.zipMatchLevel).toBe("state");
     expect(result.coverageConfidence).toBe("STATE_LEVEL");
+    expect(result.providers.map((provider) => provider.id)).toEqual(["state"]);
+  });
+
+  it("drops metadata-derived polygon providers outside their service envelope", () => {
+    const result = tierProvidersFromDb(
+      [
+        {
+          id: "polygon-from-metadata",
+          slug: "wmata",
+          scope: "STATE",
+          coverageModel: null,
+          coverages: [{ state: "MD", zipPrefix: null, zipExact: null }],
+        },
+        {
+          id: "state",
+          scope: "STATE",
+          coverages: [{ state: "MD", zipPrefix: null, zipExact: null }],
+        },
+      ],
+      { state: "MD", zip: "21201", latitude: 39.2904, longitude: -76.6122 }
+    );
+
+    expect(result.zipMatchLevel).toBe("state");
     expect(result.providers.map((provider) => provider.id)).toEqual(["state"]);
   });
 

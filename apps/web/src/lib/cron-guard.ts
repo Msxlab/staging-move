@@ -31,6 +31,7 @@
 
 import { NextResponse } from "next/server";
 import { getLimiterHealth, rateLimit } from "@/lib/rate-limit";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 interface CronGuardOptions {
@@ -81,10 +82,8 @@ export async function guardCronRequest(
   // (header-derived IP if present, otherwise the literal "cron"). We
   // avoid keying off the secret itself so a rotated secret doesn't reset
   // the limiter and allow a burst.
-  const callerBucket =
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "cron";
+  const resolvedIp = resolveClientIpFromHeaders(request.headers);
+  const callerBucket = resolvedIp === "anonymous" ? "cron" : resolvedIp;
 
   const limit = options.limit ?? 10;
   const windowSeconds = options.windowSeconds ?? 60;

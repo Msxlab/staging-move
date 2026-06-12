@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 // See route.ts in the parent — bulk editorial workflow needs a 1h grace.
 const STATE_RULE_STEP_UP_GRACE_MS = 60 * 60 * 1000;
@@ -56,7 +57,7 @@ export async function PATCH(
         entityType: "StateRule",
         entityId: id,
         changes: JSON.stringify(updateData),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 
@@ -96,7 +97,7 @@ export async function DELETE(
         entityType: "StateRule",
         entityId: id,
         changes: JSON.stringify({ stateCode: rule.stateCode }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 const TARGETS = [
   "MOBILE_IOS",
@@ -130,7 +131,7 @@ export async function PATCH(req: NextRequest) {
           email: updated.email,
           target: updated.target,
         }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
       },
     });
 

@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { revalidatePublicBlog } from "@/lib/blog-revalidate";
 
 const publishSchema = z.object({
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           publishedAt: next.publishedAt?.toISOString() ?? null,
           scheduledAt: next.scheduledAt?.toISOString() ?? null,
         }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(req).ipAddress || "unknown",
       },
     });
   });

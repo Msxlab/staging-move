@@ -61,7 +61,10 @@
 // module does NOT auto-update any provider account; it is read-only lookup.
 // =============================================================================
 
+import { normalizeIspName } from "@locateflow/shared";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+
+export { normalizeIspName };
 
 // ── Public types ────────────────────────────────────────────────────────────
 
@@ -177,22 +180,6 @@ function degraded(status: FccLookupStatus, reason: string, blockGeoid: string | 
     reason,
     source: SOURCE,
   };
-}
-
-/**
- * Normalize a provider brand name for cross-source matching. The catalog's
- * provider names and the FCC's `brand_name` rarely match byte-for-byte
- * ("AT&T Internet" vs "AT&T"), so we strip punctuation, common ISP suffixes,
- * and whitespace, then lowercase. Callers compare with the same normalization.
- */
-export function normalizeIspName(name: string | null | undefined): string {
-  if (!name) return "";
-  return name
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/\b(internet|communications|broadband|fiber|cable|telecom|networks?|inc|llc|corp|co|the)\b/g, "")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
 }
 
 function isFiniteNumber(v: unknown): v is number {

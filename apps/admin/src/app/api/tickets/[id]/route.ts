@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import {
   sendSupportTicketReplyEmail,
   sendSupportTicketStatusEmail,
@@ -221,7 +222,7 @@ export async function POST(
         action: validated.isInternal ? "TICKET_INTERNAL_NOTE" : "TICKET_REPLY",
         entityType: "SupportTicket",
         entityId: id,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 
@@ -313,7 +314,7 @@ export async function PATCH(
         entityType: "SupportTicket",
         entityId: id,
         changes: JSON.stringify(validated),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        ipAddress: getAuditRequestMeta(request).ipAddress || "unknown",
       },
     });
 

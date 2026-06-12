@@ -14,6 +14,7 @@ export * from "./runtime-config";
 export * from "./provider-coverage";
 export * from "./provider-integrity";
 export * from "./provider-move-domain";
+export * from "./isp";
 export * from "./move-transition-classifier";
 export * from "./move-task-lifecycle";
 export * from "./sentry-redaction";

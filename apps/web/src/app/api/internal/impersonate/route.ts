@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SignJWT } from "jose";
 import { prisma } from "@/lib/db";
+import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { hashSessionToken } from "@/lib/user-auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
 
   const tokenHash = await hashSessionToken(token);
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+  const resolvedIp = resolveClientIpFromHeaders(request.headers);
 
   const sessionData = {
     userId: user.id,
@@ -84,9 +86,7 @@ export async function POST(request: NextRequest) {
     expiresAt,
     impersonatedByAdminId: adminId,
     deviceType: "IMPERSONATION",
-    ipAddress: (request.headers.get("x-forwarded-for") || "internal")
-      .split(",")[0]
-      .trim(),
+    ipAddress: resolvedIp === "anonymous" ? "internal" : resolvedIp,
     userAgent: `admin-impersonation/${adminId}`,
     isActive: true,
   };
