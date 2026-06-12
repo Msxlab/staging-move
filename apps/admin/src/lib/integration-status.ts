@@ -162,6 +162,14 @@ export function buildIntegrations(
     buildIntegrationStatus(catalogMap, "airnow", "Air quality — AirNow", [
       "AIRNOW_API_KEY",
     ]),
+    buildIntegrationStatus(catalogMap, "hud_housing", "Housing context - HUD User", [
+      "HUD_HOUSING_DATA_ENABLED",
+      "HUD_USER_API_TOKEN",
+    ]),
+    buildIntegrationStatus(catalogMap, "ev_charging", "EV charging - NLR Alternative Fuel Stations", [
+      "NLR_ALT_FUEL_STATIONS_ENABLED",
+      "NLR_API_KEY",
+    ]),
     buildIntegrationStatus(catalogMap, "anthropic_ai", "AI move briefing — Anthropic", [
       "ANTHROPIC_API_KEY",
     ]),

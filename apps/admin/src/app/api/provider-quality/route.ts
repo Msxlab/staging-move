@@ -28,6 +28,10 @@ const LIVE_DATA_KEYS = [
   "OPENEI_API_KEY",
   "AIRNOW_API_KEY",
   "CENSUS_API_KEY",
+  "HUD_HOUSING_DATA_ENABLED",
+  "HUD_USER_API_TOKEN",
+  "NLR_ALT_FUEL_STATIONS_ENABLED",
+  "NLR_API_KEY",
   "FMCSA_WEBKEY",
 ] as const;
 
@@ -78,6 +82,10 @@ function buildLiveDataReadiness(values: Record<string, string | null>): LiveData
   const openEiKey = isConfigured(values.OPENEI_API_KEY);
   const airNowKey = isConfigured(values.AIRNOW_API_KEY);
   const censusKey = isConfigured(values.CENSUS_API_KEY);
+  const hudEnabled = isEnabled(values.HUD_HOUSING_DATA_ENABLED);
+  const hudToken = isConfigured(values.HUD_USER_API_TOKEN);
+  const nlrEnabled = isEnabled(values.NLR_ALT_FUEL_STATIONS_ENABLED);
+  const nlrKey = isConfigured(values.NLR_API_KEY);
   const fmcsaKey = isConfigured(values.FMCSA_WEBKEY);
 
   return [
@@ -118,6 +126,28 @@ function buildLiveDataReadiness(values: Record<string, string | null>): LiveData
       detail: censusKey
         ? "Census calls can use the configured key."
         : "Census data can use keyless public endpoints; add CENSUS_API_KEY for higher reliability.",
+    },
+    {
+      id: "hud-housing",
+      label: "HUD housing data",
+      status: !hudEnabled ? "disabled" : hudToken ? "ready" : "missing",
+      configured: hudEnabled && hudToken,
+      detail: !hudEnabled
+        ? "Disabled by HUD_HOUSING_DATA_ENABLED."
+        : hudToken
+          ? "HUD ZIP Crosswalk, Fair Market Rent, and Income Limits enrichment can run."
+          : "HUD_HOUSING_DATA_ENABLED is on, but HUD_USER_API_TOKEN is missing.",
+    },
+    {
+      id: "nlr-ev-charging",
+      label: "NLR EV charging stations",
+      status: !nlrEnabled ? "disabled" : nlrKey ? "ready" : "missing",
+      configured: nlrEnabled && nlrKey,
+      detail: !nlrEnabled
+        ? "Disabled by NLR_ALT_FUEL_STATIONS_ENABLED."
+        : nlrKey
+          ? "Nearby public active EV charging enrichment can run."
+          : "NLR_ALT_FUEL_STATIONS_ENABLED is on, but NLR_API_KEY is missing.",
     },
     {
       id: "fmcsa",

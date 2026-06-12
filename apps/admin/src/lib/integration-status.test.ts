@@ -116,6 +116,8 @@ describe("buildIntegrations", () => {
       "electric_utility",
       "census_acs",
       "airnow",
+      "hud_housing",
+      "ev_charging",
       "anthropic_ai",
       "fmcsa",
       "address_connectors",

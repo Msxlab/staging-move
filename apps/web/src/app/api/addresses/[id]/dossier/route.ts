@@ -16,6 +16,8 @@ import {
 } from "@/lib/census-acs";
 import { lookupWalkability, type WalkabilityLookupResult, type WalkabilityBand } from "@/lib/epa-walkability";
 import { lookupNearbySchools, type NearbySchoolsLookupResult, type SchoolLevel } from "@/lib/nces-schools";
+import { lookupHudHousing, type HudHousingLookupResult } from "@/lib/hud-housing";
+import { lookupEvCharging, type EvChargingLookupResult, type EvChargingStationSummary } from "@/lib/nlr-alt-fuel-stations";
 import {
   assertScopedRecordAction,
   planLimitScopeForDataScope,
@@ -37,6 +39,8 @@ import { planFeatures } from "@locateflow/shared";
 //   • radon   — EPA county radon zone at the point       (lib/epa-radon.ts)
 //   • water   — EPA SDWIS community water system by city (lib/epa-water.ts)
 //   • air     — AirNow current AQI (needs AIRNOW_API_KEY) (lib/airnow.ts)
+//   • housing — HUD User FMR / Income Limits by ZIP area (lib/hud-housing.ts)
+//   • ev      — NLR public EV charging near the point (lib/nlr-alt-fuel-stations.ts)
 //
 // Every lookup degrades gracefully (status unions, never throws), so this
 // route always answers 200 for an authorized address — sections individually
@@ -95,6 +99,48 @@ interface AirSection {
   status: "ok" | "not_configured" | "no_location" | "error";
   aqi: number | null;
   category: string | null;
+}
+
+interface HousingSection {
+  status: "ok" | "disabled" | "not_configured" | "no_location" | "no_zip" | "not_found" | "error";
+  zip: string | null;
+  entityId: string | null;
+  countyFips: string | null;
+  cbsaCode: string | null;
+  countyName: string | null;
+  metroName: string | null;
+  areaName: string | null;
+  fairMarketRent: {
+    year: number | null;
+    efficiency: number | null;
+    oneBedroom: number | null;
+    twoBedroom: number | null;
+    threeBedroom: number | null;
+    fourBedroom: number | null;
+    zipSpecific: boolean;
+  } | null;
+  incomeLimits: {
+    year: number | null;
+    medianIncome: number | null;
+    extremelyLowIncome4Person: number | null;
+    veryLowIncome4Person: number | null;
+    lowIncome4Person: number | null;
+  } | null;
+  caveat: string | null;
+}
+
+interface EvChargingSection {
+  status: "ok" | "disabled" | "not_configured" | "no_location" | "error";
+  radiusMiles: number;
+  totalResults: number | null;
+  stationCount: number;
+  nearestDistanceMiles: number | null;
+  dcFastPortCount: number;
+  level2PortCount: number;
+  teslaCompatibleCount: number;
+  ccsCompatibleCount: number;
+  stations: EvChargingStationSummary[];
+  caveat: string | null;
 }
 
 // Pro-only Neighborhood Intelligence — a small bundle of area context (Census
@@ -175,6 +221,98 @@ function airSection(settled: PromiseSettledResult<AirQualityLookupResult>): AirS
   if (settled.status !== "fulfilled") return { status: "error", aqi: null, category: null };
   const { status, aqi, category } = settled.value;
   return { status, aqi, category };
+}
+
+function emptyHousing(status: HousingSection["status"], zip: string | null = null): HousingSection {
+  return {
+    status,
+    zip,
+    entityId: null,
+    countyFips: null,
+    cbsaCode: null,
+    countyName: null,
+    metroName: null,
+    areaName: null,
+    fairMarketRent: null,
+    incomeLimits: null,
+    caveat: null,
+  };
+}
+
+function housingSection(settled: PromiseSettledResult<HudHousingLookupResult>): HousingSection {
+  if (settled.status !== "fulfilled") return emptyHousing("error");
+  const {
+    status,
+    zip,
+    entityId,
+    countyFips,
+    cbsaCode,
+    countyName,
+    metroName,
+    areaName,
+    fairMarketRent,
+    incomeLimits,
+    caveat,
+  } = settled.value;
+  return {
+    status,
+    zip,
+    entityId,
+    countyFips,
+    cbsaCode,
+    countyName,
+    metroName,
+    areaName,
+    fairMarketRent,
+    incomeLimits,
+    caveat,
+  };
+}
+
+function emptyEvCharging(status: EvChargingSection["status"]): EvChargingSection {
+  return {
+    status,
+    radiusMiles: 10,
+    totalResults: null,
+    stationCount: 0,
+    nearestDistanceMiles: null,
+    dcFastPortCount: 0,
+    level2PortCount: 0,
+    teslaCompatibleCount: 0,
+    ccsCompatibleCount: 0,
+    stations: [],
+    caveat: null,
+  };
+}
+
+function evChargingSection(settled: PromiseSettledResult<EvChargingLookupResult>): EvChargingSection {
+  if (settled.status !== "fulfilled") return emptyEvCharging("error");
+  const {
+    status,
+    radiusMiles,
+    totalResults,
+    stationCount,
+    nearestDistanceMiles,
+    dcFastPortCount,
+    level2PortCount,
+    teslaCompatibleCount,
+    ccsCompatibleCount,
+    stations,
+    caveat,
+  } = settled.value;
+  return {
+    status,
+    radiusMiles,
+    totalResults,
+    stationCount,
+    nearestDistanceMiles,
+    dcFastPortCount,
+    level2PortCount,
+    teslaCompatibleCount,
+    ccsCompatibleCount,
+    stations,
+    caveat,
+  };
 }
 
 function emptyNeighborhood(status: "ok" | "no_location"): NeighborhoodSection {
@@ -276,6 +414,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         deletedAt: true,
         city: true,
         state: true,
+        zip: true,
         latitude: true,
         longitude: true,
       },
@@ -309,7 +448,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    const addressPayload = { id: address.id, city: address.city, state: address.state };
+    const addressPayload = { id: address.id, city: address.city, state: address.state, zip: address.zip };
 
     const hasLocation =
       typeof address.latitude === "number" &&
@@ -334,6 +473,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         radon: "no_location",
         water: "no_location",
         air: "no_location",
+        hud_housing: "no_location",
+        ev_charging: "no_location",
         census: features.neighborhoodIntel ? "no_location" : "gated",
         walkability: features.neighborhoodIntel ? "no_location" : "gated",
         schools: features.neighborhoodIntel ? "no_location" : "gated",
@@ -349,6 +490,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         radon: { status: "no_location", zone: null } satisfies RadonSection,
         water: { status: "no_location", systemName: null, violations5y: null } satisfies WaterSection,
         air: { status: "no_location", aqi: null, category: null } satisfies AirSection,
+        housing: emptyHousing("no_location", address.zip),
+        evCharging: emptyEvCharging("no_location"),
         neighborhood,
       });
     }
@@ -374,22 +517,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // The libs never throw by contract, but allSettled keeps one misbehaving
     // lookup from ever taking down the other sections (belt and braces).
-    const [floodSettled, schoolSettled, weatherSettled, hazardsSettled, radonSettled, waterSettled, airSettled] =
-      await Promise.allSettled([
-        lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
-        lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
-        weatherTargetDate
-          ? lookupMoveDayForecast({
-              latitude: address.latitude,
-              longitude: address.longitude,
-              targetDate: weatherTargetDate,
-            })
-          : Promise.resolve(null),
-        lookupHazardRisks({ latitude: address.latitude, longitude: address.longitude }),
-        lookupRadonZone({ latitude: address.latitude, longitude: address.longitude }),
-        lookupWaterSystem({ city: address.city, state: address.state }),
-        lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
-      ]);
+    const [
+      floodSettled,
+      schoolSettled,
+      weatherSettled,
+      hazardsSettled,
+      radonSettled,
+      waterSettled,
+      airSettled,
+      housingSettled,
+      evChargingSettled,
+    ] = await Promise.allSettled([
+      lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
+      lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
+      weatherTargetDate
+        ? lookupMoveDayForecast({
+            latitude: address.latitude,
+            longitude: address.longitude,
+            targetDate: weatherTargetDate,
+          })
+        : Promise.resolve(null),
+      lookupHazardRisks({ latitude: address.latitude, longitude: address.longitude }),
+      lookupRadonZone({ latitude: address.latitude, longitude: address.longitude }),
+      lookupWaterSystem({ city: address.city, state: address.state }),
+      lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
+      lookupHudHousing({ zip: address.zip, state: address.state }),
+      lookupEvCharging({ latitude: address.latitude, longitude: address.longitude }),
+    ]);
 
     // Neighborhood Intelligence is Pro-only: only Pro spends these three
     // lookups (Census ACS + EPA walkability + nearby schools); every other
@@ -424,6 +578,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       radon: radonSection(radonSettled),
       water: waterSection(waterSettled),
       air: airSection(airSettled),
+      housing: housingSection(housingSettled),
+      evCharging: evChargingSection(evChargingSettled),
       neighborhood,
     };
 
@@ -438,6 +594,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       radon: dossier.radon.status,
       water: dossier.water.status,
       air: dossier.air.status,
+      hud_housing: dossier.housing.status,
+      ev_charging: dossier.evCharging.status,
       // Per-source health for the Pro bundle (NOT the merged section status).
       census: censusStatus,
       walkability: walkabilityStatus,

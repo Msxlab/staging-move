@@ -2,7 +2,7 @@
  * Fire-and-forget integration telemetry.
  *
  * Records the per-request OUTCOME of each external-data integration (fcc,
- * electric, nri, radon, water, air, nws) plus the two composite AI surfaces
+ * electric, nri, radon, water, air, nws, hud_housing, ev_charging) plus the two composite AI surfaces
  * (briefing, dossier) into `IntegrationDailyStat` — one row per (UTC day,
  * source) whose `statusCounts` JSON is an open-ended counter map, e.g.
  * `{"ok": 41, "error": 2, "not_configured": 7}`.
@@ -36,6 +36,8 @@ export type IntegrationSource =
   | "water"
   | "air"
   | "nws"
+  | "hud_housing"
+  | "ev_charging"
   // Pro "Neighborhood Intelligence" dossier bundle. Each source records its own
   // health: census (US Census ACS area economics), walkability (EPA National
   // Walkability Index), schools (nearby public-school directory). Statuses:

@@ -552,6 +552,64 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Optional. Only needed to enable the Pro neighborhood-economics section.",
   },
   {
+    key: "HUD_HOUSING_DATA_ENABLED",
+    label: "HUD Housing Data Enabled",
+    description:
+      "Master flag for HUD User housing-data enrichment in the New Home Dossier. When 'true' AND HUD_USER_API_TOKEN is set, the dossier can show ZIP-to-county/metro context plus HUD Fair Market Rent and Income Limits data. Off by default; the dossier falls back gracefully when disabled.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    validation: "boolean",
+    note: "Requires HUD_USER_API_TOKEN. Uses the saved address ZIP/state; no ZIP means a graceful no-op.",
+  },
+  {
+    key: "HUD_USER_API_TOKEN",
+    label: "HUD User API Token",
+    description:
+      "HUD User API access token used by the New Home Dossier for ZIP Crosswalk, Fair Market Rent, and Income Limits lookups. Register free at huduser.gov. Without it, HUD housing enrichment stays disabled and the rest of the dossier is unaffected.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable HUD housing context.",
+  },
+  {
+    key: "NLR_ALT_FUEL_STATIONS_ENABLED",
+    label: "NLR EV Charging Data Enabled",
+    description:
+      "Master flag for NLR Alternative Fuel Stations EV charging enrichment in the New Home Dossier. When 'true' AND NLR_API_KEY is set, the dossier can show nearby public active EV charging availability. Off by default; the dossier falls back gracefully when disabled.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    validation: "boolean",
+    note: "Requires NLR_API_KEY. Needs address coordinates; no coordinates means a graceful no-op.",
+  },
+  {
+    key: "NLR_API_KEY",
+    label: "NLR API Key",
+    description:
+      "NLR Developer Network API key used by the New Home Dossier to query the Alternative Fuel Stations nearest-stations endpoint for public active EV charging near an address.",
+    scope: "WEB",
+    category: "MAPS",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+    runtimeEditable: true,
+    usedBy: ["web app dossier"],
+    note: "Optional. Only needed to enable nearby EV charging context.",
+  },
+  {
     key: "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
     label: "Places Autocomplete Daily Limit",
     description: "Global daily cap for Places autocomplete calls when enabled.",
@@ -2027,6 +2085,8 @@ export function validateRuntimeConfigValueShape(
     "KILL_OUTBOUND_EMAIL",
     "FCC_BDC_ENABLED",
     "ELECTRIC_LOOKUP_ENABLED",
+    "HUD_HOUSING_DATA_ENABLED",
+    "NLR_ALT_FUEL_STATIONS_ENABLED",
   ]);
   if (BOOLEAN_KEYS.has(key)) {
     return value === "true" || value === "false"

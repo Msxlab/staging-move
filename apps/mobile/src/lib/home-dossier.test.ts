@@ -6,8 +6,10 @@ import {
   deriveHomeDossierView,
   formatForecastDate,
   getAirRow,
+  getEvChargingRow,
   getFloodRow,
   getHazardsRow,
+  getHousingRow,
   getNeighborhoodRow,
   getRadonRow,
   getSchoolRow,
@@ -87,6 +89,8 @@ describe("deriveHomeDossier — card-level gating", () => {
       radon: null,
       water: null,
       air: null,
+      housing: null,
+      evCharging: null,
       neighborhood: null,
       hasContent: false,
     });
@@ -604,6 +608,141 @@ describe("getAirRow", () => {
 
   it("hides when the section is absent (older server)", () => {
     expect(getAirRow(dossier())).toBeNull();
+  });
+});
+
+describe("getHousingRow", () => {
+  it("renders HUD rent and income figures when present", () => {
+    expect(
+      getHousingRow(
+        extendedDossier({
+          housing: {
+            status: "ok",
+            zip: " 78701 ",
+            countyName: "Travis County",
+            metroName: "Austin-Round Rock-Georgetown, TX",
+            areaName: null,
+            fairMarketRent: {
+              year: 2026,
+              oneBedroom: 1550,
+              twoBedroom: 1888.4,
+              threeBedroom: null,
+              fourBedroom: null,
+              zipSpecific: true,
+            },
+            incomeLimits: { year: 2026, medianIncome: 101200, lowIncome4Person: 84200 },
+          },
+        }),
+      ),
+    ).toEqual({
+      areaName: "Austin-Round Rock-Georgetown, TX",
+      zip: "78701",
+      fmrYear: 2026,
+      twoBedroomFmr: 1888,
+      medianIncome: 101200,
+      lowIncome4Person: 84200,
+      zipSpecific: true,
+    });
+  });
+
+  it("hides non-ok, absent, or empty HUD sections", () => {
+    expect(getHousingRow(dossier())).toBeNull();
+    expect(
+      getHousingRow(
+        extendedDossier({
+          housing: {
+            status: "not_found",
+            zip: "78701",
+            countyName: null,
+            metroName: null,
+            areaName: null,
+            fairMarketRent: null,
+            incomeLimits: null,
+          },
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      getHousingRow(
+        extendedDossier({
+          housing: {
+            status: "ok",
+            zip: "78701",
+            countyName: null,
+            metroName: null,
+            areaName: null,
+            fairMarketRent: null,
+            incomeLimits: null,
+          },
+        }),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("getEvChargingRow", () => {
+  it("renders nearby EV charging counts and rounds distance", () => {
+    expect(
+      getEvChargingRow(
+        extendedDossier({
+          evCharging: {
+            status: "ok",
+            radiusMiles: 10,
+            stationCount: 7,
+            nearestDistanceMiles: 1.24,
+            dcFastPortCount: 4,
+            level2PortCount: 12,
+          },
+        }),
+      ),
+    ).toEqual({
+      radiusMiles: 10,
+      stationCount: 7,
+      nearestDistanceMiles: 1.2,
+      dcFastPortCount: 4,
+      level2PortCount: 12,
+    });
+  });
+
+  it("keeps an authoritative zero-station result visible", () => {
+    expect(
+      getEvChargingRow(
+        extendedDossier({
+          evCharging: {
+            status: "ok",
+            radiusMiles: 10,
+            stationCount: 0,
+            nearestDistanceMiles: null,
+            dcFastPortCount: 0,
+            level2PortCount: 0,
+          },
+        }),
+      ),
+    ).toEqual({
+      radiusMiles: 10,
+      stationCount: 0,
+      nearestDistanceMiles: null,
+      dcFastPortCount: 0,
+      level2PortCount: 0,
+    });
+  });
+
+  it("hides non-ok and absent EV sections", () => {
+    expect(getEvChargingRow(dossier())).toBeNull();
+    expect(
+      getEvChargingRow(
+        extendedDossier({
+          evCharging: {
+            status: "disabled",
+            radiusMiles: 10,
+            stationCount: 7,
+            nearestDistanceMiles: 1,
+            dcFastPortCount: 1,
+            level2PortCount: 2,
+          },
+        }),
+      ),
+    ).toBeNull();
   });
 });
 

@@ -9,6 +9,8 @@ import {
   Radiation,
   Droplets,
   Wind,
+  Building2,
+  Zap,
   Lock,
   ArrowRight,
 } from "lucide-react-native";
@@ -142,6 +144,8 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
       { Icon: Radiation, color: theme.colors.amber.text, label: t("dossier.radonLabel"), value: t("dossier.teaserRadon") },
       { Icon: Droplets, color: theme.colors.cyan.text, label: t("dossier.waterLabel"), value: t("dossier.teaserWater") },
       { Icon: Wind, color: theme.colors.sky.text, label: t("dossier.airLabel"), value: t("dossier.teaserAir") },
+      { Icon: Building2, color: theme.colors.amber.text, label: t("dossier.housingLabel"), value: t("dossier.teaserHousing") },
+      { Icon: Zap, color: theme.colors.emerald.text, label: t("dossier.evChargingLabel"), value: t("dossier.teaserEvCharging") },
     ];
     return (
       <Card variant="default" style={styles.card}>
@@ -211,6 +215,15 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
         .filter(Boolean)
         .join(" · ")
     : "";
+
+  const housing = rows.housing;
+  const housingArea = housing
+    ? [housing.areaName, housing.zip ? t("dossier.housingZip", { zip: housing.zip }) : null]
+        .filter(Boolean)
+        .join(" - ")
+    : "";
+
+  const evCharging = rows.evCharging;
 
   // Neighborhood (Pro): either the locked teaser variant or the area medians.
   const neighborhood = rows.neighborhood;
@@ -390,6 +403,74 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             <Text style={styles.rowLabel}>{t("dossier.airLabel")}</Text>
             {!!airHeadline && <Text style={styles.rowValue}>{airHeadline}</Text>}
             <Text style={styles.finePrint}>{t("dossier.airFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {housing && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Building2 size={14} color={theme.colors.amber.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.housingLabel")}</Text>
+            {!!housingArea && <Text style={styles.rowValue}>{housingArea}</Text>}
+            {housing.twoBedroomFmr !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.housingTwoBedroomFmr")}</Text>
+                <Text style={styles.statValue}>
+                  {t("dossier.housingRentPerMonth", {
+                    amount: formatUsd(housing.twoBedroomFmr),
+                  })}
+                </Text>
+              </View>
+            )}
+            {housing.medianIncome !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.housingMedianIncome")}</Text>
+                <Text style={styles.statValue}>{formatUsd(housing.medianIncome)}</Text>
+              </View>
+            )}
+            {housing.lowIncome4Person !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.housingLowIncome4")}</Text>
+                <Text style={styles.statValue}>{formatUsd(housing.lowIncome4Person)}</Text>
+              </View>
+            )}
+            <Text style={styles.finePrint}>{t("dossier.housingFinePrint")}</Text>
+          </View>
+        </View>
+      )}
+
+      {evCharging && (
+        <View style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Zap size={14} color={theme.colors.emerald.text} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>{t("dossier.evChargingLabel")}</Text>
+            <Text style={styles.rowValue}>
+              {evCharging.stationCount === 0
+                ? t("dossier.evChargingNone", { radius: evCharging.radiusMiles })
+                : t("dossier.evChargingCount", {
+                    count: evCharging.stationCount,
+                    radius: evCharging.radiusMiles,
+                  })}
+            </Text>
+            {evCharging.nearestDistanceMiles !== null && (
+              <Text style={styles.rowMeta}>
+                {t("dossier.evChargingNearest", { miles: evCharging.nearestDistanceMiles })}
+              </Text>
+            )}
+            {(evCharging.dcFastPortCount > 0 || evCharging.level2PortCount > 0) && (
+              <Text style={styles.rowMeta}>
+                {t("dossier.evChargingPorts", {
+                  dc: evCharging.dcFastPortCount,
+                  level2: evCharging.level2PortCount,
+                })}
+              </Text>
+            )}
+            <Text style={styles.finePrint}>{t("dossier.evChargingFinePrint")}</Text>
           </View>
         </View>
       )}
