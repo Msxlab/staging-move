@@ -79,6 +79,12 @@ export const READINESS_CONFIG_KEYS = [
   "BACKUP_STORAGE_ENDPOINT",
   "BACKUP_STORAGE_ACCESS_KEY_ID",
   "BACKUP_STORAGE_SECRET_ACCESS_KEY",
+  "GOOGLE_PLAY_PACKAGE_NAME",
+  "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+  "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+  "GOOGLE_PLAY_RTDN_AUDIENCE",
+  "APPLE_BUNDLE_ID",
+  "APPLE_TEAM_ID",
 ] as const;
 
 export function getReadinessConfigKeys(): string[] {
@@ -366,6 +372,35 @@ export function buildReadinessReport(
     for (const key of ["BACKUP_STORAGE_PROVIDER", "BACKUP_STORAGE_BUCKET", "BACKUP_STORAGE_ACCESS_KEY_ID", "BACKUP_STORAGE_SECRET_ACCESS_KEY"] as const) {
       if (!readConfig(key)) fail(key, `${key} is required when backup storage is configured.`);
     }
+  }
+
+  // ── Mobile in-app purchase store identity ────────────────────
+  // When mobile billing is live the store identity keys must be present, or
+  // server-side purchase validation and store-webhook verification silently
+  // break. Gate on "any key configured" (same shape as R2/backup) so a non-mobile
+  // deploy is unaffected, but a partially-configured one fails fast.
+  const googlePlayIapKeys = [
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+    "GOOGLE_PLAY_RTDN_AUDIENCE",
+  ] as const;
+  if (googlePlayIapKeys.some((key) => Boolean(readConfig(key)))) {
+    for (const key of googlePlayIapKeys) {
+      if (!readConfig(key)) {
+        fail(key, `${key} is required when Google Play in-app purchases are configured (mobile billing is live).`);
+      }
+    }
+  }
+  // The App Store Server Notification handler fails closed in production without
+  // APPLE_BUNDLE_ID; surface it at readiness when the iOS app is otherwise
+  // configured (APPLE_TEAM_ID present) so a billing-live deploy that lost the
+  // value is caught before the first webhook rather than after.
+  if (productionLike && readConfig("APPLE_TEAM_ID") && !readConfig("APPLE_BUNDLE_ID")) {
+    warn(
+      "APPLE_BUNDLE_ID",
+      "APPLE_BUNDLE_ID is unset while APPLE_TEAM_ID is configured; the App Store webhook rejects all notifications without it.",
+    );
   }
 
   if (productionLike) {

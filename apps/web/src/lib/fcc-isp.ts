@@ -335,6 +335,35 @@ interface FccConfig {
   apiBase: string;
 }
 
+/** Path segment the BDC availability call lives under, below the host. */
+const FCC_BDC_API_PATH = "/api/public/map";
+
+/**
+ * Resolve the FCC BDC availability API base URL from the (optional) override.
+ *
+ * The admin runtime-config field normalizes URLs to their ORIGIN (it strips the
+ * path) and won't store an empty value, so an override can realistically only
+ * arrive as a bare host like "https://broadbandmap.fcc.gov". The availability
+ * call lives under `/api/public/map`, so re-append that path whenever the
+ * configured base has none — a host-only override still hits the right endpoint.
+ * A non-URL value (e.g. a stray "true") degrades to the working default instead
+ * of breaking every FCC call with a relative URL. An explicit non-root path is
+ * respected (in case the FCC truly moves the endpoint). Idempotent for the
+ * full default.
+ */
+export function normalizeFccApiBase(raw: string | null | undefined): string {
+  const candidate = raw?.trim() || DEFAULT_FCC_BDC_API_BASE;
+  let url: URL;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return DEFAULT_FCC_BDC_API_BASE;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return DEFAULT_FCC_BDC_API_BASE;
+  const path = url.pathname.replace(/\/+$/, "");
+  return `${url.origin}${path === "" ? FCC_BDC_API_PATH : path}`;
+}
+
 async function loadFccConfig(): Promise<FccConfig> {
   // Read flags/keys from the same runtime-config resolver used by the rest of
   // the app (deployment env first, DB fallback). Never read raw secrets here.
@@ -348,7 +377,7 @@ async function loadFccConfig(): Promise<FccConfig> {
     enabled: (enabledRaw || "").trim().toLowerCase() === "true",
     apiKey: apiKey?.trim() || null,
     username: usernameRaw?.trim() || null,
-    apiBase: (apiBaseRaw?.trim() || DEFAULT_FCC_BDC_API_BASE).replace(/\/+$/, ""),
+    apiBase: normalizeFccApiBase(apiBaseRaw),
   };
 }
 

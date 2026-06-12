@@ -5,10 +5,64 @@ import {
   DEFAULT_SCORING_WEIGHTS,
   buildRecommendationClusters,
   getRecommendedProviders,
+  getEssentialSetupCategories,
   scoreProviders,
   type Provider,
   type UserProfile,
 } from "../recommendation-engine";
+
+describe("getEssentialSetupCategories (dashboard AI card source)", () => {
+  const renterNoCarNoKids: UserProfile = {
+    hasChildren: false,
+    childrenCount: 0,
+    hasPets: false,
+    hasSenior: false,
+    carCount: 0,
+    hasDisability: false,
+    needsStorage: false,
+    hasMotorcycle: false,
+    hasBoatRV: false,
+    ownership: "RENT",
+  };
+
+  it("returns profile-gated CRITICAL + IMPORTANT categories, dropping irrelevant ones", () => {
+    const { critical, important } = getEssentialSetupCategories(renterNoCarNoKids, []);
+    // Universal essentials are present.
+    expect(critical).toContain("GOVERNMENT_POSTAL");
+    expect(critical).toContain("UTILITY_ELECTRIC");
+    expect(important).toContain("UTILITY_INTERNET");
+    expect(important).toContain("FINANCIAL_BANK");
+    // Renter → renters insurance is critical, home insurance is gated out.
+    expect(critical).toContain("FINANCIAL_INSURANCE_RENTERS");
+    expect(critical).not.toContain("FINANCIAL_INSURANCE_HOME");
+    // No car → auto insurance + toll gated out; no kids → school gated out.
+    expect(critical).not.toContain("FINANCIAL_INSURANCE_AUTO");
+    expect(important).not.toContain("KIDS_SCHOOL");
+    expect(important).not.toContain("TRANSPORTATION_TOLL");
+  });
+
+  it("includes car/kid categories when the profile is relevant", () => {
+    const carParentOwner: UserProfile = {
+      ...renterNoCarNoKids,
+      carCount: 2,
+      hasChildren: true,
+      ownership: "OWN",
+    };
+    const { critical, important } = getEssentialSetupCategories(carParentOwner, []);
+    expect(critical).toContain("FINANCIAL_INSURANCE_AUTO");
+    expect(critical).toContain("FINANCIAL_INSURANCE_HOME");
+    expect(critical).not.toContain("FINANCIAL_INSURANCE_RENTERS");
+    expect(important).toContain("KIDS_SCHOOL");
+  });
+
+  it("closes a category once it is completed (case-insensitive)", () => {
+    const before = getEssentialSetupCategories(renterNoCarNoKids, []);
+    expect(before.important).toContain("FINANCIAL_BANK");
+    const after = getEssentialSetupCategories(renterNoCarNoKids, ["financial_bank", "UTILITY_ELECTRIC"]);
+    expect(after.important).not.toContain("FINANCIAL_BANK");
+    expect(after.critical).not.toContain("UTILITY_ELECTRIC");
+  });
+});
 
 describe("category taxonomy", () => {
   it("every PROVIDER_CATEGORY_VALUES entry has matching CATEGORY_META", () => {

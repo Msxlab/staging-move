@@ -7,7 +7,7 @@ import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-da
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { getUserPlan } from "@/lib/plan-limits";
 import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
-import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { getMergedDisplayCategoryLabel, getEssentialSetupCategories, type UserProfile } from "@/lib/recommendation-engine";
 import { recordIntegrationOutcome } from "@/lib/integration-telemetry";
 import {
   buildBriefingSignals,
@@ -22,20 +22,6 @@ import {
 } from "@/lib/onboarding-briefing";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Universal "essential setup" categories used to derive a coarse
- * missing-critical count for the rule-based fallback briefing. This is a small,
- * self-contained list (NOT sourced from the recommendation engine internals, so
- * the engine stays untouched). Housing-tenure-specific insurance is resolved at
- * request time. These are catalog categories, never PII.
- */
-const ESSENTIAL_CATEGORIES_BASE = [
-  "GOVERNMENT_POSTAL", // change of address
-  "UTILITY_ELECTRIC",
-  "UTILITY_INTERNET",
-  "FINANCIAL_BANK",
-] as const;
 
 /**
  * Per-user, per-UTC-day in-process LRU cache + HARD daily AI-generation cap.
@@ -59,12 +45,16 @@ interface CachedBriefing {
   moveStage: MoveStage;
   daysToMoveBucket: DaysToMoveBucket;
   source: "ai" | "rule_based";
-  /** AI generation attempts consumed for this user today (UTC). */
-  generationCount: number;
   cachedAt: number;
 }
 const briefingCache = new Map<string, CachedBriefing>();
-/** Hard per-user cap on Anthropic API attempts per UTC day. */
+/**
+ * Hard per-user cap on Anthropic API attempts per UTC day. Enforced via the
+ * shared (Upstash-backed) rate limiter keyed by user + UTC day, NOT an in-process
+ * counter — so the 3/day budget is GLOBAL across instances and survives a restart
+ * (the cap is the only thing guarding real Anthropic spend). The in-memory cache
+ * below still serves same-day unchanged requests and the last briefing for free.
+ */
 const DAILY_AI_GENERATION_CAP = 3;
 /** LRU bound — day-scoped entries, so this is purely a memory guard. */
 const BRIEFING_CACHE_MAX_ENTRIES = 2000;
@@ -190,7 +180,7 @@ export async function POST(request: NextRequest) {
   // ── Gather coarse, non-PII signals from the user's own data ──
   const scope = await resolveWorkspaceDataScope(request, userId);
 
-  const [user, activePlan, activeServices] = await Promise.all([
+  const [user, activePlan, activeServices, savedProviders] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -228,6 +218,12 @@ export async function POST(request: NextRequest) {
       ),
       select: { category: true },
     }),
+    // Saved providers count as "handled" too, so picking a bank (etc.) closes its
+    // essential here even if the user bookmarked rather than tracked it.
+    prisma.savedProvider.findMany({
+      where: { userId },
+      select: { provider: { select: { category: true } } },
+    }),
   ]);
 
   // Primary address (for coarse state + housing tenure). Best-effort.
@@ -239,24 +235,55 @@ export async function POST(request: NextRequest) {
     })
     .catch(() => null);
 
-  // Derive missing-critical labels (coarse catalog labels — never PII).
-  const ownedCategories = new Set(
-    activeServices.map((s) => (s.category || "").toUpperCase()),
-  );
+  // Categories the user has already handled — a tracked Service OR a saved
+  // provider. Either one CLOSES that essential (so picking a bank drops the
+  // financial recommendation). Catalog enum values — never PII.
+  const ownedCategories = new Set<string>();
+  for (const s of activeServices) ownedCategories.add((s.category || "").toUpperCase());
+  for (const sp of savedProviders) {
+    const cat = (sp.provider?.category || "").toUpperCase();
+    if (cat) ownedCategories.add(cat);
+  }
   const housing = (primaryAddress?.ownership || "").toUpperCase();
-  const essentials = [...ESSENTIAL_CATEGORIES_BASE] as string[];
-  // Tenure-appropriate insurance is an essential when we know the tenure.
-  if (housing === "OWNER") essentials.push("FINANCIAL_INSURANCE_HOME");
-  else if (housing === "RENTER") essentials.push("FINANCIAL_INSURANCE_RENTERS");
 
-  // { category, label } pairs for still-pending essentials, de-duped by the
-  // merged display label (so two raw categories that render to the same label
-  // don't double up). The category KEY rides along so each generated action can
-  // carry a `{type:'category'}` deep-link. Catalog enum values — never PII.
+  // Engine-derived, profile/address-aware essentials — the SAME tier + relevance
+  // logic the ranked recommendations use, instead of a hardcoded list. CRITICAL
+  // first, then IMPORTANT: the AI card surfaces only what matters; RECOMMENDED +
+  // OPTIONAL stay in the normal recommendation lists. Profile-irrelevant
+  // categories (auto insurance for a car-less renter, school for a childless
+  // mover) are gated out, so the card is address-aware and auto-closes a category
+  // the moment the user adds a service/provider for it.
+  const engineProfile: UserProfile = {
+    hasChildren: Boolean(user?.profile?.hasChildren),
+    childrenCount: 0,
+    hasPets: Boolean(user?.profile?.hasPets),
+    hasSenior: Boolean(user?.profile?.hasSenior),
+    carCount: Math.max(0, Math.floor(user?.profile?.carCount ?? 0)),
+    hasDisability: false,
+    needsStorage: Boolean(user?.profile?.needsStorage),
+    hasMotorcycle: false,
+    hasBoatRV: false,
+    isMilitary: Boolean(user?.profile?.isMilitary),
+    isBusinessOwner: Boolean(user?.profile?.isBusinessOwner),
+    moveType: user?.profile?.moveType ?? undefined,
+    // Address tenure → engine ownership so home- vs renters-insurance gate
+    // correctly (a known owner is never told to buy renters insurance).
+    ownership:
+      housing === "OWNER" || housing === "OWN"
+        ? "OWN"
+        : housing === "RENTER" || housing === "RENT"
+          ? "RENT"
+          : undefined,
+  };
+
+  const { critical, important } = getEssentialSetupCategories(engineProfile, ownedCategories);
+
+  // { category, label } pairs, de-duped by merged display label, CRITICAL ahead
+  // of IMPORTANT. The category KEY rides along so each generated action carries a
+  // `{type:'category'}` deep-link. buildBriefingSignals slices to the top 6.
   const seenLabels = new Set<string>();
   const missingCritical: Array<{ category: string; label: string }> = [];
-  for (const cat of essentials) {
-    if (ownedCategories.has(cat)) continue;
+  for (const cat of [...critical, ...important]) {
     const label = getMergedDisplayCategoryLabel(cat);
     if (seenLabels.has(label)) continue;
     seenLabels.add(label);
@@ -276,6 +303,32 @@ export async function POST(request: NextRequest) {
     missingCritical,
   });
 
+  // Quiet when nothing essential is pending: the user has handled every relevant
+  // CRITICAL + IMPORTANT category. Don't spend an AI generation or a budget unit —
+  // return a short, reassuring card (empty actions → the client renders just the
+  // line). Owner decision: an empty/short card beats a padded one.
+  if (missingCritical.length === 0) {
+    recordIntegrationOutcome("briefing", "cached");
+    const prose =
+      "You've set up the essentials for this move — nice work. Browse the recommendations below whenever you want to add optional extras.";
+    return NextResponse.json({
+      configured: true,
+      source: "rule_based",
+      aiGenerated: false,
+      allEssentialsHandled: true,
+      briefing: encodeBriefingString({
+        briefing: prose,
+        actions: [],
+        moveStage: signals.moveStage,
+        daysToMoveBucket: signals.daysToMoveBucket,
+      }),
+      actions: [],
+      moveStage: signals.moveStage,
+      daysToMoveBucket: signals.daysToMoveBucket,
+      cached: false,
+    });
+  }
+
   const fingerprint = signalFingerprint(signals);
 
   // ── Per-user, per-UTC-day cache + daily cap ─────────────────
@@ -287,11 +340,37 @@ export async function POST(request: NextRequest) {
     return cachedResponse(cached);
   }
 
-  // Inputs changed but today's AI budget is spent → keep serving today's last
-  // briefing rather than burning another generation. Never an error; the next
-  // UTC day (new cache key) restores the budget.
-  if (cached && cached.generationCount >= DAILY_AI_GENERATION_CAP) {
-    return cachedResponse(cached);
+  // Inputs changed → this is a generation attempt. Consume one unit of today's
+  // GLOBAL budget via the shared limiter (Upstash, with in-memory fallback),
+  // keyed by user + UTC day so the 3/day cap holds across instances and restarts.
+  // One attempt = one unit, success or not — the hammering guard. Same-day
+  // unchanged requests above never reach here, so they cost nothing.
+  const genGate = await rateLimit(`briefing-gen:${cacheKey}`, {
+    limit: DAILY_AI_GENERATION_CAP,
+    windowSeconds: 24 * 60 * 60,
+  });
+  if (!genGate.success) {
+    // Budget spent: serve today's last briefing if this instance still has it,
+    // otherwise a deterministic rule-based briefing (no AI call, no extra spend).
+    // Never an error; the next UTC day restores the budget.
+    if (cached) return cachedResponse(cached);
+    const cappedActions = buildBriefingActions(signals);
+    recordIntegrationOutcome("briefing", "cached");
+    return NextResponse.json({
+      configured: true,
+      source: "rule_based",
+      aiGenerated: false,
+      briefing: encodeBriefingString({
+        briefing: buildFallbackBriefing(signals),
+        actions: cappedActions,
+        moveStage: signals.moveStage,
+        daysToMoveBucket: signals.daysToMoveBucket,
+      }),
+      actions: cappedActions,
+      moveStage: signals.moveStage,
+      daysToMoveBucket: signals.daysToMoveBucket,
+      cached: true,
+    });
   }
 
   // Structured, deep-linked actions (each with a machine-readable `target`) are
@@ -301,9 +380,8 @@ export async function POST(request: NextRequest) {
   const actions = buildBriefingActions(signals);
 
   // ── Try the LLM for the situation SUMMARY; degrade to the rule-based summary ──
-  // One attempt = one unit of today's budget, success or not — that is the
-  // hammering guard. generateLlmBriefing never throws; null means "fall back".
-  const generationCount = (cached?.generationCount ?? 0) + 1;
+  // The budget unit was already consumed by the gen gate above (success or not).
+  // generateLlmBriefing never throws; null means "fall back".
   const aiSummary = await generateLlmBriefing(apiKey, signals);
   let source: "ai" | "rule_based" = "ai";
   let prose: string;
@@ -333,7 +411,6 @@ export async function POST(request: NextRequest) {
     moveStage: signals.moveStage,
     daysToMoveBucket: signals.daysToMoveBucket,
     source,
-    generationCount,
     cachedAt: Date.now(),
   });
 

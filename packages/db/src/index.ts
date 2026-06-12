@@ -69,6 +69,7 @@ export {
   isOptimisticLockError,
 } from "./optimistic-locking";
 export { rebuildProviderCoverage, type RebuildCoverageInput } from "./provider-coverage";
+export { zipCentroid, zipCentroidCount, type ZipCentroid } from "./zip-centroid";
 export {
   getProviderCoverageMetadata,
   getProviderCoverageMetadataMap,

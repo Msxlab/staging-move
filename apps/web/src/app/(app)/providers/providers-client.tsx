@@ -57,6 +57,10 @@ export interface ProviderItem {
   subCategory: string | null;
   description: string | null;
   website: string | null;
+  /** Stable grouping key for sibling services of the same company (e.g. Chase). */
+  brandKey?: string;
+  /** Human brand label for the cluster chip ("Chase"). */
+  brandLabel?: string;
   phone: string | null;
   logoUrl: string | null;
   scope: string;
@@ -89,6 +93,10 @@ interface RecommendationsResponse {
     totalCount: number;
   }>;
   nextCriticalActions: ScoredProvider[];
+  /** The user's region (from their address city/state) — heads the recommendations. */
+  region?: { city: string | null; state: string | null; label: string | null };
+  /** Top-N region-relevant providers per pending CRITICAL/IMPORTANT category. */
+  regionGroups?: Array<{ category: string; label: string; tier: UrgencyTier; providers: ScoredProvider[] }>;
   meta?: {
     state?: string;
     currentPhase?: number;
@@ -386,6 +394,19 @@ export function ProvidersClient({
     return list;
   }, [providers, categoryFilter, showSavedOnly, shortlist]);
 
+  // Brand keys shared by 2+ currently-visible providers, so sibling services of
+  // one company (e.g. "Chase" + "Chase Credit Cards") get a small brand chip and
+  // read as one brand's offerings rather than an accidental duplicate.
+  const siblingBrandKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of visibleProviders) {
+      if (p.brandKey) counts.set(p.brandKey, (counts.get(p.brandKey) ?? 0) + 1);
+    }
+    const keys = new Set<string>();
+    for (const [key, n] of counts) if (n >= 2) keys.add(key);
+    return keys;
+  }, [visibleProviders]);
+
   // Per-user "not relevant" dismissals — optimistically hidden here and persisted
   // server-side so the engine stops re-surfacing them on future loads.
   const [dismissedRecIds, setDismissedRecIds] = useState<Set<string>>(new Set());
@@ -496,9 +517,16 @@ export function ProvidersClient({
         <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-tone-orange-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Recommended for you</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {recs?.region?.label ? `Top picks for ${recs.region.label}` : "Recommended for you"}
+            </h2>
             {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </div>
+          {recs?.region?.label && (
+            <p className="text-[11px] text-muted-foreground -mt-1.5">
+              Ranked for your area — locally-confirmed providers first.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {highlightProviders.map((p) => (
               <Link
@@ -734,6 +762,14 @@ export function ProvidersClient({
                   <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                     Listed provider
                   </span>
+                  {p.brandKey && p.brandLabel && siblingBrandKeys.has(p.brandKey) && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-foreground/5 text-muted-foreground"
+                      title={`Part of ${p.brandLabel} — one of several ${p.brandLabel} services`}
+                    >
+                      {p.brandLabel}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]

@@ -62,8 +62,17 @@ export async function GET(request: NextRequest) {
     const tagsParam = searchParams.get("tags");
     const latitude = latitudeParam !== null ? Number(latitudeParam) : null;
     const longitude = longitudeParam !== null ? Number(longitudeParam) : null;
-    const normalizedLatitude = Number.isFinite(latitude) ? latitude : null;
-    const normalizedLongitude = Number.isFinite(longitude) ? longitude : null;
+    let normalizedLatitude = Number.isFinite(latitude) ? latitude : null;
+    let normalizedLongitude = Number.isFinite(longitude) ? longitude : null;
+    // No coordinates supplied but we have a ZIP → resolve its ZCTA centroid so the
+    // directory can still rank by distance (finer than the 3-digit-prefix heuristic).
+    if ((normalizedLatitude === null || normalizedLongitude === null) && zip) {
+      const centroid = zipCentroid(zip);
+      if (centroid) {
+        normalizedLatitude = normalizedLatitude ?? centroid.latitude;
+        normalizedLongitude = normalizedLongitude ?? centroid.longitude;
+      }
+    }
 
     const effectiveState = resolveEffectiveState(state, zip);
 
@@ -208,6 +217,10 @@ export async function GET(request: NextRequest) {
         requiresPolygonCheck,
       });
 
+      // Brand identity for clustering sibling services of the same company (e.g.
+      // "Chase" + "Chase Credit Cards") so search doesn't read them as dupes.
+      const brand = getProviderBrand({ website: p.website, name: p.name });
+
       return {
         id: p.id,
         name: p.name,
@@ -216,6 +229,8 @@ export async function GET(request: NextRequest) {
         subCategory: p.subCategory,
         description: p.description,
         website: p.website,
+        brandKey: brand.brandKey,
+        brandLabel: brand.brandLabel,
         phone: p.phone,
         logoUrl: p.logoUrl,
         scope: p.scope,

@@ -2,19 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { tokenExpiryFrom } from "@locateflow/connectors";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
-import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { getConnectorOAuthConfig, refreshConnectorToken } from "@/lib/connector-oauth";
+import { guardCronRequest } from "@/lib/cron-guard";
 
 export const runtime = "nodejs";
-
-/** Cron/system auth: Bearer CRON_SECRET. Token refresh is a background job. */
-async function isCronAuthorized(request: NextRequest): Promise<boolean> {
-  const secret = (await getRuntimeConfigValue("CRON_SECRET")) ?? process.env.CRON_SECRET ?? "";
-  if (!secret) return false;
-  const header = request.headers.get("authorization") ?? "";
-  const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
-  return bearer.length > 0 && bearer === secret;
-}
 
 /**
  * POST /api/partner-consents/[id]/refresh
@@ -22,11 +13,20 @@ async function isCronAuthorized(request: NextRequest): Promise<boolean> {
  * Refreshes a consent's access token using the stored refresh token. Called by
  * the scheduler. On unrecoverable failure the consent is marked EXPIRED so the
  * connections UI prompts the user to reconnect rather than silently failing.
+ *
+ * NOTE: the entire partner-consent/connector surface is gated behind
+ * FEATURE_API_CONNECTORS (currently OFF), and this path lives under
+ * /api/partner-consents/, which the web middleware treats as user-authenticated
+ * — so a Bearer-CRON_SECRET scheduler call is rejected at the edge today (this is
+ * effectively dormant until connectors launch). When they launch, relocate this
+ * route under /api/cron/ (or allowlist it in middleware) so the scheduler can
+ * actually reach it.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await isCronAuthorized(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Constant-time CRON_SECRET auth + per-route rate limit, consistent with every
+  // other scheduled route (replaces a bespoke, non-constant-time === compare).
+  const guard = await guardCronRequest(request, "partner-consent-refresh", { limit: 60 });
+  if (!guard.ok) return guard.response;
 
   const { id } = await params;
   const consent = await prisma.partnerConsent.findUnique({

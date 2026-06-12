@@ -25,7 +25,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { encrypt } from "@/lib/shared-encryption";
-import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { reserveWebhookEvent, releaseWebhookEvent } from "@/lib/webhook-idempotency";
 import { connectorRegistry } from "@/lib/connector-registry";
 
 const KEY_RE = /^[a-z][a-z0-9-]*$/;
@@ -106,12 +106,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ key
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  // Dedupe on the verified body so a partner's at-least-once retries are safe.
-  const eventId = `connector:${key}:${createHash("sha256").update(rawBody).digest("hex")}`;
-  if (await hasProcessedWebhookEvent(eventId)) {
-    return NextResponse.json({ ok: true, duplicate: true });
-  }
-
+  // Validation that 400s with NO side-effect runs BEFORE we reserve the event,
+  // so a malformed-but-signed body never consumes an idempotency marker.
   let payload: unknown;
   try {
     payload = rawBody ? JSON.parse(rawBody) : {};
@@ -124,38 +120,57 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ key
     return NextResponse.json({ error: "Unrecognized payload" }, { status: 400 });
   }
 
-  const dispatch = await prisma.connectorDispatch.findUnique({ where: { idempotencyKey: parsed.ref } });
-  // Unknown / wrong-connector ref: ack so the partner stops retrying, but touch
-  // nothing. (A signed caller for this connector simply referenced a dispatch we
-  // don't have — e.g. one already pruned.)
-  if (!dispatch || dispatch.connectorKey !== key) {
-    await markWebhookEventProcessed(eventId, `connector:${key}`);
-    return NextResponse.json({ ok: true, matched: false });
+  // Atomically RESERVE on the verified body BEFORE any dispatch mutation (mirrors
+  // the Stripe/App Store/Play Store webhooks). The previous hasProcessedWebhookEvent
+  // check-then-act left a window where two concurrent deliveries both passed the
+  // read and both advanced the dispatch; the unique-key reservation closes it — a
+  // duplicate loses the create race and gets "duplicate" here. The winner owns the
+  // marker and releases it only if processing throws, so a partner's legitimate
+  // retry can still reprocess instead of seeing a duplicate no-op.
+  const eventId = `connector:${key}:${createHash("sha256").update(rawBody).digest("hex")}`;
+  const reservation = await reserveWebhookEvent(eventId, `connector:${key}`);
+  if (reservation === "duplicate") {
+    return NextResponse.json({ ok: true, duplicate: true });
   }
 
-  if (!TERMINAL_STATUSES.has(dispatch.status)) {
-    const { outcome, errorCode, confirmationNumber } = parsed.result;
-    if (outcome === "CONFIRMED") {
-      await prisma.connectorDispatch.update({
-        where: { id: dispatch.id },
-        data: {
-          status: "CONFIRMED",
-          confirmedAt: new Date(),
-          lastErrorCode: null,
-          ...(confirmationNumber ? { confirmationEncrypted: encrypt(confirmationNumber) } : {}),
-        },
-      });
-    } else if (outcome === "FAILED" || outcome === "NEEDS_USER") {
-      // Async failure → guided-update fallback. The golden rule holds: a connector
-      // failure degrades to manual, it never blocks (or silently drops) the move.
-      await prisma.connectorDispatch.update({
-        where: { id: dispatch.id },
-        data: { status: "NEEDS_USER", lastErrorCode: errorCode ?? "UNKNOWN" },
-      });
+  try {
+    const dispatch = await prisma.connectorDispatch.findUnique({ where: { idempotencyKey: parsed.ref } });
+    // Unknown / wrong-connector ref: ack so the partner stops retrying, but touch
+    // nothing. (A signed caller for this connector simply referenced a dispatch we
+    // don't have — e.g. one already pruned.) The reservation stays: it's fully handled.
+    if (!dispatch || dispatch.connectorKey !== key) {
+      return NextResponse.json({ ok: true, matched: false });
     }
-    // outcome === "SUBMITTED" → still pending; leave the row untouched.
-  }
 
-  await markWebhookEventProcessed(eventId, `connector:${key}`);
-  return NextResponse.json({ ok: true });
+    if (!TERMINAL_STATUSES.has(dispatch.status)) {
+      const { outcome, errorCode, confirmationNumber } = parsed.result;
+      if (outcome === "CONFIRMED") {
+        await prisma.connectorDispatch.update({
+          where: { id: dispatch.id },
+          data: {
+            status: "CONFIRMED",
+            confirmedAt: new Date(),
+            lastErrorCode: null,
+            ...(confirmationNumber ? { confirmationEncrypted: encrypt(confirmationNumber) } : {}),
+          },
+        });
+      } else if (outcome === "FAILED" || outcome === "NEEDS_USER") {
+        // Async failure → guided-update fallback. The golden rule holds: a connector
+        // failure degrades to manual, it never blocks (or silently drops) the move.
+        await prisma.connectorDispatch.update({
+          where: { id: dispatch.id },
+          data: { status: "NEEDS_USER", lastErrorCode: errorCode ?? "UNKNOWN" },
+        });
+      }
+      // outcome === "SUBMITTED" → still pending; leave the row untouched.
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    // Processing failed AFTER reserving — release the marker so the partner's
+    // retry can reprocess instead of getting a "duplicate" no-op and silently
+    // dropping the confirmation. Return 500 so the partner does retry.
+    await releaseWebhookEvent(eventId, `connector:${key}`).catch(() => {});
+    return NextResponse.json({ error: "Processing failed" }, { status: 500 });
+  }
 }

@@ -8,11 +8,20 @@ const mocks = vi.hoisted(() => ({
   serviceUpdate: vi.fn(),
   addressFindMany: vi.fn(),
   addressUpdate: vi.fn(),
+  // Shared stand-in for the other FIELD_ENCRYPTION_KEY models (user, adminUser,
+  // runtimeConfigEntry, partnerConsent, connectorDispatch). Default empty so the
+  // generic scan walks every model without needing rows in each.
+  otherFindMany: vi.fn(),
+  otherUpdate: vi.fn(),
   writeAdminAudit: vi.fn(),
   isEncrypted: vi.fn(),
   reEncrypt: vi.fn(),
   validateKeyFormat: vi.fn(),
 }));
+
+// Every model the rotation route must cover. service + address have bespoke
+// mocks; the rest share otherFindMany/otherUpdate.
+const OTHER_MODELS = ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch"];
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mocks.requirePermission(...args),
@@ -22,7 +31,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/db", () => {
   // Rotation scans + updates run on the RAW client (rawPrisma) so soft-deleted
   // rows are rotated too; point both exports at the same mock fns.
-  const client = {
+  const client: Record<string, { findMany: (...a: unknown[]) => unknown; update: (...a: unknown[]) => unknown }> = {
     service: {
       findMany: (...args: unknown[]) => mocks.serviceFindMany(...args),
       update: (...args: unknown[]) => mocks.serviceUpdate(...args),
@@ -32,6 +41,12 @@ vi.mock("@/lib/db", () => {
       update: (...args: unknown[]) => mocks.addressUpdate(...args),
     },
   };
+  for (const name of ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch"]) {
+    client[name] = {
+      findMany: (...args: unknown[]) => mocks.otherFindMany(name, ...args),
+      update: (...args: unknown[]) => mocks.otherUpdate(name, ...args),
+    };
+  }
   return { prisma: client, rawPrisma: client, prismaUnsafe: client };
 });
 
@@ -89,6 +104,8 @@ describe("security key rotation API", () => {
     mocks.addressFindMany.mockResolvedValue([]);
     mocks.serviceUpdate.mockResolvedValue({});
     mocks.addressUpdate.mockResolvedValue({});
+    mocks.otherFindMany.mockResolvedValue([]);
+    mocks.otherUpdate.mockResolvedValue({});
     mocks.writeAdminAudit.mockResolvedValue(undefined);
   });
 
@@ -111,6 +128,34 @@ describe("security key rotation API", () => {
     expect(auditActions()).toEqual(["KEY_ROTATION_STARTED", "KEY_ROTATION_COMPLETED"]);
     expect(serializedAuditCalls()).not.toContain(OLD_KEY);
     expect(serializedAuditCalls()).not.toContain(NEW_KEY);
+  });
+
+  it("rotates EVERY FIELD_ENCRYPTION_KEY model, not just service + address (audit P0-1)", async () => {
+    const response = await POST(request({ oldKey: OLD_KEY, confirmPassword: "pw", mfaCode: "123456" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // service + address keep their bespoke scans...
+    expect(mocks.serviceFindMany).toHaveBeenCalled();
+    expect(mocks.addressFindMany).toHaveBeenCalled();
+    // ...and every other encrypted model is scanned too (the bug was that these
+    // were silently skipped, so their ciphertext would become undecryptable).
+    const scannedOthers = new Set(mocks.otherFindMany.mock.calls.map((call) => call[0]));
+    for (const model of OTHER_MODELS) {
+      expect(scannedOthers.has(model)).toBe(true);
+    }
+    // The STARTED audit advertises the full coverage set.
+    const startedCall = mocks.writeAdminAudit.mock.calls.find((call) => call[1]?.action === "KEY_ROTATION_STARTED");
+    expect(startedCall?.[1]?.metadata?.tables).toEqual(
+      expect.arrayContaining(["service", "address", ...OTHER_MODELS]),
+    );
+    // The success message no longer over-promises "all encrypted fields".
+    expect(body.message).toContain("Re-encrypted");
+    expect(body.message).toContain("connectorDispatch");
+    // Results report stats for all seven tables.
+    expect(Object.keys(body.results).sort()).toEqual(
+      ["address", "adminUser", "connectorDispatch", "partnerConsent", "runtimeConfigEntry", "service", "user"],
+    );
   });
 
   it("fails closed and writes KEY_ROTATION_FAILED if any record mutation fails", async () => {

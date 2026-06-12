@@ -4,15 +4,7 @@ import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { isEncrypted, reEncrypt, validateKeyFormat } from "@/lib/shared-encryption";
 import { acquireLock, type LockResult } from "@/lib/distributed-lock";
-
-const ENCRYPTED_FIELDS: Record<string, { fields: string[] }> = {
-  services: {
-    fields: ["accountNumber", "username", "phone", "email", "notes"],
-  },
-  addresses: {
-    fields: ["formattedAddress"],
-  },
-};
+import { ENCRYPTED_MODELS } from "@/lib/key-rotation-fields";
 
 const BATCH_SIZE = 100;
 // Worst-case rotation should complete inside this window. The lock auto-
@@ -49,88 +41,44 @@ function safeFailureMetadata(error: unknown) {
 async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Promise<RotationStats> {
   const results: RotationStats = {};
 
-  for (const [tableName, config] of Object.entries(ENCRYPTED_FIELDS)) {
+  for (const { model, idField, fields } of ENCRYPTED_MODELS) {
+    const delegate = (rawPrisma as any)[model];
+    if (!delegate || typeof delegate.findMany !== "function" || typeof delegate.update !== "function") {
+      // A configured model whose delegate is missing means ENCRYPTED_MODELS and
+      // the Prisma client have drifted. Fail loudly rather than silently skip —
+      // a silently-skipped table is exactly the data-loss bug this rotation set
+      // exists to prevent.
+      throw new KeyRotationFailure("model_delegate_missing", { tableName: model });
+    }
+
     const stats = { total: 0, rotated: 0, skipped: 0, errors: 0 };
+    const select: Record<string, boolean> = { [idField]: true };
+    for (const field of fields) select[field] = true;
+
     let skip = 0;
     let hasMore = true;
 
     while (hasMore) {
-      if (tableName === "services") {
-        // rawPrisma: soft-deleted Service rows are still restorable during the
-        // deletion grace window, so their ciphertext MUST be re-encrypted too —
-        // otherwise it becomes permanently undecryptable once the old key is
-        // retired. orderBy makes offset pagination stable (no skipped/repeated
-        // rows, which would otherwise re-feed an already-rotated row to reEncrypt
-        // and fail mid-rotation).
-        const records = await rawPrisma.service.findMany({
-          skip,
-          take: BATCH_SIZE,
-          orderBy: { id: "asc" },
-          select: { id: true, accountNumber: true, username: true, phone: true, email: true, notes: true },
-        });
-        if (records.length < BATCH_SIZE) hasMore = false;
-        skip += BATCH_SIZE;
+      // rawPrisma: soft-deleted rows are still restorable during their grace
+      // window, so their ciphertext MUST be re-encrypted too — otherwise it
+      // becomes permanently undecryptable once the old key is retired. orderBy
+      // makes offset pagination stable (no skipped/repeated rows, which would
+      // otherwise re-feed an already-rotated row to reEncrypt and fail).
+      const records: any[] = await delegate.findMany({
+        skip,
+        take: BATCH_SIZE,
+        orderBy: { [idField]: "asc" },
+        select,
+      });
+      if (records.length < BATCH_SIZE) hasMore = false;
+      skip += BATCH_SIZE;
 
-        for (const record of records) {
-          stats.total++;
-          const updates: Record<string, string> = {};
-          const serviceFields = {
-            accountNumber: record.accountNumber,
-            username: record.username,
-            phone: record.phone,
-            email: record.email,
-            notes: record.notes,
-          };
+      for (const record of records) {
+        stats.total++;
+        const updates: Record<string, string> = {};
 
-          for (const field of config.fields) {
-            const value = serviceFields[field as keyof typeof serviceFields];
-            if (!value || !isEncrypted(value)) {
-              stats.skipped++;
-              continue;
-            }
-
-            const rotated = reEncrypt(value, oldKey);
-            if (rotated === null) {
-              stats.errors++;
-              throw new KeyRotationFailure("reencrypt_failed", { tableName, fieldName: field });
-            }
-            updates[field] = rotated;
-          }
-
-          if (Object.keys(updates).length === 0) continue;
-
-          if (!dryRun) {
-            try {
-              await rawPrisma.service.update({
-                where: { id: record.id },
-                data: {
-                  ...(updates.accountNumber ? { accountNumber: updates.accountNumber } : {}),
-                  ...(updates.username ? { username: updates.username } : {}),
-                  ...(updates.phone ? { phone: updates.phone } : {}),
-                  ...(updates.email ? { email: updates.email } : {}),
-                  ...(updates.notes ? { notes: updates.notes } : {}),
-                },
-              });
-            } catch {
-              stats.errors++;
-              throw new KeyRotationFailure("record_update_failed", { tableName });
-            }
-          }
-          stats.rotated++;
-        }
-      } else {
-        const records = await rawPrisma.address.findMany({
-          skip,
-          take: BATCH_SIZE,
-          orderBy: { id: "asc" },
-          select: { id: true, formattedAddress: true },
-        });
-        if (records.length < BATCH_SIZE) hasMore = false;
-        skip += BATCH_SIZE;
-
-        for (const record of records) {
-          stats.total++;
-          const value = record.formattedAddress;
+        for (const field of fields) {
+          const value = record[field];
           if (!value || !isEncrypted(value)) {
             stats.skipped++;
             continue;
@@ -139,26 +87,29 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
           const rotated = reEncrypt(value, oldKey);
           if (rotated === null) {
             stats.errors++;
-            throw new KeyRotationFailure("reencrypt_failed", { tableName, fieldName: "formattedAddress" });
+            throw new KeyRotationFailure("reencrypt_failed", { tableName: model, fieldName: field });
           }
-
-          if (!dryRun) {
-            try {
-              await rawPrisma.address.update({
-                where: { id: record.id },
-                data: { formattedAddress: rotated },
-              });
-            } catch {
-              stats.errors++;
-              throw new KeyRotationFailure("record_update_failed", { tableName });
-            }
-          }
-          stats.rotated++;
+          updates[field] = rotated;
         }
+
+        if (Object.keys(updates).length === 0) continue;
+
+        if (!dryRun) {
+          try {
+            await delegate.update({
+              where: { [idField]: record[idField] },
+              data: updates,
+            });
+          } catch {
+            stats.errors++;
+            throw new KeyRotationFailure("record_update_failed", { tableName: model });
+          }
+        }
+        stats.rotated++;
       }
     }
 
-    results[tableName] = stats;
+    results[model] = stats;
   }
 
   return results;
@@ -279,7 +230,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         status: "started",
         dryRun,
-        tables: Object.keys(ENCRYPTED_FIELDS),
+        tables: ENCRYPTED_MODELS.map((m) => m.model),
       },
       request: requestMeta,
     });
@@ -310,8 +261,8 @@ export async function POST(request: NextRequest) {
       success: true,
       dryRun,
       message: dryRun
-        ? "Dry run complete. No data was modified."
-        : "Key rotation complete. All encrypted fields have been re-encrypted with the new key.",
+        ? `Dry run complete. No data was modified. Scanned ${Object.keys(results).length} tables (${Object.keys(results).join(", ")}).`
+        : `Key rotation complete. Re-encrypted ${Object.keys(results).length} tables (${Object.keys(results).join(", ")}) with the new key. Keep the old key available until you have confirmed zero "errors" across all tables.`,
       results,
     });
   } catch (error: any) {

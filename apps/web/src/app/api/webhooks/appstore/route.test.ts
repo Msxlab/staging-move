@@ -252,4 +252,35 @@ describe("App Store webhook idempotency", () => {
     // Outer bundle check short-circuits before the reservation.
     expect(processedMock.create).not.toHaveBeenCalled();
   });
+
+  it("fails closed (503) in production when APPLE_BUNDLE_ID is unset (audit P1-10)", async () => {
+    const prevAppEnv = process.env.APP_ENV;
+    process.env.APP_ENV = "production";
+    // APPLE_BUNDLE_ID unset → the bundle check would otherwise silently no-op,
+    // letting an Apple-signed notification for a different app be processed.
+    mocks.getRuntimeConfigValue.mockResolvedValue(null);
+    mocks.verifyAppleJws.mockReturnValueOnce({
+      notificationUUID: "apple-notification-nobundle",
+      notificationType: "DID_RENEW",
+      signedDate: Date.now(),
+      data: { bundleId: "com.locateflow.mobile", signedTransactionInfo: "transaction-jws" },
+    });
+
+    try {
+      const response = await POST(request());
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({ error: expect.stringContaining("bundle id") });
+      // No side-effect and no reservation consumed.
+      expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
+      expect(processedMock.create).not.toHaveBeenCalled();
+      expect(mocks.emitSecurityEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: expect.objectContaining({ reason: "missing_expected_bundle" }),
+        }),
+      );
+    } finally {
+      if (prevAppEnv === undefined) delete process.env.APP_ENV;
+      else process.env.APP_ENV = prevAppEnv;
+    }
+  });
 });

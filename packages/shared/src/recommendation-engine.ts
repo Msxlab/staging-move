@@ -568,6 +568,43 @@ function getUrgencyTier(category: string, profile: UserProfile): UrgencyTier {
   return baseTier;
 }
 
+/**
+ * Pending "essential setup" categories for the dashboard / onboarding AI card.
+ *
+ * Returns the profile-gated CRITICAL and IMPORTANT categories the user has NOT
+ * yet handled — the same tier + relevance logic the ranked recommendations use,
+ * so the card is profile/address-aware (a car-less renter isn't told to set up
+ * auto insurance; a childless mover isn't told to enroll a school) instead of a
+ * hardcoded essentials list. A category whose relevance gate fails is demoted to
+ * OPTIONAL and dropped here — that is the "only what's relevant to THIS user"
+ * behavior the dashboard card wants.
+ *
+ * `completedCategories` should include EVERY category the user already has a
+ * tracked Service or a saved provider for, so picking one CLOSES it here. Pure:
+ * profile + already-handled categories only — no provider catalog, no DB.
+ * Categories are returned ordered by their display order, CRITICAL split from
+ * IMPORTANT so the caller can prioritise.
+ */
+export function getEssentialSetupCategories(
+  profile: UserProfile,
+  completedCategories: Iterable<string> = [],
+): { critical: string[]; important: string[] } {
+  const completed = new Set<string>();
+  for (const c of completedCategories) completed.add((c || "").toUpperCase());
+
+  const critical: string[] = [];
+  const important: string[] = [];
+  for (const category of [...CRITICAL_CATEGORIES, ...IMPORTANT_CATEGORIES]) {
+    if (completed.has(category)) continue;
+    const tier = getUrgencyTier(category, profile);
+    if (tier === "CRITICAL") critical.push(category);
+    else if (tier === "IMPORTANT") important.push(category);
+  }
+  const byOrder = (a: string, b: string) =>
+    getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b);
+  return { critical: critical.sort(byOrder), important: important.sort(byOrder) };
+}
+
 // ── Category Deadlines ───────────────────────────────────────
 
 const CATEGORY_DEADLINES: Record<string, string> = {
@@ -757,9 +794,12 @@ const TAG_PROFILE_MAP: Record<string, (p: UserProfile) => { match: boolean; reas
   veteran: (p) => ({ match: p.isMilitary || false, reason: "Veteran benefit", weight: 20 }),
   identity: () => ({ match: true, reason: "Identity protection", weight: 12 }),
   security: () => ({ match: true, reason: "Home security", weight: 10 }),
-  dental: () => ({ match: true, reason: "Dental coverage", weight: 10 }),
-  vision: () => ({ match: true, reason: "Vision coverage", weight: 10 }),
-  investment: () => ({ match: true, reason: "Investment services", weight: 8 }),
+  // dental / vision / investment were unconditional `match: true` with no profile
+  // signal behind them, so EVERY user got a fake "personalized for you" boost +
+  // reason for dental/vision/investment providers (the dashboard "dental/mental
+  // noise"). There is no profile field that indicates these needs, so they must
+  // not claim a personalization match — removed. The providers still surface via
+  // their normal category tier; they just no longer masquerade as personalized.
   online: () => ({ match: true, reason: "Online service", weight: 5 }),
   grocery: () => ({ match: true, reason: "Grocery & food delivery", weight: 8 }),
   cleaning: () => ({ match: true, reason: "Home cleaning service", weight: 6 }),

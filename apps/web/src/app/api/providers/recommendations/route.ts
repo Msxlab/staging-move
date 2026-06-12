@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderCoverageMetadata, zipCentroid, type ProviderCoverageModel } from "@locateflow/db";
 import { CANCELED_MOVING_PLAN_STATUSES, getCurrentRelocationPhase } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
@@ -7,8 +7,11 @@ import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   scoreProviders,
   buildRecommendationClusters,
+  getMergedDisplayCategoryLabel,
+  getMergedDisplayCategoryOrder,
   type UserProfile,
   type Provider,
+  type UrgencyTier,
 } from "@/lib/recommendation-engine";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
@@ -116,8 +119,19 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
-    const fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
-    const fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    let fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
+    let fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    // No stored/queried coordinates but we have a ZIP → resolve its ZCTA centroid
+    // (Census gazetteer) so distance-based provider ranking still works for ANY
+    // address with a ZIP, instead of only those with geocoded lat/lng. This is the
+    // finer alternative to the coarse 3-digit-prefix heuristic.
+    if ((fallbackLatitude === null || fallbackLongitude === null) && fallbackZip) {
+      const centroid = zipCentroid(fallbackZip);
+      if (centroid) {
+        fallbackLatitude = fallbackLatitude ?? centroid.latitude;
+        fallbackLongitude = fallbackLongitude ?? centroid.longitude;
+      }
+    }
 
     const providers = await prisma.serviceProvider.findMany({
       where: {
@@ -302,6 +316,51 @@ export async function GET(request: NextRequest) {
     );
     const result = buildRecommendationClusters(scored, completedCategories, dismissedProviderIds);
 
+    // ── #3a: region-grouped top picks ────────────────────────────
+    // The user's own city is on their address, so we can head the recommendations
+    // with their region and show the top FEW region-relevant providers PER category
+    // (the scored list is coverage-ranked, so local providers float up) instead of
+    // a single best-per-category or an undifferentiated dump. Focus on pending
+    // CRITICAL + IMPORTANT categories — "present region-based, don't recommend
+    // everything." Lower tiers stay in the normal clusters/full directory below.
+    const REGION_GROUP_PER_CATEGORY = 3;
+    const REGION_GROUP_TIERS = new Set<UrgencyTier>(["CRITICAL", "IMPORTANT"]);
+    const TIER_RANK: Record<string, number> = { CRITICAL: 0, IMPORTANT: 1 };
+    const regionCompletedSet = new Set(completedCategories.map((c) => (c || "").toUpperCase()));
+    const regionByCategory = new Map<string, typeof scored>();
+    for (const p of scored) {
+      if (dismissedProviderIds.has(p.id)) continue;
+      const cat = (p.category || "").toUpperCase();
+      if (!cat || regionCompletedSet.has(cat) || !REGION_GROUP_TIERS.has(p.urgencyTier)) continue;
+      const arr = regionByCategory.get(cat) ?? [];
+      arr.push(p);
+      regionByCategory.set(cat, arr);
+    }
+    const regionGroups = [...regionByCategory.entries()]
+      .map(([category, providers]) => {
+        const top = [...providers]
+          .sort((a, b) => b.recommendationScore - a.recommendationScore)
+          .slice(0, REGION_GROUP_PER_CATEGORY);
+        return {
+          category,
+          label: getMergedDisplayCategoryLabel(category),
+          tier: top[0]?.urgencyTier ?? ("IMPORTANT" as UrgencyTier),
+          providers: top,
+        };
+      })
+      .sort((a, b) => {
+        const t = (TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9);
+        return t !== 0 ? t : getMergedDisplayCategoryOrder(a.category) - getMergedDisplayCategoryOrder(b.category);
+      });
+
+    const regionCity = primaryAddr?.city?.trim() || null;
+    const regionState = (primaryAddr?.state?.trim().toUpperCase() || effectiveState) || null;
+    const region = {
+      city: regionCity,
+      state: regionState,
+      label: regionCity && regionState ? `${regionCity}, ${regionState}` : regionState || null,
+    };
+
     // Fire-and-forget integration telemetry (synchronous in-process buffer —
     // never throws, never adds latency). Mirrors the fcc/electric statuses
     // reported in `meta` below so per-day IntegrationDailyStat counters track
@@ -313,6 +372,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       ...result,
+      region,
+      regionGroups,
       meta: {
         state: effectiveState,
         requestedState: requestedState || null,

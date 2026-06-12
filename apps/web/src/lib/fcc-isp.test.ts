@@ -3,8 +3,35 @@ import {
   lookupFccIsps,
   isIspServiceable,
   normalizeIspName,
+  normalizeFccApiBase,
   clearFccCache,
 } from "./fcc-isp";
+
+const DEFAULT_BASE = "https://broadbandmap.fcc.gov/api/public/map";
+
+describe("normalizeFccApiBase", () => {
+  it("re-appends the BDC path to a host-only override (the admin panel strips paths)", () => {
+    expect(normalizeFccApiBase("https://broadbandmap.fcc.gov")).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase("https://broadbandmap.fcc.gov/")).toBe(DEFAULT_BASE);
+  });
+
+  it("is idempotent for the full default", () => {
+    expect(normalizeFccApiBase(DEFAULT_BASE)).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase(DEFAULT_BASE + "/")).toBe(DEFAULT_BASE);
+  });
+
+  it("falls back to the default for empty / non-URL values (e.g. a stray 'true')", () => {
+    expect(normalizeFccApiBase("")).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase(null)).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase(undefined)).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase("true")).toBe(DEFAULT_BASE);
+    expect(normalizeFccApiBase("ftp://x")).toBe(DEFAULT_BASE);
+  });
+
+  it("respects an explicit non-root path (FCC genuinely moved the endpoint)", () => {
+    expect(normalizeFccApiBase("https://new.fcc.gov/v2/map")).toBe("https://new.fcc.gov/v2/map");
+  });
+});
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
