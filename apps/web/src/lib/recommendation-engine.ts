@@ -6,6 +6,7 @@ export {
   scoreProviders,
   getRecommendedProviders,
   buildRecommendationClusters,
+  getEssentialSetupCategories,
   getCategoryLabel,
   getCategoryIcon,
   getCategoryOrder,

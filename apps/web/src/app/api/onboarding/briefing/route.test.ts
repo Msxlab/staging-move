@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   userFindUnique: vi.fn(),
   movingPlanFindFirst: vi.fn(),
   serviceFindMany: vi.fn(),
+  savedProviderFindMany: vi.fn(),
   addressFindFirst: vi.fn(),
   rateLimit: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("@/lib/db", () => ({
     user: { findUnique: (...args: unknown[]) => mocks.userFindUnique(...args) },
     movingPlan: { findFirst: (...args: unknown[]) => mocks.movingPlanFindFirst(...args) },
     service: { findMany: (...args: unknown[]) => mocks.serviceFindMany(...args) },
+    savedProvider: { findMany: (...args: unknown[]) => mocks.savedProviderFindMany(...args) },
     address: { findFirst: (...args: unknown[]) => mocks.addressFindFirst(...args) },
   },
 }));
@@ -89,6 +91,7 @@ function primeData({ carCount = 1, state = "NJ" }: { carCount?: number; state?: 
     toAddress: { state },
   });
   mocks.serviceFindMany.mockResolvedValue([]);
+  mocks.savedProviderFindMany.mockResolvedValue([]);
   mocks.addressFindFirst.mockResolvedValue({ state, ownership: "RENTER" });
 }
 
@@ -317,6 +320,44 @@ describe("/api/onboarding/briefing", () => {
     expect(nextDay.cached).toBe(false);
     expect(nextDay.source).toBe("ai");
     expect(mocks.generateLlmBriefing).toHaveBeenCalledTimes(4);
+  });
+
+  it("goes quiet (allEssentialsHandled, no LLM) when every essential is handled — saved providers count too", async () => {
+    // Compute the exact pending essentials for the primed profile, then mark them
+    // ALL handled via SAVED PROVIDERS (proves saved providers are in the owned set
+    // AND that an empty pending list takes the quiet path with no AI spend).
+    const { getEssentialSetupCategories } = await import("@/lib/recommendation-engine");
+    primeData({ carCount: 0 });
+    const profile = {
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      hasSenior: false,
+      carCount: 0,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      isMilitary: false,
+      isBusinessOwner: false,
+      moveType: "PERSONAL",
+      ownership: "RENT",
+    } as const;
+    const { critical, important } = getEssentialSetupCategories(profile, []);
+    mocks.savedProviderFindMany.mockResolvedValue(
+      [...critical, ...important].map((category) => ({ provider: { category } })),
+    );
+
+    const response = await POST(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.allEssentialsHandled).toBe(true);
+    expect(body.actions).toEqual([]);
+    expect(body.aiGenerated).toBe(false);
+    expect(typeof body.briefing).toBe("string");
+    // No AI generation spent when there is nothing essential to surface.
+    expect(mocks.generateLlmBriefing).not.toHaveBeenCalled();
   });
 
   it("failed AI attempts still consume budget (hammering guard) and pin the cached fallback", async () => {
