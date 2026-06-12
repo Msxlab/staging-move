@@ -217,6 +217,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Deployment env only. This key must never contain a comma-separated allowlist.",
   },
   {
+    key: "TRUSTED_PROXY_HEADERS",
+    label: "Trusted Proxy Headers",
+    description: "Controls which edge proxy IP header family the web and admin apps trust for rate limits, audit logs, cron guards, and auth telemetry. Use cloudflare behind Cloudflare, vercel behind Vercel, standard behind a trusted reverse proxy, or none to ignore forwarded headers.",
+    scope: "GLOBAL",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app"],
+    validation: "one of compat, none, vercel, cloudflare, standard",
+    note: "Deployment env only. Leaving it unset preserves compat precedence but is intentionally less explicit for production.",
+  },
+  {
     key: "STRIPE_SECRET_KEY",
     label: "Stripe Secret Key",
     description: "Server-side Stripe key for checkout, portal, and recurring billing operations.",
@@ -1893,6 +1907,25 @@ export function validateRuntimeConfigValueShape(
   if (key === "APP_ENV" && !["production", "staging", "preview"].includes(value.toLowerCase())) {
     return invalid("production_like_required");
   }
+  if (key === "TRUSTED_PROXY_HEADERS") {
+    return [
+      "auto",
+      "compat",
+      "none",
+      "false",
+      "0",
+      "off",
+      "vercel",
+      "cloudflare",
+      "cf",
+      "standard",
+      "true",
+      "1",
+      "on",
+    ].includes(value.toLowerCase())
+      ? valid()
+      : invalid("trusted_proxy_header_mode");
+  }
   if (key === "DATABASE_URL") {
     const reason = validateUrl(value, { allowDatabaseScheme: true });
     return reason ? invalid(reason) : valid();
@@ -1992,6 +2025,8 @@ export function validateRuntimeConfigValueShape(
     "NOTIFICATION_PUSH_ENABLED",
     "KILL_SIGNUPS",
     "KILL_OUTBOUND_EMAIL",
+    "FCC_BDC_ENABLED",
+    "ELECTRIC_LOOKUP_ENABLED",
   ]);
   if (BOOLEAN_KEYS.has(key)) {
     return value === "true" || value === "false"

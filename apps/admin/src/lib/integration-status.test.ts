@@ -132,4 +132,11 @@ describe("buildIntegrations", () => {
       ]);
     }
   });
+
+  it("requires the FCC username with the FCC BDC key for configured serviceability", () => {
+    const integrations = buildIntegrations(catalogMap(["FCC_BDC_ENABLED", "FCC_BDC_API_KEY"]));
+    const fcc = integrations.find((item) => item.id === "fcc_broadband");
+    expect(fcc?.configured).toBe(false);
+    expect(fcc?.missingKeys).toEqual(["FCC_BDC_USERNAME"]);
+  });
 });

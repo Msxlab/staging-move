@@ -122,6 +122,34 @@ describe("provider trust helpers", () => {
     );
   });
 
+  it("does not double-flag address-qualified or polygon coverage as broad state coverage", () => {
+    const liveAddressWarnings = getProviderQualityWarnings({
+      name: "Metro Water",
+      category: "UTILITY_WATER",
+      scope: "STATE",
+      states: ["CA"],
+      coverageModel: "live_address",
+      description: "Metro Water provides residential water service in selected communities.",
+      website: "https://example.com",
+    }).map((warning) => warning.code);
+
+    expect(liveAddressWarnings).toContain("address_check_required");
+    expect(liveAddressWarnings).not.toContain("broad_state_coverage");
+
+    const polygonWarnings = getProviderQualityWarnings({
+      name: "Metro Tollway",
+      category: "TRANSPORTATION_TOLL",
+      scope: "STATE",
+      states: ["CA"],
+      coverageModel: "polygon",
+      description: "Metro Tollway operates a mapped regional toll road network.",
+      website: "https://example.com",
+    }).map((warning) => warning.code);
+
+    expect(polygonWarnings).toContain("polygon_check_required");
+    expect(polygonWarnings).not.toContain("broad_state_coverage");
+  });
+
   it("flags a stale record only when last review is older than the freshness window", () => {
     const now = Date.UTC(2026, 0, 1);
     const base = {

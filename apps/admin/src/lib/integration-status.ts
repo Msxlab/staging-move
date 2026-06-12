@@ -150,6 +150,7 @@ export function buildIntegrations(
     buildIntegrationStatus(catalogMap, "fcc_broadband", "FCC Broadband — ISP availability", [
       "FCC_BDC_ENABLED",
       "FCC_BDC_API_KEY",
+      "FCC_BDC_USERNAME",
     ]),
     buildIntegrationStatus(catalogMap, "electric_utility", "Electric Utility — OpenEI URDB", [
       "ELECTRIC_LOOKUP_ENABLED",

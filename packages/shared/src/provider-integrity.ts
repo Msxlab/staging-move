@@ -276,6 +276,8 @@ export function getProviderQualityWarnings(
   const states = normalizeStates(record.states);
   const zipCodes = normalizeZipCodes(record.zipCodes);
   const domain = normalizeProviderUrlDomain(record.website);
+  const hasExternalCoverageModel =
+    record.coverageModel === "live_address" || record.coverageModel === "polygon";
 
   if (!record.logoUrl) {
     warnings.push({
@@ -341,6 +343,7 @@ export function getProviderQualityWarnings(
   if (
     record.scope === "STATE" &&
     zipCodes.length === 0 &&
+    !hasExternalCoverageModel &&
     LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(record.category)
   ) {
     warnings.push({
@@ -355,6 +358,7 @@ export function getProviderQualityWarnings(
   if (
     record.scope === "FEDERAL" &&
     zipCodes.length === 0 &&
+    !hasExternalCoverageModel &&
     ADDRESS_QUALIFIED_FEDERAL_CATEGORIES.has(record.category)
   ) {
     warnings.push({

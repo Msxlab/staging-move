@@ -40,6 +40,7 @@ describe("shouldPreferEnvRuntimeConfigValue", () => {
       "CRON_SECRET",
       "INTERNAL_WEBHOOK_SECRET",
       "IMPERSONATION_HANDOFF_SECRET",
+      "TRUSTED_PROXY_HEADERS",
     ];
     for (const key of sample) {
       expect(shouldPreferEnvRuntimeConfigValue(key, {})).toBe(true);
@@ -182,6 +183,7 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       "DATABASE_URL",
       "NODE_ENV",
       "APP_ENV",
+      "TRUSTED_PROXY_HEADERS",
     ];
     for (const key of deploymentOnly) {
       const def = getRuntimeConfigDefinition(key);
@@ -377,6 +379,29 @@ describe("validateRuntimeConfigValueShape hardening", () => {
     ).toMatchObject({ ok: true });
     expect(
       validateRuntimeConfigValueShape("FEATURE_API_CONNECTORS", "1", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "boolean_required" });
+  });
+
+  it("validates proxy and serviceability activation flags", () => {
+    expect(
+      validateRuntimeConfigValueShape("TRUSTED_PROXY_HEADERS", "cloudflare", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("TRUSTED_PROXY_HEADERS", "random-proxy", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "trusted_proxy_header_mode" });
+    expect(
+      validateRuntimeConfigValueShape("FCC_BDC_ENABLED", "true", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("ELECTRIC_LOOKUP_ENABLED", "yes", {
         productionLike: false,
       }),
     ).toMatchObject({ ok: false, reason: "boolean_required" });

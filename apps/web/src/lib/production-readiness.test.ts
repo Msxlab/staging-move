@@ -29,6 +29,14 @@ const validProdEnv = {
   STRIPE_PRICE_PRO_YEARLY: "price_proyearly123",
   STRIPE_ANNUAL_TRIAL_DAYS: "90",
   GOOGLE_MAPS_API_KEY: "AIzaSyProductionMapsKey",
+  TRUSTED_PROXY_HEADERS: "cloudflare",
+  FCC_BDC_ENABLED: "true",
+  FCC_BDC_API_KEY: "fcc-production-token",
+  FCC_BDC_USERNAME: "ops@example.com",
+  ELECTRIC_LOOKUP_ENABLED: "true",
+  OPENEI_API_KEY: "openei-production-token",
+  AIRNOW_API_KEY: "airnow-production-token",
+  CENSUS_API_KEY: "census-production-token",
 } as unknown as NodeJS.ProcessEnv;
 
 describe("buildReadinessReport", () => {
@@ -105,6 +113,33 @@ describe("buildReadinessReport", () => {
     const report = buildReadinessReport(env, true);
     expect(report.ready).toBe(true);
     expect(report.issues.find((i) => i.key === "ALLOW_PRODUCTION_REPLACE_RESTORE")?.severity).toBe("warn");
+  });
+
+  it("warns without blocking when production proxy header mode is implicit", () => {
+    const env = { ...validProdEnv, TRUSTED_PROXY_HEADERS: undefined };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(true);
+    expect(report.issues.find((i) => i.key === "TRUSTED_PROXY_HEADERS")?.severity).toBe("warn");
+  });
+
+  it("warns without blocking when FCC serviceability is enabled without the documented credential pair", () => {
+    const env = {
+      ...validProdEnv,
+      FCC_BDC_ENABLED: "true",
+      FCC_BDC_API_KEY: "fcc-production-token",
+      FCC_BDC_USERNAME: undefined,
+    };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(true);
+    expect(report.issues.find((i) => i.key === "FCC_BDC_USERNAME")?.severity).toBe("warn");
+  });
+
+  it("warns without blocking when dossier data keys are absent", () => {
+    const env = { ...validProdEnv, AIRNOW_API_KEY: undefined, CENSUS_API_KEY: undefined };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(true);
+    expect(report.issues.find((i) => i.key === "AIRNOW_API_KEY")?.severity).toBe("warn");
+    expect(report.issues.find((i) => i.key === "CENSUS_API_KEY")?.severity).toBe("warn");
   });
 
   it("flags placeholder Redis env in production", () => {

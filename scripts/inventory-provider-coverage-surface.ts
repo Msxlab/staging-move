@@ -10,6 +10,8 @@ const shared = require("../packages/shared/src");
 const integrityModule = require("../packages/shared/src/provider-integrity");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const coverageModule = require("../packages/shared/src/provider-coverage");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const coverageMetadataModule = require("../packages/db/src/provider-coverage-metadata");
 
 const { FEDERAL_NEW, STATE_DMVS, STATE_PROVIDERS } = providersModule as {
   FEDERAL_NEW: ProviderRecord[];
@@ -23,6 +25,9 @@ const {
 } = integrityModule;
 
 const { expandCoverageRows } = coverageModule;
+const { getProviderCoverageMetadata } = coverageMetadataModule as {
+  getProviderCoverageMetadata: (slug?: string | null) => ProviderCoverageMetadata | null;
+};
 
 const { CATEGORY_META } = shared as {
   CATEGORY_META: Record<string, { label: string }>;
@@ -37,9 +42,17 @@ type ProviderRecord = {
   states?: string[];
   zipCodes?: string[];
   description?: string;
+  coverageModel?: ProviderCoverageModel | null;
 };
 
 type NormalizedProvider = ReturnType<typeof normalizeProviderRecord<ProviderRecord>>;
+
+type ProviderCoverageModel = "state" | "zip_prefix" | "polygon" | "live_address";
+
+type ProviderCoverageMetadata = {
+  coverageModel: ProviderCoverageModel;
+  source?: "catalog" | "research";
+};
 
 const ALL_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
@@ -92,6 +105,22 @@ function coversState(provider: NormalizedProvider, state: string) {
   return provider.states.includes(state);
 }
 
+function isProviderCoverageModel(value: unknown): value is ProviderCoverageModel {
+  return value === "state" || value === "zip_prefix" || value === "polygon" || value === "live_address";
+}
+
+function getEffectiveCoverageModel(provider: NormalizedProvider): ProviderCoverageModel {
+  if (isProviderCoverageModel(provider.coverageModel)) return provider.coverageModel;
+  const metadataModel = getProviderCoverageMetadata(provider.slug)?.coverageModel;
+  if (metadataModel) return metadataModel;
+  return provider.zipCodes.length > 0 ? "zip_prefix" : "state";
+}
+
+function hasExternalCoverageCheck(provider: NormalizedProvider): boolean {
+  const model = getEffectiveCoverageModel(provider);
+  return model === "live_address" || model === "polygon";
+}
+
 function buildCategoryStats(providers: NormalizedProvider[]) {
   const buckets = new Map<string, {
     total: number;
@@ -101,6 +130,10 @@ function buildCategoryStats(providers: NormalizedProvider[]) {
     exactRows: number;
     prefixRows: number;
     stateRows: number;
+    effectiveStateModel: number;
+    effectiveZipPrefixModel: number;
+    effectivePolygonModel: number;
+    effectiveLiveAddressModel: number;
   }>();
 
   for (const provider of providers) {
@@ -112,12 +145,21 @@ function buildCategoryStats(providers: NormalizedProvider[]) {
       exactRows: 0,
       prefixRows: 0,
       stateRows: 0,
+      effectiveStateModel: 0,
+      effectiveZipPrefixModel: 0,
+      effectivePolygonModel: 0,
+      effectiveLiveAddressModel: 0,
     };
 
+    const effectiveCoverageModel = getEffectiveCoverageModel(provider);
     entry.total += 1;
     if (provider.scope === "FEDERAL") entry.federal += 1;
     else entry.state += 1;
     if (provider.zipCodes.length > 0) entry.withZipRules += 1;
+    if (effectiveCoverageModel === "state") entry.effectiveStateModel += 1;
+    else if (effectiveCoverageModel === "zip_prefix") entry.effectiveZipPrefixModel += 1;
+    else if (effectiveCoverageModel === "polygon") entry.effectivePolygonModel += 1;
+    else entry.effectiveLiveAddressModel += 1;
 
     for (const row of expandCoverageRows({
       scope: provider.scope,
@@ -147,16 +189,19 @@ function buildPrecisionRiskLists(providers: NormalizedProvider[]) {
 
   for (const provider of providers) {
     const localitySignal = LOCALITY_SIGNAL_REGEX.test(`${provider.name} ${provider.description || ""}`);
+    const effectiveCoverageModel = getEffectiveCoverageModel(provider);
 
     if (
       provider.scope === "STATE" &&
       provider.zipCodes.length === 0 &&
+      effectiveCoverageModel === "state" &&
       LOCATION_SENSITIVE_CATEGORIES.has(provider.category)
     ) {
       localScopeOverbroad.push({
         name: provider.name,
         slug: provider.slug,
         category: provider.category,
+        coverageModel: effectiveCoverageModel,
         scope: provider.scope,
         states: provider.states,
         website: provider.website,
@@ -173,12 +218,14 @@ function buildPrecisionRiskLists(providers: NormalizedProvider[]) {
     if (
       provider.scope === "FEDERAL" &&
       provider.zipCodes.length === 0 &&
+      effectiveCoverageModel === "state" &&
       ADDRESS_QUALIFIED_FEDERAL_CATEGORIES.has(provider.category)
     ) {
       federalAddressQualified.push({
         name: provider.name,
         slug: provider.slug,
         category: provider.category,
+        coverageModel: effectiveCoverageModel,
         website: provider.website,
         risk: "medium",
         reason: "national brand likely requires address-level serviceability check",
@@ -220,7 +267,7 @@ function buildStateRiskMatrix(providers: NormalizedProvider[]) {
       entry.locationSensitiveProviders += 1;
       entry.categories[provider.category] = (entry.categories[provider.category] || 0) + 1;
 
-      if (provider.scope === "STATE" && provider.zipCodes.length === 0) {
+      if (provider.scope === "STATE" && provider.zipCodes.length === 0 && !hasExternalCoverageCheck(provider)) {
         if (HIGH_RISK_LOCAL_CATEGORIES.has(provider.category) || LOCALITY_SIGNAL_REGEX.test(provider.name)) {
           entry.highRiskLocalProviders += 1;
         }
@@ -248,6 +295,10 @@ function toMarkdown(input: {
   const locationSensitiveStats = input.categoryStats.filter((row) => LOCATION_SENSITIVE_CATEGORIES.has(row.category));
   const totalLocationSensitive = locationSensitiveStats.reduce((sum, row) => sum + row.total, 0);
   const totalZipBacked = locationSensitiveStats.reduce((sum, row) => sum + row.withZipRules, 0);
+  const totalNonStateModel = locationSensitiveStats.reduce(
+    (sum, row) => sum + row.effectiveZipPrefixModel + row.effectivePolygonModel + row.effectiveLiveAddressModel,
+    0
+  );
 
   lines.push("# Provider Coverage Surface Inventory");
   lines.push("");
@@ -259,6 +310,7 @@ function toMarkdown(input: {
   lines.push(`- Sanitized provider records: ${input.sanitizedCount}`);
   lines.push(`- Location-sensitive providers: ${totalLocationSensitive}`);
   lines.push(`- Location-sensitive providers with ZIP rules: ${totalZipBacked}`);
+  lines.push(`- Location-sensitive providers with effective non-state coverage model: ${totalNonStateModel}`);
   lines.push(`- State-scoped overbroad candidates: ${input.localScopeOverbroad.length}`);
   lines.push(`- Federal/address-qualified candidates: ${input.federalAddressQualified.length}`);
   lines.push("");
@@ -266,7 +318,7 @@ function toMarkdown(input: {
   lines.push("");
   for (const row of locationSensitiveStats) {
     lines.push(
-      `- ${row.category} (${row.label}): total=${row.total}, federal=${row.federal}, state=${row.state}, withZip=${row.withZipRules}, exactRows=${row.exactRows}, prefixRows=${row.prefixRows}, stateRows=${row.stateRows}`
+      `- ${row.category} (${row.label}): total=${row.total}, federal=${row.federal}, state=${row.state}, withZip=${row.withZipRules}, exactRows=${row.exactRows}, prefixRows=${row.prefixRows}, stateRows=${row.stateRows}, modelState=${row.effectiveStateModel}, modelZip=${row.effectiveZipPrefixModel}, modelPolygon=${row.effectivePolygonModel}, modelLiveAddress=${row.effectiveLiveAddressModel}`
     );
   }
   lines.push("");
@@ -285,7 +337,7 @@ function toMarkdown(input: {
   } else {
     for (const row of input.localScopeOverbroad.slice(0, 80)) {
       lines.push(
-        `- ${row.name} | ${row.category} | ${row.states.join(",")} | ${row.risk} | ${row.reason}${row.website ? ` | ${row.website}` : ""}`
+        `- ${row.name} | ${row.category} | model=${row.coverageModel} | ${row.states.join(",")} | ${row.risk} | ${row.reason}${row.website ? ` | ${row.website}` : ""}`
       );
     }
   }
@@ -297,7 +349,7 @@ function toMarkdown(input: {
   } else {
     for (const row of input.federalAddressQualified.slice(0, 80)) {
       lines.push(
-        `- ${row.name} | ${row.category} | ${row.risk} | ${row.reason}${row.website ? ` | ${row.website}` : ""}`
+        `- ${row.name} | ${row.category} | model=${row.coverageModel} | ${row.risk} | ${row.reason}${row.website ? ` | ${row.website}` : ""}`
       );
     }
   }
