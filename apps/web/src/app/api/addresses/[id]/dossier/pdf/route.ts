@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
+import { planLimitScopeForDataScope, resolveWorkspaceDataScope } from "@/lib/workspace-data-scope";
 import { planFeatures } from "@locateflow/shared";
 import { generateDossierReportPdf } from "@/lib/pdf/dossier-report";
 import type { PdfDossier } from "@/lib/pdf/types";
@@ -26,10 +27,12 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const scope = await resolveWorkspaceDataScope(request, userId);
 
-    // Pro-only gate. Inactive/expired Pro resolves to FREE_TRIAL in getUserPlan,
+    // Pro-only gate. Inactive/expired Pro resolves to FREE_TRIAL in the plan lookup,
     // so this also blocks lapsed Pro. Spend nothing beyond the plan read.
-    if (!planFeatures((await getUserPlan(userId)).plan).dossierPdf) {
+    const planInfo = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
+    if (!planFeatures(planInfo.plan).dossierPdf) {
       return NextResponse.json({
         configured: true,
         entitled: false,

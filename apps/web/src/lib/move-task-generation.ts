@@ -15,6 +15,10 @@ import { prisma } from "@/lib/db";
 import { getProviderCoverageConfidenceFromDb, resolveEffectiveState } from "@/lib/provider-matching";
 import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
+import {
+  applyProviderServiceabilityConfidence,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
 
 function safeParseJSON(value: unknown, fallback: string[]): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
@@ -111,6 +115,11 @@ export async function buildMoveTransitionContext(
     take: 1000,
   });
 
+  await enrichProviderServiceability(destinationProviders as any[], {
+    latitude: (plan as any).toAddress?.latitude ?? null,
+    longitude: (plan as any).toAddress?.longitude ?? null,
+  });
+
   const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
     const metadata = getProviderCoverageMetadata(p.slug);
     const zipCodes = safeJsonArray(p.zipCodes);
@@ -118,20 +127,23 @@ export async function buildMoveTransitionContext(
       (p.coverageModel as ProviderCoverageModel | null | undefined) ||
       metadata?.coverageModel ||
       (zipCodes.length > 0 ? "zip_prefix" : "state");
-    const coverageConfidence = getProviderCoverageConfidenceFromDb(
-      {
-        id: p.id,
-        slug: p.slug,
-        scope: p.scope,
-        coverageModel,
-        coverages: p.coverages || [],
-      },
-      {
-        state: effectiveToState,
-        zip: toZip,
-        latitude: (plan as any).toAddress?.latitude ?? null,
-        longitude: (plan as any).toAddress?.longitude ?? null,
-      },
+    const coverageConfidence = applyProviderServiceabilityConfidence(
+      p,
+      getProviderCoverageConfidenceFromDb(
+        {
+          id: p.id,
+          slug: p.slug,
+          scope: p.scope,
+          coverageModel,
+          coverages: p.coverages || [],
+        },
+        {
+          state: effectiveToState,
+          zip: toZip,
+          latitude: (plan as any).toAddress?.latitude ?? null,
+          longitude: (plan as any).toAddress?.longitude ?? null,
+        },
+      ),
     );
 
     return {
