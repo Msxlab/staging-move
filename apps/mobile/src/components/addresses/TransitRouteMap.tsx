@@ -3,6 +3,7 @@ import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import { API_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth-store";
+import { buildMobileAuthHeaders } from "@/lib/client-identity";
 import { useThemePreference } from "@/lib/theme";
 import {
   buildTransitRouteMapPath,
@@ -93,7 +94,7 @@ export function TransitRouteMap({
       accessibilityLabel={t("addresses.transit.mapAlt", { from: fromCity, to: toCity })}
     >
       <Image
-        source={{ uri, headers: { Authorization: `Bearer ${token}` } }}
+        source={{ uri, headers: buildMobileAuthHeaders(token) }}
         resizeMode="cover"
         style={StyleSheet.absoluteFill}
         fadeDuration={0}

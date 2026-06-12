@@ -226,7 +226,10 @@ function imageResponse(entry: CacheEntry, cacheState: "HIT" | "MISS"): NextRespo
 export async function GET(request: NextRequest) {
   let userId: string;
   try {
-    userId = await requireDbUserId();
+    // Native Image loaders may drop or rewrite User-Agent. Reject those
+    // requests, but do not burn the user's DB session because the mobile
+    // screen already has a graceful map fallback.
+    userId = await requireDbUserId({ invalidateOnFingerprintMismatch: false });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

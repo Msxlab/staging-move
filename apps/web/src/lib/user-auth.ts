@@ -466,7 +466,12 @@ async function readSingleTokenFromRequestForLegacyPath(): Promise<{
   return null;
 }
 
-export async function getUserSession(options: { diagnostics?: UserAuthDiagnostics } = {}): Promise<UserSessionClaims | null> {
+export async function getUserSession(
+  options: {
+    diagnostics?: UserAuthDiagnostics;
+    invalidateOnFingerprintMismatch?: boolean;
+  } = {},
+): Promise<UserSessionClaims | null> {
   const candidates = await readTokenCandidatesFromRequest();
   const diagnostics = options.diagnostics;
   if (diagnostics) {
@@ -613,8 +618,10 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
         } else {
           if (diagnostics) diagnostics.fingerprintMatched = false;
           markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
-          await invalidateSession();
-          shouldClearCookie = shouldClearCookie || cameFromCookie;
+          if (options.invalidateOnFingerprintMismatch !== false) {
+            await invalidateSession();
+            shouldClearCookie = shouldClearCookie || cameFromCookie;
+          }
           continue;
         }
       }
@@ -709,9 +716,16 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
 type CanonicalUserSession = UserSessionClaims & { user: AuthenticatedSessionUser };
 
 async function requireCanonicalUserSession(
-  options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {},
+  options: {
+    distinguishDeleted?: boolean;
+    diagnostics?: UserAuthDiagnostics;
+    invalidateOnFingerprintMismatch?: boolean;
+  } = {},
 ): Promise<CanonicalUserSession> {
-  const session = await getUserSession({ diagnostics: options.diagnostics });
+  const session = await getUserSession({
+    diagnostics: options.diagnostics,
+    invalidateOnFingerprintMismatch: options.invalidateOnFingerprintMismatch,
+  });
   if (!session) {
     if (
       options.distinguishDeleted &&
@@ -746,7 +760,13 @@ async function requireCanonicalUserSession(
  * Also destroys stale soft-deleted sessions. Callers that need a distinct
  * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
  */
-export async function requireDbUserId(options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
+export async function requireDbUserId(
+  options: {
+    distinguishDeleted?: boolean;
+    diagnostics?: UserAuthDiagnostics;
+    invalidateOnFingerprintMismatch?: boolean;
+  } = {},
+): Promise<string> {
   const session = await requireCanonicalUserSession(options);
   return session.user.id;
 }
