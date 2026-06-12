@@ -157,6 +157,34 @@ describe("deriveHomeDossier — card-level gating", () => {
     expect(rows.hasContent).toBe(true);
   });
 
+  it("keeps content when only a new neighborhood field survives and base sections are omitted", () => {
+    const rows = deriveHomeDossier({
+      configured: true,
+      address: { id: "addr_1", city: "Austin", state: "TX" },
+      neighborhood: {
+        status: "ok",
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: null,
+        walkScore: 12.4,
+        walkBand: "above_average",
+        schools: [],
+      },
+    });
+    expect(rows.hasContent).toBe(true);
+    expect(rows.neighborhood).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: null,
+      walkScore: 12.4,
+      walkBand: "above_average",
+      schools: [],
+    });
+  });
+
   it("renders no data rows for an unentitled payload, even if sections leaked in", () => {
     // Defense in depth: rows must never render for a free user — extended
     // sections (hazards/radon/water/air) included.
@@ -234,6 +262,15 @@ describe("deriveHomeDossierView — entitlement gating", () => {
     ).toEqual({ kind: "teaser" });
     // Sections present anyway → still a teaser, never real rows.
     expect(deriveHomeDossierView(dossier({ entitled: false }))).toEqual({ kind: "teaser" });
+  });
+
+  it("teases on an upgradeRequired gate signal, even when entitled is absent", () => {
+    expect(
+      deriveHomeDossierView({
+        configured: true,
+        upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
+      }),
+    ).toEqual({ kind: "teaser" });
   });
 
   it("shows content when entitled:true", () => {
@@ -650,11 +687,37 @@ describe("getNeighborhoodRow", () => {
       medianGrossRent: 1850,
       medianHouseholdIncome: 96500,
       ownerOccupiedPct: 58,
+      walkScore: null,
+      walkBand: null,
       schools: [
-        { name: "Hill Elementary", rating: "8/10" },
-        { name: "Bryker Woods", rating: null },
-        { name: "Casis", rating: "7/10" },
+        { name: "Hill Elementary", level: null, rating: "8/10" },
+        { name: "Bryker Woods", level: null, rating: null },
+        { name: "Casis", level: null, rating: "7/10" },
       ],
+    });
+  });
+
+  it("keeps walkability and NCES school level fields from the current web payload", () => {
+    const row = getNeighborhoodRow(
+      neighborhood({
+        medianHomeValue: null,
+        medianGrossRent: null,
+        medianHouseholdIncome: null,
+        ownerOccupiedPct: null,
+        walkScore: 18.83,
+        walkBand: "most",
+        schools: [{ name: "Hill Elementary", level: "Elementary" }],
+      }),
+    );
+    expect(row).toEqual({
+      locked: false,
+      medianHomeValue: null,
+      medianGrossRent: null,
+      medianHouseholdIncome: null,
+      ownerOccupiedPct: null,
+      walkScore: 18.8,
+      walkBand: "most",
+      schools: [{ name: "Hill Elementary", level: "Elementary", rating: null }],
     });
   });
 
@@ -674,6 +737,8 @@ describe("getNeighborhoodRow", () => {
       medianGrossRent: null,
       medianHouseholdIncome: null,
       ownerOccupiedPct: 0,
+      walkScore: null,
+      walkBand: null,
       schools: [],
     });
   });
@@ -694,7 +759,9 @@ describe("getNeighborhoodRow", () => {
       medianGrossRent: null,
       medianHouseholdIncome: null,
       ownerOccupiedPct: null,
-      schools: [{ name: "Hill Elementary", rating: null }],
+      walkScore: null,
+      walkBand: null,
+      schools: [{ name: "Hill Elementary", level: null, rating: null }],
     });
   });
 

@@ -24,6 +24,7 @@ export type DossierNeighborhoodStatus =
   | "not_configured"
   | "no_location"
   | "error";
+export type WalkBand = "least" | "below_average" | "above_average" | "most";
 
 export interface HomeDossierResponse {
   configured: boolean;
@@ -34,6 +35,12 @@ export interface HomeDossierResponse {
    * backend never hides real data from a paying user.
    */
   entitled?: boolean;
+  /** Companion gate signal from the API; any truthy value means teaser. */
+  upgradeRequired?: boolean | string;
+  /** Gate code (for diagnostics only; rendering is driven by entitlement/gate). */
+  code?: string;
+  /** Pro-only PDF entitlement. Present for parity with the web dossier payload. */
+  dossierPdf?: boolean;
   address?: { id: string; city: string; state: string };
   /** Data sections may be omitted entirely on unentitled payloads. */
   flood?: {
@@ -83,7 +90,11 @@ export interface HomeDossierResponse {
     medianGrossRent: number | null;
     medianHouseholdIncome: number | null;
     ownerOccupiedPct: number | null;
-    schools?: Array<{ name: string; rating: string | null }> | null;
+    /** EPA National Walkability Index (1-20); area context, not a per-home score. */
+    walkScore?: number | null;
+    /** Coarse walkability band: least | below_average | above_average | most. */
+    walkBand?: string | null;
+    schools?: Array<{ name: string; level?: string | null; rating?: string | null }> | null;
   };
 }
 
@@ -136,6 +147,7 @@ export interface AirRow {
 
 export interface NeighborhoodSchool {
   name: string;
+  level: string | null;
   rating: string | null;
 }
 
@@ -152,6 +164,8 @@ export type NeighborhoodRow =
       medianGrossRent: number | null;
       medianHouseholdIncome: number | null;
       ownerOccupiedPct: number | null;
+      walkScore: number | null;
+      walkBand: WalkBand | null;
       schools: NeighborhoodSchool[];
     };
 
@@ -316,6 +330,32 @@ export function clampNeighborhoodPct(value: number | null | undefined): number |
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+/** EPA walkability index (1-20) rounded to one decimal; null when absent/invalid. */
+export function clampWalkScore(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return Math.min(20, Math.round(value * 10) / 10);
+}
+
+/** Narrow an API band string to the known EPA buckets; null means no label. */
+export function normalizeWalkBand(raw: string | null | undefined): WalkBand | null {
+  return raw === "least" || raw === "below_average" || raw === "above_average" || raw === "most"
+    ? raw
+    : null;
+}
+
+export function walkBandLabelKey(
+  band: WalkBand,
+):
+  | "dossier.neighborhoodWalkLeast"
+  | "dossier.neighborhoodWalkBelow"
+  | "dossier.neighborhoodWalkAbove"
+  | "dossier.neighborhoodWalkMost" {
+  if (band === "least") return "dossier.neighborhoodWalkLeast";
+  if (band === "below_average") return "dossier.neighborhoodWalkBelow";
+  if (band === "above_average") return "dossier.neighborhoodWalkAbove";
+  return "dossier.neighborhoodWalkMost";
+}
+
 /**
  * Neighborhood row (Pro). "upgrade_required" ⇒ the locked teaser variant.
  * "ok" ⇒ the area-median figures, but only when at least one figure or a named
@@ -332,20 +372,39 @@ export function getNeighborhoodRow(d: HomeDossierResponse): NeighborhoodRow | nu
   const medianGrossRent = posInt(n.medianGrossRent);
   const medianHouseholdIncome = posInt(n.medianHouseholdIncome);
   const ownerOccupiedPct = clampNeighborhoodPct(n.ownerOccupiedPct);
+  const walkScore = clampWalkScore(n.walkScore);
+  const walkBand = normalizeWalkBand(n.walkBand);
   const schools: NeighborhoodSchool[] = (Array.isArray(n.schools) ? n.schools : [])
-    .filter((s): s is { name: string; rating: string | null } => !!s && nonEmpty(s.name))
+    .filter(
+      (s): s is { name: string; level?: string | null; rating?: string | null } =>
+        !!s && nonEmpty(s.name),
+    )
     .slice(0, 3)
-    .map((s) => ({ name: s.name.trim(), rating: nonEmpty(s.rating) ? s.rating.trim() : null }));
+    .map((s) => ({
+      name: s.name.trim(),
+      level: nonEmpty(s.level) ? s.level.trim() : null,
+      rating: nonEmpty(s.rating) ? s.rating.trim() : null,
+    }));
 
   const hasFigure =
     medianHomeValue !== null ||
     medianGrossRent !== null ||
     medianHouseholdIncome !== null ||
     ownerOccupiedPct !== null ||
+    walkScore !== null ||
     schools.length > 0;
   if (!hasFigure) return null;
 
-  return { locked: false, medianHomeValue, medianGrossRent, medianHouseholdIncome, ownerOccupiedPct, schools };
+  return {
+    locked: false,
+    medianHomeValue,
+    medianGrossRent,
+    medianHouseholdIncome,
+    ownerOccupiedPct,
+    walkScore,
+    walkBand,
+    schools,
+  };
 }
 
 /**
@@ -360,7 +419,6 @@ export function deriveHomeDossier(
 ): HomeDossierRows {
   if (!dossier || dossier.configured !== true) return EMPTY_ROWS;
   if (dossier.entitled === false) return EMPTY_ROWS;
-  if (!dossier.flood || !dossier.school || !dossier.weather) return EMPTY_ROWS;
   const flood = getFloodRow(dossier);
   const school = getSchoolRow(dossier);
   const weather = getWeatherRow(dossier);
@@ -405,7 +463,7 @@ export function deriveHomeDossierView(
   dossier: HomeDossierResponse | null | undefined,
 ): HomeDossierView {
   if (!dossier || dossier.configured !== true) return { kind: "hidden" };
-  if (dossier.entitled === false) return { kind: "teaser" };
+  if (dossier.entitled === false || !!dossier.upgradeRequired) return { kind: "teaser" };
   const rows = deriveHomeDossier(dossier);
   return rows.hasContent ? { kind: "content", rows } : { kind: "hidden" };
 }
@@ -449,7 +507,7 @@ export type AmbientSectionInput =
   | { kind: "hazard"; topRisks: ReadonlyArray<{ hazard: string; rating: string }> }
   | { kind: "radon"; zone: 1 | 2 | 3 }
   | { kind: "air"; aqi: number }
-  | { kind: "neighborhood"; walkBand: string | null }
+  | { kind: "neighborhood"; walkBand: WalkBand | null }
   | { kind: "weather"; summary: string | null; precipChancePct: number | null };
 
 /** NRI rating -> intensity: Relatively/Very High => 2, *Moderate => 1, else 0. */

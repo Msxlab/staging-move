@@ -735,8 +735,15 @@
     "neighborhoodIncome": "Median household income",
     "neighborhoodOwnerOccupied": "Owner-occupied homes",
     "neighborhoodPercent": "{{percent}}%",
+    "neighborhoodWalkability": "Walkability",
+    "neighborhoodWalkValue": "{{score}}/20 - {{label}}",
+    "neighborhoodWalkScoreOnly": "{{score}}/20",
+    "neighborhoodWalkLeast": "Least walkable",
+    "neighborhoodWalkBelow": "Below average",
+    "neighborhoodWalkAbove": "Above average",
+    "neighborhoodWalkMost": "Most walkable",
     "neighborhoodSchools": "Nearby schools",
-    "neighborhoodFinePrint": "U.S. Census Bureau (ACS) tract medians — context for the area, not a valuation of this home."
+    "neighborhoodFinePrint": "U.S. Census Bureau (ACS) tract medians, EPA walkability and NCES schools - context for the area, not a valuation of this home."
   },
   "subscription": {
     "upgradeTitle": "Unlock your move plan",
