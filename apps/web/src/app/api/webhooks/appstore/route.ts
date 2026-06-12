@@ -43,6 +43,16 @@ export const dynamic = "force-dynamic";
 // stream MB-scale junk hoping verifyAppleJws gives up.
 const APPSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
 
+function isProductionLikeRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview"
+  );
+}
+
 function emitAppstoreFailure(reason: string, context: Record<string, unknown> = {}) {
   emitSecurityEvent({
     type: "WEBHOOK_SIG_FAILURE",
@@ -88,6 +98,14 @@ export async function POST(request: NextRequest) {
     }
 
     const expectedBundleId = await getRuntimeConfigValue("APPLE_BUNDLE_ID");
+    // Mirror the Play Store handler: in a production-like runtime we MUST be able
+    // to verify the notification targets our bundle. Without APPLE_BUNDLE_ID the
+    // bundle checks below silently no-op, so a valid Apple-signed notification for
+    // a DIFFERENT app would be processed. Fail closed instead of skipping the check.
+    if (!expectedBundleId && isProductionLikeRuntime()) {
+      emitAppstoreFailure("missing_expected_bundle", { correlationId: outer.notificationUUID });
+      return NextResponse.json({ error: "App Store bundle id is not configured" }, { status: 503 });
+    }
     if (expectedBundleId && outer.data?.bundleId && outer.data.bundleId !== expectedBundleId) {
       emitAppstoreFailure("bundle_mismatch", { correlationId: outer.notificationUUID });
       return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });

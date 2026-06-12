@@ -10,16 +10,16 @@ const mocks = vi.hoisted(() => ({
     connectorDispatch: { findUnique: vi.fn(), update: vi.fn() },
   },
   encrypt: vi.fn((s: string) => `enc:${s}`),
-  hasProcessedWebhookEvent: vi.fn(),
-  markWebhookEventProcessed: vi.fn(),
+  reserveWebhookEvent: vi.fn(),
+  releaseWebhookEvent: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/runtime-config", () => ({ getRuntimeConfigValue: mocks.getRuntimeConfigValue }));
 vi.mock("@/lib/shared-encryption", () => ({ encrypt: mocks.encrypt }));
 vi.mock("@/lib/webhook-idempotency", () => ({
-  hasProcessedWebhookEvent: mocks.hasProcessedWebhookEvent,
-  markWebhookEventProcessed: mocks.markWebhookEventProcessed,
+  reserveWebhookEvent: mocks.reserveWebhookEvent,
+  releaseWebhookEvent: mocks.releaseWebhookEvent,
 }));
 // Mock the app connector registry so a stand-in async-confirm connector is
 // addressable for "usps": its parseWebhook reads our echoed ref + outcome out of
@@ -59,8 +59,8 @@ describe("inbound connector webhook receiver", () => {
       if (k === "CONNECTOR_USPS_WEBHOOK_SECRET") return Promise.resolve(SECRET);
       return Promise.resolve(null);
     });
-    mocks.hasProcessedWebhookEvent.mockResolvedValue(false);
-    mocks.markWebhookEventProcessed.mockResolvedValue("created");
+    mocks.reserveWebhookEvent.mockResolvedValue("reserved");
+    mocks.releaseWebhookEvent.mockResolvedValue(undefined);
     mocks.prisma.connectorConfig.findUnique.mockResolvedValue({
       enabled: true,
       stage: "GA",
@@ -89,7 +89,9 @@ describe("inbound connector webhook receiver", () => {
         confirmationEncrypted: "enc:USPS-COA-9988",
       }),
     });
-    expect(mocks.markWebhookEventProcessed).toHaveBeenCalled();
+    // Reserved up-front (race-free), and NOT released since processing succeeded.
+    expect(mocks.reserveWebhookEvent).toHaveBeenCalled();
+    expect(mocks.releaseWebhookEvent).not.toHaveBeenCalled();
   });
 
   it("degrades to the guided-update fallback (NEEDS_USER) on a FAILED outcome", async () => {
@@ -177,16 +179,27 @@ describe("inbound connector webhook receiver", () => {
     expect(res.status).toBe(200);
     expect(body.matched).toBe(false);
     expect(mocks.prisma.connectorDispatch.update).not.toHaveBeenCalled();
-    expect(mocks.markWebhookEventProcessed).toHaveBeenCalled();
+    // Reserved and kept (the unknown ref is fully handled — nothing to retry).
+    expect(mocks.reserveWebhookEvent).toHaveBeenCalled();
+    expect(mocks.releaseWebhookEvent).not.toHaveBeenCalled();
   });
 
-  it("short-circuits a duplicate delivery", async () => {
-    mocks.hasProcessedWebhookEvent.mockResolvedValue(true);
+  it("short-circuits a duplicate delivery before touching any dispatch", async () => {
+    mocks.reserveWebhookEvent.mockResolvedValue("duplicate");
     const { POST } = await import("./route");
     const res = await POST(signedRequest("usps", { ref: "idem-123", outcome: "CONFIRMED" }), params("usps"));
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.duplicate).toBe(true);
     expect(mocks.prisma.connectorDispatch.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("releases the reservation and 500s when processing throws (retryable)", async () => {
+    mocks.prisma.connectorDispatch.update.mockRejectedValue(new Error("db down"));
+    const { POST } = await import("./route");
+    const res = await POST(signedRequest("usps", { ref: "idem-123", outcome: "CONFIRMED", conf: "X" }), params("usps"));
+    expect(res.status).toBe(500);
+    // Released so the partner's retry can reprocess instead of seeing a duplicate.
+    expect(mocks.releaseWebhookEvent).toHaveBeenCalledWith(expect.any(String), "connector:usps");
   });
 });

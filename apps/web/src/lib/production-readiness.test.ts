@@ -74,6 +74,32 @@ describe("buildReadinessReport", () => {
     expect(report.warnCount).toBeGreaterThan(0);
   });
 
+  it("requires the full Google Play IAP identity set once any key is configured (audit P1-10)", () => {
+    const env = { ...validProdEnv, GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile" };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(false);
+    expect(report.issues.find((i) => i.key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL")?.severity).toBe("fail");
+    expect(report.issues.find((i) => i.key === "GOOGLE_PLAY_RTDN_AUDIENCE")?.severity).toBe("fail");
+  });
+
+  it("passes when the Google Play IAP identity set is complete", () => {
+    const env = {
+      ...validProdEnv,
+      GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
+      GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL: "play-api@example.iam.gserviceaccount.com",
+      GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----",
+      GOOGLE_PLAY_RTDN_AUDIENCE: "https://app.example.com/api/webhooks/playstore",
+    } as unknown as NodeJS.ProcessEnv;
+    const report = buildReadinessReport(env, true);
+    expect(report.issues.some((i) => i.key.startsWith("GOOGLE_PLAY_"))).toBe(false);
+  });
+
+  it("warns when APPLE_TEAM_ID is set but APPLE_BUNDLE_ID is missing in production (audit P1-10)", () => {
+    const env = { ...validProdEnv, APPLE_TEAM_ID: "TEAM123456" } as unknown as NodeJS.ProcessEnv;
+    const report = buildReadinessReport(env, true);
+    expect(report.issues.find((i) => i.key === "APPLE_BUNDLE_ID")?.severity).toBe("warn");
+  });
+
   it("flags REPLACE-restore unlock as a warning in production", () => {
     const env = { ...validProdEnv, ALLOW_PRODUCTION_REPLACE_RESTORE: "true" };
     const report = buildReadinessReport(env, true);
