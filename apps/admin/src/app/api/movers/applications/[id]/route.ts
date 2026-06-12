@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
-import { rawAssetUrl } from "@/lib/r2-asset-storage";
 import { sendEmail } from "@/lib/email";
 import { MOVER_DECISION_STATUSES, moverServiceLabels, type MoverDecisionStatus } from "@locateflow/shared";
 
 /**
- * GET  /api/movers/applications/:id — full application + documents (with
- *      short-lived raw R2 URLs for the reviewer to open each file).
+ * GET  /api/movers/applications/:id — full application + same-origin document
+ *      download links for the reviewer.
  * PATCH /api/movers/applications/:id — record a decision (APPROVED | REJECTED |
  *      NEEDS_INFO). Mutates public-facing state (an approval lists the mover) →
  *      ADMIN + password/MFA step-up + an audit row, mirroring the sponsored
@@ -37,18 +36,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     });
     if (!application) return NextResponse.json({ error: "Application not found" }, { status: 404 });
 
-    // Resolve a viewable URL per document (raw R2 public URL when configured).
-    const documents = await Promise.all(
-      application.documents.map(async (doc) => ({
-        id: doc.id,
-        kind: doc.kind,
-        fileName: doc.fileName,
-        contentType: doc.contentType,
-        sizeBytes: doc.sizeBytes,
-        createdAt: doc.createdAt,
-        url: await rawAssetUrl(doc.objectKey).catch(() => null),
-      })),
-    );
+    const documents = application.documents.map((doc) => ({
+      id: doc.id,
+      kind: doc.kind,
+      fileName: doc.fileName,
+      contentType: doc.contentType,
+      sizeBytes: doc.sizeBytes,
+      createdAt: doc.createdAt,
+      downloadUrl: `/api/movers/applications/${encodeURIComponent(id)}/documents/${encodeURIComponent(doc.id)}/download`,
+    }));
 
     return NextResponse.json({ application: { ...application, documents } });
   } catch (error: any) {

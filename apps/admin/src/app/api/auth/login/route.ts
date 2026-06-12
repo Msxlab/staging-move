@@ -9,6 +9,7 @@ import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { resolveTrustedClientIpFromHeaders } from "@locateflow/shared/trusted-client-ip";
 
 // Body validation. The password length cap is bcrypt's effective input
 // limit (72 bytes) — anything longer is silently truncated by bcrypt
@@ -179,21 +180,11 @@ async function writeLoginAuditLog(input: {
 }
 
 function resolveClientIP(request: NextRequest): string {
-  if (process.env.VERCEL_ENV) {
-    const vercelIp = request.headers.get("x-vercel-forwarded-for");
-    if (vercelIp) return vercelIp.split(",")[0].trim();
-  }
-
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp.trim();
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-
-  return "unknown";
+  return resolveTrustedClientIpFromHeaders(request.headers, {
+    mode: process.env.TRUSTED_PROXY_HEADERS,
+    vercelEnv: process.env.VERCEL_ENV,
+    fallback: "unknown",
+  });
 }
 
 function stableRateKeyHash(value: string | null | undefined): string {

@@ -5,6 +5,7 @@ import {
   normalizeEmailForRateLimit,
   rateLimitResponseInit,
   RATE_LIMIT_POLICIES,
+  resolvePolicyClientIP,
 } from "./rate-limit-policy";
 
 function request(headers: Record<string, string> = {}) {
@@ -15,6 +16,18 @@ function request(headers: Record<string, string> = {}) {
       ...headers,
     },
   });
+}
+
+function withTrustedProxyHeaders<T>(value: string | undefined, fn: () => T): T {
+  const previous = process.env.TRUSTED_PROXY_HEADERS;
+  if (value === undefined) delete process.env.TRUSTED_PROXY_HEADERS;
+  else process.env.TRUSTED_PROXY_HEADERS = value;
+  try {
+    return fn();
+  } finally {
+    if (previous === undefined) delete process.env.TRUSTED_PROXY_HEADERS;
+    else process.env.TRUSTED_PROXY_HEADERS = previous;
+  }
 }
 
 describe("rate-limit policy", () => {
@@ -84,6 +97,25 @@ describe("rate-limit policy", () => {
     expect(key).toContain("rl:mobile_oauth_exchange:client:mobile");
     expect(key).not.toContain("oauth-code-secret");
     expect(key).not.toContain("LocateFlowMobile");
+  });
+
+  it("keeps compatible proxy-header behavior by default", () => {
+    const ip = withTrustedProxyHeaders(undefined, () =>
+      resolvePolicyClientIP(request({
+        "cf-connecting-ip": "198.51.100.77",
+        "x-forwarded-for": "203.0.113.10",
+      })),
+    );
+
+    expect(ip).toBe("198.51.100.77");
+  });
+
+  it("can ignore forwarded headers when the deployment does not trust proxies", () => {
+    const ip = withTrustedProxyHeaders("none", () =>
+      resolvePolicyClientIP(request({ "x-forwarded-for": "198.51.100.99" })),
+    );
+
+    expect(ip).toBe("anonymous");
   });
 });
 

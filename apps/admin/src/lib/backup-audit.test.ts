@@ -10,6 +10,7 @@ vi.mock("@/lib/db", () => ({
 
 import { prisma } from "@/lib/db";
 import {
+  getBackupAuditRequestMeta,
   redactBackupAuditMetadata,
   writeBackupAudit,
 } from "./backup-audit";
@@ -17,6 +18,27 @@ import {
 describe("writeBackupAudit metadata redaction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("can ignore forwarded IP headers when trusted proxy headers are disabled", () => {
+    const previous = process.env.TRUSTED_PROXY_HEADERS;
+    process.env.TRUSTED_PROXY_HEADERS = "none";
+    try {
+      expect(
+        getBackupAuditRequestMeta(new Request("https://admin.locateflow.com/api/backup/export", {
+          headers: {
+            "x-forwarded-for": "198.51.100.200",
+            "user-agent": "vitest",
+          },
+        })),
+      ).toEqual({
+        ipAddress: "unknown",
+        userAgent: "vitest",
+      });
+    } finally {
+      if (previous === undefined) delete process.env.TRUSTED_PROXY_HEADERS;
+      else process.env.TRUSTED_PROXY_HEADERS = previous;
+    }
   });
 
   it("redacts dangerous metadata recursively while preserving safe restore metadata", async () => {

@@ -7,10 +7,12 @@ import { sendEmail, renderLocateFlowEmail } from "@/lib/email";
 import {
   validateMoverApplication,
   isMoverDocumentKind,
-  isAllowedMoverDocContentType,
+  detectMoverDocumentContentType,
+  normalizeMoverDocContentType,
   moverServiceLabels,
   MOVER_DOC_MAX_BYTES,
   MOVER_DOC_MAX_COUNT,
+  type MoverDocumentContentType,
 } from "@locateflow/shared";
 
 // POST /api/movers/apply — public mover self-service application intake.
@@ -31,10 +33,8 @@ export const runtime = "nodejs"; // R2 signing + Buffer
 
 const MAX_BODY_BYTES = MOVER_DOC_MAX_COUNT * MOVER_DOC_MAX_BYTES + 256 * 1024; // docs + form slack
 
-/** Pick a safe file extension from the name, falling back to the content type. */
-function extFor(fileName: string, contentType: string): string {
-  const fromName = /\.([a-zA-Z0-9]{1,6})$/.exec(fileName)?.[1];
-  if (fromName) return fromName;
+/** Pick a safe file extension from the byte-verified content type. */
+function extFor(contentType: string): string {
   const map: Record<string, string> = {
     "application/pdf": "pdf",
     "image/jpeg": "jpg",
@@ -42,6 +42,14 @@ function extFor(fileName: string, contentType: string): string {
     "image/webp": "webp",
   };
   return map[contentType.split(";")[0]?.trim().toLowerCase() ?? ""] ?? "bin";
+}
+
+interface PreparedMoverDocument {
+  fileName: string;
+  kind: string;
+  buffer: Buffer;
+  contentType: MoverDocumentContentType;
+  sizeBytes: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -99,13 +107,29 @@ export async function POST(request: NextRequest) {
     if (files.length > MOVER_DOC_MAX_COUNT) {
       return NextResponse.json({ error: `Attach at most ${MOVER_DOC_MAX_COUNT} documents.` }, { status: 400 });
     }
-    for (const file of files) {
+    const preparedDocuments: PreparedMoverDocument[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       if (file.size > MOVER_DOC_MAX_BYTES) {
         return NextResponse.json({ error: `${file.name} is larger than 10MB.` }, { status: 413 });
       }
-      if (!isAllowedMoverDocContentType(file.type)) {
+      const declaredContentType = normalizeMoverDocContentType(file.type);
+      if (!declaredContentType) {
         return NextResponse.json({ error: `${file.name} must be a PDF or image.` }, { status: 415 });
       }
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const detectedContentType = detectMoverDocumentContentType(buffer);
+      if (!detectedContentType || detectedContentType !== declaredContentType) {
+        return NextResponse.json({ error: `${file.name} does not match its declared file type.` }, { status: 415 });
+      }
+      const kindRaw = typeof kinds[i] === "string" ? kinds[i] : "OTHER";
+      preparedDocuments.push({
+        fileName: file.name,
+        kind: isMoverDocumentKind(kindRaw) ? kindRaw : "OTHER",
+        buffer,
+        contentType: detectedContentType,
+        sizeBytes: file.size,
+      });
     }
 
     // ── Create the application (PENDING) ──
@@ -117,22 +141,18 @@ export async function POST(request: NextRequest) {
     // ── Upload each document to R2, then record it. Best-effort per file: a
     //    failed upload is skipped (never recorded, never rolls back the app). ──
     let uploaded = 0;
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const kindRaw = typeof kinds[i] === "string" ? kinds[i] : "OTHER";
-      const kind = isMoverDocumentKind(kindRaw) ? kindRaw : "OTHER";
+    for (const document of preparedDocuments) {
       try {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const objectKey = buildObjectKey("document", `mover-${application.id}`, extFor(file.name, file.type));
-        await putObject({ objectKey, body: buffer, contentType: file.type });
+        const objectKey = buildObjectKey("document", `mover-${application.id}`, extFor(document.contentType));
+        await putObject({ objectKey, body: document.buffer, contentType: document.contentType });
         await prisma.moverDocument.create({
           data: {
             applicationId: application.id,
-            kind,
-            fileName: file.name.slice(0, 255) || "document",
+            kind: document.kind,
+            fileName: document.fileName.slice(0, 255) || "document",
             objectKey,
-            contentType: file.type.split(";")[0]?.trim().toLowerCase() || "application/octet-stream",
-            sizeBytes: file.size,
+            contentType: document.contentType,
+            sizeBytes: document.sizeBytes,
           },
         });
         uploaded += 1;
