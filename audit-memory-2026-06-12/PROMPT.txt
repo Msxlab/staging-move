@@ -1,0 +1,23 @@
+Objective
+Audit the current GitHub-main LocateFlow codebase end to end from source code and executable config, without relying on prior markdown reports or previous audit memory.
+
+Scope
+- Build a current system map across Web, Mobile, Admin, shared packages, database, connectors, jobs, deployment, and release pipelines.
+- Walk the map module by module and identify dead code, dead features, serious logic bugs, serious security issues, missing behavior, incorrect behavior, weak product decisions, and practical improvements.
+- Give special attention to service providers, recommendations, AI features, API data flow, and newly added infrastructure datasets for electricity, internet, public data, and mover/provider intelligence.
+- Maintain TODO as findings are discovered and update status as items are validated.
+- Keep evidence grounded in source files, tests, schemas, routes, and runtime configuration.
+
+Constraints
+- Do not use prior .md reports as evidence.
+- Do not use previous memory artifacts as evidence.
+- Prefer code/config/tests/scripts/schema inspection and focused command output.
+- Separate confirmed issues from hypotheses.
+- Avoid destructive git operations.
+
+Output
+- System map.
+- Module-by-module audit notes.
+- Prioritized TODO.
+- TestFlight/version investigation note.
+- Final report with evidence and recommended next actions.

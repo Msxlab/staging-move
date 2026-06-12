@@ -1,10 +1,10 @@
 # Provider Coverage Surface Inventory
 
-Generated: 2026-05-13T21:11:49.240Z
+Generated: 2026-06-12T16:43:35.069Z
 
 ## Summary
 
-- Raw provider records: 1123
+- Raw provider records: 1122
 - Sanitized provider records: 1122
 - Location-sensitive providers: 562
 - Location-sensitive providers with ZIP rules: 434
@@ -17,19 +17,19 @@ Generated: 2026-05-13T21:11:49.240Z
 - TRANSPORTATION_TRANSIT (Transit): total=66, federal=0, state=66, withZip=41, exactRows=0, prefixRows=157, stateRows=27
 - UTILITY_ELECTRIC (Electric): total=199, federal=0, state=199, withZip=177, exactRows=1077, prefixRows=738, stateRows=37
 - UTILITY_GAS (Gas): total=83, federal=0, state=83, withZip=57, exactRows=411, prefixRows=475, stateRows=32
-- UTILITY_INTERNET (Internet): total=20, federal=9, state=11, withZip=0, exactRows=0, prefixRows=0, stateRows=94
+- UTILITY_INTERNET (Internet): total=20, federal=9, state=11, withZip=0, exactRows=0, prefixRows=0, stateRows=88
 - UTILITY_WATER (Water): total=156, federal=0, state=156, withZip=130, exactRows=1040, prefixRows=304, stateRows=26
 
 ## Highest-Risk States
 
-- CA: highRiskLocalProviders=6, locationSensitiveProviders=39
-- TX: highRiskLocalProviders=4, locationSensitiveProviders=36
+- CA: highRiskLocalProviders=6, locationSensitiveProviders=38
+- TX: highRiskLocalProviders=4, locationSensitiveProviders=35
 - PA: highRiskLocalProviders=3, locationSensitiveProviders=33
 - LA: highRiskLocalProviders=3, locationSensitiveProviders=18
 - FL: highRiskLocalProviders=2, locationSensitiveProviders=38
-- NC: highRiskLocalProviders=2, locationSensitiveProviders=33
 - VA: highRiskLocalProviders=2, locationSensitiveProviders=33
-- NY: highRiskLocalProviders=2, locationSensitiveProviders=26
+- NC: highRiskLocalProviders=2, locationSensitiveProviders=32
+- NY: highRiskLocalProviders=2, locationSensitiveProviders=25
 - DE: highRiskLocalProviders=2, locationSensitiveProviders=24
 - IL: highRiskLocalProviders=2, locationSensitiveProviders=23
 - AL: highRiskLocalProviders=2, locationSensitiveProviders=22
