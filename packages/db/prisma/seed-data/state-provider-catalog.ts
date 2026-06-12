@@ -5840,8 +5840,8 @@ export const STATE_PROVIDER_COMPLETENESS_CATALOG: StateProviderCatalogEntry[] = 
     states: ["VA"],
     category: "TRANSPORTATION_TOLL",
     officialUrl: "https://www.ezpassva.com/",
-    coverageModel: "state",
-    note: "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on driving/toll use rather than residence utility territory.",
+    coverageModel: "live_address",
+    note: "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on address and driving/toll use rather than residence utility territory.",
     legacyNames: ["Virginia E-ZPass", "E-ZPass VA"],
     seedRecord: stateSeed({
       name: "E-ZPass Virginia",
