@@ -5,10 +5,13 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import { getProviderTrustSummary } from "@locateflow/shared";
 import {
-  getProviderCoverageConfidenceFromDb,
-  getProviderMatchLevelFromDb,
+  getProviderPresentationMatchLevelFromDb,
   safeJsonArray,
 } from "@/lib/provider-matching";
+import {
+  applyProviderServiceabilityMatchLevel,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
 
 // GET /api/providers/compare?ids=a,b,c[&addressId=...]
 //
@@ -50,6 +53,8 @@ type CompareProviderRow = {
   displayOrder: number;
   userCount: number;
   affiliateActive: boolean;
+  fccServiceable?: boolean;
+  utilityServiceable?: boolean;
   coverages: Array<{ state: string | null; zipPrefix: string | null; zipExact: string | null }>;
 };
 
@@ -125,6 +130,10 @@ export async function GET(req: NextRequest) {
   // Popularity rank is relative WITHIN the compared set so the label is honest
   // ("most popular of the 3 you picked"), not a global claim. Ties share a rank.
   const present = requestedIds.map((id) => byId.get(id)).filter((r): r is CompareProviderRow => Boolean(r));
+  await enrichProviderServiceability(present, {
+    latitude: address?.latitude ?? null,
+    longitude: address?.longitude ?? null,
+  });
   const byPopularity = [...present].sort((a, b) => b.popularityScore - a.popularityScore);
   const popularityRank = new Map<string, number>();
   let rank = 0;
@@ -157,8 +166,10 @@ export async function GET(req: NextRequest) {
         coverageModel,
         coverages: p.coverages || [],
       };
-      const coverageMatchLevel = getProviderMatchLevelFromDb(matchInput, matchOptions);
-      const coverageConfidence = getProviderCoverageConfidenceFromDb(matchInput, matchOptions);
+      const coverageMatchLevel = applyProviderServiceabilityMatchLevel(
+        p,
+        getProviderPresentationMatchLevelFromDb(matchInput, matchOptions),
+      );
       const requiresAddressCheck = coverageModel === "live_address";
       const requiresPolygonCheck = coverageModel === "polygon";
 
@@ -202,6 +213,8 @@ export async function GET(req: NextRequest) {
         popularityScore: p.popularityScore,
         popularityRank: popularityRank.get(p.id) ?? null,
         userCount: p.userCount || 0,
+        fccServiceable: p.fccServiceable === true,
+        utilityServiceable: p.utilityServiceable === true,
         // "Official link" = the provider exposes an outbound affiliate/official
         // link we surface; otherwise it's a directory listing only.
         affiliateActive: Boolean(p.affiliateActive),

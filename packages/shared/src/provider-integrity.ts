@@ -37,6 +37,7 @@ export interface NormalizedProviderRecord extends ProviderIntegrityRecord {
 }
 
 export type ProviderCoverageMatchLevel =
+  | "available_at_address"
   | "exact"
   | "prefix"
   | "polygon"

@@ -3,7 +3,12 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import { compareCoverageConfidence, getProviderTrustSummary } from "@locateflow/shared";
-import { getProviderCoverageConfidenceFromDb, getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import { getProviderCoverageConfidenceFromDb, getProviderPresentationMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import {
+  applyProviderServiceabilityConfidence,
+  applyProviderServiceabilityMatchLevel,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const fetchProvidersForState = unstable_cache(
@@ -141,6 +146,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const serviceability = await enrichProviderServiceability(filtered, {
+      latitude: normalizedLatitude,
+      longitude: normalizedLongitude,
+    });
+
     // resolveProviderMatchLevelFromDb walks every coverage row, and both the
     // sort comparator and the response map need it — so compute match level +
     // confidence once per provider instead of O(n log n) times inside sort.
@@ -149,8 +159,14 @@ export async function GET(request: NextRequest) {
       filtered.map((p) => [
         p,
         {
-          matchLevel: getProviderMatchLevelFromDb(p, matchOptions),
-          confidence: getProviderCoverageConfidenceFromDb(p, matchOptions),
+          matchLevel: applyProviderServiceabilityMatchLevel(
+            p,
+            getProviderPresentationMatchLevelFromDb(p, matchOptions),
+          ),
+          confidence: applyProviderServiceabilityConfidence(
+            p,
+            getProviderCoverageConfidenceFromDb(p, matchOptions),
+          ),
         },
       ] as const),
     );
@@ -174,6 +190,7 @@ export async function GET(request: NextRequest) {
       const tags = safeJsonArray(p.tags);
       const coverageModel = p.coverageModel || "state";
       const coverageMatchLevel = coverageByProvider.get(p)!.matchLevel;
+      const serviceabilityFlags = p as typeof p & { fccServiceable?: boolean; utilityServiceable?: boolean };
       const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;
       const coverageSourceUrl = ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null;
       const requiresAddressCheck = coverageModel === "live_address";
@@ -208,6 +225,8 @@ export async function GET(request: NextRequest) {
         popularityScore: p.popularityScore,
         displayOrder: p.displayOrder,
         affiliateActive: Boolean((p as { affiliateActive?: boolean }).affiliateActive),
+        fccServiceable: serviceabilityFlags.fccServiceable === true,
+        utilityServiceable: serviceabilityFlags.utilityServiceable === true,
         coverageModel,
         coverageMatchLevel,
         coverageNote,
@@ -238,6 +257,8 @@ export async function GET(request: NextRequest) {
           liveAddress: result.filter((provider) => provider.coverageModel === "live_address").length,
           zipPrefix: result.filter((provider) => provider.coverageModel === "zip_prefix").length,
         },
+        fcc: serviceability.fcc,
+        electric: serviceability.electric,
       },
     });
   } catch (error) {

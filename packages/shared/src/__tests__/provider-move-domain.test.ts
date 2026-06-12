@@ -48,6 +48,15 @@ describe("provider move domain helpers", () => {
     ).toBe("ADDRESS_CHECK_REQUIRED");
   });
 
+  it("keeps explicit unknown coverage unknown even for polygon/live-address models", () => {
+    expect(
+      mapCoverageMatchToConfidence("unknown", { coverageModel: "polygon" }),
+    ).toBe("UNKNOWN");
+    expect(
+      mapCoverageMatchToConfidence("unknown", { requiresAddressCheck: true }),
+    ).toBe("UNKNOWN");
+  });
+
   it("orders coverage confidence from exact ZIP down to unknown", () => {
     const values = [
       "UNKNOWN",

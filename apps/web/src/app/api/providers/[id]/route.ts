@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import { getProviderTrustSummary } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
-import { getProviderMatchLevelFromDb } from "@/lib/provider-matching";
+import { getProviderPresentationMatchLevelFromDb, resolveEffectiveState } from "@/lib/provider-matching";
+import {
+  applyProviderServiceabilityMatchLevel,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 type ProviderRow = {
   id: string;
@@ -23,6 +28,8 @@ type ProviderRow = {
   displayOrder: number;
   userCount?: number;
   affiliateActive?: boolean;
+  fccServiceable?: boolean;
+  utilityServiceable?: boolean;
   coverages?: Array<{
     state: string | null;
     zipPrefix: string | null;
@@ -30,20 +37,45 @@ type ProviderRow = {
   }>;
 };
 
+type CoverageContext = {
+  state: string | null;
+  zip: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rl = await rateLimit(getRateLimitKey(request, "providers:detail"), { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString() } },
+      );
+    }
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const includeAlts = searchParams.get("alternatives") !== "0";
     const stateParam = searchParams.get("state")?.toUpperCase() || null;
+    const zipParam = searchParams.get("zip")?.trim() || null;
+    const latitude = parseFiniteNumber(searchParams.get("lat"));
+    const longitude = parseFiniteNumber(searchParams.get("lng"));
+    const effectiveState = resolveEffectiveState(stateParam, zipParam) || stateParam;
+    const coverageContext: CoverageContext = {
+      state: effectiveState,
+      zip: zipParam,
+      latitude,
+      longitude,
+    };
 
     const provider = (await prisma.serviceProvider.findFirst({
       where: { id, isActive: true },
       include: {
-        coverages: stateParam ? { where: { state: stateParam } } : true,
+        coverages: effectiveState ? { where: { state: effectiveState } } : true,
       },
     })) as ProviderRow | null;
 
@@ -59,25 +91,30 @@ export async function GET(
         category: provider.category,
         id: { not: provider.id },
       };
-      if (stateParam) {
+      if (effectiveState) {
         altWhere.OR = [
           { scope: "FEDERAL" },
-          { coverages: { some: { state: stateParam } } },
+          { coverages: { some: { state: effectiveState } } },
         ];
       }
       alternatives = (await prisma.serviceProvider.findMany({
         where: altWhere,
         include: {
-          coverages: stateParam ? { where: { state: stateParam } } : true,
+          coverages: effectiveState ? { where: { state: effectiveState } } : true,
         },
         orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
         take: 4,
       })) as ProviderRow[];
     }
 
+    await enrichProviderServiceability([provider, ...alternatives], {
+      latitude,
+      longitude,
+    });
+
     return NextResponse.json({
-      provider: shape(provider, stateParam),
-      alternatives: alternatives.map((alt) => shape(alt, stateParam)),
+      provider: shape(provider, coverageContext),
+      alternatives: alternatives.map((alt) => shape(alt, coverageContext)),
     });
   } catch (error) {
     console.error("Failed to fetch provider:", error);
@@ -85,7 +122,7 @@ export async function GET(
   }
 }
 
-function shape(p: ProviderRow, state: string | null) {
+function shape(p: ProviderRow, coverageContext: CoverageContext) {
   const states = safeJsonParse(p.states, []) as string[];
   const zipCodes = safeJsonParse(p.zipCodes, []) as string[];
   const tags = safeJsonParse(p.tags, []) as string[];
@@ -94,15 +131,18 @@ function shape(p: ProviderRow, state: string | null) {
     (p.coverageModel as ProviderCoverageModel | null | undefined) ||
     metadata?.coverageModel ||
     (zipCodes.length > 0 ? "zip_prefix" : "state");
-  const coverageMatchLevel = getProviderMatchLevelFromDb(
-    {
-      id: p.id,
-      slug: p.slug,
-      scope: p.scope,
-      coverageModel,
-      coverages: p.coverages || [],
-    },
-    { state },
+  const coverageMatchLevel = applyProviderServiceabilityMatchLevel(
+    p,
+    getProviderPresentationMatchLevelFromDb(
+      {
+        id: p.id,
+        slug: p.slug,
+        scope: p.scope,
+        coverageModel,
+        coverages: p.coverages || [],
+      },
+      coverageContext,
+    ),
   );
   const requiresAddressCheck = coverageModel === "live_address";
   const requiresPolygonCheck = coverageModel === "polygon";
@@ -139,6 +179,8 @@ function shape(p: ProviderRow, state: string | null) {
     popularityScore: p.popularityScore,
     displayOrder: p.displayOrder,
     userCount: p.userCount || 0,
+    fccServiceable: p.fccServiceable === true,
+    utilityServiceable: p.utilityServiceable === true,
     coverageModel,
     coverageMatchLevel,
     coverageNote,
@@ -156,4 +198,10 @@ function safeJsonParse(value: string, fallback: unknown) {
   } catch {
     return fallback;
   }
+}
+
+function parseFiniteNumber(value: string | null): number | null {
+  if (value === null || value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

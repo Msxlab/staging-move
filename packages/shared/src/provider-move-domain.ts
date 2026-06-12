@@ -552,6 +552,7 @@ export function mapCoverageMatchToConfidence(
   // National Broadband Map BDC match) is the strongest signal and overrides
   // every weaker tier, including an explicit address-check requirement.
   if (matchLevel === "available_at_address") return "AVAILABLE_AT_ADDRESS";
+  if (matchLevel === "unknown") return "UNKNOWN";
   if (options?.requiresAddressCheck) return "ADDRESS_CHECK_REQUIRED";
   if (matchLevel === "exact") return "EXACT_ZIP";
   if (matchLevel === "prefix") return "ZIP_PREFIX";

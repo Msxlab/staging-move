@@ -3,7 +3,11 @@ import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locate
 import { getProviderTrustSummary } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { getProviderMatchLevelFromDb } from "@/lib/provider-matching";
+import { getProviderPresentationMatchLevelFromDb } from "@/lib/provider-matching";
+import {
+  applyProviderServiceabilityMatchLevel,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
 import { ProviderDetailClient, type ProviderDetail } from "./detail-client";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +31,8 @@ type ProviderRow = {
   displayOrder: number;
   userCount?: number;
   affiliateActive?: boolean;
+  fccServiceable?: boolean;
+  utilityServiceable?: boolean;
   coverages?: Array<{
     state: string | null;
     zipPrefix: string | null;
@@ -62,20 +68,23 @@ function shape(p: ProviderRow, address: CoverageAddress): ProviderDetail {
   // Pass the full address (zip + coordinates when known) so ZIP- and
   // polygon-level coverage can resolve instead of always falling back to a
   // coarse state-level match.
-  const coverageMatchLevel = getProviderMatchLevelFromDb(
-    {
-      id: p.id,
-      slug: p.slug,
-      scope: p.scope,
-      coverageModel,
-      coverages: p.coverages || [],
-    },
-    {
-      state: address?.state ?? null,
-      zip: address?.zip ?? null,
-      latitude: address?.latitude ?? null,
-      longitude: address?.longitude ?? null,
-    },
+  const coverageMatchLevel = applyProviderServiceabilityMatchLevel(
+    p,
+    getProviderPresentationMatchLevelFromDb(
+      {
+        id: p.id,
+        slug: p.slug,
+        scope: p.scope,
+        coverageModel,
+        coverages: p.coverages || [],
+      },
+      {
+        state: address?.state ?? null,
+        zip: address?.zip ?? null,
+        latitude: address?.latitude ?? null,
+        longitude: address?.longitude ?? null,
+      },
+    ),
   );
   const requiresAddressCheck = coverageModel === "live_address";
   const requiresPolygonCheck = coverageModel === "polygon";
@@ -166,6 +175,11 @@ export default async function ProviderDetailPage({
         a?.state ? prisma.stateRule.findUnique({ where: { stateCode: a.state } }) : null
       ),
   ]);
+
+  await enrichProviderServiceability([provider, ...alternativesRaw], {
+    latitude: primaryAddress?.latitude ?? null,
+    longitude: primaryAddress?.longitude ?? null,
+  });
 
   return (
     <ProviderDetailClient
