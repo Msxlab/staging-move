@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
-// getUserPlan is mocked (no DB); planFeatures stays REAL so the dossierPdf gate
+// getPlanForLimitScope is mocked (no DB); planFeatures stays REAL so the dossierPdf gate
 // exercises the actual @locateflow/shared matrix (Pro-only). The dossier data
 // route and the pdfkit generator are mocked at their boundaries.
 vi.mock("@/lib/auth", () => ({
@@ -18,7 +18,19 @@ vi.mock("@/lib/api-gates", () => ({
 }));
 
 vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: vi.fn(),
+  getPlanForLimitScope: vi.fn(),
+}));
+
+vi.mock("@/lib/workspace-data-scope", () => ({
+  resolveWorkspaceDataScope: vi.fn(async () => ({
+    actorUserId: "user-1",
+    ownerUserId: "user-1",
+    workspaceId: null,
+    workspaceMode: false,
+    memberRole: null,
+    memberStatus: null,
+  })),
+  planLimitScopeForDataScope: vi.fn(() => ({})),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -36,14 +48,14 @@ vi.mock("../route", () => ({
 }));
 
 import { requireDbUserId } from "@/lib/auth";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { prisma } from "@/lib/db";
 import { generateDossierReportPdf } from "@/lib/pdf/dossier-report";
 import { GET as getDossier } from "../route";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
-const mockGetUserPlan = getUserPlan as unknown as Mock;
+const mockGetPlanForLimitScope = getPlanForLimitScope as unknown as Mock;
 const mockUserFindUnique = prisma.user.findUnique as unknown as Mock;
 const mockGenerate = generateDossierReportPdf as unknown as Mock;
 const mockGetDossier = getDossier as unknown as Mock;
@@ -70,7 +82,7 @@ function req() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireDbUserId.mockResolvedValue("user-1");
-  mockGetUserPlan.mockResolvedValue({ plan: "PRO" });
+  mockGetPlanForLimitScope.mockResolvedValue({ plan: "PRO" });
   mockGetDossier.mockResolvedValue(NextResponse.json(ENTITLED_DOSSIER));
   mockUserFindUnique.mockResolvedValue({ firstName: "Ada", lastName: "Lovelace" });
   mockGenerate.mockResolvedValue(Buffer.from("%PDF-1.4 fake"));
@@ -81,14 +93,14 @@ describe("GET /api/addresses/:id/dossier/pdf — dossierPdf gate (Pro only)", ()
     mockRequireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
     const res = await GET(req(), ctx());
     expect(res.status).toBe(401);
-    expect(mockGetUserPlan).not.toHaveBeenCalled();
+    expect(mockGetPlanForLimitScope).not.toHaveBeenCalled();
     expect(mockGetDossier).not.toHaveBeenCalled();
   });
 
   it.each(["FREE_TRIAL", "INDIVIDUAL", "FAMILY"])(
     "answers 200 entitled:false for %s without aggregating or rendering",
     async (plan) => {
-      mockGetUserPlan.mockResolvedValue({ plan });
+      mockGetPlanForLimitScope.mockResolvedValue({ plan });
       const res = await GET(req(), ctx());
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({

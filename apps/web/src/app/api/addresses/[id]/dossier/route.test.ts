@@ -49,15 +49,20 @@ vi.mock("@/lib/nces-schools", () => ({
   lookupNearbySchools: vi.fn(),
 }));
 
-// Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
+// Plan entitlement: getPlanForLimitScope is mocked (no DB); planFeatures stays REAL so
 // the gate exercises the actual @locateflow/shared feature matrix.
 vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: vi.fn(),
+  getPlanForLimitScope: vi.fn(),
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  getRateLimitKey: vi.fn(() => "rate-key"),
+  rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
 }));
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { lookupFloodZone } from "@/lib/fema-flood";
 import { lookupSchoolDistrict } from "@/lib/nces-district";
 import { lookupMoveDayForecast } from "@/lib/nws-weather";
@@ -71,7 +76,7 @@ import { lookupNearbySchools } from "@/lib/nces-schools";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
-const mockGetUserPlan = getUserPlan as unknown as Mock;
+const mockGetPlanForLimitScope = getPlanForLimitScope as unknown as Mock;
 const mockAddressFindUnique = prisma.address.findUnique as unknown as Mock;
 const mockPlanFindFirst = prisma.movingPlan.findFirst as unknown as Mock;
 const mockLookupFloodZone = lookupFloodZone as unknown as Mock;
@@ -209,7 +214,7 @@ describe("address dossier route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user-1");
-    mockGetUserPlan.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
     mockAddressFindUnique.mockResolvedValue({ ...BASE_ADDRESS });
     mockPlanFindFirst.mockResolvedValue(null);
     mockLookupFloodZone.mockResolvedValue(FLOOD_OK);
@@ -267,7 +272,7 @@ describe("address dossier route", () => {
   });
 
   it("free plan gets the 200 upgrade teaser — address block omitted, no lookups spent", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
 
     const response = await GET(dossierRequest(), addressParams() as any);
     const body = await response.json();
@@ -292,7 +297,7 @@ describe("address dossier route", () => {
   });
 
   it("404 still wins over the teaser for a free user's foreign address id", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
     mockAddressFindUnique.mockResolvedValueOnce({ ...BASE_ADDRESS, userId: "user-2" });
 
     const response = await GET(dossierRequest(), addressParams() as any);
@@ -302,7 +307,7 @@ describe("address dossier route", () => {
 
   it("every paid tier passes the gate (FAMILY and PRO included)", async () => {
     for (const plan of ["FAMILY", "PRO"]) {
-      mockGetUserPlan.mockResolvedValueOnce({ plan, hasPremium: true, isActive: true });
+      mockGetPlanForLimitScope.mockResolvedValueOnce({ plan, hasPremium: true, isActive: true });
 
       const response = await GET(dossierRequest(), addressParams() as any);
       const body = await response.json();
@@ -484,7 +489,7 @@ describe("address dossier route", () => {
   });
 
   it("Pro populates the Neighborhood Intelligence section from Census ACS (stripped to contract)", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
 
     const response = await GET(dossierRequest(), addressParams() as any);
     const body = await response.json();
@@ -516,7 +521,7 @@ describe("address dossier route", () => {
   });
 
   it("Pro neighborhood: a Census failure nulls only its fields; walkability + schools still render", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
     mockLookupNeighborhoodAcs.mockRejectedValueOnce(new Error("boom"));
 
     const response = await GET(dossierRequest(), addressParams() as any);
@@ -548,7 +553,7 @@ describe("address dossier route", () => {
   });
 
   it("Pro neighborhood: an unset CENSUS_API_KEY nulls the medians but keeps walkability + schools", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
     mockLookupNeighborhoodAcs.mockResolvedValueOnce({
       status: "not_configured",
       geography: null,
@@ -579,7 +584,7 @@ describe("address dossier route", () => {
   });
 
   it("Pro neighborhood: when every bundle source degrades, the section is ok but empty (card hides it)", async () => {
-    mockGetUserPlan.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "PRO", hasPremium: true, isActive: true });
     mockLookupNeighborhoodAcs.mockRejectedValueOnce(new Error("boom"));
     mockLookupWalkability.mockResolvedValueOnce({ status: "error", score: null, band: "unknown", reason: "boom", source: WALKABILITY_OK.source });
     mockLookupNearbySchools.mockResolvedValueOnce({ status: "error", schools: [], reason: "boom", source: SCHOOLS_OK.source });

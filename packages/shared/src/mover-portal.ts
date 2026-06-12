@@ -102,6 +102,45 @@ export function isAllowedMoverDocContentType(contentType: string): boolean {
   return MOVER_DOC_ALLOWED_CONTENT_TYPES.includes(contentType.split(";")[0]?.trim().toLowerCase() ?? "");
 }
 
+export type MoverDocumentContentType = (typeof MOVER_DOC_ALLOWED_CONTENT_TYPES)[number];
+
+export function normalizeMoverDocContentType(contentType: string): MoverDocumentContentType | null {
+  const mediaType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  return MOVER_DOC_ALLOWED_CONTENT_TYPES.includes(mediaType)
+    ? (mediaType as MoverDocumentContentType)
+    : null;
+}
+
+function hasPrefix(bytes: Uint8Array, prefix: readonly number[]): boolean {
+  if (bytes.length < prefix.length) return false;
+  return prefix.every((value, index) => bytes[index] === value);
+}
+
+/**
+ * Detect the actual uploaded proof-document type from magic bytes. This closes
+ * the gap where multipart `file.type` could claim PDF/image while the body was
+ * arbitrary HTML/script/ZIP/etc.
+ */
+export function detectMoverDocumentContentType(bytes: Uint8Array): MoverDocumentContentType | null {
+  if (hasPrefix(bytes, [0x25, 0x50, 0x44, 0x46, 0x2d])) return "application/pdf"; // %PDF-
+  if (hasPrefix(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
+  if (hasPrefix(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+  return null;
+}
+
 // ── Pure input validator ──────────────────────────────────────────────────────
 
 export interface MoverApplicationInput {

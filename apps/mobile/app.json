@@ -2,7 +2,7 @@
   "expo": {
     "name": "LocateFlow",
     "slug": "locateflow",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "locateflow",
@@ -17,7 +17,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.locateflow.mobile",
-      "buildNumber": "1",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -74,7 +73,6 @@
         "backgroundColor": "#0A0F18"
       },
       "package": "com.locateflow.mobile",
-      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",

@@ -24,6 +24,7 @@ import {
   ambientForSection,
   deriveHomeDossierView,
   formatForecastDate,
+  walkBandLabelKey,
   type HomeDossierResponse,
 } from "@/lib/home-dossier";
 
@@ -414,9 +415,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {neighborhood?.locked === false && (
         <View style={styles.row}>
-          {/* The mobile payload carries no walk band yet — null keeps the
-              footstep cadence at its honest calm default. */}
-          <DossierAmbient {...ambientForSection({ kind: "neighborhood", walkBand: null })} />
+          <DossierAmbient
+            {...ambientForSection({ kind: "neighborhood", walkBand: neighborhood.walkBand })}
+          />
           <View style={styles.rowIcon}>
             <Home size={14} color={theme.colors.amber.text} />
           </View>
@@ -453,6 +454,21 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
                 </Text>
               </View>
             )}
+            {neighborhood.walkScore !== null && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{t("dossier.neighborhoodWalkability")}</Text>
+                <Text style={styles.statValue}>
+                  {neighborhood.walkBand
+                    ? t("dossier.neighborhoodWalkValue", {
+                        score: neighborhood.walkScore,
+                        label: t(walkBandLabelKey(neighborhood.walkBand)),
+                      })
+                    : t("dossier.neighborhoodWalkScoreOnly", {
+                        score: neighborhood.walkScore,
+                      })}
+                </Text>
+              </View>
+            )}
 
             {neighborhood.schools.length > 0 && (
               <View style={styles.schoolsBlock}>
@@ -462,7 +478,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
                     <Text style={styles.schoolName} numberOfLines={1}>
                       {school.name}
                     </Text>
-                    {school.rating ? <Text style={styles.schoolRating}>{school.rating}</Text> : null}
+                    {school.level || school.rating ? (
+                      <Text style={styles.schoolRating}>{school.level ?? school.rating}</Text>
+                    ) : null}
                   </View>
                 ))}
               </View>

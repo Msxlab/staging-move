@@ -137,6 +137,37 @@ describe("admin login rate limiting", () => {
     }));
   });
 
+  it("can ignore spoofed forwarded IP rotation when trusted proxy headers are disabled", async () => {
+    const previous = process.env.TRUSTED_PROXY_HEADERS;
+    process.env.TRUSTED_PROXY_HEADERS = "none";
+    try {
+      for (let i = 0; i < 5; i++) {
+        const response = await POST(
+          request("strict-proxy-admin@example.com", {}, { "x-forwarded-for": `198.51.100.${i + 1}` }),
+        );
+        expect(response.status).toBe(401);
+      }
+
+      const response = await POST(
+        request("strict-proxy-admin@example.com", {}, { "x-forwarded-for": "198.51.100.250" }),
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(429);
+      expect(body.error).toBe("Too many login attempts. Please try again later.");
+      expect(mocks.rateLimitLogCreate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          ipAddress: "unknown",
+          endpoint: "POST /api/auth/login",
+          blocked: true,
+        }),
+      }));
+    } finally {
+      if (previous === undefined) delete process.env.TRUSTED_PROXY_HEADERS;
+      else process.env.TRUSTED_PROXY_HEADERS = previous;
+    }
+  });
+
   it("does not allow User-Agent rotation to bypass the same email and IP cooldown", async () => {
     for (let i = 0; i < 5; i++) {
       const response = await POST(

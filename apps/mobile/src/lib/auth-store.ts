@@ -11,10 +11,9 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import { Platform } from "react-native";
 import { create } from "zustand";
 import { tokenCache } from "@/lib/auth";
+import { CLIENT_IDENTITY_HEADERS } from "@/lib/client-identity";
 import { runSessionCleanupHook } from "@/lib/session-cleanup-hook";
 
 const TOKEN_KEY = "locateflow.session";
@@ -28,25 +27,12 @@ const TOKEN_KEY = "locateflow.session";
  * the `fp` claim minted at login, and getUserSession returns 401 + marks the
  * DB session inactive.
  *
- * The shared ApiClient (apps/mobile/src/lib/api.ts) sends these on every call,
- * but the cold-start /api/auth/me hydration in `refreshUser` uses a bare
- * `fetch`, so it MUST set them too — otherwise the first request after every
- * app restart 401s and logs the user out. Keep these values byte-for-byte in
- * sync with api.ts's CLIENT_* constants.
+ * The shared ApiClient sends these on every call, but the cold-start
+ * /api/auth/me hydration in `refreshUser` uses a bare `fetch`, so it MUST set
+ * them too — otherwise the first request after every app restart 401s and logs
+ * the user out. Keep all authenticated native request paths on
+ * CLIENT_IDENTITY_HEADERS.
  */
-const CLIENT_VERSION =
-  Constants.expoConfig?.version ??
-  (Constants as { nativeAppVersion?: string }).nativeAppVersion ??
-  "0.0.0";
-
-const CLIENT_IDENTITY_HEADERS: Record<string, string> = {
-  "x-client-type": "mobile",
-  "x-client-platform": Platform.OS,
-  "x-client-version": CLIENT_VERSION,
-  "User-Agent": `LocateFlow/${CLIENT_VERSION} (${
-    Platform.OS === "ios" ? "iOS" : Platform.OS === "android" ? "Android" : "Mobile"
-  }; Expo)`,
-};
 // planTier lives in AsyncStorage (NOT SecureStore) alongside the other
 // non-secret UI prefs (theme, app-lock). Persisting it lets ThemeProvider
 // derive the correct Family/Pro palette on the FIRST render after a cold

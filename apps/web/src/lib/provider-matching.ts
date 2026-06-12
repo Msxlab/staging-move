@@ -27,6 +27,7 @@ import {
 } from "@locateflow/shared";
 
 export type ZipMatchLevel = "exact" | "prefix" | "polygon" | "state" | "live_address";
+export type ProviderPresentationMatchLevel = ZipMatchLevel | "available_at_address" | "unknown";
 
 export interface ProviderMatchResult<T> {
   effectiveState?: string;
@@ -181,6 +182,22 @@ export function getProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
 
   const matchLevel = resolveProviderMatchLevelFromDb(provider, options);
   return matchLevel === "none" ? "state" : matchLevel;
+}
+
+export function getProviderPresentationMatchLevelFromDb<T extends ProviderWithCoverages>(
+  provider: T,
+  options: ProviderMatchOptions
+): ProviderPresentationMatchLevel {
+  const effectiveState = resolveEffectiveState(options.state, options.zip);
+  const normalizedZip = normalizeZip(options.zip);
+  const hasCoordinates = isFiniteCoordinate(options.latitude) && isFiniteCoordinate(options.longitude);
+
+  if (!effectiveState && !normalizedZip && !hasCoordinates) {
+    return "state";
+  }
+
+  const matchLevel = resolveProviderMatchLevelFromDb(provider, options);
+  return matchLevel === "none" ? "unknown" : matchLevel;
 }
 
 export function getProviderCoverageConfidenceFromDb<T extends ProviderWithCoverages>(

@@ -70,6 +70,7 @@ import { Card } from "@/components/ui/Card";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
+import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
 import { PlanHero } from "@/components/ui/PlanHero";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
@@ -539,6 +540,7 @@ export default function DashboardScreen() {
               id: activePlan.id,
               fromCity: activePlan.fromAddress?.city || "—",
               toCity: activePlan.toAddress?.city || "—",
+              toAddressId: activePlan.toAddress?.id ?? null,
               moveDate: activePlan.moveDate,
               status: activePlan.status,
             }
@@ -1500,6 +1502,8 @@ export default function DashboardScreen() {
             await fetchDashboard();
           }}
         />
+
+        <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
 
         {/* CONNECTED UTILITIES + BUDGET TRACKER — the Edition VII paired duo of
             compact card modules, rendered entirely from the services list this

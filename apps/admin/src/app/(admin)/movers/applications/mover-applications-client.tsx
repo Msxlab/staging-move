@@ -40,7 +40,7 @@ interface AppDoc {
   fileName: string;
   contentType: string;
   sizeBytes: number;
-  url: string | null;
+  downloadUrl: string | null;
 }
 
 interface AppDetail extends AppRow {
@@ -329,12 +329,12 @@ export default function MoverApplicationsClient() {
                           <span className="truncate">{doc.fileName}</span>
                           <span className="shrink-0 text-xs text-muted-foreground">({doc.kind})</span>
                         </span>
-                        {doc.url ? (
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-medium text-primary hover:underline">
-                            Open
+                        {doc.downloadUrl ? (
+                          <a href={doc.downloadUrl} download className="shrink-0 text-xs font-medium text-primary hover:underline">
+                            Download
                           </a>
                         ) : (
-                          <span className="shrink-0 text-xs text-muted-foreground">no preview</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">unavailable</span>
                         )}
                       </li>
                     ))}

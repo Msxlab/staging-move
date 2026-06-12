@@ -9,7 +9,8 @@
     "*": {
       "provider-coverage": ["src/provider-coverage.ts"],
       "provider-integrity": ["src/provider-integrity.ts"],
-      "recommendation-engine": ["src/recommendation-engine.ts"]
+      "recommendation-engine": ["src/recommendation-engine.ts"],
+      "trusted-client-ip": ["src/trusted-client-ip.ts"]
     }
   },
   "exports": {
@@ -19,7 +20,8 @@
     },
     "./provider-coverage": "./src/provider-coverage.ts",
     "./provider-integrity": "./src/provider-integrity.ts",
-    "./recommendation-engine": "./src/recommendation-engine.ts"
+    "./recommendation-engine": "./src/recommendation-engine.ts",
+    "./trusted-client-ip": "./src/trusted-client-ip.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit"

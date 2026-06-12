@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import type { AdminSession } from "@/lib/auth";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
+import { resolveTrustedClientIpFromHeaders } from "@locateflow/shared/trusted-client-ip";
 
 type BackupAuditSession = Partial<AdminSession> | null | undefined;
 
@@ -12,10 +13,6 @@ export interface BackupAuditInput {
   request?: NextRequest | Request | { headers: Headers } | null;
   metadata?: Record<string, unknown>;
   error?: unknown;
-}
-
-function firstForwardedIp(value: string | null) {
-  return value?.split(",")[0]?.trim() || null;
 }
 
 const DANGEROUS_METADATA_KEYS = new Set([
@@ -105,12 +102,11 @@ export function getBackupAuditRequestMeta(
   const headers = request?.headers;
   if (!headers) return { ipAddress: null, userAgent: null };
   return {
-    ipAddress:
-      firstForwardedIp(headers.get("cf-connecting-ip")) ||
-      firstForwardedIp(headers.get("x-vercel-forwarded-for")) ||
-      firstForwardedIp(headers.get("x-forwarded-for")) ||
-      firstForwardedIp(headers.get("x-real-ip")) ||
-      "unknown",
+    ipAddress: resolveTrustedClientIpFromHeaders(headers, {
+      mode: process.env.TRUSTED_PROXY_HEADERS,
+      vercelEnv: process.env.VERCEL_ENV,
+      fallback: "unknown",
+    }),
     userAgent: headers.get("user-agent") || "unknown",
   };
 }

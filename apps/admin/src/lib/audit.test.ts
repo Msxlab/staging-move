@@ -9,7 +9,7 @@ vi.mock("./db", () => ({
 }));
 
 import { prisma } from "./db";
-import { writeAdminAudit } from "./audit";
+import { getAuditRequestMeta, writeAdminAudit } from "./audit";
 import type { AdminSession } from "./auth";
 
 const session: AdminSession = {
@@ -21,6 +21,27 @@ const session: AdminSession = {
 describe("writeAdminAudit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("can ignore forwarded IP headers when trusted proxy headers are disabled", () => {
+    const previous = process.env.TRUSTED_PROXY_HEADERS;
+    process.env.TRUSTED_PROXY_HEADERS = "none";
+    try {
+      expect(
+        getAuditRequestMeta({
+          headers: new Headers({
+            "x-forwarded-for": "198.51.100.200",
+            "user-agent": "AdminBrowser/1.0",
+          }),
+        }),
+      ).toEqual({
+        ipAddress: "unknown",
+        userAgent: "AdminBrowser/1.0",
+      });
+    } finally {
+      if (previous === undefined) delete process.env.TRUSTED_PROXY_HEADERS;
+      else process.env.TRUSTED_PROXY_HEADERS = previous;
+    }
   });
 
   it("redacts before/after metadata before writing AdminAuditLog", async () => {

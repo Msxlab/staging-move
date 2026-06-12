@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
-  requireDbUserId: () => mocks.requireDbUserId(),
+  requireDbUserId: (options?: unknown) => (mocks.requireDbUserId as any)(options),
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -106,6 +106,7 @@ describe("/api/maps/static proxy", () => {
     const response = await GET(request(VALID_QUERY));
 
     expect(response.status).toBe(200);
+    expect(mocks.requireDbUserId).toHaveBeenCalledWith({ invalidateOnFingerprintMismatch: false });
     expect(response.headers.get("content-type")).toBe("image/png");
     expect(response.headers.get("cache-control")).toBe("private, max-age=604800, immutable");
     expect(response.headers.get("x-maps-cache")).toBe("MISS");

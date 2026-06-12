@@ -54,6 +54,9 @@ describe("mobile api client", () => {
 
     expect(mod.API_URL).toBe("https://locateflow.com/api");
     expect(captured.config.clientType).toBe("mobile");
+    expect(captured.config.clientPlatform).toBe("ios");
+    expect(captured.config.clientVersion).toBe("0.0.0");
+    expect(captured.config.userAgent).toBe("LocateFlow/0.0.0 (iOS; Expo)");
     expect(captured.config.timeoutMs).toBe(20_000);
 
     await captured.config.onUnauthorized();

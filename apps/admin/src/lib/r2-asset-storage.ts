@@ -5,11 +5,13 @@
  * storage client (`backup-storage.ts`) because backup uses a different
  * bucket / set of credentials (BACKUP_STORAGE_*).
  *
- * Two helpers exposed:
+ * Helpers exposed:
  *   - putAssetObject({ objectKey, body, contentType }) — server-side PUT
  *   - rawAssetUrl(objectKey) — turns a key into a public CDN URL (or null
  *     if R2_PUBLIC_BASE_URL is not set, in which case the caller has no
  *     way to surface the asset and should treat it as unconfigured)
+ *   - downloadAssetObject(objectKey) — server-side signed GET for private
+ *     admin download routes.
  */
 import { createHash, createHmac, randomUUID } from "crypto";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
@@ -33,6 +35,7 @@ const R2_ASSET_KEYS = [
 ] as const;
 
 const R2_PUT_TIMEOUT_MS = 3_000;
+const R2_GET_TIMEOUT_MS = 5_000;
 const TINY_TEST_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
   "base64",
@@ -338,6 +341,47 @@ function signPutRequest(input: {
   return { url, authorization, amzDate };
 }
 
+function signGetRequest(input: {
+  cfg: R2AssetConfig;
+  objectKey: string;
+  payloadHash: string;
+  now?: Date;
+}) {
+  const now = input.now ?? new Date();
+  const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const amzDate = `${dateStamp}T${now.toISOString().slice(11, 19).replace(/:/g, "")}Z`;
+  const url = buildObjectUrl(input.cfg, input.objectKey);
+
+  const headers: Array<[string, string]> = [
+    ["host", url.host],
+    ["x-amz-content-sha256", input.payloadHash],
+    ["x-amz-date", amzDate],
+  ];
+  headers.sort((a, b) => a[0].localeCompare(b[0]));
+
+  const canonicalHeaders = headers.map(([k, v]) => `${k}:${v}\n`).join("");
+  const signedHeaders = headers.map(([k]) => k).join(";");
+  const canonicalRequest = [
+    "GET",
+    url.pathname,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    input.payloadHash,
+  ].join("\n");
+  const credentialScope = `${dateStamp}/${input.cfg.region}/s3/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    sha256Hex(canonicalRequest),
+  ].join("\n");
+  const signingKey = getSignatureKey(input.cfg.secretAccessKey, dateStamp, input.cfg.region);
+  const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+  const authorization = `AWS4-HMAC-SHA256 Credential=${input.cfg.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  return { url, authorization, amzDate };
+}
+
 export async function putAssetObject(input: {
   objectKey: string;
   body: Buffer;
@@ -388,6 +432,48 @@ export async function rawAssetUrl(objectKey: string): Promise<string | null> {
   const clean = cfg.publicBaseUrl.replace(/\/+$/, "");
   const encoded = objectKey.split("/").map(encodeRfc3986).join("/");
   return `${clean}/${encoded}`;
+}
+
+export async function downloadAssetObject(objectKey: string): Promise<{
+  body: Buffer;
+  contentType: string | null;
+}> {
+  const cfg = await resolveAssetConfig();
+  const payloadHash = sha256Hex("");
+  const signed = signGetRequest({
+    cfg,
+    objectKey,
+    payloadHash,
+  });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), R2_GET_TIMEOUT_MS);
+  try {
+    const res = await fetch(signed.url, {
+      method: "GET",
+      signal: controller.signal,
+      headers: {
+        Authorization: signed.authorization,
+        "x-amz-content-sha256": payloadHash,
+        "x-amz-date": signed.amzDate,
+      },
+    });
+    if (!res.ok) {
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      throw new Error(`R2_GET_FAILED:${res.status}:${detail}`);
+    }
+    return {
+      body: Buffer.from(await res.arrayBuffer()),
+      contentType: res.headers.get("content-type"),
+    };
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      throw new Error("R2_GET_TIMEOUT");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function isAssetStorageConfigured(): Promise<boolean> {

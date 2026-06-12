@@ -60,6 +60,22 @@ vi.mock("@/lib/recommendation-engine", () => ({
   getMergedDisplayCategoryOrder: vi.fn(() => 0),
 }));
 
+vi.mock("@/lib/fcc-isp", () => ({
+  lookupFccIsps: vi.fn(async () => ({
+    status: "not_configured",
+    providers: [],
+    normalizedBrandNames: new Set<string>(),
+    blockGeoid: null,
+    reason: "fcc_bdc_disabled",
+    source: {
+      name: "FCC National Broadband Map (BDC)",
+      url: "https://broadbandmap.fcc.gov/",
+      selfReported: true,
+    },
+  })),
+  isIspServiceable: vi.fn(() => false),
+}));
+
 // Electric-utility enrichment is mocked so the route tests can drive each
 // lookup status deterministically (the real module is unit-tested in
 // src/lib/electric-utility.test.ts). Defaults mirror production defaults:
@@ -82,6 +98,7 @@ vi.mock("@/lib/electric-utility", () => ({
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { lookupFccIsps, isIspServiceable } from "@/lib/fcc-isp";
 import { lookupElectricUtilities, isElectricUtilityServiceable } from "@/lib/electric-utility";
 import { scoreProviders } from "@/lib/recommendation-engine";
 import { GET } from "./route";
@@ -95,6 +112,8 @@ const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Moc
 const mockStateRule = prisma.stateRule as unknown as { findUnique: Mock };
 const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
 const rateLimitMock = rateLimit as unknown as Mock;
+const lookupFccIspsMock = lookupFccIsps as unknown as Mock;
+const isIspServiceableMock = isIspServiceable as unknown as Mock;
 const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
 const isElectricUtilityServiceableMock = isElectricUtilityServiceable as unknown as Mock;
 const scoreProvidersMock = scoreProviders as unknown as Mock;
@@ -113,6 +132,22 @@ function electricLookupResult(overrides: Record<string, unknown> = {}) {
       name: "OpenEI U.S. Utility Rate Database (URDB)",
       url: "https://openei.org/wiki/Utility_Rate_Database",
       modeled: true,
+    },
+    ...overrides,
+  };
+}
+
+function fccLookupResult(overrides: Record<string, unknown> = {}) {
+  return {
+    status: "not_configured",
+    providers: [],
+    normalizedBrandNames: new Set<string>(),
+    blockGeoid: null,
+    reason: "fcc_bdc_disabled",
+    source: {
+      name: "FCC National Broadband Map (BDC)",
+      url: "https://broadbandmap.fcc.gov/",
+      selfReported: true,
     },
     ...overrides,
   };
@@ -153,6 +188,8 @@ describe("provider recommendations route", () => {
     mockServiceProvider.findMany.mockResolvedValue([]);
     mockStateRule.findUnique.mockResolvedValue(null);
     mockRecFeedback.findMany.mockResolvedValue([]);
+    lookupFccIspsMock.mockResolvedValue(fccLookupResult());
+    isIspServiceableMock.mockReturnValue(false);
     lookupElectricUtilitiesMock.mockResolvedValue(electricLookupResult());
     isElectricUtilityServiceableMock.mockReturnValue(false);
   });
@@ -267,6 +304,92 @@ describe("provider recommendations route", () => {
     expect(passedProfile.petTypes).toEqual([]); // safeJsonArray of a missing value
     expect(passedProfile.businessType).toBeUndefined();
     expect(passedProfile.immigrationStatus).toBeUndefined();
+  });
+
+  // ── FCC ISP serviceability enrichment ─────────────────────────────────────
+
+  it("skips the FCC lookup entirely when no internet candidates exist", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "Austin Energy", category: "UTILITY_ELECTRIC" }),
+    ]);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupFccIspsMock).not.toHaveBeenCalled();
+    expect(body.meta.fcc).toEqual({ status: "skipped", confirmedCount: 0, blockGeoid: null });
+  });
+
+  it("flags matching internet providers fccServiceable when the FCC lookup confirms them", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "internet-1", name: "Xfinity", category: "UTILITY_INTERNET" }),
+      dbProvider({ id: "internet-2", name: "AT&T Internet", category: "UTILITY_INTERNET" }),
+      dbProvider({ id: "electric-1", name: "Austin Energy" }),
+    ]);
+    lookupFccIspsMock.mockResolvedValue(
+      fccLookupResult({
+        status: "ok",
+        providers: [
+          {
+            brandName: "Xfinity",
+            providerId: "123",
+            maxDownloadMbps: 1000,
+            maxUploadMbps: 40,
+            technologyCodes: [40],
+          },
+        ],
+        normalizedBrandNames: new Set(["xfinity"]),
+        blockGeoid: "484530011001",
+        reason: null,
+      }),
+    );
+    isIspServiceableMock.mockImplementation((_result: unknown, name: string) => name === "Xfinity");
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupFccIspsMock).toHaveBeenCalledTimes(1);
+
+    const confirmed = body.allProviders.find((p: { id: string }) => p.id === "internet-1");
+    const unconfirmed = body.allProviders.find((p: { id: string }) => p.id === "internet-2");
+    const electric = body.allProviders.find((p: { id: string }) => p.id === "electric-1");
+    expect(confirmed.fccServiceable).toBe(true);
+    expect(unconfirmed.fccServiceable).toBeUndefined();
+    expect(electric.fccServiceable).toBeUndefined();
+
+    expect(body.meta.fcc).toEqual({ status: "ok", confirmedCount: 1, blockGeoid: "484530011001" });
+  });
+
+  it("leaves providers untouched when the FCC lookup is not configured", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "internet-1", name: "Xfinity", category: "UTILITY_INTERNET" }),
+    ]);
+    isIspServiceableMock.mockReturnValue(true);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    const provider = body.allProviders.find((p: { id: string }) => p.id === "internet-1");
+    expect(provider.fccServiceable).toBeUndefined();
+    expect(body.meta.fcc).toEqual({ status: "not_configured", confirmedCount: 0, blockGeoid: null });
+  });
+
+  it("degrades gracefully (200, untouched recs) even if the FCC lookup throws", async () => {
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "internet-1", name: "Xfinity", category: "UTILITY_INTERNET" }),
+    ]);
+    lookupFccIspsMock.mockRejectedValue(new Error("unexpected"));
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    const provider = body.allProviders.find((p: { id: string }) => p.id === "internet-1");
+    expect(provider.fccServiceable).toBeUndefined();
+    expect(body.meta.fcc).toEqual({ status: "not_configured", confirmedCount: 0, blockGeoid: null });
   });
 
   // ── Electric-utility serviceability enrichment (mirrors the FCC block) ────

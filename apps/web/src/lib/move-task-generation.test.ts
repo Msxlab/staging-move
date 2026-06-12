@@ -1,21 +1,63 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 vi.mock("@/lib/db", () => ({
-  prisma: {},
+  prisma: {
+    movingPlan: { findUnique: vi.fn() },
+    service: { findMany: vi.fn() },
+    serviceProvider: { findMany: vi.fn() },
+  },
 }));
 
+vi.mock("@/lib/provider-serviceability", () => ({
+  enrichProviderServiceability: vi.fn(async () => ({
+    fcc: { status: "skipped", confirmedCount: 0, blockGeoid: null },
+    electric: { status: "skipped", confirmedCount: 0, utilityCount: 0 },
+  })),
+  applyProviderServiceabilityConfidence: vi.fn((provider, confidence) =>
+    provider.fccServiceable || provider.utilityServiceable ? "AVAILABLE_AT_ADDRESS" : confidence,
+  ),
+}));
+
+import { prisma } from "@/lib/db";
 import {
+  applyProviderServiceabilityConfidence,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
+import {
+  buildMoveTransitionContext,
   buildMoveTaskDueDate,
   buildMoveTaskIdempotencyKey,
   buildChecklistTaskIdempotencyKey,
   buildChecklistProfile,
 } from "./move-task-generation";
 
+const movingPlanMock = prisma.movingPlan as unknown as { findUnique: Mock };
+const serviceMock = prisma.service as unknown as { findMany: Mock };
+const serviceProviderMock = prisma.serviceProvider as unknown as { findMany: Mock };
+const enrichProviderServiceabilityMock = enrichProviderServiceability as unknown as Mock;
+const applyProviderServiceabilityConfidenceMock = applyProviderServiceabilityConfidence as unknown as Mock;
+
 const basePlan = {
   serviceId: "service-1",
   actionType: "SHOP_PROVIDER",
   destinationProviderCandidates: [],
 } as any;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  enrichProviderServiceabilityMock.mockImplementation(async (providers: any[]) => {
+    for (const provider of providers) {
+      if (provider.id === "dest-xfinity") provider.fccServiceable = true;
+    }
+    return {
+      fcc: { status: "ok", confirmedCount: 1, blockGeoid: "484530011001" },
+      electric: { status: "skipped", confirmedCount: 0, utilityCount: 0 },
+    };
+  });
+  applyProviderServiceabilityConfidenceMock.mockImplementation((provider, confidence) =>
+    provider.fccServiceable || provider.utilityServiceable ? "AVAILABLE_AT_ADDRESS" : confidence,
+  );
+});
 
 describe("move task idempotency keys", () => {
   it("includes normalized origin and destination states", () => {
@@ -45,6 +87,65 @@ describe("move task idempotency keys", () => {
         toState: "TX",
       }),
     );
+  });
+});
+
+describe("buildMoveTransitionContext", () => {
+  it("feeds address-level serviceability confidence into destination candidates", async () => {
+    movingPlanMock.findUnique.mockResolvedValue({
+      id: "plan-1",
+      userId: "user-1",
+      workspaceId: null,
+      deletedAt: null,
+      fromAddressId: "from-1",
+      toAddressId: "to-1",
+      workspace: null,
+      fromAddress: { state: "NJ", zip: "07030" },
+      toAddress: {
+        state: "TX",
+        zip: "78701",
+        latitude: 30.2672,
+        longitude: -97.7431,
+      },
+    });
+    serviceMock.findMany.mockResolvedValue([
+      {
+        id: "service-1",
+        category: "UTILITY_INTERNET",
+        providerName: "Old Internet",
+        providerId: null,
+        customProviderId: null,
+        provider: null,
+        customProvider: null,
+      },
+    ]);
+    serviceProviderMock.findMany.mockResolvedValue([
+      {
+        id: "dest-xfinity",
+        name: "Xfinity",
+        slug: "xfinity",
+        category: "UTILITY_INTERNET",
+        scope: "FEDERAL",
+        states: [],
+        zipCodes: [],
+        coverageModel: "live_address",
+        coverages: [],
+        popularityScore: 10,
+      },
+    ]);
+
+    const context = await buildMoveTransitionContext("user-1", "plan-1");
+
+    expect(enrichProviderServiceabilityMock).toHaveBeenCalledWith(
+      expect.any(Array),
+      { latitude: 30.2672, longitude: -97.7431 },
+    );
+    expect(applyProviderServiceabilityConfidenceMock).toHaveBeenCalled();
+    expect(context.transitionPlans[0]?.destinationProviderCandidates[0]).toMatchObject({
+      id: "dest-xfinity",
+      name: "Xfinity",
+      coverageConfidence: "AVAILABLE_AT_ADDRESS",
+    });
   });
 });
 

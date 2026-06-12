@@ -32,6 +32,7 @@
 
 import { z } from "zod";
 import { redactAuditPayload } from "@locateflow/shared";
+import { resolveTrustedClientIpFromHeaders } from "@locateflow/shared/trusted-client-ip";
 import type { AdminSession } from "./auth";
 import { prisma } from "./db";
 
@@ -145,22 +146,15 @@ export async function writeAdminAudit(
 }
 
 /**
- * Extract request metadata in the canonical precedence order. The full
- * cross-app helper (P1-9) will replace this with a shared package import;
- * for now this mirrors apps/web/src/lib/rate-limit.ts ordering so admin
- * audit IPs match what the rate-limiter sees.
+ * Extract request metadata through the shared trusted-proxy resolver so admin
+ * audit IPs match login, middleware, and rate-limit behavior.
  */
 export function getAuditRequestMeta(req: { headers: Headers }): AuditRequestMeta {
-  const cf = req.headers.get("cf-connecting-ip");
-  const vercel = req.headers.get("x-vercel-forwarded-for");
-  const xff = req.headers.get("x-forwarded-for");
-  const real = req.headers.get("x-real-ip");
-  const firstIp = (val: string | null | undefined) => {
-    if (!val) return null;
-    const first = val.split(",")[0]?.trim();
-    return first || null;
-  };
-  const ip = firstIp(cf) || firstIp(vercel) || firstIp(xff) || firstIp(real) || null;
+  const ip = resolveTrustedClientIpFromHeaders(req.headers, {
+    mode: process.env.TRUSTED_PROXY_HEADERS,
+    vercelEnv: process.env.VERCEL_ENV,
+    fallback: "unknown",
+  });
   const userAgent = req.headers.get("user-agent");
   return { ipAddress: ip, userAgent };
 }

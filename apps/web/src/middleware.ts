@@ -51,6 +51,8 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/verify-email",
   "/invitations", // workspace invite landing (flag-gated API returns 404 when off)
+  "/movers/apply", // public mover self-service application (route-level feature gate)
+  "/movers/portal", // passwordless mover portal, gated by mover_portal cookie in page code
   "/opengraph-image",
 ];
 
@@ -78,6 +80,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/webhooks/",
   "/api/tracking",
   "/api/address-autocomplete", // landing-page feature
+  "/api/movers/portal/", // passwordless mover portal APIs use their own portal cookie
 ];
 const PUBLIC_API_EXACT = [
   "/api/auth/login",
@@ -106,6 +109,7 @@ const PUBLIC_API_EXACT = [
   // blog/revalidate) so provider catalog edits refresh the public site at once.
   "/api/providers/revalidate",
   "/api/blog/view",
+  "/api/movers/apply",
 ];
 const PUBLIC_API_GET = [
   "/api/acquisition/public-trial-campaign",
@@ -147,6 +151,7 @@ function isPublicApi(pathname: string, method: string): boolean {
 // ── Body size ──────────────────────────────────────────────────
 const MAX_JSON_BODY = 1 * 1024 * 1024; // 1 MB
 const MAX_UPLOAD_BODY = 10 * 1024 * 1024; // 10 MB
+const MAX_MOVER_APPLY_BODY = 8 * 10 * 1024 * 1024 + 256 * 1024; // 8 docs + form slack
 
 function applyBodySizeLimit(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl?.pathname || "";
@@ -161,7 +166,12 @@ function applyBodySizeLimit(req: NextRequest): NextResponse | null {
 
   const contentType = req.headers.get("content-type") || "";
   const isUpload = contentType.includes("multipart/form-data");
-  const limit = isUpload ? MAX_UPLOAD_BODY : MAX_JSON_BODY;
+  const limit =
+    isUpload && pathname === "/api/movers/apply"
+      ? MAX_MOVER_APPLY_BODY
+      : isUpload
+        ? MAX_UPLOAD_BODY
+        : MAX_JSON_BODY;
 
   if (size > limit) {
     return NextResponse.json(

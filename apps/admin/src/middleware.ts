@@ -4,6 +4,7 @@ import { adminRoleRequiresMfa } from "@/lib/admin-roles";
 import { checkIPAccess } from "@/lib/ip-rules";
 import { getInternalCallerSecret } from "@/lib/internal-secrets";
 import { generateAdminSessionFingerprint } from "@/lib/session-fingerprint";
+import { resolveTrustedClientIpFromHeaders } from "@locateflow/shared/trusted-client-ip";
 
 // NOTE: Do NOT import PrismaClient here — middleware runs on Edge Runtime
 // where Node.js-only DB drivers (SQLite/libSQL) cannot execute.
@@ -64,21 +65,11 @@ export function isPublicPath(pathname: string): boolean {
 }
 
 function resolveClientIP(request: NextRequest): string {
-  if (process.env.VERCEL_ENV) {
-    const vercelIp = request.headers.get("x-vercel-forwarded-for");
-    if (vercelIp) return vercelIp.split(",")[0].trim();
-  }
-
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp.trim();
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-
-  return "unknown";
+  return resolveTrustedClientIpFromHeaders(request.headers, {
+    mode: process.env.TRUSTED_PROXY_HEADERS,
+    vercelEnv: process.env.VERCEL_ENV,
+    fallback: "unknown",
+  });
 }
 
 async function emitSecurityEvent(

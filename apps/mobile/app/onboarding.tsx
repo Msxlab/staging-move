@@ -27,6 +27,7 @@ import {
   Calendar,
 } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   getRecommendedProviders,
   getMergedDisplayCategoryIcon,
@@ -71,6 +72,7 @@ import {
   type ChecklistStateRuleContext,
 } from "@locateflow/shared";
 import { MoveTeaserCard } from "@/components/ui/MoveTeaserCard";
+import { LogoBrand } from "@/components/ui/LogoBrand";
 import {
   ProShowcaseCard,
   hasProShowcaseContext,
@@ -1228,9 +1230,62 @@ export default function OnboardingScreen() {
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
-        {/* Progress — a continuous animated fill (springs between steps) plus a
-            one-shot shimmer on step-complete. Replaces the old hard-swap dots. */}
-        <View style={styles.progressRow}>
+        {/* Aurora onboarding chrome: compact brand stage + named step rail.
+            Pure presentation; all production save/skip/payment paths below
+            stay unchanged. */}
+        <View style={styles.onboardingHeader}>
+          <LinearGradient
+            colors={[`${theme.colors.primary}24`, `${theme.colors.accent}10`, "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.headerBrandRow}>
+            <LogoBrand size="sm" />
+            <View style={styles.headerCopy}>
+              <Text style={styles.headerKicker}>
+                {t("onboarding.headerKicker", { defaultValue: "A moving companion" })}
+              </Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {t("onboarding.headerTitle", { defaultValue: "Move once. Remember everything." })}
+              </Text>
+            </View>
+            <View style={styles.headerPill}>
+              <Text style={styles.headerPillText}>{step + 1}/{STEP_KEYS.length}</Text>
+            </View>
+          </View>
+          <View
+            style={styles.stepRail}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 1, max: STEP_KEYS.length, now: step + 1 }}
+          >
+            {STEP_KEYS.map((key, index) => {
+              const active = index === step;
+              const complete = index < step;
+              return (
+                <View key={key} style={styles.stepRailItem}>
+                  <View
+                    style={[
+                      styles.stepRailDot,
+                      (active || complete) && styles.stepRailDotOn,
+                      active && styles.stepRailDotActive,
+                    ]}
+                  >
+                    {complete ? <Check size={9} color={theme.colors.background} /> : null}
+                  </View>
+                  <Text
+                    style={[
+                      styles.stepRailLabel,
+                      active && styles.stepRailLabelOn,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {t(key)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
           <OnboardingProgressBar step={step} total={STEP_KEYS.length} pulseTick={pulseTick} />
         </View>
         <Text style={styles.stepLabel}>
@@ -2017,7 +2072,85 @@ export default function OnboardingScreen() {
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  progressRow: { paddingTop: 16, paddingHorizontal: 20 },
+  onboardingHeader: {
+    position: "relative",
+    overflow: "hidden",
+    marginHorizontal: 16,
+    marginTop: 10,
+    padding: 14,
+    borderRadius: theme.radius["2xl"],
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    backgroundColor: theme.colors.glass.bg,
+  },
+  headerBrandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headerCopy: { flex: 1, minWidth: 0 },
+  headerKicker: {
+    fontFamily: Platform.select({ ios: "GeistMono_500Medium", android: "GeistMono_500Medium" }),
+    fontSize: 9.5,
+    fontWeight: "700",
+    letterSpacing: 1.25,
+    textTransform: "uppercase",
+    color: theme.colors.textTertiary,
+  },
+  headerTitle: {
+    marginTop: 2,
+    fontFamily: Platform.select({ ios: "Fraunces_500Medium", android: "Fraunces_500Medium" }),
+    fontSize: 17,
+    color: theme.colors.text,
+  },
+  headerPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  headerPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    fontVariant: ["tabular-nums"],
+  },
+  stepRail: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 12,
+  },
+  stepRailItem: { flex: 1, alignItems: "center", minWidth: 0 },
+  stepRailDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  stepRailDotOn: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  stepRailDotActive: {
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  stepRailLabel: {
+    marginTop: 5,
+    maxWidth: "100%",
+    fontSize: 10,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
+    textAlign: "center",
+  },
+  stepRailLabelOn: { color: theme.colors.primary },
   stepLabel: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", marginTop: 12 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 140 },
   stepContent: { alignItems: "center" },

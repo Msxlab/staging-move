@@ -16,9 +16,15 @@ import {
 } from "@/lib/census-acs";
 import { lookupWalkability, type WalkabilityLookupResult, type WalkabilityBand } from "@/lib/epa-walkability";
 import { lookupNearbySchools, type NearbySchoolsLookupResult, type SchoolLevel } from "@/lib/nces-schools";
-import { assertScopedRecordAction, resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
+import {
+  assertScopedRecordAction,
+  planLimitScopeForDataScope,
+  resolveWorkspaceDataScope,
+  scopedRecordWhere,
+} from "@/lib/workspace-data-scope";
 import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getPlanForLimitScope } from "@/lib/plan-limits";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { planFeatures } from "@locateflow/shared";
 
 // GET /api/addresses/:id/dossier — the New Home Dossier data endpoint.
@@ -246,6 +252,18 @@ function sourceTelemetryStatus(settled: PromiseSettledResult<{ status: string }>
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const rl = await rateLimit(getRateLimitKey(request, "address:dossier", { userId }), {
+      limit: 60,
+      windowSeconds: 60,
+    });
+    if (!rl.success) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": retryAfterSeconds.toString() } },
+      );
+    }
+
     const scope = await resolveWorkspaceDataScope(request, userId);
     const { id } = await params;
 
@@ -271,7 +289,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Resolve the plan once: the whole-dossier gate (homeDossier, Individual+)
     // and the per-section Neighborhood Intelligence gate (Pro only) both read
     // from it, so this is a single plan lookup for the request.
-    const features = planFeatures((await getUserPlan(userId)).plan);
+    const planInfo = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
+    const features = planFeatures(planInfo.plan);
 
     // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
     // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 —

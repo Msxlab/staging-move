@@ -15,6 +15,10 @@ import {
   resolveEffectiveState,
 } from "@/lib/provider-matching";
 import {
+  applyProviderServiceabilityConfidence,
+  enrichProviderServiceability,
+} from "@/lib/provider-serviceability";
+import {
   analyzeMigration,
   type ServiceWithProvider,
   type ProviderForMigration,
@@ -139,6 +143,11 @@ export async function GET(request: NextRequest) {
       return !providerNameMentionsOtherState(String(p.name || ""), effectiveToState);
     });
 
+    await enrichProviderServiceability(cleanedDestinationProviders as any[], {
+      latitude: (plan as any).toAddress?.latitude ?? null,
+      longitude: (plan as any).toAddress?.longitude ?? null,
+    });
+
     const destinationProviderInputs: MoveTransitionProviderInput[] = cleanedDestinationProviders.map((p: any) => {
       const metadata = getProviderCoverageMetadata(p.slug);
       const zipCodes = safeJsonArray(p.zipCodes);
@@ -146,20 +155,23 @@ export async function GET(request: NextRequest) {
         (p.coverageModel as ProviderCoverageModel | null | undefined) ||
         metadata?.coverageModel ||
         (zipCodes.length > 0 ? "zip_prefix" : "state");
-      const coverageConfidence = getProviderCoverageConfidenceFromDb(
-        {
-          id: p.id,
-          slug: p.slug,
-          scope: p.scope,
-          coverageModel,
-          coverages: p.coverages || [],
-        },
-        {
-          state: effectiveToState,
-          zip: toZip,
-          latitude: (plan as any).toAddress?.latitude ?? null,
-          longitude: (plan as any).toAddress?.longitude ?? null,
-        },
+      const coverageConfidence = applyProviderServiceabilityConfidence(
+        p,
+        getProviderCoverageConfidenceFromDb(
+          {
+            id: p.id,
+            slug: p.slug,
+            scope: p.scope,
+            coverageModel,
+            coverages: p.coverages || [],
+          },
+          {
+            state: effectiveToState,
+            zip: toZip,
+            latitude: (plan as any).toAddress?.latitude ?? null,
+            longitude: (plan as any).toAddress?.longitude ?? null,
+          },
+        ),
       );
 
       return {

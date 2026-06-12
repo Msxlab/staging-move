@@ -66,6 +66,8 @@ type AddressOption = {
   state: string;
   zip: string;
   isPrimary: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type RecMeta = {
@@ -160,6 +162,13 @@ export default function ProviderDetailScreen() {
 
     const detailParams: Record<string, string> = {};
     if (primary?.state) detailParams.state = primary.state;
+    if (primary?.zip) detailParams.zip = primary.zip;
+    if (typeof primary?.latitude === "number" && Number.isFinite(primary.latitude)) {
+      detailParams.lat = String(primary.latitude);
+    }
+    if (typeof primary?.longitude === "number" && Number.isFinite(primary.longitude)) {
+      detailParams.lng = String(primary.longitude);
+    }
 
     const [detailRes, recRes] = await Promise.all([
       api.get<DetailResponse>(`/api/providers/${providerId}`, detailParams),

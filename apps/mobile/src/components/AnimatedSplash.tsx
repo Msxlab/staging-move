@@ -1,25 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, {
-  Circle,
-  Defs,
-  LinearGradient as SvgLinearGradient,
-  Path,
-  Rect,
-  Stop,
-} from "react-native-svg";
-import { RaccoonWalking } from "@/components/ui/RaccoonWalking";
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-const FOIL_LEN = 88;
+import { LogoBrand } from "@/components/ui/LogoBrand";
 
 export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => void; ready?: boolean }) {
   const markOpacity = useRef(new Animated.Value(0)).current;
   const markScale = useRef(new Animated.Value(0.94)).current;
-  const lineProgress = useRef(new Animated.Value(0)).current;
-  const endDotOpacity = useRef(new Animated.Value(0)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
   const [introDone, setIntroDone] = useState(false);
   const [barActive, setBarActive] = useState(false);
@@ -47,20 +33,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(180),
-      Animated.timing(lineProgress, {
-        toValue: 1,
-        duration: 820,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(endDotOpacity, {
-        toValue: 1,
-        duration: 180,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.delay(160),
+      Animated.delay(860),
     ]);
 
     introAnimation.start(({ finished }) => {
@@ -71,7 +44,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
       clearTimeout(barTimer);
       introAnimation.stop();
     };
-  }, [endDotOpacity, lineProgress, markOpacity, markScale]);
+  }, [markOpacity, markScale]);
 
   useEffect(() => {
     if (!ready || !introDone || didFinish.current) return;
@@ -90,22 +63,9 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
     return () => fadeAnimation.stop();
   }, [introDone, overallOpacity, ready]);
 
-  const dashOffset = lineProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [FOIL_LEN, 0],
-  });
-
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      {/* Branded mascot beat: the LocateFlow raccoon strolls in with a little
-          suitcase while the wordmark mark draws. Purely decorative — it owns its
-          own Reanimated drivers and never touches the ready/onFinish hand-off, so
-          it can never block or delay app readiness. */}
-      <View style={styles.mascotArea} pointerEvents="none">
-        <RaccoonWalking size={150} />
-      </View>
-
-      <View style={styles.logoArea}>
+      <View style={styles.logoArea} pointerEvents="none">
         <Animated.View
           style={[
             styles.markContainer,
@@ -115,60 +75,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
             },
           ]}
         >
-          <Svg width={168} height={168} viewBox="0 0 100 100">
-            <Defs>
-              <SvgLinearGradient id="splash-bg" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="#1A2438" />
-                <Stop offset="60%" stopColor="#131C2C" />
-                <Stop offset="100%" stopColor="#0A0F18" />
-              </SvgLinearGradient>
-              <SvgLinearGradient id="splash-shine" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="#ECF1F8" stopOpacity="0.15" />
-                <Stop offset="48%" stopColor="#ECF1F8" stopOpacity="0.05" />
-                <Stop offset="100%" stopColor="#ECF1F8" stopOpacity="0" />
-              </SvgLinearGradient>
-              <SvgLinearGradient id="splash-foil" x1="0" y1="1" x2="1" y2="0">
-                <Stop offset="0%" stopColor="#5C9DDC" />
-                <Stop offset="45%" stopColor="#7FB6E8" />
-                <Stop offset="100%" stopColor="#DDE7F5" />
-              </SvgLinearGradient>
-            </Defs>
-
-            <Rect width="100" height="100" rx="22" fill="url(#splash-bg)" />
-            <Rect width="100" height="100" rx="22" fill="url(#splash-shine)" />
-            <Path
-              d="M20 65 Q 30 32, 50 48 T 80 40"
-              stroke="rgba(221, 231, 245, 0.13)"
-              strokeWidth="5"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <Circle cx="20" cy="65" r="5.4" fill="#7FB6E8" />
-            <Circle cx="20" cy="65" r="1.7" fill="#0A0F18" />
-            <Path
-              d="M20 65 Q 30 32, 50 48 T 80 40"
-              stroke="url(#splash-foil)"
-              strokeWidth="5"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={FOIL_LEN}
-              {...({ strokeDashoffset: dashOffset } as any)}
-            />
-            <AnimatedCircle
-              cx="80"
-              cy="40"
-              r="6.8"
-              fill="#7FB6E8"
-              opacity={endDotOpacity as unknown as number}
-            />
-            <AnimatedCircle
-              cx="80"
-              cy="40"
-              r="2.2"
-              fill="#ECF1F8"
-              opacity={endDotOpacity as unknown as number}
-            />
-          </Svg>
+          <LogoBrand size="lg" />
         </Animated.View>
       </View>
 
@@ -233,18 +140,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 999,
   },
-  mascotArea: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 20,
-  },
   logoArea: {
     alignItems: "center",
     marginBottom: 28,
   },
   markContainer: {
-    width: 168,
-    height: 168,
+    width: 118,
+    height: 118,
     alignItems: "center",
     justifyContent: "center",
   },

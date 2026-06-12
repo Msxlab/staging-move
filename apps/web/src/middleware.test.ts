@@ -179,6 +179,24 @@ describe("web middleware auth boundaries", () => {
     }
   });
 
+  it("lets public mover application and passwordless portal pages render without a user session", async () => {
+    const publicPaths = [
+      "/movers/apply",
+      "/movers/portal",
+      "/movers/portal/enter",
+      "/movers/portal/dashboard",
+      "/movers/portal/placements",
+    ];
+
+    for (const path of publicPaths) {
+      const response = await middleware(request(`https://locateflow.com${path}`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("location")).toBeNull();
+    }
+  });
+
   it("does not noindex a production request just because the origin host is staging-named", async () => {
     const response = await middleware(
       request("https://locateflow-staging-owew7.ondigitalocean.app/about", {
@@ -243,6 +261,64 @@ describe("web middleware auth boundaries", () => {
 
     expect(response.status).toBe(401);
     expect(body.code).toBe("UNAUTHORIZED");
+  });
+
+  it("lets mover application and portal APIs reach their own gates without a user session", async () => {
+    const applyResponse = await middleware(
+      request("https://locateflow.com/api/movers/apply", {
+        method: "POST",
+        headers: {
+          "content-type": "multipart/form-data; boundary=test",
+          "content-length": String(12 * 1024 * 1024),
+        },
+      }),
+    );
+    const portalRequestResponse = await middleware(
+      request("https://locateflow.com/api/movers/portal/request", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "mover@example.com" }),
+      }),
+    );
+    const placementResponse = await middleware(
+      request("https://locateflow.com/api/movers/portal/placements/request", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ stateScope: "CA", durationDays: 30 }),
+      }),
+    );
+
+    expect(applyResponse.status).toBe(200);
+    expect(applyResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(portalRequestResponse.status).toBe(200);
+    expect(portalRequestResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(placementResponse.status).toBe(200);
+    expect(placementResponse.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("keeps the general multipart cap while allowing the larger mover application intake", async () => {
+    const oversizedGeneric = await middleware(
+      request("https://locateflow.com/api/services", {
+        method: "POST",
+        headers: {
+          "content-type": "multipart/form-data; boundary=test",
+          "content-length": String(12 * 1024 * 1024),
+        },
+      }),
+    );
+    const moverApply = await middleware(
+      request("https://locateflow.com/api/movers/apply", {
+        method: "POST",
+        headers: {
+          "content-type": "multipart/form-data; boundary=test",
+          "content-length": String(12 * 1024 * 1024),
+        },
+      }),
+    );
+
+    expect(oversizedGeneric.status).toBe(413);
+    expect(moverApply.status).toBe(200);
+    expect(moverApply.headers.get("x-middleware-next")).toBe("1");
   });
 
   it("adds noindex headers to public auth pages", async () => {

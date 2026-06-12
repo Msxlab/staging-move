@@ -735,8 +735,15 @@
     "neighborhoodIncome": "Ingreso medio del hogar",
     "neighborhoodOwnerOccupied": "Viviendas ocupadas por el dueño",
     "neighborhoodPercent": "{{percent}}%",
+    "neighborhoodWalkability": "Caminabilidad",
+    "neighborhoodWalkValue": "{{score}}/20 - {{label}}",
+    "neighborhoodWalkScoreOnly": "{{score}}/20",
+    "neighborhoodWalkLeast": "Poco caminable",
+    "neighborhoodWalkBelow": "Por debajo del promedio",
+    "neighborhoodWalkAbove": "Por encima del promedio",
+    "neighborhoodWalkMost": "Muy caminable",
     "neighborhoodSchools": "Escuelas cercanas",
-    "neighborhoodFinePrint": "Medianas del sector censal de la Oficina del Censo de EE. UU. (ACS) — contexto del área, no una valoración de esta vivienda."
+    "neighborhoodFinePrint": "Medianas del sector censal de la Oficina del Censo de EE. UU. (ACS), caminabilidad de la EPA y escuelas de NCES - contexto del área, no una valoración de esta vivienda."
   },
   "subscription": {
     "upgradeTitle": "Desbloquea tu plan de mudanza",

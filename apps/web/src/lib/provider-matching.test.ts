@@ -3,6 +3,7 @@ import { compareCoverageConfidence } from "@locateflow/shared";
 import {
   getProviderCoverageConfidenceFromDb,
   getProviderMatchLevelFromDb,
+  getProviderPresentationMatchLevelFromDb,
   tierProvidersFromDb,
 } from "./provider-matching";
 
@@ -82,6 +83,9 @@ describe("tierProvidersFromDb", () => {
     expect(result.zipMatchLevel).toBe("exact");
     expect(result.providers.map((provider) => provider.id)).toEqual(["kauai-water"]);
     expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "HI", zip: "96766" })).toBe("UNKNOWN");
+    expect(getProviderPresentationMatchLevelFromDb(providers[0]!, { state: "HI", zip: "96766" })).toBe(
+      "unknown",
+    );
   });
 
   it("drops state-scoped providers when their coverage rows belong to another state", () => {

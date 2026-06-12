@@ -233,6 +233,47 @@ describe("getUserSession duplicate cookies", () => {
     expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
   });
 
+  it("can reject a fingerprint mismatch without invalidating the DB session", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      const normalized = name.toLowerCase();
+      if (normalized === "cookie") return "user_session=valid-token";
+      if (normalized === "user-agent") return "NativeImageLoader/1.0";
+      if (normalized === "x-forwarded-for") return "203.0.113.10";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: {
+        userId: "user-1",
+        email: "user@example.com",
+        fp: await generateMobileFingerprint("LocateFlow/1.0.2 (iOS; Expo)"),
+        fpMode: "mobile",
+      },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-mobile",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "LocateFlow/1.0.2 (iOS; Expo)",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(getUserSession({
+      diagnostics,
+      invalidateOnFingerprintMismatch: false,
+    })).resolves.toBeNull();
+
+    expect(diagnostics).toMatchObject({
+      jwtCandidateValidCount: 1,
+      dbSessionFound: true,
+      fingerprintMatched: false,
+      finalFailureCode: "FINGERPRINT_MISMATCH",
+    });
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+  });
+
   it("keeps new web sessions valid across IP changes when the UA fingerprint matches", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
