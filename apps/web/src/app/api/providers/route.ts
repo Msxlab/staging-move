@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { compareCoverageConfidence, getProviderTrustSummary } from "@locateflow/shared";
+import { getProviderCoverageMetadata, zipCentroid, type ProviderCoverageModel } from "@locateflow/db";
+import { compareCoverageConfidence, getProviderBrand, getProviderTrustSummary } from "@locateflow/shared";
 import { getProviderCoverageConfidenceFromDb, getProviderPresentationMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import {
   applyProviderServiceabilityConfidence,
