@@ -12,6 +12,7 @@ import {
   applyProviderServiceabilityMatchLevel,
   enrichProviderServiceability,
 } from "@/lib/provider-serviceability";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 
 // GET /api/providers/compare?ids=a,b,c[&addressId=...]
 //
@@ -130,10 +131,12 @@ export async function GET(req: NextRequest) {
   // Popularity rank is relative WITHIN the compared set so the label is honest
   // ("most popular of the 3 you picked"), not a global claim. Ties share a rank.
   const present = requestedIds.map((id) => byId.get(id)).filter((r): r is CompareProviderRow => Boolean(r));
-  await enrichProviderServiceability(present, {
-    latitude: address?.latitude ?? null,
-    longitude: address?.longitude ?? null,
-  });
+  if (await requestHasPlanFeature(req, userId, "addressValidation")) {
+    await enrichProviderServiceability(present, {
+      latitude: address?.latitude ?? null,
+      longitude: address?.longitude ?? null,
+    });
+  }
   const byPopularity = [...present].sort((a, b) => b.popularityScore - a.popularityScore);
   const popularityRank = new Map<string, number>();
   let rank = 0;

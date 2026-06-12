@@ -20,7 +20,8 @@ import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
 import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
-import { enrichProviderServiceability } from "@/lib/provider-serviceability";
+import { enrichProviderServiceability, providerServiceabilityGatedMeta } from "@/lib/provider-serviceability";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 import type { ProviderCoverageMetadata } from "@locateflow/db";
 
 // Representative geo coordinate for a GEO-BEARING provider: the centroid of its
@@ -291,10 +292,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const serviceability = await enrichProviderServiceability(parsedProviders, {
-      latitude: fallbackLatitude,
-      longitude: fallbackLongitude,
-    });
+    const canUseDataChecked = await requestHasPlanFeature(request, userId, "addressValidation");
+    const serviceability = canUseDataChecked
+      ? await enrichProviderServiceability(parsedProviders, {
+          latitude: fallbackLatitude,
+          longitude: fallbackLongitude,
+        })
+      : providerServiceabilityGatedMeta(parsedProviders);
 
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
     const completedCategories = [...new Set(services.map((s) => s.category).filter(Boolean))];

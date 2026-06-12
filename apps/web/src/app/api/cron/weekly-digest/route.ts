@@ -8,7 +8,7 @@ import {
   getNextBillingDate,
   groupNotificationPreferencesByUser,
 } from "@/lib/notification-preferences";
-import { getUserPlan } from "@/lib/plan-limits";
+import { getUserPlanForDefaultWorkspace } from "@/lib/plan-limits";
 import { DEFAULT_US_TIME_ZONE, formatDateOnlyUtc, formatInUserTimeZone, planFeatures } from "@locateflow/shared";
 
 // A local-midnight date (new Date(y, m, d)) reprojected onto its UTC calendar
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     // set (kept small by the day match), in parallel, and drop free/free-trial
     // users before any per-user data is fetched or any email is sent.
     const entitledFlags = await Promise.all(
-      eligibleUsers.map((user) => getUserPlan(user.id).then((p) => planFeatures(p.plan).weatherDigest)),
+      eligibleUsers.map((user) => getUserPlanForDefaultWorkspace(user.id).then((p) => planFeatures(p.plan).weatherDigest)),
     );
     const gatedEligibleUsers = eligibleUsers.filter((_, i) => entitledFlags[i]);
     if (gatedEligibleUsers.length === 0) {

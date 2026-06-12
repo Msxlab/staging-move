@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
-import { getUserPlan } from "@/lib/plan-limits";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { lookupVehicleByVin, type VehicleLookupResult } from "@/lib/nhtsa";
-import { planFeatures } from "@locateflow/shared";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 
 // GET /api/vehicles/decode?vin=2HKRW2H59KH601234 — the move checklist's
 // "Check your vehicle" helper (vehicle-registration task).
@@ -81,7 +80,7 @@ export async function GET(request: NextRequest) {
     // 200 — never 403 — and the vehicle/recalls blocks are omitted, so a gated
     // request spends no NHTSA lookups or rate-limit budget. 401 above still
     // wins. (Mirrors the dossier / movers GATE-API teaser contract.)
-    if (!planFeatures((await getUserPlan(userId)).plan).vehicleCheck) {
+    if (!(await requestHasPlanFeature(request, userId, "vehicleCheck"))) {
       return NextResponse.json({
         configured: true,
         entitled: false,

@@ -28,6 +28,16 @@ vi.mock("@/lib/plan-limits", () => ({
   getUserPlan: (...args: unknown[]) => mocks.getUserPlan(...args),
 }));
 
+vi.mock("@/lib/request-entitlements", async () => {
+  const { planFeatures } = await vi.importActual<typeof import("@locateflow/shared")>("@locateflow/shared");
+  return {
+    requestHasPlanFeature: async (_request: Request, userId: string, feature: keyof ReturnType<typeof planFeatures>) => {
+      const plan = await mocks.getUserPlan(userId);
+      return planFeatures(plan.plan)[feature] === true;
+    },
+  };
+});
+
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: (...args: unknown[]) => mocks.getRuntimeConfigValue(...args),
 }));

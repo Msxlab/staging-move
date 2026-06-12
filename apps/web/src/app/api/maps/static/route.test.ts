@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   requireDbUserId: vi.fn(() => Promise.resolve("user-1")),
   rateLimit: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
+  requestHasPlanFeature: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +19,10 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: (...args: unknown[]) => mocks.getRuntimeConfigValue(...args),
+}));
+
+vi.mock("@/lib/request-entitlements", () => ({
+  requestHasPlanFeature: (...args: unknown[]) => mocks.requestHasPlanFeature(...args),
 }));
 
 import { GET, buildStaticMapUrl, __resetStaticMapCacheForTests } from "./route";
@@ -49,6 +54,7 @@ describe("/api/maps/static proxy", () => {
     __resetStaticMapCacheForTests();
     mocks.requireDbUserId.mockResolvedValue("user-1");
     mocks.rateLimit.mockResolvedValue({ success: true, remaining: 10, resetAt: Date.now() + 1000 });
+    mocks.requestHasPlanFeature.mockResolvedValue(true);
     mocks.getRuntimeConfigValue.mockResolvedValue("test-maps-key-123");
     fetchMock.mockResolvedValue(pngResponse());
     vi.stubGlobal("fetch", fetchMock);
@@ -64,6 +70,18 @@ describe("/api/maps/static proxy", () => {
     const response = await GET(request(VALID_QUERY));
 
     expect(response.status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("403s before touching Google when the plan lacks realMap", async () => {
+    mocks.requestHasPlanFeature.mockResolvedValue(false);
+
+    const response = await GET(request(VALID_QUERY));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("REAL_MAP_UPGRADE_REQUIRED");
+    expect(mocks.getRuntimeConfigValue).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

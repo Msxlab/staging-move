@@ -1022,6 +1022,7 @@
     "daysAgo": "Te mudaste hace {{count}} días",
     "unlockHint": "Desbloquea tu plan completo: lista personalizada, cuenta regresiva de plazos y seguimiento de la mudanza.",
     "unlockCta": "Desbloquear con Individual",
+    "briefingUnlockCta": "Desbloquear con Family",
     "paidFeatureLabel": "Función del plan Individual",
     "dashboardEyebrow": "Desbloquea la mudanza",
     "dashboardTitle": "¿Listo para planear tu mudanza?",
@@ -1029,7 +1030,7 @@
     "dashboardCta": "Desbloquear tu plan de mudanza",
     "freeIncluded": "Incluido gratis",
     "freeAddresses": "Hasta 3 hogares y direcciones",
-    "freeProviders": "Proveedores y servicios ilimitados",
+    "freeProviders": "Hasta 10 proveedores y servicios",
     "freeReminders": "Recordatorios de facturas y renovaciones"
   },
   "onboarding": {

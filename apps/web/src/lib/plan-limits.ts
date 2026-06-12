@@ -3,6 +3,7 @@ import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
+import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -157,6 +158,22 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
 export async function getPlanForLimitScope(userId: string, scope: PlanLimitScope = {}): Promise<UserPlan> {
   return getUserPlan(scope.planOwnerUserId || userId);
+}
+
+export async function getUserPlanForDefaultWorkspace(userId: string): Promise<UserPlan> {
+  if (!(await isWorkspaceModelEnabled().catch(() => false))) return getUserPlan(userId);
+
+  const member = await prisma.workspaceMember.findFirst({
+    where: {
+      userId,
+      status: { in: ["ACTIVE", "OVERFLOW"] },
+    },
+    orderBy: { joinedAt: "asc" },
+    select: {
+      workspace: { select: { ownerUserId: true } },
+    },
+  });
+  return getUserPlan(member?.workspace?.ownerUserId || userId);
 }
 
 function recordScopeWhere(userId: string, scope: PlanLimitScope = {}) {

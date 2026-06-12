@@ -8,8 +8,10 @@ import {
   applyProviderServiceabilityConfidence,
   applyProviderServiceabilityMatchLevel,
   enrichProviderServiceability,
+  providerServiceabilityGatedMeta,
 } from "@/lib/provider-serviceability";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { optionalRequestHasPlanFeature } from "@/lib/request-entitlements";
 
 const fetchProvidersForState = unstable_cache(
   async (effectiveState: string, category: string | null, scope: string | null) => {
@@ -155,10 +157,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const serviceability = await enrichProviderServiceability(filtered, {
-      latitude: normalizedLatitude,
-      longitude: normalizedLongitude,
-    });
+    const canUseDataChecked = await optionalRequestHasPlanFeature(request, "addressValidation");
+    const serviceability = canUseDataChecked
+      ? await enrichProviderServiceability(filtered, {
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+        })
+      : providerServiceabilityGatedMeta(filtered);
 
     // resolveProviderMatchLevelFromDb walks every coverage row, and both the
     // sort comparator and the response map need it — so compute match level +

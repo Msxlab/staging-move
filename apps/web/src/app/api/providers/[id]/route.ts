@@ -8,6 +8,7 @@ import {
   enrichProviderServiceability,
 } from "@/lib/provider-serviceability";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { optionalRequestHasPlanFeature } from "@/lib/request-entitlements";
 
 type ProviderRow = {
   id: string;
@@ -107,10 +108,12 @@ export async function GET(
       })) as ProviderRow[];
     }
 
-    await enrichProviderServiceability([provider, ...alternatives], {
-      latitude,
-      longitude,
-    });
+    if (await optionalRequestHasPlanFeature(request, "addressValidation")) {
+      await enrichProviderServiceability([provider, ...alternatives], {
+        latitude,
+        longitude,
+      });
+    }
 
     return NextResponse.json({
       provider: shape(provider, coverageContext),

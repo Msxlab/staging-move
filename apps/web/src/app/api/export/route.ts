@@ -8,9 +8,9 @@ import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { verifyUserStepUp } from "@/lib/user-step-up";
-import { getUserPlan } from "@/lib/plan-limits";
 import { planFeatures } from "@locateflow/shared";
 import { buildTaxReportData } from "@/lib/tax-report-data";
+import { getRequestEntitlement } from "@/lib/request-entitlements";
 
 // POST /api/export
 // Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     // data dump, so it requires an active plan whose features include
     // advancedExport (Pro). Inactive/expired Pro resolves to FREE_TRIAL here.
     if (ADVANCED_EXPORT_TYPES.has(type)) {
-      const userPlan = await getUserPlan(userId);
+      const { plan: userPlan } = await getRequestEntitlement(request, userId);
       if (!planFeatures(userPlan.plan).advancedExport) {
         await createAuditLog({
           userId,

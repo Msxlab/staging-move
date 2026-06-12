@@ -48,11 +48,18 @@ vi.mock("@/lib/service-active", () => ({
   activeTrackedServiceWhereForScope: () => ({}),
 }));
 
-// Plan entitlement: getUserPlan is mocked (no DB); planFeatures stays REAL so
-// the gate exercises the actual @locateflow/shared feature matrix.
-vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: (...args: unknown[]) => mocks.getUserPlan(...args),
-}));
+// Request entitlement is mocked at the request boundary (no DB); planFeatures
+// stays REAL so the gate exercises the actual @locateflow/shared feature matrix.
+vi.mock("@/lib/request-entitlements", async () => {
+  const { planFeatures } = await vi.importActual<typeof import("@locateflow/shared")>("@locateflow/shared");
+  return {
+    getRequestEntitlement: async (request: Request, userId: string) => {
+      const scope = await mocks.resolveWorkspaceDataScope(request, userId);
+      const plan = await mocks.getUserPlan(userId);
+      return { scope, plan, features: planFeatures(plan.plan) };
+    },
+  };
+});
 
 // Keep the REAL signal/action/encoding logic; stub only the network call.
 vi.mock("@/lib/onboarding-briefing", async (importOriginal) => {

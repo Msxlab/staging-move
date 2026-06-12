@@ -1,14 +1,29 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
+const mocks = vi.hoisted(() => ({
+  getUserPlan: vi.fn(),
+}));
+
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
 
 // getUserPlan is mocked (no DB); planFeatures stays REAL so the vehicleCheck
-// gate exercises the actual @locateflow/shared feature matrix (Individual+).
+// gate exercises the actual @locateflow/shared feature matrix via the request
+// entitlement boundary (Individual+).
 vi.mock("@/lib/plan-limits", () => ({
-  getUserPlan: vi.fn(),
+  getUserPlan: mocks.getUserPlan,
 }));
+
+vi.mock("@/lib/request-entitlements", async () => {
+  const { planFeatures } = await vi.importActual<typeof import("@locateflow/shared")>("@locateflow/shared");
+  return {
+    requestHasPlanFeature: async (_request: Request, userId: string, feature: keyof ReturnType<typeof planFeatures>) => {
+      const plan = await mocks.getUserPlan(userId);
+      return planFeatures(plan.plan)[feature] === true;
+    },
+  };
+});
 
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "vehicles:decode:user:user-1"),

@@ -35,6 +35,10 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => Promise.resolve({ success: true })),
 }));
 
+vi.mock("@/lib/request-entitlements", () => ({
+  requestHasPlanFeature: vi.fn(() => Promise.resolve(true)),
+}));
+
 vi.mock("@locateflow/db", () => ({
   getProviderCoverageMetadata: vi.fn(() => null),
   zipCentroid: vi.fn(() => null),
@@ -98,6 +102,7 @@ vi.mock("@/lib/electric-utility", () => ({
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 import { lookupFccIsps, isIspServiceable } from "@/lib/fcc-isp";
 import { lookupElectricUtilities, isElectricUtilityServiceable } from "@/lib/electric-utility";
 import { scoreProviders } from "@/lib/recommendation-engine";
@@ -112,6 +117,7 @@ const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Moc
 const mockStateRule = prisma.stateRule as unknown as { findUnique: Mock };
 const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
 const rateLimitMock = rateLimit as unknown as Mock;
+const requestHasPlanFeatureMock = requestHasPlanFeature as unknown as Mock;
 const lookupFccIspsMock = lookupFccIsps as unknown as Mock;
 const isIspServiceableMock = isIspServiceable as unknown as Mock;
 const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
@@ -188,6 +194,7 @@ describe("provider recommendations route", () => {
     mockServiceProvider.findMany.mockResolvedValue([]);
     mockStateRule.findUnique.mockResolvedValue(null);
     mockRecFeedback.findMany.mockResolvedValue([]);
+    requestHasPlanFeatureMock.mockResolvedValue(true);
     lookupFccIspsMock.mockResolvedValue(fccLookupResult());
     isIspServiceableMock.mockReturnValue(false);
     lookupElectricUtilitiesMock.mockResolvedValue(electricLookupResult());
@@ -307,6 +314,23 @@ describe("provider recommendations route", () => {
   });
 
   // ── FCC ISP serviceability enrichment ─────────────────────────────────────
+
+  it("gates data-checked provider serviceability without address validation entitlement", async () => {
+    requestHasPlanFeatureMock.mockResolvedValue(false);
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "internet-1", name: "Xfinity", category: "UTILITY_INTERNET" }),
+      dbProvider({ id: "electric-1", name: "Austin Energy", category: "UTILITY_ELECTRIC" }),
+    ]);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupFccIspsMock).not.toHaveBeenCalled();
+    expect(lookupElectricUtilitiesMock).not.toHaveBeenCalled();
+    expect(body.meta.fcc).toEqual({ status: "gated", confirmedCount: 0, blockGeoid: null });
+    expect(body.meta.electric).toEqual({ status: "gated", confirmedCount: 0, utilityCount: 0 });
+  });
 
   it("skips the FCC lookup entirely when no internet candidates exist", async () => {
     mockServiceProvider.findMany.mockResolvedValue([

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
-import { getUserPlan } from "@/lib/plan-limits";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { requestHasPlanFeature } from "@/lib/request-entitlements";
 import {
   getActiveSponsoredMover,
   getMoversByState,
   recordSponsoredClick,
   recordSponsoredImpression,
 } from "@/lib/movers";
-import { planFeatures } from "@locateflow/shared";
 
 // GET /api/movers?state=XX[&city=…] — FMCSA household-goods movers for a
 // destination state. Family/Pro feature (`moverSuggestions`).
@@ -50,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Plan gate BEFORE any catalog/placement work — gated requests cost
     // nothing beyond the plan read (same posture as the dossier route).
-    if (!planFeatures((await getUserPlan(userId)).plan).moverSuggestions) {
+    if (!(await requestHasPlanFeature(request, userId, "moverSuggestions"))) {
       return NextResponse.json({
         configured: true,
         entitled: false,
