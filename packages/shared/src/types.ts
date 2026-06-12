@@ -224,6 +224,7 @@ export interface DashboardStats {
     id: string;
     fromCity: string;
     toCity: string;
+    toAddressId?: string | null;
     moveDate: string;
     status: string;
   } | null;
