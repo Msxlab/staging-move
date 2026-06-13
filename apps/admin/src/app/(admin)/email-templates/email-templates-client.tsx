@@ -189,7 +189,8 @@ export default function EmailTemplatesClient() {
       </div>
 
       {tab === "templates" && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <>
+        <div className="hidden overflow-x-auto rounded-xl border border-border bg-card sm:block">
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Failed</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
             <tbody>
@@ -211,10 +212,37 @@ export default function EmailTemplatesClient() {
             </tbody>
           </table>
         </div>
+        <div className="space-y-2.5 sm:hidden">
+          {templates.length === 0 ? (
+            <EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." />
+          ) : templates.map((t) => (
+            <div key={t.id} className="rounded-xl border border-border bg-card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{t.name}</p>
+                  <p className="truncate font-mono text-xs text-muted-foreground">{t.slug}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{t.isActive ? "Active" : "Inactive"}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">{t.category}</span>
+                <span>Sent {t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</span>
+                <span>Failed {t.sendCounts?.failed ?? 0}</span>
+              </div>
+              <div className="mt-2.5 flex gap-2">
+                <button onClick={() => setPreview(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent"><Eye className="h-3.5 w-3.5" /> Preview</button>
+                <button onClick={() => startEdit(t)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent"><Edit2 className="h-3.5 w-3.5" /> Edit</button>
+                <button onClick={() => setPendingDelete({ id: t.id, name: t.name })} aria-label="Delete template" className="inline-flex items-center justify-center rounded-md border border-destructive/40 px-3 py-2 text-xs text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+        </>
       )}
 
       {tab === "logs" && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <>
+        <div className="hidden overflow-x-auto rounded-xl border border-border bg-card sm:block">
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Provider ID</th><th className="px-4 py-3 font-medium">Details</th></tr></thead>
             <tbody>
@@ -261,6 +289,34 @@ export default function EmailTemplatesClient() {
             </tbody>
           </table>
         </div>
+        <div className="space-y-2.5 sm:hidden">
+          {logs.length === 0 ? (
+            <EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." />
+          ) : logs.map((l) => (
+            <div key={l.id} className="rounded-xl border border-border bg-card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 truncate font-medium text-foreground">{l.to}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{l.status}</span>
+              </div>
+              <p className="mt-1 truncate text-xs text-foreground">{l.subject}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {l.template ? `${l.template.name} (${l.template.slug})` : "Manual"} · {l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}
+              </p>
+              <button type="button" onClick={() => setExpandedLogId(expandedLogId === l.id ? null : l.id)} className="mt-1.5 text-xs text-primary hover:underline">
+                {expandedLogId === l.id ? "Hide details" : "Details"}
+              </button>
+              {expandedLogId === l.id && (
+                <div className="mt-2 grid gap-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                  <p><span className="font-medium text-foreground">Failure reason:</span> {l.safeErrorReason || l.error || "-"}</p>
+                  <p><span className="font-medium text-foreground">From:</span> {l.fromAddress || "-"}</p>
+                  <p><span className="font-medium text-foreground">Recipient domain:</span> {l.toDomain || "-"}</p>
+                  <p><span className="font-medium text-foreground">Provider ID:</span> {l.providerMessageId || "-"}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        </>
       )}
 
       <ConfirmDialog

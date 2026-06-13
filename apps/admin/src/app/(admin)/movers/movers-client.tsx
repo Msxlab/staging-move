@@ -441,7 +441,8 @@ export default function MoversClient() {
             />
           )
         ) : (
-          <div className="overflow-x-auto overscroll-x-contain">
+          <>
+          <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -532,6 +533,50 @@ export default function MoversClient() {
               </tbody>
             </table>
           </div>
+          <div className="space-y-2.5 sm:hidden">
+            {movers.map((mover) => {
+              const ratingKey = mover.safetyRating ? safetyKey(mover.safetyRating) : null;
+              return (
+                <div key={mover.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{moverDisplayName(mover)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {mover.city ? `${mover.city}, ` : ""}{mover.state} · USDOT {mover.usdotNumber}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleActive(mover)}
+                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                        mover.active ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"
+                      }`}
+                      title={mover.active ? t("table.deactivateHint") : t("table.activateHint")}
+                    >
+                      {mover.active ? t("status.active") : t("status.inactive")}
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {mover.hhgAuthorization ? (
+                      <span className="inline-flex rounded-full bg-tone-sage-bg px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-tone-sage-fg">{t("table.hhgYes")}</span>
+                    ) : (
+                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t("table.hhgNo")}</span>
+                    )}
+                    <span>{t("table.fleet")}: {mover.fleetSize ?? "—"}</span>
+                    <span>{t("table.complaints")}: {mover.complaintCount2y.toLocaleString()}</span>
+                    {mover.safetyRating ? <span>{ratingKey ? t(`safety.${ratingKey}`) : mover.safetyRating}</span> : null}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">{new Date(mover.dataAsOf).toLocaleDateString()}</span>
+                    <button type="button" onClick={() => startEdit(mover)} aria-label={t("table.edit")} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground">
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          </>
         )}
         {total > PAGE_SIZE ? (
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
