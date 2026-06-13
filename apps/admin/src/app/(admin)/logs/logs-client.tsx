@@ -275,6 +275,14 @@ export default function LogsClient() {
         columnsVersion={1}
         columns={columns}
         filters={filters}
+        onRowActivate={(log) => {
+          if (!log.changes) return;
+          setExpandedLog((cur) =>
+            cur?.id === log.id
+              ? null
+              : { id: log.id, changes: log.changes, action: log.action, entityType: log.entityType },
+          );
+        }}
         defaultSortBy="createdAt"
         defaultSortDir="desc"
         perPage={30}

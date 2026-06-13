@@ -369,6 +369,7 @@ export default function UsersPage() {
         searchPlaceholder="Search by name or email..."
         selectable
         isRowSelectable={(u) => !u.deletedAt}
+        onRowActivate={(u) => setQuickLook(u)}
         emptyIcon={Users}
         emptyTitle="No users found"
         emptyDescription={(hasQuery) =>
