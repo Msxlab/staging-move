@@ -493,7 +493,7 @@ export default function MovingPage() {
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="border-t border-border bg-muted/20 p-5">
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                       {/* From */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">

@@ -392,8 +392,8 @@ export default function MovingPlanDetailClient({ id }: { id: string }) {
             className="rounded-xl border border-border bg-card"
           />
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-foreground/[0.03] text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Task</th>

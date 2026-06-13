@@ -356,7 +356,7 @@ export default function NotificationsClient() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -399,7 +399,7 @@ export default function NotificationsClient() {
           <h2 className="text-lg font-semibold text-foreground">
             Send Notification
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">
                 Title
@@ -693,8 +693,8 @@ export default function NotificationsClient() {
             />
           </div>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-lg border border-border">
-            <table className="w-full text-sm">
+          <div className="mt-4 overflow-x-auto overscroll-x-contain rounded-lg border border-border">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Title</th>
