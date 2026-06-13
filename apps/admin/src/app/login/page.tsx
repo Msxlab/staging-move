@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [mfaCode, setMfaCode] = useState("");
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(true);
   const mfaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,11 +33,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const body: Record<string, string> = { email, password };
+      const body: Record<string, string | boolean> = { email, password };
       if (useBackupCode && backupCode.trim()) {
         body.backupCode = backupCode.trim();
       } else if (!useBackupCode && mfaCode.trim()) {
         body.mfaCode = mfaCode.trim();
+        if (mfaRequired && rememberDevice) body.rememberDevice = true;
       }
 
       const res = await fetch("/api/auth/login", {
@@ -104,42 +106,6 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-foreground">{tLogin("password")}</label>
                 <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="........" autoComplete="current-password" />
               </div>
-              {!useBackupCode ? (
-                <div>
-                  <label htmlFor="mfaCode" className="block text-sm font-medium text-foreground">{tLogin("mfaCode")}</label>
-                  <input
-                    ref={mfaInputRef}
-                    id="mfaCode"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className={inputCls + " text-center text-lg font-mono"}
-                    placeholder="000000"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label htmlFor="backupCode" className="block text-sm font-medium text-foreground">{tLogin("backupCode")}</label>
-                  <input
-                    ref={mfaInputRef}
-                    id="backupCode"
-                    type="text"
-                    autoComplete="off"
-                    maxLength={16}
-                    value={backupCode}
-                    onChange={(e) => setBackupCode(e.target.value.toUpperCase().slice(0, 16))}
-                    className={inputCls + " text-center text-lg tracking-widest font-mono"}
-                    placeholder="XXXXXXXX"
-                  />
-                </div>
-              )}
-              <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setMfaCode(""); setBackupCode(""); }}
-                className="text-xs text-primary hover:underline">
-                {tLogin("useBackupCode")}
-              </button>
             </>
           ) : (
             <>
@@ -156,7 +122,7 @@ export default function LoginPage() {
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     required
-                    className={inputCls + " text-center text-2xl tracking-[0.5em] font-mono"}
+                    className={inputCls + " text-center text-2xl font-mono"}
                     placeholder="000000"
                   />
                 </div>
@@ -168,21 +134,35 @@ export default function LoginPage() {
                     id="backupCode"
                     type="text"
                     autoComplete="off"
-                    maxLength={8}
+                    maxLength={16}
                     value={backupCode}
-                    onChange={(e) => setBackupCode(e.target.value.toUpperCase().slice(0, 8))}
+                    onChange={(e) => setBackupCode(e.target.value.toUpperCase().slice(0, 16))}
                     required
-                    className={inputCls + " text-center text-lg tracking-widest font-mono"}
+                    className={inputCls + " text-center text-lg font-mono"}
                     placeholder="XXXXXXXX"
                   />
                 </div>
               )}
+              {!useBackupCode && (
+                <label className="flex gap-3 rounded-xl border border-border/70 bg-background/70 p-3 text-left text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span>
+                    <span className="block font-medium text-foreground">Trust this device for 30 days</span>
+                    <span>After this MFA check, this browser can sign in with password only.</span>
+                  </span>
+                </label>
+              )}
               <div className="flex items-center justify-between text-xs">
-                <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setMfaCode(""); setBackupCode(""); }}
+                <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setMfaCode(""); setBackupCode(""); setRememberDevice(true); }}
                   className="text-primary hover:underline">
                   {tLogin("useBackupCode")}
                 </button>
-                <button type="button" onClick={() => { setMfaRequired(false); setMfaCode(""); setBackupCode(""); setUseBackupCode(false); }}
+                <button type="button" onClick={() => { setMfaRequired(false); setMfaCode(""); setBackupCode(""); setUseBackupCode(false); setRememberDevice(true); }}
                   className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="h-3 w-3" /> {tCommon("back")}
                 </button>

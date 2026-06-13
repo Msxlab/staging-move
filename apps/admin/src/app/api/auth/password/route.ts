@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { expireAdminSessionCookies, requireAdmin, requirePasswordConfirm } from "@/lib/auth";
+import { expireAdminMfaTrustCookie, revokeAdminMfaTrustedDevices } from "@/lib/admin-mfa-trusted-device";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 export async function PATCH(request: NextRequest) {
@@ -57,6 +58,7 @@ export async function PATCH(request: NextRequest) {
       where: { adminUserId: session.adminId, isActive: true },
       data: { isActive: false, lastActivity: new Date() },
     });
+    await revokeAdminMfaTrustedDevices(session.adminId);
 
     await writeAdminAudit(session, {
       action: "PASSWORD_CHANGED",
@@ -80,6 +82,7 @@ export async function PATCH(request: NextRequest) {
         },
       },
     );
+    expireAdminMfaTrustCookie(response, request.headers.get("host"));
     return expireAdminSessionCookies(response, request.headers.get("host"));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

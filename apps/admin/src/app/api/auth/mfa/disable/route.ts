@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { expireAdminSessionCookies, requireAdmin, requirePasswordConfirm } from "@/lib/auth";
+import { expireAdminMfaTrustCookie, revokeAdminMfaTrustedDevices } from "@/lib/admin-mfa-trusted-device";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // POST /api/auth/mfa/disable — disable MFA for current admin
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
       where: { adminUserId: session.adminId, isActive: true },
       data: { isActive: false, lastActivity: new Date() },
     });
+    await revokeAdminMfaTrustedDevices(session.adminId);
 
     await writeAdminAudit(session, {
       action: "MFA_DISABLED",
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest) {
         },
       },
     );
+    expireAdminMfaTrustCookie(response, request.headers.get("host"));
     return expireAdminSessionCookies(response, request.headers.get("host"));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

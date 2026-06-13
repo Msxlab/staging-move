@@ -1221,6 +1221,7 @@ model AdminUser {
   permissions                 AdminPermission[]
   auditLogs                   AdminAuditLog[]
   sessions                    AdminSession[]
+  mfaTrustedDevices           AdminMfaTrustedDevice[]
   loginLogs                   AdminLoginLog[]
   runtimeConfigUpdates        RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
   providerGovernanceReviews   ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
@@ -1259,6 +1260,27 @@ model AdminSession {
   @@index([tokenHash])
   @@index([isActive])
   @@index([expiresAt])
+}
+
+model AdminMfaTrustedDevice {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  tokenHash       String    @unique @db.VarChar(64)
+  fingerprintHash String    @db.VarChar(64)
+  deviceLabel     String?   @db.VarChar(120)
+  ipAddress       String?   @db.VarChar(45)
+  userAgent       String?   @db.VarChar(500)
+  lastUsedAt      DateTime?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([fingerprintHash])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model AdminLoginLog {

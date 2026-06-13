@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
@@ -37,6 +37,12 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "LocateFlow Admin",
   description: "LocateFlow Administration Panel",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "LocateFlow Admin",
+    statusBarStyle: "black-translucent",
+  },
   robots: {
     index: false,
     follow: false,
@@ -48,7 +54,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
+    apple: "/logo-mark.svg",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0A0F18",
 };
 
 export default async function RootLayout({

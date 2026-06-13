@@ -17,6 +17,9 @@ vi.mock("@/lib/db", () => ({
     adminSession: {
       updateMany: vi.fn(),
     },
+    adminMfaTrustedDevice: {
+      updateMany: vi.fn(),
+    },
     adminAuditLog: {
       create: vi.fn(),
     },
@@ -27,6 +30,7 @@ vi.mock("@/lib/auth", () => ({
   requireAdmin: vi.fn(() => Promise.resolve({ adminId: "admin_1", email: "admin@example.com", role: "SUPER_ADMIN" })),
   requirePasswordConfirm: vi.fn(() => Promise.resolve({ confirmed: true })),
   expireAdminSessionCookies: vi.fn((response) => response),
+  shouldUseSecureAdminCookies: vi.fn(() => false),
 }));
 
 import { prisma } from "@/lib/db";
@@ -35,6 +39,7 @@ import { PATCH } from "./route";
 
 const adminUserMock = prisma.adminUser as unknown as { findUnique: Mock; update: Mock };
 const adminSessionMock = prisma.adminSession as unknown as { updateMany: Mock };
+const adminMfaTrustedDeviceMock = prisma.adminMfaTrustedDevice as unknown as { updateMany: Mock };
 const expireAdminSessionCookiesMock = expireAdminSessionCookies as unknown as Mock;
 
 function makeRequest() {
@@ -54,6 +59,7 @@ describe("admin password route", () => {
     adminUserMock.findUnique.mockResolvedValue({ id: "admin_1", password: "old-hash" });
     adminUserMock.update.mockResolvedValue({});
     adminSessionMock.updateMany.mockResolvedValue({ count: 2 });
+    adminMfaTrustedDeviceMock.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("invalidates active admin sessions and expires the cookie after password change", async () => {
@@ -63,6 +69,10 @@ describe("admin password route", () => {
     expect(adminSessionMock.updateMany).toHaveBeenCalledWith({
       where: { adminUserId: "admin_1", isActive: true },
       data: { isActive: false, lastActivity: expect.any(Date) },
+    });
+    expect(adminMfaTrustedDeviceMock.updateMany).toHaveBeenCalledWith({
+      where: { adminUserId: "admin_1", revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
     });
     expect(expireAdminSessionCookiesMock).toHaveBeenCalledWith(response, "admin.locateflow.com");
     expect(response.headers.get("cache-control")).toBe("no-store");

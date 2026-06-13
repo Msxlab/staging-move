@@ -94,36 +94,45 @@ describe("admin service worker", () => {
   it("serves the service worker path without requiring an admin session", () => {
     expect(isPublicStaticPath("/sw.js")).toBe(true);
     expect(isPublicStaticPath("/register-sw.js")).toBe(true);
+    expect(isPublicStaticPath("/manifest.json")).toBe(true);
+    expect(isPublicStaticPath("/logo-mark.svg")).toBe(true);
+    expect(isPublicStaticPath("/icon-192.png")).toBe(true);
     expect(isPublicStaticPath("/robots.txt")).toBe(true);
     expect(isPublicStaticPath("/login")).toBe(false);
     expect(isPublicStaticPath("/api/providers")).toBe(false);
   });
 
-  it("retires stale workers and never intercepts external R2 assets", () => {
+  it("only caches static admin assets and leaves authenticated traffic on the network", () => {
     const sw = readFileSync(join(process.cwd(), "public", "sw.js"), "utf8");
     const fetchHandler = sw.slice(sw.indexOf('self.addEventListener("fetch"'));
 
     expect(sw).toContain("self.skipWaiting()");
     expect(sw).toContain("self.clients");
     expect(sw).toContain(".claim()");
-    expect(sw).toContain("self.registration.unregister()");
+    expect(sw).toContain('const CACHE_PREFIX = "locateflow-admin-"');
+    expect(sw).toContain("/manifest.json");
     expect(fetchHandler).toContain("if (url.origin !== self.location.origin) return;");
-    expect(fetchHandler).not.toContain("respondWith");
+    expect(fetchHandler).toContain('if (request.mode === "navigate") return;');
+    expect(fetchHandler).toContain('if (url.pathname.startsWith("/api/")) return;');
+    expect(fetchHandler).toContain("event.respondWith");
     expect(sw).not.toContain("assets.locateflow.com");
   });
 
-  it("unregisters stale service workers from the admin shell", () => {
+  it("registers the admin service worker and exposes PWA metadata", () => {
     const register = readFileSync(join(process.cwd(), "public", "register-sw.js"), "utf8");
     const layout = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
     const nextConfig = readFileSync(join(process.cwd(), "next.config.js"), "utf8");
+    const manifest = readFileSync(join(process.cwd(), "public", "manifest.json"), "utf8");
 
-    expect(register).toContain("navigator.serviceWorker.getRegistrations()");
-    expect(register).toContain("registration.unregister()");
-    expect(register).toContain('key.indexOf("locateflow-") === 0');
-    expect(register).not.toContain("navigator.serviceWorker.register");
+    expect(register).toContain('navigator.serviceWorker');
+    expect(register).toContain('.register("/sw.js"');
     expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />');
+    expect(layout).toContain('manifest: "/manifest.json"');
     expect(nextConfig).toContain('source: "/register-sw.js"');
+    expect(nextConfig).toContain('source: "/manifest.json"');
     expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
+    expect(manifest).toContain('"display": "standalone"');
+    expect(manifest).toContain('"/icon-192.png"');
   });
 });
 

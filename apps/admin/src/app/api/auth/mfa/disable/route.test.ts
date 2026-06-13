@@ -5,9 +5,11 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   requirePasswordConfirm: vi.fn(),
   expireAdminSessionCookies: vi.fn((response) => response),
+  shouldUseSecureAdminCookies: vi.fn(() => false),
   adminFindUnique: vi.fn(),
   adminUpdate: vi.fn(),
   adminSessionUpdateMany: vi.fn(),
+  adminMfaTrustedDeviceUpdateMany: vi.fn(),
   writeAdminAudit: vi.fn(),
 }));
 
@@ -15,6 +17,7 @@ vi.mock("@/lib/auth", () => ({
   requireAdmin: mocks.requireAdmin,
   requirePasswordConfirm: mocks.requirePasswordConfirm,
   expireAdminSessionCookies: mocks.expireAdminSessionCookies,
+  shouldUseSecureAdminCookies: mocks.shouldUseSecureAdminCookies,
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -25,6 +28,9 @@ vi.mock("@/lib/db", () => ({
     },
     adminSession: {
       updateMany: mocks.adminSessionUpdateMany,
+    },
+    adminMfaTrustedDevice: {
+      updateMany: mocks.adminMfaTrustedDeviceUpdateMany,
     },
   },
 }));
@@ -62,6 +68,7 @@ describe("admin MFA disable route", () => {
     mocks.adminFindUnique.mockResolvedValue({ mfaEnabled: true });
     mocks.adminUpdate.mockResolvedValue({});
     mocks.adminSessionUpdateMany.mockResolvedValue({ count: 2 });
+    mocks.adminMfaTrustedDeviceUpdateMany.mockResolvedValue({ count: 1 });
     mocks.writeAdminAudit.mockResolvedValue(undefined);
   });
 
@@ -120,6 +127,10 @@ describe("admin MFA disable route", () => {
     expect(mocks.adminSessionUpdateMany).toHaveBeenCalledWith({
       where: { adminUserId: "admin_1", isActive: true },
       data: { isActive: false, lastActivity: expect.any(Date) },
+    });
+    expect(mocks.adminMfaTrustedDeviceUpdateMany).toHaveBeenCalledWith({
+      where: { adminUserId: "admin_1", revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
     });
     expect(mocks.writeAdminAudit).toHaveBeenCalledWith(
       expect.objectContaining({ adminId: "admin_1" }),

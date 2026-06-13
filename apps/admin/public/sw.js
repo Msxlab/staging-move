@@ -1,10 +1,23 @@
-const CACHE_PREFIX = "locateflow-";
+const CACHE_PREFIX = "locateflow-admin-";
+const STATIC_CACHE = `${CACHE_PREFIX}static-v1`;
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
-});
+const STATIC_ASSETS = [
+  "/manifest.json",
+  "/favicon.svg",
+  "/logo.svg",
+  "/logo-mark.svg",
+  "/og-image.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
-function clearLocateFlowCaches() {
+function isStaticAdminAsset(url) {
+  if (url.origin !== self.location.origin) return false;
+  if (url.pathname.startsWith("/_next/static/")) return true;
+  return STATIC_ASSETS.includes(url.pathname);
+}
+
+function clearLocateFlowAdminCaches() {
   return caches.keys().then((keys) =>
     Promise.all(
       keys
@@ -14,30 +27,56 @@ function clearLocateFlowCaches() {
   );
 }
 
-function retireWorker() {
-  return clearLocateFlowCaches()
-    .then(() => self.registration.unregister())
-    .catch(() => undefined);
-}
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .catch(() => undefined)
+  );
+  self.skipWaiting();
+});
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    self.clients
-      .claim()
-      .catch(() => undefined)
-      .then(() => retireWorker())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.indexOf(CACHE_PREFIX) === 0 && key !== STATIC_CACHE)
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const { request } = event;
+  if (request.method !== "GET") return;
 
-  // External logo/CDN requests must stay on the browser's normal network path.
-  // A rejected service-worker fetch promise here causes NS_ERROR_INTERCEPTION_FAILED.
+  const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (request.mode === "navigate") return;
+  if (url.pathname.startsWith("/api/")) return;
+  if (!isStaticAdminAsset(url)) return;
 
-  // This worker exists only to replace and retire stale admin service workers
-  // that cached too broadly. Leave every request on the native browser path.
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached);
+
+      return cached || network;
+    })
+  );
 });
 
 self.addEventListener("message", (event) => {
@@ -45,6 +84,6 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
   if (event.data && event.data.type === "LOGOUT_CLEAR_CACHES") {
-    event.waitUntil(clearLocateFlowCaches());
+    event.waitUntil(clearLocateFlowAdminCaches());
   }
 });

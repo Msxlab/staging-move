@@ -29,7 +29,18 @@ const PUBLIC_EXACT_PATHS = new Set([
   "/api/auth/set-password",
 ]);
 const PUBLIC_PREFIX_PATHS: string[] = [];
-const PUBLIC_STATIC_PATHS = ["/sw.js", "/register-sw.js", "/robots.txt"];
+const PUBLIC_STATIC_PATHS = [
+  "/sw.js",
+  "/register-sw.js",
+  "/manifest.json",
+  "/robots.txt",
+  "/logo.svg",
+  "/logo-mark.svg",
+  "/favicon.svg",
+  "/og-image.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
 /**
  * Paths that must reach the request handler even when an IP rule would

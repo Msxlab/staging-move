@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
+import {
+  createAdminMfaTrustToken,
+  expireAdminMfaTrustCookie,
+  findValidAdminMfaTrustedDevice,
+  getAdminMfaTrustCookie,
+  rememberAdminMfaTrustedDevice,
+  setAdminMfaTrustCookie,
+} from "@/lib/admin-mfa-trusted-device";
 import { trackFailedLogin, trackSuccessfulLogin } from "@/lib/security-monitor";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
@@ -31,6 +38,7 @@ const adminLoginSchema = z
       .min(8)
       .max(16)
       .optional(),
+    rememberDevice: z.boolean().optional(),
   })
   .strict();
 
@@ -318,7 +326,7 @@ export async function POST(request: NextRequest) {
       // path/issue list, which would leak the schema.
       return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
     }
-    const { email, password, mfaCode, backupCode } = parsed.data;
+    const { email, password, mfaCode, backupCode, rememberDevice } = parsed.data;
 
     // SEC-005: Rate limiting
     const ip = resolveClientIP(request);
@@ -375,117 +383,164 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    // MFA check — if enabled, require TOTP code or backup code
-    if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
-      if (!mfaCode && !backupCode) {
-        await writeLoginAuditLog({ action: "MFA_REQUIRED", email, ip, ua, reason: "MFA_REQUIRED", adminId: admin.id });
-        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
-        return NextResponse.json({ error: "MFA required", requiresMfa: true }, { status: 403 });
-      }
-
-      const mfaRateCheck = await checkLoginRateLimitRedis(
-        buildAdminMfaRateKey(admin.id, ip),
-        ADMIN_MFA_RATE_LIMIT,
-      );
-      if (!mfaRateCheck.allowed) {
-        const mfaBlockReason = mfaRateCheck.unavailable ? "MFA_RATE_LIMIT_UNAVAILABLE" : "MFA_RATE_LIMIT_BLOCKED";
-        await writeLoginAuditLog({
-          action: "LOGIN_BLOCKED",
-          email,
-          ip,
-          ua,
-          reason: mfaBlockReason,
-          adminId: admin.id,
-        });
-        await writeLoginLog({
-          adminUserId: admin.id,
-          email,
-          success: false,
-          failReason: mfaBlockReason,
-          ip,
-          ua,
-          mfaUsed: true,
-          mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
-        });
-        return NextResponse.json(
-          {
-            error: mfaRateCheck.unavailable
-              ? "Login temporarily unavailable. Please try again later."
-              : "Too many MFA attempts. Please try again later.",
-          },
-          {
-            status: mfaRateCheck.unavailable ? 503 : 429,
-            headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) },
-          },
-        );
-      }
-
-      const secret = decrypt((admin as any).mfaSecret);
-      if (!secret) {
-        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_CONFIG_ERROR", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
-        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
-      }
-
-      let mfaValid = false;
-
-      if (mfaCode) {
-        mfaValid = verifyTOTP(secret, mfaCode);
-      } else if (backupCode) {
-        // Verify and consume backup code. The DB column is a JSON string
-        // of hashes; if the row got corrupted (manual edit, partial
-        // migration), fall through to "invalid backup code" instead of
-        // crashing the whole login route.
-        const originalBackupCodes = (admin as any).mfaBackupCodes || "[]";
-        let storedHashes: string[] = [];
-        try {
-          const decoded = JSON.parse(originalBackupCodes);
-          if (Array.isArray(decoded)) storedHashes = decoded.filter((h) => typeof h === "string");
-        } catch {
-          storedHashes = [];
-        }
-        const matchIndex = await verifyBackupCode(backupCode, storedHashes);
-        if (matchIndex >= 0) {
-          // Remove used backup code
-          storedHashes.splice(matchIndex, 1);
-          const consumed = await prisma.adminUser.updateMany({
-            where: { id: admin.id, mfaBackupCodes: originalBackupCodes },
-            data: { mfaBackupCodes: JSON.stringify(storedHashes) },
-          });
-          mfaValid = consumed.count === 1;
-        }
-      }
-
-      if (!mfaValid) {
-        trackFailedLogin(email, ip);
-        await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, ua, reason: "INVALID_MFA", adminId: admin.id });
-        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_MFA", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
-        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
-      }
-      if (backupCode) {
-        await writeAdminAudit(
-          {
-            adminId: admin.id,
-            email: admin.email,
-            role: admin.role,
-          },
-          {
-            action: "BACKUP_CODE_USED",
-            entityType: "AdminAuth",
-            entityId: admin.id,
-            metadata: { operation: "admin_login", method: "BACKUP_CODE" },
-            request: getAuditRequestMeta(request),
-          },
-        );
-      }
-    }
-
-    // Session fingerprinting — bind JWT to IP + User-Agent
+    // MFA check — if enabled, require TOTP, backup code, or a valid trusted device.
     const fp = await generateFingerprint(
       ip,
       ua,
       request.headers.get("accept-language"),
       request.headers.get("sec-ch-ua"),
     );
+    let mfaTrustedDeviceUsed = false;
+    let shouldExpireMfaTrustCookie = false;
+    let trustedDeviceTokenToSet: string | null = null;
+
+    if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
+      const existingTrustToken = !mfaCode && !backupCode ? getAdminMfaTrustCookie(request) : null;
+      if (existingTrustToken) {
+        const trustedDevice = await findValidAdminMfaTrustedDevice({
+          adminUserId: admin.id,
+          token: existingTrustToken,
+          fingerprint: fp,
+        });
+        mfaTrustedDeviceUsed = Boolean(trustedDevice);
+        shouldExpireMfaTrustCookie = !trustedDevice;
+      }
+
+      if (!mfaTrustedDeviceUsed && !mfaCode && !backupCode) {
+        await writeLoginAuditLog({ action: "MFA_REQUIRED", email, ip, ua, reason: "MFA_REQUIRED", adminId: admin.id });
+        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
+        const response = NextResponse.json({ error: "MFA required", requiresMfa: true }, { status: 403 });
+        if (shouldExpireMfaTrustCookie) {
+          expireAdminMfaTrustCookie(response, request.headers.get("host"));
+        }
+        return response;
+      }
+
+      if (!mfaTrustedDeviceUsed) {
+        const mfaRateCheck = await checkLoginRateLimitRedis(
+          buildAdminMfaRateKey(admin.id, ip),
+          ADMIN_MFA_RATE_LIMIT,
+        );
+        if (!mfaRateCheck.allowed) {
+          const mfaBlockReason = mfaRateCheck.unavailable ? "MFA_RATE_LIMIT_UNAVAILABLE" : "MFA_RATE_LIMIT_BLOCKED";
+          await writeLoginAuditLog({
+            action: "LOGIN_BLOCKED",
+            email,
+            ip,
+            ua,
+            reason: mfaBlockReason,
+            adminId: admin.id,
+          });
+          await writeLoginLog({
+            adminUserId: admin.id,
+            email,
+            success: false,
+            failReason: mfaBlockReason,
+            ip,
+            ua,
+            mfaUsed: true,
+            mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
+          });
+          return NextResponse.json(
+            {
+              error: mfaRateCheck.unavailable
+                ? "Login temporarily unavailable. Please try again later."
+                : "Too many MFA attempts. Please try again later.",
+            },
+            {
+              status: mfaRateCheck.unavailable ? 503 : 429,
+              headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) },
+            },
+          );
+        }
+
+        const secret = decrypt((admin as any).mfaSecret);
+        if (!secret) {
+          await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_CONFIG_ERROR", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
+          return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+        }
+
+        let mfaValid = false;
+
+        if (mfaCode) {
+          mfaValid = verifyTOTP(secret, mfaCode);
+        } else if (backupCode) {
+          // Verify and consume backup code. The DB column is a JSON string
+          // of hashes; if the row got corrupted (manual edit, partial
+          // migration), fall through to "invalid backup code" instead of
+          // crashing the whole login route.
+          const originalBackupCodes = (admin as any).mfaBackupCodes || "[]";
+          let storedHashes: string[] = [];
+          try {
+            const decoded = JSON.parse(originalBackupCodes);
+            if (Array.isArray(decoded)) storedHashes = decoded.filter((h) => typeof h === "string");
+          } catch {
+            storedHashes = [];
+          }
+          const matchIndex = await verifyBackupCode(backupCode, storedHashes);
+          if (matchIndex >= 0) {
+            // Remove used backup code
+            storedHashes.splice(matchIndex, 1);
+            const consumed = await prisma.adminUser.updateMany({
+              where: { id: admin.id, mfaBackupCodes: originalBackupCodes },
+              data: { mfaBackupCodes: JSON.stringify(storedHashes) },
+            });
+            mfaValid = consumed.count === 1;
+          }
+        }
+
+        if (!mfaValid) {
+          trackFailedLogin(email, ip);
+          await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, ua, reason: "INVALID_MFA", adminId: admin.id });
+          await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_MFA", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
+          return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+        }
+        if (backupCode) {
+          await writeAdminAudit(
+            {
+              adminId: admin.id,
+              email: admin.email,
+              role: admin.role,
+            },
+            {
+              action: "BACKUP_CODE_USED",
+              entityType: "AdminAuth",
+              entityId: admin.id,
+              metadata: { operation: "admin_login", method: "BACKUP_CODE" },
+              request: getAuditRequestMeta(request),
+            },
+          );
+        }
+        if (mfaCode && rememberDevice) {
+          trustedDeviceTokenToSet = createAdminMfaTrustToken();
+          const trustedParsedUA = parseLoginUA(ua);
+          await rememberAdminMfaTrustedDevice({
+            adminUserId: admin.id,
+            token: trustedDeviceTokenToSet,
+            fingerprint: fp,
+            ipAddress: ip,
+            userAgent: ua,
+            deviceLabel: `${trustedParsedUA.browser} on ${trustedParsedUA.os}`,
+          });
+          await writeAdminAudit(
+            {
+              adminId: admin.id,
+              email: admin.email,
+              role: admin.role,
+            },
+            {
+              action: "MFA_TRUSTED_DEVICE_CREATED",
+              entityType: "AdminAuth",
+              entityId: admin.id,
+              metadata: { operation: "admin_login", expiresInDays: 30 },
+              request: getAuditRequestMeta(request),
+            },
+          );
+        }
+      }
+    }
+
+    // Session fingerprinting — bind JWT to IP + User-Agent
     // Embed `mfaEnabled` in the JWT so the Edge-Runtime middleware can gate
     // access without a DB call. SUPER_ADMINs without MFA are steered to the
     // setup page (see admin middleware `applyMfaSetupGate`). The `mcp`
@@ -505,7 +560,8 @@ export async function POST(request: NextRequest) {
     // Create DB-tracked admin session
     const tokenH = await hashSessionToken(token);
     const parsedUA = parseLoginUA(ua);
-    const mfaWasUsed = Boolean((admin as any).mfaEnabled && ((admin as any).mfaSecret));
+    const mfaMethod = mfaTrustedDeviceUsed ? "TRUSTED_DEVICE" : mfaCode ? "TOTP" : backupCode ? "BACKUP_CODE" : null;
+    const mfaWasUsed = Boolean((admin as any).mfaEnabled && ((admin as any).mfaSecret) && mfaMethod);
     try {
       await prisma.adminSession.create({
         data: {
@@ -539,7 +595,8 @@ export async function POST(request: NextRequest) {
       entityId: admin.id,
       metadata: {
         mfaUsed: mfaWasUsed,
-        mfaMethod: mfaCode ? "TOTP" : backupCode ? "BACKUP_CODE" : null,
+        mfaMethod,
+        trustedDevice: mfaTrustedDeviceUsed,
       },
       request: getAuditRequestMeta(request),
     });
@@ -547,10 +604,10 @@ export async function POST(request: NextRequest) {
     // Write login log
     await writeLoginLog({
       adminUserId: admin.id, email, success: true, ip, ua,
-      mfaUsed: mfaWasUsed, mfaMethod: mfaCode ? "TOTP" : backupCode ? "BACKUP_CODE" : null,
+      mfaUsed: mfaWasUsed, mfaMethod,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       admin: {
         id: admin.id,
@@ -562,6 +619,10 @@ export async function POST(request: NextRequest) {
         mustChangePassword,
       },
     });
+    if (trustedDeviceTokenToSet) {
+      setAdminMfaTrustCookie(response, trustedDeviceTokenToSet);
+    }
+    return response;
   } catch (error) {
     console.error("Login failed:", error);
     return NextResponse.json({ error: "Login failed" }, { status: 500 });

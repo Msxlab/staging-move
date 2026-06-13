@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   adminLoginLogCreate: vi.fn(),
   adminAuditLogCreate: vi.fn(),
   adminSessionCreate: vi.fn(),
+  adminMfaTrustedDeviceFindFirst: vi.fn(),
+  adminMfaTrustedDeviceCreate: vi.fn(),
+  adminMfaTrustedDeviceUpdateMany: vi.fn(),
   rateLimitLogCreate: vi.fn(),
   compare: vi.fn(),
   verifyTOTP: vi.fn(),
@@ -27,6 +30,11 @@ vi.mock("@/lib/db", () => ({
     adminLoginLog: { create: mocks.adminLoginLogCreate },
     adminAuditLog: { create: mocks.adminAuditLogCreate },
     adminSession: { create: mocks.adminSessionCreate },
+    adminMfaTrustedDevice: {
+      findFirst: mocks.adminMfaTrustedDeviceFindFirst,
+      create: mocks.adminMfaTrustedDeviceCreate,
+      updateMany: mocks.adminMfaTrustedDeviceUpdateMany,
+    },
     rateLimitLog: { create: mocks.rateLimitLogCreate },
   },
 }));
@@ -39,6 +47,7 @@ vi.mock("@/lib/auth", () => ({
   createSession: vi.fn(() => Promise.resolve("admin-session-token")),
   generateFingerprint: vi.fn(() => Promise.resolve("fingerprint")),
   hashSessionToken: vi.fn(() => Promise.resolve("session-hash")),
+  shouldUseSecureAdminCookies: vi.fn(() => false),
 }));
 
 vi.mock("@/lib/security-monitor", () => ({
@@ -97,6 +106,9 @@ describe("admin login rate limiting", () => {
     mocks.adminLoginLogCreate.mockResolvedValue({});
     mocks.adminAuditLogCreate.mockResolvedValue({});
     mocks.adminSessionCreate.mockResolvedValue({});
+    mocks.adminMfaTrustedDeviceFindFirst.mockResolvedValue(null);
+    mocks.adminMfaTrustedDeviceCreate.mockResolvedValue({});
+    mocks.adminMfaTrustedDeviceUpdateMany.mockResolvedValue({ count: 1 });
     mocks.rateLimitLogCreate.mockResolvedValue({});
     mocks.adminUpdate.mockResolvedValue({});
     mocks.adminUpdateMany.mockResolvedValue({ count: 1 });
@@ -212,6 +224,114 @@ describe("admin login rate limiting", () => {
         adminUserId: "admin-mfa",
       }),
     }));
+  });
+
+  it("skips the MFA prompt when a valid trusted-device cookie matches the admin fingerprint", async () => {
+    mocks.compare.mockResolvedValue(true);
+    mocks.adminFindUnique.mockResolvedValue({
+      id: "admin-trusted",
+      email: "trusted-admin@example.com",
+      password: "hash",
+      firstName: "Trusted",
+      lastName: "Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: "encrypted-secret",
+      mfaBackupCodes: "[]",
+    });
+    mocks.adminMfaTrustedDeviceFindFirst.mockResolvedValue({
+      id: "trusted-device-1",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const response = await POST(request(
+      "trusted-admin@example.com",
+      { password: "correct-password" },
+      { cookie: "admin_mfa_trust=trusted-token-value-that-is-long-enough" },
+    ));
+
+    expect(response.status).toBe(200);
+    expect(mocks.verifyTOTP).not.toHaveBeenCalled();
+    expect(mocks.adminMfaTrustedDeviceFindFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        adminUserId: "admin-trusted",
+        revokedAt: null,
+        expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
+      }),
+    }));
+    expect(mocks.adminMfaTrustedDeviceUpdateMany).toHaveBeenCalledWith({
+      where: { id: "trusted-device-1", revokedAt: null },
+      data: { lastUsedAt: expect.any(Date) },
+    });
+    expect(mocks.adminSessionCreate).toHaveBeenCalled();
+    expect(mocks.adminAuditLogCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        action: "LOGIN_SUCCESS",
+        changes: expect.stringContaining('"trustedDevice":true'),
+      }),
+    }));
+  });
+
+  it("creates a 30-day trusted-device cookie after a successful TOTP when requested", async () => {
+    mocks.compare.mockResolvedValue(true);
+    mocks.verifyTOTP.mockReturnValue(true);
+    mocks.adminFindUnique.mockResolvedValue({
+      id: "admin-remember",
+      email: "remember-admin@example.com",
+      password: "hash",
+      firstName: "Remember",
+      lastName: "Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: "encrypted-secret",
+      mfaBackupCodes: "[]",
+    });
+
+    const response = await POST(request("remember-admin@example.com", {
+      password: "correct-password",
+      mfaCode: "123456",
+      rememberDevice: true,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMfaTrustedDeviceCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        adminUserId: "admin-remember",
+        deviceLabel: "Unknown on Unknown",
+        expiresAt: expect.any(Date),
+      }),
+    }));
+    expect(response.headers.get("set-cookie")).toContain("admin_mfa_trust=");
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=2592000");
+  });
+
+  it("does not trust a device from backup-code login even if the request asks for it", async () => {
+    mocks.compare.mockResolvedValue(true);
+    mocks.verifyBackupCode.mockResolvedValue(0);
+    mocks.adminFindUnique.mockResolvedValue({
+      id: "admin-backup-no-trust",
+      email: "backup-no-trust@example.com",
+      password: "hash",
+      firstName: "Backup",
+      lastName: "NoTrust",
+      role: "SUPER_ADMIN",
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: "encrypted-secret",
+      mfaBackupCodes: JSON.stringify(["hash-a"]),
+    });
+
+    const response = await POST(request("backup-no-trust@example.com", {
+      password: "correct-password",
+      backupCode: "ABCDEF12",
+      rememberDevice: true,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMfaTrustedDeviceCreate).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie") || "").not.toContain("admin_mfa_trust=");
   });
 
   it("accepts a backup code once and writes backup-code audit metadata", async () => {

@@ -48,6 +48,7 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "WorkspaceAuthChallenge", // short-lived step-up challenges — never restore live auth state
   "AdminSetPasswordToken", // single-use, expiring admin invite/set-password tokens — never restore live token state (same rationale as PasswordResetToken)
   "AdminActionOtp", // single-use, expiring admin step-up OTP hashes — never restore live token state (same token-table rationale)
+  "AdminMfaTrustedDevice", // remembered-admin-device tokens — restoring stale hashes would re-grant MFA bypass on old browsers
   "ServiceCostLog", // per-service monthly cost history; derived budget telemetry rebuilt as services accrue — PITR covers point-in-time recovery
   "SavedProvider", // convenience provider shortlist; user-rebuildable, low disaster-recovery value (same rationale as RecommendationFeedback)
   "RecommendationFeedback", // per-user recommendation dismiss/snooze signal; regenerates through use, low recovery value (same rationale as UserEvent)
