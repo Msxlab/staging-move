@@ -668,7 +668,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
   },
   commandTop: {
     flexDirection: "row",
@@ -883,7 +882,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    ...theme.shadow.md,
   },
   compareTrayTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
   compareTrayHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },

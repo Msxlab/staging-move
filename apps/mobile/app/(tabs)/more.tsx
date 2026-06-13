@@ -340,7 +340,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.glass.border,
     padding: 15,
     marginBottom: 12,
-    ...theme.shadow.sm,
   },
   profileBody: { flex: 1, minWidth: 0 },
   profileName: {
@@ -382,7 +381,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     padding: 10,
     justifyContent: "space-between",
-    ...theme.shadow.sm,
   },
   quickIcon: {
     width: 32,

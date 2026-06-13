@@ -12,9 +12,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, MapPin, Check, Calendar } from "lucide-react-native";
+import { ArrowLeft, MapPin, Check, Calendar, Sparkles } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
@@ -23,6 +24,7 @@ import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
+import { addressLimitForPlan } from "@/lib/plan-comparison";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 
@@ -48,6 +50,7 @@ export default function NewAddressScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [addressGate, setAddressGate] = useState<{ current: number; limit: number } | null>(null);
   // Success micro-moment: fire the raccoon toast on save, then go back when it
   // finishes so the user actually sees the loop close.
   const [showSuccess, setShowSuccess] = useState(false);
@@ -89,6 +92,30 @@ export default function NewAddressScreen() {
     longitude: null as number | null,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [addressesRes, profileRes] = await Promise.all([
+        api.get<any>("/api/addresses", { limit: "200" }),
+        api.get<any>("/api/profile"),
+      ]);
+      if (cancelled) return;
+      const plan =
+        profileRes.data?.entitlement?.plan ||
+        profileRes.data?.subscription?.plan ||
+        "FREE_TRIAL";
+      setAddressGate({
+        current: addressesRes.data?.addresses?.length || 0,
+        limit: addressLimitForPlan(plan),
+      });
+    })().catch(() => {
+      if (!cancelled) setAddressGate(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const update = (field: string, value: string | boolean | number | null) =>
     setForm((prev) => {
       const next = { ...prev, [field]: value };
@@ -103,6 +130,10 @@ export default function NewAddressScreen() {
   };
 
   const handleSave = async () => {
+    if (addressLimitReached) {
+      showAddressLimitAlert();
+      return;
+    }
     if (!form.street || !form.city || !form.state || !form.zip) {
       Alert.alert(t("validation.missingFields"), t("addresses.errorRequiredFields"));
       return;
@@ -166,14 +197,7 @@ export default function NewAddressScreen() {
       // message — turn those into an upsell with an Upgrade button instead of a
       // generic "Try again" that dead-ends the user.
       if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
-        Alert.alert(
-          t("subscription.upgradeTitle", { defaultValue: "Upgrade needed" }),
-          res.error,
-          [
-            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-          ],
-        );
+        showAddressLimitAlert(res.error);
       } else {
         Alert.alert(t("common.retry"), res.error);
       }
@@ -187,6 +211,26 @@ export default function NewAddressScreen() {
     ADDRESS_TYPES.find((type) => type.value === form.type)?.label || t("addresses.type_primary");
   const requiredComplete = [form.street, form.city, form.state, form.zip].filter(Boolean).length;
   const placeLine = [form.city, form.state, form.zip].filter(Boolean).join(", ");
+  const heroSubline = placeLine || t("addresses.newDescription", {
+    defaultValue: "Add a real address so providers, reminders, and local details match the right place.",
+  });
+  const addressLimitReached = addressGate != null && addressGate.current >= addressGate.limit;
+  const showAddressLimitAlert = (message?: string) => {
+    hapticError();
+    Alert.alert(
+      t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" }),
+      message ||
+        t("addresses.limitReachedWithCount", {
+          current: addressGate?.current ?? 0,
+          limit: addressGate?.limit ?? 0,
+          defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
+        }),
+      [
+        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+        { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -210,6 +254,33 @@ export default function NewAddressScreen() {
       >
         <EmailVerificationBanner context={t("addresses.title")} />
 
+        {addressLimitReached ? (
+          <View style={styles.limitCard}>
+            <View style={styles.limitIcon}>
+              <Sparkles size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.limitTitle}>
+                {t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" })}
+              </Text>
+              <Text style={styles.limitBody}>
+                {t("addresses.limitReachedWithCount", {
+                  current: addressGate?.current ?? 0,
+                  limit: addressGate?.limit ?? 0,
+                  defaultValue: `Your plan includes ${addressGate?.limit ?? 0} addresses. Upgrade to add more.`,
+                })}
+              </Text>
+              <TouchableOpacity
+                style={styles.limitCta}
+                onPress={() => router.push("/settings/subscription")}
+                activeOpacity={0.72}
+              >
+                <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
         <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
@@ -219,14 +290,14 @@ export default function NewAddressScreen() {
               <Text style={styles.heroKicker}>ADDRESS COMMAND</Text>
               <Text style={styles.heroTitle}>{form.nickname || selectedTypeLabel}</Text>
               <Text style={styles.heroSub} numberOfLines={2}>
-                {placeLine || t("addresses.emptyDescription")}
+                {heroSubline}
               </Text>
             </View>
           </View>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{requiredComplete}/4</Text>
-              <Text style={styles.heroStatLabel}>required</Text>
+              <Text style={styles.heroStatLabel}>fields</Text>
             </View>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{form.ownership}</Text>
@@ -273,7 +344,7 @@ export default function NewAddressScreen() {
           <AddressAutocompleteField
             label={t("addresses.street") + " *"}
             value={form.street}
-            placeholder="123 Main Street"
+            placeholder={t("addresses.streetPlaceholder", { defaultValue: "Street address" })}
             onValueChange={(value) => update("street", value)}
             onSelect={handleAutocompleteSelect}
           />
@@ -292,7 +363,7 @@ export default function NewAddressScreen() {
           <Text style={styles.label}>{t("addresses.city")} *</Text>
           <TextInput
             style={styles.input}
-            placeholder="New York"
+            placeholder={t("addresses.cityPlaceholder", { defaultValue: "City" })}
             placeholderTextColor={theme.colors.textMuted}
             value={form.city}
             onChangeText={(v) => update("city", v)}
@@ -304,7 +375,7 @@ export default function NewAddressScreen() {
               <Text style={styles.label}>{t("addresses.state")} *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="NY"
+                placeholder={t("addresses.statePlaceholder", { defaultValue: "ST" })}
                 placeholderTextColor={theme.colors.textMuted}
                 value={form.state}
                 onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
@@ -316,7 +387,7 @@ export default function NewAddressScreen() {
               <Text style={styles.label}>{t("addresses.zip")} *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="10001"
+                placeholder={t("addresses.zipPlaceholder", { defaultValue: "ZIP code" })}
                 placeholderTextColor={theme.colors.textMuted}
                 value={form.zip}
                 onChangeText={(v) => update("zip", v)}
@@ -409,6 +480,8 @@ export default function NewAddressScreen() {
             </>
           )}
         </TouchableOpacity>
+        </>
+        )}
       </ScrollView>
       </KeyboardAvoidingView>
       <SuccessToast
@@ -446,6 +519,37 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.glass.highlight,
     ...theme.shadow.sm,
   },
+  limitCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  limitIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+  },
+  limitTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
+  limitBody: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 19, marginTop: 4 },
+  limitCta: {
+    alignSelf: "flex-start",
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+  },
+  limitCtaText: { fontSize: 13, fontWeight: "800", color: "#fff" },
   heroTop: {
     flexDirection: "row",
     alignItems: "center",

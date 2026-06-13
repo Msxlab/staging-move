@@ -599,7 +599,7 @@
     "errorDestinationStateFormat": "El estado de destino debe ser un código de 2 letras.",
     "errorPlanCreateFailed": "No se pudo crear el plan de mudanza.",
     "checklist": "Lista",
-    "checklistEmpty": "Tu lista aparecerá aquí cuando agregues servicios.",
+    "checklistEmpty": "Aún no hay plan de mudanza.",
     "detailTitle": "Plan de mudanza",
     "origin": "Origen",
     "from": "Desde",

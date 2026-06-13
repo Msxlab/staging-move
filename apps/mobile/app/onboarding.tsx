@@ -101,6 +101,7 @@ import { ObCoach } from "@/components/ui/ObCoach";
 import { coachCopyKeys } from "@/components/ui/ob-coach-state";
 import { computeOnboardingDataQuality } from "@/lib/onboarding-data-quality";
 import { NotificationPrimingCard } from "@/components/onboarding/NotificationPrimingCard";
+import { serviceLimitForPlan } from "@/lib/plan-comparison";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -240,6 +241,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const planTier = useAuthStore((s) => s.planTier);
   const [step, setStep] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
@@ -517,6 +519,9 @@ export default function OnboardingScreen() {
     });
   };
   const updateMoving = (key: string, value: any) => {
+    if (step === 3 && error) {
+      setError("");
+    }
     setMovingForm((prev) => {
       const next = { ...prev, [key]: value };
       if (key === "street" || key === "city" || key === "state" || key === "zip") {
@@ -534,7 +539,22 @@ export default function OnboardingScreen() {
     setMovingForm((prev) => applyAddressAutocompleteResult(prev, result));
   };
 
+  const serviceSelectionLimit = serviceLimitForPlan(planTier);
+  const serviceLimitMessage = useCallback(() =>
+    t("services.limitReachedWithCount", {
+      current: serviceSelectionLimit,
+      limit: serviceSelectionLimit,
+      defaultValue: `Your plan includes ${serviceSelectionLimit} services. Upgrade to add more.`,
+    }), [serviceSelectionLimit, t]);
+
   const toggleProvider = (provider: ScoredProvider) => {
+    const alreadySelected = selectedProviders.has(provider.id);
+    if (!alreadySelected && selectedProviders.size >= serviceSelectionLimit) {
+      hapticError();
+      setError(serviceLimitMessage());
+      return;
+    }
+    setError("");
     setSelectedProviders((prev) => {
       const next = new Map(prev);
       if (next.has(provider.id)) next.delete(provider.id);
@@ -1092,20 +1112,33 @@ export default function OnboardingScreen() {
     () => essentialRecommended.reduce((n, p) => (selectedProviders.has(p.id) ? n : n + 1), 0),
     [essentialRecommended, selectedProviders],
   );
+  const remainingProviderSlots = Math.max(0, serviceSelectionLimit - selectedProviders.size);
+  const addAllEssentialCount = Math.min(unselectedEssentialCount, remainingProviderSlots);
+  const essentialSelectionLimited = unselectedEssentialCount > remainingProviderSlots;
 
   // One-tap: select every essential pick the user hasn't already added. Purely
   // additive — it never deselects, so a user who tapped one extra keeps it, and
   // they can still deselect any single card afterward.
   const addAllEssentials = useCallback(() => {
+    if (remainingProviderSlots <= 0) {
+      hapticError();
+      setError(serviceLimitMessage());
+      return;
+    }
+    setError("");
     hapticSuccess();
     setSelectedProviders((prev) => {
       const next = new Map(prev);
+      let added = 0;
       for (const provider of essentialRecommended) {
-        if (!next.has(provider.id)) next.set(provider.id, provider);
+        if (next.has(provider.id)) continue;
+        if (added >= remainingProviderSlots) break;
+        next.set(provider.id, provider);
+        added++;
       }
       return next;
     });
-  }, [essentialRecommended]);
+  }, [essentialRecommended, remainingProviderSlots, serviceLimitMessage]);
 
   // Shared compact recommendation card (used by both the essentials and the
   // optional-extras lists so they stay visually identical and there's no
@@ -1676,14 +1709,23 @@ export default function OnboardingScreen() {
                     </View>
                     {unselectedEssentialCount > 0 ? (
                       <TouchableOpacity
-                        style={styles.addAllBtn}
+                        style={[styles.addAllBtn, addAllEssentialCount === 0 && { opacity: 0.55 }]}
                         onPress={addAllEssentials}
+                        disabled={addAllEssentialCount === 0}
                         accessibilityRole="button"
-                        accessibilityLabel={t("onboarding.providers_addAllA11y", { defaultValue: "Add all recommended essentials", count: unselectedEssentialCount })}
+                        accessibilityLabel={
+                          addAllEssentialCount === 0
+                            ? t("onboarding.providers_limitReached", { defaultValue: "Service limit reached" })
+                            : t("onboarding.providers_addAllA11y", { defaultValue: "Add recommended essentials", count: addAllEssentialCount })
+                        }
                       >
                         <Check size={13} color={theme.colors.primary} />
                         <Text style={styles.addAllBtnText}>
-                          {t("onboarding.providers_addAll", { defaultValue: "Add all", count: unselectedEssentialCount })}
+                          {addAllEssentialCount === 0
+                            ? t("onboarding.providers_limitReached", { defaultValue: "Limit reached" })
+                            : essentialSelectionLimited
+                              ? t("onboarding.providers_addAvailable", { defaultValue: `Add ${addAllEssentialCount}`, count: addAllEssentialCount })
+                              : t("onboarding.providers_addAll", { defaultValue: "Add all", count: unselectedEssentialCount })}
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -1696,6 +1738,14 @@ export default function OnboardingScreen() {
                   <Text style={styles.recoSubtle}>
                     {t("onboarding.providers_essentialsHint", { defaultValue: "Tap one to deselect — you're in control." })}
                   </Text>
+                  {essentialSelectionLimited && (
+                    <Text style={[styles.recoSubtle, { color: theme.colors.amber.text, marginTop: 4 }]}>
+                      {t("onboarding.providers_limitHint", {
+                        limit: serviceSelectionLimit,
+                        defaultValue: `Your plan includes ${serviceSelectionLimit} services. Choose the essentials now; upgrade for the rest.`,
+                      })}
+                    </Text>
+                  )}
                   {essentialRecommended.map((provider: ScoredProvider, recoIndex: number) =>
                     renderRecoCard(provider, recoIndex, `ess-${provider.id}`),
                   )}

@@ -33,6 +33,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
+import { serviceLimitForPlan } from "@/lib/plan-comparison";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import {
@@ -121,6 +122,7 @@ export default function NewServiceScreen() {
   // Address state
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
+  const [serviceGate, setServiceGate] = useState<{ current: number; limit: number } | null>(null);
 
   // Provider state
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
@@ -167,7 +169,11 @@ export default function NewServiceScreen() {
   // Fetch addresses
   useEffect(() => {
     (async () => {
-      const addrRes = await api.get<any>("/api/addresses");
+      const [addrRes, servicesRes, profileRes] = await Promise.all([
+        api.get<any>("/api/addresses"),
+        api.get<any>("/api/services", { limit: "200" }),
+        api.get<any>("/api/profile"),
+      ]);
       if (addrRes.data) {
         const addrs = addrRes.data.addresses || [];
         setAddresses(addrs);
@@ -177,6 +183,12 @@ export default function NewServiceScreen() {
           setSelectedAddress(requested?.id || (primary ? primary.id : addrs[0].id));
         }
       }
+      const plan =
+        profileRes.data?.entitlement?.plan ||
+        profileRes.data?.subscription?.plan ||
+        "FREE_TRIAL";
+      const current = servicesRes.data?.services?.length || 0;
+      setServiceGate({ current, limit: serviceLimitForPlan(plan) });
     })();
   }, [requestedAddressId]);
 
@@ -285,6 +297,10 @@ export default function NewServiceScreen() {
 
   // Save all selected providers as services (batch)
   const handleSaveAll = async () => {
+    if (serviceGate && serviceGate.current + selectedProviders.size > serviceGate.limit) {
+      showServiceLimitAlert();
+      return;
+    }
     if (!selectedAddress) { Alert.alert(t("common.retry"), t("validation.required")); return; }
     if (selectedProviders.size === 0) { Alert.alert(t("common.retry"), t("validation.required")); return; }
     setSaving(true);
@@ -329,14 +345,7 @@ export default function NewServiceScreen() {
       hapticError();
       // A plan-limit / inactive-subscription gate gets an Upgrade affordance.
       if (gateCode) {
-        Alert.alert(
-          t("subscription.upgradeTitle", { defaultValue: "Upgrade needed" }),
-          t("services.limitReached", { defaultValue: "You've reached your plan's service limit. Upgrade to add more." }),
-          [
-            { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
-            { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
-          ],
-        );
+        showServiceLimitAlert();
       } else {
         Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
       }
@@ -345,6 +354,10 @@ export default function NewServiceScreen() {
 
   // Save manual form
   const handleSaveManual = async () => {
+    if (serviceGate && serviceGate.current + 1 > serviceGate.limit) {
+      showServiceLimitAlert();
+      return;
+    }
     if (!selectedAddress || !manualForm.category || !manualForm.providerName) {
       Alert.alert(t("common.retry"), t("validation.required"));
       return;
@@ -408,7 +421,11 @@ export default function NewServiceScreen() {
     if (res.error) {
       await api.delete(`/api/custom-providers/${providerRes.data.provider.id}`).catch(() => null);
       hapticError();
-      Alert.alert(t("common.retry"), res.error);
+      if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
+        showServiceLimitAlert(res.error);
+      } else {
+        Alert.alert(t("common.retry"), res.error);
+      }
     } else if (manualForm.coverage !== "LOCAL") {
       // Submitted-for-review carries distinct info — keep the explicit Alert and
       // navigate back as before (the Alert itself is the acknowledgement).
@@ -432,6 +449,23 @@ export default function NewServiceScreen() {
     setManualForm((prev) => ({ ...prev, [field]: value }));
 
   const selectedCount = selectedProviders.size;
+  const serviceLimitReached = serviceGate != null && serviceGate.current >= serviceGate.limit;
+  const showServiceLimitAlert = (message?: string) => {
+    hapticError();
+    Alert.alert(
+      t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
+      message ||
+        t("services.limitReachedWithCount", {
+          current: serviceGate?.current ?? 0,
+          limit: serviceGate?.limit ?? 0,
+          defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
+        }),
+      [
+        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+        { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+      ],
+    );
+  };
   const categoryLabel = useCallback(
     (category: string) => t(`categories.${category}`, { defaultValue: getMergedDisplayCategoryLabel(category) }),
     [t],
@@ -515,6 +549,36 @@ export default function NewServiceScreen() {
       <View style={{ paddingHorizontal: 20 }}>
         <EmailVerificationBanner context={t("services.title")} />
       </View>
+
+      {serviceLimitReached ? (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.limitCard}>
+            <View style={styles.limitIcon}>
+              <Sparkles size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.limitTitle}>
+                {t("services.limitReachedTitle", { defaultValue: "Service limit reached" })}
+              </Text>
+              <Text style={styles.limitBody}>
+                {t("services.limitReachedWithCount", {
+                  current: serviceGate?.current ?? 0,
+                  limit: serviceGate?.limit ?? 0,
+                  defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
+                })}
+              </Text>
+              <TouchableOpacity
+                style={styles.limitCta}
+                onPress={() => router.push("/settings/subscription")}
+                activeOpacity={0.72}
+              >
+                <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      ) : (
+        <>
 
       {/* Mode toggle */}
       <View style={styles.modeRow}>
@@ -1034,6 +1098,8 @@ export default function NewServiceScreen() {
           router.back();
         }}
       />
+      </>
+      )}
     </SafeAreaView>
   );
 }
@@ -1064,6 +1130,37 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   modeBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
   modeBtnTextActive: { color: "#fff" },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  limitCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  limitIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+  },
+  limitTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
+  limitBody: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 19, marginTop: 4 },
+  limitCta: {
+    alignSelf: "flex-start",
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+  },
+  limitCtaText: { fontSize: 13, fontWeight: "800", color: "#fff" },
   sectionLabel: {
     fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary,
     textTransform: "uppercase", letterSpacing: 0.5, marginTop: 16, marginBottom: 10,

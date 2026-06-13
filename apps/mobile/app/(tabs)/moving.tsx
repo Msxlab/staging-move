@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Truck,
@@ -66,6 +67,8 @@ export default function MovingScreen() {
   const [offline, setOffline] = useState(false);
   const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
   const hasDataRef = useRef(false);
+  const loadedOnceRef = useRef(false);
+  const fetchPlansRef = useRef<() => Promise<boolean>>(async () => false);
 
   // Cold-start hydration: show the last-known plan list instantly (no skeleton/
   // error wall) on a no-signal launch, then reconcile against the live fetch.
@@ -115,6 +118,7 @@ export default function MovingScreen() {
     try {
       await fetchPlans();
     } finally {
+      loadedOnceRef.current = true;
       setLoading(false);
     }
   }, [fetchPlans]);
@@ -129,6 +133,17 @@ export default function MovingScreen() {
   }, [fetchPlans]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetchPlansRef.current = fetchPlans;
+  }, [fetchPlans]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loadedOnceRef.current) return undefined;
+      void fetchPlansRef.current();
+      return undefined;
+    }, []),
+  );
 
   if (loading) {
     return (

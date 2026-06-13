@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Zap,
@@ -50,6 +51,8 @@ import { PressableScale } from "@/components/ui/PressableScale";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { useAuthStore } from "@/lib/auth-store";
+import { serviceLimitForPlan } from "@/lib/plan-comparison";
 import {
   SERVICE_CATEGORIES,
   generateChecklist,
@@ -109,7 +112,9 @@ export default function ServicesScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
+  const planTier = useAuthStore((s) => s.planTier);
   const [services, setServices] = useState<any[]>([]);
+  const [totalServiceCount, setTotalServiceCount] = useState(0);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +131,8 @@ export default function ServicesScreen() {
   const [offline, setOffline] = useState(false);
   const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
   const hasDataRef = useRef(false);
+  const loadedOnceRef = useRef(false);
+  const fetchServicesRef = useRef<() => Promise<boolean>>(async () => false);
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
 
@@ -176,9 +183,10 @@ export default function ServicesScreen() {
   );
 
   const fetchServices = useCallback(async () => {
-    const [servicesRes, addressesRes] = await Promise.all([
+    const [servicesRes, addressesRes, allServicesRes] = await Promise.all([
       api.get<any>("/api/services", { ...(selectedAddressId ? { addressId: selectedAddressId } : {}), limit: "200" }),
       api.get<any>("/api/addresses", { limit: "200" }),
+      selectedAddressId ? api.get<any>("/api/services", { limit: "200" }) : Promise.resolve(null),
     ]);
     if (servicesRes.error || addressesRes.error) {
       // OFFLINE FALLBACK: if we already have data on screen (cache or prior
@@ -194,7 +202,11 @@ export default function ServicesScreen() {
     }
     const svcs = servicesRes.data?.services || [];
     const nextAddresses = addressesRes.data?.addresses || [];
+    const accountServices = selectedAddressId
+      ? allServicesRes?.data?.services || svcs
+      : svcs;
     setServices(svcs);
+    setTotalServiceCount(accountServices.length);
     setAddresses(nextAddresses);
     setError(null);
     // Live data landed → back online; persist the last-known list for next time.
@@ -260,6 +272,7 @@ export default function ServicesScreen() {
     try {
       await fetchServices();
     } finally {
+      loadedOnceRef.current = true;
       setLoading(false);
     }
   }, [fetchServices]);
@@ -274,6 +287,17 @@ export default function ServicesScreen() {
   }, [fetchServices]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetchServicesRef.current = fetchServices;
+  }, [fetchServices]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loadedOnceRef.current) return undefined;
+      void fetchServicesRef.current();
+      return undefined;
+    }, []),
+  );
 
   if (loading) {
     return (
@@ -308,6 +332,8 @@ export default function ServicesScreen() {
   const filtered = filterCat ? services.filter((s) => getMergedDisplayCategoryKey(s.category) === filterCat) : services;
   const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
   const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
+  const serviceLimit = serviceLimitForPlan(planTier);
+  const serviceLimitReached = totalServiceCount >= serviceLimit;
   const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
 
@@ -342,16 +368,20 @@ export default function ServicesScreen() {
   });
   const missingCostCount = services.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
   const pricedServiceCount = services.length - missingCostCount;
+  const healthAttentionIds = new Set<string>(attentionItems.map((service) => service.id));
+  for (const service of services) {
+    if (service.isActive === false) continue;
+    if (!service.monthlyCost || service.monthlyCost <= 0) healthAttentionIds.add(service.id);
+  }
+  const healthAttentionCount = healthAttentionIds.size;
   const serviceHealthPct = activeServiceCount > 0
-    ? Math.max(0, Math.round(((activeServiceCount - attentionItems.length) / activeServiceCount) * 100))
+    ? Math.max(0, Math.round(((activeServiceCount - healthAttentionCount) / activeServiceCount) * 100))
     : services.length > 0
       ? 100
       : 0;
-  const serviceHealthTone = attentionItems.length > 0
+  const serviceHealthTone = healthAttentionCount > 0
     ? theme.colors.amber
-    : missingCostCount > 0
-      ? theme.colors.sky
-      : theme.colors.emerald;
+    : theme.colors.emerald;
 
   // Same headline copy as the detail screen (services/[id].tsx), reusing its keys.
   const renewalHeadline = (renewal: ServiceRenewal) =>
@@ -401,7 +431,24 @@ export default function ServicesScreen() {
         </View>
         <PressableScale
           style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
-          onPress={() => router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new")}
+          onPress={() => {
+            if (serviceLimitReached) {
+              Alert.alert(
+                t("services.limitReachedTitle", { defaultValue: "Service limit reached" }),
+                t("services.limitReachedWithCount", {
+                  current: totalServiceCount,
+                  limit: serviceLimit,
+                  defaultValue: `Your plan includes ${serviceLimit} services. Upgrade to add more.`,
+                }),
+                [
+                  { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+                  { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+                ],
+              );
+              return;
+            }
+            router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new");
+          }}
           disabled={addresses.length === 0}
           accessibilityLabel={t("services.newTitle")}
         >
@@ -519,7 +566,7 @@ export default function ServicesScreen() {
                   { backgroundColor: serviceHealthTone.bg, borderColor: serviceHealthTone.border },
                 ]}
               >
-                {attentionItems.length > 0 ? (
+                {healthAttentionCount > 0 ? (
                   <AlertTriangle size={18} color={serviceHealthTone.text} />
                 ) : (
                   <Check size={18} color={serviceHealthTone.text} />
@@ -569,7 +616,7 @@ export default function ServicesScreen() {
                 </Text>
               </View>
               <View style={styles.systemStat}>
-                <Text style={styles.systemStatValue}>{attentionItems.length}</Text>
+                <Text style={styles.systemStatValue}>{healthAttentionCount}</Text>
                 <Text style={styles.systemStatLabel}>
                   {t("services.needsAttention")}
                 </Text>
@@ -857,7 +904,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.glass.border,
-    ...theme.shadow.glow,
   },
   inScrollHero: { marginHorizontal: 0 },
   heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
@@ -893,7 +939,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.glass.border,
-    ...theme.shadow.sm,
   },
   systemHead: {
     flexDirection: "row",
