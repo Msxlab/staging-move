@@ -231,11 +231,11 @@ export default function SecurityDashboardClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-between gap-4 border-b border-border">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-2 border-b border-border sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex gap-2 overflow-x-auto overscroll-x-contain -mb-px">
           {([["sessions", "Active Sessions", Monitor], ["login-history", "Login History", KeyRound], ["events", "Security Events", ShieldAlert]] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setTab(key as Tab)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Icon className="h-4 w-4" /> {label}
             </button>
           ))}
@@ -253,9 +253,9 @@ export default function SecurityDashboardClient() {
       {/* Active Sessions Tab */}
       {tab === "sessions" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">{activeSessions.length} active session(s)</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => loadSessions()} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>

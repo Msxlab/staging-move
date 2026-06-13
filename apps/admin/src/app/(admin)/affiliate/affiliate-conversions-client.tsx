@@ -158,8 +158,8 @@ export function AffiliateConversionsClient() {
       ) : rows.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No conversions in this view.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overscroll-x-contain">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-2 py-2">Provider</th>
