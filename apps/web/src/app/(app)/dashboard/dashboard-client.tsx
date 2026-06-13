@@ -6,7 +6,7 @@ import {
   MapPin, Zap, DollarSign, Truck, ArrowRight,
   Home, Briefcase, Palmtree, TrendingUp, Edit,
   Calendar, PieChart, Loader2, SlidersHorizontal, X, GripVertical,
-  AlertTriangle, Clock, Sparkles, Star, ChevronDown,
+  AlertTriangle, Clock, Sparkles, Star, ChevronDown, ClipboardList,
 } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
@@ -43,6 +43,15 @@ const categoryColors: Record<string, string> = {
   KIDS: "bg-tone-foil-fg", FITNESS: "bg-tone-orange-fg", SHOPPING: "bg-destructive", OTHER: "bg-tone-slate-fg",
 };
 const CATEGORY_KEYS = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"] as const;
+
+function formatPlanBadgeLabel(plan: string): string | null {
+  const normalized = plan.trim().toUpperCase();
+  if (!normalized || normalized === "FREE_TRIAL") return null;
+  return normalized
+    .split("_")
+    .map((part) => part.slice(0, 1) + part.slice(1).toLowerCase())
+    .join(" ");
+}
 
 interface AddressInfo {
   id: string; type: string; nickname?: string; street: string; city: string; state: string; isPrimary: boolean;
@@ -581,6 +590,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
     !!stats.activePlan &&
     stats.activePlan.fromCity !== "Origin" &&
     stats.activePlan.toCity !== "Destination";
+  const premiumBadgeLabel = formatPlanBadgeLabel(premiumPlan) ?? td("premiumBadge");
 
   // Central widget render dispatch — every column widget body lives in this
   // one switch. A null body keeps each widget's existing self-hide behavior
@@ -679,7 +689,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           <div key={key} className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-xl">{phaseInfo?.icon || "🚚"}</span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg">
+                  <Truck className="h-5 w-5" aria-hidden="true" />
+                </span>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">{td("section_moving")}</h3>
                   <p className="text-xs text-muted-foreground">
@@ -737,7 +749,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             {/* Next Action */}
             {checklist?.nextAction && !checklist.nextAction.isCompleted && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.03] border border-border">
-                <span className="text-base">{checklist.nextAction.icon}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-primary/10 text-primary">
+                  <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{checklist.nextAction.title}</p>
                   {checklist.nextAction.stateNote && (
@@ -1000,9 +1014,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               {td.rich("title_serif", { em: (chunks) => <em>{chunks}</em> })}
             </h1>
             {isPremium && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary/20 via-primary/20 to-transparent border border-tone-honey-br text-tone-honey-fg animate-pulse">
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                {td("premiumBadge")}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-tone-honey-br bg-tone-honey-bg px-3 py-1 text-xs font-semibold text-tone-honey-fg">
+                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                {premiumBadgeLabel}
               </span>
             )}
           </div>

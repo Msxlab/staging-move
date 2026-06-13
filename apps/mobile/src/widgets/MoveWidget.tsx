@@ -56,7 +56,7 @@ export function countdownHeadline(snapshot: WidgetSnapshot): string {
 export function nextLine(snapshot: WidgetSnapshot): string {
   if (snapshot.phase === "none") return "Tap to start your move plan";
   if (snapshot.nextTaskTitle) return snapshot.nextTaskTitle;
-  if (snapshot.readinessPercent >= 100) return "You're all set 🎉";
+  if (snapshot.readinessPercent >= 100) return "You're all set";
   return "No open tasks right now";
 }
 

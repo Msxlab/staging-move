@@ -68,44 +68,47 @@ export default function SetupPasswordScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <LogoBrand />
-          <View style={styles.iconWrap}>
-            {sent ? (
-              <MailCheck size={26} color={theme.colors.success} />
-            ) : (
-              <ShieldCheck size={26} color={theme.colors.success} />
-            )}
+          <View style={styles.authPanel}>
+            <LogoBrand />
+            <View style={styles.iconWrap}>
+              {sent ? (
+                <MailCheck size={26} color={theme.colors.success} />
+              ) : (
+                <ShieldCheck size={26} color={theme.colors.success} />
+              )}
+            </View>
+            <Text style={styles.heroKicker}>ACCOUNT SECURITY</Text>
+            <Text style={styles.title}>
+              {sent ? t("auth.setupPasswordSentTitle") : t("auth.setupPasswordTitle")}
+            </Text>
+            <Text style={styles.subtitle}>
+              {sent ? t("auth.setupPasswordSentBody") : t("auth.setupPasswordSubtitle")}
+            </Text>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Button
+              title={
+                sending
+                  ? t("common.loading")
+                  : sent
+                  ? t("auth.setupPasswordResend")
+                  : t("auth.setupPasswordCta")
+              }
+              onPress={sendSetupLink}
+              loading={sending}
+              disabled={sending}
+              fullWidth
+              style={{ marginTop: 8 }}
+            />
+            <Button
+              title={t("auth.setupPasswordSkip")}
+              onPress={continueWithout}
+              variant="secondary"
+              fullWidth
+              style={{ marginTop: 8 }}
+            />
           </View>
-          <Text style={styles.title}>
-            {sent ? t("auth.setupPasswordSentTitle") : t("auth.setupPasswordTitle")}
-          </Text>
-          <Text style={styles.subtitle}>
-            {sent ? t("auth.setupPasswordSentBody") : t("auth.setupPasswordSubtitle")}
-          </Text>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <Button
-            title={
-              sending
-                ? t("common.loading")
-                : sent
-                ? t("auth.setupPasswordResend")
-                : t("auth.setupPasswordCta")
-            }
-            onPress={sendSetupLink}
-            loading={sending}
-            disabled={sending}
-            fullWidth
-            style={{ marginTop: 8 }}
-          />
-          <Button
-            title={t("auth.setupPasswordSkip")}
-            onPress={continueWithout}
-            variant="secondary"
-            fullWidth
-            style={{ marginTop: 8 }}
-          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -120,6 +123,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 24,
     gap: 12,
   },
+  authPanel: {
+    borderRadius: 28,
+    padding: 18,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
   iconWrap: {
     width: 54,
     height: 54,
@@ -132,10 +143,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: "rgba(135, 221, 192, 0.28)",
     marginTop: 18,
   },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.accent,
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginTop: 4,
+  },
   title: {
     marginTop: 8,
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "800",
     color: theme.colors.text,
     textAlign: "center",
   },

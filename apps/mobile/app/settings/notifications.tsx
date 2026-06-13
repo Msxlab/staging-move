@@ -74,7 +74,7 @@ export default function NotificationSettingsScreen() {
     const wantsPush = prefs.pushTaskReminders || prefs.pushBillReminders || prefs.pushMoveAlerts;
     let pushPermissionDenied = false;
     if (wantsPush) {
-      // Toggling a push category ON is an explicit opt-in — bypass the
+      // Toggling a push category ON is an explicit opt-in - bypass the
       // soft-prompt gate so the OS permission prompt actually fires (otherwise,
       // on a fresh install the gate silently no-ops and nothing is delivered).
       const registered = await registerForPushNotifications({ requireSoftPrompt: false });
@@ -83,7 +83,7 @@ export default function NotificationSettingsScreen() {
 
     // Persist the preferences REGARDLESS of the push-permission outcome. A
     // denied/undetermined OS permission must not silently discard the user's
-    // edits (including unrelated email toggles) — we save what they chose and
+    // edits (including unrelated email toggles) - we save what they chose and
     // warn separately that push needs the OS permission before it can deliver.
     const res = await api.put<any>("/api/notifications/preferences", prefs);
     setSaving(false);
@@ -176,6 +176,8 @@ export default function NotificationSettingsScreen() {
       ],
     },
   ];
+  const enabledTotal = Object.values(prefs).filter(Boolean).length;
+  const totalPrefs = Object.keys(DEFAULT_PREFS).length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -188,12 +190,39 @@ export default function NotificationSettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <Smartphone size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>ALERT COMMAND</Text>
+              <Text style={styles.heroTitle}>{t("notifications.title")}</Text>
+              <Text style={styles.heroSub}>{enabledTotal}/{totalPrefs} preferences enabled</Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{enabledTotal}</Text>
+              <Text style={styles.heroStatLabel}>enabled</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{sections[0].items.filter((item) => prefs[item.key]).length}</Text>
+              <Text style={styles.heroStatLabel}>email</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{sections[1].items.filter((item) => prefs[item.key]).length}</Text>
+              <Text style={styles.heroStatLabel}>push</Text>
+            </View>
+          </View>
+        </View>
+
         {sections.map((section) => {
           const SectionIcon = section.Icon;
           const enabledCount = section.items.filter((item) => prefs[item.key]).length;
           return (
           <View key={section.title} style={styles.section}>
-            {/* Aurora grouped-card header — icon chip + kicker + on-count */}
+            {/* Aurora grouped-card header - icon chip + kicker + on-count */}
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: section.tintBg }]}>
                 <SectionIcon size={14} color={section.tint} />
@@ -261,6 +290,50 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 2,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   section: { marginTop: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, marginLeft: 2 },
   sectionIcon: {
@@ -268,10 +341,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   sectionTitle: {
-    fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary,
+    fontSize: 10, letterSpacing: 0, fontWeight: "700", color: theme.colors.textTertiary,
   },
   sectionCount: {
-    fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent,
+    fontSize: 10, letterSpacing: 0, fontWeight: "700", color: theme.colors.accent,
     fontVariant: ["tabular-nums"],
   },
   sectionHint: {
@@ -279,8 +352,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginLeft: 2, marginBottom: 8,
   },
   card: {
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden",
+    backgroundColor: theme.colors.glass.bg, borderRadius: 22,
+    borderWidth: 1, borderColor: theme.colors.glass.highlight, overflow: "hidden",
+    ...theme.shadow.sm,
   },
   row: {
     flexDirection: "row", alignItems: "center", gap: 12,

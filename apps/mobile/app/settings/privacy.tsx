@@ -225,7 +225,7 @@ export default function PrivacySettingsScreen() {
   };
 
   const handleOpenPrivacyPolicy = async () => {
-    // Owned page → chromeless in-app browser with the shared session and
+    // Owned page -> chromeless in-app browser with the shared session and
     // ?embed=mobile (matches subscription/help), not a full Safari/Chrome jump.
     const opened = await openWebUrl(PRIVACY_POLICY_URL);
     if (!opened) {
@@ -280,6 +280,15 @@ export default function PrivacySettingsScreen() {
       onPress: handleOpenPrivacyPolicy,
     },
   ];
+  const activeSessionCount = security?.sessions.filter((session) => session.isActive).length ?? 0;
+  const linkedMethodCount = security?.linkedMethods.filter((method) => method.enabled).length ?? 0;
+  const securityReadyCount = [
+    security?.account.emailVerified,
+    security?.account.hasPasswordLogin,
+    security?.account.mfaEnabled,
+    appLockEnabled,
+    analyticsConsent,
+  ].filter(Boolean).length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -292,6 +301,33 @@ export default function PrivacySettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <Shield size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>PRIVACY COMMAND</Text>
+              <Text style={styles.heroTitle}>{t("settings.privacy")}</Text>
+              <Text style={styles.heroSub}>{t("settings.accountSecurityDescription")}</Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{securityReadyCount}/5</Text>
+              <Text style={styles.heroStatLabel}>ready</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{linkedMethodCount}</Text>
+              <Text style={styles.heroStatLabel}>methods</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{activeSessionCount}</Text>
+              <Text style={styles.heroStatLabel}>sessions</Text>
+            </View>
+          </View>
+        </View>
+
         <Card variant="default" style={{ marginBottom: 12 }}>
           <View style={styles.consentRow}>
             <View style={{ flex: 1 }}>
@@ -434,7 +470,7 @@ export default function PrivacySettingsScreen() {
                           {session.browser || t("settings.unknownBrowser")}{session.os ? ` / ${session.os}` : ""}
                         </Text>
                         <Text style={styles.mutedText}>
-                          {session.current ? `${t("settings.current")} · ` : ""}{session.isActive ? t("settings.sessionActive") : t("settings.sessionRevoked")} · {new Date(session.lastActivity).toLocaleDateString()}
+                          {session.current ? `${t("settings.current")} - ` : ""}{session.isActive ? t("settings.sessionActive") : t("settings.sessionRevoked")} - {new Date(session.lastActivity).toLocaleDateString()}
                         </Text>
                       </View>
                     </View>
@@ -483,7 +519,7 @@ export default function PrivacySettingsScreen() {
           ) : null}
         </Card>
 
-        {/* Info Cards — tappable (Privacy/Do-not-sell → policy, Security → 2FA) */}
+        {/* Info Cards - tappable (Privacy/Do-not-sell -> policy, Security -> 2FA) */}
         {infoItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -568,6 +604,50 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   infoRow: { flexDirection: "row", gap: 14 },
   infoIcon: {
     width: 40, height: 40, borderRadius: 12,
@@ -581,7 +661,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   inlineErrorRow: { gap: 10, marginTop: 12 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginBottom: 14 },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  subheading: { fontSize: 12, fontWeight: "700", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 },
+  subheading: { fontSize: 12, fontWeight: "700", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0, marginBottom: 8 },
   methodList: { gap: 8 },
   methodRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
   methodLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
@@ -592,7 +672,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   sessionRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
   sectionTitle: {
     fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 24, marginBottom: 12, marginLeft: 4,
+    textTransform: "uppercase", letterSpacing: 0, marginTop: 24, marginBottom: 12, marginLeft: 4,
   },
   actionBtn: {
     flexDirection: "row", alignItems: "center", gap: 14, padding: 16,

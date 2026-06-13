@@ -63,7 +63,7 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success(`${tLogin("title")} — ${data.admin.firstName}`);
+      toast.success(`${tLogin("title")} - ${data.admin.firstName}`);
       window.location.assign("/");
     } catch {
       toast.error(tLogin("invalid"));
@@ -77,18 +77,15 @@ export default function LoginPage() {
   return (
     <div className="adm-aurora relative flex min-h-screen items-center justify-center bg-background">
       <AuroraBackground />
-      <div className="relative z-10 w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur-xl">
+      <div className="relative z-10 w-full max-w-md space-y-8 rounded-3xl border border-border/70 bg-card/80 p-8 shadow-2xl backdrop-blur-xl">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-            {mfaRequired ? (
-              <ShieldCheck className="h-8 w-8 text-primary" />
-            ) : (
-              <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-              </svg>
-            )}
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
+            <ShieldCheck className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Admin command
+          </p>
+          <h1 className="text-2xl font-semibold text-foreground">
             {mfaRequired ? tCommon("confirm") : tLogin("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -105,7 +102,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground">{tLogin("password")}</label>
-                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" autoComplete="current-password" />
+                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="........" autoComplete="current-password" />
               </div>
               {!useBackupCode ? (
                 <div>
@@ -196,7 +193,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-xl bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? tCommon("loading") : mfaRequired ? tCommon("confirm") : tLogin("submit")}
           </button>

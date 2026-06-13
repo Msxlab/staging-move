@@ -230,18 +230,44 @@ export default function RuntimeConfigClient() {
         actions={
           <button
             onClick={() => void load()}
-            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+            className="flex items-center gap-2 rounded-xl border border-border bg-card/70 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur-xl hover:bg-accent"
           >
             <RefreshCw className="h-4 w-4" /> Refresh
           </button>
         }
       />
 
+      <div className="rounded-[1.4rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">Runtime control plane</p>
+            <h2 className="mt-1 text-xl font-semibold text-foreground">Config readiness stays visible before deploy impact.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+              Production secrets still belong in deployment env. Runtime overrides remain a controlled recovery path with masked values, validation status, and step-up authentication.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-xl border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
+              <p className="text-lg font-semibold">{configs.filter((item) => item.configured).length}</p>
+              <p className="mt-0.5 opacity-80">configured</p>
+            </div>
+            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
+              <p className="text-lg font-semibold">{configs.filter((item) => item.status === "Conflict").length}</p>
+              <p className="mt-0.5 opacity-80">conflicts</p>
+            </div>
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+              <p className="text-lg font-semibold">{configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length}</p>
+              <p className="mt-0.5 opacity-80">required</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
           label="Managed Keys"
           value={configs.length}
-          hint="Every config key this app reads — secrets like JWT signing keys, service URLs (e.g. Redis), Stripe keys, and feature toggles."
+          hint="Every config key this app reads, including secrets like JWT signing keys, service URLs such as Redis, Stripe keys, and feature toggles."
         />
         <MetricCard
           label="Verified from ENV"
@@ -273,7 +299,7 @@ export default function RuntimeConfigClient() {
       </div>
 
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">Loading runtime config...</div>
+        <div className="rounded-[1.2rem] border border-border bg-card/70 p-10 text-center text-muted-foreground shadow-sm backdrop-blur-xl">Loading runtime config...</div>
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([category, items]) => (
@@ -287,7 +313,7 @@ export default function RuntimeConfigClient() {
                   const isEditing = editingKey === item.key;
                   const editLocked = item.editable === "No";
                   return (
-                    <div key={item.key} className="rounded-xl border border-border bg-card p-5">
+                    <div key={item.key} className="rounded-[1.2rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
@@ -313,7 +339,7 @@ export default function RuntimeConfigClient() {
                           <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground md:grid-cols-2">
                             <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
                             <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>
-                            <div><span className="font-medium text-foreground">Source:</span> {item.source === "Missing" ? "—" : item.source}</div>
+                            <div><span className="font-medium text-foreground">Source:</span> {item.source === "Missing" ? "-" : item.source}</div>
                             <div><span className="font-medium text-foreground">Value:</span> {getRuntimeConfigDisplayValue(item)}</div>
                             {item.validation ? (
                               <div><span className="font-medium text-foreground">Validation:</span> {item.validation}</div>
@@ -321,7 +347,7 @@ export default function RuntimeConfigClient() {
                             {item.usedBy && item.usedBy.length > 0 ? (
                               <div><span className="font-medium text-foreground">Used by:</span> {item.usedBy.join(", ")}</div>
                             ) : null}
-                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "—"}</div>
+                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "-"}</div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -333,8 +359,8 @@ export default function RuntimeConfigClient() {
                               setStepUpHint(null);
                               setForm({ ...EMPTY_FORM });
                             }}
-                            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                            title={editLocked ? "Deployment-only key — update in DigitalOcean env." : undefined}
+                            className="flex items-center gap-2 rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                            title={editLocked ? "Deployment-only key - update in DigitalOcean env." : undefined}
                           >
                             <KeyRound className="h-4 w-4" /> Edit
                           </button>
@@ -342,7 +368,7 @@ export default function RuntimeConfigClient() {
                       </div>
 
                       {isEditing && (
-                        <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-border bg-background/50 p-4 lg:grid-cols-2">
+                        <div className="mt-4 grid grid-cols-1 gap-3 rounded-[1rem] border border-border bg-background/60 p-4 lg:grid-cols-2">
                           {stepUpHint ? (
                             <div className="lg:col-span-2 rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-sm text-tone-honey-fg">
                               {stepUpHint}
@@ -440,7 +466,7 @@ export default function RuntimeConfigClient() {
 
 function MetricCard({ label, value, tone = "default", hint }: { label: string; value: number; tone?: "default" | "danger"; hint?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-[1.1rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
       <p className="flex items-center gap-1 text-sm text-muted-foreground">
         {label}
         {hint ? <InfoHint text={hint} label={label} /> : null}
@@ -458,5 +484,5 @@ function StatusBadge({ label, tone }: { label: string; tone: "success" | "warnin
     neutral: "bg-muted text-muted-foreground",
   } as const;
 
-  return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${tones[tone]}`}>{label}</span>;
+  return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${tones[tone]}`}>{label}</span>;
 }

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -80,18 +80,6 @@ const catColors: Record<string, string> = {
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
-const serviceCategoryIcons: Record<string, string> = {
-  GOVERNMENT: "🏛️",
-  UTILITY: "⚡",
-  FINANCIAL: "💳",
-  HOUSING: "🏠",
-  HEALTHCARE: "🏥",
-  TRANSPORTATION: "🚗",
-  KIDS: "👶",
-  FITNESS: "💪",
-  SHOPPING: "🛒",
-  OTHER: "📋",
-};
 
 function getServiceCategoryGroup(category: string): string {
   if (!category) return "OTHER";
@@ -108,7 +96,7 @@ function getServiceCategoryLabel(category: string): string {
 }
 
 function getServiceCategoryIcon(category: string): string {
-  return serviceCategoryIcons[category] || getMergedDisplayCategoryIcon(category) || getCategoryIcon(category);
+  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || getCategoryIcon(getServiceCategoryGroup(category)) || "";
 }
 
 export default function ServicesScreen() {
@@ -496,9 +484,13 @@ export default function ServicesScreen() {
               style={[styles.filterChip, filterCat === cat && styles.filterChipActive]}
               onPress={() => setFilterCat(filterCat === cat ? null : cat)}
             >
-              <View style={[styles.filterDot, { backgroundColor: getServiceCategoryColor(cat) }]} />
+              <CategoryIcon
+                emoji={getServiceCategoryIcon(cat)}
+                size={13}
+                color={filterCat === cat ? theme.colors.orange.text : getServiceCategoryColor(cat)}
+              />
               <Text style={[styles.filterText, filterCat === cat && styles.filterTextActive]} numberOfLines={1} ellipsizeMode="tail">
-                {getServiceCategoryIcon(cat)} {serviceCategoryLabel(cat)}
+                {serviceCategoryLabel(cat)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -852,7 +844,7 @@ export default function ServicesScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
-  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
   // ── Aurora glass hero ──
@@ -880,7 +872,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.amber.border,
   },
   heroBadgeText: { fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
-  heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: -1, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: 0, color: theme.colors.text, fontVariant: ["tabular-nums"] },
   heroBigSuffix: { fontSize: 12, fontWeight: "500", letterSpacing: 0, color: theme.colors.textTertiary },
   heroBar: { flexDirection: "row", gap: 3, height: 9, marginTop: 14, marginBottom: 12 },
   heroBarSeg: { borderRadius: 4 },

@@ -644,6 +644,7 @@
     "dossier_air_title": "Calidad del aire",
     "dossier_air_now": "Calidad del aire ahora: AQI {aqi} ({category})",
     "dossier_air_nowNoCategory": "Calidad del aire ahora: AQI {aqi}",
+    "dossier_air_categoryOnly": "Calidad del aire ahora: {category}",
     "dossier_air_disclaimer": "AirNow (EPA) — una instantánea del momento, no un promedio a largo plazo.",
     "dossier_housing_title": "Contexto de vivienda",
     "dossier_housing_fmr": "{amount}/mes FMR HUD 2 rec.",

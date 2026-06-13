@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, X } from "lucide-react";
+import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, X, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -129,7 +129,18 @@ export default function HelpCenterPage() {
                   <td className="px-4 py-3"><p className="font-medium text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">{a.slug}</p></td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{a.category}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{a.viewCount}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} 👍 {a.helpfulNo} 👎</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1">
+                        {a.helpfulYes}
+                        <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        {a.helpfulNo}
+                        <ThumbsDown className="h-3.5 w-3.5" aria-hidden="true" />
+                      </span>
+                    </span>
+                  </td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.isPublished ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{a.isPublished ? "Published" : "Draft"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => togglePublish(a, "article")} aria-label={a.isPublished ? "Unpublish article" : "Publish article"} aria-pressed={a.isPublished} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>

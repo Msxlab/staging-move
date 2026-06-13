@@ -1396,7 +1396,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.colors.amber.border,
     },
     heroBadgeText: { flexShrink: 1, fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
-    heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: -1, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+    heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: 0, color: theme.colors.text, fontVariant: ["tabular-nums"] },
     heroSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 16 },
     heroBar: { marginTop: 12 },
 
@@ -1409,7 +1409,7 @@ const makeStyles = (theme: Theme) =>
       padding: 12,
       gap: 3,
     },
-    statValue: { fontSize: 18, fontWeight: "800", marginTop: 4, letterSpacing: -0.5 },
+    statValue: { fontSize: 18, fontWeight: "800", marginTop: 4, letterSpacing: 0 },
     statLabel: { fontSize: 11.5, color: theme.colors.textSecondary, fontWeight: "600" },
     statSub: { fontSize: 10.5, color: theme.colors.textTertiary },
 
@@ -1456,7 +1456,7 @@ const makeStyles = (theme: Theme) =>
     },
     savingsLabelRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
     savingsLabel: { fontSize: 11, color: theme.colors.textTertiary, marginBottom: 4 },
-    savingsValue: { fontSize: 19, fontWeight: "800", letterSpacing: -0.5 },
+    savingsValue: { fontSize: 19, fontWeight: "800", letterSpacing: 0 },
     savingsHeadline: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
     savingsConfirmed: { fontSize: 10.5, color: theme.colors.textTertiary, marginTop: 3 },
 

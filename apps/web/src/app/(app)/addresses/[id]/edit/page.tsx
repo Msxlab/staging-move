@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,22 +103,47 @@ export default function EditAddressPage() {
   };
 
   if (loading) return <LoadingSpinner />;
+  const requiredComplete = [form.street, form.city, form.state, form.zip].filter(Boolean).length;
+  const placeLine = [form.city, form.state, form.zip].filter(Boolean).join(", ");
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />Back
-        </Button>
-        <h1 className="text-2xl font-bold">Edit Address</h1>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+        <div className="flex items-start gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-2xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+            <MapPin className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase text-primary">Address command</p>
+            <h1 className="text-2xl font-bold text-foreground">{form.nickname || "Edit Address"}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{placeLine || "Keep this place accurate across services."}</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{requiredComplete}/4</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">required</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{form.ownership}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">ownership</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{form.isPrimary ? "Yes" : "No"}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">primary</p>
+          </div>
+        </div>
+      </section>
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
+        <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
           <CardHeader><CardTitle className="text-lg">Address Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

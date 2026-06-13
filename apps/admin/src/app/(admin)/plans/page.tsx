@@ -131,14 +131,14 @@ export default async function PlansPage() {
             >
               <div className="flex items-center gap-2.5">
                 <span className="au-plancard__dot" aria-hidden="true" />
-                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                <h2 className="text-sm font-semibold text-foreground">
                   {def.displayName}
                 </h2>
                 <span className="au-plancard__tag ml-auto">{pres.tag}</span>
               </div>
 
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="font-mono text-2xl font-semibold tracking-tight text-foreground">
+                <span className="font-mono text-2xl font-semibold text-foreground">
                   {def.isPaid ? def.priceLabel : "$0"}
                 </span>
                 <span className="text-xs text-muted-foreground">

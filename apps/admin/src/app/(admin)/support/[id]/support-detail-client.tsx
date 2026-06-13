@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send, Lock } from "lucide-react";
+import { ArrowLeft, Loader2, Send, Lock, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_OPTIONS = ["OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"];
@@ -210,7 +210,7 @@ export default function AdminTicketDetailClient() {
                       isSystem ? "bg-muted text-muted-foreground" :
                       "bg-tone-emerald-bg text-tone-emerald-fg"
                     }`}>
-                      {isUser ? "U" : isSystem ? "⚙" : "A"}
+                      {isUser ? "U" : isSystem ? <Settings className="h-3 w-3" aria-hidden="true" /> : "A"}
                     </div>
                     <span className="text-xs font-medium text-foreground">
                       {isUser ? userName : isSystem ? "System" : "Admin"}

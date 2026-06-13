@@ -17,7 +17,7 @@ function normalizeLogoUrl(value: unknown): string | null {
 // React Native's <Image> cannot decode these formats, even though a browser
 // <img> renders them fine. Most provider logos are auto-ingested from favicons,
 // which are frequently .ico — so without this gate the stored logo URL fails
-// onError and the card silently falls back to the category emoji on mobile.
+// onError and the card silently falls back to the category system icon on mobile.
 const NON_RENDERABLE_EXTENSIONS = new Set([".ico", ".svg", ".bmp", ".tif", ".tiff"]);
 
 /**

@@ -323,7 +323,7 @@ export default function MovingScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
-  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
@@ -363,7 +363,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     ...theme.shadow.glow,
   },
   routeHd: { flexDirection: "row", alignItems: "center", gap: 8 },
-  routeCity: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: theme.colors.text, letterSpacing: -0.2 },
+  routeCity: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: theme.colors.text, letterSpacing: 0 },
   livePill: {
     marginLeft: "auto",
     paddingHorizontal: 8,

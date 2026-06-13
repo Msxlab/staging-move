@@ -14,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
-  Building2,
   Edit,
   Globe,
   Mail,
@@ -26,9 +25,11 @@ import { api } from "@/lib/api";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
+import { getCategoryIcon } from "@/lib/recommendation-engine";
 
 interface CustomProvider {
   id: string;
@@ -149,6 +150,8 @@ export default function CustomProviderDetailScreen() {
     provider.email && { icon: Mail, label: t("common.email"), value: provider.email, onPress: () => Linking.openURL(`mailto:${provider.email}`) },
     address && { icon: MapPin, label: t("addresses.title"), value: address },
   ].filter(Boolean) as Array<{ icon: any; label: string; value: string; onPress?: () => void }>;
+  const categoryLabel = t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") });
+  const reviewStatus = provider.adminReviewStatus || "PRIVATE";
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -167,24 +170,39 @@ export default function CustomProviderDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        <Card variant="glow">
+        <View style={styles.hero}>
           <View style={styles.heroRow}>
             <View style={styles.heroIcon}>
-              <Building2 size={24} color={theme.colors.primary} />
+              <CategoryIcon emoji={getCategoryIcon(provider.category)} size={22} color={theme.colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
+              <Text style={styles.heroKicker}>LOCAL PROVIDER</Text>
               <Text style={styles.heroName}>{provider.name}</Text>
-              <Text style={styles.heroMeta}>{t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") })}</Text>
+              <Text style={styles.heroMeta}>{categoryLabel}</Text>
             </View>
           </View>
           <View style={styles.badgeRow}>
             <Badge label={t("customProviders.userAddedBadge")} variant="info" />
             <Badge label={t("providers.manualTrackingOnly")} variant="warning" />
           </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{rows.length}</Text>
+              <Text style={styles.heroStatLabel}>contacts</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{provider.services?.length || 0}</Text>
+              <Text style={styles.heroStatLabel}>linked</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{reviewStatus.replace(/_/g, " ")}</Text>
+              <Text style={styles.heroStatLabel}>status</Text>
+            </View>
+          </View>
           <Text style={styles.caveat}>
             {provider.availabilityCaveat || t("customProviders.privateRecordHint")}
           </Text>
-        </Card>
+        </View>
 
         {provider.description ? (
           <>
@@ -268,11 +286,40 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   emptyText: { color: theme.colors.textTertiary },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center" },
-  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text },
+  heroIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.primary + "33", alignItems: "center", justifyContent: "center" },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+  heroName: { fontSize: 21, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
   heroMeta: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   caveat: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 12 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 10 },
   bodyText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },

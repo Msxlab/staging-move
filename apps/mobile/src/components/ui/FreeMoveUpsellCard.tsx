@@ -109,7 +109,7 @@ const makeStyles = (theme: Theme) =>
       letterSpacing: 0.4,
       textTransform: "uppercase",
     },
-    title: { fontSize: 18, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.3, lineHeight: 23 },
+    title: { fontSize: 18, fontWeight: "800", color: theme.colors.text, letterSpacing: 0, lineHeight: 23 },
     body: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 19 },
     freeWrap: {
       gap: 8,
@@ -138,5 +138,5 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 14,
       ...theme.shadow.glow,
     },
-    unlockBtnText: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: -0.2 },
+    unlockBtnText: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: 0 },
   });

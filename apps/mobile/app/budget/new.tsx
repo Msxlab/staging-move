@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check, Crown } from "lucide-react-native";
+import { ArrowLeft, Check, Crown, DollarSign } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -141,6 +141,9 @@ export default function NewBudgetScreen() {
   };
 
   const formDisabled = saving || subscriptionRequired === true;
+  const plannedIncomeAmount = Number.parseFloat(form.plannedIncome || "0") || 0;
+  const plannedExpensesAmount = Number.parseFloat(form.plannedExpenses || "0") || 0;
+  const plannedBalance = plannedIncomeAmount - plannedExpensesAmount;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -153,6 +156,35 @@ export default function NewBudgetScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <DollarSign size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>BUDGET COMMAND</Text>
+              <Text style={styles.heroTitle}>{t("budget.newBudget")}</Text>
+              <Text style={styles.heroSub} numberOfLines={1}>{form.month}</Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>${Math.round(plannedIncomeAmount)}</Text>
+              <Text style={styles.heroStatLabel}>income</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>${Math.round(plannedExpensesAmount)}</Text>
+              <Text style={styles.heroStatLabel}>expenses</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, plannedBalance < 0 && styles.heroStatWarn]}>
+                ${Math.round(plannedBalance)}
+              </Text>
+              <Text style={styles.heroStatLabel}>balance</Text>
+            </View>
+          </View>
+        </View>
+
         {subscriptionRequired === true ? (
           <View style={styles.gateCard}>
             <View style={styles.gateIcon}>
@@ -176,72 +208,81 @@ export default function NewBudgetScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.label}>{t("budget.month")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-01"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.month}
-          onChangeText={(value) => update("month", value)}
-          autoCapitalize="none"
-        />
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>Period</Text>
+          <Text style={styles.label}>{t("budget.month")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="YYYY-MM-01"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.month}
+            onChangeText={(value) => update("month", value)}
+            autoCapitalize="none"
+          />
 
-        <Text style={styles.label}>{t("budget.year")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="2026"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.year}
-          onChangeText={(value) => update("year", value.replace(/[^0-9]/g, ""))}
-          keyboardType="number-pad"
-          maxLength={4}
-        />
+          <Text style={styles.label}>{t("budget.year")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="2026"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.year}
+            onChangeText={(value) => update("year", value.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
+            maxLength={4}
+          />
+        </View>
 
-        <Text style={styles.sectionLabel}>{t("budget.actualIncome")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t("budget.plannedIncome")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.plannedIncome}
-          onChangeText={(value) => update("plannedIncome", value.replace(/[^0-9.]/g, ""))}
-          keyboardType="decimal-pad"
-        />
-        <TextInput
-          style={[styles.input, styles.inputSpacing]}
-          placeholder={t("budget.actualIncome")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.actualIncome}
-          onChangeText={(value) => update("actualIncome", value.replace(/[^0-9.]/g, ""))}
-          keyboardType="decimal-pad"
-        />
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("budget.actualIncome")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("budget.plannedIncome")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.plannedIncome}
+            onChangeText={(value) => update("plannedIncome", value.replace(/[^0-9.]/g, ""))}
+            keyboardType="decimal-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.inputSpacing]}
+            placeholder={t("budget.actualIncome")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.actualIncome}
+            onChangeText={(value) => update("actualIncome", value.replace(/[^0-9.]/g, ""))}
+            keyboardType="decimal-pad"
+          />
+        </View>
 
-        <Text style={styles.sectionLabel}>{t("budget.actualExpenses")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t("budget.plannedExpenses")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.plannedExpenses}
-          onChangeText={(value) => update("plannedExpenses", value.replace(/[^0-9.]/g, ""))}
-          keyboardType="decimal-pad"
-        />
-        <TextInput
-          style={[styles.input, styles.inputSpacing]}
-          placeholder={t("budget.actualExpenses")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.actualExpenses}
-          onChangeText={(value) => update("actualExpenses", value.replace(/[^0-9.]/g, ""))}
-          keyboardType="decimal-pad"
-        />
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("budget.actualExpenses")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("budget.plannedExpenses")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.plannedExpenses}
+            onChangeText={(value) => update("plannedExpenses", value.replace(/[^0-9.]/g, ""))}
+            keyboardType="decimal-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.inputSpacing]}
+            placeholder={t("budget.actualExpenses")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.actualExpenses}
+            onChangeText={(value) => update("actualExpenses", value.replace(/[^0-9.]/g, ""))}
+            keyboardType="decimal-pad"
+          />
+        </View>
 
-        <Text style={styles.sectionLabel}>{t("budget.notes")}</Text>
-        <TextInput
-          style={[styles.input, styles.notesInput]}
-          placeholder={t("budget.notes")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.notes}
-          onChangeText={(value) => update("notes", value)}
-          multiline
-        />
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("budget.notes")}</Text>
+          <TextInput
+            style={[styles.input, styles.notesInput]}
+            placeholder={t("budget.notes")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.notes}
+            onChangeText={(value) => update("notes", value)}
+            multiline
+          />
+        </View>
 
         <TouchableOpacity
           style={[styles.saveBtn, formDisabled && { opacity: 0.6 }]}
@@ -276,10 +317,93 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+  },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  heroStatWarn: {
+    color: theme.colors.error,
+  },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  formSection: {
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   label: { fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6 },
   sectionLabel: {
     fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 24, marginBottom: 10,
+    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
   },
   input: {
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,

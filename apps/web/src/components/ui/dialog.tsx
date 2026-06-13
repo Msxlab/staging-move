@@ -128,7 +128,7 @@ function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 
 function DialogTitle({ className, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   const { titleId } = React.useContext(DialogContext);
-  return <h2 id={id ?? titleId} className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />;
+  return <h2 id={id ?? titleId} className={cn("text-lg font-semibold leading-none", className)} {...props} />;
 }
 
 function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {

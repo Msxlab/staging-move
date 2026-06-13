@@ -71,6 +71,7 @@ export default function MovingDetailScreen() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Move-focused "what's still tied to the old address" — services on the from/to
@@ -167,6 +168,7 @@ export default function MovingDetailScreen() {
     hapticSuccess();
     setMoveTasks(res.data?.tasks || []);
     setShowAllTasks(false);
+    setExpandedTaskIds(new Set());
   };
 
   const updateMoveTask = async (taskId: string, event: "ACCEPT" | "COMPLETE" | "DISMISS" | "REOPEN") => {
@@ -181,6 +183,15 @@ export default function MovingDetailScreen() {
     hapticSuccess();
     if (plan) await fetchMoveTasks(plan.id);
   };
+
+  const toggleTaskDetails = useCallback((taskId: string) => {
+    setExpandedTaskIds((current) => {
+      const next = new Set(current);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
 
   // Assign (or unassign) a task to a workspace member. Any active member may
   // assign within their workspace; the API validates the target before writing.
@@ -638,7 +649,9 @@ export default function MovingDetailScreen() {
                 const done = task.status === "COMPLETED";
                 const dismissed = task.status === "DISMISSED";
                 const open = !done && !dismissed;
+                const expanded = expandedTaskIds.has(task.id);
                 const dueShort = formatTaskDueShort(task.dueDate);
+                const dueLabel = formatTaskDueDate(task.dueDate);
                 const rowInner = (
                   <View
                     style={[styles.taskRow, done && styles.taskRowDone]}
@@ -650,23 +663,63 @@ export default function MovingDetailScreen() {
                         <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
                       </View>
                       <View style={styles.taskTitleRow}>
-                        <Text style={[styles.taskTitle, { flex: 1 }]} numberOfLines={2}>{task.title}</Text>
+                        <TouchableOpacity
+                          style={styles.taskTitleToggle}
+                          onPress={() => toggleTaskDetails(task.id)}
+                          activeOpacity={0.75}
+                          accessibilityRole="button"
+                          accessibilityLabel={expanded
+                            ? t("moving.hideTaskDetails", { defaultValue: "Hide task details" })
+                            : t("moving.showTaskDetails", { defaultValue: "Show task details" })}
+                        >
+                          <Text style={[styles.taskTitle, { flex: 1 }]} numberOfLines={2}>{task.title}</Text>
+                          <ChevronRight
+                            size={15}
+                            color={theme.colors.textTertiary}
+                            style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
+                          />
+                        </TouchableOpacity>
+                        {open && !expanded ? (
+                          <TouchableOpacity
+                            style={styles.taskQuickDone}
+                            disabled={taskBusy === task.id}
+                            onPress={() => confirmCompleteMoveTask(task.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("moving.complete")}
+                          >
+                            <Check size={14} color={theme.colors.background} />
+                          </TouchableOpacity>
+                        ) : null}
                         {/* Assignee avatar — multi-member workspaces only. */}
                         {assignmentEnabled && task.assignee ? (
                           <Avatar initials={task.assignee.initials} size={24} style={{ marginLeft: 8 }} />
                         ) : null}
                       </View>
-                      {!!task.description && <Text style={styles.taskDescription} numberOfLines={3}>{task.description}</Text>}
-                      {formatTaskDueDate(task.dueDate) && (
-                        <Text style={styles.taskDue}>{t("moving.dueDate", { date: formatTaskDueDate(task.dueDate) })}</Text>
+                      <View style={styles.taskCompactMeta}>
+                        {dueShort ? (
+                          <View style={styles.taskDuePill}>
+                            <Calendar size={11} color={theme.colors.primary} />
+                            <Text style={styles.taskDuePillText}>{dueShort}</Text>
+                          </View>
+                        ) : null}
+                        <Text style={styles.taskDetailHint}>
+                          {expanded
+                            ? t("moving.hideTaskDetails", { defaultValue: "Hide details" })
+                            : t("moving.showTaskDetails", { defaultValue: "Details" })}
+                        </Text>
+                      </View>
+                      {expanded && !!task.description && <Text style={styles.taskDescription} numberOfLines={3}>{task.description}</Text>}
+                      {expanded && dueLabel && (
+                        <Text style={styles.taskDue}>{t("moving.dueDate", { date: dueLabel })}</Text>
                       )}
-                      <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
+                      {expanded && <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>}
                       {/* Vehicle-registration task only: compact VIN → specs/recalls
                           helper (NHTSA) with the destination state's DMV link. */}
-                      {open && isVehicleRegistrationTask(task) && (
+                      {expanded && open && isVehicleRegistrationTask(task) && (
                         <VehicleCheckCard destinationState={plan.toAddress?.state} />
                       )}
                     </View>
+                    {expanded && (
                     <View style={styles.taskActions}>
                       {assignmentEnabled && open && (
                         <TouchableOpacity
@@ -711,6 +764,7 @@ export default function MovingDetailScreen() {
                         </TouchableOpacity>
                       )}
                     </View>
+                    )}
                   </View>
                 );
 
@@ -1289,7 +1343,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   celebrateTitle: {
     fontSize: 18,
     fontWeight: "700",
-    letterSpacing: -0.2,
+    letterSpacing: 0,
     color: theme.colors.text,
   },
   celebrateBody: {
@@ -1318,11 +1372,57 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   taskTitleRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  taskTitleToggle: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   taskTitle: {
     fontSize: 13,
     fontWeight: "800",
     color: theme.colors.text,
+  },
+  taskQuickDone: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primary,
+  },
+  taskCompactMeta: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 7,
+  },
+  taskDuePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  taskDuePillText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.primary,
+  },
+  taskDetailHint: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   assignBtn: {
     flexDirection: "row",

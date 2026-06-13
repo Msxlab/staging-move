@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 
 interface FoilEmptyStateProps {
@@ -88,7 +88,7 @@ export function FoilEmptyState({
         </p>
       ) : null}
       <h3
-        className="text-2xl md:text-3xl font-light tracking-tight mb-2 max-w-md"
+        className="text-2xl md:text-3xl font-light mb-2 max-w-md"
         style={{ fontFamily: "var(--font-display, Fraunces, Georgia, serif)" }}
       >
         {title}

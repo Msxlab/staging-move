@@ -15,11 +15,11 @@ import {
 } from "lucide-react";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import {
-  getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
   getMergedDisplaySubcategoryLabel,
 } from "@/lib/recommendation-engine";
 import { resolveLogoUrl } from "@/lib/logo-url";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import type {
   ProviderCoverageConfidence,
   ProviderTrustSummary,
@@ -139,7 +139,7 @@ export function ProviderDetailClient({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt={`${provider.name} logo`} className="h-full w-full object-contain" />
             ) : (
-              getMergedDisplayCategoryIcon(provider.category)
+              <CategoryIcon category={provider.category} className="h-7 w-7 text-muted-foreground" />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -274,8 +274,8 @@ export function ProviderDetailClient({
                 href={`/providers/${a.id}`}
                 className="rounded-xl border border-border bg-foreground/5 hover:bg-foreground/[0.08] transition p-3 flex items-start gap-3"
               >
-                <div className="h-10 w-10 shrink-0 rounded-lg bg-foreground/5 border border-border flex items-center justify-center text-xl">
-                  {getMergedDisplayCategoryIcon(a.category)}
+                <div className="h-10 w-10 shrink-0 rounded-lg bg-foreground/5 border border-border flex items-center justify-center">
+                  <CategoryIcon category={a.category} className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">{a.name}</p>

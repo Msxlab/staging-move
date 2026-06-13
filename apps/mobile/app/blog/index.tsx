@@ -13,12 +13,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 
 /**
- * Mobile Blog list — public content, no auth required.
+ * Mobile Blog list - public content, no auth required.
  *
  * Pulls JSON from `/api/blog/posts` (the same endpoint the web app
  * exposes), caches via `@tanstack/react-query` already wired through
@@ -119,6 +119,7 @@ export default function BlogListScreen() {
   const openPost = useCallback((slug: string, locale: string) => {
     router.push({ pathname: "/blog/[slug]", params: { slug, locale } });
   }, [router]);
+  const latestPost = items[0];
 
   if (loading) {
     return (
@@ -165,6 +166,38 @@ export default function BlogListScreen() {
         data={items}
         keyExtractor={(item) => `${item.locale}-${item.slug}`}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View style={styles.hero}>
+            <View style={styles.heroTop}>
+              <View style={styles.heroIcon}>
+                <BookOpen size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.heroCopy}>
+                <Text style={styles.heroKicker}>READING ROOM</Text>
+                <Text style={styles.heroTitle}>{t("blog.title")}</Text>
+                <Text style={styles.heroSub} numberOfLines={1}>
+                  {latestPost?.title || t("blog.empty")}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.heroStats}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{items.length}</Text>
+                <Text style={styles.heroStatLabel}>posts</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{locale.toUpperCase()}</Text>
+                <Text style={styles.heroStatLabel}>locale</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>
+                  {latestPost ? new Date(latestPost.publishedAt).toLocaleDateString(i18n.language || undefined, { month: "short", day: "numeric" }) : "--"}
+                </Text>
+                <Text style={styles.heroStatLabel}>latest</Text>
+              </View>
+            </View>
+          </View>
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -181,7 +214,9 @@ export default function BlogListScreen() {
             {item.ogImageUrl ? (
               <Image source={{ uri: item.ogImageUrl }} style={styles.cover} />
             ) : (
-              <View style={[styles.cover, styles.coverPlaceholder]} />
+              <View style={[styles.cover, styles.coverPlaceholder]}>
+                <BookOpen size={24} color={theme.colors.primary} />
+              </View>
             )}
             <View style={styles.cardBody}>
               {item.category ? (
@@ -197,8 +232,11 @@ export default function BlogListScreen() {
                   month: "short",
                   day: "numeric",
                 })}{" "}
-                · {t("blog.minRead", { minutes: item.readingMinutes })}
+                - {t("blog.minRead", { minutes: item.readingMinutes })}
               </Text>
+            </View>
+            <View style={styles.cardArrow}>
+              <ChevronRight size={16} color={theme.colors.textMuted} />
             </View>
           </TouchableOpacity>
         )}
@@ -234,12 +272,59 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  listContent: { padding: 16, gap: 16 },
-  card: {
+  listContent: { padding: 16, gap: 14 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 2,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
     backgroundColor: theme.colors.surface,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  card: {
+    backgroundColor: theme.colors.glass.bg,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
     overflow: "hidden",
-    marginBottom: 16,
+    marginBottom: 0,
+    ...theme.shadow.sm,
   },
   cover: {
     width: "100%",
@@ -247,12 +332,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.elevated,
   },
   coverPlaceholder: {
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: theme.colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardBody: { padding: 16, gap: 6 },
   category: {
     fontSize: 10,
-    letterSpacing: 1,
+    letterSpacing: 0,
     color: theme.colors.primary,
     fontWeight: "700",
   },
@@ -271,6 +358,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 11,
     color: theme.colors.textMuted,
     marginTop: 4,
+  },
+  cardArrow: {
+    position: "absolute",
+    right: 14,
+    bottom: 14,
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
     color: theme.colors.text,

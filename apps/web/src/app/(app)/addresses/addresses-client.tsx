@@ -177,29 +177,49 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
   const transitToCity = activeMove?.toAddress?.city || transitTo?.city || "—";
   const transitToState = activeMove?.toAddress?.state || transitTo?.state || "";
 
+  const formattedMonthly = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(totalMonthly);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="h1 text-2xl md:text-3xl text-foreground">
-            {t.rich("titleEditorial", { em: (chunks) => <em>{chunks}</em> })}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {addresses.length} · {totalServices} · {
-              new Intl.NumberFormat(locale, {
-                style: "currency",
-                currency: "USD",
-                maximumFractionDigits: 0,
-              }).format(totalMonthly)
-            }
-          </p>
+      <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+              <MapPin className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-primary">Address command</p>
+              <h1 className="h1 text-2xl text-foreground md:text-3xl">
+                {t.rich("titleEditorial", { em: (chunks) => <em>{chunks}</em> })}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t("formSubtitle")}</p>
+            </div>
+          </div>
+          <Link href="/addresses/new">
+            <button className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90">
+              <Plus className="h-4 w-4" /> {t("newTitle")}
+            </button>
+          </Link>
         </div>
-        <Link href="/addresses/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition">
-            <Plus className="h-4 w-4" /> {t("newTitle")}
-          </button>
-        </Link>
-      </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{addresses.length}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">addresses</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{totalServices}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">services</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{formattedMonthly}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">monthly</p>
+          </div>
+        </div>
+      </section>
 
       {/* Move-in-transit hero — route nodes old → new + sage→primary progress */}
       {activeMove && (
@@ -208,7 +228,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           aria-label={t("transit_aria", { from: transitFromCity, to: transitToCity })}
           className="block rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 hover:bg-foreground/[0.07] transition-all"
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{t("transit_kicker")}</p>
+          <p className="text-[11px] font-semibold uppercase text-primary">{t("transit_kicker")}</p>
           <div className="my-3 flex items-center gap-4">
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold text-foreground">
@@ -242,7 +262,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
               pct: transitPct,
               date: new Date(activeMove.moveDate).toLocaleDateString(locale, { month: "short", day: "numeric" }),
             })}
-            {" · "}
+            {" - "}
             {transitStillAtOld > 0 ? (
               <span className="font-medium text-destructive">{t("transit_stillAtOld", { count: transitStillAtOld })}</span>
             ) : (

@@ -202,6 +202,15 @@ export default function NewMovingPlanScreen() {
     if (!form.destinationCity && !form.destinationState) return t("moving.newDestination");
     return `${form.destinationCity || t("moving.destination")}${form.destinationState ? `, ${form.destinationState}` : ""}`;
   };
+  const originPreview = form.fromAddressId ? getLabel(form.fromAddressId) : t("moving.fromAddress");
+  const destinationPreview = getDestinationPreview();
+  const moveDatePreview = selectedDate
+    ? selectedDate.toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric" })
+    : t("moving.moveDate");
+  const routeReady =
+    Boolean(form.fromAddressId) &&
+    Boolean(form.moveDate) &&
+    (form.destinationMode === "existing" ? Boolean(form.toAddressId) : Boolean(form.destinationCity && form.destinationState && form.destinationZip));
 
   const handleSave = async () => {
     if (!form.fromAddressId || !form.moveDate) {
@@ -262,14 +271,14 @@ export default function NewMovingPlanScreen() {
     if (res.error) {
       hapticError();
       // FREEMIUM: the moving plan is a paid unlock. A FREE user reaching this
-      // screen (e.g. via Quick Actions) gets MOVING_PLAN_UPGRADE_REQUIRED — show
+      // screen (e.g. via Quick Actions) gets MOVING_PLAN_UPGRADE_REQUIRED - show
       // the Upgrade affordance instead of a confusing generic "Retry" alert.
       if (res.code && UPSELL_GATE_CODES.includes(res.code)) {
         Alert.alert(
           t("subscription.upgradeTitle", { defaultValue: "Unlock your move plan" }),
           t("moving.upgradeRequiredBody", {
             defaultValue:
-              "The full moving plan — personalized checklist, countdown, and tracking — unlocks with Individual.",
+              "The full moving plan - personalized checklist, countdown, and tracking - unlocks with Individual.",
           }),
           [
             { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
@@ -313,6 +322,42 @@ export default function NewMovingPlanScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.hero}>
+            <View style={styles.heroTop}>
+              <View style={styles.heroIcon}>
+                <MapPin size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.heroCopy}>
+                <Text style={styles.heroKicker}>MOVE COMMAND</Text>
+                <Text style={styles.heroTitle} numberOfLines={1}>{t("moving.newPlan")}</Text>
+                <Text style={styles.heroSub} numberOfLines={1}>
+                  {originPreview} to {destinationPreview}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.heroRoute}>
+              <Text style={styles.heroRouteText} numberOfLines={1}>{originPreview}</Text>
+              <ArrowRight size={16} color={theme.colors.primary} />
+              <Text style={styles.heroRouteText} numberOfLines={1}>{destinationPreview}</Text>
+            </View>
+            <View style={styles.heroStats}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{addresses.length}</Text>
+                <Text style={styles.heroStatLabel}>addresses</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{moveDatePreview}</Text>
+                <Text style={styles.heroStatLabel}>date</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={[styles.heroStatValue, routeReady && styles.heroStatReady]}>
+                  {routeReady ? "Ready" : "Draft"}
+                </Text>
+                <Text style={styles.heroStatLabel}>status</Text>
+              </View>
+            </View>
+          </View>
+
           {addresses.length === 0 ? (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>
@@ -327,6 +372,7 @@ export default function NewMovingPlanScreen() {
             </View>
           ) : (
             <>
+              <View style={styles.formSection}>
               {/* From Address */}
               <Text style={styles.sectionLabel}>{t("moving.fromAddress")} *</Text>
               <View style={styles.chipRow}>
@@ -443,7 +489,9 @@ export default function NewMovingPlanScreen() {
                   </View>
                 </View>
               )}
+              </View>
 
+              <View style={styles.formSection}>
               {/* Move Date */}
               <Text style={styles.label}>{t("moving.moveDate")} *</Text>
               <TouchableOpacity
@@ -508,6 +556,7 @@ export default function NewMovingPlanScreen() {
                   />
                 </>
               )}
+              </View>
 
               {/* Save */}
               <TouchableOpacity
@@ -546,9 +595,87 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 160 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroRoute: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  heroRouteText: { flex: 1, fontSize: 12, fontWeight: "700", color: theme.colors.text, textAlign: "center" },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 10 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatReady: { color: theme.colors.emerald.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  formSection: {
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   sectionLabel: {
     fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 10,
+    textTransform: "uppercase", letterSpacing: 0, marginTop: 0, marginBottom: 10,
   },
   helperText: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 10 },
   label: {
@@ -606,7 +733,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 8,
     padding: 14,
     borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

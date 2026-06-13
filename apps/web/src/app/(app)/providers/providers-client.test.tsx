@@ -1,7 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
+import { describe, expect, it, vi } from "vitest";
 import { ProviderLogoMark, shouldShowProviderLogo } from "./providers-client";
+
+vi.mock("@/components/ui/category-icon", () => ({
+  CategoryIcon: ({ category, className }: { category?: string | null; className?: string }) => (
+    <svg data-category-icon={category ?? ""} className={className} />
+  ),
+}));
 
 describe("ProviderLogoMark", () => {
   it("renders a provider logo image when logoUrl exists", () => {
@@ -36,7 +41,7 @@ describe("ProviderLogoMark", () => {
     );
 
     expect(markup).not.toContain("<img");
-    expect(markup).toContain(getMergedDisplayCategoryIcon("GOVERNMENT_POSTAL"));
+    expect(markup).toContain("data-category-icon=\"GOVERNMENT_POSTAL\"");
   });
 
   it("uses the fallback branch after a logo URL has failed", () => {
@@ -61,6 +66,6 @@ describe("ProviderLogoMark", () => {
     );
 
     expect(markup).not.toContain("<img");
-    expect(markup).toContain(getMergedDisplayCategoryIcon("GOVERNMENT_POSTAL"));
+    expect(markup).toContain("data-category-icon=\"GOVERNMENT_POSTAL\"");
   });
 });

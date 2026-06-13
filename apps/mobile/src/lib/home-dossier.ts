@@ -596,13 +596,27 @@ export type AmbientKind =
   | "school"
   | "hazard"
   | "radon"
+  | "water"
   | "air"
+  | "housing"
+  | "evCharging"
   | "neighborhood"
   | "weather";
 
 export type AmbientIntensity = 0 | 1 | 2;
 
-export type AmbientVariant = "lightning" | "wind" | "winter" | "sun" | "cloud" | "rain";
+export type AmbientVariant =
+  | "lightning"
+  | "wind"
+  | "winter"
+  | "sun"
+  | "cloud"
+  | "rain"
+  | "storm"
+  | "snow"
+  | "fog"
+  | "heat"
+  | "cold";
 
 export interface AmbientSpec {
   kind: AmbientKind;
@@ -620,9 +634,28 @@ export type AmbientSectionInput =
   | { kind: "school" }
   | { kind: "hazard"; topRisks: ReadonlyArray<{ hazard: string; rating: string }> }
   | { kind: "radon"; zone: 1 | 2 | 3 }
-  | { kind: "air"; aqi: number }
+  | { kind: "water"; violations5y: number | null }
+  | { kind: "air"; aqi: number | null; category?: string | null }
+  | {
+      kind: "housing";
+      twoBedroomFmr: number | null;
+      medianIncome: number | null;
+      lowIncome4Person: number | null;
+    }
+  | {
+      kind: "evCharging";
+      stationCount: number;
+      dcFastPortCount: number;
+      level2PortCount: number;
+    }
   | { kind: "neighborhood"; walkBand: WalkBand | null }
-  | { kind: "weather"; summary: string | null; precipChancePct: number | null };
+  | {
+      kind: "weather";
+      summary: string | null;
+      precipChancePct: number | null;
+      tempHighF?: number | null;
+      tempLowF?: number | null;
+    };
 
 /** NRI rating -> intensity: Relatively/Very High => 2, *Moderate => 1, else 0. */
 function hazardIntensity(rating: string | undefined): AmbientIntensity {
@@ -649,16 +682,80 @@ function hazardVariant(hazard: string | undefined): AmbientVariant {
   return "wind";
 }
 
+function textHasAny(text: string, needles: ReadonlyArray<string>): boolean {
+  return needles.some((needle) => text.includes(needle));
+}
+
+function weatherSpec({
+  summary,
+  precipChancePct,
+  tempHighF,
+  tempLowF,
+}: Extract<AmbientSectionInput, { kind: "weather" }>): AmbientSpec {
+  const s = (summary ?? "").toLowerCase();
+  const precip = precipChancePct;
+  const high = typeof tempHighF === "number" && Number.isFinite(tempHighF) ? tempHighF : null;
+  const low = typeof tempLowF === "number" && Number.isFinite(tempLowF) ? tempLowF : null;
+
+  if (textHasAny(s, ["thunder", "storm", "lightning", "squall", "tornado"])) {
+    return { kind: "weather", intensity: 2, variant: "storm" };
+  }
+  if (textHasAny(s, ["snow", "sleet", "freezing", "ice", "blizzard", "flurr"])) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["blizzard", "heavy", "freezing"]) || (precip ?? 0) >= 70 ? 2 : 1,
+      variant: "snow",
+    };
+  }
+  if (textHasAny(s, ["fog", "mist", "haze", "smoke"])) {
+    return { kind: "weather", intensity: textHasAny(s, ["dense", "smoke"]) ? 2 : 1, variant: "fog" };
+  }
+  if (textHasAny(s, ["wind", "gust", "breez"])) {
+    return { kind: "weather", intensity: textHasAny(s, ["high wind", "gust"]) ? 2 : 1, variant: "wind" };
+  }
+  if (typeof precip === "number" && precip >= 50) {
+    return { kind: "weather", intensity: precip >= 80 ? 2 : 1, variant: "rain" };
+  }
+  if (textHasAny(s, ["cloud", "overcast"])) {
+    return { kind: "weather", intensity: 1, variant: "cloud" };
+  }
+  if (textHasAny(s, ["heat", "hot", "excessive"]) || (high !== null && high >= 95)) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["excessive"]) || (high !== null && high >= 100) ? 2 : 1,
+      variant: "heat",
+    };
+  }
+  if (textHasAny(s, ["cold", "chill", "freeze"]) || (low !== null && low <= 32)) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["freeze"]) || (low !== null && low <= 25) ? 2 : 1,
+      variant: "cold",
+    };
+  }
+  return { kind: "weather", intensity: 0, variant: "sun" };
+}
+
+function airCategoryIntensity(category: string | null | undefined): AmbientIntensity {
+  const c = (category ?? "").toLowerCase();
+  if (c.includes("hazard") || c.includes("very unhealthy") || c.includes("unhealthy")) return 2;
+  if (c.includes("moderate") || c.includes("sensitive")) return 1;
+  return 0;
+}
+
 /**
  * Map a dossier section's REAL data to its ambient scene parameters:
  *  - flood: isHighRisk true => 2, false => 0, unknown => 1;
  *  - school: fixed moderate ambience (directory data carries no risk signal);
  *  - hazard: variant from the TOP risk chip, intensity from its NRI rating;
  *  - radon: zone 1 => 2, zone 2 => 1, zone 3 => 0;
+ *  - water: 0 violations => 0, unknown count => 1, violations > 0 => 2;
  *  - air: AQI <= 50 => 0 (mint), 51-100 => 1 (amber), > 100 => 2 (coral);
+ *  - housing: HUD rent/income figures drive low/moderate/high-cost ambience;
+ *  - evCharging: none => 0, nearby L2 => 1, DC-fast/many stations => 2;
  *  - neighborhood: walk band most => 2, above_average => 1, else 0 (cadence);
- *  - weather: precip >= 50 => rain (>= 80 elevated), summary mentions cloud
- *    => cloud, else sun.
+ *  - weather: storm/snow/fog/wind/rain/cloud/heat/cold/sun derived from
+ *    forecast summary + precipitation + temps.
  */
 export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
   switch (section.kind) {
@@ -679,8 +776,45 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
     }
     case "radon":
       return { kind: "radon", intensity: section.zone === 1 ? 2 : section.zone === 2 ? 1 : 0 };
+    case "water":
+      return {
+        kind: "water",
+        intensity: section.violations5y === null ? 1 : section.violations5y > 0 ? 2 : 0,
+      };
     case "air":
-      return { kind: "air", intensity: section.aqi <= 50 ? 0 : section.aqi <= 100 ? 1 : 2 };
+      return {
+        kind: "air",
+        intensity:
+          typeof section.aqi === "number"
+            ? section.aqi <= 50
+              ? 0
+              : section.aqi <= 100
+                ? 1
+                : 2
+            : airCategoryIntensity(section.category),
+      };
+    case "housing": {
+      const fmr = section.twoBedroomFmr;
+      const lowIncome = section.lowIncome4Person;
+      const highCost =
+        (typeof fmr === "number" && fmr >= 2500) ||
+        (typeof lowIncome === "number" && lowIncome >= 95000);
+      const moderateCost =
+        (typeof fmr === "number" && fmr >= 1600) ||
+        (typeof lowIncome === "number" && lowIncome >= 65000) ||
+        (typeof section.medianIncome === "number" && section.medianIncome >= 85000);
+      return { kind: "housing", intensity: highCost ? 2 : moderateCost ? 1 : 0 };
+    }
+    case "evCharging":
+      return {
+        kind: "evCharging",
+        intensity:
+          section.stationCount <= 0
+            ? 0
+            : section.dcFastPortCount > 0 || section.stationCount >= 8
+              ? 2
+              : 1,
+      };
     case "neighborhood": {
       const band = section.walkBand;
       return {
@@ -688,16 +822,8 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
         intensity: band === "most" ? 2 : band === "above_average" ? 1 : 0,
       };
     }
-    case "weather": {
-      const precip = section.precipChancePct;
-      if (typeof precip === "number" && precip >= 50) {
-        return { kind: "weather", intensity: precip >= 80 ? 2 : 1, variant: "rain" };
-      }
-      if ((section.summary ?? "").toLowerCase().includes("cloud")) {
-        return { kind: "weather", intensity: 1, variant: "cloud" };
-      }
-      return { kind: "weather", intensity: 0, variant: "sun" };
-    }
+    case "weather":
+      return weatherSpec(section);
   }
 }
 

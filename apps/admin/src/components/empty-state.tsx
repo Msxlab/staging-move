@@ -30,12 +30,12 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center",
+        "flex flex-col items-center justify-center rounded-[1.2rem] border border-border/60 bg-card/55 text-center shadow-sm backdrop-blur-xl",
         compact ? "py-4" : "py-12",
         className,
       )}
     >
-      <div className="rounded-full bg-muted/30 p-3 text-muted-foreground">
+      <div className="rounded-2xl border border-border/60 bg-background/70 p-3 text-muted-foreground shadow-sm">
         <Icon className={cn(compact ? "h-5 w-5" : "h-6 w-6")} aria-hidden="true" />
       </div>
       <p className="mt-3 text-sm font-medium text-foreground">{title}</p>

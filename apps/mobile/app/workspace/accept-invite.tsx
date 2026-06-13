@@ -26,12 +26,12 @@ import { hapticSuccess, hapticError } from "@/lib/haptics";
  * Manual workspace-invite-accept screen.
  *
  * Reachable two ways:
- *   1. Manually from Settings → Workspace ("Have an invite?"). The user pastes the
+ *   1. Manually from Settings -> Workspace ("Have an invite?"). The user pastes the
  *      invite link (or bare code) from their email and taps Join. This is the
  *      robust fallback when the universal link did NOT open the app directly.
- *   2. With a `?token=` (or `?code=`) query param — used as a soft deep-link target.
+ *   2. With a `?token=` (or `?code=`) query param - used as a soft deep-link target.
  *      The canonical universal-link deep link still lands on app/invitations/[token].tsx;
- *      this screen accepts a prefilled token too so a `locateflow://workspace/accept-invite?token=…`
+ *      this screen accepts a prefilled token too so a `locateflow://workspace/accept-invite?token=...`
  *      style link works without extra native config.
  *
  * Both call the same accept endpoint the web uses and refresh the plan entitlement
@@ -43,7 +43,7 @@ export default function AcceptInviteScreen() {
   const router = useRouter();
   const { t } = useTranslation();
 
-  // Accept a token prefilled via query param (?token=… or ?code=…) for soft deep links.
+  // Accept a token prefilled via query param (?token=... or ?code=...) for soft deep links.
   const params = useLocalSearchParams<{ token?: string; code?: string }>();
   const prefill = useMemo(() => {
     const raw = (typeof params.token === "string" && params.token) || (typeof params.code === "string" && params.code) || "";
@@ -99,7 +99,7 @@ export default function AcceptInviteScreen() {
       const text = await Clipboard.getStringAsync();
       if (text) setInput(text);
     } catch {
-      /* clipboard unavailable — user can type manually */
+      /* clipboard unavailable - user can type manually */
     }
   }, []);
 
@@ -139,6 +139,7 @@ export default function AcceptInviteScreen() {
             <View style={[styles.iconWrap, { backgroundColor: theme.colors.success + "22" }]}>
               <Check size={28} color={theme.colors.success} />
             </View>
+            <Text style={styles.heroKicker}>WORKSPACE ACCESS</Text>
             <Text style={styles.title}>
               {t("invite.successTitle", "You're in!")}
             </Text>
@@ -172,15 +173,19 @@ export default function AcceptInviteScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.iconWrapLarge}>
-          <Users size={28} color={theme.colors.primary} />
+        <View style={styles.hero}>
+          <View style={styles.iconWrapLarge}>
+            <Users size={28} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.heroKicker}>WORKSPACE INVITE</Text>
+          <Text style={styles.heroTitle}>{t("invite.joinWorkspaceTitle", "Join a workspace")}</Text>
+          <Text style={styles.lede}>
+            {t(
+              "invite.pasteLede",
+              "Got an invite email? Paste the invite link (or code) below to join your household or team workspace.",
+            )}
+          </Text>
         </View>
-        <Text style={styles.lede}>
-          {t(
-            "invite.pasteLede",
-            "Got an invite email? Paste the invite link (or code) below to join your household or team workspace.",
-          )}
-        </Text>
 
         <View style={styles.card}>
           <Text style={styles.label}>{t("invite.pasteLabel", "Invite link or code")}</Text>
@@ -190,7 +195,7 @@ export default function AcceptInviteScreen() {
               setInput(v);
               if (errorCode) setErrorCode(null);
             }}
-            placeholder="https://locateflow.com/invitations/wsi_…"
+            placeholder="https://locateflow.com/invitations/wsi_..."
             placeholderTextColor={theme.colors.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
@@ -264,45 +269,66 @@ const makeStyles = (theme: Theme) =>
       width: 56,
       height: 56,
       borderRadius: 18,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
       alignItems: "center",
       justifyContent: "center",
+    },
+    hero: {
+      borderRadius: 28,
+      padding: 20,
+      alignItems: "center",
+      marginBottom: 14,
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.highlight,
+      ...theme.shadow.sm,
     },
     iconWrapLarge: {
       width: 56,
       height: 56,
       borderRadius: 18,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.primaryFaded,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.primary + "33",
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
-      marginTop: 8,
-      marginBottom: 16,
+      marginBottom: 12,
     },
+    heroKicker: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.accent,
+      textTransform: "uppercase",
+      textAlign: "center",
+    },
+    heroTitle: { marginTop: 6, fontSize: 22, fontWeight: "800", color: theme.colors.text, textAlign: "center" },
     lede: {
       fontSize: 14,
       color: theme.colors.textSecondary,
       lineHeight: 20,
       textAlign: "center",
-      marginBottom: 16,
+      marginTop: 8,
     },
     card: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.radius.xl,
+      backgroundColor: theme.colors.glass.bg,
+      borderRadius: 24,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.glass.highlight,
       padding: 20,
       gap: 12,
       alignItems: "stretch",
+      ...theme.shadow.sm,
     },
-    label: { fontSize: 12, fontWeight: "600", color: theme.colors.textTertiary, letterSpacing: 0.4 },
+    label: { fontSize: 12, fontWeight: "600", color: theme.colors.textTertiary, letterSpacing: 0 },
     input: {
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.surface,
       paddingHorizontal: 12,
       paddingVertical: 10,
       fontSize: 14,
@@ -314,7 +340,7 @@ const makeStyles = (theme: Theme) =>
     pasteBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.primary },
     errorBox: {
       backgroundColor: theme.colors.error + "14",
-      borderRadius: theme.radius.md,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.error + "44",
       padding: 12,
@@ -326,10 +352,11 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       gap: 8,
       backgroundColor: theme.colors.primary,
-      borderRadius: theme.radius.md,
+      borderRadius: 16,
       paddingVertical: 13,
       width: "100%",
       marginTop: 4,
+      ...theme.shadow.glow,
     },
     primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
     title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, textAlign: "center" },

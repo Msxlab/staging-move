@@ -121,7 +121,7 @@ export default async function AffiliatePage() {
         {stats.map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">{s.value}</p>
+            <p className="mt-1 text-3xl font-bold text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
@@ -130,7 +130,7 @@ export default async function AffiliatePage() {
         {revenueStats.map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{s.value}</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{s.value}</p>
           </div>
         ))}
       </div>

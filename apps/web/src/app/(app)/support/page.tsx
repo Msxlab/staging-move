@@ -77,28 +77,49 @@ export default function SupportPage() {
       setCreating(false);
     }
   };
+  const openCount = tickets.filter((ticket) => ticket.status !== "CLOSED").length;
+  const waitingCount = tickets.filter((ticket) => ticket.status === "WAITING_USER").length;
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Support</em></h1>
-          <p className="text-sm text-muted-foreground mt-1">View and manage your support tickets</p>
+      <section className="rounded-3xl border border-border/70 bg-card/80 p-5 shadow-sm backdrop-blur-xl">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
+              <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Support command</p>
+              <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">Support</h1>
+              <p className="mt-1 text-sm text-muted-foreground">View and manage your support tickets</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> New Ticket
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
-        >
-          <Plus className="h-4 w-4" /> New Ticket
-        </button>
-      </div>
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          {[
+            ["Total", tickets.length],
+            ["Open", openCount],
+            ["Waiting", waitingCount],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-border bg-background/55 p-3">
+              <p className="text-lg font-semibold text-foreground">{value}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Contact cards — email + ticket, tonal icon tiles (Aurora Help) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <a
           href={mailto(LEGAL_CONTACTS.support)}
-          className="rounded-2xl border border-border bg-foreground/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-tone-sky-br"
+          className="rounded-2xl border border-border bg-card/70 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-tone-sky-br"
         >
           <div className="h-10 w-10 rounded-xl bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center mb-3">
             <Mail className="h-4 w-4 text-tone-sky-fg" />
@@ -109,7 +130,7 @@ export default function SupportPage() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="rounded-2xl border border-border bg-foreground/[0.03] p-4 text-left transition hover:-translate-y-0.5 hover:border-tone-orange-br"
+          className="rounded-2xl border border-border bg-card/70 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-tone-orange-br"
         >
           <div className="h-10 w-10 rounded-xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center mb-3">
             <MessageCircle className="h-4 w-4 text-tone-orange-fg" />
@@ -121,7 +142,7 @@ export default function SupportPage() {
 
       {/* Create ticket form */}
       {showCreate && (
-        <div className="rounded-2xl border border-border bg-foreground/[0.03] p-6">
+        <div className="rounded-3xl border border-border bg-card/80 p-6 shadow-sm backdrop-blur-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-foreground">New Support Ticket</h2>
             <button onClick={() => setShowCreate(false)} className="text-foreground/40 hover:text-foreground">
@@ -202,7 +223,7 @@ export default function SupportPage() {
           <Loader2 className="h-6 w-6 animate-spin text-foreground/30" />
         </div>
       ) : tickets.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-foreground/[0.02] p-12 text-center">
+        <div className="rounded-3xl border border-border bg-card/70 p-12 text-center shadow-sm">
           <MessageCircle className="h-10 w-10 text-foreground/20 mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">No support tickets yet</p>
           <p className="text-foreground/30 text-xs mt-1">Create a ticket if you need help with anything</p>
@@ -214,7 +235,7 @@ export default function SupportPage() {
             const lastMsg = ticket.messages[0];
             return (
               <Link key={ticket.id} href={`/support/${ticket.id}`}>
-                <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] hover:bg-foreground/[0.04] p-4 transition flex items-center gap-4">
+                <div className="flex items-center gap-4 rounded-2xl border border-border bg-card/70 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${badge.cls}`}>

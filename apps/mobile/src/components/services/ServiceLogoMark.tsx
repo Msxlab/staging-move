@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { useAppTheme } from "@/lib/theme";
 import {
   resolveMobileServiceLogoAltName,
   resolveMobileServiceLogoUrls,
@@ -29,6 +31,7 @@ export function ServiceLogoMark({
   fallbackFontSize = 16,
 }: ServiceLogoMarkProps) {
   const { t } = useTranslation();
+  const theme = useAppTheme();
   const [failedLogoUrls, setFailedLogoUrls] = useState<Set<string>>(() => new Set());
   const logoUrls = resolveMobileServiceLogoUrls(service);
   const logoUrl = logoUrls.find((url) => !failedLogoUrls.has(url)) || null;
@@ -59,7 +62,7 @@ export function ServiceLogoMark({
           }}
         />
       ) : (
-        <Text style={[styles.fallbackIcon, { fontSize: fallbackFontSize }]}>{fallbackIcon}</Text>
+        <CategoryIcon emoji={fallbackIcon} size={Math.max(14, fallbackFontSize)} color={theme.colors.textSecondary} />
       )}
     </View>
   );
@@ -71,8 +74,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-  },
-  fallbackIcon: {
-    lineHeight: 22,
   },
 });

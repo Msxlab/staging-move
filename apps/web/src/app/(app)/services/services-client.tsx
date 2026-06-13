@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Plus, Zap, Search, Globe, ChevronRight, Star, MapPin, Home, Briefcase, Palmtree,
-  AlertTriangle, Clock, ArrowRight,
+  AlertTriangle, Clock, ArrowRight, Baby, Car, ClipboardList, CreditCard, Dumbbell,
+  Hospital, Landmark, ShoppingCart,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -33,16 +34,16 @@ export {
 // filterGroups mapping — labels are keys to be translated
 // Use getFilterGroups(t) to get translated version in the component
 const FILTER_GROUPS_KEYS = [
-  { label: "filterGroups.all", value: "", icon: "📋" },
-  { label: "filterGroups.government", value: "GOVERNMENT", icon: "🏛️" },
-  { label: "filterGroups.utilities", value: "UTILITY", icon: "⚡" },
-  { label: "filterGroups.financial", value: "FINANCIAL", icon: "💳" },
-  { label: "filterGroups.housing", value: "HOUSING", icon: "🏠" },
-  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "🏥" },
-  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "🚗" },
-  { label: "filterGroups.kids", value: "KIDS", icon: "👶" },
-  { label: "filterGroups.fitness", value: "FITNESS", icon: "💪" },
-  { label: "filterGroups.shopping", value: "SHOPPING", icon: "🛒" },
+  { label: "filterGroups.all", value: "" },
+  { label: "filterGroups.government", value: "GOVERNMENT" },
+  { label: "filterGroups.utilities", value: "UTILITY" },
+  { label: "filterGroups.financial", value: "FINANCIAL" },
+  { label: "filterGroups.housing", value: "HOUSING" },
+  { label: "filterGroups.healthcare", value: "HEALTHCARE" },
+  { label: "filterGroups.transport", value: "TRANSPORTATION" },
+  { label: "filterGroups.kids", value: "KIDS" },
+  { label: "filterGroups.fitness", value: "FITNESS" },
+  { label: "filterGroups.shopping", value: "SHOPPING" },
 ];
 
 const GROUP_LABELS_KEYS: Record<string, string> = {
@@ -56,9 +57,18 @@ const GROUP_LABELS_KEYS: Record<string, string> = {
   FITNESS: "groupLabels.fitness",
   SHOPPING: "groupLabels.shopping",
 };
-const groupIcons: Record<string, string> = {
-  GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
-  TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
+const groupIconComponents: Record<string, React.ElementType> = {
+  "": ClipboardList,
+  GOVERNMENT: Landmark,
+  UTILITY: Zap,
+  FINANCIAL: CreditCard,
+  HOUSING: Home,
+  HEALTHCARE: Hospital,
+  TRANSPORTATION: Car,
+  KIDS: Baby,
+  FITNESS: Dumbbell,
+  SHOPPING: ShoppingCart,
+  OTHER: ClipboardList,
 };
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 
@@ -229,7 +239,7 @@ export function ServicesClient({
   const filterGroups = FILTER_GROUPS_KEYS.map((g) => ({
     label: t(g.label as any),
     value: g.value,
-    icon: g.icon,
+    Icon: groupIconComponents[g.value] ?? ClipboardList,
   }));
 
   // Build group labels record with translated values
@@ -424,17 +434,17 @@ export function ServicesClient({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.6fr]">
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.perMonth")}</p>
-          <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground leading-none">{formatCurrency(overviewMonthly)}</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-foreground leading-none">{formatCurrency(overviewMonthly)}</p>
           <p className="mt-2 text-[11px] text-foreground/45">{t("stats.acrossServices", { count: services.length })}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.active")}</p>
-          <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground leading-none">{activeCount}</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-foreground leading-none">{activeCount}</p>
           <p className="mt-2 text-[11px] text-foreground/45">{t("stats.activeHint")}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.needsAttention")}</p>
-          <p className={`mt-2 font-mono text-2xl font-bold tracking-tight leading-none ${attentionItems.length > 0 ? "text-destructive" : "text-foreground"}`}>{attentionItems.length}</p>
+          <p className={`mt-2 font-mono text-2xl font-bold leading-none ${attentionItems.length > 0 ? "text-destructive" : "text-foreground"}`}>{attentionItems.length}</p>
           <p className="mt-2 text-[11px] text-foreground/45">
             {attentionItems.length > 0 ? t("stats.attentionHint", { days: RENEWAL_SOON_DAYS }) : t("stats.allClear")}
           </p>
@@ -472,7 +482,9 @@ export function ServicesClient({
         <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xl">{currentPhaseInfo?.icon || ""}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg">
+                <ClipboardList className="h-5 w-5" aria-hidden="true" />
+              </span>
               <div>
                 <h2 className="text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
                 <p className="text-xs text-muted-foreground">
@@ -603,6 +615,7 @@ export function ServicesClient({
           {filterGroups.map((g) => {
             const count = g.value ? services.filter((s) => s.category.startsWith(g.value)).length : services.length;
             if (g.value && count === 0) return null;
+            const Icon = g.Icon;
             return (
               <button
                 key={g.value}
@@ -613,7 +626,7 @@ export function ServicesClient({
                     : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                 }`}
               >
-                <span>{g.icon}</span>
+                <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {g.label}
                 <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
               </button>
@@ -678,10 +691,11 @@ export function ServicesClient({
         <div className="space-y-5">
           {sortedGroups.map((prefix) => {
             const items = grouped[prefix];
+            const GroupIcon = groupIconComponents[prefix] ?? ClipboardList;
             return (
               <div key={prefix} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <span className="text-base">{groupIcons[prefix] || ""}</span>
+                  <GroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h2>
                   <span className="text-[10px] text-foreground/30">{items.length}</span>
                 </div>

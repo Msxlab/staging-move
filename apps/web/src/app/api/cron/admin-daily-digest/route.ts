@@ -305,7 +305,7 @@ export async function GET(request: Request) {
         </tr>
       </table>
       <h2 style="margin:18px 0 8px;font-size:15px;color:#0f172a;">Action queue</h2>
-      ${renderList(actionQueueItems, "Nothing needs attention right now. 🎉")}
+      ${renderList(actionQueueItems, "Nothing needs attention right now.")}
       <h2 style="margin:18px 0 8px;font-size:15px;color:#0f172a;">New users</h2>
       ${renderList(newUserItems, "No new user signups in this window.")}
       <h2 style="margin:18px 0 8px;font-size:15px;color:#0f172a;">Support tickets</h2>

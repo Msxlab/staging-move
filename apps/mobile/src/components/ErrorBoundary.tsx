@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { AlertTriangle } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { captureException } from "@/lib/sentry";
 import i18n from "@/i18n/config";
@@ -54,7 +55,9 @@ function ErrorFallback({ reset }: ErrorFallbackProps) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.emoji}>!</Text>
+        <View style={styles.iconWrap}>
+          <AlertTriangle size={32} color={theme.colors.error} />
+        </View>
         <Text style={styles.title}>{i18n.t("common.errorTitle")}</Text>
         <Text style={styles.message} numberOfLines={6}>
           {i18n.t("common.genericError")}
@@ -70,7 +73,17 @@ function ErrorFallback({ reset }: ErrorFallbackProps) {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   scroll: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  emoji: { fontSize: 56, marginBottom: 12, color: theme.colors.error },
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+    backgroundColor: theme.colors.errorFaded,
+    borderWidth: 1,
+    borderColor: "rgba(240, 140, 142, 0.24)",
+  },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, marginBottom: 8, textAlign: "center" },
   message: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", lineHeight: 20, marginBottom: 24, maxWidth: 320 },
   button: {

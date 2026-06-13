@@ -95,11 +95,7 @@ export function AppShell({ children, showBudget = true, showWorkspace = false, p
 
   return (
     <div className={`flex min-h-screen relative ${planClass}`} style={{ background: "var(--surface)" }}>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark-only-blobs">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-tone-orange-bg blur-[150px]" />
-        <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-tone-foil-bg blur-[120px]" />
-        <div className="absolute -bottom-40 right-1/3 w-[350px] h-[350px] rounded-full bg-tone-cyan-bg blur-[120px]" />
-      </div>
+      <div className="app-shell-backdrop fixed inset-0 pointer-events-none z-0" aria-hidden="true" />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-md focus:bg-brand-orange focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -1015,6 +1015,63 @@ describe("ambientForSection — air", () => {
     expect(ambientForSection({ kind: "air", aqi: 101 }).intensity).toBe(2);
     expect(ambientForSection({ kind: "air", aqi: 180 }).intensity).toBe(2);
   });
+
+  it("falls back to AirNow category when AQI is absent", () => {
+    expect(ambientForSection({ kind: "air", aqi: null, category: "Good" }).intensity).toBe(0);
+    expect(ambientForSection({ kind: "air", aqi: null, category: "Moderate" }).intensity).toBe(1);
+    expect(ambientForSection({ kind: "air", aqi: null, category: "Unhealthy" }).intensity).toBe(2);
+    expect(ambientForSection({ kind: "air", aqi: null, category: "Very Unhealthy" }).intensity).toBe(2);
+  });
+});
+
+describe("ambientForSection - water / housing / EV", () => {
+  it("maps water violations to clear / notice / violation bands", () => {
+    expect(ambientForSection({ kind: "water", violations5y: 0 })).toEqual({ kind: "water", intensity: 0 });
+    expect(ambientForSection({ kind: "water", violations5y: null })).toEqual({ kind: "water", intensity: 1 });
+    expect(ambientForSection({ kind: "water", violations5y: 3 })).toEqual({ kind: "water", intensity: 2 });
+  });
+
+  it("derives housing ambience from HUD rent and income figures", () => {
+    expect(
+      ambientForSection({
+        kind: "housing",
+        twoBedroomFmr: 1200,
+        medianIncome: 52000,
+        lowIncome4Person: 42000,
+      }),
+    ).toEqual({ kind: "housing", intensity: 0 });
+    expect(
+      ambientForSection({
+        kind: "housing",
+        twoBedroomFmr: 1800,
+        medianIncome: 70000,
+        lowIncome4Person: 68000,
+      }),
+    ).toEqual({ kind: "housing", intensity: 1 });
+    expect(
+      ambientForSection({
+        kind: "housing",
+        twoBedroomFmr: 2600,
+        medianIncome: 110000,
+        lowIncome4Person: 98000,
+      }),
+    ).toEqual({ kind: "housing", intensity: 2 });
+  });
+
+  it("maps EV charging density from station and fast-port counts", () => {
+    expect(
+      ambientForSection({ kind: "evCharging", stationCount: 0, dcFastPortCount: 0, level2PortCount: 0 }),
+    ).toEqual({ kind: "evCharging", intensity: 0 });
+    expect(
+      ambientForSection({ kind: "evCharging", stationCount: 3, dcFastPortCount: 0, level2PortCount: 8 }),
+    ).toEqual({ kind: "evCharging", intensity: 1 });
+    expect(
+      ambientForSection({ kind: "evCharging", stationCount: 3, dcFastPortCount: 1, level2PortCount: 8 }),
+    ).toEqual({ kind: "evCharging", intensity: 2 });
+    expect(
+      ambientForSection({ kind: "evCharging", stationCount: 9, dcFastPortCount: 0, level2PortCount: 12 }),
+    ).toEqual({ kind: "evCharging", intensity: 2 });
+  });
 });
 
 describe("ambientForSection — neighborhood", () => {
@@ -1030,6 +1087,27 @@ describe("ambientForSection — neighborhood", () => {
 });
 
 describe("ambientForSection — weather", () => {
+  it("maps explicit severe/cold/fog/wind/heat summaries before generic rain/cloud/sun", () => {
+    expect(
+      ambientForSection({ kind: "weather", summary: "Thunderstorms likely", precipChancePct: 30 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "storm" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Heavy snow", precipChancePct: 80 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "snow" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Dense fog", precipChancePct: 20 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "fog" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Wind gusts", precipChancePct: 20 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "wind" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Sunny", precipChancePct: 10, tempHighF: 101 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "heat" });
+    expect(
+      ambientForSection({ kind: "weather", summary: "Clear", precipChancePct: 0, tempLowF: 24 }),
+    ).toEqual({ kind: "weather", intensity: 2, variant: "cold" });
+  });
+
   it("precip >= 50 wins as rain, elevated at >= 80, even when the summary mentions clouds", () => {
     expect(
       ambientForSection({ kind: "weather", summary: "Cloudy", precipChancePct: 60 }),
@@ -1075,7 +1153,7 @@ describe("ambientForSection — weather", () => {
       intensity: 2,
     });
     expect(
-      rows.air && rows.air.aqi !== null && ambientForSection({ kind: "air", aqi: rows.air.aqi }),
+      rows.air && ambientForSection({ kind: "air", aqi: rows.air.aqi, category: rows.air.category }),
     ).toEqual({ kind: "air", intensity: 0 });
     expect(
       rows.weather &&
@@ -1083,6 +1161,8 @@ describe("ambientForSection — weather", () => {
           kind: "weather",
           summary: rows.weather.summary,
           precipChancePct: rows.weather.precipChancePct,
+          tempHighF: rows.weather.tempHighF,
+          tempLowF: rows.weather.tempLowF,
         }),
     ).toEqual({ kind: "weather", intensity: 0, variant: "sun" });
   });

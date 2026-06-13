@@ -77,7 +77,7 @@ export function ProviderCard({
   const { t, i18n } = useTranslation();
   const iconEmoji = getCategoryIcon(provider.category);
   // Render via the shared ServiceLogoMark so this card uses the SAME tested
-  // fallback chain (renderable-URL filter + onError advance + category-emoji
+  // fallback chain (renderable-URL filter + onError advance + category icon
   // fallback + a11y label) as the services screen — never a blank box.
   const logoService = {
     provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },

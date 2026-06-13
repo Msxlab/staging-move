@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
   Loader2, Globe, Phone, Search, Building2, Shield, X, ChevronDown, ChevronUp, Sparkles, Calendar,
-  Lock, CalendarClock, Clock,
+  Lock, CalendarClock, Clock, Briefcase, Palmtree,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -35,7 +35,6 @@ import { getMoveCountdown } from "@locateflow/shared";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import {
   getRecommendedProviders,
-  getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
@@ -48,6 +47,7 @@ import {
   getDefaultLegalConsents,
   hasRequiredLegalConsents,
 } from "@/lib/legal";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { detectStateZipMismatch } from "@locateflow/shared";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
@@ -1214,7 +1214,9 @@ export default function OnboardingPage() {
                   key={item.id}
                   className="flex items-start gap-3 p-3 rounded-xl border border-border bg-foreground/[0.03]"
                 >
-                  <span className="text-base leading-none mt-0.5">{item.icon || "✅"}</span>
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-primary/10 text-primary">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{item.title}</p>
                     {reason && (
@@ -1476,24 +1478,28 @@ export default function OnboardingPage() {
               <span id="onb-moveType-label" className={labelCls}>Move Type</span>
               <div role="group" aria-labelledby="onb-moveType-label" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { value: "PERSONAL", label: "🏠 Personal" },
-                  { value: "BUSINESS", label: "💼 Business" },
-                  { value: "VACATION", label: "🌴 Vacation" },
-                  { value: "MILITARY", label: "🎖️ Military" },
-                ].map((opt) => (
+                  { value: "PERSONAL", label: "Personal", icon: User },
+                  { value: "BUSINESS", label: "Business", icon: Briefcase },
+                  { value: "VACATION", label: "Vacation", icon: Palmtree },
+                  { value: "MILITARY", label: "Military", icon: Shield },
+                ].map((opt) => {
+                  const MoveTypeIcon = opt.icon;
+                  return (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setProfile({ ...profile, moveType: opt.value, isMilitary: false })}
-                    className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
+                    className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       profile.moveType === opt.value
                         ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
                         : "border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                     }`}
                   >
+                    <MoveTypeIcon className="h-3.5 w-3.5" aria-hidden="true" />
                     {opt.label}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -1514,7 +1520,8 @@ export default function OnboardingPage() {
                       checked={profile.isImmigrant}
                       onChange={(e) => setProfile({ ...profile, isImmigrant: e.target.checked, immigrationStatus: e.target.checked ? profile.immigrationStatus : "" })}
                     />
-                    🌍 Immigrant / Visa Holder
+                    <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    Immigrant / Visa Holder
                   </label>
                   {profile.isImmigrant && (
                     <select className={selectCls} value={profile.immigrationStatus} onChange={(e) => setProfile({ ...profile, immigrationStatus: e.target.value })}>
@@ -1534,14 +1541,15 @@ export default function OnboardingPage() {
             {/* Business Owner */}
             {(profile.moveType === "BUSINESS" || profile.moveType === "PERSONAL") && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
-                  <input
-                    type="checkbox"
-                    className={checkboxCls}
-                    checked={profile.isBusinessOwner}
-                    onChange={(e) => setProfile({ ...profile, isBusinessOwner: e.target.checked, businessType: e.target.checked ? profile.businessType : "" })}
-                  />
-                  🏢 Business Owner
+                  <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
+                    <input
+                      type="checkbox"
+                      className={checkboxCls}
+                      checked={profile.isBusinessOwner}
+                      onChange={(e) => setProfile({ ...profile, isBusinessOwner: e.target.checked, businessType: e.target.checked ? profile.businessType : "" })}
+                    />
+                    <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    Business Owner
                 </label>
                 {profile.isBusinessOwner && (
                   <select className={selectCls} value={profile.businessType} onChange={(e) => setProfile({ ...profile, businessType: e.target.value })}>
@@ -1826,7 +1834,12 @@ export default function OnboardingPage() {
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
                         activeCategory === cat ? "bg-tone-orange-fg text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                       }`}
-                    >{getMergedDisplayCategoryIcon(cat)} {getMergedDisplayCategoryLabel(cat)} ({count})</button>
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <CategoryIcon category={cat} className="h-3.5 w-3.5" />
+                        {getMergedDisplayCategoryLabel(cat)} ({count})
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -1907,7 +1920,9 @@ export default function OnboardingPage() {
                       onClick={() => toggleCat(cat)}
                       className="w-full flex items-center gap-2 px-4 py-3 bg-foreground/[0.02] hover:bg-foreground/5 transition text-left"
                     >
-                      <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-foreground/5 text-muted-foreground">
+                        <CategoryIcon category={cat} className="h-4 w-4" />
+                      </span>
                       <span className="text-sm font-medium text-foreground/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
                       <span className="text-[10px] text-foreground/45">{items.length}</span>
                       {selectedInCat > 0 && (

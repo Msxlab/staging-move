@@ -85,6 +85,8 @@ const DOSSIER_READINESS_IDS = new Set([
   "nlr-ev-charging",
 ]);
 
+const NEW_DOSSIER_READINESS_IDS = new Set(["hud-housing", "nlr-ev-charging"]);
+
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
@@ -93,6 +95,12 @@ function statusIcon(status: LiveDataStatus) {
   if (status === "ready" || status === "keyless") return CheckCircle2;
   if (status === "disabled") return XCircle;
   return AlertTriangle;
+}
+
+function dossierSourceIcon(id: string, status: LiveDataStatus) {
+  if (id === "hud-housing") return Home;
+  if (id === "nlr-ev-charging") return Zap;
+  return statusIcon(status);
 }
 
 function countTotal(rows: Array<{ count: number }>): number {
@@ -120,9 +128,9 @@ function MetricCard({
             : "text-foreground bg-card border-border";
 
   return (
-    <div className={`rounded-lg border p-4 ${toneClass}`}>
+    <div className={`rounded-[1.1rem] border p-4 shadow-sm ${toneClass}`}>
       <p className="text-xs font-medium opacity-75">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
   );
 }
@@ -277,7 +285,7 @@ export default function ProviderQualityClient() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-medium uppercase text-muted-foreground">New Home Dossier</p>
-                      <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+                      <p className="mt-1 text-3xl font-semibold text-foreground">
                         {dossierReadyCount}/{dossierReadiness.length}
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">source gates ready</p>
@@ -286,12 +294,18 @@ export default function ProviderQualityClient() {
                       <Database className="h-5 w-5" />
                     </div>
                   </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${Math.round((dossierReadyCount / Math.max(dossierReadiness.length, 1)) * 100)}%` }}
+                    />
+                  </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
+                    <div className="rounded-xl border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
                       <p className="font-semibold">{dossierReadyCount}</p>
                       <p className="mt-0.5 opacity-80">ready or keyless</p>
                     </div>
-                    <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
+                    <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
                       <p className="font-semibold">{dossierReadiness.length - dossierReadyCount}</p>
                       <p className="mt-0.5 opacity-80">needs config</p>
                     </div>
@@ -300,14 +314,22 @@ export default function ProviderQualityClient() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   {dossierReadiness.map((item) => {
-                    const SourceIcon = item.id === "hud-housing" ? Home : item.id === "nlr-ev-charging" ? Zap : statusIcon(item.status);
+                    const SourceIcon = dossierSourceIcon(item.id, item.status);
+                    const isNewDossierSource = NEW_DOSSIER_READINESS_IDS.has(item.id);
                     return (
-                      <div key={item.id} className={`rounded-lg border p-4 ${STATUS_STYLES[item.status]}`}>
+                      <div key={item.id} className={`rounded-[1.1rem] border p-4 shadow-sm ${STATUS_STYLES[item.status]}`}>
                         <div className="flex items-start gap-3">
-                          <SourceIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-current/20 bg-background/35">
+                            <SourceIcon className="h-4 w-4" />
+                          </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-semibold">{item.label}</p>
+                              {isNewDossierSource ? (
+                                <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                                  New dossier section
+                                </span>
+                              ) : null}
                               <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
                                 {item.status}
                               </span>

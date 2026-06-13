@@ -162,7 +162,7 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "700",
       color: theme.colors.text,
       lineHeight: 21,
-      letterSpacing: -0.2,
+      letterSpacing: 0,
     },
     features: { gap: 8 },
     featureRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -184,5 +184,5 @@ const makeStyles = (theme: Theme) =>
     },
     footnote: { flex: 1, fontSize: 11, color: theme.colors.textTertiary, lineHeight: 15 },
     seeProBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-    seeProText: { fontSize: 13, fontWeight: "700", color: theme.colors.warning, letterSpacing: -0.1 },
+    seeProText: { fontSize: 13, fontWeight: "700", color: theme.colors.warning, letterSpacing: 0 },
   });

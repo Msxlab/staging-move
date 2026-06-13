@@ -159,7 +159,7 @@ const makeStyles = (theme: Theme) =>
     },
     metric: { flex: 1, alignItems: "center" },
     metricDivider: { width: 1, alignSelf: "stretch", backgroundColor: theme.colors.border, marginVertical: 4 },
-    metricValue: { fontSize: 20, fontWeight: "800", color: theme.colors.emerald.text, letterSpacing: -0.5 },
+    metricValue: { fontSize: 20, fontWeight: "800", color: theme.colors.emerald.text, letterSpacing: 0 },
     metricLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
     lines: { marginTop: 12, gap: 8 },
     line: { flexDirection: "row", alignItems: "flex-start", gap: 8 },

@@ -543,26 +543,30 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-tone-umber-fg" },
-          { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-tone-slate-fg" },
-          { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-tone-rose-fg" },
-        ].map((action) => (
-          <Link key={action.label} href={action.href}
-            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md hover:border-primary/20">
-            <div className="rounded-lg bg-muted p-2.5">
-              <action.icon className={`h-5 w-5 ${action.color}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">{action.label}</p>
-              <p className="text-xs text-muted-foreground">{action.desc}</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
-        ))}
-      </div>
+      <AdminPanel title="Command shortcuts" caption="Frequent operational routes">
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[
+            { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-tone-umber-fg" },
+            { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-tone-slate-fg" },
+            { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-tone-rose-fg" },
+          ].map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="group flex items-center gap-3 rounded-lg border border-border bg-background/45 px-3 py-2.5 transition hover:border-primary/25 hover:bg-accent/30"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card">
+                <action.icon className={`h-4 w-4 ${action.color}`} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-foreground">{action.label}</span>
+                <span className="block truncate text-xs text-muted-foreground">{action.desc}</span>
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition group-hover:text-primary" />
+            </Link>
+          ))}
+        </div>
+      </AdminPanel>
 
       {/* Overview trends — two-tab chart card. "Revenue" keeps the daily
           estimated-MRR series with crosshair hover and 7D/30D/QTR range

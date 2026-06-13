@@ -219,7 +219,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: 15,
       fontWeight: "700",
       color: theme.colors.text,
-      letterSpacing: -0.2,
+      letterSpacing: 0,
     },
     body: {
       fontSize: 12,

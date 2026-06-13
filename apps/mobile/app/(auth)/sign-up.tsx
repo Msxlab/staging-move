@@ -256,133 +256,161 @@ export default function SignUpScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <LogoBrand />
-        <Text style={styles.title}>{t("auth.signUp_title")}</Text>
-        <Text style={styles.subtitle}>{t("auth.signUp")}</Text>
+        <View style={styles.authPanel}>
+          <View style={styles.hero}>
+            <LogoBrand />
+            <Text style={styles.heroKicker}>START LOCATEFLOW</Text>
+            <Text style={styles.title}>{t("auth.signUp_title")}</Text>
+            <Text style={styles.subtitle}>{t("auth.signUp")}</Text>
+          </View>
 
-        {hasPendingInvite ? (
-          <View style={styles.inviteBanner}>
-            <Text style={styles.inviteBannerText}>
-              {t(
-                "auth.inviteSignUpContext",
-                "You're creating an account to join the household you were invited to. We'll add you automatically once you're signed in.",
-              )}
+          {hasPendingInvite ? (
+            <View style={styles.inviteBanner}>
+              <Text style={styles.inviteBannerText}>
+                {t(
+                  "auth.inviteSignUpContext",
+                  "You're creating an account to join the household you were invited to. We'll add you automatically once you're signed in.",
+                )}
+              </Text>
+            </View>
+          ) : null}
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <TouchableOpacity
+            onPress={() => openOAuth("google")}
+            disabled={!googleReady || Boolean(oauthLoading)}
+            activeOpacity={0.78}
+            style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+            accessibilityLabel={t("auth.continueWithGoogle")}
+            accessibilityRole="button"
+          >
+            <GoogleGMark size={20} />
+            <Text style={styles.oauthGoogleText}>
+              {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => openOAuth("apple")}
+            disabled={!appleReady || Boolean(oauthLoading)}
+            activeOpacity={0.78}
+            style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+            accessibilityLabel={t("auth.continueWithApple")}
+            accessibilityRole="button"
+          >
+            <AppleLogoMark size={18} color="#fff" />
+            <Text style={styles.oauthAppleText}>
+              {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
+            </Text>
+          </TouchableOpacity>
+
+          {showOAuthReadinessNote ? (
+            <Text style={styles.oauthNote}>
+              {t("auth.socialSignUpUnavailable")}
+            </Text>
+          ) : null}
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
+            <View style={styles.dividerLine} />
           </View>
-        ) : null}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Input placeholder={t("auth.firstName")} value={firstName} onChangeText={setFirstName}
+                leftIcon={<User size={16} color={theme.colors.textMuted} />} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input placeholder={t("auth.lastName")} value={lastName} onChangeText={setLastName} />
+            </View>
+          </View>
 
-        <TouchableOpacity
-          onPress={() => openOAuth("google")}
-          disabled={!googleReady || Boolean(oauthLoading)}
-          activeOpacity={0.78}
-          style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
-          accessibilityLabel={t("auth.continueWithGoogle")}
-          accessibilityRole="button"
-        >
-          <GoogleGMark size={20} />
-          <Text style={styles.oauthGoogleText}>
-            {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => openOAuth("apple")}
-          disabled={!appleReady || Boolean(oauthLoading)}
-          activeOpacity={0.78}
-          style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
-          accessibilityLabel={t("auth.continueWithApple")}
-          accessibilityRole="button"
-        >
-          <AppleLogoMark size={18} color="#fff" />
-          <Text style={styles.oauthAppleText}>
-            {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
-          </Text>
-        </TouchableOpacity>
+          <Input
+            placeholder={t("auth.email")} value={email} onChangeText={setEmail}
+            keyboardType="email-address" autoCapitalize="none" autoComplete="email"
+            leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
+          />
+          <Input
+            placeholder={t("auth.password")} value={password} onChangeText={setPassword}
+            isPassword autoComplete="password-new"
+            leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
+          />
+          {password.length > 0 ? (
+            <View style={styles.rulesBox}>
+              {passwordRuleResults.map((rule) => {
+                const color = rule.passed ? theme.colors.success : theme.colors.textMuted;
+                return (
+                  <View key={rule.key} style={styles.ruleRow}>
+                    {rule.passed ? (
+                      <Check size={14} color={theme.colors.success} />
+                    ) : (
+                      <X size={14} color={theme.colors.textMuted} />
+                    )}
+                    <Text style={[styles.ruleText, { color }]}>{t(rule.labelKey)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
 
-        {showOAuthReadinessNote ? (
-          <Text style={styles.oauthNote}>
-            {t("auth.socialSignUpUnavailable")}
-          </Text>
-        ) : null}
+          <LegalConsentPanel
+            consents={legalConsents}
+            onChange={setLegalConsents}
+            title={t("auth.requiredAcknowledgements")}
+            description={t("auth.requiredAcknowledgementsDescription")}
+            compact
+          />
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
-          <View style={styles.dividerLine} />
+          <Button
+            title={loading ? t("common.loading") : t("auth.signUp")}
+            onPress={handleSubmit}
+            disabled={loading || !email || !password || !passwordPolicyMet || !legalAccepted}
+            style={{ marginTop: 12 }}
+          />
+
+          <TouchableOpacity
+            onPress={() => router.replace("/(auth)/sign-in")}
+            style={{ alignItems: "center", marginTop: 12 }}
+          >
+            <Text style={styles.linkText}>
+              {t("auth.haveAccount")} <Text style={styles.linkEmphasis}>{t("auth.signIn")}</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Input placeholder={t("auth.firstName")} value={firstName} onChangeText={setFirstName}
-              leftIcon={<User size={16} color={theme.colors.textMuted} />} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Input placeholder={t("auth.lastName")} value={lastName} onChangeText={setLastName} />
-          </View>
-        </View>
-
-        <Input
-          placeholder={t("auth.email")} value={email} onChangeText={setEmail}
-          keyboardType="email-address" autoCapitalize="none" autoComplete="email"
-          leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
-        />
-        <Input
-          placeholder={t("auth.password")} value={password} onChangeText={setPassword}
-          isPassword autoComplete="password-new"
-          leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
-        />
-        {password.length > 0 ? (
-          <View style={styles.rulesBox}>
-            {passwordRuleResults.map((rule) => {
-              const color = rule.passed ? theme.colors.success : theme.colors.textMuted;
-              return (
-                <View key={rule.key} style={styles.ruleRow}>
-                  {rule.passed ? (
-                    <Check size={14} color={theme.colors.success} />
-                  ) : (
-                    <X size={14} color={theme.colors.textMuted} />
-                  )}
-                  <Text style={[styles.ruleText, { color }]}>{t(rule.labelKey)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <LegalConsentPanel
-          consents={legalConsents}
-          onChange={setLegalConsents}
-          title={t("auth.requiredAcknowledgements")}
-          description={t("auth.requiredAcknowledgementsDescription")}
-          compact
-        />
-
-        <Button
-          title={loading ? t("common.loading") : t("auth.signUp")}
-          onPress={handleSubmit}
-          disabled={loading || !email || !password || !passwordPolicyMet || !legalAccepted}
-          style={{ marginTop: 12 }}
-        />
-
-        <TouchableOpacity
-          onPress={() => router.replace("/(auth)/sign-in")}
-          style={{ alignItems: "center", marginTop: 12 }}
-        >
-          <Text style={styles.linkText}>
-            {t("auth.haveAccount")} <Text style={styles.linkEmphasis}>{t("auth.signIn")}</Text>
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
-  scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
+  keyboard: { flex: 1, backgroundColor: theme.colors.background },
+  scroll: { padding: 20, flexGrow: 1, justifyContent: "center" },
+  authPanel: {
+    borderRadius: 28,
+    padding: 18,
+    gap: 10,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  hero: {
+    alignItems: "center",
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    color: theme.colors.accent,
+    textTransform: "uppercase",
+    marginTop: 14,
+  },
+  title: { fontSize: 26, fontWeight: "800", color: theme.colors.text, marginTop: 8, letterSpacing: 0 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
   inviteBanner: {
     padding: 12,

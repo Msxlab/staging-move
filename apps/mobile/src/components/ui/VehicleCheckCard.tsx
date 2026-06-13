@@ -330,5 +330,5 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 9,
       marginTop: 10,
     },
-    unlockBtnText: { fontSize: 11, fontWeight: "800", color: "#fff", letterSpacing: -0.2 },
+    unlockBtnText: { fontSize: 11, fontWeight: "800", color: "#fff", letterSpacing: 0 },
   });

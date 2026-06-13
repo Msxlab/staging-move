@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, Rocket, ShieldAlert, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  Globe2,
+  Home,
+  Link2,
+  Map,
+  RefreshCw,
+  Rocket,
+  ShieldAlert,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminPageHeader } from "@/components/admin-page-header";
@@ -37,10 +50,10 @@ const REVIEW_STATUS_BADGE: Record<string, { label: string; className: string }> 
   LINKED_TO_GLOBAL_PROVIDER: { label: "Promoted", className: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br" },
 };
 
-const COVERAGE_BADGE: Record<string, { label: string; icon: string; className: string }> = {
-  LOCAL: { label: "Local", icon: "🏠", className: "bg-foreground/5 text-muted-foreground border-border" },
-  STATEWIDE: { label: "Statewide", icon: "🗺️", className: "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" },
-  NATIONWIDE: { label: "Nationwide", icon: "🌐", className: "bg-tone-foil-bg text-tone-foil-fg border-tone-foil-br" },
+const COVERAGE_BADGE: Record<string, { label: string; icon: LucideIcon; className: string }> = {
+  LOCAL: { label: "Local", icon: Home, className: "bg-foreground/5 text-muted-foreground border-border" },
+  STATEWIDE: { label: "Statewide", icon: Map, className: "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" },
+  NATIONWIDE: { label: "Nationwide", icon: Globe2, className: "bg-tone-foil-bg text-tone-foil-fg border-tone-foil-br" },
 };
 
 export default function ProviderGovernancePage() {
@@ -181,6 +194,7 @@ export default function ProviderGovernancePage() {
                   const customId = isCustomQueue && provider?.id ? provider.id : null;
                   const reviewBadge = customId ? REVIEW_STATUS_BADGE[provider.adminReviewStatus] : null;
                   const coverageBadge = customId && provider?.coverage ? COVERAGE_BADGE[provider.coverage] : null;
+                  const CoverageIcon = coverageBadge?.icon;
                   return (
                     <div key={`${key}-${provider?.id || index}-${item.warning?.code}`} className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -189,7 +203,7 @@ export default function ProviderGovernancePage() {
                             <p className="truncate text-sm font-medium">{provider?.name || "Unknown provider"}</p>
                             {coverageBadge && (
                               <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${coverageBadge.className}`}>
-                                <span aria-hidden>{coverageBadge.icon}</span>
+                                {CoverageIcon && <CoverageIcon className="h-3 w-3" aria-hidden="true" />}
                                 {coverageBadge.label}
                               </span>
                             )}

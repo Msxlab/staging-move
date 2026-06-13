@@ -213,7 +213,7 @@ export interface HomeDossierView {
   hazards: { topRisks: DossierHazardRisk[]; overallRating: string | null } | null;
   radon: { zone: 1 | 2 | 3 } | null;
   water: { systemName: string; violations5y: number } | null;
-  air: { aqi: number; category: string | null } | null;
+  air: { aqi: number | null; category: string | null } | null;
   housing: {
     areaName: string | null;
     countyName: string | null;
@@ -379,14 +379,19 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
 
   // (7) Air quality now — AQI is the headline datum; category is optional.
   const airSection = data.air;
+  const airAqi =
+    typeof airSection?.aqi === "number" && Number.isFinite(airSection.aqi)
+      ? Math.round(airSection.aqi)
+      : null;
+  const airCategory =
+    typeof airSection?.category === "string" && airSection.category.trim()
+      ? airSection.category.trim()
+      : null;
   const air =
-    airSection?.status === "ok" && typeof airSection.aqi === "number" && Number.isFinite(airSection.aqi)
+    airSection?.status === "ok" && (airAqi !== null || airCategory)
       ? {
-          aqi: Math.round(airSection.aqi),
-          category:
-            typeof airSection.category === "string" && airSection.category.trim()
-              ? airSection.category.trim()
-              : null,
+          aqi: airAqi,
+          category: airCategory,
         }
       : null;
 
@@ -768,6 +773,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 kind: "weather",
                 summary: view.weather.summary,
                 precipChancePct: view.weather.precipChancePct,
+                tempHighF: view.weather.tempHighF,
+                tempLowF: view.weather.tempLowF,
               })}
             />
             <div className="flex items-center gap-3">
@@ -847,7 +854,8 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (6) Drinking water — EPA SDWIS; zero violations reads reassuring */}
         {view.water && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient {...ambientForSection({ kind: "water", violations5y: view.water.violations5y })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
                 <Droplets className="h-4 w-4 text-tone-sky-fg" />
@@ -879,7 +887,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         {/* (7) Air quality now — AirNow snapshot; hidden when not_configured */}
         {view.air && (
           <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
-            <DossierAmbient {...ambientForSection({ kind: "air", aqi: view.air.aqi })} />
+            <DossierAmbient {...ambientForSection({ kind: "air", aqi: view.air.aqi, category: view.air.category })} />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sage-bg border border-tone-sage-br flex items-center justify-center shrink-0">
                 <Wind className="h-4 w-4 text-tone-sage-fg" />
@@ -887,9 +895,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">{td("dossier_air_title")}</p>
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {view.air.category
+                  {view.air.aqi !== null && view.air.category
                     ? td("dossier_air_now", { aqi: view.air.aqi, category: view.air.category })
-                    : td("dossier_air_nowNoCategory", { aqi: view.air.aqi })}
+                    : view.air.aqi !== null
+                      ? td("dossier_air_nowNoCategory", { aqi: view.air.aqi })
+                      : td("dossier_air_categoryOnly", { category: view.air.category ?? "" })}
                 </p>
               </div>
             </div>
@@ -899,7 +909,15 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (8) Housing affordability context - HUD User FMR / Income Limits. */}
         {view.housing && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient
+              {...ambientForSection({
+                kind: "housing",
+                twoBedroomFmr: view.housing.twoBedroomFmr,
+                medianIncome: view.housing.medianIncome,
+                lowIncome4Person: view.housing.lowIncome4Person,
+              })}
+            />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-honey-bg border border-tone-honey-br flex items-center justify-center shrink-0">
                 <Home className="h-4 w-4 text-tone-honey-fg" />
@@ -949,7 +967,15 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
 
         {/* (9) EV charging - NLR/AFDC public active stations near destination. */}
         {view.evCharging && (
-          <div className="p-3 rounded-xl border border-border bg-foreground/[0.02]">
+          <div className="relative isolate p-3 rounded-xl border border-border bg-foreground/[0.02]">
+            <DossierAmbient
+              {...ambientForSection({
+                kind: "evCharging",
+                stationCount: view.evCharging.stationCount,
+                dcFastPortCount: view.evCharging.dcFastPortCount,
+                level2PortCount: view.evCharging.level2PortCount,
+              })}
+            />
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-tone-sky-bg border border-tone-sky-br flex items-center justify-center shrink-0">
                 <Zap className="h-4 w-4 text-tone-sky-fg" />

@@ -509,7 +509,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               id="blog-title"
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full border-0 bg-transparent p-0 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground"
+              className="w-full border-0 bg-transparent p-0 text-3xl font-semibold text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Post title"
             />
           </div>

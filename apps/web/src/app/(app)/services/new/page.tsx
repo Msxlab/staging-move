@@ -12,7 +12,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   getRecommendedProviders,
-  getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
@@ -31,6 +30,7 @@ import {
   type ServiceLimitDetails,
 } from "@/components/shared/service-limit-upsell";
 import { ServiceUsageIndicator } from "@/components/shared/service-usage-indicator";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { resolveLogoUrl } from "@/lib/logo-url";
 
 const BILLING_CYCLES = [
@@ -698,7 +698,7 @@ export default function NewServicePage() {
                   </option>
                   {CUSTOM_PROVIDER_CATEGORY_OPTIONS.map((category) => (
                     <option key={category.value} value={category.value}>
-                      {category.icon ? `${category.icon} ` : ""}{category.label}
+                      {category.label}
                     </option>
                   ))}
                 </select>
@@ -708,24 +708,25 @@ export default function NewServicePage() {
                     {([
                       {
                         value: "LOCAL",
-                        icon: "🏠",
+                        icon: Home,
                         title: "Local",
                         desc: "Only at this address. Stays in your private records.",
                       },
                       {
                         value: "STATEWIDE",
-                        icon: "🗺️",
+                        icon: MapPin,
                         title: "Statewide",
                         desc: "Serves this state. We'll review and may add it to the directory.",
                       },
                       {
                         value: "NATIONWIDE",
-                        icon: "🌐",
+                        icon: Globe,
                         title: "Nationwide",
                         desc: "Serves the whole country. We'll review and may add it to the directory.",
                       },
                     ] as const).map((option) => {
                       const selected = customProvider.coverage === option.value;
+                      const CoverageIcon = option.icon;
                       return (
                         <button
                           key={option.value}
@@ -739,7 +740,9 @@ export default function NewServicePage() {
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{option.icon}</span>
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-foreground/5 text-muted-foreground">
+                              <CoverageIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
                             <span className="text-sm font-semibold text-foreground">{option.title}</span>
                           </div>
                           <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{option.desc}</p>
@@ -801,7 +804,12 @@ export default function NewServicePage() {
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
                         activeCategory === cat ? "bg-tone-foil-bg text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                       }`}
-                    >{getMergedDisplayCategoryIcon(cat)} {getMergedDisplayCategoryLabel(cat)} ({count})</button>
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <CategoryIcon category={cat} className="h-3.5 w-3.5" />
+                        {getMergedDisplayCategoryLabel(cat)} ({count})
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -887,7 +895,9 @@ export default function NewServicePage() {
                       onClick={() => toggleCat(cat)}
                       className="w-full flex items-center gap-2 px-4 py-3 bg-foreground/[0.02] hover:bg-foreground/5 transition text-left"
                     >
-                      <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-foreground/5 text-muted-foreground">
+                        <CategoryIcon category={cat} className="h-4 w-4" />
+                      </span>
                       <span className="text-sm font-medium text-foreground/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
                       <span className="text-[10px] text-foreground/45">{items.length}</span>
                       {selectedInCat > 0 && (

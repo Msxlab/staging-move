@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { resolveLogoUrl } from "@/lib/logo-url";
 
 export interface LogoServiceItem {
@@ -53,7 +53,7 @@ export function ServiceLogoMark({
           onError={() => setFailedLogoUrl(logoUrl)}
         />
       ) : (
-        <span aria-hidden="true">{getMergedDisplayCategoryIcon(service.category)}</span>
+        <CategoryIcon category={service.category} className="h-5 w-5 text-muted-foreground" />
       )}
     </div>
   );

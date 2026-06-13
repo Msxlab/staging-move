@@ -13,30 +13,31 @@ import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
 import { ServiceLogoMark } from "@/components/services/service-logo-mark";
+import { CategoryIcon } from "@/components/ui/category-icon";
 
-const CATEGORY_META: Record<string, { label: string; icon: string }> = {
-  GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "📬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "🧾" },
-  GOVERNMENT_DMV: { label: "DMV", icon: "🪪" }, GOVERNMENT_BENEFITS: { label: "Benefits", icon: "🏛️" },
-  GOVERNMENT_VOTER: { label: "Voter Registration", icon: "🗳️" }, GOVERNMENT_ID: { label: "Passport / ID", icon: "🪪" },
-  GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "🏥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "🎓" },
-  GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "🌍" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "🏘️" },
-  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "🚨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "🏛️" },
-  UTILITY_ELECTRIC: { label: "Electric", icon: "⚡" }, UTILITY_GAS: { label: "Gas", icon: "🔥" },
-  UTILITY_WATER: { label: "Water", icon: "💧" }, UTILITY_INTERNET: { label: "Internet", icon: "🌐" },
-  UTILITY_PHONE: { label: "Phone", icon: "📱" }, UTILITY_CABLE: { label: "Cable / TV", icon: "📺" },
-  UTILITY_TRASH: { label: "Trash & Waste", icon: "🗑️" }, UTILITY_SEWER: { label: "Sewer", icon: "🚰" },
-  FINANCIAL_BANK: { label: "Banks", icon: "🏦" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "💳" },
-  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "🚗" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "🏠" },
-  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "🏥" }, FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "🔑" },
-  FINANCIAL_LOAN: { label: "Loans", icon: "💰" }, HOUSING_RENT: { label: "Rent / Mortgage", icon: "🏘️" },
-  HOUSING_STORAGE: { label: "Storage", icon: "📦" }, HOUSING_HOA: { label: "HOA", icon: "🏢" },
-  HOUSING_LAWN_CARE: { label: "Lawn Care", icon: "🌿" }, HOUSING_PEST_CONTROL: { label: "Pest Control", icon: "🐛" },
-  HEALTHCARE_DOCTORS: { label: "Doctors", icon: "🩺" },
-  HEALTHCARE_DENTIST: { label: "Dentist", icon: "🦷" }, HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "💊" },
-  HEALTHCARE_VET: { label: "Veterinary", icon: "🐾" }, TRANSPORTATION_TOLL: { label: "Toll Pass", icon: "🛣️" },
-  TRANSPORTATION_TRANSIT: { label: "Transit", icon: "🚌" }, KIDS_SCHOOL: { label: "Schools", icon: "🏫" },
-  KIDS_DAYCARE: { label: "Daycare", icon: "👶" }, FITNESS_GYM: { label: "Fitness & Gym", icon: "💪" },
-  SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "📦" }, SHOPPING_RETAIL: { label: "Shopping", icon: "🛒" },
+const CATEGORY_META: Record<string, { label: string }> = {
+  GOVERNMENT_POSTAL: { label: "Mail & Postal" }, GOVERNMENT_TAX: { label: "Tax (IRS)" },
+  GOVERNMENT_DMV: { label: "DMV" }, GOVERNMENT_BENEFITS: { label: "Benefits" },
+  GOVERNMENT_VOTER: { label: "Voter Registration" }, GOVERNMENT_ID: { label: "Passport / ID" },
+  GOVERNMENT_HEALTH: { label: "Healthcare.gov" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA" },
+  GOVERNMENT_IMMIGRATION: { label: "Immigration" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)" },
+  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)" }, GOVERNMENT_OTHER: { label: "Gov. Other" },
+  UTILITY_ELECTRIC: { label: "Electric" }, UTILITY_GAS: { label: "Gas" },
+  UTILITY_WATER: { label: "Water" }, UTILITY_INTERNET: { label: "Internet" },
+  UTILITY_PHONE: { label: "Phone" }, UTILITY_CABLE: { label: "Cable / TV" },
+  UTILITY_TRASH: { label: "Trash & Waste" }, UTILITY_SEWER: { label: "Sewer" },
+  FINANCIAL_BANK: { label: "Banks" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards" },
+  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance" },
+  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance" }, FINANCIAL_MORTGAGE: { label: "Mortgage" },
+  FINANCIAL_LOAN: { label: "Loans" }, HOUSING_RENT: { label: "Rent / Mortgage" },
+  HOUSING_STORAGE: { label: "Storage" }, HOUSING_HOA: { label: "HOA" },
+  HOUSING_LAWN_CARE: { label: "Lawn Care" }, HOUSING_PEST_CONTROL: { label: "Pest Control" },
+  HEALTHCARE_DOCTORS: { label: "Doctors" },
+  HEALTHCARE_DENTIST: { label: "Dentist" }, HEALTHCARE_PHARMACY: { label: "Pharmacy" },
+  HEALTHCARE_VET: { label: "Veterinary" }, TRANSPORTATION_TOLL: { label: "Toll Pass" },
+  TRANSPORTATION_TRANSIT: { label: "Transit" }, KIDS_SCHOOL: { label: "Schools" },
+  KIDS_DAYCARE: { label: "Daycare" }, FITNESS_GYM: { label: "Fitness & Gym" },
+  SHOPPING_SUBSCRIPTION: { label: "Subscriptions" }, SHOPPING_RETAIL: { label: "Shopping" },
 };
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
@@ -258,11 +259,6 @@ export default function AddressDetailPage() {
     FITNESS: t("detail_group_fitness"),
     SHOPPING: t("detail_group_shopping"),
   };
-  const groupIcons: Record<string, string> = {
-    GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
-    TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
-  };
-
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
       {/* Header */}
@@ -398,7 +394,9 @@ export default function AddressDetailPage() {
               return (
                 <div key={prefix} className="space-y-1.5">
                   <div className="flex items-center gap-2 px-1">
-                    <span className="text-base">{groupIcons[prefix] || "📋"}</span>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-foreground/5 text-muted-foreground">
+                      <CategoryIcon category={prefix} className="h-3.5 w-3.5" />
+                    </span>
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h3>
                     <span className="text-[10px] text-foreground/30">{items.length}</span>
                   </div>

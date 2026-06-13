@@ -21,7 +21,6 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
 import { CompareView } from "./compare-view";
 import {
-  getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
@@ -37,6 +36,7 @@ import {
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import { trackEvent } from "@/lib/analytics";
 import { resolveLogoUrl } from "@/lib/logo-url";
+import { CategoryIcon } from "@/components/ui/category-icon";
 
 export interface AddressOption {
   id: string;
@@ -166,7 +166,7 @@ export function ProviderLogoMark({
         />
       ) : (
         <span className={fallbackClassName} aria-hidden="true">
-          {getMergedDisplayCategoryIcon(provider.category)}
+          <CategoryIcon category={provider.category} className="h-[1em] w-[1em]" />
         </span>
       )}
     </div>
@@ -657,7 +657,7 @@ export function ProvidersClient({
                   : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span>{getMergedDisplayCategoryIcon(cat)}</span>
+              <CategoryIcon category={cat} className="h-3.5 w-3.5" />
               <span>{getMergedDisplayCategoryLabel(cat)}</span>
               <span className="text-muted-foreground">· {count}</span>
             </button>

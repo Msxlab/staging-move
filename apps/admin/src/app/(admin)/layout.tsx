@@ -47,12 +47,14 @@ export default async function AdminLayout({
             sidebar offset (pl-64) and pins to the viewport top while the
             page content scrolls beneath it. */}
         <Topbar ctx={{ role: ctx.role, permissions: ctx.permissions, email: ctx.email }} />
-        <div className="p-8">
+        <div className="admin-workspace">
+          <div className="admin-workspace-inner">
           {/* Section tab bar — surfaces the sub-workflows that were removed
               from the sidebar (Billing, Governance, Reports, …). Renders only
               inside a cluster, role-gated by the same ctx as the sidebar. */}
-          <SubNav ctx={{ role: ctx.role, permissions: ctx.permissions }} />
-          {children}
+            <SubNav ctx={{ role: ctx.role, permissions: ctx.permissions }} />
+            {children}
+          </div>
         </div>
       </main>
     </div>

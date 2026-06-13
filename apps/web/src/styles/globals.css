@@ -583,7 +583,7 @@
      hero wants a touch more optical tightening at scale. `-0.022em` reads
      crisp without crushing the letterforms. */
   .display-tight {
-    letter-spacing: -0.022em;
+    letter-spacing: 0;
     text-wrap: balance;
   }
   /* Cap a body paragraph to a comfortable ~65-character measure so long
@@ -601,8 +601,25 @@
   }
 }
 
-/* Hide gradient blobs in light mode (kept from previous direction). */
-.light .dark-only-blobs { opacity: 0; }
+.app-shell-backdrop {
+  background:
+    linear-gradient(135deg, rgba(127, 182, 232, 0.10) 0%, transparent 32%),
+    linear-gradient(220deg, transparent 8%, rgba(242, 196, 108, 0.055) 44%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface) 86%, transparent) 100%),
+    repeating-linear-gradient(90deg, rgba(236, 241, 248, 0.026) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(236, 241, 248, 0.018) 0 1px, transparent 1px 72px);
+  opacity: 0.85;
+}
+
+.light .app-shell-backdrop {
+  background:
+    linear-gradient(135deg, rgba(45, 123, 196, 0.055) 0%, transparent 34%),
+    linear-gradient(220deg, transparent 6%, rgba(176, 120, 30, 0.04) 46%, transparent 82%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface) 88%, transparent) 100%),
+    repeating-linear-gradient(90deg, rgba(20, 32, 47, 0.026) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(20, 32, 47, 0.018) 0 1px, transparent 1px 72px);
+  opacity: 0.9;
+}
 
 /* =========================================================================
    LIGHT MODE — comprehensive overrides for utilities authored in dark-first
@@ -774,62 +791,6 @@
   .aurora-blob-2 {
     animation: none;
   }
-}
-
-/* =========================================================================
-   Brand mark animations (LocateFlow logo)
-   Ripple/float/sweep motion for the pin — mirrors design-system preview.
-   Disabled under prefers-reduced-motion.
-   ========================================================================= */
-.lf-ripple {
-  transform-origin: 80px 40px;
-  transform-box: fill-box;
-  animation: lf-ripple 2.4s cubic-bezier(.3,.7,.4,1) infinite;
-}
-.lf-ripple-2 { animation-delay: .8s; }
-@keyframes lf-ripple {
-  0%   { transform: scale(.35); opacity: 0; }
-  15%  { opacity: .9; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-.lf-pin-float {
-  transform-origin: 80px 40px;
-  transform-box: fill-box;
-  animation: lf-float 3.8s ease-in-out infinite;
-}
-@keyframes lf-float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-2px); }
-}
-
-.lf-pin-dot {
-  transform-origin: 80px 40px;
-  transform-box: fill-box;
-  animation: lf-dot 2.4s ease-in-out infinite;
-}
-@keyframes lf-dot {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(.7); }
-}
-
-.lf-sweep {
-  stroke-dasharray: 120;
-  stroke-dashoffset: 120;
-  animation: lf-sweep 3.2s cubic-bezier(.4,.0,.2,1) infinite;
-}
-@keyframes lf-sweep {
-  0%   { stroke-dashoffset: 120; }
-  55%  { stroke-dashoffset: 0;   }
-  100% { stroke-dashoffset: -120;}
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lf-ripple, .lf-pin-float, .lf-pin-dot, .lf-sweep {
-    animation: none;
-  }
-  .lf-sweep { stroke-dashoffset: 0; }
-  .lf-ripple { opacity: 0; }
 }
 
 /* =========================================================================
@@ -1374,7 +1335,7 @@
   border-radius: 14px;
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   box-shadow:
@@ -1767,6 +1728,41 @@ html[data-embed="mobile"] .install-prompt {
 
 /* — Air: long soft breeze streaks; mint / honey / coral by AQI band.
    Intensity 0 adds one tumbling leaf, 2 adds a pulsing blurred haze. — */
+.da-layer[data-kind="water"] { --da-water-color: var(--rose); }
+.da-layer[data-kind="water"][data-intensity="1"] { --da-water-color: var(--foil-b); }
+.da-layer[data-kind="water"][data-intensity="2"] { --da-water-color: var(--danger); }
+.da-water-ripple {
+  position: absolute;
+  stroke: var(--da-water-color);
+  stroke-width: 1.2;
+  fill: none;
+  opacity: 0;
+  transform-origin: center;
+  animation: da-water-ripple 5.4s ease-out infinite;
+}
+@keyframes da-water-ripple {
+  0%   { opacity: 0; transform: scaleX(0.68); }
+  18%  { opacity: 0.18; }
+  74%  { opacity: 0.10; }
+  100% { opacity: 0; transform: scaleX(1.22); }
+}
+.da-water-drop {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--da-water-color);
+  opacity: 0;
+  animation: da-water-drop 1.8s linear infinite;
+}
+@keyframes da-water-drop {
+  0%   { transform: translateY(-8px); opacity: 0; }
+  20%  { opacity: 0.20; }
+  84%  { opacity: 0.18; }
+  100% { transform: translateY(58px); opacity: 0; }
+}
+
 .da-layer[data-kind="air"] { --da-air-color: var(--sage); }
 .da-layer[data-kind="air"][data-intensity="1"] { --da-air-color: var(--foil-b); }
 .da-layer[data-kind="air"][data-intensity="2"] { --da-air-color: var(--danger); }
@@ -1824,6 +1820,94 @@ html[data-embed="mobile"] .install-prompt {
 /* — Neighborhood: skyline silhouette, honey windows lighting up one by one,
    dotted walk path with sequential footsteps. Cadence from the walk band:
    intensity >= 1 (above_average/most) ~1.2s, else ~2.2s. — */
+.da-layer[data-kind="housing"] { --da-market-color: var(--sage); }
+.da-layer[data-kind="housing"][data-intensity="1"] { --da-market-color: var(--foil-b); }
+.da-layer[data-kind="housing"][data-intensity="2"] { --da-market-color: var(--danger); }
+.da-housing-homes {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 5px;
+  width: 84%;
+  height: 30px;
+}
+.da-housing-homes path {
+  fill: var(--fg);
+  opacity: 0.055;
+}
+.da-housing-homes rect {
+  fill: var(--da-market-color);
+  opacity: 0.18;
+}
+.da-housing-homes line {
+  stroke: var(--fg);
+  stroke-width: 1;
+  opacity: 0.08;
+}
+.da-housing-bar {
+  position: absolute;
+  bottom: 8px;
+  width: 10px;
+  border-radius: 9999px;
+  background: var(--da-market-color);
+  opacity: 0.14;
+  animation: da-housing-bar 3.2s ease-in-out infinite;
+}
+.da-layer[data-kind="housing"][data-intensity="1"] .da-housing-bar { opacity: 0.17; }
+.da-layer[data-kind="housing"][data-intensity="2"] .da-housing-bar { opacity: 0.20; }
+@keyframes da-housing-bar {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.da-layer[data-kind="evCharging"] { --da-ev-color: var(--fg); }
+.da-layer[data-kind="evCharging"][data-intensity="1"] { --da-ev-color: var(--sage); }
+.da-layer[data-kind="evCharging"][data-intensity="2"] { --da-ev-color: var(--foil-b); }
+.da-ev-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.da-ev-path path {
+  stroke: var(--da-ev-color);
+  stroke-width: 1.2;
+  fill: none;
+  opacity: 0.16;
+  stroke-dasharray: 3 5;
+}
+.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-path path { opacity: 0.08; }
+.da-ev-node {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--da-ev-color);
+  opacity: 0.18;
+  animation: da-ev-node 2.6s ease-in-out infinite;
+}
+@keyframes da-ev-node {
+  0%, 100% { opacity: 0.18; transform: scale(0.88); }
+  20%      { opacity: 0.42; transform: scale(1.18); }
+}
+.da-ev-bolt {
+  position: absolute;
+  top: 24%;
+  right: 14%;
+  stroke: var(--da-ev-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.22;
+  animation: da-ev-charge 1.1s ease-in-out infinite alternate;
+}
+.da-layer[data-kind="evCharging"][data-intensity="0"] .da-ev-bolt { opacity: 0.12; }
+@keyframes da-ev-charge {
+  from { opacity: 0.22; transform: scale(0.96); }
+  to   { opacity: 0.52; transform: scale(1.05); }
+}
+
 .da-layer[data-kind="neighborhood"][data-intensity="0"] { --da-cadence: 2.2s; }
 .da-skyline {
   position: absolute;
@@ -1933,6 +2017,40 @@ html[data-embed="mobile"] .install-prompt {
   18%  { opacity: 0.22; }
   82%  { opacity: 0.22; }
   100% { transform: translate3d(-5px, 64px, 0) rotate(8deg); opacity: 0; }
+}
+
+.da-fog-cloud-a {
+  top: 12px;
+  right: 24%;
+  opacity: 0.055;
+  animation: da-cloud-drift-a 24s ease-in-out infinite;
+}
+.da-fog-cloud-b {
+  top: 32px;
+  right: 7%;
+  opacity: 0.045;
+  animation: da-cloud-drift-b 32s ease-in-out infinite;
+}
+.da-fog-line {
+  position: absolute;
+  left: 12%;
+  right: 6%;
+  height: 1px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--fg), transparent);
+}
+.da-heat-line {
+  position: absolute;
+  bottom: 9px;
+  width: 2px;
+  border-radius: 9999px;
+  background: var(--foil-b);
+  opacity: 0.1;
+  animation: da-heat-shimmer 1.7s ease-in-out infinite alternate;
+}
+@keyframes da-heat-shimmer {
+  from { opacity: 0.08; transform: translateY(2px) skewX(-6deg); }
+  to   { opacity: 0.18; transform: translateY(-2px) skewX(6deg); }
 }
 
 /* Reduced motion: every dossier-ambient animation off. Static fallbacks keep

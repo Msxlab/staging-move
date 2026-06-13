@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, ExternalLink } from "lucide-react-native";
+import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react-native";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { useAppTheme, type Theme } from "@/lib/theme";
 
@@ -176,19 +176,38 @@ export default function BlogDetailScreen() {
         {post.ogImageUrl ? (
           <Image source={{ uri: post.ogImageUrl }} style={styles.cover} accessibilityLabel={post.ogImageAlt || post.title} />
         ) : null}
-        {post.category ? <Text style={styles.category}>{post.category.name.toUpperCase()}</Text> : null}
-        <Text style={styles.title}>{post.title}</Text>
-        <Text style={styles.excerpt}>{post.excerpt}</Text>
-        <Text style={styles.meta}>
-          {post.author?.name || "LocateFlow"} /{" "}
-          {new Date(post.publishedAt).toLocaleDateString(i18n.language || undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}{" "}
-          / {t("blog.minRead", { minutes: post.readingMinutes })}
-        </Text>
-        <Text style={styles.body}>{body}</Text>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <BookOpen size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>READING ROOM</Text>
+              {post.category ? <Text style={styles.category}>{post.category.name.toUpperCase()}</Text> : null}
+            </View>
+          </View>
+          <Text style={styles.title}>{post.title}</Text>
+          <Text style={styles.excerpt}>{post.excerpt}</Text>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{post.readingMinutes}</Text>
+              <Text style={styles.heroStatLabel}>min read</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue} numberOfLines={1}>{post.author?.name || "LocateFlow"}</Text>
+              <Text style={styles.heroStatLabel}>author</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>
+                {new Date(post.publishedAt).toLocaleDateString(i18n.language || undefined, { month: "short", day: "numeric" })}
+              </Text>
+              <Text style={styles.heroStatLabel}>date</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.bodyPanel}>
+          <Text style={styles.body}>{body}</Text>
+        </View>
         <TouchableOpacity onPress={openWeb} style={styles.webButton}>
           <ExternalLink size={16} color="#fff" />
           <Text style={styles.webButtonText}>{t("blog.openWeb")}</Text>
@@ -229,16 +248,37 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   cover: {
     width: "100%",
     aspectRatio: 1200 / 630,
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: 22,
+    marginBottom: 14,
     backgroundColor: theme.colors.elevated,
   },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
   category: {
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 0,
     color: theme.colors.primary,
     fontWeight: "700",
-    marginBottom: 8,
+    marginTop: 3,
   },
   title: {
     fontSize: 28,
@@ -252,11 +292,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 12,
   },
-  meta: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  bodyPanel: {
+    borderRadius: 22,
+    padding: 16,
     marginTop: 14,
-    marginBottom: 22,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   body: {
     fontSize: 16,
@@ -265,7 +327,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   webButton: {
     marginTop: 28,
-    borderRadius: 10,
+    borderRadius: 16,
     backgroundColor: theme.colors.primary,
     paddingVertical: 12,
     alignItems: "center",

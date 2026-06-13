@@ -427,43 +427,129 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/settings">
-            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition" aria-label="Back to settings">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-          </Link>
-          <div>
-            <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Budget</em></h1>
-            <p className="text-muted-foreground mt-1">Plan monthly service commitments and one-time moving costs.</p>
+      <section className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
+        <div className="border-b border-border bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--muted))_100%)] p-4 sm:p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex items-start gap-3">
+              <Link href="/settings">
+                <button className="rounded-xl border border-border bg-background/70 p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label="Back to settings">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              </Link>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Money command</p>
+                <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">Budget</h1>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                  Plan monthly commitments, confirm real costs, and keep move-related spending in one place.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(150px,190px)_minmax(180px,240px)_auto]">
+              <label className="space-y-1.5">
+                <span className={labelCls}>Month</span>
+                <input className={inputCls} type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} />
+              </label>
+              <label className="space-y-1.5">
+                <span className={labelCls}>Address</span>
+                <select className={inputCls} value={selectedAddressId} onChange={(event) => setSelectedAddressId(event.target.value)}>
+                  <option value="">All addresses</option>
+                  {addresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.nickname || `${address.city}, ${address.state}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                onClick={showForm ? closeBudgetForm : openBudgetForm}
+              >
+                {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" /><span className="hidden sm:inline">Manage Budget Limits</span><span className="sm:hidden">Limits</span></>}
+              </button>
+            </div>
           </div>
         </div>
-        <button
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
-          onClick={showForm ? closeBudgetForm : openBudgetForm}
-        >
-          {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" />Manage Budget Limits</>}
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label className={labelCls}>Month</label>
-          <input className={inputCls} type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} />
+        <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-[1.15fr_1fr]">
+          <div className="rounded-2xl border border-border bg-background/55 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Projected this month</p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
+                  {formatCurrency(budgetSummary.projectedThisMonth)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {budgetSummary.monthlyCommitted > 0
+                    ? `${formatCurrency(budgetSummary.monthlyCommitted)} recurring plus ${formatCurrency(budgetSummary.oneTimeThisMonth)} one-time`
+                    : "No recurring costs in this filter yet"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card px-3 py-2 text-right">
+                <p className="text-[10px] text-muted-foreground">Limit</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {budgetLimit > 0 ? formatCurrency(budgetLimit) : "Not set"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-foreground/5">
+              <div
+                className={`h-full rounded-full transition-all ${budgetDelta !== null && budgetDelta < 0 ? "bg-destructive" : "bg-tone-emerald-fg"}`}
+                style={{ width: `${budgetLimit > 0 ? budgetUsedPercent : 0}%` }}
+              />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+              <span className="rounded-full border border-border bg-card px-2.5 py-1">
+                {addressLabel(addresses, selectedAddressId)}
+              </span>
+              <span className="rounded-full border border-border bg-card px-2.5 py-1">{monthLabel(selectedMonth)}</span>
+              <span
+                className={`rounded-full border px-2.5 py-1 ${
+                  budgetDelta !== null && budgetDelta < 0
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg"
+                }`}
+              >
+                {budgetDelta === null
+                  ? "Set a limit"
+                  : `${budgetDelta >= 0 ? "Under" : "Over"} ${formatCurrency(Math.abs(budgetDelta))}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {overviewStats.map((stat) => {
+              const tone = statTone[stat.tone];
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className="rounded-2xl border border-border bg-background/55 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className={`rounded-lg border p-1.5 ${tone.box}`}>
+                      <Icon className={`h-3.5 w-3.5 ${tone.icon}`} />
+                    </div>
+                    <span className="min-w-0 truncate text-[11px] text-muted-foreground">{stat.label}</span>
+                  </div>
+                  <p className="truncate text-lg font-semibold tabular-nums text-foreground">{stat.value}</p>
+                  <p className="mt-0.5 truncate text-[10px] text-foreground/45">{stat.sub}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <label className={labelCls}>Address</label>
-          <select className={inputCls} value={selectedAddressId} onChange={(event) => setSelectedAddressId(event.target.value)}>
-            <option value="">All addresses</option>
-            {addresses.map((address) => (
-              <option key={address.id} value={address.id}>
-                {address.nickname || `${address.city}, ${address.state}`}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+
+        {!currentBudget && hasServiceCosts ? (
+          <div className="mx-4 mb-4 flex gap-3 rounded-xl border border-tone-cyan-br bg-tone-cyan-bg p-3 text-sm text-tone-cyan-fg sm:mx-5 sm:mb-5">
+            <Target className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>Your active services currently total {formatCurrency(budgetSummary.monthlyCommitted)}/mo. Set a monthly budget to compare your costs.</p>
+          </div>
+        ) : null}
+
+        {!hasServiceCosts ? (
+          <div className="mx-4 mb-4 flex gap-3 rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-sm text-tone-honey-fg sm:mx-5 sm:mb-5">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>Add costs to your services to enable budget tracking.</p>
+          </div>
+        ) : null}
+      </section>
 
       {showForm && (
         <div className="rounded-2xl border border-tone-orange-br bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
@@ -556,41 +642,6 @@ export default function BudgetPage() {
           </div>
         </div>
       )}
-
-      {!currentBudget && hasServiceCosts && (
-        <div className="rounded-2xl border border-tone-cyan-br bg-tone-cyan-bg p-4 flex gap-3">
-          <Target className="h-4 w-4 text-tone-cyan-fg shrink-0 mt-0.5" />
-          <p className="text-sm text-tone-cyan-fg">
-            Your active services currently total {formatCurrency(budgetSummary.monthlyCommitted)}/mo. Set a monthly budget to compare your costs.
-          </p>
-        </div>
-      )}
-
-      {!hasServiceCosts && (
-        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-4 flex gap-3">
-          <AlertTriangle className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
-          <p className="text-sm text-tone-honey-fg">Add costs to your services to enable budget tracking.</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {overviewStats.map((stat) => {
-          const tone = statTone[stat.tone];
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg border ${tone.box}`}>
-                  <Icon className={`h-3.5 w-3.5 ${tone.icon}`} />
-                </div>
-                <span className="text-[11px] text-muted-foreground">{stat.label}</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-[10px] text-foreground/40 mt-0.5">{stat.sub}</p>
-            </div>
-          );
-        })}
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">

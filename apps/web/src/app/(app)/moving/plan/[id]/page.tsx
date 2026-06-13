@@ -40,6 +40,8 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   FORWARD_MAIL: "Forward mail",
 };
 
+const TASK_FOCUS_LIMIT = 5;
+
 // Small circular initials badge for a task assignee.
 function AssigneeAvatar({ initials, title }: { initials: string; title?: string }) {
   return (
@@ -109,6 +111,7 @@ export default function MovingPlanDetailPage() {
   const [stateRules, setStateRules] = useState<any>(null);
   const [stateGuideOpen, setStateGuideOpen] = useState(false);
   const [moveTasks, setMoveTasks] = useState<MoveTaskItem[]>([]);
+  const [showAllTasks, setShowAllTasks] = useState(false);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   // Task assignment (Family/Pro). Members + flag come from the move-tasks GET;
@@ -179,6 +182,7 @@ export default function MovingPlanDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate move tasks");
       setMoveTasks(data.tasks || []);
+      setShowAllTasks(false);
       toast.success(`Generated ${data.generatedCount || 0} suggested tasks`);
     } catch (error: any) {
       toast.error(error?.message || "Failed to generate move tasks");
@@ -319,6 +323,27 @@ export default function MovingPlanDetailPage() {
   const migrationSummaryLabel = migration
     ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : t("migrationGuidanceEmpty");
+  const taskDueTime = (task: MoveTaskItem) => {
+    const due = task.dueDate ? new Date(task.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    return Number.isNaN(due) ? Number.POSITIVE_INFINITY : due;
+  };
+  const activeMoveTasks = [...moveTasks]
+    .filter((task) => task.status !== "COMPLETED" && task.status !== "DISMISSED")
+    .sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const fallbackMoveTasks = [...moveTasks]
+    .filter((task) => task.status !== "DISMISSED")
+    .sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const focusedMoveTasks =
+    activeMoveTasks.length > 0
+      ? activeMoveTasks
+      : fallbackMoveTasks.length > 0
+        ? fallbackMoveTasks
+        : [...moveTasks].sort((a, b) => taskDueTime(a) - taskDueTime(b));
+  const visibleMoveTasks = showAllTasks ? moveTasks : focusedMoveTasks.slice(0, TASK_FOCUS_LIMIT);
+  const hiddenMoveTaskCount = Math.max(0, moveTasks.length - visibleMoveTasks.length);
+  const trackedTaskCount = moveTasks.filter((task) => task.status !== "DISMISSED").length;
+  const doneTaskCount = moveTasks.filter((task) => task.status === "COMPLETED").length;
+  const taskProgressPct = trackedTaskCount > 0 ? Math.round((doneTaskCount / trackedTaskCount) * 100) : 0;
 
   return (
     <div className="space-y-6 pb-8">
@@ -398,17 +423,35 @@ export default function MovingPlanDetailPage() {
               Items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
             </p>
           </div>
-          <button
-            onClick={generateMoveTasks}
-            disabled={tasksLoading}
-            className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
-          >
-            {tasksLoading
-              ? "Working…"
-              : moveTasks.length === 0
-                ? "Generate checklist"
-                : "Refresh checklist"}
-          </button>
+          <div className="flex flex-col items-start sm:items-end gap-2">
+            {moveTasks.length > 0 && (
+              <div className="min-w-[150px] rounded-xl border border-tone-emerald-br bg-background/35 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Progress</span>
+                  <span className="font-mono text-xs font-semibold text-tone-emerald-fg">
+                    {doneTaskCount}/{trackedTaskCount || moveTasks.length}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+                  <div
+                    className="h-full rounded-full bg-tone-emerald-fg transition-all duration-500"
+                    style={{ width: `${taskProgressPct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <button
+              onClick={generateMoveTasks}
+              disabled={tasksLoading}
+              className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
+            >
+              {tasksLoading
+                ? "Working..."
+                : moveTasks.length === 0
+                  ? "Generate checklist"
+                  : "Refresh checklist"}
+            </button>
+          </div>
         </div>
         <div className="mt-4 space-y-2">
           {moveTasks.length === 0 && !tasksLoading && (
@@ -419,7 +462,7 @@ export default function MovingPlanDetailPage() {
               </p>
             </div>
           )}
-          {moveTasks.map((task) => {
+          {visibleMoveTasks.map((task) => {
             const busy = taskBusy === task.id;
             const isDone = task.status === "COMPLETED";
             const isDismissed = task.status === "DISMISSED";
@@ -579,6 +622,17 @@ export default function MovingPlanDetailPage() {
               </div>
             );
           })}
+          {moveTasks.length > TASK_FOCUS_LIMIT && (
+            <button
+              type="button"
+              onClick={() => setShowAllTasks((value) => !value)}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-tone-emerald-br bg-background/30 px-3 py-2.5 text-xs font-semibold text-tone-emerald-fg transition hover:bg-background/45"
+              aria-expanded={showAllTasks}
+            >
+              {showAllTasks ? "Show focused list" : `Show ${hiddenMoveTaskCount} more tasks`}
+              {showAllTasks ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          )}
         </div>
 
         {migrationLoading && !migration && moveTasks.length > 0 && (

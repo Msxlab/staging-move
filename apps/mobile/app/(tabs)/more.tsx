@@ -297,7 +297,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     color: theme.colors.text,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   profileCard: {

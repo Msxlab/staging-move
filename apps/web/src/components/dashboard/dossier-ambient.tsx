@@ -30,13 +30,27 @@ export type AmbientKind =
   | "school"
   | "hazard"
   | "radon"
+  | "water"
   | "air"
+  | "housing"
+  | "evCharging"
   | "neighborhood"
   | "weather";
 
 export type AmbientIntensity = 0 | 1 | 2;
 
-export type AmbientVariant = "lightning" | "wind" | "winter" | "sun" | "cloud" | "rain";
+export type AmbientVariant =
+  | "lightning"
+  | "wind"
+  | "winter"
+  | "sun"
+  | "cloud"
+  | "rain"
+  | "storm"
+  | "snow"
+  | "fog"
+  | "heat"
+  | "cold";
 
 export interface AmbientSpec {
   kind: AmbientKind;
@@ -54,9 +68,28 @@ export type AmbientSectionInput =
   | { kind: "school" }
   | { kind: "hazard"; topRisks: ReadonlyArray<{ hazard: string; rating: string }> }
   | { kind: "radon"; zone: 1 | 2 | 3 }
-  | { kind: "air"; aqi: number }
+  | { kind: "water"; violations5y: number | null }
+  | { kind: "air"; aqi: number | null; category?: string | null }
+  | {
+      kind: "housing";
+      twoBedroomFmr: number | null;
+      medianIncome: number | null;
+      lowIncome4Person: number | null;
+    }
+  | {
+      kind: "evCharging";
+      stationCount: number;
+      dcFastPortCount: number;
+      level2PortCount: number;
+    }
   | { kind: "neighborhood"; walkBand: string | null }
-  | { kind: "weather"; summary: string | null; precipChancePct: number | null };
+  | {
+      kind: "weather";
+      summary: string | null;
+      precipChancePct: number | null;
+      tempHighF?: number | null;
+      tempLowF?: number | null;
+    };
 
 // ── Pure mapper (exported for tests) ─────────────────────────────────────────
 
@@ -83,6 +116,67 @@ function hazardVariant(hazard: string | undefined): AmbientVariant {
     return "winter";
   }
   return "wind";
+}
+
+function textHasAny(text: string, needles: ReadonlyArray<string>): boolean {
+  return needles.some((needle) => text.includes(needle));
+}
+
+function airCategoryIntensity(category: string | null | undefined): AmbientIntensity {
+  const c = (category ?? "").toLowerCase();
+  if (c.includes("hazard") || c.includes("very unhealthy") || c.includes("unhealthy")) return 2;
+  if (c.includes("moderate") || c.includes("sensitive")) return 1;
+  return 0;
+}
+
+function weatherSpec({
+  summary,
+  precipChancePct,
+  tempHighF,
+  tempLowF,
+}: Extract<AmbientSectionInput, { kind: "weather" }>): AmbientSpec {
+  const s = (summary ?? "").toLowerCase();
+  const precip = precipChancePct;
+  const high = typeof tempHighF === "number" && Number.isFinite(tempHighF) ? tempHighF : null;
+  const low = typeof tempLowF === "number" && Number.isFinite(tempLowF) ? tempLowF : null;
+
+  if (textHasAny(s, ["thunder", "storm", "lightning", "squall", "tornado"])) {
+    return { kind: "weather", intensity: 2, variant: "storm" };
+  }
+  if (textHasAny(s, ["snow", "sleet", "freezing", "ice", "blizzard", "flurr"])) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["blizzard", "heavy", "freezing"]) || (precip ?? 0) >= 70 ? 2 : 1,
+      variant: "snow",
+    };
+  }
+  if (textHasAny(s, ["fog", "mist", "haze", "smoke"])) {
+    return { kind: "weather", intensity: textHasAny(s, ["dense", "smoke"]) ? 2 : 1, variant: "fog" };
+  }
+  if (textHasAny(s, ["wind", "gust", "breez"])) {
+    return { kind: "weather", intensity: textHasAny(s, ["high wind", "gust"]) ? 2 : 1, variant: "wind" };
+  }
+  if (typeof precip === "number" && precip >= 50) {
+    return { kind: "weather", intensity: precip >= 80 ? 2 : 1, variant: "rain" };
+  }
+  if (textHasAny(s, ["cloud", "overcast"])) {
+    return { kind: "weather", intensity: 1, variant: "cloud" };
+  }
+  if (textHasAny(s, ["heat", "hot", "excessive"]) || (high !== null && high >= 95)) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["excessive"]) || (high !== null && high >= 100) ? 2 : 1,
+      variant: "heat",
+    };
+  }
+  if (textHasAny(s, ["cold", "chill", "freeze"]) || (low !== null && low <= 32)) {
+    return {
+      kind: "weather",
+      intensity: textHasAny(s, ["freeze"]) || (low !== null && low <= 25) ? 2 : 1,
+      variant: "cold",
+    };
+  }
+  return { kind: "weather", intensity: 0, variant: "sun" };
 }
 
 /**
@@ -115,8 +209,45 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
     }
     case "radon":
       return { kind: "radon", intensity: section.zone === 1 ? 2 : section.zone === 2 ? 1 : 0 };
+    case "water":
+      return {
+        kind: "water",
+        intensity: section.violations5y === null ? 1 : section.violations5y > 0 ? 2 : 0,
+      };
     case "air":
-      return { kind: "air", intensity: section.aqi <= 50 ? 0 : section.aqi <= 100 ? 1 : 2 };
+      return {
+        kind: "air",
+        intensity:
+          typeof section.aqi === "number"
+            ? section.aqi <= 50
+              ? 0
+              : section.aqi <= 100
+                ? 1
+                : 2
+            : airCategoryIntensity(section.category),
+      };
+    case "housing": {
+      const fmr = section.twoBedroomFmr;
+      const lowIncome = section.lowIncome4Person;
+      const highCost =
+        (typeof fmr === "number" && fmr >= 2500) ||
+        (typeof lowIncome === "number" && lowIncome >= 95000);
+      const moderateCost =
+        (typeof fmr === "number" && fmr >= 1600) ||
+        (typeof lowIncome === "number" && lowIncome >= 65000) ||
+        (typeof section.medianIncome === "number" && section.medianIncome >= 85000);
+      return { kind: "housing", intensity: highCost ? 2 : moderateCost ? 1 : 0 };
+    }
+    case "evCharging":
+      return {
+        kind: "evCharging",
+        intensity:
+          section.stationCount <= 0
+            ? 0
+            : section.dcFastPortCount > 0 || section.stationCount >= 8
+              ? 2
+              : 1,
+      };
     case "neighborhood": {
       const band = section.walkBand;
       return {
@@ -124,16 +255,8 @@ export function ambientForSection(section: AmbientSectionInput): AmbientSpec {
         intensity: band === "most" ? 2 : band === "above_average" ? 1 : 0,
       };
     }
-    case "weather": {
-      const precip = section.precipChancePct;
-      if (typeof precip === "number" && precip >= 50) {
-        return { kind: "weather", intensity: precip >= 80 ? 2 : 1, variant: "rain" };
-      }
-      if ((section.summary ?? "").toLowerCase().includes("cloud")) {
-        return { kind: "weather", intensity: 1, variant: "cloud" };
-      }
-      return { kind: "weather", intensity: 0, variant: "sun" };
-    }
+    case "weather":
+      return weatherSpec(section);
   }
 }
 
@@ -399,6 +522,44 @@ function RadonScene({ intensity }: { intensity: AmbientIntensity }) {
   );
 }
 
+const WATER_RIPPLES = [
+  { left: "18%", bottom: "12px", w: 44, h: 10, dur: "4.8s", delay: "-0.5s" },
+  { left: "48%", bottom: "24px", w: 58, h: 12, dur: "6.2s", delay: "-2.3s" },
+  { left: "74%", bottom: "9px", w: 36, h: 8, dur: "5.4s", delay: "-3.5s" },
+] as const;
+
+function WaterScene({ intensity }: { intensity: AmbientIntensity }) {
+  const drops = intensity === 2 ? ["28%", "62%", "82%"] : intensity === 1 ? ["52%"] : [];
+  return (
+    <>
+      {WATER_RIPPLES.map((r, i) => (
+        <svg
+          key={i}
+          className="da-water-ripple"
+          viewBox={`0 0 ${r.w} ${r.h}`}
+          width={r.w}
+          height={r.h}
+          style={{
+            left: r.left,
+            bottom: r.bottom,
+            animationDuration: r.dur,
+            animationDelay: r.delay,
+          }}
+        >
+          <ellipse cx={r.w / 2} cy={r.h / 2} rx={r.w / 2 - 1} ry={r.h / 2 - 1} />
+        </svg>
+      ))}
+      {drops.map((left, i) => (
+        <span
+          key={left}
+          className="da-water-drop"
+          style={{ left, animationDelay: `${-(i * 0.45).toFixed(2)}s` }}
+        />
+      ))}
+    </>
+  );
+}
+
 const AIR_STREAKS = [
   { top: "20%", w: 150, dur: "13s", delay: "-3s", x: "15%" },
   { top: "44%", w: 104, dur: "16s", delay: "-8s", x: "45%" },
@@ -433,6 +594,65 @@ function AirScene({ intensity }: { intensity: AmbientIntensity }) {
         </div>
       )}
       {intensity === 2 && <div className="da-haze" />}
+    </>
+  );
+}
+
+const HOUSING_BARS = [
+  { x: "22%", h: 15, delay: "-0.2s" },
+  { x: "44%", h: 24, delay: "-0.8s" },
+  { x: "64%", h: 18, delay: "-1.4s" },
+  { x: "82%", h: 30, delay: "-2.1s" },
+] as const;
+
+function HousingScene({ intensity }: { intensity: AmbientIntensity }) {
+  return (
+    <>
+      <svg className="da-housing-homes" viewBox="0 0 180 30" width="180" height="30">
+        <path d="M10 22 L24 12 L38 22 V29 H10 Z" />
+        <rect x="18" y="22" width="6" height="7" rx="1.5" />
+        <path d="M126 22 L140 12 L154 22 V29 H126 Z" />
+        <rect x="134" y="22" width="6" height="7" rx="1.5" />
+        <line x1="0" y1="29" x2="180" y2="29" />
+      </svg>
+      {HOUSING_BARS.map((bar, i) => (
+        <span
+          key={i}
+          className="da-housing-bar"
+          style={{
+            left: bar.x,
+            height: bar.h + intensity * 4,
+            animationDelay: bar.delay,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+const EV_NODES = [
+  { left: "24%", top: "36%", delay: "-0.2s" },
+  { left: "48%", top: "62%", delay: "-0.9s" },
+  { left: "72%", top: "32%", delay: "-1.5s" },
+] as const;
+
+function EvScene({ intensity }: { intensity: AmbientIntensity }) {
+  const nodes = EV_NODES.slice(0, intensity === 0 ? 1 : intensity === 1 ? 2 : 3);
+  return (
+    <>
+      <svg className="da-ev-path" viewBox="0 0 180 72" preserveAspectRatio="none">
+        <path d="M28 36 C62 18 88 58 132 28" />
+      </svg>
+      {nodes.map((node, i) => (
+        <span
+          key={i}
+          className="da-ev-node"
+          style={{ left: node.left, top: node.top, animationDelay: node.delay }}
+        />
+      ))}
+      <svg className="da-ev-bolt" viewBox="0 0 18 24" width="18" height="24">
+        <polyline points="11,1 5,11 10,11 7,23" />
+      </svg>
     </>
   );
 }
@@ -554,6 +774,39 @@ function RainScene({ intensity }: { intensity: AmbientIntensity }) {
   );
 }
 
+function FogScene() {
+  return (
+    <>
+      <svg className="da-wcloud da-fog-cloud-a" viewBox="0 0 56 20" width="68" height="20">
+        <ellipse cx="20" cy="12" rx="16" ry="7" />
+        <ellipse cx="36" cy="10" rx="14" ry="8" />
+      </svg>
+      <svg className="da-wcloud da-fog-cloud-b" viewBox="0 0 56 20" width="72" height="18">
+        <ellipse cx="20" cy="12" rx="16" ry="7" />
+        <ellipse cx="36" cy="10" rx="14" ry="8" />
+      </svg>
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="da-fog-line" style={{ bottom: `${12 + i * 7}px`, opacity: 0.16 - i * 0.025 }} />
+      ))}
+    </>
+  );
+}
+
+function HeatScene() {
+  return (
+    <>
+      <SunScene />
+      {["48%", "58%", "68%"].map((left, i) => (
+        <span
+          key={left}
+          className="da-heat-line"
+          style={{ left, height: 22 + i * 5, animationDelay: `${-(i * 0.42).toFixed(2)}s` }}
+        />
+      ))}
+    </>
+  );
+}
+
 function AmbientScene({ kind, intensity, variant }: AmbientSpec) {
   switch (kind) {
     case "flood":
@@ -566,11 +819,22 @@ function AmbientScene({ kind, intensity, variant }: AmbientSpec) {
       return <WindScene intensity={intensity} />;
     case "radon":
       return <RadonScene intensity={intensity} />;
+    case "water":
+      return <WaterScene intensity={intensity} />;
     case "air":
       return <AirScene intensity={intensity} />;
+    case "housing":
+      return <HousingScene intensity={intensity} />;
+    case "evCharging":
+      return <EvScene intensity={intensity} />;
     case "neighborhood":
       return <NeighborhoodScene />;
     case "weather":
+      if (variant === "storm") return <LightningScene />;
+      if (variant === "snow" || variant === "cold") return <WinterScene intensity={intensity} />;
+      if (variant === "fog") return <FogScene />;
+      if (variant === "heat") return <HeatScene />;
+      if (variant === "wind") return <WindScene intensity={intensity} />;
       if (variant === "rain") return <RainScene intensity={intensity} />;
       if (variant === "cloud") return <CloudScene />;
       return <SunScene />;

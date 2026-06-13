@@ -60,6 +60,8 @@ export default function AddressChangesScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+  const totalDispatches = changes.reduce((sum, change) => sum + change.dispatchCount, 0);
+  const confirmedChanges = changes.filter((change) => change.status === "CONFIRMED").length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -72,9 +74,34 @@ export default function AddressChangesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>
-          {t("addressChanges.subtitle", "Where each address change was sent, and whether the provider confirmed it.")}
-        </Text>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <MapPin size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>ADDRESS SYNC</Text>
+              <Text style={styles.heroTitle}>{t("addressChanges.title", "Address changes")}</Text>
+              <Text style={styles.heroSub}>
+                {t("addressChanges.subtitle", "Where each address change was sent, and whether the provider confirmed it.")}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{changes.length}</Text>
+              <Text style={styles.heroStatLabel}>changes</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{totalDispatches}</Text>
+              <Text style={styles.heroStatLabel}>dispatches</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{confirmedChanges}</Text>
+              <Text style={styles.heroStatLabel}>confirmed</Text>
+            </View>
+          </View>
+        </View>
 
         {loading ? (
           <ActivityIndicator color={theme.colors.text} style={{ marginTop: 32 }} />
@@ -156,17 +183,61 @@ const makeStyles = (theme: Theme) =>
     },
     title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-    subtitle: { fontSize: 13, color: theme.colors.textMuted, marginBottom: 16 },
+    hero: {
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 16,
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.highlight,
+      ...theme.shadow.sm,
+    },
+    heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+    heroIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroCopy: { flex: 1, minWidth: 0 },
+    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+    heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+    heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+    heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+    heroStat: {
+      flex: 1,
+      minHeight: 58,
+      borderRadius: 16,
+      padding: 10,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: "center",
+    },
+    heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+    heroStatLabel: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      marginTop: 3,
+    },
     empty: { alignItems: "center", marginTop: 48, gap: 8 },
     emptyTitle: { fontSize: 15, fontWeight: "600", color: theme.colors.text, marginTop: 8 },
     emptyBody: { fontSize: 12, color: theme.colors.textMuted, textAlign: "center", maxWidth: 280 },
     card: {
-      backgroundColor: theme.colors.card,
-      borderRadius: 16,
+      backgroundColor: theme.colors.glass.bg,
+      borderRadius: 22,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.glass.highlight,
       padding: 16,
       marginBottom: 12,
+      ...theme.shadow.sm,
     },
     cardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
     cardDate: { fontSize: 12, color: theme.colors.textMuted },

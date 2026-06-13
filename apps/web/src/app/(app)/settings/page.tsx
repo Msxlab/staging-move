@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, MapPin, Users, Loader2 } from "lucide-react";
+import { User, Bell, CreditCard, Download, Shield, DollarSign, Link2, MapPin, Users, Loader2, ChevronRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
@@ -28,18 +28,18 @@ const accountSections = [
 
 function SectionList({ items }: { items: typeof accountSections }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {items.map((section) => (
         <Link key={section.title} href={section.href}>
-          <div className="flex items-center gap-4 p-3.5 rounded-xl hover:bg-foreground/[0.05] transition-all cursor-pointer">
-            <div className="p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
-              <section.icon className="h-5 w-5 text-tone-orange-fg" />
+          <div className="group flex items-center gap-3 rounded-xl border border-border bg-background/55 p-3.5 transition hover:border-primary/30 hover:bg-accent/40">
+            <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5">
+              <section.icon className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
-              <p className="text-xs text-muted-foreground">{section.description}</p>
+              <p className="truncate text-xs text-muted-foreground">{section.description}</p>
             </div>
-            <svg className="h-4 w-4 text-foreground/25" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:text-primary" />
           </div>
         </Link>
       ))}
@@ -124,18 +124,44 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-8">
-      <div>
-        <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Settings</em></h1>
-        <p className="text-muted-foreground mt-1">Manage your account and preferences</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6 pb-8">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
+        <div className="border-b border-border bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--muted))_100%)] p-5">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl border border-primary/25 bg-primary/10 p-3">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Account command</p>
+              <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">Settings</h1>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Manage plan, privacy, workspace, notifications, appearance, and exports from one operational hub.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-background/55 p-3">
+            <p className="text-[10px] font-medium text-muted-foreground">Plan & billing</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">Subscription ready</p>
+          </div>
+          <div className="rounded-xl border border-border bg-background/55 p-3">
+            <p className="text-[10px] font-medium text-muted-foreground">Security</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">Privacy controls</p>
+          </div>
+          <div className="rounded-xl border border-border bg-background/55 p-3">
+            <p className="text-[10px] font-medium text-muted-foreground">Workspace</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">Members & roles</p>
+          </div>
+        </div>
+      </section>
 
       {showBudget === true && (
-        <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
           <div className="px-5 pt-5 pb-2">
-            <h2 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Features</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Features</h2>
           </div>
-          <div className="px-2 pb-3">
+          <div className="px-4 pb-4">
             <SectionList items={[budgetFeature]} />
           </div>
         </div>
@@ -145,16 +171,16 @@ export default function SettingsPage() {
 
       <AppearanceCard />
 
-      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
         <div className="px-5 pt-5 pb-2">
-          <h2 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Account</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Account</h2>
         </div>
-        <div className="px-2 pb-3">
+        <div className="px-4 pb-4">
           <SectionList items={accountSections} />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-destructive bg-foreground/5 backdrop-blur-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-destructive/50 bg-destructive/5 shadow-sm">
         <div className="px-5 pt-5 pb-3">
           <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
         </div>

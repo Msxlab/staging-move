@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
@@ -146,26 +146,49 @@ export default function NewAddressPage() {
   const handleAutocompleteSelect = (result: Parameters<typeof applyAddressAutocompleteResult<typeof form>>[1]) => {
     setForm((prev) => applyAddressAutocompleteResult(prev, result));
   };
+  const selectedTypeLabel = addressTypes.find((type) => type.value === form.type)?.label || t("type_home" as any);
+  const requiredComplete = [form.street, form.city, form.state, form.zip].filter(Boolean).length;
+  const placeLine = [form.city, form.state, form.zip].filter(Boolean).join(", ");
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <ServiceLimitUpsell
         open={Boolean(addressLimit)}
         details={addressLimit}
         onClose={() => setAddressLimit(null)}
       />
 
-      <div className="flex items-center gap-4">
-        <Link href="/addresses">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">{t("newTitle")}</h1>
-          <p className="text-muted-foreground">{t("formSubtitle")}</p>
+      <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+        <div className="flex items-start gap-4">
+          <Link href="/addresses">
+            <Button variant="ghost" size="icon" className="rounded-2xl">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+            <MapPin className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase text-primary">Address command</p>
+            <h1 className="text-2xl font-bold text-foreground">{form.nickname || selectedTypeLabel || t("newTitle")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{placeLine || t("formSubtitle")}</p>
+          </div>
         </div>
-      </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{requiredComplete}/4</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">required</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{form.ownership}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">ownership</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{form.isPrimary ? "Yes" : "No"}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">primary</p>
+          </div>
+        </div>
+      </section>
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -218,7 +241,7 @@ export default function NewAddressPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Type & Nickname */}
-        <Card>
+        <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="text-lg">{t("basicInfoTitle")}</CardTitle>
             <CardDescription>{t("basicInfoDescription")}</CardDescription>
@@ -253,7 +276,7 @@ export default function NewAddressPage() {
         </Card>
 
         {/* Address */}
-        <Card>
+        <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="text-lg">{t("detailsTitle")}</CardTitle>
           </CardHeader>
@@ -318,7 +341,7 @@ export default function NewAddressPage() {
         </Card>
 
         {/* Ownership & Dates */}
-        <Card>
+        <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="text-lg">{t("ownershipTitle")}</CardTitle>
           </CardHeader>

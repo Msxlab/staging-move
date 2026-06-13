@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -191,6 +191,8 @@ export default function NotificationsScreen() {
   const visible = notifications.filter((n) =>
     filter === "all" ? true : filter === "unread" ? !n.read : REMINDER_TYPES.has(n.type),
   );
+  const reminderCount = notifications.filter((n) => REMINDER_TYPES.has(n.type)).length;
+  const linkedCount = notifications.filter((n) => resolveMobileHref(n.href)).length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -236,15 +238,32 @@ export default function NotificationsScreen() {
           />
         ) : (
           <>
-            {unreadCount > 0 && (
+            {notifications.length > 0 && (
               <View style={styles.hero}>
-                <Text style={styles.heroCount}>{unreadCount}</Text>
+                <View style={styles.heroIcon}>
+                  <Bell size={22} color={unreadCount > 0 ? theme.colors.error : theme.colors.primary} />
+                </View>
                 <View style={styles.heroBody}>
                   <Text style={styles.heroKicker}>
-                    {t("notifications.unread", { count: unreadCount }).toUpperCase()}
+                    {unreadCount > 0
+                      ? t("notifications.unread", { count: unreadCount }).toUpperCase()
+                      : t("notifications.allClear", { defaultValue: "ALL CLEAR" })}
                   </Text>
-                  <Text style={styles.heroTitle}>{t("notifications.heroTitle")}</Text>
-                  <Text style={styles.heroSub}>{t("notifications.heroSubtitle")}</Text>
+                  <Text style={styles.heroTitle}>
+                    {unreadCount > 0
+                      ? t("notifications.heroTitle")
+                      : t("notifications.allClearTitle", { defaultValue: "Inbox is under control" })}
+                  </Text>
+                  <Text style={styles.heroSub}>
+                    {unreadCount > 0
+                      ? t("notifications.heroSubtitle")
+                      : t("notifications.allClearSubtitle", { defaultValue: "Recent alerts stay here with reminders and deep links when available." })}
+                  </Text>
+                  <View style={styles.heroStats}>
+                    <Text style={styles.heroStat}>{notifications.length} total</Text>
+                    <Text style={styles.heroStat}>{reminderCount} reminders</Text>
+                    <Text style={styles.heroStat}>{linkedCount} linked</Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -357,19 +376,40 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center",
     gap: 14,
     padding: 16,
-    borderRadius: theme.radius.xl,
+    borderRadius: theme.radius["2xl"],
     borderWidth: 1,
-    borderColor: theme.colors.error + "33",
-    backgroundColor: theme.colors.errorFaded,
+    borderColor: theme.colors.glass.border,
+    backgroundColor: theme.colors.glass.bg,
     marginBottom: 14,
     ...theme.shadow.glow,
-    shadowColor: theme.colors.error,
   },
-  heroCount: { fontSize: 32, fontWeight: "800", color: theme.colors.error, fontVariant: ["tabular-nums"], minWidth: 36, textAlign: "center" },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "30",
+  },
   heroBody: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.error, marginBottom: 3 },
+  heroKicker: { fontSize: 10, letterSpacing: 1, fontWeight: "800", color: theme.colors.textTertiary, marginBottom: 3 },
   heroTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
   heroSub: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 17 },
+  heroStats: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
+  heroStat: {
+    overflow: "hidden",
+    borderRadius: theme.radius.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontSize: 10,
+    fontWeight: "700",
+    color: theme.colors.textTertiary,
+  },
   // ── Segmented filter chips (addresses Hub idiom) ──
   seg: {
     flexDirection: "row",

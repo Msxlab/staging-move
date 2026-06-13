@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check } from "lucide-react-native";
+import { ArrowLeft, Check, MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
@@ -133,6 +133,10 @@ export default function EditAddressScreen() {
     }
   };
 
+  const selectedTypeLabel = t(ADDRESS_TYPE_LABEL_KEYS[form.type as (typeof ADDRESS_TYPES)[number]] || "addresses.type_primary");
+  const requiredComplete = [form.street, form.city, form.state, form.zip].filter(Boolean).length;
+  const placeLine = [form.city, form.state, form.zip].filter(Boolean).join(", ");
+
   if (pageLoading) return <LoadingScreen />;
 
   return (
@@ -152,106 +156,142 @@ export default function EditAddressScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
-        <View style={styles.chipRow}>
-          {ADDRESS_TYPES.map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[styles.chip, form.type === type && styles.chipActive]}
-              onPress={() => update("type", type)}
-            >
-              <Text style={[styles.chipText, form.type === type && styles.chipTextActive]}>
-                {t(ADDRESS_TYPE_LABEL_KEYS[type])}
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <MapPin size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>ADDRESS COMMAND</Text>
+              <Text style={styles.heroTitle}>{form.nickname || selectedTypeLabel}</Text>
+              <Text style={styles.heroSub} numberOfLines={2}>
+                {placeLine || form.street || t("addresses.editTitle")}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>{t("addresses.nickname")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t("addresses.nicknameHint")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.nickname}
-          onChangeText={(v) => update("nickname", v)}
-        />
-
-        <AddressAutocompleteField
-          label={t("addresses.street") + " *"}
-          value={form.street}
-          placeholder="123 Main Street"
-          onValueChange={(value) => update("street", value)}
-          onSelect={handleAutocompleteSelect}
-        />
-
-        <Text style={styles.label}>{t("addresses.street2")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Apt 4B"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.street2}
-          onChangeText={(v) => update("street2", v)}
-        />
-
-        <Text style={styles.label}>{t("addresses.city")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="New York"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.city}
-          onChangeText={(v) => update("city", v)}
-        />
-
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>{t("addresses.state")} *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="NY"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.state}
-              onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
-              maxLength={2}
-              autoCapitalize="characters"
-            />
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>{t("addresses.zip")} *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="10001"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.zip}
-              onChangeText={(v) => update("zip", v)}
-              keyboardType="number-pad"
-              maxLength={10}
-            />
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{requiredComplete}/4</Text>
+              <Text style={styles.heroStatLabel}>required</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{form.ownership}</Text>
+              <Text style={styles.heroStatLabel}>ownership</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{form.isPrimary ? "Yes" : "No"}</Text>
+              <Text style={styles.heroStatLabel}>primary</Text>
+            </View>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
-        <View style={styles.chipRow}>
-          {OWNERSHIP_TYPES.map((ownership) => (
-            <TouchableOpacity
-              key={ownership}
-              style={[styles.chip, form.ownership === ownership && styles.chipActive]}
-              onPress={() => update("ownership", ownership)}
-            >
-              <Text style={[styles.chipText, form.ownership === ownership && styles.chipTextActive]}>
-                {t(OWNERSHIP_LABEL_KEYS[ownership])}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
+          <View style={styles.chipRow}>
+            {ADDRESS_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[styles.chip, form.type === type && styles.chipActive]}
+                onPress={() => update("type", type)}
+              >
+                <Text style={[styles.chipText, form.type === type && styles.chipTextActive]}>
+                  {t(ADDRESS_TYPE_LABEL_KEYS[type])}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
-          <Switch
-            value={form.isPrimary}
-            onValueChange={(v) => update("isPrimary", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="#fff"
+          <Text style={styles.label}>{t("addresses.nickname")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("addresses.nicknameHint")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.nickname}
+            onChangeText={(v) => update("nickname", v)}
           />
+        </View>
+
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>Location</Text>
+          <AddressAutocompleteField
+            label={t("addresses.street") + " *"}
+            value={form.street}
+            placeholder="123 Main Street"
+            onValueChange={(value) => update("street", value)}
+            onSelect={handleAutocompleteSelect}
+          />
+
+          <Text style={styles.label}>{t("addresses.street2")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Apt 4B"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.street2}
+            onChangeText={(v) => update("street2", v)}
+          />
+
+          <Text style={styles.label}>{t("addresses.city")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="New York"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.city}
+            onChangeText={(v) => update("city", v)}
+          />
+
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>{t("addresses.state")} *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="NY"
+                placeholderTextColor={theme.colors.textMuted}
+                value={form.state}
+                onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
+                maxLength={2}
+                autoCapitalize="characters"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>{t("addresses.zip")} *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="10001"
+                placeholderTextColor={theme.colors.textMuted}
+                value={form.zip}
+                onChangeText={(v) => update("zip", v)}
+                keyboardType="number-pad"
+                maxLength={10}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
+          <View style={styles.chipRow}>
+            {OWNERSHIP_TYPES.map((ownership) => (
+              <TouchableOpacity
+                key={ownership}
+                style={[styles.chip, form.ownership === ownership && styles.chipActive]}
+                onPress={() => update("ownership", ownership)}
+              >
+                <Text style={[styles.chipText, form.ownership === ownership && styles.chipTextActive]}>
+                  {t(OWNERSHIP_LABEL_KEYS[ownership])}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
+            <Switch
+              value={form.isPrimary}
+              onValueChange={(v) => update("isPrimary", v)}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
         <TouchableOpacity
@@ -287,9 +327,90 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 18,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+  },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.9,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  formSection: {
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   sectionLabel: {
     fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 10,
+    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
   },
   label: {
     fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,

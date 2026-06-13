@@ -239,45 +239,6 @@
 }
 
 /* =========================================================================
-   Sidebar logo animation — pin float + ring ripple + sweep draw.
-   Driven by admin sidebar SVG group classes; respects reduced motion.
-   ========================================================================= */
-.sb-pin-float {
-  animation: sb-pin-float 3.8s ease-in-out infinite;
-  transform-origin: center;
-}
-@keyframes sb-pin-float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-1.5px); }
-}
-
-.sb-ripple {
-  transform-origin: center;
-  animation: sb-ripple 2.4s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
-}
-@keyframes sb-ripple {
-  0%   { transform: scale(1);   opacity: 0.6; }
-  100% { transform: scale(2.4); opacity: 0;   }
-}
-
-.sb-sweep {
-  stroke-dasharray: 90;
-  stroke-dashoffset: 0;
-  animation: sb-sweep 3.2s ease-in-out infinite;
-}
-@keyframes sb-sweep {
-  0%   { stroke-dashoffset: 90;  opacity: 0.4; }
-  50%  { stroke-dashoffset: 0;   opacity: 1;   }
-  100% { stroke-dashoffset: -90; opacity: 0.4; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sb-pin-float, .sb-ripple, .sb-sweep { animation: none; }
-  .sb-sweep   { stroke-dashoffset: 0; }
-  .sb-ripple  { opacity: 0; }
-}
-
-/* =========================================================================
    Health pill — sage / honey / rose. The rose tone pulses to draw the
    support team's eye to at-risk users.
    ========================================================================= */

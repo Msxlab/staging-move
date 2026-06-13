@@ -293,6 +293,8 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
               kind: "weather",
               summary: weather.summary,
               precipChancePct: weather.precipChancePct,
+              tempHighF: weather.tempHighF,
+              tempLowF: weather.tempLowF,
             })}
           />
           <View style={styles.rowIcon}>
@@ -371,6 +373,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {rows.water && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({ kind: "water", violations5y: rows.water.violations5y })}
+          />
           <View style={styles.rowIcon}>
             <Droplets size={14} color={theme.colors.cyan.text} />
           </View>
@@ -391,11 +396,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {air && (
         <View style={styles.row}>
-          {/* AQI bands drive the scene; a category-only row stays scene-free
-              rather than inventing an intensity AirNow never published. */}
-          {air.aqi !== null && (
-            <DossierAmbient {...ambientForSection({ kind: "air", aqi: air.aqi })} />
-          )}
+          <DossierAmbient {...ambientForSection({ kind: "air", aqi: air.aqi, category: air.category })} />
           <View style={styles.rowIcon}>
             <Wind size={14} color={theme.colors.sky.text} />
           </View>
@@ -409,6 +410,14 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {housing && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({
+              kind: "housing",
+              twoBedroomFmr: housing.twoBedroomFmr,
+              medianIncome: housing.medianIncome,
+              lowIncome4Person: housing.lowIncome4Person,
+            })}
+          />
           <View style={styles.rowIcon}>
             <Building2 size={14} color={theme.colors.amber.text} />
           </View>
@@ -444,6 +453,14 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
       {evCharging && (
         <View style={styles.row}>
+          <DossierAmbient
+            {...ambientForSection({
+              kind: "evCharging",
+              stationCount: evCharging.stationCount,
+              dcFastPortCount: evCharging.dcFastPortCount,
+              level2PortCount: evCharging.level2PortCount,
+            })}
+          />
           <View style={styles.rowIcon}>
             <Zap size={14} color={theme.colors.emerald.text} />
           </View>
@@ -707,6 +724,6 @@ const makeStyles = (theme: Theme) =>
       fontSize: 14,
       fontWeight: "800",
       color: "#fff",
-      letterSpacing: -0.2,
+      letterSpacing: 0,
     },
   });

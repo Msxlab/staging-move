@@ -132,6 +132,7 @@ export default function ConnectionsScreen() {
   if (pageLoading) return <LoadingScreen />;
 
   const connectable = catalog.filter((c) => !grantedByKey.has(c.connectorKey));
+  const connectedCount = consents.filter((consent) => consent.status === "GRANTED").length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -144,12 +145,37 @@ export default function ConnectionsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.intro}>
-          {t(
-            "connections.intro",
-            "Connect a partner once and LocateFlow can keep your address up to date there when you move.",
-          )}
-        </Text>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <Link2 size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>PARTNER SYNC</Text>
+              <Text style={styles.heroTitle}>{t("connections.title", "Connections")}</Text>
+              <Text style={styles.heroSub}>
+                {t(
+                  "connections.intro",
+                  "Connect a partner once and LocateFlow can keep your address up to date there when you move.",
+                )}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{connectedCount}</Text>
+              <Text style={styles.heroStatLabel}>connected</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{connectable.length}</Text>
+              <Text style={styles.heroStatLabel}>available</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{apiSync ? "On" : "Plan"}</Text>
+              <Text style={styles.heroStatLabel}>auto sync</Text>
+            </View>
+          </View>
+        </View>
 
         {consents.length > 0 && (
           <View style={styles.section}>
@@ -198,14 +224,14 @@ export default function ConnectionsScreen() {
             <View style={styles.card}>
               {connectable.map((c, i) => {
                 // Only an API_SYNC partner the user is entitled to gets a live
-                // OAuth "Connect". API_SYNC without entitlement → upsell; a
-                // GUIDED_UPDATE partner → a how-to link; COMING_SOON → disabled.
+                // OAuth "Connect". API_SYNC without entitlement -> upsell; a
+                // GUIDED_UPDATE partner -> a how-to link; COMING_SOON -> disabled.
                 const canConnect = c.mode === "API_SYNC" && apiSync;
                 const modeLabel =
                   c.mode === "API_SYNC"
                     ? canConnect
                       ? t("connections.mode_apiSync", { defaultValue: "Automatic sync" })
-                      : t("connections.mode_proRequired", { defaultValue: "Automatic sync · Pro" })
+                      : t("connections.mode_proRequired", { defaultValue: "Automatic sync - Pro" })
                     : c.mode === "COMING_SOON"
                       ? t("connections.mode_comingSoon", { defaultValue: "Coming soon" })
                       : t("connections.mode_guided", { defaultValue: "Guided update" });
@@ -266,7 +292,7 @@ function statusLabel(status: string, t: (k: string, d: string) => string): strin
     case "GRANTED":
       return t("connections.status_connected", "Connected");
     case "EXPIRED":
-      return t("connections.status_expired", "Expired — reconnect");
+      return t("connections.status_expired", "Expired - reconnect");
     case "REVOKED":
       return t("connections.status_revoked", "Disconnected");
     default:
@@ -288,16 +314,60 @@ const makeStyles = (theme: Theme) =>
     },
     title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-    intro: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 19, marginTop: 8, marginBottom: 4 },
+    hero: {
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 2,
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.highlight,
+      ...theme.shadow.sm,
+    },
+    heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+    heroIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroCopy: { flex: 1, minWidth: 0 },
+    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+    heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+    heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+    heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+    heroStat: {
+      flex: 1,
+      minHeight: 58,
+      borderRadius: 16,
+      padding: 10,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: "center",
+    },
+    heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+    heroStatLabel: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      marginTop: 3,
+    },
     section: { marginTop: 20 },
     sectionTitle: {
       fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
-      textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
+      textTransform: "uppercase", letterSpacing: 0, marginBottom: 8, marginLeft: 4,
     },
     empty: { fontSize: 13, color: theme.colors.textMuted, marginLeft: 4 },
     card: {
-      backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
-      borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden",
+      backgroundColor: theme.colors.glass.bg, borderRadius: 22,
+      borderWidth: 1, borderColor: theme.colors.glass.highlight, overflow: "hidden",
+      ...theme.shadow.sm,
     },
     row: {
       flexDirection: "row", alignItems: "center", gap: 12,
@@ -306,15 +376,16 @@ const makeStyles = (theme: Theme) =>
     rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
     rowIcon: {
       width: 36, height: 36, borderRadius: 12,
-      backgroundColor: theme.colors.background, alignItems: "center", justifyContent: "center",
+      backgroundColor: theme.colors.surface, alignItems: "center", justifyContent: "center",
     },
     rowLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
     rowDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
     iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     connectBtn: {
       flexDirection: "row", alignItems: "center", gap: 6,
-      backgroundColor: theme.colors.primary, borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.primary, borderRadius: 14,
       paddingVertical: 8, paddingHorizontal: 14,
+      ...theme.shadow.sm,
     },
     connectBtnText: { fontSize: 13, fontWeight: "700", color: "#fff" },
   });

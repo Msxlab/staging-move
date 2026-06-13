@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Bell,
   CalendarClock,
+  ChevronRight,
   RefreshCw,
   Receipt,
   AlertTriangle,
@@ -222,6 +223,12 @@ export default function RemindersScreen() {
     }
   };
 
+  const overdueCount = rows.filter((row) => row.days < 0).length;
+  const soonCount = rows.filter((row) => row.days >= 0 && row.days <= 7).length;
+  const renewalCount = rows.filter((row) => row.kind === "renewal").length;
+  const reminderCount = rows.length - renewalCount;
+  const nextRow = rows[0] || null;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -246,6 +253,30 @@ export default function RemindersScreen() {
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
         >
+          {rows.length > 0 ? (
+            <View style={styles.hero}>
+              <View style={styles.heroIcon}>
+                <CalendarClock size={22} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.heroKicker}>{t("reminders.heroKicker", { defaultValue: "REMINDER COMMAND" })}</Text>
+                <Text style={styles.heroTitle}>
+                  {nextRow
+                    ? t("reminders.heroTitleNext", {
+                        defaultValue: "Next: {{title}}",
+                        title: nextRow.title,
+                      })
+                    : t("reminders.heroTitle", { defaultValue: "Your upcoming timeline" })}
+                </Text>
+                <Text style={styles.heroSub} numberOfLines={2}>
+                  {nextRow
+                    ? `${relativeLabel(nextRow.days, nextRow.date)} - ${nextRow.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}`
+                    : t("reminders.heroDescription", { defaultValue: "Renewals and reminders stay grouped by urgency." })}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {error && rows.length === 0 ? (
             <ErrorState message={error} onRetry={load} />
           ) : rows.length === 0 ? (
@@ -261,6 +292,20 @@ export default function RemindersScreen() {
             />
           ) : (
             <>
+              <View style={styles.statGrid}>
+                {[
+                  { label: t("reminders.overdue", { defaultValue: "Overdue" }), value: overdueCount, tone: theme.colors.error, Icon: AlertTriangle },
+                  { label: t("reminders.soon", { defaultValue: "Soon" }), value: soonCount, tone: theme.colors.amber.text, Icon: Clock },
+                  { label: t("reminders.renewalLabel", { defaultValue: "Renewal" }), value: renewalCount, tone: theme.colors.primary, Icon: RefreshCw },
+                  { label: t("reminders.reminderLabel", { defaultValue: "Reminder" }), value: reminderCount, tone: theme.colors.emerald.text, Icon: Bell },
+                ].map(({ label, value, tone, Icon }) => (
+                  <View key={label} style={styles.statChip}>
+                    <Icon size={13} color={tone} />
+                    <Text style={styles.statValue}>{value}</Text>
+                    <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
+                  </View>
+                ))}
+              </View>
               <Text style={styles.intro}>
                 {t("reminders.intro", { count: rows.length, defaultValue: `${rows.length} coming up` })}
               </Text>
@@ -278,7 +323,7 @@ export default function RemindersScreen() {
                       <View style={[styles.rowIcon, { backgroundColor: row.tint + "22" }]}>
                         <Icon size={18} color={row.tint} />
                       </View>
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
                         <View style={styles.rowTop}>
                           <Text style={styles.rowTitle} numberOfLines={1}>{row.title}</Text>
                           <Text style={[styles.rowWhen, { color: row.tint }]}>{relativeLabel(row.days, row.date)}</Text>
@@ -293,6 +338,7 @@ export default function RemindersScreen() {
                           {` · ${row.date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}`}
                         </Text>
                       </View>
+                      <ChevronRight size={16} color={theme.colors.textMuted} />
                     </TouchableOpacity>
                   );
                 })}
@@ -311,6 +357,46 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 4 },
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
+    borderRadius: theme.radius["2xl"],
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    marginBottom: 12,
+    ...theme.shadow.glow,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "30",
+  },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 1, color: theme.colors.textTertiary },
+  heroTitle: { marginTop: 3, fontSize: 18, fontWeight: "800", color: theme.colors.text },
+  heroSub: { marginTop: 4, fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
+  statGrid: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  statChip: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: 2,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  statValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  statLabel: { maxWidth: "100%", fontSize: 9.5, color: theme.colors.textTertiary },
   intro: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 12, marginLeft: 4 },
   list: { gap: 8 },
   row: {

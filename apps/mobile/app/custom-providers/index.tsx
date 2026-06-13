@@ -95,6 +95,9 @@ export default function CustomProvidersScreen() {
 
   if (loading) return <LoadingScreen />;
 
+  const localCount = providers.filter((provider) => provider.city || provider.state).length;
+  const manualCount = providers.filter((provider) => provider.manualTrackingOnly).length;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -125,6 +128,35 @@ export default function CustomProvidersScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <Building2 size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>LOCAL PROVIDERS</Text>
+              <Text style={styles.heroTitle}>{t("customProviders.title")}</Text>
+              <Text style={styles.heroSub} numberOfLines={2}>
+                {t("customProviders.noticeText")}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{providers.length}</Text>
+              <Text style={styles.heroStatLabel}>saved</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{localCount}</Text>
+              <Text style={styles.heroStatLabel}>local</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{manualCount}</Text>
+              <Text style={styles.heroStatLabel}>manual</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.notice}>
           <Badge label={t("customProviders.userAddedBadge")} variant="info" />
           <Text style={styles.noticeText}>
@@ -217,6 +249,79 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+  },
+  heroStat: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 15,
+    padding: 9,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  heroStatLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   notice: {
     borderRadius: theme.radius.xl,
     borderWidth: 1,
@@ -231,10 +336,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
+    borderColor: theme.colors.glass.highlight,
+    borderRadius: theme.radius.xl,
     paddingHorizontal: 14,
     marginBottom: 16,
   },

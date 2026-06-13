@@ -336,38 +336,36 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
 
   return (
     <>
-      <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/15">
+      <section className="relative rounded-2xl border border-border bg-foreground/[0.03] p-4">
+        <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-center sm:pr-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10">
             <Users className="h-4 w-4 text-primary" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               {td("household_eyebrow")}
             </p>
             <h2 className="mt-0.5 text-sm font-semibold text-foreground">
               {td("household_title")}
             </h2>
-            <p className="mt-1 text-[13.5px] leading-5 text-muted-foreground">
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
               {td("household_body", { count: maxInvites })}
             </p>
           </div>
           <button
             type="button"
-            onClick={handleDismiss}
-            aria-label={td("household_dismiss")}
-            className="shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="mt-4">
-          <button
-            type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
             {td("household_cta")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            aria-label={td("household_dismiss")}
+            className="absolute right-3 top-3 shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground sm:static"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
       </section>

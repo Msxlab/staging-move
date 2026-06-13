@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Users, Trash2, ExternalLink, Ticket } from "lucide-react-native";
+import { ArrowLeft, Users, Trash2, ExternalLink, Ticket, Pencil } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
@@ -437,7 +437,10 @@ export default function WorkspaceScreen() {
                         disabled={selected.role !== "OWNER"}
                         activeOpacity={selected.role === "OWNER" ? 0.6 : 1}
                       >
-                        <Text style={styles.wsName}>{selected.name}{selected.role === "OWNER" ? "  ✎" : ""}</Text>
+                        <View style={styles.wsNameRow}>
+                          <Text style={styles.wsName}>{selected.name}</Text>
+                          {selected.role === "OWNER" && <Pencil size={14} color={theme.colors.textTertiary} />}
+                        </View>
                       </TouchableOpacity>
                       {selected.isPersonalSolo && (
                         <View style={styles.personalBadge}>
@@ -649,6 +652,7 @@ const makeStyles = (theme: Theme) =>
     },
     rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     wsName: { fontSize: 17, fontWeight: "700", color: theme.colors.text },
+    wsNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
     wsMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 4 },
     personalBadge: {
       borderRadius: 999,

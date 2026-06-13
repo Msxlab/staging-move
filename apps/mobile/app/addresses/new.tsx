@@ -183,6 +183,11 @@ export default function NewAddressScreen() {
     }
   };
 
+  const selectedTypeLabel =
+    ADDRESS_TYPES.find((type) => type.value === form.type)?.label || t("addresses.type_primary");
+  const requiredComplete = [form.street, form.city, form.state, form.zip].filter(Boolean).length;
+  const placeLine = [form.city, form.state, form.zip].filter(Boolean).join(", ");
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -205,151 +210,187 @@ export default function NewAddressScreen() {
       >
         <EmailVerificationBanner context={t("addresses.title")} />
 
-        {/* Type Selector */}
-        <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
-        <View style={styles.chipRow}>
-          {ADDRESS_TYPES.map((t) => (
-            <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, form.type === t.value && styles.chipActive]}
-              onPress={() => update("type", t.value)}
-            >
-              <Text style={[styles.chipText, form.type === t.value && styles.chipTextActive]}>
-                {t.label}
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <MapPin size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>ADDRESS COMMAND</Text>
+              <Text style={styles.heroTitle}>{form.nickname || selectedTypeLabel}</Text>
+              <Text style={styles.heroSub} numberOfLines={2}>
+                {placeLine || t("addresses.emptyDescription")}
               </Text>
-            </TouchableOpacity>
-          ))}
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{requiredComplete}/4</Text>
+              <Text style={styles.heroStatLabel}>required</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{form.ownership}</Text>
+              <Text style={styles.heroStatLabel}>ownership</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{form.isPrimary ? "Yes" : "No"}</Text>
+              <Text style={styles.heroStatLabel}>primary</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Nickname */}
-        <Text style={styles.label}>{t("addresses.nickname")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t("addresses.nicknameHint")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.nickname}
-          onChangeText={(v) => update("nickname", v)}
-        />
+        {/* Type Selector */}
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
+          <View style={styles.chipRow}>
+            {ADDRESS_TYPES.map((t) => (
+              <TouchableOpacity
+                key={t.value}
+                style={[styles.chip, form.type === t.value && styles.chipActive]}
+                onPress={() => update("type", t.value)}
+              >
+                <Text style={[styles.chipText, form.type === t.value && styles.chipTextActive]}>
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Nickname */}
+          <Text style={styles.label}>{t("addresses.nickname")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("addresses.nicknameHint")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.nickname}
+            onChangeText={(v) => update("nickname", v)}
+          />
+        </View>
 
         {/* Street */}
-        <AddressAutocompleteField
-          label={t("addresses.street") + " *"}
-          value={form.street}
-          placeholder="123 Main Street"
-          onValueChange={(value) => update("street", value)}
-          onSelect={handleAutocompleteSelect}
-        />
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>Location</Text>
+          <AddressAutocompleteField
+            label={t("addresses.street") + " *"}
+            value={form.street}
+            placeholder="123 Main Street"
+            onValueChange={(value) => update("street", value)}
+            onSelect={handleAutocompleteSelect}
+          />
 
-        {/* Street 2 */}
-        <Text style={styles.label}>{t("addresses.street2")}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={t("addresses.street2")}
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.street2}
-          onChangeText={(v) => update("street2", v)}
-        />
+          {/* Street 2 */}
+          <Text style={styles.label}>{t("addresses.street2")}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={t("addresses.street2")}
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.street2}
+            onChangeText={(v) => update("street2", v)}
+          />
 
-        {/* City */}
-        <Text style={styles.label}>{t("addresses.city")} *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="New York"
-          placeholderTextColor={theme.colors.textMuted}
-          value={form.city}
-          onChangeText={(v) => update("city", v)}
-        />
+          {/* City */}
+          <Text style={styles.label}>{t("addresses.city")} *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="New York"
+            placeholderTextColor={theme.colors.textMuted}
+            value={form.city}
+            onChangeText={(v) => update("city", v)}
+          />
 
-        {/* State + ZIP row */}
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>{t("addresses.state")} *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="NY"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.state}
-              onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
-              maxLength={2}
-              autoCapitalize="characters"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>{t("addresses.zip")} *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="10001"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.zip}
-              onChangeText={(v) => update("zip", v)}
-              keyboardType="number-pad"
-              maxLength={10}
-            />
+          {/* State + ZIP row */}
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>{t("addresses.state")} *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="NY"
+                placeholderTextColor={theme.colors.textMuted}
+                value={form.state}
+                onChangeText={(v) => update("state", v.toUpperCase().slice(0, 2))}
+                maxLength={2}
+                autoCapitalize="characters"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>{t("addresses.zip")} *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="10001"
+                placeholderTextColor={theme.colors.textMuted}
+                value={form.zip}
+                onChangeText={(v) => update("zip", v)}
+                keyboardType="number-pad"
+                maxLength={10}
+              />
+            </View>
           </View>
         </View>
 
         {/* Ownership */}
-        <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
-        <View style={styles.chipRow}>
-          {OWNERSHIP_TYPES.map((o) => (
-            <TouchableOpacity
-              key={o.value}
-              style={[styles.chip, form.ownership === o.value && styles.chipActive]}
-              onPress={() => update("ownership", o.value)}
-            >
-              <Text style={[styles.chipText, form.ownership === o.value && styles.chipTextActive]}>
-                {o.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <View style={styles.formSection}>
+          <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
+          <View style={styles.chipRow}>
+            {OWNERSHIP_TYPES.map((o) => (
+              <TouchableOpacity
+                key={o.value}
+                style={[styles.chip, form.ownership === o.value && styles.chipActive]}
+                onPress={() => update("ownership", o.value)}
+              >
+                <Text style={[styles.chipText, form.ownership === o.value && styles.chipTextActive]}>
+                  {o.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {/* Move-in Date */}
-        <Text style={styles.label}>{t("addresses.startDate")}</Text>
-        <TouchableOpacity
-          style={styles.dateButton}
-          onPress={() => setShowDatePicker(true)}
-          activeOpacity={0.7}
-        >
-          <Calendar size={16} color={theme.colors.primary} />
-          <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
-            {selectedStartDate.toLocaleDateString(i18n.language || "en", { month: "long", day: "numeric", year: "numeric" })}
-          </Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={selectedStartDate}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(event: any, date?: Date) => {
-              setShowDatePicker(Platform.OS === "ios");
-              if (date) {
-                setSelectedStartDate(date);
-                update("startDate", date.toISOString().slice(0, 10));
-              }
-            }}
-            themeVariant={resolvedScheme}
-            textColor={theme.colors.text}
-          />
-        )}
-        {Platform.OS === "ios" && showDatePicker && (
+          {/* Move-in Date */}
+          <Text style={styles.label}>{t("addresses.startDate")}</Text>
           <TouchableOpacity
-            style={{ alignSelf: "flex-end", marginTop: 4 }}
-            onPress={() => setShowDatePicker(false)}
+            style={styles.dateButton}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
           >
-            <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
+            <Calendar size={16} color={theme.colors.primary} />
+            <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
+              {selectedStartDate.toLocaleDateString(i18n.language || "en", { month: "long", day: "numeric", year: "numeric" })}
+            </Text>
           </TouchableOpacity>
-        )}
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedStartDate}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event: any, date?: Date) => {
+                setShowDatePicker(Platform.OS === "ios");
+                if (date) {
+                  setSelectedStartDate(date);
+                  update("startDate", date.toISOString().slice(0, 10));
+                }
+              }}
+              themeVariant={resolvedScheme}
+              textColor={theme.colors.text}
+            />
+          )}
+          {Platform.OS === "ios" && showDatePicker && (
+            <TouchableOpacity
+              style={{ alignSelf: "flex-end", marginTop: 4 }}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
+            </TouchableOpacity>
+          )}
 
-        {/* Primary Toggle */}
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
-          <Switch
-            value={form.isPrimary}
-            onValueChange={(v) => update("isPrimary", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="#fff"
-          />
+          {/* Primary Toggle */}
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
+            <Switch
+              value={form.isPrimary}
+              onValueChange={(v) => update("isPrimary", v)}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
         {/* Save Button */}
@@ -396,9 +437,90 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 160 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 18,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+  },
+  heroStat: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  heroStatLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.9,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
+  formSection: {
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   sectionLabel: {
     fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 10,
+    textTransform: "uppercase", letterSpacing: 0.8, marginTop: 0, marginBottom: 10,
   },
   label: {
     fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,

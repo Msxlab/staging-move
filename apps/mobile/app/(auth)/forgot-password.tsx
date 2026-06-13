@@ -50,24 +50,38 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <LogoBrand />
+        <View style={styles.authPanel}>
+          <LogoBrand />
+          <View style={styles.hero}>
+            <View style={styles.heroIcon}>
+              {sent ? (
+                <CheckCircle2 size={24} color={theme.colors.primary} />
+              ) : (
+                <Mail size={24} color={theme.colors.primary} />
+              )}
+            </View>
+            <Text style={styles.heroKicker}>ACCOUNT RECOVERY</Text>
+            <Text style={styles.title}>
+              {sent ? t("auth.checkEmail", "Check your email") : t("auth.forgotPassword")}
+            </Text>
+            <Text style={styles.subtitle}>
+              {sent
+                ? t("auth.forgotPassword_sentDescription", {
+                    defaultValue: "If an account exists, we sent password reset instructions.",
+                  })
+                : t("auth.forgotPassword_subtitle", "Enter your account email.")}
+            </Text>
+          </View>
 
         {sent ? (
           <View style={styles.sentBox}>
-            <CheckCircle2 size={48} color={theme.colors.primary} />
-            <Text style={styles.title}>{t("auth.checkEmail", "Check your email")}</Text>
-            <Text style={styles.subtitle}>
-              {t("auth.forgotPassword_sentDescription", {
-                defaultValue: "If an account exists, we sent password reset instructions.",
-              })}
-            </Text>
             <Button
               title={t("auth.signIn")}
               onPress={() => router.replace("/(auth)/sign-in")}
@@ -76,11 +90,6 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : (
           <>
-            <Text style={styles.title}>{t("auth.forgotPassword")}</Text>
-            <Text style={styles.subtitle}>
-              {t("auth.forgotPassword_subtitle", "Enter your account email.")}
-            </Text>
-
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Input
@@ -111,17 +120,40 @@ export default function ForgotPasswordScreen() {
             </TouchableOpacity>
           </>
         )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
-  subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
+  authPanel: {
+    borderRadius: 28,
+    padding: 18,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  hero: { alignItems: "center", marginTop: 18, marginBottom: 18 },
+  heroIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    marginBottom: 12,
+  },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, color: theme.colors.accent, textTransform: "uppercase" },
+  title: { fontSize: 24, fontWeight: "800", color: theme.colors.text, marginTop: 6, textAlign: "center" },
+  subtitle: { fontSize: 14, color: theme.colors.textMuted, marginTop: 8, marginBottom: 0, textAlign: "center", lineHeight: 20 },
   error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
-  sentBox: { alignItems: "center", paddingVertical: 32, gap: 8 },
+  sentBox: { alignItems: "center", paddingBottom: 4, gap: 8 },
   linkRow: { alignItems: "center", marginTop: 16 },
   linkText: { color: theme.colors.textMuted, fontSize: 13 },
   linkEmphasis: { color: theme.colors.primary, fontWeight: "600" },

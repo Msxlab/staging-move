@@ -555,6 +555,123 @@ function RadonScene({ intensity, width, height, palette, reduceMotion }: ScenePr
 
 // ── Air — long soft breeze streaks; mint / honey / coral by AQI band ─────────
 
+const WATER_RIPPLES = [
+  { left: 0.18, bottom: 12, w: 44, h: 10, durMs: 4800, offset: 0.1 },
+  { left: 0.48, bottom: 24, w: 58, h: 12, durMs: 6200, offset: 0.38 },
+  { left: 0.74, bottom: 9, w: 36, h: 8, durMs: 5400, offset: 0.66 },
+] as const;
+
+function WaterRipple({
+  width,
+  ripple,
+  color,
+  reduceMotion,
+}: {
+  width: number;
+  ripple: (typeof WATER_RIPPLES)[number];
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const phase = useLoopPhase(ripple.durMs, reduceMotion);
+  const pulse = useAnimatedStyle(() => {
+    const p = (phase.value + ripple.offset) % 1;
+    return {
+      opacity: interpolate(p, [0, 0.18, 0.74, 1], [0, 0.18, 0.1, 0]),
+      transform: [{ scaleX: interpolate(p, [0, 1], [0.68, 1.22]) }],
+    };
+  });
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          left: ripple.left * width,
+          bottom: ripple.bottom,
+          width: ripple.w,
+          height: ripple.h,
+        },
+        pulse,
+      ]}
+    >
+      <Svg width={ripple.w} height={ripple.h} viewBox={`0 0 ${ripple.w} ${ripple.h}`}>
+        <Ellipse
+          cx={ripple.w / 2}
+          cy={ripple.h / 2}
+          rx={ripple.w / 2 - 1}
+          ry={ripple.h / 2 - 1}
+          stroke={color}
+          strokeWidth={1.2}
+          fill="none"
+        />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+function WaterDrop({
+  width,
+  height,
+  left,
+  offset,
+  color,
+  reduceMotion,
+}: {
+  width: number;
+  height: number;
+  left: number;
+  offset: number;
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const phase = useLoopPhase(1800, reduceMotion);
+  const fall = useAnimatedStyle(() => {
+    const p = (phase.value + offset) % 1;
+    return {
+      opacity: interpolate(p, [0, 0.2, 0.84, 1], [0, 0.2, 0.18, 0]),
+      transform: [{ translateY: interpolate(p, [0, 1], [-8, height * 0.72]) }],
+    };
+  });
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          top: 0,
+          left: left * width,
+          width: 2,
+          height: 7,
+          borderRadius: 999,
+          backgroundColor: color,
+        },
+        fall,
+      ]}
+    />
+  );
+}
+
+function WaterScene({ intensity, width, height, palette, reduceMotion }: SceneProps) {
+  const color = intensity === 2 ? palette.coral : intensity === 1 ? palette.honey : palette.cool;
+  const drops = intensity === 2 ? [0.28, 0.62, 0.82] : intensity === 1 ? [0.52] : [];
+  return (
+    <>
+      {WATER_RIPPLES.map((ripple, i) => (
+        <WaterRipple key={i} width={width} ripple={ripple} color={color} reduceMotion={reduceMotion} />
+      ))}
+      {drops.map((left, i) => (
+        <WaterDrop
+          key={left}
+          width={width}
+          height={height}
+          left={left}
+          offset={i * 0.29}
+          color={color}
+          reduceMotion={reduceMotion}
+        />
+      ))}
+    </>
+  );
+}
+
 const AIR_STREAKS = [
   { top: "20%", w: 130, durMs: 13000, offset: 0.18 },
   { top: "44%", w: 96, durMs: 16000, offset: 0.5 },
@@ -649,6 +766,160 @@ function AirScene({ intensity, width, palette, reduceMotion }: SceneProps) {
 // ── Neighborhood — skyline, honey windows lighting up, footstep cadence ──────
 
 /** Skyline rects (x, y, w, h in a 220x36 box), same silhouette as the web. */
+const HOUSING_BARS = [
+  { x: 22, h: 15 },
+  { x: 44, h: 24 },
+  { x: 64, h: 18 },
+  { x: 82, h: 30 },
+] as const;
+
+function HousingBar({
+  index,
+  x,
+  h,
+  color,
+  intensity,
+  reduceMotion,
+}: {
+  index: number;
+  x: number;
+  h: number;
+  color: string;
+  intensity: AmbientIntensity;
+  reduceMotion: boolean;
+}) {
+  const phase = useBreathePhase(3200 + index * 420, reduceMotion, 0.45);
+  const lift = intensity * 2;
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(phase.value, [0, 1], [0, -lift]) }],
+  }));
+  return (
+    <Animated.View style={[{ position: "absolute", left: `${x}%`, bottom: 8 }, style]}>
+      <Svg width={14} height={h + intensity * 4} viewBox={`0 0 14 ${h + intensity * 4}`}>
+        <Rect
+          x={2}
+          y={0}
+          width={10}
+          height={h + intensity * 4}
+          rx={3}
+          fill={color}
+          opacity={0.12 + intensity * 0.035}
+        />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+function HousingScene({ intensity, palette, reduceMotion }: SceneProps) {
+  const color = intensity === 2 ? palette.coral : intensity === 1 ? palette.honey : palette.mint;
+  return (
+    <>
+      <Svg style={{ position: "absolute", left: "8%", right: "8%", bottom: 5 }} width="84%" height={30} viewBox="0 0 180 30">
+        <Path d="M10 22 L24 12 L38 22 V29 H10 Z" fill={palette.ink} opacity={0.055} />
+        <Rect x={18} y={22} width={6} height={7} rx={1.5} fill={color} opacity={0.18} />
+        <Path d="M126 22 L140 12 L154 22 V29 H126 Z" fill={palette.ink} opacity={0.055} />
+        <Rect x={134} y={22} width={6} height={7} rx={1.5} fill={color} opacity={0.18} />
+        <Line x1={0} y1={29} x2={180} y2={29} stroke={palette.ink} strokeWidth={1} opacity={0.08} />
+      </Svg>
+      {HOUSING_BARS.map((bar, i) => (
+        <HousingBar
+          key={i}
+          index={i}
+          x={bar.x}
+          h={bar.h}
+          color={color}
+          intensity={intensity}
+          reduceMotion={reduceMotion}
+        />
+      ))}
+    </>
+  );
+}
+
+const EV_NODES = [
+  { x: 0.24, y: 0.36, delay: 0.1 },
+  { x: 0.48, y: 0.62, delay: 0.34 },
+  { x: 0.72, y: 0.32, delay: 0.58 },
+] as const;
+
+function EvNode({
+  width,
+  height,
+  node,
+  color,
+  reduceMotion,
+}: {
+  width: number;
+  height: number;
+  node: (typeof EV_NODES)[number];
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const phase = useLoopPhase(2600, reduceMotion);
+  const pulse = useAnimatedStyle(() => {
+    const p = (phase.value + node.delay) % 1;
+    return {
+      opacity: interpolate(p, [0, 0.2, 0.62, 1], [0.18, 0.42, 0.18, 0.18]),
+      transform: [{ scale: interpolate(p, [0, 0.2, 1], [0.88, 1.18, 0.88]) }],
+    };
+  });
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          left: node.x * width,
+          top: node.y * height,
+          width: 7,
+          height: 7,
+          borderRadius: 999,
+          backgroundColor: color,
+        },
+        pulse,
+      ]}
+    />
+  );
+}
+
+function EvScene({ intensity, width, height, palette, reduceMotion }: SceneProps) {
+  const color = intensity === 0 ? palette.ink : intensity === 1 ? palette.mint : palette.honey;
+  const nodes = EV_NODES.slice(0, intensity === 0 ? 1 : intensity === 1 ? 2 : 3);
+  const charge = useBreathePhase(1100, reduceMotion, 0.5);
+  const boltStyle = useAnimatedStyle(() => ({
+    opacity: intensity === 0 ? 0.12 : interpolate(charge.value, [0, 1], [0.22, 0.52]),
+    transform: [{ scale: interpolate(charge.value, [0, 1], [0.96, 1.05]) }],
+  }));
+  return (
+    <>
+      <Svg style={{ position: "absolute", left: 0, top: 0 }} width="100%" height="100%" viewBox="0 0 180 72" preserveAspectRatio="none">
+        <Path
+          d="M28 36 C62 18 88 58 132 28"
+          stroke={color}
+          strokeWidth={1.2}
+          fill="none"
+          opacity={intensity === 0 ? 0.08 : 0.16}
+          strokeDasharray="3 5"
+        />
+      </Svg>
+      {nodes.map((node) => (
+        <EvNode key={`${node.x}-${node.y}`} width={width} height={height} node={node} color={color} reduceMotion={reduceMotion} />
+      ))}
+      <Animated.View style={[{ position: "absolute", right: "14%", top: "24%" }, boltStyle]}>
+        <Svg width={18} height={24} viewBox="0 0 18 24">
+          <Polyline
+            points="11,1 5,11 10,11 7,23"
+            stroke={color}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+      </Animated.View>
+    </>
+  );
+}
+
 const HOOD_BUILDINGS = [
   [0, 18, 28, 18],
   [32, 10, 22, 26],
@@ -976,6 +1247,94 @@ function RainScene({ intensity, width, height, palette, reduceMotion }: ScenePro
 
 // ── Scene switch + layer component ───────────────────────────────────────────
 
+function FogScene({ palette, reduceMotion }: SceneProps) {
+  return (
+    <>
+      <CloudPuff
+        top={12}
+        right="24%"
+        width={68}
+        height={20}
+        driftPx={-12}
+        halfMs={12000}
+        opacity={0.055}
+        color={palette.ink}
+        reduceMotion={reduceMotion}
+      />
+      <CloudPuff
+        top={32}
+        right="7%"
+        width={72}
+        height={18}
+        driftPx={10}
+        halfMs={16000}
+        opacity={0.045}
+        color={palette.ink}
+        reduceMotion={reduceMotion}
+      />
+      <View style={{ position: "absolute", left: "12%", right: "6%", bottom: 12, gap: 7 }}>
+        {[0, 1, 2].map((i) => (
+          <LinearGradient
+            key={i}
+            colors={[withAlpha(palette.ink, "00"), withAlpha(palette.ink, "26"), withAlpha(palette.ink, "00")]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={{ height: 1, borderRadius: 999, opacity: 0.7 - i * 0.12 }}
+          />
+        ))}
+      </View>
+    </>
+  );
+}
+
+function HeatLine({
+  left,
+  height,
+  color,
+  reduceMotion,
+}: {
+  left: `${number}%`;
+  height: number;
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const phase = useBreathePhase(1700, reduceMotion, 0.4);
+  const shimmer = useAnimatedStyle(() => ({
+    opacity: interpolate(phase.value, [0, 1], [0.08, 0.18]),
+    transform: [
+      { translateY: interpolate(phase.value, [0, 1], [2, -2]) },
+      { skewX: `${interpolate(phase.value, [0, 1], [-6, 6])}deg` },
+    ],
+  }));
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          left,
+          bottom: 9,
+          width: 2,
+          height,
+          borderRadius: 999,
+          backgroundColor: color,
+        },
+        shimmer,
+      ]}
+    />
+  );
+}
+
+function HeatScene({ palette, reduceMotion }: SceneProps) {
+  return (
+    <>
+      <SunScene intensity={2} width={0} height={0} palette={palette} reduceMotion={reduceMotion} />
+      {(["48%", "58%", "68%"] as const).map((left, i) => (
+        <HeatLine key={left} left={left} height={22 + i * 5} color={palette.honey} reduceMotion={reduceMotion} />
+      ))}
+    </>
+  );
+}
+
 function AmbientScene({
   kind,
   variant,
@@ -992,11 +1351,22 @@ function AmbientScene({
       return <WindScene {...scene} />;
     case "radon":
       return <RadonScene {...scene} />;
+    case "water":
+      return <WaterScene {...scene} />;
     case "air":
       return <AirScene {...scene} />;
+    case "housing":
+      return <HousingScene {...scene} />;
+    case "evCharging":
+      return <EvScene {...scene} />;
     case "neighborhood":
       return <NeighborhoodScene {...scene} />;
     case "weather":
+      if (variant === "storm") return <LightningScene {...scene} />;
+      if (variant === "snow" || variant === "cold") return <WinterScene {...scene} />;
+      if (variant === "fog") return <FogScene {...scene} />;
+      if (variant === "heat") return <HeatScene {...scene} />;
+      if (variant === "wind") return <WindScene {...scene} />;
       if (variant === "rain") return <RainScene {...scene} />;
       if (variant === "cloud") return <CloudScene {...scene} />;
       return <SunScene {...scene} />;

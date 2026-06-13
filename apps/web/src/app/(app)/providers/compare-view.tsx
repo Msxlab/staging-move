@@ -16,13 +16,13 @@ import {
   Trophy,
 } from "lucide-react";
 import {
-  getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
   getMergedDisplaySubcategoryLabel,
 } from "@/lib/recommendation-engine";
 import type { ProviderCoverageConfidence, ProviderTrustSummary } from "@locateflow/shared";
 import { resolveLogoUrl } from "@/lib/logo-url";
 import { trackEvent } from "@/lib/analytics";
+import { CategoryIcon } from "@/components/ui/category-icon";
 
 export interface CompareProvider {
   id: string;
@@ -225,7 +225,7 @@ export function CompareView({
                                     loading="lazy"
                                   />
                                 ) : (
-                                  <span className="text-xl">{getMergedDisplayCategoryIcon(p.category)}</span>
+                                  <CategoryIcon category={p.category} className="h-5 w-5 text-muted-foreground" />
                                 )}
                               </div>
                               <button

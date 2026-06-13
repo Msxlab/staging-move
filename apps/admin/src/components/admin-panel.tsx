@@ -41,7 +41,7 @@ export function AdminPanel({
         <header className="admin-panel-head">
           {title ? (
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">
+              <h3 className="text-sm font-semibold text-foreground">
                 {title}
               </h3>
               {caption ? (

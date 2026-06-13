@@ -94,7 +94,7 @@ export default function InvitationScreen() {
   const accept = async () => {
     setAccepting(true);
     // Route through the shared helper so this deep-link path ALSO refreshes the
-    // plan entitlement (planTier) on success — that's what makes the new
+    // plan entitlement (planTier) on success - that's what makes the new
     // Family/Pro theme + mascots apply immediately after joining.
     const res = await acceptInvite(tokenStr);
     setAccepting(false);
@@ -103,7 +103,7 @@ export default function InvitationScreen() {
       Alert.alert(t("invite.cantJoin", "Couldn't join"), errorCopy(res.code, res.message));
       return;
     }
-    // Joined here directly — clear the stashed token so it isn't re-consumed on a
+    // Joined here directly - clear the stashed token so it isn't re-consumed on a
     // later sign-in (the accept endpoint would just no-op with ALREADY_MEMBER,
     // but clearing keeps the handoff state tidy).
     void setPendingInviteToken(null).catch(() => {});
@@ -121,6 +121,7 @@ export default function InvitationScreen() {
             <View style={styles.iconWrap}>
               <Check size={28} color={theme.colors.success} />
             </View>
+            <Text style={styles.heroKicker}>WORKSPACE ACCESS</Text>
             <Text style={styles.title}>
               {t("invite.successTitle", "You're in!")}
             </Text>
@@ -139,12 +140,16 @@ export default function InvitationScreen() {
   }
 
   const roleLabel = invite ? ROLE_LABEL[invite.role] ?? invite.role : "";
+  const expiresLabel = invite
+    ? new Date(invite.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : "";
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.center}>
         {!invite ? (
           <View style={styles.card}>
+            <Text style={styles.heroKicker}>INVITE LINK</Text>
             <Text style={styles.title}>{t("invite.unavailableTitle", "Invitation unavailable")}</Text>
             <Text style={styles.body}>{errorMsg}</Text>
             <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace("/(tabs)")}>
@@ -156,6 +161,7 @@ export default function InvitationScreen() {
             <View style={styles.iconWrap}>
               <Users size={28} color={theme.colors.primary} />
             </View>
+            <Text style={styles.heroKicker}>WORKSPACE INVITE</Text>
             <Text style={styles.title}>
               {t("invite.joinTitle", "Join")} {invite.workspaceName ?? t("invite.aWorkspace", "a workspace")}
             </Text>
@@ -165,6 +171,20 @@ export default function InvitationScreen() {
             <Text style={styles.note}>
               {t("invite.invitedFor", "Invitation for")} {invite.invitedEmail}
             </Text>
+            <View style={styles.heroStats}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue} numberOfLines={1}>{roleLabel}</Text>
+                <Text style={styles.heroStatLabel}>role</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue} numberOfLines={1}>{invite.invitedEmail.split("@")[0]}</Text>
+                <Text style={styles.heroStatLabel}>account</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{expiresLabel}</Text>
+                <Text style={styles.heroStatLabel}>expires</Text>
+              </View>
+            </View>
             <View style={styles.consentBox}>
               <Text style={styles.consentText}>
                 {t(
@@ -200,28 +220,60 @@ const makeStyles = (theme: Theme) =>
     container: { flex: 1, backgroundColor: theme.colors.background },
     center: { flex: 1, justifyContent: "center", paddingHorizontal: 20 },
     card: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.radius.xl,
+      backgroundColor: theme.colors.glass.bg,
+      borderRadius: 28,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.glass.highlight,
       padding: 24,
       gap: 12,
       alignItems: "center",
+      ...theme.shadow.sm,
     },
     iconWrap: {
       width: 56,
       height: 56,
       borderRadius: 18,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, textAlign: "center" },
+    heroKicker: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.accent,
+      textTransform: "uppercase",
+      textAlign: "center",
+    },
+    title: { fontSize: 22, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: 0 },
     body: { fontSize: 14, color: theme.colors.textSecondary, textAlign: "center", lineHeight: 20 },
     note: { fontSize: 12, color: theme.colors.textTertiary, textAlign: "center" },
+    heroStats: { flexDirection: "row", gap: 8, width: "100%" },
+    heroStat: {
+      flex: 1,
+      minHeight: 58,
+      borderRadius: 16,
+      padding: 10,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: "center",
+    },
+    heroStatValue: { fontSize: 12, fontWeight: "800", color: theme.colors.text, textAlign: "center" },
+    heroStatLabel: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      marginTop: 3,
+      textAlign: "center",
+    },
     consentBox: {
-      backgroundColor: theme.colors.background,
-      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.border,
       padding: 12,
@@ -234,10 +286,11 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       gap: 8,
       backgroundColor: theme.colors.primary,
-      borderRadius: theme.radius.md,
+      borderRadius: 16,
       paddingVertical: 13,
       width: "100%",
       marginTop: 4,
+      ...theme.shadow.glow,
     },
     primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
     secondaryBtn: { paddingVertical: 10, alignItems: "center", width: "100%" },

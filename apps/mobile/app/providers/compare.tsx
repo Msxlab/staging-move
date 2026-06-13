@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   X,
+  Scale,
   AlertTriangle,
   Check,
   Minus,
@@ -215,18 +216,41 @@ export default function ProviderCompareScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {header}
 
-      {addressLabel ? (
-        <Text style={styles.addressNote}>
-          {t("providers.compareAtAddress", {
-            address: addressLabel,
-            defaultValue: "Coverage shown for {{address}}",
-          })}
-        </Text>
-      ) : (
-        <Text style={styles.addressNote}>
-          {t("providers.compareNoAddress", { defaultValue: "Add a primary address for coverage at your address." })}
-        </Text>
-      )}
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <View style={styles.heroIcon}>
+            <Scale size={20} color={theme.colors.primary} />
+          </View>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroKicker}>COMPARE COMMAND</Text>
+            <Text style={styles.heroTitle}>
+              {visibleProviders.length} {t("providers.title").toLowerCase()}
+            </Text>
+            <Text style={styles.heroSub} numberOfLines={1}>
+              {addressLabel
+                ? t("providers.compareAtAddress", {
+                    address: addressLabel,
+                    defaultValue: "Coverage shown for {{address}}",
+                  })
+                : t("providers.compareNoAddress", { defaultValue: "Add a primary address for coverage at your address." })}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.heroStats}>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>{data?.sameCategory ? "Same" : "Mixed"}</Text>
+            <Text style={styles.heroStatLabel}>category</Text>
+          </View>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>{formatCount(bestUserCount)}</Text>
+            <Text style={styles.heroStatLabel}>top users</Text>
+          </View>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>{visibleProviders.length}</Text>
+            <Text style={styles.heroStatLabel}>columns</Text>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.truthBanner}>
         <AlertTriangle size={15} color={theme.colors.warning} />
@@ -452,6 +476,79 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    hero: {
+      marginHorizontal: 20,
+      marginBottom: 12,
+      borderRadius: 24,
+      padding: 16,
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.highlight,
+      ...theme.shadow.sm,
+    },
+    heroTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    heroIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroCopy: { flex: 1, minWidth: 0 },
+    heroKicker: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 1.3,
+      textTransform: "uppercase",
+      color: theme.colors.accent,
+    },
+    heroTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: theme.colors.text,
+      marginTop: 3,
+      letterSpacing: 0,
+    },
+    heroSub: {
+      fontSize: 12,
+      color: theme.colors.textTertiary,
+      marginTop: 3,
+    },
+    heroStats: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 14,
+    },
+    heroStat: {
+      flex: 1,
+      minHeight: 56,
+      borderRadius: 15,
+      padding: 9,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: "center",
+    },
+    heroStatValue: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: theme.colors.text,
+    },
+    heroStatLabel: {
+      fontSize: 8,
+      fontWeight: "800",
+      letterSpacing: 0.8,
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      marginTop: 3,
+    },
     addressNote: { fontSize: 12, color: theme.colors.textTertiary, paddingHorizontal: 20, marginBottom: 8 },
     truthBanner: {
       flexDirection: "row",

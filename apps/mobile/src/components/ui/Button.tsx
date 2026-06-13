@@ -343,7 +343,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   textSize_cta: {
     fontSize: 16,
     fontWeight: "700",
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   textDisabled: {
     opacity: 0.7,

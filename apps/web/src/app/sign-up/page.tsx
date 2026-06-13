@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle, CheckCircle2, Users } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Users, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -128,7 +128,7 @@ function SignUpForm() {
   if (done) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 shadow-lg backdrop-blur-xl space-y-4 text-center">
+        <div className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-border/70 bg-card/75 p-8 text-center shadow-lg backdrop-blur-xl">
           <div className="flex justify-center">
             <Wordmark href="/" animated={false} />
           </div>
@@ -155,12 +155,18 @@ function SignUpForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 shadow-lg backdrop-blur-xl space-y-6">
+      <div className="w-full max-w-md space-y-6 rounded-[1.75rem] border border-border/70 bg-card/75 p-8 shadow-lg backdrop-blur-xl">
         <div className="space-y-3 text-center">
           <div className="flex justify-center">
             <Wordmark href="/" animated={false} />
           </div>
+          <div className="flex justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+              <ShieldCheck className="h-6 w-6" />
+            </span>
+          </div>
           <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase text-primary">Start LocateFlow</p>
             <h1 className="text-2xl font-bold text-foreground">{tAuth("signUp_title")}</h1>
             <p className="text-sm text-muted-foreground">{tAuth("signUp_subtitle")} {tLanding("noCreditCard")}</p>
           </div>
@@ -217,7 +223,7 @@ function SignUpForm() {
 
           <div className="flex items-center gap-3 py-1">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
+            <span className="text-[11px] uppercase text-muted-foreground">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
         </div>

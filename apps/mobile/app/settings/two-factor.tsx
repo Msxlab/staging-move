@@ -29,7 +29,7 @@ interface SetupData {
 }
 
 /**
- * Mobile two-factor (TOTP) management — parity with web. Enable: re-enter
+ * Mobile two-factor (TOTP) management - parity with web. Enable: re-enter
  * password -> /api/auth/mfa/setup returns a QR + secret + one-time backup codes
  * -> enter the 6-digit code -> /api/auth/mfa/confirm flips it on. Disable:
  * re-enter password -> /api/auth/mfa/disable. All endpoints are bearer-auth.
@@ -87,7 +87,7 @@ export default function TwoFactorScreen() {
     if (code.length < 6) return;
     setBusy(true);
     // skipUnauthorizedHandler: an older server returns 401 for a wrong code; that
-    // must NOT trip the global sign-out — the session is fine, the digits aren't.
+    // must NOT trip the global sign-out - the session is fine, the digits aren't.
     const res = await api.post<any>("/api/auth/mfa/confirm", { mfaCode: code }, { skipUnauthorizedHandler: true });
     setBusy(false);
     if (res.data?.success === true) {
@@ -147,10 +147,40 @@ export default function TwoFactorScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <ShieldCheck size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>SECURITY COMMAND</Text>
+              <Text style={styles.heroTitle}>{t("settings.twoFactor", { defaultValue: "Two-factor authentication" })}</Text>
+              <Text style={styles.heroSub}>
+                {mfaEnabled
+                  ? t("settings.twoFactor_onDescription", { defaultValue: "2FA is on. Manage or turn it off." })
+                  : t("settings.twoFactor_offDescription", { defaultValue: "Add a one-time code from an authenticator app for stronger account security." })}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{mfaEnabled ? "On" : "Off"}</Text>
+              <Text style={styles.heroStatLabel}>2FA</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{hasPassword ? "Yes" : "No"}</Text>
+              <Text style={styles.heroStatLabel}>password</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{setup ? "Setup" : done ? "Done" : "Ready"}</Text>
+              <Text style={styles.heroStatLabel}>state</Text>
+            </View>
+          </View>
+        </View>
         {loading ? (
           <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 40 }} />
         ) : done || (mfaEnabled && !setup) ? (
-          <Card variant="default" style={{ gap: 12 }}>
+          <Card variant="glass" style={{ gap: 12 }}>
             <View style={styles.statusRow}>
               <ShieldCheck size={20} color={theme.colors.emerald.text} />
               <Badge label={t("settings.mfaEnabled", { defaultValue: "2FA on" })} variant="success" />
@@ -190,10 +220,10 @@ export default function TwoFactorScreen() {
             />
           </Card>
         ) : setup ? (
-          <Card variant="default" style={{ gap: 12 }}>
+          <Card variant="glass" style={{ gap: 12 }}>
             <Text style={styles.subheading}>{t("settings.twoFactor_scan", { defaultValue: "Scan with an authenticator app" })}</Text>
             <Text style={styles.muted}>
-              {t("settings.twoFactor_scanHint", { defaultValue: "Scan the QR code in Google Authenticator, 1Password, or Authy — or enter the key manually." })}
+              {t("settings.twoFactor_scanHint", { defaultValue: "Scan the QR code in Google Authenticator, 1Password, or Authy - or enter the key manually." })}
             </Text>
             {setup.qrDataUrl ? (
               <View style={styles.qrWrap}>
@@ -236,7 +266,7 @@ export default function TwoFactorScreen() {
             />
           </Card>
         ) : (
-          <Card variant="default" style={{ gap: 12 }}>
+          <Card variant="glass" style={{ gap: 12 }}>
             <Text style={styles.body}>
               {t("settings.twoFactor_offDescription", { defaultValue: "Add a one-time code from an authenticator app for stronger account security." })}
             </Text>
@@ -279,6 +309,49 @@ function makeStyles(theme: Theme) {
     backBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.card },
     title: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
     scroll: { padding: 16, gap: 12 },
+    hero: {
+      borderRadius: 24,
+      padding: 16,
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.highlight,
+      ...theme.shadow.sm,
+    },
+    heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+    heroIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "33",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroCopy: { flex: 1, minWidth: 0 },
+    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
+    heroTitle: { fontSize: 20, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+    heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+    heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+    heroStat: {
+      flex: 1,
+      minHeight: 58,
+      borderRadius: 16,
+      padding: 10,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: "center",
+    },
+    heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+    heroStatLabel: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0,
+      color: theme.colors.textTertiary,
+      textTransform: "uppercase",
+      marginTop: 3,
+    },
     statusRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     body: { fontSize: 14, color: theme.colors.textSecondary, lineHeight: 20 },
     subheading: { fontSize: 14, fontWeight: "700", color: theme.colors.text, marginTop: 4 },
@@ -295,7 +368,7 @@ function makeStyles(theme: Theme) {
     },
     qrWrap: { alignItems: "center", paddingVertical: 8 },
     qr: { width: 200, height: 200, borderRadius: 12, backgroundColor: "#fff" },
-    secret: { fontSize: 15, fontWeight: "700", letterSpacing: 1, color: theme.colors.text, textAlign: "center", fontFamily: "monospace" },
+    secret: { fontSize: 15, fontWeight: "700", letterSpacing: 0, color: theme.colors.text, textAlign: "center", fontFamily: "monospace" },
     backupBox: { borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 12, gap: 6 },
     codeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
     backupCode: { fontSize: 13, fontWeight: "600", color: theme.colors.text, fontFamily: "monospace", width: "30%" },

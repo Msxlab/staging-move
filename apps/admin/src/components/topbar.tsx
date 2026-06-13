@@ -8,16 +8,16 @@ import { meetsRole } from "@/lib/admin-nav";
 import { deriveBreadcrumb, initialsFromEmail } from "./topbar-breadcrumb";
 
 /**
- * Corporate admin topbar (F3-C) — sticky chrome strip above the content
+ * Corporate admin topbar (F3-C) - sticky chrome strip above the content
  * area on every admin page. Ported from the design system's `.adp-top`
- * (admin-pro.jsx): breadcrumb · global search trigger · bell / help /
+ * (admin-pro.jsx): breadcrumb, global search trigger, bell / help /
  * identity cluster. Styles live in aurora.css under `.adp-topbar` and are
  * driven entirely by the `--au-*` token system (slate light / aurora dark).
  */
 
 interface TopbarProps {
   /**
-   * Server-resolved permission context. Display-only — page-guard and API
+   * Server-resolved permission context. Display-only - page-guard and API
    * gates remain authoritative. Used to gate the notifications bell
    * (ADMIN+, mirroring the nav model) and to render the identity disc.
    */
@@ -27,7 +27,7 @@ interface TopbarProps {
 /**
  * Open the existing global CommandPalette by replaying its own keyboard
  * shortcut on `window`. The palette is the single search surface in the
- * admin — the topbar deliberately does NOT mount a second input or result
+ * admin - the topbar deliberately does NOT mount a second input or result
  * list, so search behavior/permissions stay defined in one place.
  */
 function openCommandPalette() {
@@ -38,7 +38,7 @@ export function Topbar({ ctx }: TopbarProps = {}) {
   const pathname = usePathname();
   const crumb = deriveBreadcrumb(pathname || "/");
 
-  // Platform-correct shortcut hint (⌘K on Apple, Ctrl K elsewhere). Same
+  // Platform-correct shortcut hint (Cmd K on Apple, Ctrl K elsewhere). Same
   // SSR-safe pattern as the sidebar: default to the non-Apple form, correct
   // on mount, and suppress the hydration warning on the <kbd>.
   const [isMac, setIsMac] = useState(false);
@@ -57,7 +57,7 @@ export function Topbar({ ctx }: TopbarProps = {}) {
 
   return (
     <header className="adp-topbar">
-      {/* Breadcrumb — Admin › {Section} › {Page}, labels from admin-nav. */}
+      {/* Breadcrumb - Admin > {Section} > {Page}, labels from admin-nav. */}
       <nav aria-label="Breadcrumb" className="adp-crumb">
         <span>Admin</span>
         {crumb.section && (
@@ -72,7 +72,7 @@ export function Topbar({ ctx }: TopbarProps = {}) {
 
       <span className="sp" aria-hidden="true" />
 
-      {/* Global search trigger — opens the ⌘K CommandPalette. Rendered as a
+      {/* Global search trigger - opens the CommandPalette. Rendered as a
           button (not an input) so the palette's close-time focus restore
           can't re-trigger an onFocus open loop. */}
       <button
@@ -83,13 +83,13 @@ export function Topbar({ ctx }: TopbarProps = {}) {
         aria-keyshortcuts="Control+K Meta+K"
       >
         <Search aria-hidden="true" />
-        <span className="ph">Search users, providers, moves…</span>
+        <span className="ph">Search users, providers, moves...</span>
         <kbd className="kbd" suppressHydrationWarning>
-          {isMac ? "⌘K" : "Ctrl K"}
+          {isMac ? "Cmd K" : "Ctrl K"}
         </kbd>
       </button>
 
-      {/* Right cluster: notifications, help, identity. No unread badge —
+      {/* Right cluster: notifications, help, identity. No unread badge -
           there is no count available at layout level without a new
           endpoint, and the bell must not invent one. */}
       {showBell && (

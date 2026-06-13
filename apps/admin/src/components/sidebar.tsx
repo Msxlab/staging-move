@@ -13,9 +13,9 @@ import { PulseDot } from "./aurora";
 import { filterNavGroups, type NavGroup, type NavItem } from "@/lib/admin-nav";
 
 /**
- * Role → display label + tone. Surfaced as a badge in the sidebar identity
+ * Role display label + tone. Surfaced as a badge in the sidebar identity
  * footer so an operator always sees their privilege level (an enterprise
- * console expectation). Display only — the server role gate is authoritative.
+ * console expectation). Display only - the server role gate is authoritative.
  */
 const ROLE_META: Record<AdminRoleString, { label: string; tone: string }> = {
   SUPER_ADMIN: { label: "Super Admin", tone: "bg-tone-orange-bg text-tone-orange-fg" },
@@ -38,7 +38,7 @@ function isItemActive(pathname: string, href: string): boolean {
 
 /**
  * Translate a nav key, falling back to the English `name` when the key is
- * missing from the message catalog (same contract as the ⌘K palette's safeT —
+ * missing from the message catalog (same contract as the command palette safeT -
  * next-intl either throws or returns the "nav.key" path depending on env).
  */
 function navLabel(t: ReturnType<typeof useTranslations>, key: string, fallback: string): string {
@@ -51,36 +51,10 @@ function navLabel(t: ReturnType<typeof useTranslations>, key: string, fallback: 
   return value === `nav.${key}` ? fallback : value;
 }
 
-/**
- * Compact LocateFlow pin mark for the 76px rail. Same geometry as the flat
- * sidebar's logo but with its own gradient ids — both sidebars are in the DOM
- * (CSS swaps them at the lg breakpoint), so ids must not collide.
- */
+/** Compact shared raccoon mark for the 76px rail. */
 function RailMark() {
   return (
-    <svg className="h-9 w-9 shrink-0" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="admin-rail-foil" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#5C9DDC" />
-          <stop offset="45%" stopColor="#7FB6E8" />
-          <stop offset="100%" stopColor="#DDE7F5" />
-        </linearGradient>
-        <linearGradient id="admin-rail-rose" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#A5C9F0" />
-          <stop offset="100%" stopColor="#5C9DDC" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M20 65 Q 30 32, 50 48 T 80 40"
-        stroke="url(#admin-rail-foil)"
-        strokeWidth="4"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <circle cx="20" cy="65" r="5" fill="url(#admin-rail-foil)" />
-      <circle cx="80" cy="40" r="8" fill="url(#admin-rail-rose)" />
-      <circle cx="80" cy="40" r="2.75" fill="#ECF1F8" />
-    </svg>
+    <img src="/logo-mark.svg" alt="" className="h-9 w-9 shrink-0" aria-hidden="true" />
   );
 }
 
@@ -88,13 +62,13 @@ interface SidebarProps {
   /**
    * Server-resolved permission context. When omitted (e.g. during the
    * brief client mount before context is wired) the sidebar shows all
-   * links, since this is purely a display affordance — page-guard and
+   * links, since this is purely a display affordance - page-guard and
    * API guards are authoritative.
    */
   ctx?: { role: AdminRoleString; permissions: AdminPermissionsMap; email?: string };
   /**
    * Optional cheap counts keyed by item href (e.g. { "/support": 12 }).
-   * Rendered as a badge next to the panel item when present. Display only —
+   * Rendered as a badge next to the panel item when present. Display only -
    * the sidebar never fetches; callers pass counts they already have.
    */
   counts?: Partial<Record<string, number | string>>;
@@ -107,7 +81,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   const allItems = filteredGroups.flatMap((g) => g.items);
   // Settings is pinned in the account footer (always reachable without
   // scrolling the nav), so drop it from the scrolling group list to avoid a
-  // duplicate. It stays in search + the ⌘K palette via allItems.
+  // duplicate. It stays in search + the command palette via allItems.
   const displayGroups = filteredGroups
     .map((g) => ({ ...g, items: g.items.filter((it) => it.href !== "/settings") }))
     .filter((g) => g.items.length > 0);
@@ -131,12 +105,12 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   );
   const panelGroup: NavGroup | undefined = displayGroups[activeGroupIdx];
 
-  // Build-time environment badge — corporate consoles surface which
+  // Build-time environment badge - corporate consoles surface which
   // environment an operator is touching. NODE_ENV is statically inlined.
   const isProd = process.env.NODE_ENV === "production";
 
-  // Platform-correct command-palette hint (⌘K on Apple, Ctrl K elsewhere).
-  // Defaults to the non-Apple form for SSR; corrected on mount — the <kbd>
+  // Platform-correct command-palette hint (Cmd K on Apple, Ctrl K elsewhere).
+  // Defaults to the non-Apple form for SSR; corrected on mount - the <kbd>
   // carries suppressHydrationWarning so the swap is silent.
   const [isMac, setIsMac] = useState(false);
   useEffect(() => {
@@ -213,7 +187,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
     );
   };
 
-  /** Search input — shared by the rail panel and the flat (mobile) sidebar. */
+  /** Search input shared by the rail panel and the flat sidebar. */
   const renderSearch = (idSuffix: string) => (
     <div className="relative">
       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -226,12 +200,12 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
         data-sidebar-search={idSuffix}
         className="w-full rounded-lg border border-border bg-background pl-8 pr-14 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
       />
-      {/* Discoverability cue for the global ⌘K command palette. */}
+      {/* Discoverability cue for the global command palette. */}
       <kbd
         suppressHydrationWarning
         className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
       >
-        {isMac ? "⌘K" : "Ctrl K"}
+        {isMac ? "Cmd K" : "Ctrl K"}
       </kbd>
     </div>
   );
@@ -239,7 +213,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   /** Identity + pinned Settings/theme/language/sign-out account footer. */
   const renderAccountFooter = (variant: "rail" | "flat") => (
     <div className={cn("adp-user border-t border-border bg-card/60 p-3", variant === "rail" && "px-2.5")}>
-      {/* Who is signed in + privilege level — display only; the server role
+      {/* Who is signed in + privilege level - display only; the server role
           gate remains authoritative. */}
       {ctx && (
         <div className="mb-2 flex items-center gap-2.5 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
@@ -258,7 +232,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
             {roleMeta && (
               <span
                 className={cn(
-                  "mt-0.5 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+                  "mt-0.5 inline-flex items-center rounded px-1.5 py-px text-[9px] font-semibold uppercase",
                   roleMeta.tone,
                 )}
               >
@@ -295,22 +269,22 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
     </div>
   );
 
-  /* ────────────────────────────────────────────────────────────────────
-     A·Rail — desktop (lg+): slim 76px icon rail (one icon per group) +
+  /* --------------------------------------------------------------------
+     Rail desktop (lg+): slim 76px icon rail (one icon per group) +
      180px contextual panel listing only the active group's items. The two
      columns total 256px (w-64) so the shell's pl-64 stays correct. Class
      hooks (.adp-rail / .adp-panel / .rail-btn / .panel-items) match the
      Slate enterprise sheet in aurora.css; Tailwind semantic tokens provide
      the baseline so the nav renders correctly standalone.
-     ──────────────────────────────────────────────────────────────────── */
+     -------------------------------------------------------------------- */
   const railSidebar = (
     <aside className="adp-side rail fixed inset-y-0 left-0 z-50 hidden w-64 grid-cols-[76px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] border-r border-border bg-card lg:grid">
-      {/* Icon rail — brand mark, one button per group, identity chip. */}
+      {/* Icon rail - brand mark, one button per group, identity chip. */}
       <div className="adp-rail flex min-h-0 flex-col items-center border-r border-border/60 px-2 py-4">
         <a
           href="/"
           title="LocateFlow Admin"
-          aria-label="LocateFlow Admin — Dashboard"
+          aria-label="LocateFlow Admin - Dashboard"
           className="mark mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-accent"
         >
           <RailMark />
@@ -335,17 +309,17 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
                 )}
               >
                 <GroupIcon className={cn("h-[18px] w-[18px]", isOn ? "text-primary" : "text-muted-foreground/70")} />
-                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.08em]">{group.railLabel}</span>
+                <span className="font-mono text-[9px] font-medium uppercase">{group.railLabel}</span>
               </a>
             );
           })}
         </nav>
         <span className="rail-grow min-h-4 flex-1" aria-hidden="true" />
-        {/* Identity chip — full identity card lives in the panel footer. */}
+        {/* Identity chip - full identity card lives in the panel footer. */}
         {ctx && (
           <span
             className="rail-av flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 font-mono text-xs font-semibold text-primary ring-1 ring-primary/20"
-            title={email ? `${email}${roleMeta ? ` — ${roleMeta.label}` : ""}` : roleMeta?.label}
+            title={email ? `${email}${roleMeta ? ` - ${roleMeta.label}` : ""}` : roleMeta?.label}
             aria-hidden="true"
           >
             {initial}
@@ -353,24 +327,24 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
         )}
       </div>
 
-      {/* Contextual panel — brand block, search, active group's items. */}
+      {/* Contextual panel - brand block, search, active group's items. */}
       <div className="adp-panel flex min-h-0 min-w-0 flex-col">
         <div className="panel-hd flex h-16 items-center gap-2 border-b border-border px-3">
           <div className="flex min-w-0 flex-col leading-none">
             <span
-              className="truncate text-[15px] tracking-[-0.025em] text-foreground"
+              className="truncate text-[15px] text-foreground"
               style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
             >
               Locate<span className="foil-text">flow</span>
             </span>
-            <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.22em] text-muted-foreground/70">
+            <span className="mt-1 font-mono text-[8px] uppercase text-muted-foreground/70">
               Admin
             </span>
           </div>
           <span className="flex-1" />
-          {/* Environment pill — pulsing-ok dot in production. */}
+          {/* Environment pill - pulsing-ok dot in production. */}
           <span
-            className="env inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            className="env inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[9px] font-semibold uppercase text-muted-foreground"
             title={isProd ? "Production environment" : "Development environment"}
           >
             <PulseDot tone={isProd ? "mint" : "amber"} />
@@ -382,7 +356,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
 
         <nav className="panel-items min-h-0 flex-1 overflow-y-auto px-2 py-2" aria-label="Section pages">
           {isSearching ? (
-            // Flat filtered list across ALL groups (mirrors the ⌘K palette).
+            // Flat filtered list across ALL groups, mirroring the command palette.
             <div className="space-y-0.5">
               {filteredItems && filteredItems.length > 0 ? (
                 filteredItems.map((item) => renderItem(item, { onNavigate: () => setSearch("") }))
@@ -393,7 +367,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
           ) : (
             panelGroup && (
               <>
-                <div className="adp-grp px-2.5 pb-1.5 pt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">
+                <div className="adp-grp px-2.5 pb-1.5 pt-1 font-mono text-[10px] font-semibold uppercase text-muted-foreground/60">
                   {navLabel(tNav, panelGroup.labelKey, panelGroup.label)}
                 </div>
                 <div className="space-y-0.5">{panelGroup.items.map((item) => renderItem(item))}</div>
@@ -407,63 +381,28 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
     </aside>
   );
 
-  /* ────────────────────────────────────────────────────────────────────
-     Flat sidebar — below lg. Unchanged from the pre-rail behavior so
+  /* --------------------------------------------------------------------
+     Flat sidebar below lg. Unchanged from the pre-rail behavior so
      small screens keep the grouped, collapsible list.
-     ──────────────────────────────────────────────────────────────────── */
+     -------------------------------------------------------------------- */
   const flatSidebar = (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card lg:hidden">
-      {/* Logo — mirrors public/logo-mark.svg from the design system.
-          Animations driven by .sb-sweep / .sb-ripple / .sb-pin-float in
-          globals.css. All respect prefers-reduced-motion. */}
+      {/* Logo shared by admin, web, and mobile launcher. */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <svg className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(127,182,232,0.22)]" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="admin-mk-foil" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" stopColor="#5C9DDC" />
-              <stop offset="45%" stopColor="#7FB6E8" />
-              <stop offset="100%" stopColor="#DDE7F5" />
-            </linearGradient>
-            <linearGradient id="admin-mk-rose" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#A5C9F0" />
-              <stop offset="100%" stopColor="#5C9DDC" />
-            </linearGradient>
-          </defs>
-          <path
-            className="sb-sweep"
-            d="M20 65 Q 30 32, 50 48 T 80 40"
-            stroke="url(#admin-mk-foil)"
-            strokeWidth="3.25"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <circle cx="20" cy="65" r="4.5" fill="url(#admin-mk-foil)" />
-          <circle cx="20" cy="65" r="1.5" fill="#0A0F18" />
-          {/* Ripple ring under the cool pin */}
-          <circle
-            className="sb-ripple"
-            cx="80"
-            cy="40"
-            r="7.25"
-            fill="none"
-            stroke="url(#admin-mk-rose)"
-            strokeWidth="1.25"
-            opacity="0.6"
-            style={{ transformOrigin: "80px 40px", transformBox: "fill-box" }}
-          />
-          <g className="sb-pin-float" style={{ transformOrigin: "80px 40px", transformBox: "fill-box" }}>
-            <circle cx="80" cy="40" r="7.25" fill="url(#admin-mk-rose)" />
-            <circle cx="80" cy="40" r="2.5" fill="#ECF1F8" />
-          </g>
-        </svg>
+        <img
+          src="/logo-mark.svg"
+          alt=""
+          className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(127,182,232,0.22)]"
+          aria-hidden="true"
+        />
         <div className="flex flex-col leading-none">
           <span
-            className="text-[1.1rem] tracking-[-0.025em] text-foreground"
+            className="text-[1.1rem] text-foreground"
             style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
           >
             Locate<span className="foil-text">flow</span>
           </span>
-          <span className="mt-1 text-[9px] font-mono uppercase tracking-[0.22em] text-muted-foreground/70">
+          <span className="mt-1 text-[9px] font-mono uppercase text-muted-foreground/70">
             Admin
           </span>
         </div>
@@ -495,7 +434,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
                     onClick={() => toggleGroup(group.label)}
                     aria-expanded={!isCollapsed}
                     className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                      "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase transition-colors",
                       hasActive
                         ? "text-primary/70"
                         : "text-muted-foreground/60 hover:text-muted-foreground"
@@ -521,7 +460,7 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
         )}
       </nav>
 
-      {/* Pinned account bar — identity, Settings and Sign out are always
+      {/* Pinned account bar - identity, Settings and Sign out are always
           reachable here without scrolling the nav; theme + language are
           compact icon buttons so the footer stays short. */}
       {renderAccountFooter("flat")}

@@ -68,37 +68,40 @@ export default function ResetPasswordScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.iconWrap}>
-            <Lock size={28} color={theme.colors.primary} />
-          </View>
-          <Text style={styles.heading}>{t("auth.resetPasswordHeading")}</Text>
-          <Text style={styles.copy}>{t("auth.resetPasswordCopy")}</Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.authPanel}>
+            <View style={styles.iconWrap}>
+              <Lock size={28} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.heroKicker}>SECURE RESET</Text>
+            <Text style={styles.heading}>{t("auth.resetPasswordHeading")}</Text>
+            <Text style={styles.copy}>{t("auth.resetPasswordCopy")}</Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Input
-            label={t("auth.newPassword")}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            isPassword
-            autoCapitalize="none"
-            placeholder={t("auth.newPasswordPlaceholder")}
-          />
-          <Input
-            label={t("auth.confirmPassword")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            isPassword
-            autoCapitalize="none"
-            placeholder={t("auth.confirmPasswordPlaceholder")}
-          />
-          <Button
-            title={saving ? t("auth.saving") : t("auth.resetPasswordTitle")}
-            onPress={submit}
-            loading={saving}
-            disabled={saving || !newPassword || !confirmPassword}
-            fullWidth
-            style={{ marginTop: 12 }}
-          />
+            <Input
+              label={t("auth.newPassword")}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              isPassword
+              autoCapitalize="none"
+              placeholder={t("auth.newPasswordPlaceholder")}
+            />
+            <Input
+              label={t("auth.confirmPassword")}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              isPassword
+              autoCapitalize="none"
+              placeholder={t("auth.confirmPasswordPlaceholder")}
+            />
+            <Button
+              title={saving ? t("auth.saving") : t("auth.resetPasswordTitle")}
+              onPress={submit}
+              loading={saving}
+              disabled={saving || !newPassword || !confirmPassword}
+              fullWidth
+              style={{ marginTop: 12 }}
+            />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -126,6 +129,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
+  authPanel: {
+    borderRadius: 28,
+    padding: 18,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
   iconWrap: {
     width: 64,
     height: 64,
@@ -135,9 +146,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: "rgba(127, 182, 232,0.22)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    alignSelf: "center",
+    marginBottom: 12,
   },
-  heading: { fontSize: 24, fontWeight: "800", color: theme.colors.text },
-  copy: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginBottom: 8 },
+  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, color: theme.colors.accent, textTransform: "uppercase", textAlign: "center" },
+  heading: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", marginTop: 6 },
+  copy: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginBottom: 8, marginTop: 8, textAlign: "center" },
   error: { color: theme.colors.error, fontSize: 13, marginBottom: 4 },
 });

@@ -135,6 +135,8 @@ export default function TicketsScreen() {
 
   if (loading) return <LoadingScreen />;
   const dateLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
+  const openCount = tickets.filter((ticket) => ticket.status !== "CLOSED").length;
+  const waitingCount = tickets.filter((ticket) => ticket.status === "WAITING_USER").length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -156,8 +158,39 @@ export default function TicketsScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <MessageCircle size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>SUPPORT DESK</Text>
+              <Text style={styles.heroTitle}>{t("tickets.title")}</Text>
+              <Text style={styles.heroSub} numberOfLines={1}>
+                {showCreate ? t("tickets.newTitle") : t("tickets.emptySubtitle")}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{tickets.length}</Text>
+              <Text style={styles.heroStatLabel}>total</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{openCount}</Text>
+              <Text style={styles.heroStatLabel}>open</Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, waitingCount > 0 && styles.heroStatWarn]}>
+                {waitingCount}
+              </Text>
+              <Text style={styles.heroStatLabel}>waiting</Text>
+            </View>
+          </View>
+        </View>
+
         {showCreate && (
-          <Card variant="default" style={{ marginBottom: 16 }}>
+          <Card variant="glass" style={{ marginBottom: 16 }}>
             <View style={styles.createHeader}>
               <Text style={styles.createTitle}>{t("tickets.newTitle")}</Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>
@@ -260,6 +293,63 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   addBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
+  hero: {
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 15,
+    padding: 9,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text },
+  heroStatWarn: { color: theme.colors.warning },
+  heroStatLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   createHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
   createTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   fieldLabel: { fontSize: 11, color: theme.colors.textTertiary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
@@ -271,7 +361,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   categoryChipText: { fontSize: 11, fontWeight: "600", color: theme.colors.textMuted },
   categoryChipTextActive: { color: theme.colors.primary },
   list: { gap: 10 },
-  ticketRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
+  ticketRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 14, ...theme.shadow.sm },
   ticketTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, borderWidth: 1 },
   statusText: { fontSize: 10, fontWeight: "700" },

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, ArrowLeft, X, AlertTriangle, Scale } from "lucide-react-native";
+import { Search, ArrowLeft, X, AlertTriangle, Scale, MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -289,6 +289,10 @@ export default function ProvidersScreen() {
   }, [router]);
 
   const selectedLabel = selectedCat ? t(`categories.${selectedCat}`, { defaultValue: getCategoryLabel(selectedCat) }) : null;
+  const commandAddressLabel =
+    primaryAddress?.nickname ||
+    [primaryAddress?.city, primaryAddress?.state].filter(Boolean).join(", ") ||
+    t("addresses.title");
 
   const renderHeader = useCallback(() => {
     return (
@@ -451,6 +455,44 @@ export default function ProvidersScreen() {
         <View style={{ width: 44 }} />
       </View>
 
+      <View style={styles.commandHero}>
+        <View style={styles.commandTop}>
+          <View style={styles.commandIcon}>
+            <Search size={20} color={theme.colors.primary} />
+          </View>
+          <View style={styles.commandCopy}>
+            <Text style={styles.commandKicker}>PROVIDER COMMAND</Text>
+            <Text style={styles.commandTitle}>{t("providers.title")}</Text>
+            <View style={styles.commandLocation}>
+              <MapPin size={12} color={theme.colors.textTertiary} />
+              <Text style={styles.commandSub} numberOfLines={1}>
+                {commandAddressLabel}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.commandStats}>
+          <View style={styles.commandStat}>
+            <Text style={styles.commandStatValue}>{providers.length}</Text>
+            <Text style={styles.commandStatLabel}>catalog</Text>
+          </View>
+          <View style={styles.commandStat}>
+            <Text style={styles.commandStatValue}>{recommended.length}</Text>
+            <Text style={styles.commandStatLabel}>matched</Text>
+          </View>
+          <View style={styles.commandStat}>
+            <Text style={[styles.commandStatValue, missingCritical.length > 0 && styles.commandStatWarn]}>
+              {missingCritical.length}
+            </Text>
+            <Text style={styles.commandStatLabel}>gaps</Text>
+          </View>
+          <View style={styles.commandStat}>
+            <Text style={styles.commandStatValue}>{compareEntries.length}/{MAX_COMPARE}</Text>
+            <Text style={styles.commandStatLabel}>compare</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
           <Search size={16} color={theme.colors.textMuted} />
@@ -605,6 +647,88 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  commandHero: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  commandTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  commandIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  commandCopy: { flex: 1, minWidth: 0 },
+  commandKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  commandTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  commandLocation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 3,
+  },
+  commandSub: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+  },
+  commandStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+  },
+  commandStat: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 15,
+    padding: 9,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  commandStatValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  commandStatWarn: {
+    color: theme.colors.warning,
+  },
+  commandStatLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   searchRow: { paddingHorizontal: 20, marginBottom: 8 },
   // Aurora glass chrome — matches the Edition VII hero panes.
   searchBox: {

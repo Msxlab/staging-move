@@ -277,6 +277,35 @@ export default function HelpScreen() {
         <View style={{ width: 44 }} />
       </View>
 
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <View style={styles.heroIcon}>
+            <HelpCircle size={20} color={theme.colors.primary} />
+          </View>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroKicker}>SUPPORT COMMAND</Text>
+            <Text style={styles.heroTitle}>{t("help.title")}</Text>
+            <Text style={styles.heroSub} numberOfLines={1}>
+              {t("help.searchPlaceholder")}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.heroStats}>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>{articles.length}</Text>
+            <Text style={styles.heroStatLabel}>articles</Text>
+          </View>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>{faqs.length}</Text>
+            <Text style={styles.heroStatLabel}>faq</Text>
+          </View>
+          <View style={styles.heroStat}>
+            <Text style={styles.heroStatValue}>2</Text>
+            <Text style={styles.heroStatLabel}>actions</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Search */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -376,12 +405,69 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  hero: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  heroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + "33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: { flex: 1, minWidth: 0 },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+    color: theme.colors.accent,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginTop: 3,
+    letterSpacing: 0,
+  },
+  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
+  heroStat: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 15,
+    padding: 9,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  heroStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text },
+  heroStatLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 3,
+  },
   searchRow: { paddingHorizontal: 20, marginBottom: 12 },
-  searchBox: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 14, paddingVertical: 10 },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: theme.colors.glass.bg, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.glass.highlight, paddingHorizontal: 14, paddingVertical: 10 },
   searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   quickRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
-  quickCard: { flex: 1, alignItems: "center", gap: 8, backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 20 },
+  quickCard: { flex: 1, alignItems: "center", gap: 8, backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 20, ...theme.shadow.sm },
   quickLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginBottom: 10 },
   list: { gap: 8, marginBottom: 24 },

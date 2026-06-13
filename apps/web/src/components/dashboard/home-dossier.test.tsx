@@ -377,9 +377,10 @@ describe("deriveDossierView — extended sections", () => {
     });
   });
 
-  it("air renders on AQI alone (category optional) and never on not_configured", () => {
+  it("air renders on AQI alone, category alone, and never on not_configured", () => {
     expect(deriveDossierView(dossier({ air: { category: null } })).air).toEqual({ aqi: 42, category: null });
-    expect(deriveDossierView(dossier({ air: { aqi: null } })).air).toBeNull();
+    expect(deriveDossierView(dossier({ air: { aqi: null } })).air).toEqual({ aqi: null, category: "Good" });
+    expect(deriveDossierView(dossier({ air: { aqi: null, category: null } })).air).toBeNull();
     expect(deriveDossierView(dossier({ air: { status: "not_configured", aqi: 42 } })).air).toBeNull();
   });
 
@@ -624,6 +625,11 @@ describe("HomeDossierCard — extended rows rendering", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: 55, category: null } })} />);
     expect(markup).toContain("Air quality now: AQI 55");
     expect(markup).not.toContain("(Good)");
+  });
+
+  it("renders current air quality when only the AirNow category is present", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={dossier({ air: { aqi: null, category: "Moderate" } })} />);
+    expect(markup).toContain("Air quality now: Moderate");
   });
 
   it("omits the air row entirely when the section is not_configured", () => {

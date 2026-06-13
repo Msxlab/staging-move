@@ -66,7 +66,7 @@ export function RevenueTrendCard({ points }: { points: TrendPoint[] }) {
     <section className="admin-panel">
       <header className="admin-panel-head">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">
+          <h3 className="text-sm font-semibold text-foreground">
             Revenue trend
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">

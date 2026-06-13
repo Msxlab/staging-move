@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Calendar, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, MapPin, Truck } from "lucide-react";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,18 +252,60 @@ export default function NewMovingPlanPage() {
       setLoading(false);
     }
   };
+  const originAddress = addresses.find((address) => address.id === form.fromAddressId);
+  const destinationAddress = addresses.find((address) => address.id === form.toAddressId);
+  const originPreview = originAddress ? `${originAddress.city}, ${originAddress.state}` : t("originRequired");
+  const destinationPreview =
+    form.destinationMode === "existing"
+      ? destinationAddress ? `${destinationAddress.city}, ${destinationAddress.state}` : t("destinationRequired")
+      : form.destinationCity || form.destinationState
+        ? `${form.destinationCity || t("destinationRequired")}${form.destinationState ? `, ${form.destinationState}` : ""}`
+        : t("enterNewDestination");
+  const routeReady =
+    Boolean(form.fromAddressId) &&
+    Boolean(form.moveDate) &&
+    (form.destinationMode === "existing" ? Boolean(form.toAddressId) : Boolean(form.destinationCity && form.destinationState && form.destinationZip));
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/moving">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {tCommon("back")}
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold">{t("newPlanTitle")}</h1>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
+        <div className="flex items-start gap-4">
+          <Link href="/moving">
+            <Button variant="ghost" size="icon" className="rounded-2xl">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+            <Truck className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase text-primary">Move command</p>
+            <h1 className="text-2xl font-bold text-foreground">{t("newPlanTitle")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{originPreview} to {destinationPreview}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-background/55 p-3">
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{originPreview}</p>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <ArrowRight className="h-4 w-4" />
+          </span>
+          <p className="min-w-0 flex-1 truncate text-right text-sm font-semibold text-foreground">{destinationPreview}</p>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{addresses.length}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">addresses</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{form.moveDate || "--"}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">date</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/55 p-3">
+            <p className="text-lg font-bold text-foreground">{routeReady ? "Ready" : "Draft"}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">status</p>
+          </div>
+        </div>
+      </section>
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -272,7 +314,7 @@ export default function NewMovingPlanPage() {
       )}
 
       {addresses.length === 0 ? (
-        <Card>
+        <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <MapPin className="h-5 w-5" /> {t("addCurrentAddressFirst")}
@@ -286,7 +328,7 @@ export default function NewMovingPlanPage() {
         </Card>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
+          <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Truck className="h-5 w-5" /> {t("addressesSection")}
@@ -381,7 +423,7 @@ export default function NewMovingPlanPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-[1.35rem] border-border/70 bg-card/70 shadow-sm backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Calendar className="h-5 w-5" /> {t("scheduleSection")}
@@ -405,7 +447,7 @@ export default function NewMovingPlanPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
+          <Card className="rounded-[1.35rem] border-primary/30 bg-primary/5 shadow-sm">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">{t("afterCreate")}</p>
             </CardContent>

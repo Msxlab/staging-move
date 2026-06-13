@@ -191,21 +191,25 @@ export default function SignInScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.keyboard}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <LogoBrand />
-        <Text style={styles.title}>{t("auth.signIn")}</Text>
-        <Text style={styles.subtitle}>{t("auth.signIn_title")}</Text>
+        <View style={styles.authPanel}>
+          <View style={styles.hero}>
+            <LogoBrand />
+            <Text style={styles.heroKicker}>SECURE ACCESS</Text>
+            <Text style={styles.title}>{t("auth.signIn")}</Text>
+            <Text style={styles.subtitle}>{t("auth.signIn_title")}</Text>
+          </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {!requiresMfa && (
-          <>
+          {!requiresMfa && (
+            <>
             <TouchableOpacity
               onPress={() => openOAuth("google")}
               disabled={!googleReady || Boolean(oauthLoading)}
@@ -262,36 +266,36 @@ export default function SignInScreen() {
               autoComplete="password"
               leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
             />
-          </>
-        )}
+            </>
+          )}
 
-        {requiresMfa && (
-          <Input
-            placeholder={t("auth.mfaCode")}
-            value={mfaCode}
-            onChangeText={(v) => setMfaCode(v.replace(/\s/g, "").slice(0, 12))}
-            autoCapitalize="characters"
-            maxLength={12}
-            autoFocus
+          {requiresMfa && (
+            <Input
+              placeholder={t("auth.mfaCode")}
+              value={mfaCode}
+              onChangeText={(v) => setMfaCode(v.replace(/\s/g, "").slice(0, 12))}
+              autoCapitalize="characters"
+              maxLength={12}
+              autoFocus
+            />
+          )}
+
+          <Button
+            title={
+              loading
+                ? t("common.loading")
+                : requiresMfa
+                ? t("common.submit")
+                : t("auth.signIn")
+            }
+            onPress={handleSubmit}
+            disabled={loading || !email || !password || (requiresMfa && mfaCode.length < 6)}
+            rightIcon={<ArrowRight size={16} color="#fff" />}
+            style={{ marginTop: 12 }}
           />
-        )}
 
-        <Button
-          title={
-            loading
-              ? t("common.loading")
-              : requiresMfa
-              ? t("common.submit")
-              : t("auth.signIn")
-          }
-          onPress={handleSubmit}
-          disabled={loading || !email || !password || (requiresMfa && mfaCode.length < 6)}
-          rightIcon={<ArrowRight size={16} color="#fff" />}
-          style={{ marginTop: 12 }}
-        />
-
-        {!requiresMfa && (
-          <>
+          {!requiresMfa && (
+            <>
             <TouchableOpacity
               onPress={() => router.push("/(auth)/forgot-password")}
               style={styles.linkRow}
@@ -307,16 +311,40 @@ export default function SignInScreen() {
                 <Text style={styles.linkEmphasis}>{t("auth.signUp")}</Text>
               </Text>
             </TouchableOpacity>
-          </>
-        )}
+            </>
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
-  scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
+  keyboard: { flex: 1, backgroundColor: theme.colors.background },
+  scroll: { padding: 20, flexGrow: 1, justifyContent: "center" },
+  authPanel: {
+    borderRadius: 28,
+    padding: 18,
+    gap: 10,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.highlight,
+    ...theme.shadow.sm,
+  },
+  hero: {
+    alignItems: "center",
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  heroKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    color: theme.colors.accent,
+    textTransform: "uppercase",
+    marginTop: 14,
+  },
+  title: { fontSize: 26, fontWeight: "800", color: theme.colors.text, marginTop: 8, letterSpacing: 0 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
   error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },

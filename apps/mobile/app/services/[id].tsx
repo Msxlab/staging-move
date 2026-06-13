@@ -63,7 +63,7 @@ function getServiceCategoryColor(category: string): string {
 }
 
 function getServiceFallbackIcon(category: string): string {
-  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "⚡";
+  return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "";
 }
 
 export default function ServiceDetailScreen() {
@@ -468,7 +468,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     ...theme.shadow.glow,
   },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.4 },
+  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
   heroCatRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
   heroCatDot: { width: 7, height: 7, borderRadius: 4 },
   heroCat: { flexShrink: 1, fontSize: 13, color: theme.colors.textTertiary },

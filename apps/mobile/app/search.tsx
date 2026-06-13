@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
+  ChevronRight,
   Search as SearchIcon,
   X,
   Zap,
@@ -253,6 +254,21 @@ export default function SearchScreen() {
         <View style={{ width: 44 }} />
       </View>
 
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <SearchIcon size={22} color={theme.colors.primary} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.heroKicker}>{t("search.heroKicker", { defaultValue: "SEARCH COMMAND" })}</Text>
+          <Text style={styles.heroTitle}>{t("search.heroTitle", { defaultValue: "Find anything in your move" })}</Text>
+          <Text style={styles.heroSub} numberOfLines={2}>
+            {t("search.heroDescription", {
+              defaultValue: "Search services, addresses, moving plans, and budget records from one focused surface.",
+            })}
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
           <SearchIcon size={16} color={theme.colors.textMuted} />
@@ -278,6 +294,20 @@ export default function SearchScreen() {
               <X size={16} color={theme.colors.textMuted} />
             </TouchableOpacity>
           ) : null}
+        </View>
+        <View style={styles.domainGrid}>
+          {[
+            { label: t("search.sectionServices"), value: services.length, Icon: Zap, tone: theme.colors.primary },
+            { label: t("search.sectionAddresses"), value: addresses.length, Icon: MapPin, tone: theme.colors.emerald.text },
+            { label: t("search.sectionPlans"), value: plans.length, Icon: Truck, tone: theme.colors.amber.text },
+            { label: t("search.sectionBudgets"), value: budgets.length, Icon: DollarSign, tone: theme.colors.sky.text },
+          ].map(({ label, value, Icon, tone }) => (
+            <View key={label} style={styles.domainChip}>
+              <Icon size={13} color={tone} />
+              <Text style={styles.domainValue}>{value}</Text>
+              <Text style={styles.domainLabel} numberOfLines={1}>{label}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -318,28 +348,35 @@ export default function SearchScreen() {
               </View>
             );
           }}
-          renderItem={({ item, index }) => (
-            <ListEntrance index={index}>
-              <TouchableOpacity
-                style={styles.resultRow}
-                activeOpacity={0.7}
-                onPress={() => onPressResult(item)}
-                accessibilityRole="button"
-                accessibilityLabel={item.title}
-              >
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.resultTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  {item.subtitle ? (
-                    <Text style={styles.resultSubtitle} numberOfLines={1}>
-                      {item.subtitle}
+          renderItem={({ item, index, section }) => {
+            const SectionIcon = (section as SearchSection).icon;
+            return (
+              <ListEntrance index={index}>
+                <TouchableOpacity
+                  style={styles.resultRow}
+                  activeOpacity={0.7}
+                  onPress={() => onPressResult(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
+                >
+                  <View style={styles.resultIcon}>
+                    <SectionIcon size={16} color={theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>
+                      {item.title}
                     </Text>
-                  ) : null}
-                </View>
-              </TouchableOpacity>
-            </ListEntrance>
-          )}
+                    {item.subtitle ? (
+                      <Text style={styles.resultSubtitle} numberOfLines={1}>
+                        {item.subtitle}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <ChevronRight size={16} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              </ListEntrance>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -367,7 +404,33 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-    searchRow: { paddingHorizontal: 20, paddingBottom: 12 },
+    hero: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginHorizontal: 20,
+      marginBottom: 12,
+      padding: 16,
+      borderRadius: theme.radius["2xl"],
+      backgroundColor: theme.colors.glass.bg,
+      borderWidth: 1,
+      borderColor: theme.colors.glass.border,
+      ...theme.shadow.glow,
+    },
+    heroIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "30",
+    },
+    heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 1, color: theme.colors.textTertiary },
+    heroTitle: { marginTop: 3, fontSize: 18, fontWeight: "800", color: theme.colors.text },
+    heroSub: { marginTop: 4, fontSize: 12, lineHeight: 17, color: theme.colors.textTertiary },
+    searchRow: { paddingHorizontal: 20, paddingBottom: 12, gap: 10 },
     searchBox: {
       flexDirection: "row",
       alignItems: "center",
@@ -380,6 +443,21 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 10,
     },
     searchInput: { flex: 1, fontSize: 15, color: theme.colors.text, padding: 0 },
+    domainGrid: { flexDirection: "row", gap: 8 },
+    domainChip: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: "center",
+      gap: 2,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+    },
+    domainValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
+    domainLabel: { maxWidth: "100%", fontSize: 9.5, color: theme.colors.textTertiary },
     listContent: { paddingHorizontal: 20, paddingBottom: 40 },
     resultCount: {
       fontSize: 12,
@@ -412,6 +490,16 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 16,
       paddingVertical: 14,
       marginBottom: 8,
+    },
+    resultIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + "28",
     },
     resultTitle: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
     resultSubtitle: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },

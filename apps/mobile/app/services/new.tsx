@@ -24,7 +24,7 @@ import {
   X,
   Plus,
   Home,
-  Briefcase,
+  MapPin,
   Globe,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -442,7 +442,7 @@ export default function NewServiceScreen() {
     // logo-resolution + fallback chain as the saved-services list and
     // ProviderCard: stored logo → website-derived favicon/Clearbit, with
     // renderable-URL filtering and onError advance across every candidate
-    // (not just the first). Falls back to the category emoji — never a blank
+    // (not just the first). Falls back to the category system icon — never a blank
     // or letter avatar — once all logo candidates are exhausted.
     return (
       <ServiceLogoMark
@@ -725,7 +725,9 @@ export default function NewServiceScreen() {
                         accessibilityHint={t("providers.providersInCategoryHint", { count: items.length })}
                         accessibilityState={{ expanded: isOpen }}
                       >
-                        <Text style={styles.catIcon}>{getMergedDisplayCategoryIcon(cat)}</Text>
+                        <View style={styles.catIcon}>
+                          <CategoryIcon emoji={getMergedDisplayCategoryIcon(cat)} size={16} color={theme.colors.primary} />
+                        </View>
                         <Text style={styles.catTitle} numberOfLines={1}>{categoryLabel(cat)}</Text>
                         <Text style={styles.catCount}>{items.length}</Text>
                         {selectedInCat > 0 && (
@@ -841,21 +843,22 @@ export default function NewServiceScreen() {
               {([
                 {
                   value: "LOCAL" as const,
-                  icon: "🏠",
+                  Icon: Home,
                   title: t("services.coverageLocal", { defaultValue: "Local" }),
                 },
                 {
                   value: "STATEWIDE" as const,
-                  icon: "🗺️",
+                  Icon: MapPin,
                   title: t("services.coverageStatewide", { defaultValue: "Statewide" }),
                 },
                 {
                   value: "NATIONWIDE" as const,
-                  icon: "🌐",
+                  Icon: Globe,
                   title: t("services.coverageNationwide", { defaultValue: "Nationwide" }),
                 },
               ]).map((option) => {
                 const selected = manualForm.coverage === option.value;
+                const CoverageIcon = option.Icon;
                 return (
                   <TouchableOpacity
                     key={option.value}
@@ -866,7 +869,7 @@ export default function NewServiceScreen() {
                     accessibilityState={{ selected }}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontSize: 13 }}>{option.icon}</Text>
+                      <CoverageIcon size={13} color={selected ? theme.colors.primary : theme.colors.textTertiary} />
                       <Text style={[styles.chipText, selected && styles.chipTextActive]}>{option.title}</Text>
                     </View>
                   </TouchableOpacity>
@@ -1120,7 +1123,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 8,
     paddingHorizontal: 14, paddingVertical: 12, backgroundColor: "rgba(255,255,255,0.02)",
   },
-  catIcon: { fontSize: 16 },
+  catIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
   catTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary },
   catCount: { fontSize: 11, color: theme.colors.textMuted },
   catBadge: {

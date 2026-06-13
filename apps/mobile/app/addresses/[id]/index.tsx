@@ -16,6 +16,7 @@ import { monthlyAmountForCycle } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ListEntrance } from "@/components/ui/ListEntrance";
@@ -264,7 +265,9 @@ export default function AddressDetailScreen() {
                 style={styles.cat}
                 onPress={() => router.push({ pathname: "/(tabs)/services", params: { addressId: String(id) } })}
               >
-                <Text style={styles.catEmoji}>{c.icon}</Text>
+                <View style={styles.catIconWrap}>
+                  <CategoryIcon emoji={c.icon} size={18} color={theme.colors.primary} />
+                </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.catT} numberOfLines={1}>{c.label}</Text>
                   <Text style={styles.catC}>{c.count} {c.count === 1 ? "account" : "accounts"}</Text>
@@ -339,7 +342,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   bannerFade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 36 },
   dhd: { paddingHorizontal: 2 },
   dhdRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  dhdTitle: { flexShrink: 1, fontSize: 22, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.4 },
+  dhdTitle: { flexShrink: 1, fontSize: 22, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
   chip: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
   chipText: { fontSize: 8, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "800" },
   dhdAddr: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 3 },
@@ -365,7 +368,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: "48%", flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 14,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  catEmoji: { fontSize: 20, width: 28, textAlign: "center" },
+  catIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
   catT: { fontSize: 12.5, fontWeight: "600", color: theme.colors.text },
   catC: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 1 },
   catBadge: {

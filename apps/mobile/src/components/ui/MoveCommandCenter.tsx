@@ -388,7 +388,7 @@ const makeStyles = (t: Theme) =>
     countdown: {
       fontSize: 28,
       fontWeight: "800",
-      letterSpacing: -0.5,
+      letterSpacing: 0,
       color: t.colors.text,
       marginTop: 6,
     },

@@ -171,6 +171,6 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     copy: { flex: 1, minWidth: 0 },
-    title: { fontSize: 16, fontWeight: "800", letterSpacing: -0.2 },
+    title: { fontSize: 16, fontWeight: "800", letterSpacing: 0 },
     subtitle: { fontSize: 12.5, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
   });

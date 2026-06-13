@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronUp,
   Filter,
+  Loader2,
   Search,
   X,
 } from "lucide-react";
@@ -295,6 +296,21 @@ export function DataTablePage<Row extends { id: string }>(
   const visibleColumns = cols.columns.filter((c) => c.visible);
   // +1 for the bulk-select checkbox column (outside the configurable set).
   const colSpan = visibleColumns.length + (selectable ? 1 : 0);
+  const activeFilters = useMemo(
+    () =>
+      filters
+        .map((filter) => {
+          const value = query.state.filters[filter.key];
+          if (!value) return null;
+          const displayValue =
+            filter.type === "select"
+              ? filter.options.find((option) => option.value === value)?.label || value
+              : value;
+          return { key: filter.key, label: filter.label, value: displayValue };
+        })
+        .filter((item): item is { key: string; label: string; value: string } => Boolean(item)),
+    [filters, query.state.filters],
+  );
 
   function alignClass(align?: "left" | "center" | "right") {
     return align === "center"
@@ -334,87 +350,115 @@ export function DataTablePage<Row extends { id: string }>(
       {beforeTable ? beforeTable(ctx) : null}
 
       {/* Search + Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={searchPlaceholder}
-            value={query.state.search}
-            onChange={(e) => query.setSearch(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-10 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-        {filters.length > 0 ? (
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
-              showFilters
-                ? "border-primary bg-primary/5 text-primary"
-                : "border-border text-muted-foreground hover:bg-accent",
-            )}
-          >
-            <Filter className="h-3.5 w-3.5" /> Filters
-            {query.activeFilterCount > 0 ? (
-              <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
-                {query.activeFilterCount}
-              </span>
-            ) : null}
-          </button>
-        ) : null}
-        {query.activeFilterCount > 0 ? (
-          <button
-            onClick={() => query.clearFilters()}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent"
-          >
-            <X className="h-3 w-3" /> Clear
-          </button>
-        ) : null}
-      </div>
-
-      {/* Filter Panel */}
-      {showFilters && filters.length > 0 ? (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {filters.map((f) => (
-              <div key={f.key}>
-                <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
-                  {f.label}
-                </label>
-                {f.type === "select" ? (
-                  <select
-                    value={query.state.filters[f.key] || ""}
-                    onChange={(e) => query.setFilter(f.key, e.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    {f.options.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : f.type === "date" ? (
-                  <input
-                    type="date"
-                    value={query.state.filters[f.key] || ""}
-                    onChange={(e) => query.setFilter(f.key, e.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value={query.state.filters[f.key] || ""}
-                    placeholder={f.placeholder}
-                    onChange={(e) => query.setFilter(f.key, e.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
+      <div className="admin-panel p-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={query.state.search}
+              onChange={(e) => query.setSearch(e.target.value)}
+              className="h-10 w-full rounded-xl border border-border bg-background/80 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-10 items-center rounded-xl border border-border bg-background/60 px-3 text-xs font-medium text-muted-foreground">
+              {loading ? (
+                <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Refreshing</>
+              ) : (
+                <>{total.toLocaleString()} rows</>
+              )}
+            </span>
+            {filters.length > 0 ? (
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={cn(
+                  "inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-colors",
+                  showFilters
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background/60 text-muted-foreground hover:bg-accent",
                 )}
-              </div>
-            ))}
+              >
+                <Filter className="h-3.5 w-3.5" /> Filters
+                {query.activeFilterCount > 0 ? (
+                  <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
+                    {query.activeFilterCount}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
+            {hasQuery ? (
+              <button
+                onClick={() => {
+                  query.setSearch("");
+                  query.clearFilters();
+                }}
+                className="inline-flex h-10 items-center gap-1 rounded-xl border border-border bg-background/60 px-3 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-3 w-3" /> Clear query
+              </button>
+            ) : null}
           </div>
         </div>
-      ) : null}
+
+        {hasQuery ? (
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+            {query.state.debouncedSearch ? (
+              <span className="rounded-full border border-border bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+                Search: <span className="font-medium text-foreground">{query.state.debouncedSearch}</span>
+              </span>
+            ) : null}
+            {activeFilters.map((filter) => (
+              <span key={filter.key} className="rounded-full border border-border bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+                {filter.label}: <span className="font-medium text-foreground">{filter.value}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {showFilters && filters.length > 0 ? (
+          <div className="mt-3 border-t border-border pt-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+              {filters.map((f) => (
+                <div key={f.key}>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {f.label}
+                  </label>
+                  {f.type === "select" ? (
+                    <select
+                      value={query.state.filters[f.key] || ""}
+                      onChange={(e) => query.setFilter(f.key, e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      {f.options.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : f.type === "date" ? (
+                    <input
+                      type="date"
+                      value={query.state.filters[f.key] || ""}
+                      onChange={(e) => query.setFilter(f.key, e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={query.state.filters[f.key] || ""}
+                      placeholder={f.placeholder}
+                      onChange={(e) => query.setFilter(f.key, e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {/* Bulk Actions */}
       {selectable && bulk.count > 0 && bulkActions ? (
@@ -506,7 +550,10 @@ export function DataTablePage<Row extends { id: string }>(
                   colSpan={colSpan + (rowActions ? 1 : 0)}
                   className="px-4 py-12 text-center text-muted-foreground"
                 >
-                  Loading...
+                  <span className="inline-flex items-center gap-2 text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading rows
+                  </span>
                 </td>
               </tr>
             ) : rows.length === 0 ? (

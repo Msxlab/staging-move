@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -529,7 +529,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     color: theme.colors.text,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: {

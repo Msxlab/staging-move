@@ -254,7 +254,7 @@ export default function ProviderDetailScreen() {
   }
 
   // Render via the shared ServiceLogoMark so the hero uses the SAME tested
-  // fallback chain (renderable-URL filter + onError advance + emoji fallback +
+  // fallback chain (renderable-URL filter + onError advance + system-icon fallback +
   // a11y) as the rest of the app instead of a single-URL Image that can blank out.
   const logoService = {
     provider: { name: provider.name, logoUrl: provider.logoUrl, website: provider.website },

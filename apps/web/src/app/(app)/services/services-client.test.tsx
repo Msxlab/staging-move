@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
+import { describe, expect, it, vi } from "vitest";
 import {
   ServiceLogoMark,
   resolveServiceLogoUrl,
@@ -10,6 +9,12 @@ import {
   shouldShowServiceLogo,
   type ServicesItem,
 } from "./services-client";
+
+vi.mock("@/components/ui/category-icon", () => ({
+  CategoryIcon: ({ category, className }: { category?: string | null; className?: string }) => (
+    <svg data-category-icon={category ?? ""} className={className} />
+  ),
+}));
 
 function service(overrides: Partial<ServicesItem> = {}): ServicesItem {
   return {
@@ -53,7 +58,7 @@ describe("ServiceLogoMark", () => {
     const markup = renderToStaticMarkup(<ServiceLogoMark service={service()} />);
 
     expect(markup).not.toContain("<img");
-    expect(markup).toContain(getMergedDisplayCategoryIcon("GOVERNMENT_POSTAL"));
+    expect(markup).toContain("data-category-icon=\"GOVERNMENT_POSTAL\"");
   });
 
   it("supports flattened logo fields and hides a logo after it fails", () => {

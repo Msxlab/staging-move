@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, Send, Loader2, MessageCircle, Lock } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, Lock, Settings } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -158,7 +158,7 @@ export default function SupportTicketPage() {
                     isSystem ? "bg-foreground/5 text-foreground/40" :
                     "bg-tone-cyan-bg text-tone-cyan-fg"
                   }`}>
-                    {isUser ? "U" : isSystem ? "⚙" : "S"}
+                    {isUser ? "U" : isSystem ? <Settings className="h-3 w-3" aria-hidden="true" /> : "S"}
                   </div>
                   <span className={`text-xs font-medium ${isUser ? "text-tone-orange-fg" : isSystem ? "text-foreground/40" : "text-tone-cyan-fg"}`}>
                     {isUser ? "You" : isSystem ? "System" : "Support"}

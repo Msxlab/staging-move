@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -1030,11 +1030,15 @@ export default function DashboardScreen() {
   const planBadge = (() => {
     const p = (planTier ?? "").toUpperCase();
     if (p === "FAMILY")
-      return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", glyph: "❖" };
+      return { label: t("dashboard.familyBadge", "Family"), fg: "#4FD1B5", bg: "rgba(79,209,181,0.12)", border: "rgba(79,209,181,0.32)", Icon: Users };
     if (p === "PRO")
-      return { label: t("dashboard.proBadge", "Pro"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.34)", glyph: "✦" };
-    return { label: t("dashboard.premiumBadge"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", glyph: "✦" };
+      return { label: t("dashboard.proBadge", "Pro"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.34)", Icon: Sparkles };
+    return { label: t("dashboard.premiumBadge"), fg: "#F2C46C", bg: "rgba(242,196,108,0.12)", border: "rgba(242,196,108,0.3)", Icon: Sparkles };
   })();
+  const PlanBadgeIcon = planBadge.Icon;
+  const workspaceRoleLabel = workspace
+    ? ({ OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", CHILD: "Child", VIEW_ONLY: "View only" } as Record<string, string>)[workspace.role] ?? workspace.role
+    : "";
 
   // HERO derivations — same data sources + readiness blend the old command
   // center used; only the presentation is regrouped into the Aurora hero card.
@@ -1086,15 +1090,30 @@ export default function DashboardScreen() {
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={styles.titleRow}>
               <Text style={styles.title}>{t("tabs.dashboard")}</Text>
               {isPremium && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: planBadge.bg, borderWidth: 1, borderColor: planBadge.border }}>
-                  <Text style={{ fontSize: 10, color: planBadge.fg }}>{planBadge.glyph}</Text>
-                  <Text style={{ fontSize: 10, fontWeight: "700", color: planBadge.fg, letterSpacing: 0.3 }}>{planBadge.label}</Text>
+                <View style={[styles.planBadge, { backgroundColor: planBadge.bg, borderColor: planBadge.border }]}>
+                  <PlanBadgeIcon size={11} color={planBadge.fg} />
+                  <Text style={[styles.planBadgeText, { color: planBadge.fg }]}>{planBadge.label}</Text>
                 </View>
               )}
             </View>
+            {workspace && (
+              <TouchableOpacity
+                style={styles.workspaceMini}
+                onPress={() => router.push("/settings/workspace")}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={t("workspace.title", { defaultValue: "Workspace" })}
+              >
+                <Users size={11} color={theme.colors.textTertiary} />
+                <Text style={styles.workspaceMiniText} numberOfLines={1}>
+                  {workspace.name} · {workspace.memberCount}/{workspace.seatLimit} {t("workspace.membersShort", "members")}
+                </Text>
+                <Text style={styles.workspaceMiniRole}>{workspaceRoleLabel}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
         <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications")}>
@@ -1632,37 +1651,6 @@ export default function DashboardScreen() {
             Self-hides when there are no active services to summarize. */}
         <SavingsInsightsCard services={services} />
 
-        {/* Household / Workspace (Family & Pro) */}
-        {workspace && (
-          <Card
-            variant="default"
-            onPress={() => router.push("/settings/workspace")}
-            style={{ marginTop: 20 }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <View style={styles.planIcon}>
-                <Users size={18} color={theme.colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.planTitle}>{workspace.name}</Text>
-                <Text style={styles.planDate}>
-                  {workspace.planLabel} · {workspace.memberCount}/{workspace.seatLimit}{" "}
-                  {t("workspace.membersShort", "members")}
-                </Text>
-              </View>
-              <UiBadge
-                label={
-                  ({ OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", CHILD: "Child", VIEW_ONLY: "View only" } as Record<string, string>)[
-                    workspace.role
-                  ] ?? workspace.role
-                }
-                variant={workspace.role === "OWNER" ? "primary" : "neutral"}
-              />
-              <ArrowRight size={16} color={theme.colors.textTertiary} />
-            </View>
-          </Card>
-        )}
-
         {/* Active Moving Plan */}
         {stats?.activePlan && (
           <Card
@@ -1805,7 +1793,38 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, paddingRight: 12 },
   greeting: { fontSize: 14, color: theme.colors.textTertiary },
-  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
+  planBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  planBadgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
+  workspaceMini: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    marginTop: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  workspaceMiniText: {
+    maxWidth: 170,
+    fontSize: 11,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
+  },
+  workspaceMiniRole: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    textTransform: "uppercase",
+  },
   notifButton: {
     width: 44,
     height: 44,
@@ -1829,7 +1848,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     // off the canvas as the primary surface. Subtle (sm) — not a drop card.
     ...theme.shadow.sm,
   },
-  statValue: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
+  statValue: { fontSize: 24, fontWeight: "800", letterSpacing: 0 },
   statLabel: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
   planHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   planIcon: {
@@ -1951,7 +1970,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   heroDaysNum: {
     fontSize: 38,
     fontWeight: "800",
-    letterSpacing: -1,
+    letterSpacing: 0,
     lineHeight: 42,
     color: theme.colors.text,
   },
@@ -1966,7 +1985,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flex: 1,
     fontSize: 21,
     fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: theme.colors.text,
   },
   heroGhostBtn: {
@@ -2108,7 +2127,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   budgetNum: {
     fontSize: 22,
     fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: theme.colors.text,
     marginTop: 10,
   },

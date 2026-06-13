@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -138,12 +138,18 @@ function SignInForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 shadow-lg backdrop-blur-xl space-y-6">
+      <div className="w-full max-w-md space-y-6 rounded-[1.75rem] border border-border/70 bg-card/75 p-8 shadow-lg backdrop-blur-xl">
         <div className="space-y-3 text-center">
           <div className="flex justify-center">
             <Wordmark href="/" animated={false} />
           </div>
+          <div className="flex justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+              <ShieldCheck className="h-6 w-6" />
+            </span>
+          </div>
           <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase text-primary">Secure access</p>
             <h1 className="text-2xl font-bold text-foreground">{tCommon("signIn")}</h1>
             <p className="text-sm text-muted-foreground">{tAuth("signIn_subtitle")}</p>
           </div>
@@ -195,7 +201,7 @@ function SignInForm() {
 
             <div className="flex items-center gap-3 py-1">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
+              <span className="text-[11px] uppercase text-muted-foreground">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
           </div>
@@ -234,7 +240,7 @@ function SignInForm() {
               <input
                 id="mfaCode" type="text" inputMode="numeric" maxLength={6} required autoComplete="one-time-code"
                 placeholder="123456"
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono text-center tracking-[0.4em]"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-center font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
                 autoFocus
               />

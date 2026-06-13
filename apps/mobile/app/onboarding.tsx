@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -42,6 +42,7 @@ import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { Button } from "@/components/ui/Button";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { Input } from "@/components/ui/Input";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -1701,7 +1702,9 @@ export default function OnboardingScreen() {
                     return (
                       <StaggerItem key={cat} index={catIndex} style={styles.catSection}>
                         <TouchableOpacity style={styles.catHeader} onPress={() => toggleCat(cat)}>
-                          <Text style={styles.catIcon}>{getMergedDisplayCategoryIcon(cat)}</Text>
+                          <View style={styles.catIcon}>
+                            <CategoryIcon emoji={getMergedDisplayCategoryIcon(cat)} size={16} color={theme.colors.primary} />
+                          </View>
                           <Text style={styles.catTitle} numberOfLines={1}>{categoryLabel(cat)}</Text>
                           <View style={styles.catRight}>
                             <Text style={styles.catCount}>{items.length}</Text>
@@ -2160,7 +2163,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.rose.border, alignItems: "center",
     justifyContent: "center", marginBottom: 20,
   },
-  stepTitle: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: -0.3 },
+  stepTitle: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: 0 },
   stepDesc: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", marginTop: 8, lineHeight: 20 },
   fieldLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, alignSelf: "flex-start", marginTop: 20, marginBottom: 8 },
   errorBox: {
@@ -2250,7 +2253,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   scopeText: { fontSize: 9, fontWeight: "600" },
   scopeFederalText: { color: theme.colors.info },
   scopeStateText: { color: theme.colors.success },
-  catIcon: { fontSize: 16, marginRight: 4 },
+  catIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 4,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
   recoSection: {
     marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border,
     backgroundColor: theme.colors.card, padding: 14, width: "100%",

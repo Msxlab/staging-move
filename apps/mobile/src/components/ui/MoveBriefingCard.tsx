@@ -447,6 +447,6 @@ const makeStyles = (theme: Theme) =>
       fontSize: 14,
       fontWeight: "800",
       color: "#fff",
-      letterSpacing: -0.2,
+      letterSpacing: 0,
     },
   });

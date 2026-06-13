@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { MapPin, ChevronRight, Plus, Minus } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import type { Address } from "@locateflow/shared";
 
@@ -173,7 +174,9 @@ export function AddressesMap({ addresses, onOpen }: { addresses: Address[]; onOp
       ) : (
         services.slice(0, 8).map((s) => (
           <View key={s.id} style={styles.svcRow}>
-            <Text style={styles.svcEmoji}>{getMergedDisplayCategoryIcon(s.category) || "•"}</Text>
+            <View style={styles.svcIcon}>
+              <CategoryIcon emoji={getMergedDisplayCategoryIcon(s.category) || ""} size={15} color={theme.colors.primary} />
+            </View>
             <Text style={styles.svcName} numberOfLines={1}>
               {s.providerName || s.provider?.name || "Service"}
             </Text>
@@ -261,7 +264,16 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.colors.border,
       marginBottom: 8,
     },
-    svcEmoji: { fontSize: 16, width: 24, textAlign: "center" },
+    svcIcon: {
+      width: 26,
+      height: 26,
+      borderRadius: 9,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.primaryFaded,
+      borderWidth: 1,
+      borderColor: theme.colors.borderFocus,
+    },
     svcName: { flex: 1, fontSize: 13, fontWeight: "600", color: theme.colors.text },
     empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 10 },
     emptyText: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", paddingHorizontal: 40 },

@@ -19,8 +19,8 @@
   <rect width="1200" height="630" fill="url(#br)"/>
   <rect x="110" y="150" width="40" height="3" rx="1.5" fill="#7FB6E8"/>
   <text x="166" y="159" font-family="'Geist Mono', ui-monospace, monospace" font-size="22" letter-spacing="0.22em" fill="#A5C9F0">GOVERNMENT · SCHOOLS</text>
-  <text x="110" y="306" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="-0.02em">Enroll in the</text>
-  <text x="110" y="392" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="-0.02em">new district</text>
+  <text x="110" y="306" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">Enroll in the</text>
+  <text x="110" y="392" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="500" fill="#ECF1F8" letter-spacing="0">new district</text>
   <g transform="translate(800,235)" stroke="url(#flow)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 70 L110 24 L210 70 L110 116 Z"/>
     <path d="M48 88 V 132 Q 110 166 172 132 V 88"/>

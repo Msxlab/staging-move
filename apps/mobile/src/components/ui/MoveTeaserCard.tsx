@@ -257,7 +257,7 @@ const makeStyles = (theme: Theme) =>
       letterSpacing: 0.4,
       textTransform: "uppercase",
     },
-    headline: { fontSize: 17, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.2, lineHeight: 22 },
+    headline: { fontSize: 17, fontWeight: "800", color: theme.colors.text, letterSpacing: 0, lineHeight: 22 },
     countdownRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -270,7 +270,7 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: "rgba(127, 182, 232,0.3)",
     },
-    countdownText: { fontSize: 14, fontWeight: "800", color: theme.colors.primary, letterSpacing: -0.2 },
+    countdownText: { fontSize: 14, fontWeight: "800", color: theme.colors.primary, letterSpacing: 0 },
     stepsWrap: { gap: 10 },
     stepsLabel: {
       fontSize: 12,
@@ -306,5 +306,5 @@ const makeStyles = (theme: Theme) =>
       ...theme.shadow.glow,
     },
     unlockBtnDisabled: { opacity: 0.6 },
-    unlockBtnText: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: -0.2 },
+    unlockBtnText: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: 0 },
   });
