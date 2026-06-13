@@ -244,9 +244,9 @@ export default function NewProviderPage() {
       />
 
       {/* Stepper */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {STEPS.map((s, i) => (
-          <div key={s.label} className="flex items-center gap-2 flex-1">
+          <div key={s.label} className="flex items-center gap-2 w-full sm:flex-1">
             <button
               onClick={() => i < step && setStep(i)}
               disabled={i > step}
@@ -285,7 +285,7 @@ export default function NewProviderPage() {
               </div>
             </button>
             {i < STEPS.length - 1 && (
-              <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <ArrowRight className="hidden h-4 w-4 text-muted-foreground flex-shrink-0 sm:block" />
             )}
           </div>
         ))}
@@ -297,7 +297,7 @@ export default function NewProviderPage() {
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" /> Basic Information
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                 Provider Name *
@@ -333,7 +333,7 @@ export default function NewProviderPage() {
               )}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                 Category *
@@ -390,7 +390,7 @@ export default function NewProviderPage() {
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Phone className="h-5 w-5 text-primary" /> Contact & Media
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                 <Globe className="inline h-3.5 w-3.5 mr-1" /> Website
@@ -508,7 +508,7 @@ export default function NewProviderPage() {
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" /> Scope & Settings
           </h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
                 Scope
@@ -649,7 +649,7 @@ export default function NewProviderPage() {
           <h3 className="text-sm font-semibold text-foreground mb-3">
             Review Summary
           </h3>
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Name</p>
               <p className="font-medium text-foreground">{form.name || "—"}</p>

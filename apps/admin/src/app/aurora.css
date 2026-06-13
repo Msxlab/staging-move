@@ -992,11 +992,17 @@ html:not(.dark) .adm-aurora .admin-workspace {
     height: 58px;
     padding: 0 12px;
     padding-top: env(safe-area-inset-top);
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
   }
 
   .adm-aurora .adp-topbar .adp-crumb {
     max-width: 42%;
     font-size: 12px;
+  }
+
+  .adm-aurora .adp-topbar .adp-crumb b {
+    max-width: 50vw;
   }
 
   .adm-aurora .adp-topbar .adp-crumb span:not(:first-child),
@@ -1006,7 +1012,7 @@ html:not(.dark) .adm-aurora .admin-workspace {
 
   .adm-aurora .adp-tsearch {
     width: 44px;
-    height: 38px;
+    height: 44px;
     justify-content: center;
     padding: 0;
   }
@@ -1016,19 +1022,25 @@ html:not(.dark) .adm-aurora .admin-workspace {
     display: none;
   }
 
-  .adm-aurora .adp-iconbtn,
+  .adm-aurora .adp-iconbtn {
+    width: 44px;
+    height: 44px;
+  }
+
   .adm-aurora .adp-avatar {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
   }
 
   .adm-aurora .admin-workspace {
     min-height: calc(100dvh - 58px);
     padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+    overflow-x: clip;
   }
 
   .adm-aurora .admin-workspace-inner {
     max-width: none;
+    min-width: 0;
   }
 }
 
@@ -1152,6 +1164,16 @@ html:not(.dark) .adm-aurora {
   .adm-aurora .au-mini--wrap {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+/* Phones: fold KPI strips to 2-up, then 1-up — a 4-up strip crushes values
+   to "1…" on a 390px screen. Source order after the 1500px rule wins. */
+@media (max-width: 640px) {
+  .adm-aurora .au-mini,
+  .adm-aurora .au-mini--wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 400px) {
+  .adm-aurora .au-mini,
+  .adm-aurora .au-mini--wrap { grid-template-columns: 1fr; }
 }
 .adm-aurora .au-ministat {
   margin: 0;
@@ -1552,7 +1574,8 @@ html:not(.dark) .adm-aurora .au-tip {
   color: var(--au-accent);
   background: var(--au-accent-soft);
   border-radius: 5px; padding: 1px 5px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .adm-aurora .au-fwhen {
   margin: 4px 0 0;
@@ -1711,8 +1734,8 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
 }
 
 .adm-aurora .adp-mobile-dock-item {
-  min-width: 72px;
-  flex: 0 0 auto;
+  min-width: 60px;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1737,6 +1760,68 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
 
 .adm-aurora .adp-mobile-dock-item:active {
   transform: translateY(1px);
+}
+
+/* ── Mobile section sheet — a tapped dock group's sub-pages ──────────── */
+.adm-aurora .adp-mobile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.adm-aurora .adp-mobile-sheet-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: var(--au-scrim, rgba(8, 12, 20, 0.55));
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  animation: adp-sheet-fade 160ms ease;
+}
+.adm-aurora .adp-mobile-sheet-panel {
+  position: relative;
+  margin: 0 12px calc(86px + env(safe-area-inset-bottom));
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--au-rule-2);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--au-surface) 96%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+          backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 var(--au-edge);
+  overflow: hidden;
+  animation: adp-sheet-rise 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.adm-aurora .adp-mobile-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px 16px;
+  border-bottom: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-mobile-sheet-title {
+  font: 600 13px/1 var(--font-sans, system-ui, sans-serif);
+  color: var(--au-ink);
+}
+.adm-aurora .adp-mobile-sheet-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+}
+@keyframes adp-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adp-sheet-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .adp-mobile-sheet-scrim,
+  .adm-aurora .adp-mobile-sheet-panel { animation: none; }
 }
 
 /* ── Ministat card — module-page stats strip ────────────────────────── */

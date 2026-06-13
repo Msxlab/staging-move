@@ -206,7 +206,7 @@ export function BlogEditor({ initialContent, onChange, disabled }: BlogEditorPro
       </div>
       <EditorContent
         editor={editor}
-        className="prose prose-zinc max-w-none p-6 min-h-[420px] focus:outline-none dark:prose-invert"
+        className="prose prose-zinc max-w-none overflow-x-auto break-words p-6 min-h-[420px] focus:outline-none dark:prose-invert [&_img]:h-auto [&_img]:max-w-full [&_pre]:overflow-x-auto"
       />
     </div>
   );

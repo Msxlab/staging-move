@@ -699,8 +699,8 @@ export default function ProvidersPage() {
                   </div>
                 </button>
                 {isOpen && items.length > 0 && (
-                  <div className="border-t border-border">
-                    <table className="w-full">
+                  <div className="border-t border-border overflow-x-auto">
+                    <table className="w-full min-w-[640px]">
                       <thead className="bg-muted/30">
                         <tr>
                           <th className="w-10 px-3 py-2"><button onClick={() => { const allSelected = items.every(p => selected.has(p.id)); items.forEach(p => { setSelected(prev => { const n = new Set(prev); allSelected ? n.delete(p.id) : n.add(p.id); return n; }); }); }} aria-label="Select all providers in this category"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
@@ -804,8 +804,8 @@ export default function ProvidersPage() {
         </div>
       ) : (
         /* Table View */
-        <div className="overflow-hidden rounded-xl border border-border">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[720px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="w-10 px-3 py-3"><button onClick={() => selected.size === allProviders.length ? deselectAll() : selectAll()} aria-label="Select all providers"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /></button></th>
