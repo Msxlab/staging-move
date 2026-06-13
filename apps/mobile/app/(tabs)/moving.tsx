@@ -26,7 +26,12 @@ import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
-import { normalizeMovingPlanStatus, formatRelativeTime } from "@locateflow/shared";
+import {
+  normalizeMovingPlanStatus,
+  formatRelativeTime,
+  formatDateOnlyUtc,
+  getMoveCountdown,
+} from "@locateflow/shared";
 
 /** Offline-cache key for the Moving screen's last-known plan list. */
 const MOVING_CACHE = "moving";
@@ -252,7 +257,15 @@ export default function MovingScreen() {
                 const normalizedStatus = normalizeMovingPlanStatus(plan.status);
                 const live = isLiveStatus(normalizedStatus);
                 const accent = accentFor(normalizedStatus);
-                const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                const countdown = getMoveCountdown(plan.moveDate, {
+                  state: plan.toAddress?.state || plan.fromAddress?.state || null,
+                });
+                const daysUntil = countdown.days;
+                const moveDateLabel = formatDateOnlyUtc(
+                  plan.moveDate,
+                  { month: "short", day: "numeric", year: "numeric" },
+                  i18n.language || "en-US",
+                );
                 const progress = live ? timeProgress(plan) : null;
                 const fromCity = plan.fromAddress?.city || "—";
                 const toCity = plan.toAddress?.city || "—";
@@ -296,9 +309,9 @@ export default function MovingScreen() {
                       <View style={styles.meta}>
                         <Calendar size={12} color={theme.colors.textMuted} />
                         <Text style={styles.metaText}>
-                          {new Date(plan.moveDate).toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric", year: "numeric" })}
+                          {moveDateLabel}
                         </Text>
-                        {daysUntil > 0 && (
+                        {daysUntil !== null && daysUntil > 0 && (
                           <Text style={styles.daysLeft}>{daysUntil}d</Text>
                         )}
                         <Text style={styles.metaDot}>·</Text>

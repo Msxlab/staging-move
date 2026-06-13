@@ -22,6 +22,7 @@ import { AddressAutocompleteField } from "@/components/address/address-autocompl
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 import { addressLimitForPlan } from "@/lib/plan-comparison";
@@ -85,7 +86,7 @@ export default function NewAddressScreen() {
     country: "USA",
     ownership: "RENTER",
     isPrimary: false,
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: formatLocalDateKey(new Date()),
     formattedAddress: null as string | null,
     placeId: null as string | null,
     latitude: null as number | null,
@@ -436,7 +437,7 @@ export default function NewAddressScreen() {
                 setShowDatePicker(Platform.OS === "ios");
                 if (date) {
                   setSelectedStartDate(date);
-                  update("startDate", date.toISOString().slice(0, 10));
+                  update("startDate", formatLocalDateKey(date));
                 }
               }}
               themeVariant={resolvedScheme}

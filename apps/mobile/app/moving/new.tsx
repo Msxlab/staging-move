@@ -22,6 +22,7 @@ import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type 
 import { useTranslation } from "react-i18next";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 
@@ -533,7 +534,7 @@ export default function NewMovingPlanScreen() {
                     onChange={(_event: any, date?: Date) => {
                       if (date) {
                         setSelectedDate(date);
-                        update("moveDate", date.toISOString().slice(0, 10));
+                        update("moveDate", formatLocalDateKey(date));
                       }
                     }}
                     themeVariant={resolvedScheme}
@@ -550,7 +551,7 @@ export default function NewMovingPlanScreen() {
                     setShowDatePicker(false);
                     if (date) {
                       setSelectedDate(date);
-                      update("moveDate", date.toISOString().slice(0, 10));
+                      update("moveDate", formatLocalDateKey(date));
                     }
                   }}
                   themeVariant={resolvedScheme}

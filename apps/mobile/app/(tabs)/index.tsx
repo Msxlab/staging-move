@@ -1699,9 +1699,10 @@ export default function DashboardScreen() {
                   {stats.activePlan.fromCity} → {stats.activePlan.toCity}
                 </Text>
                 <Text style={styles.planDate}>
-                  {new Date(stats.activePlan.moveDate).toLocaleDateString(
-                    i18n.language || "en",
-                    { month: "short", day: "numeric", year: "numeric" }
+                  {formatDateOnlyUtc(
+                    stats.activePlan.moveDate,
+                    { month: "short", day: "numeric", year: "numeric" },
+                    i18n.language || "en-US",
                   )}
                 </Text>
               </View>

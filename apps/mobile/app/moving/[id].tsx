@@ -44,7 +44,7 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { formatDateOnlyUtc, getMoveCountdown, normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
   PLANNING: "neutral",
@@ -406,9 +406,17 @@ export default function MovingDetailScreen() {
     );
   }
 
-  const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const countdown = getMoveCountdown(plan.moveDate, {
+    state: plan.toAddress?.state || plan.fromAddress?.state || null,
+  });
+  const daysUntil = countdown.days;
   const isInterstateMove = plan.fromAddress?.state !== plan.toAddress?.state;
   const dateLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
+  const moveDateLabel = formatDateOnlyUtc(
+    plan.moveDate,
+    { month: "long", day: "numeric", year: "numeric" },
+    dateLocale,
+  );
   const moveScopeLabel = isInterstateMove ? t("moving.interstateMove") : t("moving.intrastateMove");
   const scopeDetail = isInterstateMove
     ? t("moving.interstateDetail")
@@ -474,16 +482,14 @@ export default function MovingDetailScreen() {
               <View style={styles.heroMeta}>
                 <Calendar size={12} color={theme.colors.textMuted} />
                 <Text style={styles.heroDate}>
-                  {new Date(plan.moveDate).toLocaleDateString(dateLocale, {
-                    month: "long", day: "numeric", year: "numeric",
-                  })}
+                  {moveDateLabel}
                 </Text>
               </View>
             </View>
           </View>
           <View style={styles.heroBadges}>
             <UiBadge label={t(`moving.status_${plan.status}`, { defaultValue: plan.status.replace("_", " ") })} variant={statusVariant[plan.status] || "neutral"} />
-            {daysUntil > 0 && <UiBadge label={t("moving.daysLeft", { count: daysUntil })} variant="warning" />}
+            {daysUntil !== null && daysUntil > 0 && <UiBadge label={t("moving.daysLeft", { count: daysUntil })} variant="warning" />}
             {plan.isTemporary && <UiBadge label={t("moving.temporary")} variant="info" />}
             <UiBadge label={moveScopeLabel} variant={isInterstateMove ? "warning" : "success"} />
           </View>
