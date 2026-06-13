@@ -891,8 +891,8 @@ export default function SubscriptionsClient() {
       )}
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border">
+        <table className="w-full min-w-[720px]">
           <thead className="bg-muted/50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">User</th>
@@ -990,8 +990,8 @@ export default function SubscriptionsClient() {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" role="presentation" onClick={() => setDetail(null)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="subscription-detail-title" className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:pb-4" role="presentation" onClick={() => setDetail(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="subscription-detail-title" className="w-full max-w-lg max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 id="subscription-detail-title" className="text-lg font-semibold text-foreground">Subscription Detail</h2>
               <button aria-label="Close detail" onClick={() => setDetail(null)} className="rounded-lg p-1 text-muted-foreground hover:bg-accent"><X className="h-5 w-5" /></button>

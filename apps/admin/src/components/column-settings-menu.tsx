@@ -56,7 +56,7 @@ export function ColumnSettingsMenu({ columns, onToggle, onReset, hiddenCount }: 
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-border bg-card shadow-lg"
+          className="fixed inset-x-2 bottom-[calc(96px+env(safe-area-inset-bottom))] z-[60] max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-card shadow-lg sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:z-20 sm:mt-1 sm:max-h-none sm:w-56"
         >
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

@@ -122,7 +122,7 @@ export function BlogEditor({ initialContent, onChange, disabled }: BlogEditorPro
       aria-pressed={!!active}
       disabled={disabled}
       className={
-        "rounded-md border px-2 py-1 text-sm transition disabled:opacity-50 " +
+        "inline-flex min-h-[38px] min-w-[36px] items-center justify-center rounded-md border px-2.5 py-1.5 text-sm transition disabled:opacity-50 " +
         (active
           ? "border-primary/40 bg-primary/10 text-primary"
           : "border-border bg-background text-foreground hover:bg-accent")

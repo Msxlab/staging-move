@@ -147,7 +147,7 @@ export function RevenueTrendBody({
     );
   }, [view.labels]);
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = wrapRef.current;
     if (!el || n < 2) return;
     const rect = el.getBoundingClientRect();
@@ -173,8 +173,11 @@ export function RevenueTrendBody({
           <div
             ref={wrapRef}
             className="au-chartwrap"
-            onMouseMove={onMove}
-            onMouseLeave={() => setIdx(null)}
+            onPointerDown={onMove}
+            onPointerMove={onMove}
+            onPointerLeave={() => setIdx(null)}
+            onPointerUp={() => setIdx(null)}
+            onPointerCancel={() => setIdx(null)}
           >
             <svg
               viewBox={`0 0 ${W} ${H}`}

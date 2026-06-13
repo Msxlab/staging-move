@@ -140,7 +140,7 @@ export default function HealthPage() {
       <div
         className={`rounded-xl border p-6 ${data.overall === "healthy" ? "border-tone-sage-br bg-tone-sage-bg" : data.overall === "down" ? "border-destructive/30 bg-destructive/5" : "border-tone-honey-br bg-tone-honey-bg"}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className={`rounded-lg p-2.5 ${overallCfg.bg}`}>
               <OverallIcon className={`h-6 w-6 ${overallCfg.color}`} />

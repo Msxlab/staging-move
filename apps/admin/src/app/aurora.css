@@ -1289,14 +1289,14 @@ html:not(.dark) .adm-aurora {
 
 /* --- Quick-look drawer ------------------------------------------------ */
 .adm-aurora .au-qscrim {
-  position: fixed; inset: 0; z-index: 40;
+  position: fixed; inset: 0; z-index: 56;
   background: var(--au-scrim);
   -webkit-backdrop-filter: blur(2px);
           backdrop-filter: blur(2px);
   animation: au-q-fade 200ms ease both;
 }
 .adm-aurora .au-qdrawer {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 57;
   width: 432px; max-width: calc(100vw - 48px);
   display: flex; flex-direction: column;
   background:
@@ -1437,8 +1437,9 @@ html:not(.dark) .adm-aurora {
 .adm-aurora .au-qrow .s { font-size: 11px; color: var(--au-ink-3); margin-top: 2px; }
 
 .adm-aurora .au-qact {
-  display: flex; gap: 8px;
+  display: flex; flex-wrap: wrap; gap: 8px;
   padding: 14px 18px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--au-rule);
   background: color-mix(in srgb, var(--au-flat-2) 62%, transparent);
 }
@@ -1504,7 +1505,7 @@ html:not(.dark) .adm-aurora {
 }
 
 /* Interactive chart hover — crosshair + point dot + flipping tooltip */
-.adm-aurora .au-chartwrap { position: relative; cursor: crosshair; }
+.adm-aurora .au-chartwrap { position: relative; cursor: crosshair; touch-action: pan-y; }
 .adm-aurora .au-chart-cross {
   position: absolute; top: 4px; bottom: 12px; width: 1px;
   background: var(--au-rule-2);
