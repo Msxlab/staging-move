@@ -45,6 +45,7 @@ function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [requiresEmailVerification, setRequiresEmailVerification] = useState(true);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
@@ -117,6 +118,7 @@ function SignUpForm() {
         return;
       }
       trackEvent("sign_up_completed", { method: "email" });
+      setRequiresEmailVerification(data.requiresEmailVerification !== false);
       setDone(true);
       setLoading(false);
     } catch {
@@ -126,6 +128,8 @@ function SignUpForm() {
   };
 
   if (done) {
+    const accountReady = !requiresEmailVerification;
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
         <div className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-border/70 bg-card/75 p-8 text-center shadow-lg backdrop-blur-xl">
@@ -133,13 +137,17 @@ function SignUpForm() {
             <Wordmark href="/" animated={false} />
           </div>
           <CheckCircle2 className="h-10 w-10 text-sage mx-auto" />
-          <h1 className="text-2xl font-bold text-foreground">{tAuth("checkEmail")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {accountReady ? tAuth("accountReady") : tAuth("checkEmail")}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            {tAuth("checkEmailDescription", { email })}
+            {accountReady
+              ? tAuth("accountReadyDescription")
+              : tAuth("checkEmailDescription", { email })}
           </p>
           {isInviteRedirect && (
             <p className="text-xs text-muted-foreground">
-              {tAuth("inviteAfterVerify")}
+              {accountReady ? tAuth("inviteAfterReady") : tAuth("inviteAfterVerify")}
             </p>
           )}
           <Link

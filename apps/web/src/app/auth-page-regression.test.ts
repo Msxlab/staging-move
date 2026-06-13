@@ -43,6 +43,17 @@ describe("auth page regressions", () => {
     expect(resend).toContain("/api/auth/resend-verification");
   });
 
+  it("does not show email verification copy for auto-verified sign-ups", () => {
+    const signUp = read("src/app/sign-up/page.tsx");
+    const messages = read("src/i18n/messages/en.json");
+
+    expect(signUp).toContain("requiresEmailVerification");
+    expect(signUp).toContain("data.requiresEmailVerification !== false");
+    expect(signUp).toContain("accountReady");
+    expect(signUp).toContain("accountReadyDescription");
+    expect(messages).toContain("Your account is ready. Sign in to continue to onboarding.");
+  });
+
   it("uses the post-auth state helper as the protected app gate", () => {
     const appLayout = read("src/app/(app)/layout.tsx");
     const postAuth = read("src/lib/post-auth-redirect.ts");
