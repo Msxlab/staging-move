@@ -41,6 +41,7 @@ import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/l
 import { useTranslation } from "react-i18next";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { formatLocalDateKey, parseLocalDateKey } from "@/lib/date-only";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -283,7 +284,7 @@ export default function OnboardingScreen() {
   const [address, setAddress] = useState({
     nickname: "", street: "", city: "", state: "", zip: "",
     country: "USA", type: "HOME", ownership: "RENTER",
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: formatLocalDateKey(new Date()),
     formattedAddress: null as string | null,
     placeId: null as string | null,
     latitude: null as number | null,
@@ -2027,7 +2028,7 @@ export default function OnboardingScreen() {
                       <Calendar size={16} color={movingForm.moveDate ? theme.colors.primary : theme.colors.textMuted} />
                       <Text style={[styles.dateButtonText, movingForm.moveDate ? { color: theme.colors.text } : undefined]}>
                         {movingForm.moveDate
-                          ? new Date(`${movingForm.moveDate}T00:00:00`).toLocaleDateString(undefined, {
+                          ? (parseLocalDateKey(movingForm.moveDate) ?? new Date()).toLocaleDateString(undefined, {
                               weekday: "short",
                               month: "long",
                               day: "numeric",
@@ -2050,13 +2051,13 @@ export default function OnboardingScreen() {
                           </TouchableOpacity>
                         </View>
                         <DateTimePicker
-                          value={movingForm.moveDate ? new Date(`${movingForm.moveDate}T00:00:00`) : new Date()}
+                          value={parseLocalDateKey(movingForm.moveDate) ?? new Date()}
                           mode="date"
                           display="spinner"
                           minimumDate={new Date()}
                           onChange={(_event: any, date?: Date) => {
                             if (date) {
-                              updateMoving("moveDate", date.toISOString().slice(0, 10));
+                              updateMoving("moveDate", formatLocalDateKey(date));
                             }
                           }}
                           themeVariant={resolvedScheme}
@@ -2065,14 +2066,14 @@ export default function OnboardingScreen() {
                       </View>
                     ) : showMoveDatePicker ? (
                       <DateTimePicker
-                        value={movingForm.moveDate ? new Date(`${movingForm.moveDate}T00:00:00`) : new Date()}
+                        value={parseLocalDateKey(movingForm.moveDate) ?? new Date()}
                         mode="date"
                         display="default"
                         minimumDate={new Date()}
                         onChange={(_event: any, date?: Date) => {
                           setShowMoveDatePicker(false);
                           if (date) {
-                            updateMoving("moveDate", date.toISOString().slice(0, 10));
+                            updateMoving("moveDate", formatLocalDateKey(date));
                           }
                         }}
                         themeVariant={resolvedScheme}
