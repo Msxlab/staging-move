@@ -17,6 +17,8 @@ Generated from the premium mobile preview for the App Store / Google Play listin
 4. Home Dossier
 5. Addresses
 6. More
+7. Air Quality
+8. Schools
 
 The upload ZIP is kept outside the repo at:
 
