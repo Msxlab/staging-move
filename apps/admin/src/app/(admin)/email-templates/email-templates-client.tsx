@@ -149,12 +149,12 @@ export default function EmailTemplatesClient() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((c) => (<div key={c.label} className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{c.label}</p><p className={`mt-1 text-2xl font-bold ${c.color}`}>{c.value}</p></div>))}
       </div>
 
       {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" role="presentation" onClick={() => setPreview(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm" role="presentation" onClick={() => setPreview(null)}>
           <div role="dialog" aria-modal="true" aria-labelledby="email-preview-title" className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4"><h2 id="email-preview-title" className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button aria-label="Close preview" onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <p className="text-sm text-muted-foreground mb-2">Subject: {preview.subject}</p>
@@ -171,12 +171,12 @@ export default function EmailTemplatesClient() {
       {showForm && (
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">{editing ? "Edit Template" : "New Template"}</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Slug</label><input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="welcome-email" /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Name</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Welcome Email" /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Subject</label><input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Welcome to LocateFlow!" /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Category</label><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div className="col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Body (HTML)</label><textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={8} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" placeholder="<h1>Hello {{firstName}}</h1>" /></div>
+            <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Body (HTML)</label><textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={8} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" placeholder="<h1>Hello {{firstName}}</h1>" /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Variables (comma-separated)</label><input value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="firstName, email, link" /></div>
             <div className="flex items-end"><label className="flex items-center gap-2 text-sm text-foreground cursor-pointer"><input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="accent-primary" /> Active</label></div>
           </div>
@@ -189,8 +189,8 @@ export default function EmailTemplatesClient() {
       </div>
 
       {tab === "templates" && (
-        <div className="rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Failed</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
             <tbody>
               {templates.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Mail} title="No templates yet" description="Create your first email template to get started." /></td></tr>) : templates.map((t) => (
@@ -214,8 +214,8 @@ export default function EmailTemplatesClient() {
       )}
 
       {tab === "logs" && (
-        <div className="rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Provider ID</th><th className="px-4 py-3 font-medium">Details</th></tr></thead>
             <tbody>
               {logs.length === 0 ? (<tr><td colSpan={7} className="px-4"><EmptyState icon={Send} title="No emails sent yet" description="Send logs will appear here once emails go out." /></td></tr>) : logs.map((l) => (

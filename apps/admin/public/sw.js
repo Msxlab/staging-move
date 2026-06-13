@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "locateflow-admin-";
-const STATIC_CACHE = `${CACHE_PREFIX}static-v2`;
+const STATIC_CACHE = `${CACHE_PREFIX}static-v3`;
 const OFFLINE_URL = "/offline.html";
 
 const STATIC_ASSETS = [
@@ -8,7 +8,6 @@ const STATIC_ASSETS = [
   "/favicon.svg",
   "/logo.svg",
   "/logo-mark.svg",
-  "/og-image.svg",
   "/icon-192.png",
   "/icon-512.png",
 ];
@@ -34,10 +33,18 @@ function clearLocateFlowAdminCaches() {
 }
 
 self.addEventListener("install", (event) => {
+  // Precache per-asset so a single missing/404 asset can't abort the whole
+  // precache (which would leave the offline fallback uncached).
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) =>
+        Promise.all(
+          STATIC_ASSETS.map((asset) =>
+            cache.add(asset).catch(() => undefined)
+          )
+        )
+      )
       .catch(() => undefined)
   );
   self.skipWaiting();

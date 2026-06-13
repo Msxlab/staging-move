@@ -419,7 +419,7 @@ export function DataTablePage<Row extends { id: string }>(
 
         {showFilters && filters.length > 0 ? (
           <div className="mt-3 border-t border-border pt-3">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
               {filters.map((f) => (
                 <div key={f.key}>
                   <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
@@ -480,9 +480,12 @@ export function DataTablePage<Row extends { id: string }>(
         </div>
       ) : null}
 
-      {/* Table — admin-panel chrome (foil hairline + warm hover) */}
-      <div className="admin-panel overflow-hidden">
-        <table className="w-full">
+      {/* Table — admin-panel chrome (foil hairline + warm hover). The inner
+          scroller keeps wide tables inside their own card on phones instead
+          of panning the whole page; min-w keeps columns legible. */}
+      <div className="admin-panel">
+        <div className="overflow-x-auto overscroll-x-contain">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-muted/50">
             <tr>
               {selectable ? (
@@ -623,14 +626,15 @@ export function DataTablePage<Row extends { id: string }>(
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {afterTable ? afterTable(ctx) : null}
 
       {/* Pagination */}
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
             Showing {(query.state.page - 1) * query.state.perPage + 1}–
             {Math.min(query.state.page * query.state.perPage, total)} of {total}
           </p>

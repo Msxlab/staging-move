@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
-import { Search, LogOut, Settings } from "lucide-react";
+import { Search, LogOut, Settings, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
@@ -69,6 +69,10 @@ interface SidebarProps {
 export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
+  // Mobile section sheet — which dock group's sub-pages are expanded (null =
+  // closed). Lets phone users browse a section's pages without the desktop rail
+  // panel (previously only reachable via ⌘K).
+  const [openSheet, setOpenSheet] = useState<number | null>(null);
   const filteredGroups = filterNavGroups(ctx ?? null);
   const allItems = filteredGroups.flatMap((g) => g.items);
   // Settings is pinned in the account footer (always reachable without
@@ -107,6 +111,16 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   useEffect(() => {
     setIsMac(typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent));
   }, []);
+
+  // Close the mobile section sheet on Escape.
+  useEffect(() => {
+    if (openSheet === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenSheet(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openSheet]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", {
@@ -371,6 +385,24 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
           const isOn = i === activeGroupIdx;
           const groupTitle = navLabel(tNav, group.labelKey, group.label);
           const firstHref = group.items[0]?.href ?? "/";
+          // Multi-page groups open a bottom sheet so every sub-page is
+          // reachable on a phone; single-page groups link straight through.
+          if (group.items.length > 1) {
+            return (
+              <button
+                key={group.label}
+                type="button"
+                onClick={() => setOpenSheet(i)}
+                aria-haspopup="dialog"
+                aria-expanded={openSheet === i}
+                aria-current={isOn ? "page" : undefined}
+                className={cn("adp-mobile-dock-item", isOn && "on")}
+              >
+                <GroupIcon aria-hidden="true" />
+                <span>{group.railLabel || groupTitle}</span>
+              </button>
+            );
+          }
           return (
             <a
               key={group.label}
@@ -395,10 +427,44 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
     </nav>
   );
 
+  // Bottom sheet listing the tapped group's sub-pages. Sibling of the dock
+  // (which is overflow:hidden) so it can sit above it; lg:hidden so it never
+  // shows on desktop. Closes on navigate / scrim tap / Escape.
+  const sheetGroup = openSheet !== null ? displayGroups[openSheet] : null;
+  const mobileSheet = sheetGroup ? (
+    <div className="adp-mobile-sheet lg:hidden" role="dialog" aria-modal="true" aria-label={navLabel(tNav, sheetGroup.labelKey, sheetGroup.label)}>
+      <button
+        type="button"
+        className="adp-mobile-sheet-scrim"
+        aria-label={tCommon("close")}
+        onClick={() => setOpenSheet(null)}
+      />
+      <div className="adp-mobile-sheet-panel">
+        <div className="adp-mobile-sheet-head">
+          <span className="adp-mobile-sheet-title">
+            {navLabel(tNav, sheetGroup.labelKey, sheetGroup.label)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setOpenSheet(null)}
+            aria-label={tCommon("close")}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="adp-mobile-sheet-items">
+          {sheetGroup.items.map((item) => renderItem(item, { onNavigate: () => setOpenSheet(null) }))}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       {railSidebar}
       {mobileDock}
+      {mobileSheet}
     </>
   );
 }
