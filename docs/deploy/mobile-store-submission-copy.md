@@ -3,12 +3,29 @@
 Use this file to paste consistent reviewer-facing text into App Store Connect and
 Play Console. Do not store real reviewer passwords or secrets in git.
 
-Last updated: 2026-06-04
+Last updated: 2026-06-13
 
 ## Current public blockers before submission
 
 These are not code bugs, but they still need operator/store-console action:
 
+- Refreshed premium store screenshots are generated and committed at
+  `store-assets/mobile-screenshots/2026-06-13-premium/`, with 8 images each
+  for iOS 6.7", iOS 6.5", iOS 5.5", and Google Play phone screenshots. A ZIP
+  copy for manual upload is on the desktop:
+  `C:\Users\Kutay\Desktop\locateflow-store-screenshots-2026-06-13-premium.zip`.
+- App Store Connect currently shows the live `iOS App Version 1.0` as
+  `Ready for Distribution`; the refreshed screenshots and build `1.0.2 (26)`
+  require creating a new `1.0.2` iOS version before upload/attach/submit.
+- Google Play Console currently shows `LocateFlow: Moving Checklist` in
+  production with no unpublished changes and 8 existing phone screenshots.
+  Replacing those assets requires removing the existing 8 screenshots, uploading
+  the new 8 `android-phone` images, saving the listing draft, and sending the
+  change for review.
+- Android OTA is live on production for runtime `sdk55-1.0.0`, but a new native
+  Play AAB for the current commit is blocked by EAS Android cloud build quota
+  until reset or plan upgrade. Windows local EAS Android builds are unsupported,
+  and local release-signing env vars are not present.
 - Android build `15 (1.0.0)` is published to Play internal testing and marked
   `Available to internal testers`; the tester list is `LOCATEFLOW` with 4 users.
 - Android internal paid IAP now installs from Google Play and purchase/restore/cancel

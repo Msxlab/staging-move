@@ -1,6 +1,6 @@
 # LocateFlow Mobile — Store Submission Checklist
 
-Last updated: 2026-06-03. Maintain alongside every release.
+Last updated: 2026-06-13. Maintain alongside every release.
 
 Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICABLE`.
 
@@ -49,7 +49,7 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Marketing URL (optional) | NOT APPLICABLE | |
 | App category: Lifestyle / Productivity | TODO | Pick category |
 | Age rating questionnaire | TODO | No objectionable / gambling / UGC moderation needed |
-| iPhone screenshots: 6.7" (mandatory) + 6.5" + 5.5" | TODO | |
+| iPhone screenshots: 6.7" (mandatory) + 6.5" + 5.5" | HUMAN VERIFICATION REQUIRED | Assets generated and committed at `store-assets/mobile-screenshots/2026-06-13-premium/{ios-6.7,ios-6.5,ios-5.5}`. App Store Connect currently shows live `iOS App Version 1.0` as `Ready for Distribution`; create a new `1.0.2` version before uploading refreshed screenshots and attaching build `26`. |
 | iPad screenshots | NOT APPLICABLE | `supportsTablet: false` |
 | App Review notes + demo credentials | HUMAN VERIFICATION REQUIRED | Use `docs/deploy/mobile-store-submission-copy.md`. Demo password must be supplied out-of-band; do not commit it. Include IAP path: `More -> Subscription`. Apple previously rejected build 12 because IAP was not locatable. |
 | Encryption export compliance: `ITSAppUsesNonExemptEncryption=false` | DONE | `app.json` |
@@ -76,6 +76,7 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Data Safety form filled | HUMAN VERIFICATION REQUIRED | Use `apps/mobile/MOBILE_DATA_INVENTORY.md` plus `docs/deploy/mobile-store-submission-copy.md`. |
 | Privacy Policy URL: `https://locateflow.com/privacy` | DONE | Public page is live and renders the real legal entity/address. |
 | Account deletion URL: `https://locateflow.com/account/delete` | DONE | Page exists, OAuth-only users supported |
+| Phone screenshots | HUMAN VERIFICATION REQUIRED | 8 refreshed phone screenshots generated and committed at `store-assets/mobile-screenshots/2026-06-13-premium/android-phone`. Play Console currently has 8 existing phone screenshots; replacing them changes public store listing assets and requires explicit operator approval before remove/upload/save. |
 | App access instructions / demo credentials | HUMAN VERIFICATION REQUIRED | Draft copy exists in `docs/deploy/mobile-store-submission-copy.md`; demo password must be supplied out-of-band and not committed. |
 | Content rating questionnaire (IARC) | TODO | |
 | Target audience: 18+ (recommended) | TODO | |
@@ -83,6 +84,7 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Billing permission justification | DONE | Reason: in-app subscription via Play Billing |
 | Target SDK >= 35 (Aug 2025 requirement) | DONE | Inherited from Expo SDK 55 (compileSdk/targetSdk 36) |
 | Release notes (initial release) | HUMAN VERIFICATION REQUIRED | Draft release/reviewer copy exists in `docs/deploy/mobile-store-submission-copy.md`; final console entry still needs store-console review. |
+| Android native build for current commit | BLOCKED | Latest OTA is live for Android/iOS on runtime `sdk55-1.0.0`, but a new Play AAB for commit `b3c6b84` / screenshot commit `415c3439` is blocked by EAS Android cloud quota until monthly reset or plan upgrade. Windows local EAS Android build is unsupported, and local Gradle release signing env vars are not present. |
 | Production rollout strategy | TODO | Plan staged rollout (10% → 50% → 100%) |
 
 ---
