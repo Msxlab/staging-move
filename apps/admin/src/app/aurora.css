@@ -253,8 +253,13 @@ html:not(.dark) .adm-aurora .adp-topbar {
           backdrop-filter: none;
 }
 
-/* Anything inside the wrapper sits above the aurora layers */
-.adm-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
+/* Anything inside the wrapper sits above the aurora layers.
+   Exclude the fixed-position mobile chrome (dock + section sheet): without
+   the exclusion this rule's higher specificity (0,3,0) overrode their
+   `position: fixed` (0,2,0), forcing them `relative` — which dropped the
+   mobile dock back into normal flow as a flex sibling of <main>, collapsing
+   the content column. Keep them out so they pin to the viewport as intended. */
+.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
 
 /* === Card — toned-down glass (dark) / flat solid (light) =========== */
 .adm-aurora .au-card {
@@ -1117,6 +1122,22 @@ html:not(.dark) .adm-aurora .admin-workspace {
 /* desktop-first, but keep the row intact at 1280px-wide viewports */
 @media (max-width: 1366px) {
   .adm-aurora .adp-tsearch { width: 240px; }
+}
+
+/* Mobile topbar sizing — MUST come after the base .adp-tsearch / .adp-iconbtn /
+   .adp-avatar widths above. The earlier max-width:1023px block (≈line 986) is
+   placed before those base rules, so on equal specificity the base widths
+   (search 300/240, iconbtn 38, avatar 34) win on phones and the right cluster
+   (bell / help / identity) overflows the bar. Re-assert the collapsed sizes
+   here so the search shrinks to an icon and the cluster fits. */
+@media (max-width: 1023px) {
+  .adm-aurora .adp-tsearch {
+    width: 44px; height: 44px; padding: 0; justify-content: center; flex-shrink: 0;
+  }
+  .adm-aurora .adp-tsearch .ph,
+  .adm-aurora .adp-tsearch .kbd { display: none; }
+  .adm-aurora .adp-iconbtn { width: 44px; height: 44px; flex-shrink: 0; }
+  .adm-aurora .adp-avatar { width: 40px; height: 40px; flex-shrink: 0; }
 }
 
 /* =========================================================================
