@@ -6,8 +6,10 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MapPin, Plus, Check, AlertTriangle, ArrowRight, List, Map as MapIcon } from "lucide-react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -24,6 +26,8 @@ import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { AddressesMap } from "@/components/addresses/AddressesMap";
 import { TransitRouteMap } from "@/components/addresses/TransitRouteMap";
+import { useAuthStore } from "@/lib/auth-store";
+import { addressLimitForPlan } from "@/lib/plan-comparison";
 import type { Address } from "@locateflow/shared";
 
 // ── Addresses "Hub" recreation of the Aurora design (explore/Mobile Addresses) ──
@@ -162,6 +166,7 @@ export default function AddressesScreen() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
+  const planTier = useAuthStore((s) => s.planTier);
   const reduceMotion = useReducedMotion();
   const { t, i18n } = useTranslation();
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -174,6 +179,8 @@ export default function AddressesScreen() {
   // banner. Best-effort: any error just hides the banner — it never blocks
   // the addresses list.
   const [activeMove, setActiveMove] = useState<any | null>(null);
+  const loadedOnceRef = React.useRef(false);
+  const fetchAddressesRef = React.useRef<() => Promise<boolean>>(async () => false);
 
   const fetchAddresses = useCallback(async () => {
     // limit=200 (the route max): these are small per-user collections shown as
@@ -207,6 +214,7 @@ export default function AddressesScreen() {
     try {
       await fetchAddresses();
     } finally {
+      loadedOnceRef.current = true;
       setLoading(false);
     }
   }, [fetchAddresses]);
@@ -223,6 +231,18 @@ export default function AddressesScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    fetchAddressesRef.current = fetchAddresses;
+  }, [fetchAddresses]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loadedOnceRef.current) return undefined;
+      void fetchAddressesRef.current();
+      return undefined;
+    }, []),
+  );
 
   if (loading) {
     return (
@@ -247,6 +267,26 @@ export default function AddressesScreen() {
 
   const totalMonthly = addresses.reduce((sum, a) => sum + addressPerMonth(a), 0);
   const totalServices = addresses.reduce((sum, a) => sum + (a.services?.length || 0), 0);
+  const addressLimit = addressLimitForPlan(planTier);
+  const addressLimitReached = addresses.length >= addressLimit;
+  const openNewAddress = () => {
+    if (addressLimitReached) {
+      Alert.alert(
+        t("addresses.limitReachedTitle", { defaultValue: "Address limit reached" }),
+        t("addresses.limitReachedWithCount", {
+          current: addresses.length,
+          limit: addressLimit,
+          defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
+        }),
+        [
+          { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+          { text: t("subscription.upgrade", { defaultValue: "Upgrade" }), onPress: () => router.push("/settings/subscription") },
+        ],
+      );
+      return;
+    }
+    router.push("/addresses/new");
+  };
   const fmtUsd = (n: number) =>
     new Intl.NumberFormat(i18n.language || "en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
@@ -364,7 +404,7 @@ export default function AddressesScreen() {
           </View>
           <PressableScale
             style={styles.addButton}
-            onPress={() => router.push("/addresses/new")}
+            onPress={openNewAddress}
             accessibilityLabel={t("addresses.newTitle")}
           >
             <Plus size={20} color="#fff" />
@@ -393,7 +433,7 @@ export default function AddressesScreen() {
             title={t("addresses.empty")}
             description={t("addresses.emptyDescription")}
             actionLabel={t("addresses.newTitle")}
-            onAction={() => router.push("/addresses/new")}
+            onAction={openNewAddress}
           />
         ) : viewMode === "map" ? (
           <AddressesMap
@@ -505,9 +545,20 @@ export default function AddressesScreen() {
               </Text>
             )}
 
-            <TouchableOpacity style={styles.adAddCard} onPress={() => router.push("/addresses/new")}>
-              <Plus size={16} color={theme.colors.textTertiary} />
-              <Text style={styles.adAddText}>Add another address</Text>
+            <TouchableOpacity
+              style={[styles.adAddCard, addressLimitReached && styles.adAddCardLimit]}
+              onPress={addressLimitReached ? () => router.push("/settings/subscription") : openNewAddress}
+            >
+              <Plus size={16} color={addressLimitReached ? theme.colors.primary : theme.colors.textTertiary} />
+              <Text style={[styles.adAddText, addressLimitReached && styles.adAddTextLimit]}>
+                {addressLimitReached
+                  ? t("addresses.limitReachedWithCount", {
+                      current: addresses.length,
+                      limit: addressLimit,
+                      defaultValue: `Your plan includes ${addressLimit} addresses. Upgrade to add more.`,
+                    })
+                  : "Add another address"}
+              </Text>
             </TouchableOpacity>
           </>
         )}
@@ -630,7 +681,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     marginTop: 14,
   },
+  adAddCardLimit: {
+    borderStyle: "solid",
+    borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.primaryFaded,
+  },
   adAddText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "600" },
+  adAddTextLimit: { color: theme.colors.primary, textAlign: "center", flex: 1 },
   // ── Move-in-transit banner (recreates the design's .ad-transit) ──
   transit: {
     padding: 16,

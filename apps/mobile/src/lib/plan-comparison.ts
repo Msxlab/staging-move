@@ -67,6 +67,14 @@ const MAX_SERVICES: Record<BillingPlan, number> = {
   PRO: 1000,
 };
 
+export function addressLimitForPlan(planKey: string | null | undefined): number {
+  return MAX_ADDRESSES[normalizePlanKey(planKey)];
+}
+
+export function serviceLimitForPlan(planKey: string | null | undefined): number {
+  return MAX_SERVICES[normalizePlanKey(planKey)];
+}
+
 const MEMBER_SEATS: Record<BillingPlan, number> = {
   FREE_TRIAL: 1,
   INDIVIDUAL: 1,

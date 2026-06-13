@@ -212,75 +212,82 @@ export default function NewBudgetScreen() {
           <Text style={styles.sectionLabel}>Period</Text>
           <Text style={styles.label}>{t("budget.month")} *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder="YYYY-MM-01"
             placeholderTextColor={theme.colors.textMuted}
             value={form.month}
             onChangeText={(value) => update("month", value)}
             autoCapitalize="none"
+            editable={!formDisabled}
           />
 
           <Text style={styles.label}>{t("budget.year")} *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder="2026"
             placeholderTextColor={theme.colors.textMuted}
             value={form.year}
             onChangeText={(value) => update("year", value.replace(/[^0-9]/g, ""))}
             keyboardType="number-pad"
             maxLength={4}
+            editable={!formDisabled}
           />
         </View>
 
         <View style={styles.formSection}>
           <Text style={styles.sectionLabel}>{t("budget.actualIncome")}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.plannedIncome")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.plannedIncome}
             onChangeText={(value) => update("plannedIncome", value.replace(/[^0-9.]/g, ""))}
             keyboardType="decimal-pad"
+            editable={!formDisabled}
           />
           <TextInput
-            style={[styles.input, styles.inputSpacing]}
+            style={[styles.input, styles.inputSpacing, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.actualIncome")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.actualIncome}
             onChangeText={(value) => update("actualIncome", value.replace(/[^0-9.]/g, ""))}
             keyboardType="decimal-pad"
+            editable={!formDisabled}
           />
         </View>
 
         <View style={styles.formSection}>
           <Text style={styles.sectionLabel}>{t("budget.actualExpenses")}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.plannedExpenses")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.plannedExpenses}
             onChangeText={(value) => update("plannedExpenses", value.replace(/[^0-9.]/g, ""))}
             keyboardType="decimal-pad"
+            editable={!formDisabled}
           />
           <TextInput
-            style={[styles.input, styles.inputSpacing]}
+            style={[styles.input, styles.inputSpacing, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.actualExpenses")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.actualExpenses}
             onChangeText={(value) => update("actualExpenses", value.replace(/[^0-9.]/g, ""))}
             keyboardType="decimal-pad"
+            editable={!formDisabled}
           />
         </View>
 
         <View style={styles.formSection}>
           <Text style={styles.sectionLabel}>{t("budget.notes")}</Text>
           <TextInput
-            style={[styles.input, styles.notesInput]}
+            style={[styles.input, styles.notesInput, formDisabled && styles.inputDisabled]}
             placeholder={t("budget.notes")}
             placeholderTextColor={theme.colors.textMuted}
             value={form.notes}
             onChangeText={(value) => update("notes", value)}
             multiline
+            editable={!formDisabled}
           />
         </View>
 
@@ -410,6 +417,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 15, color: theme.colors.text,
   },
+  inputDisabled: { opacity: 0.55 },
   inputSpacing: { marginTop: 10 },
   notesInput: { minHeight: 100, textAlignVertical: "top" },
   saveBtn: {

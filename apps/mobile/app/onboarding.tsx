@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Alert,
 } from "react-native";
@@ -100,6 +101,7 @@ import { ObCoach } from "@/components/ui/ObCoach";
 import { coachCopyKeys } from "@/components/ui/ob-coach-state";
 import { computeOnboardingDataQuality } from "@/lib/onboarding-data-quality";
 import { NotificationPrimingCard } from "@/components/onboarding/NotificationPrimingCard";
+import { serviceLimitForPlan } from "@/lib/plan-comparison";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -239,7 +241,11 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const planTier = useAuthStore((s) => s.planTier);
   const [step, setStep] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const lastScrollYRef = useRef(0);
   // Inline validation feedback: a gentle horizontal wobble on the step content
   // whenever a save fails its checks. Paired with the existing coral error box +
   // hapticError for a clear "that didn't go through" read. Reduce-motion-safe
@@ -340,6 +346,17 @@ export default function OnboardingScreen() {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Catch-all auto-join: every post-auth path for a brand-new account routes
   // through onboarding (getPostAuthMobileRoute → "/onboarding"). If the user
@@ -502,6 +519,9 @@ export default function OnboardingScreen() {
     });
   };
   const updateMoving = (key: string, value: any) => {
+    if (step === 3 && error) {
+      setError("");
+    }
     setMovingForm((prev) => {
       const next = { ...prev, [key]: value };
       if (key === "street" || key === "city" || key === "state" || key === "zip") {
@@ -519,7 +539,22 @@ export default function OnboardingScreen() {
     setMovingForm((prev) => applyAddressAutocompleteResult(prev, result));
   };
 
+  const serviceSelectionLimit = serviceLimitForPlan(planTier);
+  const serviceLimitMessage = useCallback(() =>
+    t("services.limitReachedWithCount", {
+      current: serviceSelectionLimit,
+      limit: serviceSelectionLimit,
+      defaultValue: `Your plan includes ${serviceSelectionLimit} services. Upgrade to add more.`,
+    }), [serviceSelectionLimit, t]);
+
   const toggleProvider = (provider: ScoredProvider) => {
+    const alreadySelected = selectedProviders.has(provider.id);
+    if (!alreadySelected && selectedProviders.size >= serviceSelectionLimit) {
+      hapticError();
+      setError(serviceLimitMessage());
+      return;
+    }
+    setError("");
     setSelectedProviders((prev) => {
       const next = new Map(prev);
       if (next.has(provider.id)) next.delete(provider.id);
@@ -1077,20 +1112,33 @@ export default function OnboardingScreen() {
     () => essentialRecommended.reduce((n, p) => (selectedProviders.has(p.id) ? n : n + 1), 0),
     [essentialRecommended, selectedProviders],
   );
+  const remainingProviderSlots = Math.max(0, serviceSelectionLimit - selectedProviders.size);
+  const addAllEssentialCount = Math.min(unselectedEssentialCount, remainingProviderSlots);
+  const essentialSelectionLimited = unselectedEssentialCount > remainingProviderSlots;
 
   // One-tap: select every essential pick the user hasn't already added. Purely
   // additive — it never deselects, so a user who tapped one extra keeps it, and
   // they can still deselect any single card afterward.
   const addAllEssentials = useCallback(() => {
+    if (remainingProviderSlots <= 0) {
+      hapticError();
+      setError(serviceLimitMessage());
+      return;
+    }
+    setError("");
     hapticSuccess();
     setSelectedProviders((prev) => {
       const next = new Map(prev);
+      let added = 0;
       for (const provider of essentialRecommended) {
-        if (!next.has(provider.id)) next.set(provider.id, provider);
+        if (next.has(provider.id)) continue;
+        if (added >= remainingProviderSlots) break;
+        next.set(provider.id, provider);
+        added++;
       }
       return next;
     });
-  }, [essentialRecommended]);
+  }, [essentialRecommended, remainingProviderSlots, serviceLimitMessage]);
 
   // Shared compact recommendation card (used by both the essentials and the
   // optional-extras lists so they stay visually identical and there's no
@@ -1223,75 +1271,97 @@ export default function OnboardingScreen() {
   const continueDisabled =
     (step === 0 && (!profile.firstName || !profile.lastName)) ||
     (step === 1 && missingRequiredAddress);
+  const headerCompact = keyboardVisible || headerCollapsed;
 
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior="padding"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        keyboardVerticalOffset={0}
       >
         {/* Aurora onboarding chrome: compact brand stage + named step rail.
             Pure presentation; all production save/skip/payment paths below
             stay unchanged. */}
-        <View style={styles.onboardingHeader}>
+        <View style={[styles.onboardingHeader, headerCompact && styles.onboardingHeaderCompact]}>
           <LinearGradient
             colors={[`${theme.colors.primary}24`, `${theme.colors.accent}10`, "transparent"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.headerBrandRow}>
-            <LogoBrand size="sm" />
-            <View style={styles.headerCopy}>
-              <Text style={styles.headerKicker}>
-                {t("onboarding.headerKicker", { defaultValue: "A moving companion" })}
-              </Text>
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {t("onboarding.headerTitle", { defaultValue: "Move once. Remember everything." })}
-              </Text>
+          {headerCompact ? (
+            <View style={styles.compactHeaderRow}>
+              <LogoBrand size="sm" />
+              <View style={styles.compactHeaderCopy}>
+                <Text style={styles.compactHeaderKicker}>
+                  {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
+                </Text>
+                <Text style={styles.compactHeaderTitle} numberOfLines={1}>
+                  {t(STEP_KEYS[step])}
+                </Text>
+              </View>
+              <View style={styles.headerPill}>
+                <Text style={styles.headerPillText}>{step + 1}/{STEP_KEYS.length}</Text>
+              </View>
             </View>
-            <View style={styles.headerPill}>
-              <Text style={styles.headerPillText}>{step + 1}/{STEP_KEYS.length}</Text>
-            </View>
-          </View>
-          <View
-            style={styles.stepRail}
-            accessibilityRole="progressbar"
-            accessibilityValue={{ min: 1, max: STEP_KEYS.length, now: step + 1 }}
-          >
-            {STEP_KEYS.map((key, index) => {
-              const active = index === step;
-              const complete = index < step;
-              return (
-                <View key={key} style={styles.stepRailItem}>
-                  <View
-                    style={[
-                      styles.stepRailDot,
-                      (active || complete) && styles.stepRailDotOn,
-                      active && styles.stepRailDotActive,
-                    ]}
-                  >
-                    {complete ? <Check size={9} color={theme.colors.background} /> : null}
-                  </View>
-                  <Text
-                    style={[
-                      styles.stepRailLabel,
-                      active && styles.stepRailLabelOn,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {t(key)}
+          ) : (
+            <>
+              <View style={styles.headerBrandRow}>
+                <LogoBrand size="sm" />
+                <View style={styles.headerCopy}>
+                  <Text style={styles.headerKicker}>
+                    {t("onboarding.headerKicker", { defaultValue: "A moving companion" })}
+                  </Text>
+                  <Text style={styles.headerTitle} numberOfLines={1}>
+                    {t("onboarding.headerTitle", { defaultValue: "Move once. Remember everything." })}
                   </Text>
                 </View>
-              );
-            })}
-          </View>
+                <View style={styles.headerPill}>
+                  <Text style={styles.headerPillText}>{step + 1}/{STEP_KEYS.length}</Text>
+                </View>
+              </View>
+              <View
+                style={styles.stepRail}
+                accessibilityRole="progressbar"
+                accessibilityValue={{ min: 1, max: STEP_KEYS.length, now: step + 1 }}
+              >
+                {STEP_KEYS.map((key, index) => {
+                  const active = index === step;
+                  const complete = index < step;
+                  return (
+                    <View key={key} style={styles.stepRailItem}>
+                      <View
+                        style={[
+                          styles.stepRailDot,
+                          (active || complete) && styles.stepRailDotOn,
+                          active && styles.stepRailDotActive,
+                        ]}
+                      >
+                        {complete ? <Check size={9} color={theme.colors.background} /> : null}
+                      </View>
+                      <Text
+                        style={[
+                          styles.stepRailLabel,
+                          active && styles.stepRailLabelOn,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {t(key)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
           <OnboardingProgressBar step={step} total={STEP_KEYS.length} pulseTick={pulseTick} />
         </View>
-        <Text style={styles.stepLabel}>
-          {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
-        </Text>
+        {!headerCompact && (
+          <Text style={styles.stepLabel}>
+            {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
+          </Text>
+        )}
 
         {error ? (
           <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>
@@ -1299,8 +1369,25 @@ export default function OnboardingScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            headerCompact && styles.scrollContentCompact,
+            keyboardVisible && styles.scrollContentKeyboard,
+          ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          scrollEventThrottle={16}
+          onScroll={({ nativeEvent }) => {
+            const y = nativeEvent.contentOffset.y;
+            const lastY = lastScrollYRef.current;
+            if (y > lastY + 10 && y > 12) {
+              setHeaderCollapsed(true);
+            } else if (y < lastY - 10 || y <= 4) {
+              setHeaderCollapsed(false);
+            }
+            lastScrollYRef.current = y;
+          }}
         >
           {/* Each step's content cross-fades + lifts 8px on entry. Keyed on
               `step` so it remounts per step, which also re-triggers the
@@ -1622,14 +1709,23 @@ export default function OnboardingScreen() {
                     </View>
                     {unselectedEssentialCount > 0 ? (
                       <TouchableOpacity
-                        style={styles.addAllBtn}
+                        style={[styles.addAllBtn, addAllEssentialCount === 0 && { opacity: 0.55 }]}
                         onPress={addAllEssentials}
+                        disabled={addAllEssentialCount === 0}
                         accessibilityRole="button"
-                        accessibilityLabel={t("onboarding.providers_addAllA11y", { defaultValue: "Add all recommended essentials", count: unselectedEssentialCount })}
+                        accessibilityLabel={
+                          addAllEssentialCount === 0
+                            ? t("onboarding.providers_limitReached", { defaultValue: "Service limit reached" })
+                            : t("onboarding.providers_addAllA11y", { defaultValue: "Add recommended essentials", count: addAllEssentialCount })
+                        }
                       >
                         <Check size={13} color={theme.colors.primary} />
                         <Text style={styles.addAllBtnText}>
-                          {t("onboarding.providers_addAll", { defaultValue: "Add all", count: unselectedEssentialCount })}
+                          {addAllEssentialCount === 0
+                            ? t("onboarding.providers_limitReached", { defaultValue: "Limit reached" })
+                            : essentialSelectionLimited
+                              ? t("onboarding.providers_addAvailable", { defaultValue: `Add ${addAllEssentialCount}`, count: addAllEssentialCount })
+                              : t("onboarding.providers_addAll", { defaultValue: "Add all", count: unselectedEssentialCount })}
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -1642,6 +1738,14 @@ export default function OnboardingScreen() {
                   <Text style={styles.recoSubtle}>
                     {t("onboarding.providers_essentialsHint", { defaultValue: "Tap one to deselect — you're in control." })}
                   </Text>
+                  {essentialSelectionLimited && (
+                    <Text style={[styles.recoSubtle, { color: theme.colors.amber.text, marginTop: 4 }]}>
+                      {t("onboarding.providers_limitHint", {
+                        limit: serviceSelectionLimit,
+                        defaultValue: `Your plan includes ${serviceSelectionLimit} services. Choose the essentials now; upgrade for the rest.`,
+                      })}
+                    </Text>
+                  )}
                   {essentialRecommended.map((provider: ScoredProvider, recoIndex: number) =>
                     renderRecoCard(provider, recoIndex, `ess-${provider.id}`),
                   )}
@@ -1912,7 +2016,10 @@ export default function OnboardingScreen() {
                     <Text style={styles.dateLabel}>{t("onboarding.moving_dateLabel")}</Text>
                     <TouchableOpacity
                       style={styles.dateButton}
-                      onPress={() => setShowMoveDatePicker(true)}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setShowMoveDatePicker(true);
+                      }}
                       activeOpacity={0.7}
                       accessibilityRole="button"
                       accessibilityLabel={t("onboarding.moving_dateA11y")}
@@ -1929,14 +2036,41 @@ export default function OnboardingScreen() {
                           : t("onboarding.moving_datePlaceholder")}
                       </Text>
                     </TouchableOpacity>
-                    {showMoveDatePicker && (
+                    {showMoveDatePicker && Platform.OS === "ios" ? (
+                      <View style={styles.datePickerPanel}>
+                        <View style={styles.datePickerToolbar}>
+                          <Text style={styles.datePickerTitle}>{t("onboarding.moving_dateLabel")}</Text>
+                          <TouchableOpacity
+                            style={styles.datePickerDone}
+                            onPress={() => setShowMoveDatePicker(false)}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("onboarding.moving_dateDoneA11y")}
+                          >
+                            <Text style={styles.datePickerDoneText}>{t("common.done")}</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                          value={movingForm.moveDate ? new Date(`${movingForm.moveDate}T00:00:00`) : new Date()}
+                          mode="date"
+                          display="spinner"
+                          minimumDate={new Date()}
+                          onChange={(_event: any, date?: Date) => {
+                            if (date) {
+                              updateMoving("moveDate", date.toISOString().slice(0, 10));
+                            }
+                          }}
+                          themeVariant={resolvedScheme}
+                          textColor={theme.colors.text}
+                        />
+                      </View>
+                    ) : showMoveDatePicker ? (
                       <DateTimePicker
                         value={movingForm.moveDate ? new Date(`${movingForm.moveDate}T00:00:00`) : new Date()}
                         mode="date"
-                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        display="default"
                         minimumDate={new Date()}
                         onChange={(_event: any, date?: Date) => {
-                          setShowMoveDatePicker(Platform.OS === "ios");
+                          setShowMoveDatePicker(false);
                           if (date) {
                             updateMoving("moveDate", date.toISOString().slice(0, 10));
                           }
@@ -1944,16 +2078,6 @@ export default function OnboardingScreen() {
                         themeVariant={resolvedScheme}
                         textColor={theme.colors.text}
                       />
-                    )}
-                    {Platform.OS === "ios" && showMoveDatePicker ? (
-                      <TouchableOpacity
-                        style={styles.dateDoneButton}
-                        onPress={() => setShowMoveDatePicker(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={t("onboarding.moving_dateDoneA11y")}
-                      >
-                        <Text style={styles.dateDoneText}>{t("common.done")}</Text>
-                      </TouchableOpacity>
                     ) : null}
                   </View>
                   {/* Aspirational "what Pro unlocks for YOUR move" showcase —
@@ -1979,7 +2103,7 @@ export default function OnboardingScreen() {
                         }}
                         fromLabel={address.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
                         toLabel={movingForm.state || t("onboarding.proShowcase_yourState", { defaultValue: "your state" })}
-                        onSeePro={() => router.push("/settings/subscription")}
+                        onSeePro={() => completeWithoutPlan("subscription")}
                       />
                     )}
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
@@ -2024,7 +2148,7 @@ export default function OnboardingScreen() {
             Gating/submit logic is byte-for-byte the old behaviour: the same
             step-0 names condition, the same next/back/skipServices handlers. */}
         {step < 3 && (
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, keyboardVisible && styles.bottomBarKeyboard]}>
             {continueDisabled && (
               <Text style={styles.ctaHint} accessibilityLiveRegion="polite">
                 {step === 0
@@ -2086,7 +2210,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.glass.border,
     backgroundColor: theme.colors.glass.bg,
   },
+  onboardingHeaderCompact: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 18,
+  },
   headerBrandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  compactHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  compactHeaderCopy: { flex: 1, minWidth: 0 },
+  compactHeaderKicker: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.textTertiary,
+  },
+  compactHeaderTitle: { marginTop: 1, fontSize: 13, fontWeight: "800", color: theme.colors.text },
   headerCopy: { flex: 1, minWidth: 0 },
   headerKicker: {
     fontFamily: Platform.select({ ios: "GeistMono_500Medium", android: "GeistMono_500Medium" }),
@@ -2156,6 +2294,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   stepRailLabelOn: { color: theme.colors.primary },
   stepLabel: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", marginTop: 12 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 140 },
+  scrollContentCompact: { paddingTop: 14 },
+  scrollContentKeyboard: { paddingBottom: 92 },
   stepContent: { alignItems: "center" },
   stepIcon: {
     width: 64, height: 64, borderRadius: 20,
@@ -2229,6 +2369,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14,
   },
   dateButtonText: { flex: 1, fontSize: 15, color: theme.colors.textMuted },
+  datePickerPanel: {
+    marginTop: 10,
+    overflow: "hidden",
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  datePickerToolbar: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  datePickerTitle: { fontSize: 13, fontWeight: "800", color: theme.colors.textSecondary },
+  datePickerDone: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  datePickerDoneText: { fontSize: 13, fontWeight: "800", color: theme.colors.primary },
   dateDoneButton: { alignSelf: "flex-end", marginTop: 4, paddingHorizontal: 8, paddingVertical: 6 },
   dateDoneText: { color: theme.colors.primary, fontWeight: "600" },
   catSection: { marginBottom: 8, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden" },
@@ -2302,6 +2469,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   bottomBar: {
     paddingHorizontal: 24, paddingVertical: 14, gap: 10,
     borderTopWidth: 1, borderTopColor: theme.colors.border,
+  },
+  bottomBarKeyboard: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: theme.colors.background,
   },
   ctaHint: {
     fontSize: 12, lineHeight: 16, color: theme.colors.textTertiary, textAlign: "center",

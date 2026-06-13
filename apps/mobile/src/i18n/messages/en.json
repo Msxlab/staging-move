@@ -599,7 +599,7 @@
     "errorDestinationStateFormat": "Destination state must be a 2-letter code.",
     "errorPlanCreateFailed": "Moving plan could not be created.",
     "checklist": "Checklist",
-    "checklistEmpty": "Your checklist will appear here once you add services.",
+    "checklistEmpty": "No moving plan yet.",
     "detailTitle": "Moving Plan",
     "origin": "Origin",
     "from": "From",

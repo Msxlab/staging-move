@@ -195,6 +195,11 @@ export default function ProfileSettingsScreen() {
   const selectedFamilyLabel = FAMILY_STATUSES.find((item) => item.value === form.familyStatus)?.label
     || t("settings.familyStatus_SINGLE");
   const selectedMoveLabel = t(`settings.moveType_${form.moveType}`);
+  const profileStats = [
+    { label: t("onboarding.ageRange"), value: form.ageRange || "-" },
+    { label: t("settings.profile"), value: selectedFamilyLabel },
+    { label: t("onboarding.moveType"), value: selectedMoveLabel },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -203,7 +208,19 @@ export default function ProfileSettingsScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("settings.profile_editTitle")}</Text>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          style={[styles.headerSaveBtn, saving && { opacity: 0.55 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.profile_save", { defaultValue: "Save" })}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            <Check size={17} color={theme.colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -223,6 +240,15 @@ export default function ProfileSettingsScreen() {
               {selectedFamilyLabel} · {selectedMoveLabel}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.profileStatsRow}>
+          {profileStats.map((item) => (
+            <View key={item.label} style={styles.profileStat}>
+              <Text style={styles.profileStatValue} numberOfLines={1}>{item.value}</Text>
+              <Text style={styles.profileStatLabel} numberOfLines={1}>{item.label}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={styles.formCard}>
@@ -278,7 +304,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasChildren}
             onValueChange={(v) => update("hasChildren", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -302,7 +328,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasPets}
             onValueChange={(v) => update("hasPets", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -351,7 +377,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.isBusinessOwner}
             onValueChange={(v) => update("isBusinessOwner", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -362,7 +388,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasMotorcycle}
             onValueChange={(v) => update("hasMotorcycle", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -371,7 +397,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasBoatRV}
             onValueChange={(v) => update("hasBoatRV", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -380,7 +406,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.needsStorage}
             onValueChange={(v) => update("needsStorage", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -389,7 +415,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasSenior}
             onValueChange={(v) => update("hasSenior", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -403,7 +429,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasDisability}
             onValueChange={(v) => update("hasDisability", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -415,7 +441,7 @@ export default function ProfileSettingsScreen() {
               update("isImmigrant", v);
               if (!v) update("immigrationStatus", "");
             }}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
             thumbColor="#fff"
           />
         </View>
@@ -470,8 +496,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
+  headerSaveBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
   profileHero: {
     flexDirection: "row",
     alignItems: "center",
@@ -497,6 +533,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   profileAvatarText: { fontSize: 16, fontWeight: "900", color: theme.colors.primary },
   profileHeroTitle: { fontSize: 18, fontWeight: "900", color: theme.colors.text },
   profileHeroMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  profileStatsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 14,
+  },
+  profileStat: {
+    flex: 1,
+    minHeight: 58,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+  },
+  profileStatValue: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
+  profileStatLabel: { marginTop: 3, fontSize: 9, fontWeight: "800", color: theme.colors.textTertiary, textTransform: "uppercase" },
   formCard: {
     padding: 14,
     borderRadius: theme.radius.xl,
@@ -513,26 +567,26 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 15, color: theme.colors.text,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.4)",
+    backgroundColor: theme.colors.surface, borderColor: theme.colors.borderFocus,
   },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: 16, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
+    marginTop: 12, paddingVertical: 13, paddingHorizontal: 15,
+    backgroundColor: theme.colors.card, borderRadius: 16,
     borderWidth: 1, borderColor: theme.colors.border,
   },
-  switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  switchLabel: { flex: 1, paddingRight: 12, fontSize: 15, fontWeight: "700", color: theme.colors.text },
   helpText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginBottom: 4 },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,

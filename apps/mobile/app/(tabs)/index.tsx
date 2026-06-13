@@ -12,6 +12,7 @@ import {
   Pressable,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
@@ -377,6 +378,8 @@ export default function DashboardScreen() {
   // Mirror of `snapshot` in a ref so fetchDashboard's error branch can decide
   // "offline (keep last-known)" vs "hard error wall" without a stale closure.
   const snapshotRef = useRef<DashboardSnapshot | null>(null);
+  const loadedOnceRef = useRef(false);
+  const fetchDashboardRef = useRef<() => Promise<boolean>>(async () => false);
   useEffect(() => {
     snapshotRef.current = snapshot;
   }, [snapshot]);
@@ -770,6 +773,7 @@ export default function DashboardScreen() {
     try {
       await fetchDashboard();
     } finally {
+      loadedOnceRef.current = true;
       setLoading(false);
     }
   }, [fetchDashboard]);
@@ -808,6 +812,18 @@ export default function DashboardScreen() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    fetchDashboardRef.current = fetchDashboard;
+  }, [fetchDashboard]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loadedOnceRef.current) return undefined;
+      void fetchDashboardRef.current();
+      return undefined;
+    }, []),
+  );
 
   // Mount: hydrate from the snapshot FIRST (instant paint), THEN kick off the
   // live fetch which reconciles + overwrites + re-persists. The hydrate is
