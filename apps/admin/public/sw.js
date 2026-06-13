@@ -1,7 +1,9 @@
 const CACHE_PREFIX = "locateflow-admin-";
-const STATIC_CACHE = `${CACHE_PREFIX}static-v1`;
+const STATIC_CACHE = `${CACHE_PREFIX}static-v2`;
+const OFFLINE_URL = "/offline.html";
 
 const STATIC_ASSETS = [
+  OFFLINE_URL,
   "/manifest.json",
   "/favicon.svg",
   "/logo.svg",
@@ -11,8 +13,12 @@ const STATIC_ASSETS = [
   "/icon-512.png",
 ];
 
+function isSameOrigin(url) {
+  return url.origin === self.location.origin;
+}
+
 function isStaticAdminAsset(url) {
-  if (url.origin !== self.location.origin) return false;
+  if (!isSameOrigin(url)) return false;
   if (url.pathname.startsWith("/_next/static/")) return true;
   return STATIC_ASSETS.includes(url.pathname);
 }
@@ -57,9 +63,16 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  if (request.mode === "navigate") return;
+  if (!isSameOrigin(url)) return;
   if (url.pathname.startsWith("/api/")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(OFFLINE_URL))
+    );
+    return;
+  }
+
   if (!isStaticAdminAsset(url)) return;
 
   event.respondWith(

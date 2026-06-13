@@ -431,6 +431,51 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const planInfo = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
     const features = planFeatures(planInfo.plan);
 
+    const addressPayload = { id: address.id, city: address.city, state: address.state, zip: address.zip };
+
+    const hasLocation =
+      typeof address.latitude === "number" &&
+      Number.isFinite(address.latitude) &&
+      typeof address.longitude === "number" &&
+      Number.isFinite(address.longitude);
+
+    // Lightweight current-home dashboard summary. It returns only AirNow AQI
+    // and HUD rent/income area context, so the paid full-dossier gate below
+    // remains intact and the route avoids FEMA/NCES/NWS/NRI/water/EV/Census.
+    if (new URL(request.url).searchParams.get("summary") === "1") {
+      if (!hasLocation) {
+        const summary = {
+          configured: true,
+          address: addressPayload,
+          air: { status: "no_location", aqi: null, category: null } satisfies AirSection,
+          housing: emptyHousing("no_location", address.zip),
+        };
+        recordIntegrationOutcomes({
+          air: summary.air.status,
+          hud_housing: summary.housing.status,
+          dossier: "summary",
+        });
+        return NextResponse.json(summary, { headers: { "Cache-Control": "private, max-age=900" } });
+      }
+
+      const [airSettled, housingSettled] = await Promise.allSettled([
+        lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
+        lookupHudHousing({ zip: address.zip, state: address.state }),
+      ]);
+      const summary = {
+        configured: true,
+        address: addressPayload,
+        air: airSection(airSettled),
+        housing: housingSection(housingSettled),
+      };
+      recordIntegrationOutcomes({
+        air: summary.air.status,
+        hud_housing: summary.housing.status,
+        dossier: "summary",
+      });
+      return NextResponse.json(summary, { headers: { "Cache-Control": "private, max-age=900" } });
+    }
+
     // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
     // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 —
     // never 403 — and the address/section blocks are omitted, so old clients
@@ -447,14 +492,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
       });
     }
-
-    const addressPayload = { id: address.id, city: address.city, state: address.state, zip: address.zip };
-
-    const hasLocation =
-      typeof address.latitude === "number" &&
-      Number.isFinite(address.latitude) &&
-      typeof address.longitude === "number" &&
-      Number.isFinite(address.longitude);
 
     // No coordinates → nothing to look up; every section is "no_location" and
     // no external call is made. (water keys off city/state, but an ungeocoded

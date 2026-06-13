@@ -194,6 +194,13 @@ export default function MoreScreen() {
     },
   ];
 
+  const quickActions: MenuItem[] = [
+    { icon: User, label: t("settings.profile"), route: "/settings/profile", tone: tonePrimary },
+    { icon: CreditCard, label: planLabel, route: "/settings/subscription", tone: toneHoney },
+    { icon: Download, label: t("settings.export"), route: "/settings/export", tone: toneSage },
+    { icon: HelpCircle, label: t("settings.support"), route: "/help/tickets", tone: toneCool },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
@@ -225,6 +232,29 @@ export default function MoreScreen() {
           </View>
           <ChevronRight size={18} color={theme.colors.textMuted} />
         </TouchableOpacity>
+
+        <View style={styles.quickGrid}>
+          {quickActions.map((item) => {
+            const Icon = item.icon;
+            const tone = item.tone ?? toneCool;
+            return (
+              <TouchableOpacity
+                key={item.label}
+                style={styles.quickTile}
+                onPress={() => {
+                  hapticLight();
+                  if (item.route) router.push(item.route);
+                }}
+                activeOpacity={0.72}
+              >
+                <View style={[styles.quickIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                  <Icon size={17} color={tone.text} />
+                </View>
+                <Text style={styles.quickLabel} numberOfLines={1}>{item.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {/* Menu Sections */}
         {sections.map((section) => (
@@ -304,12 +334,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.glass.bg,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.glass.border,
     padding: 15,
-    marginBottom: 24,
+    marginBottom: 12,
     ...theme.shadow.sm,
   },
   profileBody: { flex: 1, minWidth: 0 },
@@ -337,6 +367,35 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1,
     color: theme.colors.primary,
+  },
+  quickGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 22,
+  },
+  quickTile: {
+    flex: 1,
+    minHeight: 76,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 10,
+    justifyContent: "space-between",
+    ...theme.shadow.sm,
+  },
+  quickIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: theme.colors.text,
   },
   section: { marginBottom: 20 },
   sectionTitle: {

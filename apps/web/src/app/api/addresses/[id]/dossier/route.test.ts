@@ -110,6 +110,10 @@ function dossierRequest(id = "address-1") {
   return new Request(`http://localhost/api/addresses/${id}/dossier`) as any;
 }
 
+function dossierSummaryRequest(id = "address-1") {
+  return new Request(`http://localhost/api/addresses/${id}/dossier?summary=1`) as any;
+}
+
 const BASE_ADDRESS = {
   id: "address-1",
   userId: "user-1",
@@ -341,6 +345,45 @@ describe("address dossier route", () => {
     expect(mockLookupRadonZone).not.toHaveBeenCalled();
     expect(mockLookupWaterSystem).not.toHaveBeenCalled();
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
+    expect(mockPlanFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("summary mode returns only current-home air and HUD context even for a free plan", async () => {
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+
+    const response = await GET(dossierSummaryRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("private, max-age=900");
+    expect(body).toEqual({
+      configured: true,
+      address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
+      air: { status: "ok", aqi: 52, category: "Moderate" },
+      housing: {
+        status: "disabled",
+        zip: null,
+        entityId: null,
+        countyFips: null,
+        cbsaCode: null,
+        countyName: null,
+        metroName: null,
+        areaName: null,
+        fairMarketRent: null,
+        incomeLimits: null,
+        caveat: HUD_DISABLED.caveat,
+      },
+    });
+    expect(mockLookupAirQuality).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    expect(mockLookupHudHousing).toHaveBeenCalledWith({ zip: "78701", state: "TX" });
+    expect(mockLookupFloodZone).not.toHaveBeenCalled();
+    expect(mockLookupSchoolDistrict).not.toHaveBeenCalled();
+    expect(mockLookupMoveDayForecast).not.toHaveBeenCalled();
+    expect(mockLookupHazardRisks).not.toHaveBeenCalled();
+    expect(mockLookupRadonZone).not.toHaveBeenCalled();
+    expect(mockLookupWaterSystem).not.toHaveBeenCalled();
+    expect(mockLookupEvCharging).not.toHaveBeenCalled();
+    expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
     expect(mockPlanFindFirst).not.toHaveBeenCalled();
   });
 

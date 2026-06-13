@@ -383,7 +383,15 @@ export default function ServicesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
+      <View style={[styles.header, styles.inScrollHeader]}>
         <View>
           <Text style={styles.title}>{t("services.title")}</Text>
           <Text style={styles.subtitle}>
@@ -402,7 +410,7 @@ export default function ServicesScreen() {
       </View>
 
       {/* Aurora glass hero — monthly overview + category cost distribution */}
-      <View style={styles.hero}>
+      <View style={[styles.hero, styles.inScrollHero]}>
         <View style={styles.heroTop}>
           <Text style={styles.heroKicker}>{t("services.monthlyServices").toUpperCase()}</Text>
           <View style={styles.heroBadge}>
@@ -448,7 +456,7 @@ export default function ServicesScreen() {
       </View>
 
       {addresses.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressRow} contentContainerStyle={styles.addressContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressRow} contentContainerStyle={[styles.addressContent, styles.inScrollChipContent]}>
           <TouchableOpacity
             style={[styles.addressChip, !selectedAddressId && styles.addressChipActive]}
             onPress={() => setSelectedAddressId(null)}
@@ -471,7 +479,7 @@ export default function ServicesScreen() {
 
       {/* Category Filter */}
       {categories.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={[styles.filterContent, styles.inScrollChipContent]}>
           <TouchableOpacity
             style={[styles.filterChip, !filterCat && styles.filterChipActive]}
             onPress={() => setFilterCat(null)}
@@ -497,14 +505,6 @@ export default function ServicesScreen() {
         </ScrollView>
       )}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
-      >
         {/* Offline: live fetch failed but we hydrated the last-known list. */}
         {offline && (
           <OfflineChip relativeAge={cacheUpdatedAt ? formatRelativeTime(cacheUpdatedAt, i18n.language) : ""} />
@@ -844,6 +844,7 @@ export default function ServicesScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
+  inScrollHeader: { paddingHorizontal: 0 },
   title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
   subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
   addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
@@ -858,6 +859,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.glass.border,
     ...theme.shadow.glow,
   },
+  inScrollHero: { marginHorizontal: 0 },
   heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   heroKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
   heroBadge: {
@@ -979,42 +981,43 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   statusPillText: { fontSize: 8, letterSpacing: 1, fontWeight: "700" },
   addressRow: { marginBottom: 10 },
   addressContent: { paddingHorizontal: 20, paddingVertical: 2, gap: 8, alignItems: "center" },
+  inScrollChipContent: { paddingHorizontal: 0 },
   addressChip: {
-    minWidth: 92,
+    minWidth: 74,
     maxWidth: 180,
-    minHeight: 42,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: theme.colors.card,
+    minHeight: 36,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.32)" },
-  addressChipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, textAlign: "center" },
-  addressChipTextActive: { color: theme.colors.orange.text },
+  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(242, 196, 108,0.38)" },
+  addressChipText: { fontSize: 12, fontWeight: "800", color: theme.colors.textSecondary, textAlign: "center" },
+  addressChipTextActive: { color: theme.colors.accent },
   filterRow: { marginBottom: 10 },
   filterContent: { paddingHorizontal: 20, paddingVertical: 2, gap: 8, alignItems: "center" },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    minHeight: 38,
-    minWidth: 74,
+    minHeight: 36,
+    minWidth: 68,
     maxWidth: 168,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: theme.colors.card,
+    borderRadius: 14,
+    backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.3)" },
+  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(242, 196, 108,0.34)" },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
-  filterText: { flexShrink: 1, fontSize: 13, color: theme.colors.textSecondary, fontWeight: "700" },
-  filterTextActive: { color: theme.colors.orange.text },
+  filterText: { flexShrink: 1, fontSize: 12, color: theme.colors.textSecondary, fontWeight: "800" },
+  filterTextActive: { color: theme.colors.accent },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 140, paddingTop: 8 },
   list: { gap: 12 },
   serviceTop: { flexDirection: "row", alignItems: "center", gap: 12 },

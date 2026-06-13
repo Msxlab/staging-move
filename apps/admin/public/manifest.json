@@ -2,9 +2,13 @@
   "name": "LocateFlow Admin",
   "short_name": "LF Admin",
   "description": "Secure LocateFlow administration panel.",
+  "id": "/?source=pwa",
   "start_url": "/",
   "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#0A0F18",
   "theme_color": "#0A0F18",
   "orientation": "portrait-primary",
@@ -26,6 +30,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Provider Quality",
+      "short_name": "Quality",
+      "url": "/providers?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Integration Status",
+      "short_name": "Integrations",
+      "url": "/connectors?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "categories": ["business", "productivity", "utilities"],

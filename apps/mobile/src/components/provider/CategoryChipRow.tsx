@@ -46,7 +46,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
         >
           <LayoutGrid
             size={14}
-            color={selected === null ? theme.colors.primary : theme.colors.textSecondary}
+            color={selected === null ? theme.colors.accent : theme.colors.textSecondary}
           />
           <Text style={[styles.chipText, selected === null && styles.chipTextSelected]}>{t("common.all")}</Text>
         </TouchableOpacity>
@@ -68,7 +68,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
             <CategoryIcon
               emoji={getCategoryIcon(c.value)}
               size={14}
-              color={isSelected ? theme.colors.primary : theme.colors.textSecondary}
+              color={isSelected ? theme.colors.accent : theme.colors.textSecondary}
             />
             <Text style={[styles.chipText, isSelected && styles.chipTextSelected]} numberOfLines={1}>
               {label}
@@ -88,43 +88,44 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
 const makeStyles = (theme: Theme) => StyleSheet.create({
   row: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 6,
     gap: 8,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
+    minHeight: 36,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.card,
+    borderRadius: 14,
+    backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   chipSelected: {
     backgroundColor: theme.colors.primaryFaded,
-    borderColor: "rgba(127, 182, 232,0.4)",
+    borderColor: "rgba(242, 196, 108,0.38)",
   },
   chipText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "800",
     color: theme.colors.textSecondary,
   },
   chipTextSelected: {
-    color: theme.colors.primary,
+    color: theme.colors.accent,
   },
   countPill: {
     minWidth: 20,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: theme.radius.full,
+    borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
   countPillSelected: {
-    backgroundColor: "rgba(127, 182, 232,0.25)",
+    backgroundColor: "rgba(242, 196, 108,0.16)",
   },
   countText: {
     fontSize: 11,
@@ -132,6 +133,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textTertiary,
   },
   countTextSelected: {
-    color: theme.colors.primary,
+    color: theme.colors.accent,
   },
 });

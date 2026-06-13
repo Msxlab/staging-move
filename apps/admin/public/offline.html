@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#0A0F18" />
+    <title>LocateFlow Admin Offline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0f18;
+        --card: #121a28;
+        --line: rgba(255, 255, 255, 0.12);
+        --text: #f5f7fb;
+        --muted: #9aa8bc;
+        --accent: #f2c46c;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        width: min(440px, 100%);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card);
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+      }
+      img {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 18px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.1;
+      }
+      p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      button {
+        width: 100%;
+        margin-top: 20px;
+        border: 0;
+        border-radius: 12px;
+        padding: 13px 16px;
+        background: var(--accent);
+        color: #0a0f18;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon-192.png" alt="" />
+      <h1>Admin is offline</h1>
+      <p>Reconnect to continue. Secure admin pages and API responses are intentionally not stored offline.</p>
+      <button type="button" onclick="window.location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

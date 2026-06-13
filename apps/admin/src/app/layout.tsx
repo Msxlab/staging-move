@@ -79,6 +79,10 @@ export default async function RootLayout({
     >
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="LocateFlow Admin" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="min-h-screen bg-background font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>

@@ -297,10 +297,105 @@ export default function ProvidersScreen() {
   const renderHeader = useCallback(() => {
     return (
       <View>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back")}
+            accessibilityHint={t("common.backHint")}
+          >
+            <ArrowLeft size={22} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{t("providers.title")}</Text>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <View style={styles.commandHero}>
+          <View style={styles.commandTop}>
+            <View style={styles.commandIcon}>
+              <Search size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.commandCopy}>
+              <Text style={styles.commandKicker}>PROVIDER COMMAND</Text>
+              <Text style={styles.commandTitle}>{t("providers.title")}</Text>
+              <View style={styles.commandLocation}>
+                <MapPin size={12} color={theme.colors.textTertiary} />
+                <Text style={styles.commandSub} numberOfLines={1}>
+                  {commandAddressLabel}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.commandStats}>
+            <View style={styles.commandStat}>
+              <Text style={styles.commandStatValue}>{providers.length}</Text>
+              <Text style={styles.commandStatLabel}>catalog</Text>
+            </View>
+            <View style={styles.commandStat}>
+              <Text style={styles.commandStatValue}>{recommended.length}</Text>
+              <Text style={styles.commandStatLabel}>matched</Text>
+            </View>
+            <View style={styles.commandStat}>
+              <Text style={[styles.commandStatValue, missingCritical.length > 0 && styles.commandStatWarn]}>
+                {missingCritical.length}
+              </Text>
+              <Text style={styles.commandStatLabel}>gaps</Text>
+            </View>
+            <View style={styles.commandStat}>
+              <Text style={styles.commandStatValue}>{compareEntries.length}/{MAX_COMPARE}</Text>
+              <Text style={styles.commandStatLabel}>compare</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Search size={16} color={theme.colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t("providers.searchPlaceholder")}
+              placeholderTextColor={theme.colors.textMuted}
+              value={searchInput}
+              onChangeText={setSearchInput}
+              onSubmitEditing={submitSearch}
+              returnKeyType="search"
+              accessibilityLabel={t("providers.searchA11y")}
+              accessibilityHint={t("providers.searchHint")}
+            />
+            {searchInput.length > 0 ? (
+              <TouchableOpacity
+                onPress={clearSearch}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.clearSearch")}
+              >
+                <X size={16} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={styles.truthBanner}>
+          <AlertTriangle size={15} color={theme.colors.warning} />
+          <Text style={styles.truthText}>
+            {t("providers.truthBanner")}
+          </Text>
+        </View>
+
+        {!search && categoryChips.length > 0 ? (
+          <View style={styles.categoryRowWrap}>
+            <CategoryChipRow
+              categories={categoryChips}
+              selected={selectedCat}
+              onSelect={setSelectedCat}
+            />
+          </View>
+        ) : null}
+
         {/* Location picker — browse providers for any of the user's addresses,
             not just the primary one (web parity). */}
         {addresses.length > 1 ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <View style={styles.addressSwitchWrap}>
             {addresses.map((a) => {
               const active = a.id === primaryAddress?.id;
               const label = a.nickname || a.city || a.state || t("addresses.title");
@@ -309,16 +404,9 @@ export default function ProvidersScreen() {
                   key={a.id}
                   onPress={() => setPrimaryAddress(a)}
                   accessibilityRole="button"
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: active ? theme.colors.primary : theme.colors.border,
-                    backgroundColor: active ? theme.colors.primary : "transparent",
-                  }}
+                  style={[styles.addressSwitchChip, active && styles.addressSwitchChipActive]}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: active ? "#fff" : theme.colors.textSecondary }}>
+                  <Text style={[styles.addressSwitchText, active && styles.addressSwitchTextActive]} numberOfLines={1}>
                     {label}
                   </Text>
                 </TouchableOpacity>
@@ -397,7 +485,29 @@ export default function ProvidersScreen() {
         ) : null}
       </View>
     );
-  }, [recommended, primaryAddress, addresses, router, search, t, theme, gapChips, selectGap, styles, filtered.length, selectedCat, selectedLabel]);
+  }, [
+    recommended,
+    primaryAddress,
+    addresses,
+    router,
+    search,
+    t,
+    theme,
+    gapChips,
+    selectGap,
+    styles,
+    filtered.length,
+    selectedCat,
+    selectedLabel,
+    commandAddressLabel,
+    providers.length,
+    missingCritical.length,
+    compareEntries.length,
+    searchInput,
+    submitSearch,
+    clearSearch,
+    categoryChips,
+  ]);
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
@@ -441,149 +551,52 @@ export default function ProvidersScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel={t("common.back")}
-          accessibilityHint={t("common.backHint")}
-        >
-          <ArrowLeft size={22} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>{t("providers.title")}</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <View style={styles.commandHero}>
-        <View style={styles.commandTop}>
-          <View style={styles.commandIcon}>
-            <Search size={20} color={theme.colors.primary} />
-          </View>
-          <View style={styles.commandCopy}>
-            <Text style={styles.commandKicker}>PROVIDER COMMAND</Text>
-            <Text style={styles.commandTitle}>{t("providers.title")}</Text>
-            <View style={styles.commandLocation}>
-              <MapPin size={12} color={theme.colors.textTertiary} />
-              <Text style={styles.commandSub} numberOfLines={1}>
-                {commandAddressLabel}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.commandStats}>
-          <View style={styles.commandStat}>
-            <Text style={styles.commandStatValue}>{providers.length}</Text>
-            <Text style={styles.commandStatLabel}>catalog</Text>
-          </View>
-          <View style={styles.commandStat}>
-            <Text style={styles.commandStatValue}>{recommended.length}</Text>
-            <Text style={styles.commandStatLabel}>matched</Text>
-          </View>
-          <View style={styles.commandStat}>
-            <Text style={[styles.commandStatValue, missingCritical.length > 0 && styles.commandStatWarn]}>
-              {missingCritical.length}
-            </Text>
-            <Text style={styles.commandStatLabel}>gaps</Text>
-          </View>
-          <View style={styles.commandStat}>
-            <Text style={styles.commandStatValue}>{compareEntries.length}/{MAX_COMPARE}</Text>
-            <Text style={styles.commandStatLabel}>compare</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Search size={16} color={theme.colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t("providers.searchPlaceholder")}
-            placeholderTextColor={theme.colors.textMuted}
-            value={searchInput}
-            onChangeText={setSearchInput}
-            onSubmitEditing={submitSearch}
-            returnKeyType="search"
-            accessibilityLabel={t("providers.searchA11y")}
-            accessibilityHint={t("providers.searchHint")}
-          />
-          {searchInput.length > 0 ? (
-            <TouchableOpacity
-              onPress={clearSearch}
-              accessibilityRole="button"
-              accessibilityLabel={t("common.clearSearch")}
-            >
-              <X size={16} color={theme.colors.textMuted} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      </View>
-
-      <View style={styles.truthBanner}>
-        <AlertTriangle size={15} color={theme.colors.warning} />
-        <Text style={styles.truthText}>
-          {t("providers.truthBanner")}
-        </Text>
-      </View>
-
-      {!search && categoryChips.length > 0 ? (
-        <CategoryChipRow
-          categories={categoryChips}
-          selected={selectedCat}
-          onSelect={setSelectedCat}
-        />
-      ) : null}
-
-      {loading ? (
-        <LoadingScreen />
-      ) : (
-        <FlatList
-          data={paginated}
-          keyExtractor={(p) => p.id}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
-          renderItem={({ item, index }) => {
-            const card = (
-              <ProviderCard
-                provider={item}
-                variant="full"
-                selectedForCompare={compareIds.has(item.id)}
-                onPress={() => router.push({ pathname: "/providers/[id]", params: { id: item.id } })}
-                onLongPress={() => onToggleCompare(item)}
-              />
-            );
-            // Only cascade the first screenful. Beyond that, FlatList virtualizes
-            // rows in/out as you scroll — replaying the entrance on every
-            // scroll-mount would read as busy, so later rows render plainly.
-            if (index >= PAGE_SIZE) {
-              return <View style={styles.listItem}>{card}</View>;
-            }
-            return (
-              <ListEntrance index={index} style={styles.listItem}>
-                {card}
-              </ListEntrance>
-            );
-          }}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footer}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-              </View>
-            ) : null
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.colors.primary}
+      <FlatList
+        data={loading ? [] : paginated}
+        keyExtractor={(p) => p.id}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={loading ? <LoadingScreen /> : renderEmpty}
+        renderItem={({ item, index }) => {
+          const card = (
+            <ProviderCard
+              provider={item}
+              variant="full"
+              selectedForCompare={compareIds.has(item.id)}
+              onPress={() => router.push({ pathname: "/providers/[id]", params: { id: item.id } })}
+              onLongPress={() => onToggleCompare(item)}
             />
+          );
+          // Only cascade the first screenful. Beyond that, FlatList virtualizes
+          // rows in/out as you scroll — replaying the entrance on every
+          // scroll-mount would read as busy, so later rows render plainly.
+          if (index >= PAGE_SIZE) {
+            return <View style={styles.listItem}>{card}</View>;
           }
-          contentContainerStyle={[styles.scrollContent, compareEntries.length > 0 ? styles.scrollContentWithTray : null]}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+          return (
+            <ListEntrance index={index} style={styles.listItem}>
+              {card}
+            </ListEntrance>
+          );
+        }}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footer}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            </View>
+          ) : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+        contentContainerStyle={[styles.scrollContent, compareEntries.length > 0 ? styles.scrollContentWithTray : null]}
+        showsVerticalScrollIndicator={false}
+      />
 
       {compareEntries.length > 0 ? (
         <View style={styles.compareTray}>
@@ -771,6 +784,38 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     lineHeight: 17,
+  },
+  categoryRowWrap: {
+    marginBottom: 10,
+  },
+  addressSwitchWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  addressSwitchChip: {
+    maxWidth: 170,
+    minHeight: 34,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.glass.bg,
+  },
+  addressSwitchChipActive: {
+    borderColor: "rgba(242, 196, 108,0.38)",
+    backgroundColor: theme.colors.primaryFaded,
+  },
+  addressSwitchText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.textSecondary,
+  },
+  addressSwitchTextActive: {
+    color: theme.colors.accent,
   },
   stateGuideWrap: {
     paddingHorizontal: 20,

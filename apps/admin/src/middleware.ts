@@ -33,6 +33,7 @@ const PUBLIC_STATIC_PATHS = [
   "/sw.js",
   "/register-sw.js",
   "/manifest.json",
+  "/offline.html",
   "/robots.txt",
   "/logo.svg",
   "/logo-mark.svg",

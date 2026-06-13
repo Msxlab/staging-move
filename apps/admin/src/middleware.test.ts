@@ -95,6 +95,7 @@ describe("admin service worker", () => {
     expect(isPublicStaticPath("/sw.js")).toBe(true);
     expect(isPublicStaticPath("/register-sw.js")).toBe(true);
     expect(isPublicStaticPath("/manifest.json")).toBe(true);
+    expect(isPublicStaticPath("/offline.html")).toBe(true);
     expect(isPublicStaticPath("/logo-mark.svg")).toBe(true);
     expect(isPublicStaticPath("/icon-192.png")).toBe(true);
     expect(isPublicStaticPath("/robots.txt")).toBe(true);
@@ -111,9 +112,10 @@ describe("admin service worker", () => {
     expect(sw).toContain(".claim()");
     expect(sw).toContain('const CACHE_PREFIX = "locateflow-admin-"');
     expect(sw).toContain("/manifest.json");
-    expect(fetchHandler).toContain("if (url.origin !== self.location.origin) return;");
-    expect(fetchHandler).toContain('if (request.mode === "navigate") return;');
+    expect(fetchHandler).toContain("if (!isSameOrigin(url)) return;");
     expect(fetchHandler).toContain('if (url.pathname.startsWith("/api/")) return;');
+    expect(fetchHandler).toContain('if (request.mode === "navigate")');
+    expect(fetchHandler).toContain("caches.match(OFFLINE_URL)");
     expect(fetchHandler).toContain("event.respondWith");
     expect(sw).not.toContain("assets.locateflow.com");
   });
@@ -128,10 +130,14 @@ describe("admin service worker", () => {
     expect(register).toContain('.register("/sw.js"');
     expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />');
     expect(layout).toContain('manifest: "/manifest.json"');
+    expect(layout).toContain('<meta name="mobile-web-app-capable" content="yes" />');
     expect(nextConfig).toContain('source: "/register-sw.js"');
     expect(nextConfig).toContain('source: "/manifest.json"');
+    expect(nextConfig).toContain('source: "/offline.html"');
     expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
     expect(manifest).toContain('"display": "standalone"');
+    expect(manifest).toContain('"display_override"');
+    expect(manifest).toContain('"shortcuts"');
     expect(manifest).toContain('"/icon-192.png"');
   });
 });

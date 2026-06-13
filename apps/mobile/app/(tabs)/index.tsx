@@ -70,6 +70,7 @@ import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
+import { HomeInsightCard } from "@/components/ui/HomeInsightCard";
 import { MoveCommandCenter, type CommandCenterAction } from "@/components/ui/MoveCommandCenter";
 import { FreeMoveUpsellCard } from "@/components/ui/FreeMoveUpsellCard";
 import { UpNext } from "@/components/ui/UpNext";
@@ -328,6 +329,7 @@ export default function DashboardScreen() {
   });
   // Primary address state → tz-correct move countdown (US-only zone mapping).
   const [primaryState, setPrimaryState] = useState<string | null>(null);
+  const [primaryHomeInsight, setPrimaryHomeInsight] = useState<{ id: string; label: string | null } | null>(null);
   // COLD-START momentum: true when the active plan has BOTH a real origin and a
   // real destination address. That is genuine, user-completed setup, so the
   // Move Command Center readiness ring starts at a low non-zero instead of 0%.
@@ -498,8 +500,17 @@ export default function DashboardScreen() {
       setWorkspace(primaryWs ?? null);
 
       const addresses = addrRes.data?.addresses || [];
+      const primaryAddress = addresses.find((a: any) => a.isPrimary) || addresses[0] || null;
       setPrimaryState(
-        addresses.find((a: any) => a.isPrimary)?.state || addresses[0]?.state || null,
+        primaryAddress?.state || null,
+      );
+      setPrimaryHomeInsight(
+        primaryAddress?.id
+          ? {
+              id: primaryAddress.id,
+              label: primaryAddress.nickname || [primaryAddress.city, primaryAddress.state].filter(Boolean).join(", ") || null,
+            }
+          : null,
       );
       const plans = movingRes.data?.plans || [];
       const totalServices = addresses.reduce(
@@ -1512,6 +1523,11 @@ export default function DashboardScreen() {
           onCompleted={async () => {
             await fetchDashboard();
           }}
+        />
+
+        <HomeInsightCard
+          addressId={primaryHomeInsight?.id ?? null}
+          label={primaryHomeInsight?.label ?? null}
         />
 
         <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
