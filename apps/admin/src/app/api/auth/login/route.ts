@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
+import { ADMIN_SESSION_TTL_SECONDS, createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
 import {
   createAdminMfaTrustToken,
   expireAdminMfaTrustCookie,
@@ -572,7 +572,7 @@ export async function POST(request: NextRequest) {
           browser: parsedUA.browser,
           os: parsedUA.os,
           deviceType: parsedUA.deviceType,
-          expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() + ADMIN_SESSION_TTL_SECONDS * 1000),
         },
       });
     } catch {}
