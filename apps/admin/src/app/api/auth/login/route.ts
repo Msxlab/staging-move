@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { ADMIN_SESSION_TTL_SECONDS, createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
+import { isKnownAdminLoginIp, sendAdminNewLocationAlert } from "@/lib/admin-known-ip";
 import {
   createAdminMfaTrustToken,
   expireAdminMfaTrustCookie,
@@ -164,7 +165,7 @@ function scrubLimiterError(err: unknown): string {
 }
 
 async function writeLoginAuditLog(input: {
-  action: "LOGIN_FAILED" | "LOGIN_BLOCKED" | "MFA_REQUIRED";
+  action: "LOGIN_FAILED" | "LOGIN_BLOCKED" | "MFA_REQUIRED" | "LOGIN_NEW_LOCATION";
   email: string;
   ip: string;
   ua?: string;
@@ -383,6 +384,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
+    // Adaptive risk check — is this network familiar for this admin? A new
+    // /24 network forces a fresh MFA challenge (even on a "trusted" device,
+    // see the ipKnown gate below) and emails the operator. The usual device +
+    // network stays friction-free. Fired once, on the initial password submit.
+    const ipKnown = await isKnownAdminLoginIp(admin.id, ip);
+    if (!ipKnown && !mfaCode && !backupCode) {
+      const country =
+        request.headers.get("cf-ipcountry") ||
+        request.headers.get("x-vercel-ip-country") ||
+        request.headers.get("x-geo-country") ||
+        null;
+      await writeLoginAuditLog({
+        action: "LOGIN_NEW_LOCATION",
+        email,
+        ip,
+        ua,
+        reason: "UNRECOGNIZED_NETWORK",
+        adminId: admin.id,
+      });
+      // Best-effort: never let a mail outage block the login.
+      await sendAdminNewLocationAlert({ to: admin.email, ip, userAgent: ua, country, when: new Date() });
+    }
+
     // MFA check — if enabled, require TOTP, backup code, or a valid trusted device.
     const fp = await generateFingerprint(
       ip,
@@ -395,7 +419,9 @@ export async function POST(request: NextRequest) {
     let trustedDeviceTokenToSet: string | null = null;
 
     if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
-      const existingTrustToken = !mfaCode && !backupCode ? getAdminMfaTrustCookie(request) : null;
+      // Only honor the trusted-device cookie from a familiar network. From a
+      // new /24 the operator must pass a fresh MFA challenge regardless.
+      const existingTrustToken = ipKnown && !mfaCode && !backupCode ? getAdminMfaTrustCookie(request) : null;
       if (existingTrustToken) {
         const trustedDevice = await findValidAdminMfaTrustedDevice({
           adminUserId: admin.id,
