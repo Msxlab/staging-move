@@ -67,6 +67,7 @@ export default function ExportScreen() {
   const usePasswordStepUp = security ? security.hasPasswordLogin : true;
   const useCodeStepUp = security ? !security.hasPasswordLogin && security.mfaEnabled : false;
   const noStepUpMethod = security ? !security.hasPasswordLogin && !security.mfaEnabled : false;
+  const stepUpReady = !noStepUpMethod && confirmPassword.trim().length > 0;
 
   // Export option labels resolve at render — users switching language
   // mid-session see the new titles without a reload.
@@ -185,7 +186,16 @@ export default function ExportScreen() {
         </View>
 
         <View style={styles.stepUpCard}>
-          <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
+          <View style={styles.stepUpHeader}>
+            <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
+            <View style={[styles.stepUpPill, stepUpReady && styles.stepUpPillReady]}>
+              <Text style={[styles.stepUpPillText, stepUpReady && styles.stepUpPillTextReady]}>
+                {stepUpReady
+                  ? t("settings.exportReady", { defaultValue: "Ready" })
+                  : t("settings.exportLocked", { defaultValue: "Locked" })}
+              </Text>
+            </View>
+          </View>
           {noStepUpMethod ? (
             <Text style={styles.stepUpHint}>
               {t("settings.export_needsStepUp", { defaultValue: "Set a password or turn on two-factor authentication to export your data." })}
@@ -215,6 +225,16 @@ export default function ExportScreen() {
           )}
         </View>
 
+        <View style={styles.exportStatusStrip}>
+          <View style={styles.exportStatusDot} />
+          <Text style={styles.exportStatusText}>
+            {t("settings.exportStatusSummary", {
+              defaultValue: "{{count}} protected export groups. Files are generated only after identity confirmation.",
+              count: EXPORT_OPTIONS.length,
+            })}
+          </Text>
+        </View>
+
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
           return (
@@ -223,9 +243,11 @@ export default function ExportScreen() {
                 <View style={styles.cardIconBox}>
                   <Icon size={20} color={theme.colors.primary} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.cardTitle}>{opt.title}</Text>
-                  {!!opt.desc && <Text style={styles.cardDesc}>{opt.desc}</Text>}
+                  <Text style={styles.cardDesc} numberOfLines={1}>
+                    {opt.formats.join(" / ")}
+                  </Text>
                 </View>
               </View>
               <View style={styles.formatRow}>
@@ -234,9 +256,12 @@ export default function ExportScreen() {
                   return (
                     <TouchableOpacity
                       key={fmt}
-                      style={styles.formatBtn}
+                      style={[
+                        styles.formatBtn,
+                        (!stepUpReady || !!exporting) && styles.formatBtnDisabled,
+                      ]}
                       onPress={() => handleExport(opt.type, fmt)}
-                      disabled={!!exporting || !confirmPassword}
+                      disabled={!!exporting || !stepUpReady}
                       activeOpacity={0.7}
                     >
                       {isLoading ? (
@@ -297,17 +322,56 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   exportHeroText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginTop: 3 },
   noticeBox: { marginBottom: 16, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(242, 196, 108,0.08)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.2)" },
   noticeText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
-  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 14 },
-  stepUpTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginBottom: 4 },
+  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 10 },
+  stepUpHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 4 },
+  stepUpTitle: { flex: 1, fontSize: 15, fontWeight: "800", color: theme.colors.text },
+  stepUpPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  stepUpPillReady: {
+    backgroundColor: theme.colors.successFaded,
+    borderColor: theme.colors.emerald.border,
+  },
+  stepUpPillText: { fontSize: 10, fontWeight: "900", color: theme.colors.textTertiary, textTransform: "uppercase" },
+  stepUpPillTextReady: { color: theme.colors.success },
   stepUpHint: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18 },
-  card: { backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: 14, marginBottom: 10 },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
-  cardIconBox: { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", alignItems: "center", justifyContent: "center" },
+  exportStatusStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  exportStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  exportStatusText: { flex: 1, fontSize: 11, lineHeight: 16, color: theme.colors.textTertiary },
+  card: { backgroundColor: theme.colors.card, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, padding: 12, marginBottom: 9 },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 9 },
+  cardIconBox: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
   cardTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
-  cardDesc: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
+  cardDesc: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, fontWeight: "700", textTransform: "uppercase" },
   formatRow: { flexDirection: "row", gap: 8 },
-  formatBtn: { flex: 1, minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)" },
-  formatBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.primary },
+  formatBtn: { flex: 1, minHeight: 38, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 8, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.borderFocus },
+  formatBtnDisabled: { opacity: 0.45, backgroundColor: "rgba(255,255,255,0.035)", borderColor: theme.colors.border },
+  formatBtnText: { fontSize: 13, fontWeight: "800", color: theme.colors.primary },
   gdprNote: { marginTop: 12, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: theme.colors.border },
   gdprText: { fontSize: 12, color: theme.colors.textMuted, lineHeight: 18 },
 });

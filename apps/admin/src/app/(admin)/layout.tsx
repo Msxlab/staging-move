@@ -40,7 +40,7 @@ export default async function AdminLayout({
       <main
         id="admin-main"
         tabIndex={-1}
-        className="flex-1 pl-64 focus:outline-none"
+        className="flex-1 pb-24 focus:outline-none lg:pl-64 lg:pb-0"
       >
         {/* Sticky corporate topbar — breadcrumb, ⌘K search trigger, bell /
             help / identity cluster. Lives inside <main> so it inherits the

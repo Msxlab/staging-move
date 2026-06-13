@@ -19,14 +19,17 @@ export function MobileNav() {
   const mobileNavItems = [
     { key: "dashboard", href: "/dashboard", icon: Home },
     { key: "addresses", href: "/addresses", icon: MapPin },
-    { key: "services", href: "/services", icon: Zap },
     { key: "moving", href: "/moving", icon: Truck },
+    { key: "services", href: "/services", icon: Zap },
     { key: "settings", href: "/settings", icon: Settings },
   ] as const;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t border-border md:hidden safe-area-inset-bottom" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
-      <div className="flex justify-around items-center h-16">
+    <nav
+      className="fixed bottom-3 left-3 right-3 z-50 rounded-2xl border border-border/80 shadow-2xl backdrop-blur-xl md:hidden safe-area-inset-bottom"
+      style={{ background: "color-mix(in srgb, var(--surface) 86%, transparent)" }}
+    >
+      <div className="flex h-16 items-center justify-around gap-1 px-1.5">
         {mobileNavItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
@@ -34,9 +37,9 @@ export function MobileNav() {
               key={item.key}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-colors",
+                "flex h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 transition-colors",
                 isActive
-                  ? "text-tone-orange-fg"
+                  ? "bg-tone-orange-bg text-tone-orange-fg"
                   : "text-foreground/40"
               )}
             >

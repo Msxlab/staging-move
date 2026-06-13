@@ -786,7 +786,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 17,
   },
   categoryRowWrap: {
-    marginBottom: 10,
+    marginHorizontal: 0,
+    marginBottom: 12,
+    overflow: "visible",
   },
   addressSwitchWrap: {
     flexDirection: "row",
@@ -797,17 +799,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   addressSwitchChip: {
     maxWidth: 170,
-    minHeight: 34,
+    minHeight: 38,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 13,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.glass.bg,
+    backgroundColor: theme.colors.surface,
   },
   addressSwitchChipActive: {
-    borderColor: "rgba(242, 196, 108,0.38)",
-    backgroundColor: theme.colors.primaryFaded,
+    borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.card,
   },
   addressSwitchText: {
     fontSize: 12,
@@ -815,7 +817,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   addressSwitchTextActive: {
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   stateGuideWrap: {
     paddingHorizontal: 20,

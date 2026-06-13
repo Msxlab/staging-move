@@ -11,6 +11,7 @@ import {
   Switch,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -159,6 +160,11 @@ export default function NewMovingPlanScreen() {
 
       return { ...prev, [field]: value };
     });
+
+  const openDatePicker = () => {
+    Keyboard.dismiss();
+    setShowDatePicker(true);
+  };
 
   const handleDestinationAutocompleteSelect = (result: AddressAutocompleteResult) => {
     setForm((prev) => {
@@ -315,7 +321,7 @@ export default function NewMovingPlanScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior="padding"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -496,7 +502,7 @@ export default function NewMovingPlanScreen() {
               <Text style={styles.label}>{t("moving.moveDate")} *</Text>
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
+                onPress={openDatePicker}
                 activeOpacity={0.7}
               >
                 <Calendar size={16} color={selectedDate ? theme.colors.primary : theme.colors.textMuted} />
@@ -506,14 +512,42 @@ export default function NewMovingPlanScreen() {
                     : t("moving.datePlaceholder")}
                 </Text>
               </TouchableOpacity>
-              {showDatePicker && (
+              {showDatePicker && Platform.OS === "ios" ? (
+                <View style={styles.datePickerPanel}>
+                  <View style={styles.datePickerToolbar}>
+                    <Text style={styles.datePickerTitle}>{t("moving.moveDate")}</Text>
+                    <TouchableOpacity
+                      style={styles.datePickerDone}
+                      onPress={() => setShowDatePicker(false)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("common.done")}
+                    >
+                      <Text style={styles.datePickerDoneText}>{t("common.done")}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={selectedDate || new Date()}
+                    mode="date"
+                    display="spinner"
+                    minimumDate={new Date()}
+                    onChange={(_event: any, date?: Date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                        update("moveDate", date.toISOString().slice(0, 10));
+                      }
+                    }}
+                    themeVariant={resolvedScheme}
+                    textColor={theme.colors.text}
+                  />
+                </View>
+              ) : showDatePicker ? (
                 <DateTimePicker
                   value={selectedDate || new Date()}
                   mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  display="default"
                   minimumDate={new Date()}
-                  onChange={(event: any, date?: Date) => {
-                    setShowDatePicker(Platform.OS === "ios");
+                  onChange={(_event: any, date?: Date) => {
+                    setShowDatePicker(false);
                     if (date) {
                       setSelectedDate(date);
                       update("moveDate", date.toISOString().slice(0, 10));
@@ -522,15 +556,7 @@ export default function NewMovingPlanScreen() {
                   themeVariant={resolvedScheme}
                   textColor={theme.colors.text}
                 />
-              )}
-              {Platform.OS === "ios" && showDatePicker && (
-                <TouchableOpacity
-                  style={{ alignSelf: "flex-end", marginTop: 4 }}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
-                </TouchableOpacity>
-              )}
+              ) : null}
 
               {/* Temporary Toggle */}
               <View style={styles.switchRow}>
@@ -694,6 +720,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   dateButtonText: {
     fontSize: 15, color: theme.colors.textMuted, flex: 1,
   },
+  datePickerPanel: {
+    marginTop: 10,
+    overflow: "hidden",
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  datePickerToolbar: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  datePickerTitle: { fontSize: 13, fontWeight: "800", color: theme.colors.textSecondary },
+  datePickerDone: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  datePickerDoneText: { fontSize: 13, fontWeight: "800", color: theme.colors.primary },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 6,

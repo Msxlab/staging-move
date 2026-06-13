@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
-import { ChevronDown, Search, LogOut, Settings } from "lucide-react";
+import { Search, LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
@@ -23,14 +23,6 @@ const ROLE_META: Record<AdminRoleString, { label: string; tone: string }> = {
   MODERATOR: { label: "Moderator", tone: "bg-tone-sage-bg text-tone-sage-fg" },
   VIEWER: { label: "Viewer", tone: "bg-tone-slate-bg text-muted-foreground" },
 };
-
-function getInitialCollapsed(groups: NavGroup[]): Record<string, boolean> {
-  const collapsed: Record<string, boolean> = {};
-  groups.forEach((group) => {
-    collapsed[group.label] = false;
-  });
-  return collapsed;
-}
 
 function isItemActive(pathname: string, href: string): boolean {
   return pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -85,7 +77,6 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   const displayGroups = filteredGroups
     .map((g) => ({ ...g, items: g.items.filter((it) => it.href !== "/settings") }))
     .filter((g) => g.items.length > 0);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(filteredGroups));
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
 
@@ -116,20 +107,6 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   useEffect(() => {
     setIsMac(typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent));
   }, []);
-
-  // Auto-expand group when navigating
-  useEffect(() => {
-    filteredGroups.forEach((group) => {
-      const hasActive = group.items.some((item) => isItemActive(pathname, item.href));
-      if (hasActive) {
-        setCollapsed((prev) => ({ ...prev, [group.label]: false }));
-      }
-    });
-  }, [pathname, filteredGroups]);
-
-  const toggleGroup = (label: string) => {
-    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
 
   async function handleLogout() {
     await fetch("/api/auth/logout", {
@@ -382,95 +359,46 @@ export function Sidebar({ ctx, counts }: SidebarProps = {}) {
   );
 
   /* --------------------------------------------------------------------
-     Flat sidebar below lg. Unchanged from the pre-rail behavior so
-     small screens keep the grouped, collapsible list.
+     Mobile PWA dock. Below lg the old fixed left sidebar made the admin feel
+     like a squeezed desktop app. The dock uses section entry points instead,
+     while Topbar keeps search, help, notifications, and identity reachable.
      -------------------------------------------------------------------- */
-  const flatSidebar = (
-    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card lg:hidden">
-      {/* Logo shared by admin, web, and mobile launcher. */}
-      <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <img
-          src="/logo-mark.svg"
-          alt=""
-          className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(127,182,232,0.22)]"
-          aria-hidden="true"
-        />
-        <div className="flex flex-col leading-none">
-          <span
-            className="text-[1.1rem] text-foreground"
-            style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
-          >
-            Locate<span className="foil-text">flow</span>
-          </span>
-          <span className="mt-1 text-[9px] font-mono uppercase text-muted-foreground/70">
-            Admin
-          </span>
-        </div>
+  const mobileDock = (
+    <nav className="adp-mobile-dock lg:hidden" aria-label="Admin mobile sections">
+      <div className="adp-mobile-dock-scroll">
+        {displayGroups.map((group, i) => {
+          const GroupIcon = group.icon;
+          const isOn = i === activeGroupIdx;
+          const groupTitle = navLabel(tNav, group.labelKey, group.label);
+          const firstHref = group.items[0]?.href ?? "/";
+          return (
+            <a
+              key={group.label}
+              href={firstHref}
+              aria-current={isOn ? "page" : undefined}
+              className={cn("adp-mobile-dock-item", isOn && "on")}
+            >
+              <GroupIcon aria-hidden="true" />
+              <span>{group.railLabel || groupTitle}</span>
+            </a>
+          );
+        })}
+        <a
+          href="/settings"
+          aria-current={settingsActive ? "page" : undefined}
+          className={cn("adp-mobile-dock-item", settingsActive && "on")}
+        >
+          <Settings aria-hidden="true" />
+          <span>{navLabel(tNav, "settings", "Settings")}</span>
+        </a>
       </div>
-
-      {/* Search */}
-      <div className="px-3 pt-3 pb-1">{renderSearch("flat")}</div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
-        {isSearching ? (
-          // Flat filtered list
-          <div className="space-y-0.5">
-            {filteredItems && filteredItems.length > 0 ? (
-              filteredItems.map((item) => renderItem(item, { onNavigate: () => setSearch("") }))
-            ) : (
-              <p className="px-3 py-4 text-xs text-muted-foreground text-center">{tCommon("no")}</p>
-            )}
-          </div>
-        ) : (
-          // Grouped navigation
-          <div className="space-y-1">
-            {displayGroups.map((group) => {
-              const isCollapsed = collapsed[group.label];
-              const hasActive = group.items.some((item) => isItemActive(pathname, item.href));
-              return (
-                <div key={group.label}>
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    aria-expanded={!isCollapsed}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase transition-colors",
-                      hasActive
-                        ? "text-primary/70"
-                        : "text-muted-foreground/60 hover:text-muted-foreground"
-                    )}
-                  >
-                    {navLabel(tNav, group.labelKey, group.label)}
-                    <ChevronDown
-                      className={cn(
-                        "h-3 w-3 transition-transform duration-200",
-                        isCollapsed && "-rotate-90"
-                      )}
-                    />
-                  </button>
-                  {!isCollapsed && (
-                    <div className="space-y-0.5 mt-0.5 mb-2">
-                      {group.items.map((item) => renderItem(item))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </nav>
-
-      {/* Pinned account bar - identity, Settings and Sign out are always
-          reachable here without scrolling the nav; theme + language are
-          compact icon buttons so the footer stays short. */}
-      {renderAccountFooter("flat")}
-    </aside>
+    </nav>
   );
 
   return (
     <>
       {railSidebar}
-      {flatSidebar}
+      {mobileDock}
     </>
   );
 }
