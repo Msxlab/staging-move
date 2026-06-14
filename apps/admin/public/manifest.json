@@ -2,13 +2,17 @@
   "name": "LocateFlow Admin",
   "short_name": "LF Admin",
   "description": "Secure LocateFlow administration panel.",
-  "id": "/?source=pwa",
-  "start_url": "/",
+  "id": "/?source=admin-pwa",
+  "start_url": "/?source=admin-pwa",
   "scope": "/",
   "lang": "en-US",
   "dir": "ltr",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "handle_links": "preferred",
   "background_color": "#171E2B",
   "theme_color": "#171E2B",
   "orientation": "portrait-primary",
@@ -23,13 +27,13 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [

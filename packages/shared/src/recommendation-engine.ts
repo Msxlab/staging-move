@@ -110,6 +110,12 @@ export interface Provider {
    * engine falls back to the existing catalog-based confidence — no crash.
    */
   fccServiceable?: boolean;
+  fccProviderId?: string | null;
+  fccMaxDownloadMbps?: number | null;
+  fccMaxUploadMbps?: number | null;
+  fccTechnologyCodes?: number[];
+  fccTechnologyLabel?: "fiber" | "cable" | "copper_dsl" | "fixed_wireless" | "satellite" | "mixed" | "unknown";
+  fccQualityBand?: "excellent" | "strong" | "standard" | "limited" | "unknown";
   /**
    * Set by an upstream authoritative address-level serviceability lookup for
    * ELECTRIC utilities (the OpenEI U.S. Utility Rate Database — see

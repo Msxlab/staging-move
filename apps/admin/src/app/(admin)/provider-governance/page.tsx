@@ -103,6 +103,25 @@ export default function ProviderGovernancePage() {
     }
   };
 
+  const updateIssue = async (issueId: string, action: "mark_reviewed" | "dismiss_issue" | "reopen_issue") => {
+    setBusy(issueId);
+    try {
+      const res = await fetch("/api/provider-governance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issueId, action }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Failed to update issue");
+      toast.success(action === "dismiss_issue" ? "Issue dismissed" : "Issue reviewed");
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update issue");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const confirmPromote = async () => {
     if (!pendingPromote) return;
     const { id } = pendingPromote;
@@ -192,6 +211,7 @@ export default function ProviderGovernancePage() {
                 {items.slice(0, 40).map((item, index) => {
                   const provider = item.provider;
                   const customId = isCustomQueue && provider?.id ? provider.id : null;
+                  const issueId = item.issue?.id ? String(item.issue.id) : null;
                   const reviewBadge = customId ? REVIEW_STATUS_BADGE[provider.adminReviewStatus] : null;
                   const coverageBadge = customId && provider?.coverage ? COVERAGE_BADGE[provider.coverage] : null;
                   const CoverageIcon = coverageBadge?.icon;
@@ -231,6 +251,22 @@ export default function ProviderGovernancePage() {
                             >
                               {provider.website}
                             </a>
+                          )}
+                          {issueId && item.metadata?.evidenceUrl && (
+                            <a
+                              href={String(item.metadata.evidenceUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-block max-w-full truncate text-[11px] text-primary hover:underline"
+                            >
+                              Evidence: {String(item.metadata.source || "official source")}
+                            </a>
+                          )}
+                          {issueId && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {[item.metadata?.state, item.metadata?.zip].filter(Boolean).join(" ")}
+                              {item.issue?.severity ? ` - ${item.issue.severity} severity` : ""}
+                            </p>
                           )}
                           {customId && provider?.user && (
                             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -294,6 +330,24 @@ export default function ProviderGovernancePage() {
                             className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
                           >
                             <X className="h-3 w-3" /> Reject
+                          </button>
+                        </div>
+                      )}
+                      {issueId && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            disabled={busy === issueId}
+                            onClick={() => updateIssue(issueId, "mark_reviewed")}
+                            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                          >
+                            <CheckCircle2 className="h-3 w-3" /> Mark reviewed
+                          </button>
+                          <button
+                            disabled={busy === issueId}
+                            onClick={() => updateIssue(issueId, "dismiss_issue")}
+                            className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            <X className="h-3 w-3" /> Dismiss
                           </button>
                         </div>
                       )}

@@ -518,7 +518,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.glass.bg,
     borderWidth: 1,
     borderColor: theme.colors.glass.border,
-    ...theme.shadow.sm,
   },
   profileAvatar: {
     width: 48,
@@ -572,11 +571,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingHorizontal: 13, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: "rgba(255,255,255,0.035)", borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.surface, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
   },
   chipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },
@@ -591,7 +590,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    paddingVertical: 16, marginTop: 28,
   },
   saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

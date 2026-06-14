@@ -161,6 +161,38 @@ export async function GET() {
       }
     }
 
+    for (const issue of issues) {
+      const metadata = issue.metadata && typeof issue.metadata === "object"
+        ? issue.metadata as Record<string, unknown>
+        : {};
+      const sourceProviderName =
+        typeof metadata.providerName === "string" && metadata.providerName.trim()
+          ? metadata.providerName.trim()
+          : issue.provider?.name || issue.customProvider?.name || "Unknown provider";
+      const category =
+        typeof metadata.category === "string" && metadata.category.trim()
+          ? metadata.category.trim()
+          : issue.provider?.category || issue.customProvider?.category || "Unknown category";
+      const queueKey = issue.issueType === "SOURCE_PROVIDER_MISSING" ? "coverageGap" : "sourceValidation";
+
+      queues[queueKey].push({
+        issue,
+        provider: {
+          id: issue.provider?.id || issue.customProvider?.id || issue.id,
+          name: sourceProviderName,
+          category,
+          scope: typeof metadata.source === "string" ? metadata.source : "Source-backed",
+          website: typeof metadata.evidenceUrl === "string" ? metadata.evidenceUrl : null,
+        },
+        warning: {
+          code: issue.issueType,
+          label: issue.title,
+          message: issue.description || "Source-backed provider data needs admin review.",
+        },
+        metadata,
+      });
+    }
+
     queues.userCreatedProviderReview.sort((a, b) => {
       const aPriority = CUSTOM_REVIEW_PRIORITY[a.provider.adminReviewStatus] ?? 99;
       const bPriority = CUSTOM_REVIEW_PRIORITY[b.provider.adminReviewStatus] ?? 99;

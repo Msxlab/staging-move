@@ -1,6 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
-import { ChevronRight, MapPin, Users, Check } from "lucide-react-native";
+import { ChevronRight, MapPin, Users, Check, Wifi } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
@@ -41,6 +41,15 @@ export type ProviderCardData = {
   requiresPolygonCheck?: boolean | null;
   coverageConfidence?: ProviderCoverageConfidence;
   trust?: ProviderTrustSummary;
+  internetServiceability?: {
+    source?: string | null;
+    providerId?: string | null;
+    maxDownloadMbps?: number | null;
+    maxUploadMbps?: number | null;
+    technologyCodes?: number[] | null;
+    technology?: "fiber" | "cable" | "copper_dsl" | "fixed_wireless" | "satellite" | "mixed" | "unknown" | string | null;
+    qualityBand?: "excellent" | "strong" | "standard" | "limited" | "unknown" | string | null;
+  } | null;
 };
 
 interface ProviderCardProps {
@@ -88,6 +97,9 @@ export function ProviderCard({
   const description = getLocalizedProviderDescription(t, i18n.language, provider);
   const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
   const coverageMessage = getLocalizedCoverageMessage(t, i18n.language, trust.coverageConfidence);
+  const internetSignal = provider.internetServiceability
+    ? formatInternetSignal(provider.internetServiceability)
+    : null;
 
   const selectedRing: ViewStyle = selectedForCompare
     ? { borderColor: theme.colors.primary, borderWidth: 1.5 }
@@ -148,6 +160,14 @@ export function ProviderCard({
             </View>
           ) : null}
         </View>
+        {internetSignal ? (
+          <View style={compactStyles.internetPill}>
+            <Wifi size={10} color={theme.colors.primary} />
+            <Text style={compactStyles.internetText} numberOfLines={1}>
+              {internetSignal.compact}
+            </Text>
+          </View>
+        ) : null}
       </Card>
     );
   }
@@ -196,6 +216,9 @@ export function ProviderCard({
       <View style={fullStyles.metaRow}>
         <UiBadge label={t("providers.listedProvider")} variant="warning" />
         <UiBadge label={coverageLabel} variant="info" />
+        {internetSignal ? (
+          <UiBadge label={internetSignal.full} variant={internetSignal.variant} />
+        ) : null}
         {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         {provider.userCount && provider.userCount > 0 ? (
           <View style={fullStyles.users}>
@@ -226,6 +249,48 @@ function formatUsers(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
+}
+
+function formatInternetSignal(serviceability: NonNullable<ProviderCardData["internetServiceability"]>): {
+  compact: string;
+  full: string;
+  variant: "success" | "warning" | "info" | "neutral";
+} | null {
+  const quality = serviceability.qualityBand || "unknown";
+  const technology = serviceability.technology || "unknown";
+  const download = typeof serviceability.maxDownloadMbps === "number" && Number.isFinite(serviceability.maxDownloadMbps)
+    ? serviceability.maxDownloadMbps
+    : null;
+  const technologyLabel = technology === "copper_dsl"
+    ? "DSL"
+    : technology === "fixed_wireless"
+      ? "Fixed wireless"
+      : technology === "unknown"
+        ? "Internet"
+        : String(technology).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const speedLabel = download && download > 0 ? `${Math.round(download)} Mbps` : null;
+  if (quality === "unknown" && !speedLabel && technology === "unknown") return null;
+  const qualityLabel = quality === "excellent"
+    ? "Excellent"
+    : quality === "strong"
+      ? "Strong"
+      : quality === "standard"
+        ? "Standard"
+        : quality === "limited"
+          ? "Limited"
+          : "FCC";
+  const variant = quality === "excellent" || quality === "strong"
+    ? "success"
+    : quality === "limited"
+      ? "warning"
+      : quality === "standard"
+        ? "info"
+        : "neutral";
+  return {
+    compact: [technologyLabel, speedLabel].filter(Boolean).join(" · "),
+    full: [technologyLabel, speedLabel, qualityLabel].filter(Boolean).join(" · "),
+    variant,
+  };
 }
 
 const makeCompactStyles = (theme: Theme) => StyleSheet.create({
@@ -288,6 +353,26 @@ const makeCompactStyles = (theme: Theme) => StyleSheet.create({
   usersText: {
     fontSize: 11,
     color: theme.colors.textTertiary,
+  },
+  internetPill: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    minHeight: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  internetText: {
+    flexShrink: 1,
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.primary,
   },
   compareDot: {
     width: 22,

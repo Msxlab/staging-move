@@ -1,5 +1,5 @@
 import type { CoverageConfidence } from "@locateflow/shared";
-import { lookupFccIsps, isIspServiceable, normalizeIspName, type FccLookupResult } from "@/lib/fcc-isp";
+import { lookupFccIsps, isIspServiceable, normalizeIspName, type FccIspResult, type FccLookupResult } from "@/lib/fcc-isp";
 import {
   lookupElectricUtilities,
   isElectricUtilityServiceable,
@@ -13,8 +13,25 @@ export type ServiceabilityProvider = {
   name: string;
   category: string;
   fccServiceable?: boolean;
+  fccProviderId?: string | null;
+  fccMaxDownloadMbps?: number | null;
+  fccMaxUploadMbps?: number | null;
+  fccTechnologyCodes?: number[];
+  fccTechnologyLabel?: InternetTechnologyLabel | string | null;
+  fccQualityBand?: InternetQualityBand | string | null;
   utilityServiceable?: boolean;
 };
+
+export type InternetTechnologyLabel =
+  | "fiber"
+  | "cable"
+  | "copper_dsl"
+  | "fixed_wireless"
+  | "satellite"
+  | "mixed"
+  | "unknown";
+
+export type InternetQualityBand = "excellent" | "strong" | "standard" | "limited" | "unknown";
 
 export type ServiceabilitySourceGap = {
   source: "FCC_BDC" | "OPENEI_URDB";
@@ -87,6 +104,61 @@ function hasCatalogIspMatch(providers: ServiceabilityProvider[], sourceName: str
   });
 }
 
+function findFccProviderMatch(result: FccLookupResult, providerName: string): FccIspResult | null {
+  if (result.status !== "ok") return null;
+  const normalizedProvider = normalizeIspName(providerName);
+  if (!normalizedProvider || normalizedProvider.length < 4) return null;
+  return result.providers.find((sourceProvider) => {
+    const normalizedSource = normalizeIspName(sourceProvider.brandName);
+    if (!normalizedSource || normalizedSource.length < 4) return false;
+    return (
+      normalizedProvider === normalizedSource ||
+      normalizedProvider.startsWith(normalizedSource) ||
+      normalizedSource.startsWith(normalizedProvider)
+    );
+  }) || null;
+}
+
+export function classifyInternetTechnology(codes: number[] | null | undefined): InternetTechnologyLabel {
+  const unique = new Set((codes || []).filter((code) => Number.isFinite(code)));
+  if (unique.size === 0) return "unknown";
+  if (unique.has(50)) return unique.size === 1 ? "fiber" : "mixed";
+  if (unique.has(40)) return unique.size === 1 ? "cable" : "mixed";
+  if ([70, 71, 72].some((code) => unique.has(code))) return unique.size === 1 ? "fixed_wireless" : "mixed";
+  if ([60, 61].some((code) => unique.has(code))) return unique.size === 1 ? "satellite" : "mixed";
+  if (unique.has(10)) return unique.size === 1 ? "copper_dsl" : "mixed";
+  return "unknown";
+}
+
+export function classifyInternetQuality(input: {
+  maxDownloadMbps?: number | null;
+  maxUploadMbps?: number | null;
+  technologyCodes?: number[] | null;
+}): InternetQualityBand {
+  const technology = classifyInternetTechnology(input.technologyCodes);
+  const down = typeof input.maxDownloadMbps === "number" ? input.maxDownloadMbps : 0;
+  const up = typeof input.maxUploadMbps === "number" ? input.maxUploadMbps : 0;
+  if (technology === "fiber" || down >= 1000 || up >= 500) return "excellent";
+  if (technology === "cable" || down >= 300 || up >= 50) return "strong";
+  if (technology === "fixed_wireless" || down >= 100 || up >= 20) return "standard";
+  if (technology === "satellite" || technology === "copper_dsl" || down > 0 || up > 0) return "limited";
+  return "unknown";
+}
+
+function attachFccServiceability(provider: ServiceabilityProvider, sourceProvider: FccIspResult | null) {
+  provider.fccServiceable = true;
+  provider.fccProviderId = sourceProvider?.providerId ?? null;
+  provider.fccMaxDownloadMbps = sourceProvider?.maxDownloadMbps ?? null;
+  provider.fccMaxUploadMbps = sourceProvider?.maxUploadMbps ?? null;
+  provider.fccTechnologyCodes = sourceProvider?.technologyCodes ?? [];
+  provider.fccTechnologyLabel = classifyInternetTechnology(sourceProvider?.technologyCodes ?? []);
+  provider.fccQualityBand = classifyInternetQuality({
+    maxDownloadMbps: sourceProvider?.maxDownloadMbps ?? null,
+    maxUploadMbps: sourceProvider?.maxUploadMbps ?? null,
+    technologyCodes: sourceProvider?.technologyCodes ?? [],
+  });
+}
+
 function hasCatalogElectricMatch(providers: ServiceabilityProvider[], sourceName: string): boolean {
   const normalizedSource = normalizeUtilityName(sourceName);
   if (!normalizedSource) return false;
@@ -128,7 +200,7 @@ export async function enrichProviderServiceability<T extends ServiceabilityProvi
         for (const provider of providers) {
           if (provider.category !== "UTILITY_INTERNET") continue;
           if (isIspServiceable(fccLookup, provider.name)) {
-            provider.fccServiceable = true;
+            attachFccServiceability(provider, findFccProviderMatch(fccLookup, provider.name));
           }
         }
         for (const sourceProvider of fccLookup.providers) {

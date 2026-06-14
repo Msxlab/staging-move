@@ -1188,17 +1188,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   addressSwitchChip: {
     maxWidth: 170,
-    minHeight: 38,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 13,
+    minHeight: 34,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: theme.radius.full,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "rgba(255,255,255,0.035)",
   },
   addressSwitchChipActive: {
     borderColor: theme.colors.borderFocus,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.primaryFaded,
   },
   addressSwitchText: {
     fontSize: 12,

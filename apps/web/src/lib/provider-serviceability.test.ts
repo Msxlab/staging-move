@@ -84,6 +84,14 @@ describe("provider serviceability source gaps", () => {
     const meta = await enrichProviderServiceability(providers, { latitude: 30, longitude: -97 });
 
     expect(providers[0]?.fccServiceable).toBe(true);
+    expect(providers[0]).toMatchObject({
+      fccProviderId: "1",
+      fccMaxDownloadMbps: 1000,
+      fccMaxUploadMbps: 40,
+      fccTechnologyCodes: [40],
+      fccTechnologyLabel: "cable",
+      fccQualityBand: "excellent",
+    });
     expect(meta.sourceGaps).toEqual([
       expect.objectContaining({
         source: "FCC_BDC",
@@ -91,6 +99,31 @@ describe("provider serviceability source gaps", () => {
         name: "FiberTown",
       }),
     ]);
+  });
+
+  it("classifies confirmed fiber ISP evidence as excellent serviceability", async () => {
+    lookupFccIspsMock.mockResolvedValue(
+      fccResult({
+        status: "ok",
+        providers: [
+          { brandName: "FiberTown", providerId: "2", maxDownloadMbps: 2000, maxUploadMbps: 2000, technologyCodes: [50] },
+        ],
+        normalizedBrandNames: new Set(["fibertown"]),
+        reason: null,
+      }),
+    );
+    isIspServiceableMock.mockReturnValue(true);
+
+    const providers: ServiceabilityProvider[] = [{ name: "FiberTown Internet", category: "UTILITY_INTERNET" }];
+    await enrichProviderServiceability(providers, { latitude: 30, longitude: -97 });
+
+    expect(providers[0]).toMatchObject({
+      fccServiceable: true,
+      fccTechnologyLabel: "fiber",
+      fccQualityBand: "excellent",
+      fccMaxDownloadMbps: 2000,
+      fccMaxUploadMbps: 2000,
+    });
   });
 
   it("can query OpenEI for setup-critical electric evidence even before a catalog candidate exists", async () => {

@@ -971,6 +971,12 @@ export async function GET(request: NextRequest) {
         longitude: ("geoLongitude" in p ? (p as { geoLongitude?: number | null }).geoLongitude : null) ?? null,
         requiresAddressCheck: coverageModel === "live_address",
         requiresPolygonCheck: coverageModel === "polygon",
+        fccProviderId: null,
+        fccMaxDownloadMbps: null,
+        fccMaxUploadMbps: null,
+        fccTechnologyCodes: [],
+        fccTechnologyLabel: "unknown",
+        fccQualityBand: "unknown",
       };
     });
 

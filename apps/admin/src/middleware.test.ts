@@ -137,6 +137,9 @@ describe("admin service worker", () => {
     expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
     expect(manifest).toContain('"display": "standalone"');
     expect(manifest).toContain('"display_override"');
+    expect(manifest).toContain('"launch_handler"');
+    expect(manifest).toContain('"handle_links": "preferred"');
+    expect(manifest).toContain('"purpose": "any maskable"');
     expect(manifest).toContain('"shortcuts"');
     expect(manifest).toContain('"/icon-192.png"');
   });
