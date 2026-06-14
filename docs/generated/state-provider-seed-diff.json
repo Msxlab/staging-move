@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-14T04:36:54.797Z",
+  "generatedAt": "2026-06-14T21:51:28.464Z",
   "additions": [
     {
       "providerName": "MAX Transit",
@@ -38,10 +38,10 @@
         "slug": "max-transit-al"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://maxtransit.org/",
-        "title": "Home - MAX Transit",
+        "finalUrl": "https://maxtransit.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -84,7 +84,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx",
-        "title": "People Mover Route Maps and Bus Stop Lists",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -189,7 +189,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.entergyarkansas.com/",
-        "title": "Entergy Arkansas - We power life.",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -237,7 +237,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.sdge.com/landservices",
-        "title": "New land services | San Diego Gas &amp; Electric",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -285,7 +285,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.rtd-denver.com/system-map",
-        "title": "System Map | RTD-Denver",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -375,11 +375,11 @@
         "slug": "ui-ct"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.uinet.com/moving",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -470,11 +470,11 @@
         "slug": "connecticut-natural-gas"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.cngcorp.com/moving",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -590,7 +590,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.ctwater.com/service-billing/your-service/developer-projects-and-new-service-connections/",
-        "title": "Start New Service | Connecticut Water",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -630,7 +630,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dartfirststate.com/map/",
-        "title": "DART Interactive Map - Dart First State",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -670,10 +670,10 @@
         "slug": "dc-streetcar"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://ddot.dc.gov/page/dc-streetcar-end-service-information-and-updates",
-        "title": "DC Streetcar End of Service: Information and Updates | ddot",
+        "finalUrl": "https://dcstreetcar.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -721,7 +721,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.tampaelectric.com/residential/start-service/",
-        "title": "Start Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -767,7 +767,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dor.georgia.gov/change-address-registration",
-        "title": "Change Address on Registration | Department of Revenue",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -825,7 +825,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.atlantagaslight.com/residential/start-stop-service.html",
-        "title": "Start/Stop Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -878,7 +878,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.gassouth.com/move-transfer-service",
-        "title": "Moving? Start New Gas Service, Turn Off or Transfer Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -938,7 +938,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cobbemc.com/start-stop-or-transfer-service",
-        "title": "Start, Stop or Transfer Service | Cobb EMC",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -996,7 +996,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://sawnee.coop/start-or-stop-service",
-        "title": "Start or Stop Service | Sawnee EMC",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1048,11 +1048,11 @@
         "slug": "marietta-power-water"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.mariettaga.gov/431/Start-or-Stop-Your-Service",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -1119,7 +1119,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.fultoncountyga.gov/services/water-services/start-your-water-service",
-        "title": "Start Your Water Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1194,7 +1194,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dekalbcountyga.gov/departments/watershed-management",
-        "title": "Watershed Management | DeKalb County, GA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1262,7 +1262,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.gwinnettcounty.com/government/departments/water",
-        "title": "Water Resources - Gwinnett County - Gwinnett",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1325,7 +1325,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cobbcounty.gov/water/customers/setup-service",
-        "title": "Setup Service | Cobb County Georgia | Cobb County Georgia",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1397,7 +1397,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dekalbcountyga.gov/departments/public-works/sanitation/new-residential-service",
-        "title": "Residential Service | DeKalb County, GA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1463,7 +1463,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.gwinnettcounty.com/services/solid-waste-management/start-service",
-        "title": "Start New Trash Service - Gwinnett County - Gwinnett",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1538,9 +1538,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.atlantaga.gov/government/departments/public-works/office-of-solid-waste-services",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1580,10 +1580,10 @@
         "slug": "skyline-hi"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.honolulu.gov/dts/skyline/",
-        "title": "Skyline Homepage",
+        "finalUrl": "https://www.honolulu.gov/skyline",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1620,10 +1620,10 @@
         "slug": "idaho-power"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.idahopower.com/",
-        "title": "Idaho Power",
+        "finalUrl": "https://www.idahopower.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1661,10 +1661,10 @@
         "slug": "ameren-il"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.ameren.com/about-ameren",
-        "title": "About Ameren - Ameren.com",
+        "finalUrl": "https://www.ameren.com/illinois/about",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1711,10 +1711,10 @@
         "slug": "indiana-michigan-power"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.indianamichiganpower.com/",
-        "title": "Indiana Michigan Power",
+        "finalUrl": "https://www.indianamichiganpower.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1756,7 +1756,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.alliantenergy.com/who-we-are/communities-we-serve",
-        "title": "Alliant Energy - Communities Served By Alliant Energy",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1806,7 +1806,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://ridekc.org/rider-guide/system-map",
-        "title": "System Map for RideKC | Rider Guide | RideKC",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1849,10 +1849,10 @@
         "slug": "lge-ky"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://lge-ku.com/",
-        "title": "LG&amp;E and KU",
+        "finalUrl": "https://lge-ku.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1896,10 +1896,10 @@
         "slug": "cats-la"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.brcats.com/",
-        "title": "Capital Area Transit System (CATS)",
+        "finalUrl": "https://www.brcats.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1940,10 +1940,10 @@
         "slug": "gpmetro-me"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.gpmetro.org/",
-        "title": "Home -Greater Portland Transit, ME | Official Website",
+        "finalUrl": "https://gpmetro.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -1995,7 +1995,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.mta.maryland.gov/transit-maps",
-        "title": "Transit Maps | Maryland Transit Administration",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2046,10 +2046,10 @@
         "slug": "mwra-ma"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.mwra.com/",
-        "title": "MWRA",
+        "finalUrl": "https://www.mwra.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2093,9 +2093,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 404,
+        "httpStatus": 200,
         "finalUrl": "https://www.smartbus.org/Routes-Schedules/System-Map",
-        "title": "404 - File or directory not found.",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2132,10 +2132,10 @@
         "slug": "mn-energy-resources"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.minnesotaenergyresources.com/",
-        "title": "Minnesota Energy Resources",
+        "finalUrl": "https://www.minnesotaenergyresources.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2175,10 +2175,10 @@
         "slug": "coast-transit-ms"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://coasttransit.com/",
-        "title": "Coast Transit Authority",
+        "finalUrl": "https://coasttransit.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2219,9 +2219,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 404,
+        "httpStatus": 200,
         "finalUrl": "https://mountainline.com/system-map/",
-        "title": "Page not found - Mountain Line",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2265,9 +2265,9 @@
         "slug": "oppd-ne"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.oppd.com/media/204900/service-area-map.pdf",
+        "finalUrl": "https://www.oppd.com/about/service-area/",
         "title": null,
         "error": null
       },
@@ -2313,7 +2313,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://rtcwashoe.com/public-transportation/system-map/",
-        "title": "System Map With All Routes &#8211; RTC Washoe",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2358,7 +2358,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://coastbus.org/schedules",
-        "title": "Bus Routes &amp; Map | COAST Bus - New Hampshire",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2409,7 +2409,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.drpa.org/patco/index.html",
-        "title": "DRPA | PATCO Transit Line",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2451,9 +2451,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 404,
+        "httpStatus": 200,
         "finalUrl": "https://www.cabq.gov/transit/routes-and-schedules/system-map",
-        "title": "Routes &amp; Schedules — City of Albuquerque",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2499,10 +2499,10 @@
         "slug": "pseg-li"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.psegliny.com/",
-        "title": "Home Page - PSEG Long Island",
+        "finalUrl": "https://www.psegliny.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2546,10 +2546,10 @@
         "slug": "mdu"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.montana-dakota.com/",
-        "title": "Home - Montana-Dakota Utilities Company",
+        "finalUrl": "https://www.montana-dakota.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2590,10 +2590,10 @@
         "slug": "embark-ok"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.embarkok.com/system-map/",
-        "title": "EMBARK | System Map",
+        "finalUrl": "https://embarkok.com/system-map/",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2641,9 +2641,9 @@
         "slug": "pacific-power-or"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://csapps.pacificpower.net/idm/my-account/start-stop-move",
+        "finalUrl": "https://www.pacificpower.net/my-account/start-stop-move.html",
         "title": null,
         "error": null
       },
@@ -2694,10 +2694,10 @@
         "slug": "columbia-gas-pa"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.columbiagaspa.com/",
-        "title": "Home - Columbia Gas of Pennsylvania",
+        "finalUrl": "https://www.columbiagaspa.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2735,9 +2735,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://ripta.com/statewide-system-map/",
-        "title": "403 Forbidden",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2777,10 +2777,10 @@
         "slug": "carta-sc"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://ridecarta.com/",
-        "title": "CARTA &#8211; Charleston Area Regional Transportation Authority",
+        "finalUrl": "https://ridecarta.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2821,10 +2821,10 @@
         "slug": "sioux-area-metro"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.siouxfalls.gov/resident-services/sam",
-        "title": "Sioux Area Metro - City of Sioux Falls",
+        "finalUrl": "https://www.siouxfalls.gov/sam",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2867,10 +2867,10 @@
         "slug": "mlgw"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.mlgw.com/",
-        "title": "Welcome to MLGW",
+        "finalUrl": "https://www.mlgw.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -2920,10 +2920,10 @@
         "slug": "ntta"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.ntta.org/",
-        "title": "NTTA | NTTA",
+        "finalUrl": "https://www.ntta.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3034,7 +3034,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.expresspass.utah.gov/",
-        "title": "Customer Service Center v2.0.85 Built: 2025-08-04_0517",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3076,10 +3076,10 @@
         "slug": "gmt-vt"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://ridegmt.com/",
-        "title": "Green Mountain Transit – Getting you where you need to go!",
+        "finalUrl": "https://ridegmt.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3126,7 +3126,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.ezpassva.com/",
-        "title": "Home | E-ZPass® Virginia",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3212,7 +3212,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://lge-ku.com/odp",
-        "title": "Programs, Services and Information for ODP Customers | LG&amp;E and KU",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3282,7 +3282,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.novec.com/Customer_Services/Apply-for-Service.cfm",
-        "title": "Apply for Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3408,7 +3408,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.myrec.coop/startstop-service",
-        "title": "Start/Stop Service | myrec",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3497,7 +3497,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.svec.coop/member-services/start-stop-service/",
-        "title": "Start/Stop Service &#8211; Shenandoah Valley Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3587,7 +3587,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.mycvec.com/member-services/start-stop-move-service/",
-        "title": "Start, Stop, Move Service &#8211; Central Virginia Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3708,7 +3708,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.virginianaturalgas.com/residential/manage-your-account/start-stop-transfer-service.html",
-        "title": "Start, Stop or Transfer Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3785,7 +3785,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.columbiagasva.com/services/start-stop-or-move-service",
-        "title": "Start, Stop or Move Service - Columbia Gas of Virginia",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3854,7 +3854,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.roanokegas.com/become-a-customer/residential-service/",
-        "title": "Residential Service - Roanoke Gas",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3928,7 +3928,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://richmondgasworks.com/service/start-stop-transfer-service/",
-        "title": "Start, Stop or Transfer Service – existing meter - Richmond Gas Works",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -3987,7 +3987,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.loudounwater.org/content/start-service",
-        "title": "Start Service | loudounwater.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4053,7 +4053,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://princewilliamwater.org/our-customers/how-to/start-service",
-        "title": "Start Service | Prince William Water",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4117,7 +4117,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://pu.virginiabeach.gov/customer-service/online-services",
-        "title": "Online Services | City of Virginia Beach",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4195,7 +4195,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.arlingtonva.us/Government/Programs/Water-Utilities/Customer-Service/Start-Stop-Service",
-        "title": "Start or Stop Service – Official Website of Arlington County Virginia Government",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4375,7 +4375,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.hrsd.com/customers",
-        "title": "Customer Landing Page | HRSD",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4439,7 +4439,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://pw.virginiabeach.gov/trash-recycling",
-        "title": "Trash &amp; Recycling | City of Virginia Beach",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4486,7 +4486,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://gohrt.com/routes/",
-        "title": "Routes &#8211; Hampton Roads Transit",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4530,7 +4530,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://kingcounty.gov/en/dept/metro",
-        "title": "Metro - King County, Washington",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4570,9 +4570,9 @@
         "slug": "mlta-wv"
       },
       "validation": {
-        "status": "redirect",
-        "httpStatus": 404,
-        "finalUrl": "https://www.busride.org/routes",
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://busride.org/routes/",
         "title": null,
         "error": null
       },
@@ -4616,7 +4616,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service",
-        "title": "Fixed Route Service – City of Cheyenne",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4660,7 +4660,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dot.alaska.gov/creg/whittiertunnel/index.shtml",
-        "title": "Whittier Tunnel, Transportation &amp; Public Facilities, State of Alaska",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4701,7 +4701,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.revenue.alabama.gov/division/motor-vehicle/",
-        "title": "Motor Vehicle - Alabama Department of Revenue",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4739,10 +4739,10 @@
         "slug": "alabama-freedom-pass"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://freedompass.americanroads.com/",
-        "title": "Alabama Freedom Pass Online",
+        "finalUrl": "https://freedompass.americanroads.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4786,10 +4786,10 @@
         "slug": "91-express-lanes"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.91expresslanes.com/",
-        "title": "91 Express Lanes - Home",
+        "finalUrl": "https://www.91expresslanes.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4833,10 +4833,10 @@
         "slug": "metro-expresslanes"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.metroexpresslanes.net/",
-        "title": "Metro ExpressLanes &#8211; Metro ExpressLanes",
+        "finalUrl": "https://www.metroexpresslanes.net",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4878,10 +4878,10 @@
         "slug": "the-toll-roads-orange-county"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.thetollroads.com/",
-        "title": "Home | The Toll Roads",
+        "finalUrl": "https://www.thetollroads.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -4931,11 +4931,11 @@
         "slug": "access-health-ct"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.accesshealthct.com",
         "title": null,
-        "error": "fetch failed"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -4987,7 +4987,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://portal.ct.gov/HUSKY",
-        "title": "Connecticut Husky Health",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5039,7 +5039,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://portal.ct.gov/DRS",
-        "title": "Connecticut Department of Revenue Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5084,10 +5084,10 @@
         "slug": "dc-health-link"
       },
       "validation": {
-        "status": "redirect",
-        "httpStatus": 403,
-        "finalUrl": "https://www.dchealthlink.com/",
-        "title": "Just a moment...",
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.dchealthlink.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5133,10 +5133,10 @@
         "slug": "dc-district-direct"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://districtdirect.dc.gov/ua/",
-        "title": "District Direct",
+        "finalUrl": "https://districtdirect.dc.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5180,10 +5180,10 @@
         "slug": "mytax-dc"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://mytax.dc.gov/?Check=1",
-        "title": "MyTax DC",
+        "finalUrl": "https://mytax.dc.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5227,10 +5227,10 @@
         "slug": "delaware-medicaid-assist"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://assist.dhss.delaware.gov/",
-        "title": "ASSIST Home",
+        "finalUrl": "https://assist.dhss.delaware.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5272,10 +5272,10 @@
         "slug": "delaware-taxpayer-portal"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://tax.delaware.gov/rptp/portal/home/!ut/p/z1/04_Sj9CPykssy0xPLMnMz0vMAfIjo8zijS0MnN09DIy83EODjQwc_R1DTcIcvYAsE_1wQgqigNIGOICjAVB_FCElBbkRBumOiooA7YFcLQ!!/dz/d5/L2dBISEvZ0FBIS9nQSEh/",
-        "title": "Home",
+        "finalUrl": "https://tax.delaware.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5318,10 +5318,10 @@
         "slug": "delaware-ezpass"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.ezpassde.com/",
-        "title": "Delaware E-ZPass",
+        "finalUrl": "https://www.ezpassde.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5387,10 +5387,10 @@
         "slug": "florida-kidcare"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.floridakidcare.org/",
-        "title": "Florida KidCare | High-quality health and dental insurance made just for kids",
+        "finalUrl": "https://www.floridakidcare.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5457,10 +5457,10 @@
         "slug": "florida-myaccess-medicaid"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://myaccess.myflfamilies.com/",
-        "title": "MyACCESS",
+        "finalUrl": "https://myaccess.myflfamilies.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5525,10 +5525,10 @@
         "slug": "florida-dor-eservices"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://floridarevenue.com/Pages/default.aspx",
-        "title": "Florida Dept. of Revenue - Florida Dept. of Revenue",
+        "finalUrl": "https://floridarevenue.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5572,11 +5572,11 @@
         "slug": "epass-cfx"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://epass.cfxway.com/",
         "title": null,
-        "error": "fetch failed"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -5617,10 +5617,10 @@
         "slug": "greater-miami-expressway-agency"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.gmx-way.com/",
-        "title": "Greater Miami Expressway Agency",
+        "finalUrl": "https://www.gmx-way.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5661,10 +5661,10 @@
         "slug": "i4-express"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://i4express.com/",
-        "title": "I-4 Express - I4Express.com",
+        "finalUrl": "https://i4express.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5705,10 +5705,10 @@
         "slug": "tampa-hillsborough-expressway-authority"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.tampa-xway.com/",
-        "title": "Home - Tampa Hillsborough Expressway Authority",
+        "finalUrl": "https://www.tampa-xway.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5749,10 +5749,10 @@
         "slug": "alaska-electric-light-power"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.aelp.com/",
-        "title": "Alaska Electric Light & Power | Juneau, Alaska",
+        "finalUrl": "https://www.aelp.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5793,10 +5793,10 @@
         "slug": "golden-valley-electric-association"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.gvea.com/",
-        "title": "Golden Valley Electric Assn",
+        "finalUrl": "https://www.gvea.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5837,10 +5837,10 @@
         "slug": "homer-electric-association"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.homerelectric.com/",
-        "title": "Homer Electric Association",
+        "finalUrl": "https://www.homerelectric.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5884,7 +5884,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.ketchikan.gov/ketchikan-public-utilities",
-        "title": "Official Website of the City of Ketchikan, Alaska - Ketchikan Public Utilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5926,10 +5926,10 @@
         "slug": "matanuska-electric-association"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.mea.coop/",
-        "title": "Matanuska Electric Association, Inc. – Community Built &amp; Led Since 1941",
+        "finalUrl": "https://www.mea.coop",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -5970,10 +5970,10 @@
         "slug": "interior-gas-utility"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.interiorgas.com/",
-        "title": "Interior Alaska Natural Gas Utility",
+        "finalUrl": "https://www.interiorgas.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6014,10 +6014,10 @@
         "slug": "decatur-utilities-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.decaturutilities.com/",
-        "title": "Utility Services Decatur Alabama | Decatur Utilities | United States",
+        "finalUrl": "https://www.decaturutilities.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6061,10 +6061,10 @@
         "slug": "huntsville-utilities-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.hsvutil.org/",
-        "title": "Huntsville Utilities",
+        "finalUrl": "https://www.hsvutil.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6110,7 +6110,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://conwaycorp.com/sign-up-for-a-service/",
-        "title": "Sign Up For A Service - Conway Corp",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6155,7 +6155,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://nlrelectric.com/forms/",
-        "title": "Forms - North Little Rock Electric",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6204,7 +6204,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.swepco.com/account/service/start-stop-transfer",
-        "title": "Start, Stop or Transfer Your Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6249,7 +6249,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.aogc.com/RequestService",
-        "title": "Request Service - Arkansas Oklahoma Gas",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6294,7 +6294,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.tep.com/im-moving/",
-        "title": "I’m moving – Tucson Electric Power",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6339,7 +6339,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.uesaz.com/im-moving/",
-        "title": "I’m Moving – UniSource Energy Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6383,10 +6383,10 @@
         "slug": "smud"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.smud.org/",
-        "title": "Home",
+        "finalUrl": "https://www.smud.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6427,10 +6427,10 @@
         "slug": "jewett-city-dpu-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.jewettcitydpu.com/",
-        "title": "Jewett City DPU, CT | Official Website",
+        "finalUrl": "https://www.jewettcitydpu.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6477,10 +6477,10 @@
         "slug": "norwich-public-utilities-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://norwichpublicutilities.com/",
-        "title": "Norwich Public Utilities, CT | Official Website",
+        "finalUrl": "https://norwichpublicutilities.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6526,7 +6526,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.wallingfordct.gov/government/departments/electric-division/",
-        "title": "Electric Division | Town of Wallingford",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6571,11 +6571,11 @@
         "slug": "groton-utilities"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://grotonutilities.com/221/Start-or-Stop-Service",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -6619,7 +6619,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cityofdover.gov/Public-Utilities/",
-        "title": "City of Dover Delaware - Electric Department",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6660,10 +6660,10 @@
         "slug": "city-of-milford-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.cityofmilford.com/",
-        "title": "Milford, DE - Official Website | Official Website",
+        "finalUrl": "https://www.cityofmilford.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6710,7 +6710,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://newarkde.gov/18/Electrical-Engineering",
-        "title": "Electrical Engineering | Newark, DE - Official Website",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6751,10 +6751,10 @@
         "slug": "delaware-electric-cooperative"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.delaware.coop/",
-        "title": "Delaware Electric Cooperative | We keep the lights on",
+        "finalUrl": "https://www.delaware.coop",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6795,10 +6795,10 @@
         "slug": "lewes-bpw-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.lewesbpwde.gov/",
-        "title": "Home - Lewes BPW",
+        "finalUrl": "https://www.lewesbpwde.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6839,10 +6839,10 @@
         "slug": "new-castle-msc-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://newcastlemsc.delaware.gov/",
-        "title": "Home - Municipal Services Commission - MSC",
+        "finalUrl": "https://newcastlemsc.delaware.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6884,10 +6884,10 @@
         "slug": "town-of-middletown-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.middletown.delaware.gov/",
-        "title": "Official Website for the Town of Middletown Delaware",
+        "finalUrl": "https://www.middletown.delaware.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -6928,11 +6928,11 @@
         "slug": "town-of-smyrna-electric"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://smyrna.delaware.gov",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -6983,7 +6983,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.floridacitygas.com/residential/start-stop-transfer-or-add/",
-        "title": "Start, Stop, Transfer or Add - Florida City Gas",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7025,10 +7025,10 @@
         "slug": "juneau-water-utility"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://juneau.org/",
-        "title": "City and Borough of Juneau &#8211; Alaska&#039;s Capital City",
+        "finalUrl": "https://juneau.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7073,7 +7073,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.mywater.us/alaska/about-us-menu",
-        "title": "College &amp; Golden Heart Utilities | About Us",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7117,10 +7117,10 @@
         "slug": "huntsville-water-pollution-control"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.huntsvilleal.gov/",
-        "title": "City of Huntsville - Official website of the City of Huntsville, Alabama",
+        "finalUrl": "https://www.huntsvilleal.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7165,10 +7165,10 @@
         "slug": "jefferson-county-environmental-services"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.jeffcoes.org/",
-        "title": "Jefferson County Environmental Services &ndash; HOME",
+        "finalUrl": "https://www.jeffcoes.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7210,10 +7210,10 @@
         "slug": "tuscaloosa-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.tuscaloosa.com/",
-        "title": "City of Tuscaloosa",
+        "finalUrl": "https://www.tuscaloosa.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7257,9 +7257,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.madisoncountyal.gov/departments/water-department",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7301,10 +7301,10 @@
         "slug": "mawss-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.mawss.com/",
-        "title": "MAWSS",
+        "finalUrl": "https://www.mawss.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7347,10 +7347,10 @@
         "slug": "little-rock-water-reclamation"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://lrwra.com/",
-        "title": "LRWRA",
+        "finalUrl": "https://lrwra.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7397,7 +7397,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://springdalewaterar.gov/new-customer/",
-        "title": "New Customer - Springdale Water Utilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7442,11 +7442,11 @@
         "slug": "bentonville-utilities"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.bentonvillear.com/565/Utility-Service",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -7494,7 +7494,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services",
-        "title": "New Water and Sewer Services | Fayetteville, AR - Official Website",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7540,9 +7540,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.fortsmithar.gov/resident-services/water-utilities",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7584,10 +7584,10 @@
         "slug": "jonesboro-cwl-water"
       },
       "validation": {
-        "status": "redirect",
-        "httpStatus": 403,
-        "finalUrl": "https://cwljonesboroar.gov/",
-        "title": "Just a moment...",
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.jonesborocwl.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7634,7 +7634,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/",
-        "title": "Start or Stop Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7681,7 +7681,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.pima.gov/wastewater",
-        "title": "Wastewater Reclamation | Pima County, AZ",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7726,7 +7726,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.chandleraz.gov/residents/utility-services",
-        "title": "Chandler Utility Services | City of Chandler, AZ",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7769,9 +7769,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.tempe.gov/i-want-to/start-stop-water-service",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7813,10 +7813,10 @@
         "slug": "glendale-water-services"
       },
       "validation": {
-        "status": "redirect",
-        "httpStatus": 404,
-        "finalUrl": "https://www.glendaleaz.gov/live/city_services/water_services",
-        "title": "Page Not Found | City of Glendale, AZ",
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.glendaleaz.com/live/city_services/water_services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7861,7 +7861,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.scottsdaleaz.gov/utilities/establish-service",
-        "title": "Utility Service - Establish Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7904,9 +7904,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.gilbertaz.gov/departments/public-works/water",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7951,7 +7951,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.fresno.gov/publicutilities/",
-        "title": "Public Utilities &#8211; City of Fresno",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -7996,7 +7996,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cityofsacramento.gov/utilities",
-        "title": "Utilities | City of Sacramento",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8044,7 +8044,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.sandiego.gov/public-utilities/customer-support",
-        "title": "Water/Wastewater Customer Support | City of San Diego Official Website",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8090,10 +8090,10 @@
         "slug": "ebmud-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.ebmud.com/",
-        "title": "Home :: East Bay Municipal Utility District",
+        "finalUrl": "https://www.ebmud.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8138,7 +8138,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.longbeach.gov/utilityservices/",
-        "title": "MyUtility Portal",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8180,10 +8180,10 @@
         "slug": "san-jose-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.sjwater.com/",
-        "title": "Home | San Jose Water",
+        "finalUrl": "https://www.sjwater.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8242,7 +8242,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.auroragov.org/residents/water/pay_my_water_bill/home_sellers_buyers_checklist/general_escrow_request_and_transfer_of_ownership",
-        "title": "General escrow request and transfer of ownership - City of Aurora",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8300,7 +8300,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://bouldercolorado.gov/water-service-request-form",
-        "title": "Water Service Request Form | City of Boulder",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8376,7 +8376,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.csu.org/my-account/start-stop-service",
-        "title": "Start, stop or move service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8432,7 +8432,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://secure.fcgov.com/utilities-service-request/",
-        "title": "City of Fort Collins Utilities Start/Stop Service Request",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8478,7 +8478,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
-        "title": "Water Pollution Control Authority (WPCA) | City of Bridgeport",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8522,10 +8522,10 @@
         "slug": "gnhwpca"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://gnhwpca.com/",
-        "title": "Home",
+        "finalUrl": "https://gnhwpca.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8569,9 +8569,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8618,7 +8618,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://themdc.org/",
-        "title": "The Metropolitan District | CT Water Utility Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8699,7 +8699,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.rwater.com/customer-care/start-or-stop-service",
-        "title": "Start Stop",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8745,7 +8745,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
-        "title": "Department of Public Works Kent County Levy Court",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8789,10 +8789,10 @@
         "slug": "new-castle-county-sewer"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.newcastlede.gov/",
-        "title": "New Castle County, DE - Official Website | Official Website",
+        "finalUrl": "https://www.newcastlede.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8838,7 +8838,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://sussexcountyde.gov/sewer-water",
-        "title": "Sewer &amp; Water | Sussex County",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8880,10 +8880,10 @@
         "slug": "wilmington-water-utility"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.wilmingtondewater.gov/",
-        "title": "Wilmington Water Utility | Official Website",
+        "finalUrl": "https://www.wilmingtondewater.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8929,7 +8929,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://hcfl.gov/residents/property-owners-and-renters/water-and-sewer/request-to-start-stop-or-move-water-service",
-        "title": "Request to Start, Stop, or Move Water Service | Hillsborough County, FL",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -8975,7 +8975,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.recology.com/recology-san-francisco/",
-        "title": "Recology San Francisco",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9020,10 +9020,10 @@
         "slug": "miami-dade-solid-waste"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.miamidade.gov/global/solidwaste/home.page",
-        "title": "Department of Solid Waste Management",
+        "finalUrl": "https://www.miamidade.gov/solidwaste",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9070,7 +9070,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.orangecountyfl.net/WaterGarbageRecycling.aspx",
-        "title": "Water, Garbage & Recycling",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9112,10 +9112,10 @@
         "slug": "palm-beach-county-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://discover.pbcgov.org/waterutilities/Pages/default.aspx",
-        "title": "Water Utilities Home",
+        "finalUrl": "https://discover.pbcgov.org/waterutilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9162,7 +9162,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://pinellas.gov/services/request-utilities-service/",
-        "title": "Request Utilities Service - Pinellas County",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9205,10 +9205,10 @@
         "slug": "txdmv"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.txdmv.gov/",
-        "title": "TxDMV Home | TxDMV.gov",
+        "finalUrl": "https://www.txdmv.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9259,10 +9259,10 @@
         "slug": "hctra"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.hctra.org/",
-        "title": "HCTRA &mdash; Harris County Toll Road Authority",
+        "finalUrl": "https://www.hctra.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9305,10 +9305,10 @@
         "slug": "austin-energy"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://austinenergy.com/",
-        "title": "Austin Energy",
+        "finalUrl": "https://austinenergy.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9353,10 +9353,10 @@
         "slug": "cps-energy"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.cpsenergy.com/",
-        "title": "Welcome to CPS Energy",
+        "finalUrl": "https://www.cpsenergy.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9404,7 +9404,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.fortworthtexas.gov/departments/water",
-        "title": "Water – Welcome to the City of Fort Worth",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9452,10 +9452,10 @@
         "slug": "el-paso-electric"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.epelectric.com/",
-        "title": "Electricity for West Texas and Southern New Mexico | El Paso Electric | Welcome | Home",
+        "finalUrl": "https://www.epelectric.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9500,10 +9500,10 @@
         "slug": "el-paso-water"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.epwater.org/",
-        "title": "El Paso Water | Home",
+        "finalUrl": "https://www.epwater.org",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9557,10 +9557,10 @@
         "slug": "texas-gas-service"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.texasgasservice.com/",
-        "title": "Texas Gas Service",
+        "finalUrl": "https://www.texasgasservice.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9617,10 +9617,10 @@
         "slug": "national-grid-metro-ny-gas"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.nationalgridus.com/NY-Home/",
-        "title": "Metro New York Gas | Home | National Grid",
+        "finalUrl": "https://www.nationalgridus.com/NY-Home",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9673,9 +9673,9 @@
         "slug": "central-hudson"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.cenhud.com/",
+        "finalUrl": "https://www.cenhud.com",
         "title": null,
         "error": null
       },
@@ -9734,10 +9734,10 @@
         "slug": "orange-rockland"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.oru.com/en/",
-        "title": "Orange &amp; Rockland - Utility Company Serving Greater New York",
+        "finalUrl": "https://www.oru.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9806,11 +9806,11 @@
         "slug": "nyseg"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.nyseg.com",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -9861,11 +9861,11 @@
         "slug": "rge"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.rge.com",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -9930,7 +9930,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.nationalfuel.com/utility/",
-        "title": "National Fuel | Heat Your Home or Business | Gas Company For WNY &amp; Northwest PA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -9977,10 +9977,10 @@
         "slug": "suffolk-county-water-authority"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.scwa.com/",
-        "title": "SCWA | Suffolk County Water Authority",
+        "finalUrl": "https://www.scwa.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10091,7 +10091,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.firstenergycorp.com/met_edison.html",
-        "title": "Met Edison",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10145,7 +10145,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.firstenergycorp.com/penelec.html",
-        "title": "Penelec",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10199,7 +10199,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.firstenergycorp.com/penn_power.html",
-        "title": "Penn Power",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10253,7 +10253,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.firstenergycorp.com/west_penn_power.html",
-        "title": "West Penn Power",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10312,7 +10312,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.peoples-gas.com/my-account/start-or-modify-gas-service",
-        "title": "Start or Modify Gas Service | Peoples",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10359,7 +10359,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.pgworks.com/customer-care/your-home/service",
-        "title": "Start/Stop Service | PGW (Philadelphia Gas Works)",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10406,7 +10406,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.aquawater.com/start-or-stop-service",
-        "title": "Start Or Stop Service | Aqua",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10453,7 +10453,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.amwater.com/paaw/customer-service-billing/",
-        "title": "Pennsylvania American Water Customer Service & Billing",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10514,7 +10514,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.drjtbc.org/e-zpass/",
-        "title": "E-ZPass Information &#8211; DRJTBC",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10574,9 +10574,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.mass.gov/ezdrivema",
-        "title": "Not allowed | Mass Gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10637,7 +10637,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://unitil.com/account-billing/start-stop-or-move-service",
-        "title": "Start, Stop or Move Service | Unitil",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10703,11 +10703,11 @@
         "slug": "berkshire-gas"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.berkshiregas.com/moving",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -10762,7 +10762,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://massachusetts.libertyutilities.com/fall-river/residential/my-account/moving.html",
-        "title": "Moving - Residential - Massachusetts Gas - Liberty",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10813,10 +10813,10 @@
         "slug": "aquarion-ma"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.aquarionwater.com/customer-service/start-or-stop-service",
-        "title": "Start or Stop Service | Aquarion Water",
+        "finalUrl": "https://www.aquarionwater.com/customer-care/start-or-stop-service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10878,7 +10878,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://waterandsewer.org/request-service/",
-        "title": "Request Service - Springfield Water and Sewer Commission",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10937,7 +10937,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.worcesterma.gov/water-sewer",
-        "title": "Water &amp; Sewer Operations | City of Worcester",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -10989,7 +10989,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cambridgema.gov/departments/waterdepartment",
-        "title": "Water Department - City of Cambridge, MA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11040,7 +11040,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.somervillema.gov/departments/water-and-sewer",
-        "title": "Water and Sewer | City of Somerville",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11091,7 +11091,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.hged.com/residential/start-stop-move-upgrade.aspx",
-        "title": "For your Home | Residential Start, Stop, Move, Upgrade | Holyoke Gas and Electric, Holyoke, Massachusetts",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11140,9 +11140,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 404,
+        "httpStatus": 200,
         "finalUrl": "https://www.wgeld.org/forms/residential-start-stop-service/",
-        "title": "Page Not Found",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11193,7 +11193,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.pmlp.com/235/Sign-Up-for-Electrical-Service",
-        "title": "Sign Up for Electrical Service | Peabody Municipal Light Plant, MA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11251,7 +11251,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.tmlp.com/162/Stop-Start-Service",
-        "title": "Stop &amp; Start Service | TMLP, MA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11305,7 +11305,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.rmld.com/291/Start-or-Stop-Service",
-        "title": "Start or Stop Service | RMLD, MA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11358,7 +11358,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.celd.com/application-for-service",
-        "title": "Application for Service | Chicopee Electric",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11407,7 +11407,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.beld.com/",
-        "title": "Braintree Electric Light Department &#8211; Your hometown electric provider",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11489,7 +11489,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.boston.gov/departments/public-works/trash-and-recycling-day-schedule-and-search",
-        "title": "Trash and Recycling Day Schedule and Search | Boston.gov",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11544,7 +11544,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cambridgema.gov/services/curbsidecollections",
-        "title": "Curbside Collections - City of Cambridge, MA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11603,7 +11603,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.worcesterma.gov/trash-recycling",
-        "title": "Trash &amp; Recycling | City of Worcester",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11654,7 +11654,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.somervillema.gov/trash-and-recycling",
-        "title": "Somerville Trash &amp; Recycling Information | City of Somerville",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11705,7 +11705,7 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.ezpassnh.com/",
         "title": null,
         "error": null
@@ -11782,7 +11782,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://unitil.com/account-billing/start-stop-or-move-service",
-        "title": "Start, Stop or Move Service | Unitil",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11893,7 +11893,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.nhec.com/request-service/",
-        "title": "Request Service | New Hampshire Electric Co-op",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -11979,7 +11979,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://new-hampshire.libertyutilities.com/pelham/residential/contact/service-requests/",
-        "title": "Service Requests - Residential - New Hampshire Gas - Liberty",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12033,10 +12033,10 @@
         "slug": "aquarion-nh"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.aquarionwater.com/customer-service/start-or-stop-service",
-        "title": "Start or Stop Service | Aquarion Water",
+        "finalUrl": "https://www.aquarionwater.com/customer-care/start-or-stop-service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12095,7 +12095,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.hampsteadwater.com/new-service",
-        "title": "Apply for New Water Service - Hampstead Area Water Company, Inc.",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12148,7 +12148,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://manchesterwater.org/start%2Fstop-service",
-        "title": "Start/Stop Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12203,7 +12203,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.manchesternh.gov/Departments/sewer-and-stormwater",
-        "title": "Sewer and Stormwater",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12257,7 +12257,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.manchesternh.gov/Departments/Trash-and-Recycling/Trash-Collection",
-        "title": "Trash Collection",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12308,7 +12308,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.concordnh.gov/1339/Utility-Billing",
-        "title": "Utility Billing | Concord, NH - Official Website",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12358,7 +12358,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.concordnh.gov/536/Trash-Recycling",
-        "title": "Trash &amp; Recycling | Concord, NH - Official Website",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12411,7 +12411,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.nashuanh.gov/441/Residential-Collections",
-        "title": "Residential Collections | Nashua, NH",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12463,7 +12463,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.nashuanh.gov/392/Wastewater-Department",
-        "title": "Wastewater Department | Nashua, NH",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12526,7 +12526,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://fpuc.com/customer-care/start-stop-transfer-service/",
-        "title": "Start / Stop / Transfer Service - Florida Public Utilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12571,7 +12571,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://lakelandelectric.com/billing-and-payment/moving",
-        "title": "Lakeland Electric - Start, Stop, Move Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12620,7 +12620,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://kua.com/contact-information/contact-kua/",
-        "title": "Contact KUA - Kissimmee Utility Authority",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12668,10 +12668,10 @@
         "slug": "gru"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.gru.com/",
-        "title": "GRU Home",
+        "finalUrl": "https://www.gru.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12755,7 +12755,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.leegov.com/tolls",
-        "title": "Lee County Tolls - LeeWay",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12824,7 +12824,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.gswater.com/your-service-area",
-        "title": "Your Service Area - Golden State Water Company",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12871,10 +12871,10 @@
         "slug": "riverside-express"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.riversideexpress.com/",
-        "title": "Riverside Express, Express Lanes, FasTrak",
+        "finalUrl": "https://www.riversideexpress.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12924,10 +12924,10 @@
         "slug": "sandag-fastrak"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://www.myfastrak.511sd.com/en",
-        "title": "SANDAG FasTrak",
+        "finalUrl": "https://www.myfastrak.511sd.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -12986,7 +12986,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://driveezmd.com/sign-up/",
-        "title": "Create Your E-ZPass or Pay-By-Plate Account | DriveEzMD.com",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13040,7 +13040,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.firstenergycorp.com/potomac_edison.html",
-        "title": "Potomac Edison",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13090,7 +13090,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.smeco.coop/my-account/service-management/connect-service/",
-        "title": "Connect Service &#8211; Southern Maryland Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13141,7 +13141,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://choptankelectric.coop/apply-service",
-        "title": "Apply for Service | Choptank Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13211,7 +13211,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.columbiagasmd.com/services/start-stop-or-move-service",
-        "title": "Start, Stop or Move Service - Columbia Gas of Maryland",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13300,7 +13300,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.aacounty.org/services/sewer-water",
-        "title": "Sewer &amp; Water | Anne Arundel County Government",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13374,7 +13374,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.howardcountymd.gov/public-works/bureau-utilities",
-        "title": "Bureau of Utilities | Howard County",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13426,7 +13426,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://amwater.com/mdaw/",
-        "title": "Maryland American Water We Keep Life Flowing",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13534,9 +13534,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.princegeorgescountymd.gov/departments-offices/environment/waste-recycling/residential-collections",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13639,9 +13639,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.baltimorecountymd.gov/departments/public-works/solid-waste",
-        "title": "ERROR: The request could not be satisfied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13722,7 +13722,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Recycle-Compost-Trash",
-        "title": "Trash, Recycle & Compost - City and County of Denver",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13781,7 +13781,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.westminsterco.gov/184/Utility-Billing",
-        "title": "Utility Billing | Westminster, CO",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13844,7 +13844,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://core.coop/start-stop-service/",
-        "title": "Start/Stop Service - CORE",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13904,7 +13904,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.unitedpower.com/start-transfer-stop",
-        "title": "Start, Transfer or Stop Service | United Power",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -13971,7 +13971,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://pvrea.coop/for-members/account-management/start-stop-service/",
-        "title": "Start &amp; Stop Service | Poudre Valley REA",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14040,7 +14040,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.holycross.com/account-services/services/service-requests/start-stop-transfer-service",
-        "title": "Start, Stop, Transfer Service - Holy Cross Energy",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14094,7 +14094,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://longmontcolorado.gov/utilities-and-public-works/utility-bill/start-or-stop-service/",
-        "title": "Start or Stop Service - City of Longmont",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14143,9 +14143,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.lovelandwaterandpower.org/about-us/start-stop-or-move-service",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14191,10 +14191,10 @@
         "slug": "utah-dmv-motor-vehicle-portal"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://mvp.tax.utah.gov/?Check=1",
-        "title": "Motor Vehicle Portal",
+        "finalUrl": "https://mvp.tax.utah.gov/",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14248,7 +14248,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.provo.gov/181/City-Utilities",
-        "title": "City Utilities | Provo, UT",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14301,7 +14301,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://sgcityutah.gov/departments/apply_for_utility_services.php",
-        "title": "St. George, UT - Apply for Utility Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14371,7 +14371,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://wfwrdutah.gov/services-and-request/services-requests",
-        "title": "Services and Request | Wasatch Front Waste &amp; Recycling District",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14490,7 +14490,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.honolulu.gov/csd/vehicle/",
-        "title": "Division of Motor Vehicles | Department of Customer Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14555,11 +14555,11 @@
         "slug": "maui-county-dmv"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.mauicounty.gov/1328/DMV",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -14639,9 +14639,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.vrl.hawaiicounty.gov/motor-vehicle-registration",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14707,7 +14707,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.kauai.gov/Government/Departments-Agencies/Finance/Drivers-Licensing-and-Motor-Vehicles",
-        "title": "Division of Motor Vehicles (DMV) - Kauai County, HI",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14777,7 +14777,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.hawaiianelectric.com/customer-service/maui-county-directory",
-        "title": "Maui County Directory | Hawaiian Electric",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14858,7 +14858,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.hawaiianelectric.com/customer-service/hawaii-island-directory",
-        "title": "Hawaii Island Directory | Hawaiian Electric",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14923,7 +14923,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://kiuc.coop/start-or-stop-service",
-        "title": "Start or Stop Service | Kauaʻi Island Utility Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -14987,11 +14987,11 @@
         "slug": "maui-dws"
       },
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.mauicounty.gov/215/Fiscal-Division",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "newly_added"
     },
@@ -15071,7 +15071,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://customerconnect.hawaiidws.org/moving/start-service",
-        "title": "Department of Water Supply, County of Hawai'i > Main Menu > Manage Services > Stop, Start or Transfer Service > Start New Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15136,7 +15136,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.kauaiwater.org/sign-up-or-transfer-water-service/",
-        "title": "Sign Up or Transfer Water Service &#8211; Kauaʻi Department of Water",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15183,7 +15183,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://tax.hawaii.gov/faq/",
-        "title": "FAQs | Department of Taxation",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15232,7 +15232,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://medquest.hawaii.gov/en/members-applicants/already-covered/change-update-information.html",
-        "title": "Change/Update Your Information",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15319,7 +15319,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.snopud.com/account/my-account/start-stop-service/",
-        "title": "Start / Stop / Transfer Service - Snohomish County PUD",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15412,7 +15412,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.mytpu.org/payment-billing/start-stop-service/",
-        "title": "Start/Stop Service - Tacoma Public Utilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15486,7 +15486,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.clarkpublicutilities.com/start-stop-transfer-service/",
-        "title": "Start, Stop or Transfer Service - Clark Public Utilities",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15548,7 +15548,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.myavista.com/your-account/moving",
-        "title": "Start, stop, or transfer energy services when moving | Avista",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15596,9 +15596,9 @@
         "slug": "pacific-power-or"
       },
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://csapps.pacificpower.net/idm/my-account/start-stop-move",
+        "finalUrl": "https://www.pacificpower.net/my-account/start-stop-move.html",
         "title": null,
         "error": null
       },
@@ -15669,7 +15669,7 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://my.spokanecity.org/publicworks/utility-billing/",
         "title": null,
         "error": null
@@ -15735,7 +15735,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.chelanpud.org/my-pud-services/start-stop-services",
-        "title": "Start/Stop Services",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15796,7 +15796,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.grantpud.org/start-stop-service",
-        "title": "Start/Stop Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15854,7 +15854,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.bentonpud.org/manage-my-account/start-stop-service",
-        "title": "Benton PUD - Start &amp; Stop Service",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15913,7 +15913,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.cowlitzpud.org/new-services/start-stop-or-transfer-service/",
-        "title": "Start, Stop or Transfer Service &#8211; Cowlitz County Public Utility District",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -15985,7 +15985,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.lcpud.org/services/start-stop-service/",
-        "title": "Start/Stop Service &#8211; Lewis County PUD",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16043,7 +16043,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.pud3.org/electric-service/electric-start-new-service/",
-        "title": "Start or Stop Electric Service &#8211; Mason County PUD No. 3",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16095,7 +16095,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
-        "title": "About BreezeBy Electronic Bridge Tolling - Port of Hood River",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16145,7 +16145,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.idahopower.com/accounts-service/start-stop-transfer/",
-        "title": "Start, Stop, Move - Idaho Power",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16196,7 +16196,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.myavista.com/your-account/moving",
-        "title": "Start, stop, or transfer energy services when moving | Avista",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16244,7 +16244,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.eweb.org/start-stop",
-        "title": "Start, Stop or Move My Service | EWEB",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16292,7 +16292,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.subutil.com/customer-service/start-stop-service/",
-        "title": "Start/Stop Service &#8211; Springfield Utility Board",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16342,7 +16342,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://clpud.org/customer-information/start-or-stop-service/",
-        "title": "Start or Stop Service &#8211; Central Lincoln",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16392,7 +16392,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.tpud.org/customer-service/start-or-stop-service/",
-        "title": "Start or Stop Service &#8211; Tillamook People&#039;s Utility District",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16440,7 +16440,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.otec.coop/",
-        "title": "Home | Oregon Trail Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16488,7 +16488,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.umatillaelectric.com/member-services/start-stop-service/",
-        "title": "Start/Stop Service &#8211; Umatilla Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16537,7 +16537,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://cpi.coop/service/stop-service",
-        "title": "Start / Stop Service | Consumers Power Inc.",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16581,7 +16581,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.laneelectric.com/member-services/new-member-guide/",
-        "title": "New Member Guide &#8211; Lane Electric Cooperative",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16624,9 +16624,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16671,7 +16671,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://bendoregon.gov/service/water-sewer-start-or-stop-service/",
-        "title": "Water/Sewer START or STOP service - City of Bend",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16715,7 +16715,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.medfordwater.org/services/customer-service/",
-        "title": "Customer Service -Medford Water",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16761,9 +16761,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.tvwd.org/district/page/startstop-service-interim-billing",
-        "title": "Just a moment...",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16807,9 +16807,9 @@
       },
       "validation": {
         "status": "ok",
-        "httpStatus": 403,
+        "httpStatus": 200,
         "finalUrl": "https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service",
-        "title": "Access Denied",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16856,7 +16856,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/",
-        "title": "Stop or Start Utility Services | City of Gresham",
+        "title": null,
         "error": null
       },
       "status": "newly_added"
@@ -16881,7 +16881,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.alaskacommunications.com/Residential",
-        "title": "Home Internet &amp; Voice Services Provider - Alaska Communications",
+        "title": null,
         "error": null
       },
       "status": "catalog_backlog"
@@ -16898,11 +16898,11 @@
       "rawSeedMatch": null,
       "mergedSeedMatch": null,
       "validation": {
-        "status": "error",
-        "httpStatus": null,
+        "status": "ok",
+        "httpStatus": 200,
         "finalUrl": "https://www.oncor.com",
         "title": null,
-        "error": "The operation was aborted due to timeout"
+        "error": null
       },
       "status": "catalog_backlog"
     },
@@ -16918,10 +16918,10 @@
       "rawSeedMatch": null,
       "mergedSeedMatch": null,
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://e470.com/",
-        "title": "E470 Public Highway Authority - Express Toll Colorado",
+        "finalUrl": "https://www.e470.com",
+        "title": null,
         "error": null
       },
       "status": "catalog_backlog"
@@ -16938,10 +16938,10 @@
       "rawSeedMatch": null,
       "mergedSeedMatch": null,
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://nwpky.com/",
-        "title": "Home - Northwest Parkway",
+        "finalUrl": "https://www.nwpky.com",
+        "title": null,
         "error": null
       },
       "status": "catalog_backlog"
@@ -16958,10 +16958,10 @@
       "rawSeedMatch": null,
       "mergedSeedMatch": null,
       "validation": {
-        "status": "redirect",
+        "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://southeastgas.com/",
-        "title": "Home - Southeast Gas",
+        "finalUrl": "https://southeastgas.com",
+        "title": null,
         "error": null
       },
       "status": "catalog_backlog"
@@ -16985,7 +16985,7 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.coloradonaturalgas.com/service-areas",
-        "title": "ServiceAreas - Colorado Natural Gas",
+        "title": null,
         "error": null
       },
       "status": "catalog_backlog"
