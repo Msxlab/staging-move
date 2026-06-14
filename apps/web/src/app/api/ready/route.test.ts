@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   queryRaw: vi.fn(),
@@ -17,6 +18,10 @@ vi.mock("@/lib/runtime-config", () => ({
 }));
 
 import { GET } from "./route";
+
+function request(url = "https://locateflow.com/api/ready") {
+  return new NextRequest(url);
+}
 
 const validEnv: Record<string, string> = {
   NODE_ENV: "production",
@@ -61,7 +66,7 @@ describe("/api/ready", () => {
   });
 
   it("passes with valid ENV-backed effective config and empty Runtime Config DB", async () => {
-    const response = await GET();
+    const response = await GET(request());
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -73,7 +78,7 @@ describe("/api/ready", () => {
   it("fails with 503 when a required production env value is missing", async () => {
     delete process.env.USER_JWT_SECRET;
 
-    const response = await GET();
+    const response = await GET(request());
     const body = await response.json();
 
     expect(response.status).toBe(503);
@@ -84,10 +89,23 @@ describe("/api/ready", () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    const response = await GET();
+    const response = await GET(request());
     const body = await response.json();
 
     expect(response.status).toBe(503);
     expect(body.failures.some((failure: { key: string }) => failure.key === "UPSTASH_REDIS")).toBe(true);
+  });
+
+  it("can return a 200 diagnostic body without changing readiness status semantics", async () => {
+    delete process.env.USER_JWT_SECRET;
+
+    const response = await GET(request("https://locateflow.com/api/ready?soft=1"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.soft).toBe(true);
+    expect(body.ready).toBe(false);
+    expect(body.readinessStatus).toBe(503);
+    expect(body.failures.some((failure: { key: string }) => failure.key === "USER_JWT_SECRET")).toBe(true);
   });
 });

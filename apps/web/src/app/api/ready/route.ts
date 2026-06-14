@@ -15,7 +15,7 @@
  * nothing they couldn't already infer from a 500 on /api/auth/login.
  */
 
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   buildReadinessReport,
@@ -52,7 +52,7 @@ async function probeDatabase(): Promise<boolean> {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const effectiveConfig =
     (await withTimeout(
       getRequiredRuntimeConfigValues(getReadinessConfigKeys()),
@@ -63,15 +63,17 @@ export async function GET() {
 
   const overallReady = report.ready && dbReady;
   const summary = summarizeReadinessForResponse(report);
+  const soft = request.nextUrl.searchParams.get("soft") === "1";
 
   return NextResponse.json(
     {
       ...summary,
       database: dbReady ? "ready" : "unavailable",
+      ...(soft ? { soft: true, readinessStatus: overallReady ? 200 : 503 } : {}),
       timestamp: new Date().toISOString(),
     },
     {
-      status: overallReady ? 200 : 503,
+      status: soft ? 200 : overallReady ? 200 : 503,
       headers: { "Cache-Control": "no-store" },
     },
   );
