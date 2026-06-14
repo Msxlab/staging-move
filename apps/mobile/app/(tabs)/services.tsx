@@ -982,12 +982,16 @@ export default function ServicesScreen() {
                       onPress={() => handleSaveCost(service.id)}
                       disabled={savingCost}
                       style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" }}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("services.saveCost", { defaultValue: "Save monthly cost" })}
                     >
                       <Check size={14} color="#fff" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => { setEditingCost(null); setCostValue(""); }}
                       style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" }}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("services.cancelCost", { defaultValue: "Cancel cost editing" })}
                     >
                       <X size={14} color={theme.colors.textMuted} />
                     </TouchableOpacity>

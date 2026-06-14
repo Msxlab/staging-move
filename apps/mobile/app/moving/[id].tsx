@@ -626,8 +626,20 @@ export default function MovingDetailScreen() {
               style={styles.migBtnPrimary}
               onPress={generateMoveTasks}
               disabled={taskBusy === "generate"}
+              accessibilityRole="button"
+              accessibilityLabel={
+                moveTasks.length > 0
+                  ? t("moving.regenerateTasks", { defaultValue: "Regenerate tasks" })
+                  : t("moving.generateTasks", { defaultValue: "Generate tasks" })
+              }
             >
-              <Text style={styles.migBtnPrimaryText}>{taskBusy === "generate" ? t("moving.syncing") : t("moving.generate")}</Text>
+              <Text style={styles.migBtnPrimaryText}>
+                {taskBusy === "generate"
+                  ? t("moving.syncing")
+                  : moveTasks.length > 0
+                    ? t("moving.regenerate", { defaultValue: "Regenerate" })
+                    : t("moving.generate")}
+              </Text>
             </TouchableOpacity>
           </View>
           {/* Aurora progress strip — mono kicker + glow gradient bar (tl-prog) */}
