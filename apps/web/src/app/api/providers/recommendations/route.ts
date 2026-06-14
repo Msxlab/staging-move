@@ -648,6 +648,31 @@ function buildGuideSummary(input: {
   return "Your provider plan is ready. Add an address or move details to make recommendations more precise.";
 }
 
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as Record<string, unknown>) } : {};
+}
+
+function metadataStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function appendUniqueLimited(values: string[], next: string | null | undefined, limit = 12): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of [...values, next || ""]) {
+    const clean = value.trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    result.push(clean);
+    if (result.length >= limit) break;
+  }
+  return result;
+}
+
+function sourceGapSeverity(gap: ServiceabilitySourceGap): "HIGH" | "MEDIUM" {
+  return gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET" ? "HIGH" : "MEDIUM";
+}
+
 async function recordProviderSourceGaps(
   gaps: ServiceabilitySourceGap[],
   context: {
@@ -661,37 +686,74 @@ async function recordProviderSourceGaps(
   if (gaps.length === 0) return;
 
   for (const gap of gaps.slice(0, 8)) {
+    const now = new Date().toISOString();
     const title = `Source provider missing: ${gap.category} ${gap.name}`;
+    const state = context.state || null;
+    const zip = context.zip || null;
+    const locationLabel = [state, zip].filter(Boolean).join(" ") || null;
+    const baseMetadata = {
+      source: gap.source,
+      category: gap.category,
+      providerName: gap.name,
+      sourceProviderId: gap.sourceProviderId,
+      evidenceUrl: gap.evidenceUrl,
+      state,
+      zip,
+      addressId: context.addressId || null,
+      latitude: context.latitude ?? null,
+      longitude: context.longitude ?? null,
+    };
     const existing = await prisma.providerGovernanceIssue.findFirst({
       where: {
         issueType: "SOURCE_PROVIDER_MISSING",
         status: "OPEN",
         title,
       },
-      select: { id: true },
+      select: { id: true, metadata: true },
     });
-    if (existing) continue;
+    if (existing) {
+      const previous = metadataRecord(existing.metadata);
+      const previousCount = typeof previous.occurrenceCount === "number" && Number.isFinite(previous.occurrenceCount)
+        ? previous.occurrenceCount
+        : 1;
+      await prisma.providerGovernanceIssue.update({
+        where: { id: existing.id },
+        data: {
+          severity: sourceGapSeverity(gap),
+          metadata: {
+            ...previous,
+            ...baseMetadata,
+            occurrenceCount: previousCount + 1,
+            firstSeen: typeof previous.firstSeen === "string" ? previous.firstSeen : now,
+            lastSeen: now,
+            states: appendUniqueLimited(metadataStringArray(previous.states), state),
+            zips: appendUniqueLimited(metadataStringArray(previous.zips), zip),
+            sampleAddressIds: appendUniqueLimited(metadataStringArray(previous.sampleAddressIds), context.addressId),
+            sampleLocations: appendUniqueLimited(metadataStringArray(previous.sampleLocations), locationLabel),
+          },
+        },
+      });
+      continue;
+    }
 
     await prisma.providerGovernanceIssue.create({
       data: {
         issueType: "SOURCE_PROVIDER_MISSING",
         status: "OPEN",
-        severity: gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET" ? "HIGH" : "MEDIUM",
+        severity: sourceGapSeverity(gap),
         title,
         description:
           `${gap.source} returned ${gap.name} for the requested location, but no matching active catalog provider was found. ` +
           "Review the official source, add/update the provider, and attach precise coverage before surfacing it as an actionable recommendation.",
         metadata: {
-          source: gap.source,
-          category: gap.category,
-          providerName: gap.name,
-          sourceProviderId: gap.sourceProviderId,
-          evidenceUrl: gap.evidenceUrl,
-          state: context.state || null,
-          zip: context.zip || null,
-          addressId: context.addressId || null,
-          latitude: context.latitude ?? null,
-          longitude: context.longitude ?? null,
+          ...baseMetadata,
+          occurrenceCount: 1,
+          firstSeen: now,
+          lastSeen: now,
+          states: appendUniqueLimited([], state),
+          zips: appendUniqueLimited([], zip),
+          sampleAddressIds: appendUniqueLimited([], context.addressId),
+          sampleLocations: appendUniqueLimited([], locationLabel),
         },
       },
     });
@@ -802,8 +864,24 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
-    let fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
-    let fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    const hasRequestedLocationOverride = Boolean(requestedState || requestedZip);
+    const requestMatchesPrimaryAddress = Boolean(
+      primaryAddr &&
+        (!requestedState || requestedState === primaryAddr.state?.trim().toUpperCase()) &&
+        (!requestedZip || requestedZip === primaryAddr.zip?.trim()),
+    );
+    const canUseStoredAddressCoordinates = Boolean(selectedAddress) || !hasRequestedLocationOverride || requestMatchesPrimaryAddress;
+    const hasQueryCoordinates = queryLatitude !== null && queryLongitude !== null;
+    let fallbackLatitude = hasQueryCoordinates
+      ? queryLatitude
+      : canUseStoredAddressCoordinates
+        ? primaryAddr?.latitude ?? null
+        : null;
+    let fallbackLongitude = hasQueryCoordinates
+      ? queryLongitude
+      : canUseStoredAddressCoordinates
+        ? primaryAddr?.longitude ?? null
+        : null;
     // No stored/queried coordinates but we have a ZIP → resolve its ZCTA centroid
     // (Census gazetteer) so distance-based provider ranking still works for ANY
     // address with a ZIP, instead of only those with geocoded lat/lng. This is the

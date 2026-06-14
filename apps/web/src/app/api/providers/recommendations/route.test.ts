@@ -28,6 +28,7 @@ vi.mock("@/lib/db", () => ({
     },
     providerGovernanceIssue: {
       findFirst: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
     },
   },
@@ -144,6 +145,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestHasPlanFeature } from "@/lib/request-entitlements";
+import { zipCentroid } from "@locateflow/db";
 import { lookupFccIsps, isIspServiceable } from "@/lib/fcc-isp";
 import { lookupElectricUtilities, isElectricUtilityServiceable } from "@/lib/electric-utility";
 import { scoreProviders } from "@/lib/recommendation-engine";
@@ -160,10 +162,12 @@ const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: 
 const mockSavedProvider = prisma.savedProvider as unknown as { findMany: Mock };
 const mockProviderGovernanceIssue = prisma.providerGovernanceIssue as unknown as {
   findFirst: Mock;
+  update: Mock;
   create: Mock;
 };
 const rateLimitMock = rateLimit as unknown as Mock;
 const requestHasPlanFeatureMock = requestHasPlanFeature as unknown as Mock;
+const zipCentroidMock = zipCentroid as unknown as Mock;
 const lookupFccIspsMock = lookupFccIsps as unknown as Mock;
 const isIspServiceableMock = isIspServiceable as unknown as Mock;
 const lookupElectricUtilitiesMock = lookupElectricUtilities as unknown as Mock;
@@ -242,8 +246,10 @@ describe("provider recommendations route", () => {
     mockRecFeedback.findMany.mockResolvedValue([]);
     mockSavedProvider.findMany.mockResolvedValue([]);
     mockProviderGovernanceIssue.findFirst.mockResolvedValue(null);
+    mockProviderGovernanceIssue.update.mockResolvedValue({});
     mockProviderGovernanceIssue.create.mockResolvedValue({});
     requestHasPlanFeatureMock.mockResolvedValue(true);
+    zipCentroidMock.mockReturnValue(null);
     lookupFccIspsMock.mockResolvedValue(fccLookupResult());
     isIspServiceableMock.mockReturnValue(false);
     lookupElectricUtilitiesMock.mockResolvedValue(electricLookupResult());
@@ -279,6 +285,34 @@ describe("provider recommendations route", () => {
       expect.any(String),
       expect.objectContaining({ limit: 120, windowSeconds: 60 }),
     );
+  });
+
+  it("uses requested ZIP coordinates instead of the primary address when testing another market", async () => {
+    mockAddress.findMany.mockResolvedValue([
+      {
+        id: "addr-google",
+        isPrimary: true,
+        city: "Mountain View",
+        state: "CA",
+        zip: "94043",
+        latitude: 37.4220095,
+        longitude: -122.0847519,
+        deletedAt: null,
+      },
+    ]);
+    zipCentroidMock.mockReturnValue({ latitude: 40.9254, longitude: -74.2765 });
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-1", name: "PSE&G", category: "UTILITY_ELECTRIC" }),
+      dbProvider({ id: "internet-1", name: "Xfinity", category: "UTILITY_INTERNET" }),
+    ]);
+
+    const response = await GET(makeRequest("?state=NJ&zip=07470"));
+
+    expect(response.status).toBe(200);
+    expect(zipCentroidMock).toHaveBeenCalledWith("07470");
+    expect(lookupElectricUtilitiesMock).toHaveBeenCalledWith({ latitude: 40.9254, longitude: -74.2765 });
+    expect(lookupFccIspsMock).toHaveBeenCalledWith({ latitude: 40.9254, longitude: -74.2765 });
+    expect(lookupElectricUtilitiesMock).not.toHaveBeenCalledWith({ latitude: 37.4220095, longitude: -122.0847519 });
   });
 
   it("heads recommendations with the user's region and groups top picks per category (#3a)", async () => {
@@ -655,6 +689,71 @@ describe("provider recommendations route", () => {
             state: "TX",
             zip: "78701",
             addressId: "addr-austin",
+            occurrenceCount: 1,
+            states: ["TX"],
+            zips: ["78701"],
+            sampleAddressIds: ["addr-austin"],
+            sampleLocations: ["TX 78701"],
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("increments existing source-gap issues instead of creating duplicates", async () => {
+    mockAddress.findMany.mockResolvedValue([
+      {
+        id: "addr-austin",
+        isPrimary: true,
+        city: "Austin",
+        state: "TX",
+        zip: "78701",
+        latitude: 30.2672,
+        longitude: -97.7431,
+        deletedAt: null,
+      },
+    ]);
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-2", name: "Reliant Energy", category: "UTILITY_ELECTRIC" }),
+    ]);
+    mockProviderGovernanceIssue.findFirst.mockResolvedValue({
+      id: "issue-1",
+      metadata: {
+        occurrenceCount: 3,
+        firstSeen: "2026-06-01T00:00:00.000Z",
+        states: ["TX"],
+        zips: ["78701"],
+        sampleAddressIds: ["old-addr"],
+        sampleLocations: ["TX 78701"],
+      },
+    });
+    lookupElectricUtilitiesMock.mockResolvedValue(
+      electricLookupResult({
+        status: "ok",
+        utilities: [{ name: "City of Austin, Texas (Utility Company)", eiaId: "16604" }],
+        normalizedNames: new Set(["austintexas"]),
+        reason: null,
+      }),
+    );
+
+    const response = await GET(makeRequest());
+
+    expect(response.status).toBe(200);
+    expect(mockProviderGovernanceIssue.create).not.toHaveBeenCalled();
+    expect(mockProviderGovernanceIssue.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "issue-1" },
+        data: expect.objectContaining({
+          severity: "HIGH",
+          metadata: expect.objectContaining({
+            providerName: "City of Austin, Texas (Utility Company)",
+            occurrenceCount: 4,
+            firstSeen: "2026-06-01T00:00:00.000Z",
+            lastSeen: expect.any(String),
+            states: ["TX"],
+            zips: ["78701"],
+            sampleAddressIds: ["old-addr", "addr-austin"],
+            sampleLocations: ["TX 78701"],
           }),
         }),
       }),

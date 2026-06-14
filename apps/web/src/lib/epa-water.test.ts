@@ -107,6 +107,32 @@ describe("epa-water community water system lookup", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("falls back to the parent utility city for known service-area aliases", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            ...SYSTEM_ROW,
+            pwsid: "FL4134358",
+            pws_name: "MIAMI-DADE WATER AND SEWER",
+            population_served_count: 2400000,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(jsonResponse([]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await lookupWaterSystem({ city: "Miami Beach", state: "FL" });
+
+    expect(result.status).toBe("ok");
+    expect(result.systemName).toBe("MIAMI-DADE WATER AND SEWER");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("CITY_SERVED/MIAMI%20BEACH");
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("CITY_SERVED/MIAMI");
+  });
+
   it("counts only health-based violations from the last 5 years", async () => {
     const fetchMock = vi
       .fn()
