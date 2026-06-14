@@ -61,6 +61,7 @@ vi.mock("@/lib/kill-switches", () => ({
 }));
 
 vi.mock("@/lib/store-review-account", () => ({
+  getConfiguredStoreReviewAccountEmails: vi.fn(() => Promise.resolve([])),
   provisionStoreReviewAccount: vi.fn(() => Promise.resolve()),
 }));
 
@@ -86,7 +87,10 @@ import { recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import { areSignupsKilled } from "@/lib/kill-switches";
-import { provisionStoreReviewAccount } from "@/lib/store-review-account";
+import {
+  getConfiguredStoreReviewAccountEmails,
+  provisionStoreReviewAccount,
+} from "@/lib/store-review-account";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -104,6 +108,7 @@ const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
 const areSignupsKilledMock = areSignupsKilled as unknown as Mock;
+const getConfiguredStoreReviewAccountEmailsMock = getConfiguredStoreReviewAccountEmails as unknown as Mock;
 const provisionStoreReviewAccountMock = provisionStoreReviewAccount as unknown as Mock;
 
 const validBody = {
@@ -134,6 +139,7 @@ describe("register route", () => {
     tokenMock.create.mockResolvedValue({});
     resetAllowlistedQaAccountForSignupMock.mockResolvedValue({ reset: true });
     areSignupsKilledMock.mockResolvedValue(false);
+    getConfiguredStoreReviewAccountEmailsMock.mockResolvedValue([]);
     provisionStoreReviewAccountMock.mockResolvedValue(undefined);
     delete process.env.COPPA_AGE_GATE_ENABLED;
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
@@ -184,7 +190,10 @@ describe("register route", () => {
     expect(body.userId).toBe("qa-new");
     expect(body.emailVerified).toBe(true);
     expect(body.requiresEmailVerification).toBe(false);
-    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenCalledWith({ email: "qa@example.com" });
+    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenCalledWith({
+      email: "qa@example.com",
+      storeReviewEmails: [],
+    });
     expect(userMock.create).toHaveBeenCalledWith({
       data: {
         email: "qa@example.com",
@@ -283,7 +292,7 @@ describe("register route", () => {
   });
 
   it("auto-verifies a store review account without sending verification or owner alerts", async () => {
-    process.env.STORE_REVIEW_ACCOUNT_EMAILS = "googlereview@locateflow.com";
+    getConfiguredStoreReviewAccountEmailsMock.mockResolvedValue(["googlereview@locateflow.com"]);
     userMock.create.mockResolvedValue({
       id: "review-user",
       email: "googlereview@locateflow.com",

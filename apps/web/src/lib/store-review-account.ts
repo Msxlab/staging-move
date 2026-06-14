@@ -6,6 +6,35 @@ import {
   ONBOARDING_MOVING_SKIPPED_EVENT,
   ONBOARDING_SERVICES_SKIPPED_EVENT,
 } from "@/lib/onboarding-progress";
+import { getStoreReviewAccountEmails } from "@/lib/qa-account";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
+
+const STORE_REVIEW_RUNTIME_KEYS = [
+  "STORE_REVIEW_ACCOUNT_EMAILS",
+  "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+  "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+] as const;
+
+const SINGLE_EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+function parseEmailList(value: string | null | undefined): string[] {
+  return (value || "")
+    .split(/[,\n;]/)
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => SINGLE_EMAIL_PATTERN.test(email));
+}
+
+export async function getConfiguredStoreReviewAccountEmails(): Promise<string[]> {
+  const runtimeValues = await Promise.all(
+    STORE_REVIEW_RUNTIME_KEYS.map((key) => getRuntimeConfigValue(key).catch(() => null)),
+  );
+  return [
+    ...new Set([
+      ...getStoreReviewAccountEmails(),
+      ...runtimeValues.flatMap(parseEmailList),
+    ]),
+  ];
+}
 
 const REVIEW_HOME = {
   type: "HOME",
@@ -141,4 +170,53 @@ export async function provisionStoreReviewAccount(input: {
       metadata: JSON.stringify({ source: "store_review_account_provisioning" }),
     })),
   });
+}
+
+export async function provisionConfiguredStoreReviewAccounts(input: {
+  request: NextRequest;
+}) {
+  const emails = await getConfiguredStoreReviewAccountEmails();
+  if (emails.length === 0) {
+    return {
+      configured: 0,
+      matched: 0,
+      verified: 0,
+      provisioned: 0,
+      skipped: "no_store_review_emails_configured",
+    };
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      email: { in: emails },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      emailVerifiedAt: true,
+    },
+  });
+
+  let verified = 0;
+  let provisioned = 0;
+  for (const user of users) {
+    if (!user.emailVerifiedAt) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerifiedAt: new Date() },
+      });
+      verified += 1;
+    }
+    await provisionStoreReviewAccount({ userId: user.id, request: input.request });
+    provisioned += 1;
+  }
+
+  return {
+    configured: emails.length,
+    matched: users.length,
+    verified,
+    provisioned,
+    missing: emails.filter((email) => !users.some((user) => user.email.toLowerCase() === email)),
+  };
 }

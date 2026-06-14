@@ -81,12 +81,17 @@ export function isAutoVerifiedTestEmail(
 function getSignupResettableTestEmail(
   email: string | null | undefined,
   env: Record<string, string | undefined> = process.env,
+  extraStoreReviewEmails: readonly string[] = [],
 ): string | null {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
   const qaEmail = getQaResettableAccountEmail(env);
   if (qaEmail && normalized === qaEmail) return qaEmail;
-  return getStoreReviewAccountEmails(env).includes(normalized) ? normalized : null;
+  const reviewEmails = new Set([
+    ...getStoreReviewAccountEmails(env),
+    ...extraStoreReviewEmails.map((item) => normalizeEmail(item)).filter((item): item is string => Boolean(item)),
+  ]);
+  return reviewEmails.has(normalized) ? normalized : null;
 }
 
 async function resetExactAllowlistedQaUser(input: {
@@ -164,11 +169,18 @@ async function resetExactAllowlistedQaUser(input: {
 
 export async function resetAllowlistedQaAccountForSignup(input: {
   email: string | null | undefined;
+  storeReviewEmails?: readonly string[];
 }): Promise<QaAccountResetResult> {
-  const allowlistedEmail = getSignupResettableTestEmail(input.email);
+  const allowlistedEmail = getSignupResettableTestEmail(
+    input.email,
+    process.env,
+    input.storeReviewEmails ?? [],
+  );
   if (!allowlistedEmail) {
     const hasResettableConfig =
-      Boolean(getQaResettableAccountEmail()) || getStoreReviewAccountEmails().length > 0;
+      Boolean(getQaResettableAccountEmail()) ||
+      getStoreReviewAccountEmails().length > 0 ||
+      Boolean(input.storeReviewEmails?.length);
     return {
       reset: false,
       reason: hasResettableConfig ? "email_not_allowlisted" : "config_disabled",

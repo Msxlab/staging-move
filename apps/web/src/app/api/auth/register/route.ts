@@ -13,11 +13,13 @@ import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import {
-  isAutoVerifiedTestEmail,
-  isStoreReviewAccountEmail,
+  isAllowlistedQaEmail,
   resetAllowlistedQaAccountForSignup,
 } from "@/lib/qa-account";
-import { provisionStoreReviewAccount } from "@/lib/store-review-account";
+import {
+  getConfiguredStoreReviewAccountEmails,
+  provisionStoreReviewAccount,
+} from "@/lib/store-review-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import {
   areSignupsKilled,
@@ -114,8 +116,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const autoVerifyTestAccount = isAutoVerifiedTestEmail(email);
-  const storeReviewAccount = isStoreReviewAccountEmail(email);
+  const storeReviewEmails = await getConfiguredStoreReviewAccountEmails();
+  const storeReviewAccount = storeReviewEmails.includes(email);
+  const autoVerifyTestAccount = isAllowlistedQaEmail(email) || storeReviewAccount;
 
   // Is email taken?
   //
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Account already exists." }, { status: 409 });
     }
 
-    const resetResult = await resetAllowlistedQaAccountForSignup({ email });
+    const resetResult = await resetAllowlistedQaAccountForSignup({ email, storeReviewEmails });
     if (!resetResult.reset) {
       return NextResponse.json(
         {
