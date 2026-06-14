@@ -54,6 +54,44 @@ export async function getRuntimeConfigValue(key: string): Promise<string | null>
 }
 
 export async function getRequiredRuntimeConfigValues(keys: string[]) {
-  const values = await Promise.all(keys.map(async (key) => [key, await getRuntimeConfigValue(key)] as const));
-  return Object.fromEntries(values);
+  const uniqueKeys = Array.from(new Set(keys));
+  const values = new Map<string, string | null>();
+  const dbBackedKeys: string[] = [];
+
+  for (const key of uniqueKeys) {
+    const envValue = normalizeRuntimeConfigValue(getRuntimeConfigEnvValue(key, process.env));
+    if (shouldPreferEnvRuntimeConfigValue(key, process.env) && envValue) {
+      values.set(key, envValue);
+      continue;
+    }
+    values.set(key, envValue);
+    const definition = getRuntimeConfigDefinition(key);
+    if (definition && isRuntimeConfigDbBackedKeyAllowed(definition)) {
+      dbBackedKeys.push(key);
+    }
+  }
+
+  const entries =
+    dbBackedKeys.length > 0
+      ? await prisma.runtimeConfigEntry
+          .findMany({
+            where: { key: { in: dbBackedKeys } },
+            select: {
+              key: true,
+              isSecret: true,
+              valueEncrypted: true,
+              valuePlain: true,
+              isActive: true,
+              source: true,
+            },
+          })
+          .catch(() => [] as RuntimeConfigEntryRecord[])
+      : [];
+
+  for (const entry of entries) {
+    const storedValue = normalizeRuntimeConfigValue(resolveStoredValue(entry));
+    if (storedValue) values.set(entry.key, storedValue);
+  }
+
+  return Object.fromEntries(uniqueKeys.map((key) => [key, values.get(key) ?? null]));
 }
