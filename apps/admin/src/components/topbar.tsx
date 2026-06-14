@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronRight, HelpCircle, Search } from "lucide-react";
+import { Bell, ChevronRight, Download, HelpCircle, Search } from "lucide-react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
 import { meetsRole } from "@/lib/admin-nav";
 import { deriveBreadcrumb, initialsFromEmail } from "./topbar-breadcrumb";
@@ -34,6 +34,20 @@ function openCommandPalette() {
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
 }
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
+function isStandalonePwa() {
+  if (typeof window === "undefined") return false;
+  const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
+  return Boolean(
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+      navigatorWithStandalone.standalone,
+  );
+}
+
 export function Topbar({ ctx }: TopbarProps = {}) {
   const pathname = usePathname();
   const crumb = deriveBreadcrumb(pathname || "/");
@@ -42,12 +56,39 @@ export function Topbar({ ctx }: TopbarProps = {}) {
   // SSR-safe pattern as the sidebar: default to the non-Apple form, correct
   // on mount, and suppress the hydration warning on the <kbd>.
   const [isMac, setIsMac] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
   useEffect(() => {
     setIsMac(
       typeof navigator !== "undefined" &&
         /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent),
     );
   }, []);
+
+  useEffect(() => {
+    setIsStandalone(isStandalonePwa());
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => {
+      setInstallPrompt(null);
+      setIsStandalone(true);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  async function installAdminPwa() {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => null);
+    setInstallPrompt(null);
+  }
 
   // Bell mirrors the nav model's gate for /notifications (ADMIN+). The
   // page-guard on the route remains the real enforcement.
@@ -92,6 +133,17 @@ export function Topbar({ ctx }: TopbarProps = {}) {
       {/* Right cluster: notifications, help, identity. No unread badge -
           there is no count available at layout level without a new
           endpoint, and the bell must not invent one. */}
+      {installPrompt && !isStandalone && (
+        <button
+          type="button"
+          onClick={installAdminPwa}
+          className="adp-iconbtn"
+          title="Install admin app"
+          aria-label="Install admin app"
+        >
+          <Download aria-hidden="true" />
+        </button>
+      )}
       {showBell && (
         <a href="/notifications" className="adp-iconbtn" title="Notifications" aria-label="Notifications">
           <Bell aria-hidden="true" />
