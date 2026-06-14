@@ -112,6 +112,7 @@ describe("admin service worker", () => {
     expect(sw).toContain("self.clients");
     expect(sw).toContain(".claim()");
     expect(sw).toContain('const CACHE_PREFIX = "locateflow-admin-"');
+    expect(sw).toContain("static-v5");
     expect(sw).toContain("/manifest.json");
     expect(sw).toContain("/manifest.webmanifest");
     expect(fetchHandler).toContain("if (!isSameOrigin(url)) return;");
@@ -130,6 +131,8 @@ describe("admin service worker", () => {
 
     expect(register).toContain('navigator.serviceWorker');
     expect(register).toContain('.register("/sw.js"');
+    expect(register).toContain('registration.addEventListener("updatefound"');
+    expect(register).toContain('navigator.serviceWorker.addEventListener("controllerchange"');
     expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />');
     expect(layout).toContain('manifest: "/manifest.json"');
     expect(layout).toContain('<meta name="mobile-web-app-capable" content="yes" />');

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "locateflow-admin-";
-const STATIC_CACHE = `${CACHE_PREFIX}static-v4`;
+const STATIC_CACHE = `${CACHE_PREFIX}static-v5`;
 const OFFLINE_URL = "/offline.html";
 
 const STATIC_ASSETS = [
