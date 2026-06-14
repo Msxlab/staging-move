@@ -2,6 +2,12 @@ import { rawPrisma } from "@/lib/db";
 import { normalizeRuntimeConfigValue } from "@/lib/shared-runtime-config";
 
 export const QA_RESETTABLE_ACCOUNT_EMAIL_KEY = "QA_RESETTABLE_ACCOUNT_EMAIL";
+export const STORE_REVIEW_ACCOUNT_EMAILS_KEY = "STORE_REVIEW_ACCOUNT_EMAILS";
+const STORE_REVIEW_ACCOUNT_EMAIL_KEYS = [
+  STORE_REVIEW_ACCOUNT_EMAILS_KEY,
+  "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+  "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+] as const;
 
 type QaAccountResetSkipReason =
   | "config_disabled"
@@ -20,6 +26,19 @@ function normalizeEmail(value: string | null | undefined): string | null {
   return normalizeRuntimeConfigValue(value)?.toLowerCase() ?? null;
 }
 
+function parseEmailList(value: string | null | undefined): string[] {
+  const raw = normalizeRuntimeConfigValue(value);
+  if (!raw) return [];
+  const emails = raw
+    .split(/[,\n;]/)
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  if (emails.length === 0 || !emails.every((email) => SINGLE_EMAIL_PATTERN.test(email))) {
+    return [];
+  }
+  return [...new Set(emails)];
+}
+
 export function getQaResettableAccountEmail(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
@@ -28,12 +47,46 @@ export function getQaResettableAccountEmail(
   return email;
 }
 
+export function getStoreReviewAccountEmails(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  return [
+    ...new Set(STORE_REVIEW_ACCOUNT_EMAIL_KEYS.flatMap((key) => parseEmailList(env[key]))),
+  ];
+}
+
 export function isAllowlistedQaEmail(
   email: string | null | undefined,
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   const allowlistedEmail = getQaResettableAccountEmail(env);
   return Boolean(allowlistedEmail && normalizeEmail(email) === allowlistedEmail);
+}
+
+export function isStoreReviewAccountEmail(
+  email: string | null | undefined,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const normalized = normalizeEmail(email);
+  return Boolean(normalized && getStoreReviewAccountEmails(env).includes(normalized));
+}
+
+export function isAutoVerifiedTestEmail(
+  email: string | null | undefined,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return isAllowlistedQaEmail(email, env) || isStoreReviewAccountEmail(email, env);
+}
+
+function getSignupResettableTestEmail(
+  email: string | null | undefined,
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const qaEmail = getQaResettableAccountEmail(env);
+  if (qaEmail && normalized === qaEmail) return qaEmail;
+  return getStoreReviewAccountEmails(env).includes(normalized) ? normalized : null;
 }
 
 async function resetExactAllowlistedQaUser(input: {
@@ -112,8 +165,15 @@ async function resetExactAllowlistedQaUser(input: {
 export async function resetAllowlistedQaAccountForSignup(input: {
   email: string | null | undefined;
 }): Promise<QaAccountResetResult> {
-  const allowlistedEmail = getQaResettableAccountEmail();
-  if (!allowlistedEmail) return { reset: false, reason: "config_disabled" };
+  const allowlistedEmail = getSignupResettableTestEmail(input.email);
+  if (!allowlistedEmail) {
+    const hasResettableConfig =
+      Boolean(getQaResettableAccountEmail()) || getStoreReviewAccountEmails().length > 0;
+    return {
+      reset: false,
+      reason: hasResettableConfig ? "email_not_allowlisted" : "config_disabled",
+    };
+  }
 
   if (normalizeEmail(input.email) !== allowlistedEmail) {
     return { reset: false, reason: "email_not_allowlisted" };

@@ -60,6 +60,10 @@ vi.mock("@/lib/kill-switches", () => ({
   SIGNUPS_PAUSED_MESSAGE: "New signups are temporarily paused. Please try again later.",
 }));
 
+vi.mock("@/lib/store-review-account", () => ({
+  provisionStoreReviewAccount: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock("@/lib/legal-acceptance", () => ({
   normalizeAcceptedLegalConsents: vi.fn((consents) =>
     consents?.termsAccepted && consents?.disclaimerAccepted
@@ -82,6 +86,7 @@ import { recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import { areSignupsKilled } from "@/lib/kill-switches";
+import { provisionStoreReviewAccount } from "@/lib/store-review-account";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -99,6 +104,7 @@ const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
 const areSignupsKilledMock = areSignupsKilled as unknown as Mock;
+const provisionStoreReviewAccountMock = provisionStoreReviewAccount as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -117,6 +123,7 @@ function makeRequest(body: unknown) {
 
 describe("register route", () => {
   const OLD_QA_RESETTABLE_EMAIL = process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+  const OLD_STORE_REVIEW_EMAILS = process.env.STORE_REVIEW_ACCOUNT_EMAILS;
   const OLD_AGE_GATE = process.env.COPPA_AGE_GATE_ENABLED;
 
   beforeEach(() => {
@@ -127,8 +134,10 @@ describe("register route", () => {
     tokenMock.create.mockResolvedValue({});
     resetAllowlistedQaAccountForSignupMock.mockResolvedValue({ reset: true });
     areSignupsKilledMock.mockResolvedValue(false);
+    provisionStoreReviewAccountMock.mockResolvedValue(undefined);
     delete process.env.COPPA_AGE_GATE_ENABLED;
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
   });
 
   afterEach(() => {
@@ -136,6 +145,8 @@ describe("register route", () => {
     else process.env.COPPA_AGE_GATE_ENABLED = OLD_AGE_GATE;
     if (OLD_QA_RESETTABLE_EMAIL === undefined) delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
     else process.env.QA_RESETTABLE_ACCOUNT_EMAIL = OLD_QA_RESETTABLE_EMAIL;
+    if (OLD_STORE_REVIEW_EMAILS === undefined) delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
+    else process.env.STORE_REVIEW_ACCOUNT_EMAILS = OLD_STORE_REVIEW_EMAILS;
   });
 
   it("returns 409 for an existing password account", async () => {
@@ -268,6 +279,43 @@ describe("register route", () => {
     // Owner alert excluded for the QA account (route gate; the helper also
     // suppresses it internally as the single enforcement point).
     expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
+    expect(provisionStoreReviewAccountMock).not.toHaveBeenCalled();
+  });
+
+  it("auto-verifies a store review account without sending verification or owner alerts", async () => {
+    process.env.STORE_REVIEW_ACCOUNT_EMAILS = "googlereview@locateflow.com";
+    userMock.create.mockResolvedValue({
+      id: "review-user",
+      email: "googlereview@locateflow.com",
+    });
+
+    const response = await POST(makeRequest({
+      ...validBody,
+      email: "GoogleReview@LocateFlow.com",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.userId).toBe("review-user");
+    expect(body.emailVerified).toBe(true);
+    expect(body.requiresEmailVerification).toBe(false);
+    expect(userMock.create).toHaveBeenCalledWith({
+      data: {
+        email: "googlereview@locateflow.com",
+        passwordHash: "hashed-password",
+        firstName: "New",
+        lastName: "User",
+        preferredLocale: "en",
+        emailVerifiedAt: expect.any(Date),
+      },
+    });
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
+    expect(provisionStoreReviewAccountMock).toHaveBeenCalledWith({
+      userId: "review-user",
+      request: expect.any(NextRequest),
+    });
   });
 
   it("does not auto-verify normal users while the QA account env is configured", async () => {

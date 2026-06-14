@@ -12,7 +12,12 @@ import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
-import { isAllowlistedQaEmail, resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
+import {
+  isAutoVerifiedTestEmail,
+  isStoreReviewAccountEmail,
+  resetAllowlistedQaAccountForSignup,
+} from "@/lib/qa-account";
+import { provisionStoreReviewAccount } from "@/lib/store-review-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import {
   areSignupsKilled,
@@ -109,7 +114,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const autoVerifyQaAccount = isAllowlistedQaEmail(email);
+  const autoVerifyTestAccount = isAutoVerifiedTestEmail(email);
+  const storeReviewAccount = isStoreReviewAccountEmail(email);
 
   // Is email taken?
   //
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (existing) {
-    if (!autoVerifyQaAccount) {
+    if (!autoVerifyTestAccount) {
       // Deliberately reject both active and soft-deleted rows. Public signup
       // must never attach a password to, or revive, an existing account.
       return NextResponse.json({ error: "Account already exists." }, { status: 409 });
@@ -156,17 +162,16 @@ export async function POST(request: NextRequest) {
       firstName: firstName ?? null,
       lastName: lastName ?? null,
       preferredLocale: locale,
-      ...(autoVerifyQaAccount ? { emailVerifiedAt: new Date() } : {}),
+      ...(autoVerifyTestAccount ? { emailVerifiedAt: new Date() } : {}),
     },
   });
   await ensureSubscriptionDefaults(user.id);
   await ensureWorkspaceDefaults(user.id);
 
   // Owner alert: instant new-signup notification. Fire-and-forget — the
-  // helper never throws, so this can never break registration. The QA
-  // account is gated here AND suppressed inside the helper (single
-  // enforcement point).
-  if (!autoVerifyQaAccount) {
+  // helper never throws, so this can never break registration. Controlled
+  // QA/store-review accounts are gated here and suppressed inside the helper.
+  if (!autoVerifyTestAccount) {
     void sendAdminSignupAlert({
       userId: user.id,
       email,
@@ -185,7 +190,11 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  if (!autoVerifyQaAccount) {
+  if (storeReviewAccount) {
+    await provisionStoreReviewAccount({ userId: user.id, request });
+  }
+
+  if (!autoVerifyTestAccount) {
     // Email verification token (24h).
     const { token, hash } = generateOpaqueToken();
     await prisma.emailVerificationToken.create({
@@ -210,8 +219,8 @@ export async function POST(request: NextRequest) {
     {
       success: true,
       userId: user.id,
-      emailVerified: autoVerifyQaAccount,
-      requiresEmailVerification: !autoVerifyQaAccount,
+      emailVerified: autoVerifyTestAccount,
+      requiresEmailVerification: !autoVerifyTestAccount,
     },
     { status: 201 },
   );

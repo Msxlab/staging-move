@@ -61,17 +61,22 @@ vi.mock("@/lib/db", () => ({
 
 import {
   getQaResettableAccountEmail,
+  getStoreReviewAccountEmails,
+  isAutoVerifiedTestEmail,
   isAllowlistedQaEmail,
+  isStoreReviewAccountEmail,
   resetAllowlistedQaAccountForSignup,
   resetAllowlistedQaAccountOnLogout,
 } from "./qa-account";
 
 describe("QA resettable account guard", () => {
   const OLD_QA_RESETTABLE_EMAIL = process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+  const OLD_STORE_REVIEW_EMAILS = process.env.STORE_REVIEW_ACCOUNT_EMAILS;
 
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
     mocks.userFindUnique.mockResolvedValue({ id: "qa-user", email: "qa@example.com" });
     mocks.txWorkspaceFindMany.mockResolvedValue([]);
     mocks.txWorkspaceMemberFindFirst.mockResolvedValue(null);
@@ -92,6 +97,8 @@ describe("QA resettable account guard", () => {
   afterEach(() => {
     if (OLD_QA_RESETTABLE_EMAIL === undefined) delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
     else process.env.QA_RESETTABLE_ACCOUNT_EMAIL = OLD_QA_RESETTABLE_EMAIL;
+    if (OLD_STORE_REVIEW_EMAILS === undefined) delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
+    else process.env.STORE_REVIEW_ACCOUNT_EMAILS = OLD_STORE_REVIEW_EMAILS;
   });
 
   it("normalizes one exact deployment email and rejects multi-email config", () => {
@@ -107,6 +114,39 @@ describe("QA resettable account guard", () => {
 
     expect(isAllowlistedQaEmail("QA@Example.com", env)).toBe(true);
     expect(isAllowlistedQaEmail("user@example.com", env)).toBe(false);
+  });
+
+  it("normalizes store review emails from a deployment allowlist", () => {
+    expect(
+      getStoreReviewAccountEmails({
+        STORE_REVIEW_ACCOUNT_EMAILS: " GoogleReview@LocateFlow.com, apple-review@locateflow.com ",
+      }),
+    ).toEqual(["googlereview@locateflow.com", "apple-review@locateflow.com"]);
+    expect(
+      getStoreReviewAccountEmails({
+        STORE_REVIEW_ACCOUNT_EMAILS: "google <googlereview@locateflow.com>",
+      }),
+    ).toEqual([]);
+  });
+
+  it("also treats configured store-purchase tester emails as review-ready accounts", () => {
+    expect(
+      getStoreReviewAccountEmails({
+        GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS: "googlereview@locateflow.com",
+        APPLE_SANDBOX_PURCHASE_USER_EMAILS: "apple-review@locateflow.com",
+      }),
+    ).toEqual(["googlereview@locateflow.com", "apple-review@locateflow.com"]);
+  });
+
+  it("auto-verifies both QA and store review accounts without mixing the lists", () => {
+    const env = {
+      QA_RESETTABLE_ACCOUNT_EMAIL: "qa@example.com",
+      STORE_REVIEW_ACCOUNT_EMAILS: "googlereview@locateflow.com",
+    };
+
+    expect(isAutoVerifiedTestEmail("QA@Example.com", env)).toBe(true);
+    expect(isStoreReviewAccountEmail("GoogleReview@LocateFlow.com", env)).toBe(true);
+    expect(isAutoVerifiedTestEmail("user@example.com", env)).toBe(false);
   });
 
   it("does nothing when config is disabled", async () => {
@@ -135,6 +175,31 @@ describe("QA resettable account guard", () => {
     ).resolves.toEqual({ reset: false, reason: "email_not_allowlisted" });
     expect(mocks.userFindUnique).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  it("hard-resets an existing store review account during signup only", async () => {
+    process.env.STORE_REVIEW_ACCOUNT_EMAILS = "googlereview@locateflow.com";
+    mocks.userFindUnique.mockResolvedValue({
+      id: "review-user",
+      email: "googlereview@locateflow.com",
+    });
+
+    await expect(
+      resetAllowlistedQaAccountForSignup({ email: "GoogleReview@LocateFlow.com" }),
+    ).resolves.toEqual({ reset: true });
+
+    expect(mocks.userFindUnique).toHaveBeenCalledWith({
+      where: { email: "googlereview@locateflow.com" },
+      select: { id: true, email: true },
+    });
+    expect(mocks.txUserDelete).toHaveBeenCalledWith({ where: { id: "review-user" } });
+
+    await expect(
+      resetAllowlistedQaAccountOnLogout({
+        userId: "review-user",
+        sessionEmail: "googlereview@locateflow.com",
+      }),
+    ).resolves.toEqual({ reset: false, reason: "config_disabled" });
   });
 
   it("does not reset when the database user email does not match the allowlisted account", async () => {

@@ -31,6 +31,7 @@ describe("admin alert emails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
     delete process.env.NEXT_PUBLIC_ADMIN_URL;
     configureRuntimeConfig({});
     mocks.sendLoggedEmail.mockResolvedValue({ success: true, skipped: false });
@@ -109,6 +110,20 @@ describe("admin alert emails", () => {
       const sent = await sendAdminSignupAlert({
         userId: "qa-user",
         email: "QA@Example.com",
+        source: "password",
+      });
+
+      expect(sent).toBe(false);
+      expect(mocks.sendLoggedEmail).not.toHaveBeenCalled();
+    });
+
+    it("suppresses configured store review account signups", async () => {
+      process.env.STORE_REVIEW_ACCOUNT_EMAILS = "googlereview@locateflow.com";
+      configureRuntimeConfig({ ADMIN_ALERT_EMAIL: "owner@locateflow.com" });
+
+      const sent = await sendAdminSignupAlert({
+        userId: "review-user",
+        email: "GoogleReview@LocateFlow.com",
         source: "password",
       });
 

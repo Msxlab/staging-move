@@ -217,6 +217,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Deployment env only. This key must never contain a comma-separated allowlist.",
   },
   {
+    key: "STORE_REVIEW_ACCOUNT_EMAILS",
+    label: "Store Review Account Emails",
+    description: "Comma-separated Google Play/App Store review emails that may auto-verify on signup and reset themselves only during a fresh signup. Leave unset outside controlled review.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: false,
+    usedBy: ["web app auth", "mobile store review"],
+    validation: "comma-separated email addresses",
+    note: "Deployment env only. Review accounts are not hard-reset on logout like the QA account.",
+  },
+  {
     key: "TRUSTED_PROXY_HEADERS",
     label: "Trusted Proxy Headers",
     description: "Controls which edge proxy IP header family the web and admin apps trust for rate limits, audit logs, cron guards, and auth telemetry. Use cloudflare behind Cloudflare, vercel behind Vercel, standard behind a trusted reverse proxy, or none to ignore forwarded headers.",
@@ -1439,6 +1453,32 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+    label: "Google Play Test Purchase User Emails",
+    description: "Comma-separated production-safe tester/reviewer user emails allowed to claim Google Play test purchases and receive review-ready onboarding provisioning.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: true,
+    usedBy: ["web app", "mobile IAP verification", "mobile store review"],
+    validation: "comma-separated email addresses",
+  },
+  {
+    key: "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+    label: "Apple Sandbox Purchase User Emails",
+    description: "Comma-separated production-safe tester/reviewer user emails allowed to claim App Store sandbox purchases and receive review-ready onboarding provisioning.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: true,
+    usedBy: ["web app", "mobile IAP verification", "mobile store review"],
+    validation: "comma-separated email addresses",
+  },
+  {
     key: "GOOGLE_PLAY_OAUTH_CLIENT_ID",
     label: "Google Play OAuth Client ID",
     description: "OAuth 2.0 web-client ID used with GOOGLE_PLAY_OAUTH_REFRESH_TOKEN when service-account key creation is blocked by policy.",
@@ -2114,6 +2154,16 @@ export function validateRuntimeConfigValueShape(
 
   if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") {
     return validEmailAddress(value) ? valid() : invalid("email_required");
+  }
+  if (
+    key === "STORE_REVIEW_ACCOUNT_EMAILS" ||
+    key === "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS" ||
+    key === "APPLE_SANDBOX_PURCHASE_USER_EMAILS"
+  ) {
+    const emails = value.split(",").map((email) => email.trim()).filter(Boolean);
+    return emails.length > 0 && emails.every(validEmailAddress)
+      ? valid()
+      : invalid("email_required");
   }
 
   const EMAIL_KEYS = new Set([
