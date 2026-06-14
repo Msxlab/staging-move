@@ -46,11 +46,13 @@ export type ServiceabilityMeta = {
     status: FccLookupResult["status"] | "skipped" | "not_configured" | "gated";
     confirmedCount: number;
     blockGeoid: string | null;
+    reason: string | null;
   };
   electric: {
     status: ElectricLookupResult["status"] | "skipped" | "not_configured" | "gated";
     confirmedCount: number;
     utilityCount: number;
+    reason: string | null;
   };
   sourceGaps: ServiceabilitySourceGap[];
 };
@@ -63,11 +65,13 @@ export function providerServiceabilityGatedMeta(providers: ServiceabilityProvide
       status: hasInternetCandidates ? "gated" : "skipped",
       confirmedCount: 0,
       blockGeoid: null,
+      reason: hasInternetCandidates ? "plan_gated" : "no_internet_candidates",
     },
     electric: {
       status: hasElectricCandidates ? "gated" : "skipped",
       confirmedCount: 0,
       utilityCount: 0,
+      reason: hasElectricCandidates ? "plan_gated" : "no_electric_candidates",
     },
     sourceGaps: [],
   };
@@ -255,11 +259,17 @@ export async function enrichProviderServiceability<T extends ServiceabilityProvi
       status: fccLookup?.status || (hasInternetCandidates ? "not_configured" : "skipped"),
       confirmedCount: providers.filter((provider) => provider.fccServiceable === true).length,
       blockGeoid: fccLookup?.blockGeoid || null,
+      reason: fccLookup ? fccLookup.reason : hasInternetCandidates ? "fcc_lookup_not_available" : "no_internet_candidates",
     },
     electric: {
       status: electricLookup?.status || (hasElectricCandidates ? "not_configured" : "skipped"),
       confirmedCount: providers.filter((provider) => provider.utilityServiceable === true).length,
       utilityCount: electricLookup?.status === "ok" ? electricLookup.utilities.length : 0,
+      reason: electricLookup
+        ? electricLookup.reason
+        : hasElectricCandidates
+          ? "electric_lookup_not_available"
+          : "no_electric_candidates",
     },
     sourceGaps,
   };

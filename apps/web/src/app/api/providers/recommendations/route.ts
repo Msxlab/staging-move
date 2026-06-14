@@ -25,6 +25,7 @@ import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-da
 import {
   enrichProviderServiceability,
   providerServiceabilityGatedMeta,
+  type ServiceabilityMeta,
   type ServiceabilitySourceGap,
 } from "@/lib/provider-serviceability";
 import { requestHasPlanFeature } from "@/lib/request-entitlements";
@@ -673,6 +674,214 @@ function sourceGapSeverity(gap: ServiceabilitySourceGap): "HIGH" | "MEDIUM" {
   return gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET" ? "HIGH" : "MEDIUM";
 }
 
+function sourceGapSuggestedAction(gap: ServiceabilitySourceGap): string {
+  if (gap.category === "UTILITY_ELECTRIC") return "review_alias_or_add_electric_provider";
+  if (gap.category === "UTILITY_INTERNET") return "review_fcc_brand_or_add_isp";
+  return "review_source_or_dismiss";
+}
+
+function sourceGapFieldsToCollect(gap: ServiceabilitySourceGap): string[] {
+  if (gap.category === "UTILITY_ELECTRIC") {
+    return ["official utility name", "service territory", "customer support URL", "phone", "catalog alias"];
+  }
+  if (gap.category === "UTILITY_INTERNET") {
+    return ["official brand name", "availability URL", "phone", "FCC provider ID", "speed/technology evidence"];
+  }
+  return ["official name", "website", "phone", "coverage evidence"];
+}
+
+function sourceGapQualityProfile(gap: ServiceabilitySourceGap, occurrenceCount: number) {
+  const isCriticalInfrastructure = gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET";
+  const score = Math.max(20, isCriticalInfrastructure ? 42 - Math.min(occurrenceCount, 10) : 58 - Math.min(occurrenceCount, 10));
+  return {
+    score,
+    level: score >= 50 ? "needs_review" : "weak",
+    label: isCriticalInfrastructure ? "Critical infrastructure gap" : "Source-backed catalog gap",
+    summary:
+      `${gap.source} returned this provider for a user location, but the active catalog has no confident match.`,
+    recommendedAction: sourceGapSuggestedAction(gap),
+    strengths: ["Official source returned a candidate"],
+    gaps: [
+      {
+        code: "missing_catalog_match",
+        label: "No active catalog match",
+        severity: isCriticalInfrastructure ? "critical" : "warning",
+        action: sourceGapSuggestedAction(gap),
+      },
+    ],
+  };
+}
+
+function sourceHealthSuggestedAction(source: "FCC_BDC" | "OPENEI_URDB"): string {
+  if (source === "FCC_BDC") return "fix_fcc_integration";
+  return "fix_electric_integration";
+}
+
+function sourceHealthFieldsToCollect(source: "FCC_BDC" | "OPENEI_URDB"): string[] {
+  if (source === "FCC_BDC") {
+    return ["live endpoint response", "FCC API username", "hash_value freshness", "API spec/path", "sample block GEOID"];
+  }
+  return ["live endpoint response", "OpenEI API key", "sample lat/lng", "utility result payload"];
+}
+
+function sourceHealthQualityProfile(input: {
+  source: "FCC_BDC" | "OPENEI_URDB";
+  label: string;
+  status: string;
+  reason: string | null;
+  occurrenceCount: number;
+}) {
+  const score = Math.max(15, 38 - Math.min(input.occurrenceCount, 10));
+  return {
+    score,
+    level: "weak",
+    label: `${input.label} source health`,
+    summary: `${input.label} returned ${input.status}${input.reason ? `: ${input.reason}` : ""}. Recommendations fell back to catalog evidence.`,
+    recommendedAction: sourceHealthSuggestedAction(input.source),
+    strengths: ["Fallback preserved recommendations"],
+    gaps: [
+      {
+        code: "source_unavailable",
+        label: "Live source unavailable",
+        severity: "critical",
+        action: sourceHealthSuggestedAction(input.source),
+      },
+    ],
+  };
+}
+
+async function upsertProviderSourceHealthIssue(input: {
+  source: "FCC_BDC" | "OPENEI_URDB";
+  label: string;
+  category: "UTILITY_INTERNET" | "UTILITY_ELECTRIC";
+  status: string;
+  reason: string | null;
+  state: string | null | undefined;
+  zip: string | null | undefined;
+  addressId: string | null | undefined;
+  latitude: number | null | undefined;
+  longitude: number | null | undefined;
+  sourceBlockGeoid?: string | null;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  const title = `Source health: ${input.source} ${input.status}`;
+  const state = input.state || null;
+  const zip = input.zip || null;
+  const locationLabel = [state, zip].filter(Boolean).join(" ") || null;
+  const baseMetadata = {
+    source: input.source,
+    category: input.category,
+    providerName: input.label,
+    status: input.status,
+    reason: input.reason,
+    sourceBlockGeoid: input.sourceBlockGeoid || null,
+    suggestedAction: sourceHealthSuggestedAction(input.source),
+    fieldsToCollect: sourceHealthFieldsToCollect(input.source),
+    qualityProfile: sourceHealthQualityProfile({ ...input, occurrenceCount: 1 }),
+    state,
+    zip,
+    addressId: input.addressId || null,
+    latitude: input.latitude ?? null,
+    longitude: input.longitude ?? null,
+  };
+
+  const existing = await prisma.providerGovernanceIssue.findFirst({
+    where: {
+      issueType: "SOURCE_HEALTH_WARNING",
+      status: "OPEN",
+      title,
+    },
+    select: { id: true, metadata: true },
+  });
+
+  if (existing) {
+    const previous = metadataRecord(existing.metadata);
+    const previousCount = typeof previous.occurrenceCount === "number" && Number.isFinite(previous.occurrenceCount)
+      ? previous.occurrenceCount
+      : 1;
+    await prisma.providerGovernanceIssue.update({
+      where: { id: existing.id },
+      data: {
+        severity: "HIGH",
+        metadata: {
+          ...previous,
+          ...baseMetadata,
+          occurrenceCount: previousCount + 1,
+          qualityProfile: sourceHealthQualityProfile({ ...input, occurrenceCount: previousCount + 1 }),
+          firstSeen: typeof previous.firstSeen === "string" ? previous.firstSeen : now,
+          lastSeen: now,
+          states: appendUniqueLimited(metadataStringArray(previous.states), state),
+          zips: appendUniqueLimited(metadataStringArray(previous.zips), zip),
+          sampleAddressIds: appendUniqueLimited(metadataStringArray(previous.sampleAddressIds), input.addressId),
+          sampleLocations: appendUniqueLimited(metadataStringArray(previous.sampleLocations), locationLabel),
+        },
+      },
+    });
+    return;
+  }
+
+  await prisma.providerGovernanceIssue.create({
+    data: {
+      issueType: "SOURCE_HEALTH_WARNING",
+      status: "OPEN",
+      severity: "HIGH",
+      title,
+      description:
+        `${input.label} returned ${input.status}${input.reason ? ` (${input.reason})` : ""}. ` +
+        "Provider recommendations fell back to catalog evidence; fix the integration before treating live serviceability as complete.",
+      metadata: {
+        ...baseMetadata,
+        occurrenceCount: 1,
+        firstSeen: now,
+        lastSeen: now,
+        states: appendUniqueLimited([], state),
+        zips: appendUniqueLimited([], zip),
+        sampleAddressIds: appendUniqueLimited([], input.addressId),
+        sampleLocations: appendUniqueLimited([], locationLabel),
+      },
+    },
+  });
+}
+
+async function recordProviderSourceHealth(
+  serviceability: ServiceabilityMeta,
+  context: {
+    state: string | null | undefined;
+    zip: string | null | undefined;
+    addressId: string | null | undefined;
+    latitude: number | null | undefined;
+    longitude: number | null | undefined;
+  },
+): Promise<void> {
+  const writes: Array<Promise<void>> = [];
+  if (serviceability.fcc.status === "error") {
+    writes.push(
+      upsertProviderSourceHealthIssue({
+        source: "FCC_BDC",
+        label: "FCC Broadband",
+        category: "UTILITY_INTERNET",
+        status: serviceability.fcc.status,
+        reason: serviceability.fcc.reason,
+        sourceBlockGeoid: serviceability.fcc.blockGeoid,
+        ...context,
+      }),
+    );
+  }
+  if (serviceability.electric.status === "error") {
+    writes.push(
+      upsertProviderSourceHealthIssue({
+        source: "OPENEI_URDB",
+        label: "OpenEI Utility Rates",
+        category: "UTILITY_ELECTRIC",
+        status: serviceability.electric.status,
+        reason: serviceability.electric.reason,
+        ...context,
+      }),
+    );
+  }
+  if (writes.length > 0) await Promise.all(writes);
+}
+
 async function recordProviderSourceGaps(
   gaps: ServiceabilitySourceGap[],
   context: {
@@ -697,6 +906,9 @@ async function recordProviderSourceGaps(
       providerName: gap.name,
       sourceProviderId: gap.sourceProviderId,
       evidenceUrl: gap.evidenceUrl,
+      suggestedAction: sourceGapSuggestedAction(gap),
+      fieldsToCollect: sourceGapFieldsToCollect(gap),
+      qualityProfile: sourceGapQualityProfile(gap, 1),
       state,
       zip,
       addressId: context.addressId || null,
@@ -724,6 +936,7 @@ async function recordProviderSourceGaps(
             ...previous,
             ...baseMetadata,
             occurrenceCount: previousCount + 1,
+            qualityProfile: sourceGapQualityProfile(gap, previousCount + 1),
             firstSeen: typeof previous.firstSeen === "string" ? previous.firstSeen : now,
             lastSeen: now,
             states: appendUniqueLimited(metadataStringArray(previous.states), state),
@@ -1074,6 +1287,15 @@ export async function GET(request: NextRequest) {
       longitude: fallbackLongitude,
     }).catch((error) => {
       console.warn("Failed to record provider source gaps:", error);
+    });
+    await recordProviderSourceHealth(serviceability, {
+      state: effectiveState || requestedState || null,
+      zip: fallbackZip || requestedZip || null,
+      addressId: primaryAddr?.id || null,
+      latitude: fallbackLatitude,
+      longitude: fallbackLongitude,
+    }).catch((error) => {
+      console.warn("Failed to record provider source health:", error);
     });
 
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));

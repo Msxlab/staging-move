@@ -83,6 +83,8 @@ function sourceGapAction(metadata: Record<string, unknown>) {
 function actionLabel(action: string) {
   if (action === "review_alias_or_add_electric_provider") return "Review alias or add electric provider";
   if (action === "review_fcc_brand_or_add_isp") return "Review FCC brand or add ISP";
+  if (action === "fix_fcc_integration") return "Fix FCC integration";
+  if (action === "fix_electric_integration") return "Fix OpenEI integration";
   return "Review source or dismiss";
 }
 
@@ -98,6 +100,23 @@ function riskClassName(risk: string) {
   if (risk === "high") return "border-destructive/30 bg-destructive/10 text-destructive";
   if (risk === "low") return "border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg";
   return "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg";
+}
+
+function qualityLevelClassName(level: string) {
+  if (level === "excellent") return "border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg";
+  if (level === "good") return "border-tone-cyan-br bg-tone-cyan-bg text-tone-cyan-fg";
+  if (level === "weak") return "border-destructive/30 bg-destructive/10 text-destructive";
+  return "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg";
+}
+
+function qualityActionLabel(action: string) {
+  if (action === "ready") return "Ready";
+  if (action === "refresh_source") return "Refresh source";
+  if (action === "add_contact") return "Add contact";
+  if (action === "tighten_coverage") return "Tighten coverage";
+  if (action === "merge_duplicate") return "Merge duplicate";
+  if (action === "complete_profile") return "Complete profile";
+  return actionLabel(action);
 }
 
 export default function ProviderGovernancePage() {
@@ -281,15 +300,20 @@ export default function ProviderGovernancePage() {
               </div>
               <span className="rounded-full border bg-foreground/5 px-3 py-1 text-xs text-muted-foreground">
                 {auditReport.summary?.sourceGapCount || 0} source gaps
+                {auditReport.summary?.sourceHealthIssueCount ? `, ${auditReport.summary.sourceHealthIssueCount} source health` : ""}
               </span>
             </div>
           </div>
           <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
             <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-md border p-3">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Open</p>
                   <p className="mt-1 text-xl font-semibold">{auditReport.summary?.openQueueCount || 0}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Health</p>
+                  <p className="mt-1 text-xl font-semibold">{auditReport.summary?.sourceHealthIssueCount || 0}</p>
                 </div>
                 <div className="rounded-md border p-3">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Repeated</p>
@@ -325,6 +349,11 @@ export default function ProviderGovernancePage() {
                     </span>
                   </div>
                   <p className="mt-1 text-muted-foreground">{actionLabel(candidate.suggestedAction)}</p>
+                  {candidate.fieldsToCollect?.length > 0 && (
+                    <p className="mt-1 text-muted-foreground">
+                      Collect: {candidate.fieldsToCollect.slice(0, 4).join(", ")}
+                    </p>
+                  )}
                   {candidate.sampleLocations?.length > 0 && (
                     <p className="mt-1 text-muted-foreground">Locations: {candidate.sampleLocations.slice(0, 3).join(", ")}</p>
                   )}
@@ -458,6 +487,12 @@ export default function ProviderGovernancePage() {
                   const lastSeen = formatMetadataDate(metadata.lastSeen);
                   const firstSeen = formatMetadataDate(metadata.firstSeen);
                   const sourceLocations = stringList(metadata.sampleLocations);
+                  const qualityProfile = item.qualityProfile || provider?.qualityProfile || metadata.qualityProfile || null;
+                  const fieldsToCollect = stringList(metadata.fieldsToCollect);
+                  const suggestedAction =
+                    typeof metadata.suggestedAction === "string" && metadata.suggestedAction
+                      ? metadata.suggestedAction
+                      : null;
                   return (
                     <div key={`${key}-${provider?.id || index}-${item.warning?.code}`} className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -473,6 +508,11 @@ export default function ProviderGovernancePage() {
                             {reviewBadge && (
                               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${reviewBadge.className}`}>
                                 {reviewBadge.label}
+                              </span>
+                            )}
+                            {qualityProfile && (
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${qualityLevelClassName(String(qualityProfile.level || ""))}`}>
+                                {Number(qualityProfile.score || 0)} quality
                               </span>
                             )}
                           </div>
@@ -527,6 +567,32 @@ export default function ProviderGovernancePage() {
                       </div>
                       <p className="mt-2 text-sm">{item.warning?.label || item.warning?.code}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{item.warning?.message || "Needs operator review."}</p>
+                      {qualityProfile && (
+                        <div className="mt-3 rounded-md border bg-foreground/[0.02] p-3 text-xs">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quality profile</p>
+                              <p className="mt-0.5 font-medium">{qualityProfile.label || "Provider quality"}</p>
+                            </div>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${qualityLevelClassName(String(qualityProfile.level || ""))}`}>
+                              {Number(qualityProfile.score || 0)}/100
+                            </span>
+                          </div>
+                          {qualityProfile.summary && (
+                            <p className="mt-2 text-muted-foreground">{qualityProfile.summary}</p>
+                          )}
+                          {qualityProfile.recommendedAction && (
+                            <p className="mt-2 text-muted-foreground">
+                              Next: {qualityActionLabel(String(qualityProfile.recommendedAction))}
+                            </p>
+                          )}
+                          {qualityProfile.gaps?.length > 0 && (
+                            <p className="mt-2 text-muted-foreground">
+                              Gaps: {qualityProfile.gaps.slice(0, 3).map((gap: any) => gap.label).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       {issueId && (
                         <div className="mt-3 rounded-md border bg-foreground/[0.02] p-3 text-xs">
                           <div className="grid gap-2 sm:grid-cols-2">
@@ -552,7 +618,14 @@ export default function ProviderGovernancePage() {
                             <p className="mt-2 text-muted-foreground">Sample locations: {sourceLocations.slice(0, 5).join(", ")}</p>
                           )}
                           <p className="mt-2 font-medium text-foreground">Suggested action</p>
-                          <p className="mt-1 text-muted-foreground">{sourceGapAction(metadata)}</p>
+                          <p className="mt-1 text-muted-foreground">
+                            {suggestedAction ? actionLabel(suggestedAction) : sourceGapAction(metadata)}
+                          </p>
+                          {fieldsToCollect.length > 0 && (
+                            <p className="mt-2 text-muted-foreground">
+                              Collect: {fieldsToCollect.slice(0, 5).join(", ")}
+                            </p>
+                          )}
                         </div>
                       )}
                       {customId && provider?.description && (

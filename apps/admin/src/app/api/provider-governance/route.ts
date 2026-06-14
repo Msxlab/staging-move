@@ -3,6 +3,7 @@ import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import {
+  getProviderQualityProfile,
   getProviderQualityWarnings,
   normalizeProviderUrlDomain,
   slugifyProviderName,
@@ -74,11 +75,23 @@ function sourceGapAction(metadata: Record<string, unknown>): string {
   return "review_source_or_dismiss";
 }
 
+function sourceGapFieldsToCollect(metadata: Record<string, unknown>): string[] {
+  const category = typeof metadata.category === "string" ? metadata.category : "";
+  if (category === "UTILITY_ELECTRIC") {
+    return ["official utility name", "service territory", "customer support URL", "phone", "catalog alias"];
+  }
+  if (category === "UTILITY_INTERNET") {
+    return ["official brand name", "availability URL", "phone", "FCC provider ID", "speed/technology evidence"];
+  }
+  return ["official name", "website", "phone", "coverage evidence"];
+}
+
 function buildAuditReport(input: {
   queues: Record<string, any[]>;
   issues: Array<{ issueType: string; severity: string; title: string; metadata?: unknown; createdAt: Date; updatedAt: Date }>;
 }) {
   const sourceIssues = input.issues.filter((issue) => issue.issueType === "SOURCE_PROVIDER_MISSING");
+  const sourceHealthIssues = input.issues.filter((issue) => issue.issueType === "SOURCE_HEALTH_WARNING");
   const repeatedSourceIssues = sourceIssues.filter((issue) => issueOccurrenceCount(issue) > 1);
   const bySource = sourceIssues.reduce<Record<string, number>>((acc, issue) => {
     const source = String(asMetadata(issue.metadata).source || "UNKNOWN");
@@ -109,6 +122,10 @@ function buildAuditReport(input: {
         sampleLocations: metadataStringList(metadata.sampleLocations),
         evidenceUrl: typeof metadata.evidenceUrl === "string" ? metadata.evidenceUrl : null,
         suggestedAction: sourceGapAction(metadata),
+        fieldsToCollect: metadataStringList(metadata.fieldsToCollect).length > 0
+          ? metadataStringList(metadata.fieldsToCollect)
+          : sourceGapFieldsToCollect(metadata),
+        qualityProfile: asMetadata(metadata.qualityProfile),
       };
     });
 
@@ -118,6 +135,9 @@ function buildAuditReport(input: {
   }
   if ((bySource.FCC_BDC || 0) > 0) {
     recommendations.push("Review FCC provider brands against existing internet catalog rows; add aliases before creating duplicate ISP providers.");
+  }
+  if (sourceHealthIssues.length > 0) {
+    recommendations.push("Fix live source health issues before judging provider coverage completeness; failed FCC/OpenEI lookups mean recommendations are falling back to catalog evidence.");
   }
   if (repeatedSourceIssues.length > 0) {
     recommendations.push("Repeated source gaps should become operator tasks, because they affect multiple user recommendation sessions.");
@@ -136,6 +156,7 @@ function buildAuditReport(input: {
     summary: {
       openQueueCount: Object.values(input.queues).reduce((sum, rows) => sum + rows.length, 0),
       sourceGapCount: sourceIssues.length,
+      sourceHealthIssueCount: sourceHealthIssues.length,
       repeatedSourceGapCount: repeatedSourceIssues.length,
       highSeveritySourceGapCount: sourceIssues.filter((issue) => issue.severity === "HIGH").length,
       bySource,
@@ -177,7 +198,9 @@ export async function GET() {
           scope: true,
           states: true,
           zipCodes: true,
+          coverageModel: true,
           isActive: true,
+          updatedAt: true,
         },
         take: 2000,
       }),
@@ -216,15 +239,18 @@ export async function GET() {
 
     for (const provider of providers) {
       const domain = normalizeProviderUrlDomain(provider.website);
-      const warnings = getProviderQualityWarnings({
+      const providerQualityInput = {
         ...provider,
         duplicateDomainCount: domain ? domainCounts.get(domain) || 0 : 0,
-      });
+      };
+      const warnings = getProviderQualityWarnings(providerQualityInput);
+      const qualityProfile = getProviderQualityProfile(providerQualityInput);
       for (const warning of warnings) {
         queues[warningTypeToQueue(warning.code)].push({
-          provider,
+          provider: { ...provider, qualityProfile },
           warning,
           domain,
+          qualityProfile,
         });
       }
     }
@@ -283,7 +309,13 @@ export async function GET() {
           label: issue.title,
           message: issue.description || "Source-backed provider data needs admin review.",
         },
-        metadata,
+        metadata: {
+          ...metadata,
+          suggestedAction: typeof metadata.suggestedAction === "string" ? metadata.suggestedAction : sourceGapAction(metadata),
+          fieldsToCollect: metadataStringList(metadata.fieldsToCollect).length > 0
+            ? metadataStringList(metadata.fieldsToCollect)
+            : sourceGapFieldsToCollect(metadata),
+        },
       });
     }
 

@@ -196,7 +196,17 @@ async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
       headers: { Accept: "application/json", ...(init?.headers || {}) },
     });
     if (!res.ok) {
-      throw new Error(`FCC request failed: HTTP ${res.status}`);
+      let detail = "";
+      try {
+        const text = await res.text();
+        const parsed = JSON.parse(text) as { message?: unknown; status_code?: unknown };
+        const message = typeof parsed.message === "string" ? parsed.message.trim() : "";
+        const statusCode = typeof parsed.status_code === "number" ? parsed.status_code : null;
+        detail = message ? ` ${message}` : statusCode ? ` status_code=${statusCode}` : "";
+      } catch {
+        detail = "";
+      }
+      throw new Error(`FCC request failed: HTTP ${res.status}${detail}`);
     }
     return await res.json();
   } finally {
@@ -313,6 +323,15 @@ function extractRows(payload: unknown): RawFccAvailabilityRow[] | null {
   return null;
 }
 
+function extractPayloadError(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const obj = payload as Record<string, unknown>;
+  const statusCode = typeof obj.status_code === "number" ? obj.status_code : null;
+  if (statusCode === null || statusCode < 400) return null;
+  const message = typeof obj.message === "string" && obj.message.trim() ? obj.message.trim() : "FCC payload error";
+  return `FCC request failed: status_code=${statusCode} ${message}`;
+}
+
 // ── Configuration loader ─────────────────────────────────────────────────────
 
 interface FccConfig {
@@ -418,6 +437,9 @@ export async function lookupFccIsps(input: FccLookupInput): Promise<FccLookupRes
         ...(config.username ? { username: config.username } : {}),
       },
     });
+
+    const payloadError = extractPayloadError(payload);
+    if (payloadError) return degraded("error", payloadError, blockGeoid);
 
     const rows = extractRows(payload);
     if (!rows) return degraded("error", "unexpected_response_shape", blockGeoid);

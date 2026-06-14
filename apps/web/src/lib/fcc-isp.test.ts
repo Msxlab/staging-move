@@ -142,6 +142,50 @@ describe("fcc-isp serviceability lookup", () => {
     expect(isIspServiceable(result, "Comcast")).toBe(false);
   });
 
+  it("preserves FCC HTTP error details so operators can diagnose endpoint drift", async () => {
+    configure({ FCC_BDC_ENABLED: "true", FCC_BDC_API_KEY: "tok" });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ Block: { FIPS: "510079999001234" } }))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            data: [],
+            status_code: 405,
+            message: "Method Not Available",
+          },
+          405,
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await lookupFccIsps(COORDS);
+
+    expect(result.status).toBe("error");
+    expect(result.blockGeoid).toBe("510079999001234");
+    expect(result.reason).toBe("FCC request failed: HTTP 405 Method Not Available");
+  });
+
+  it("treats an FCC payload-level error as degraded even when HTTP status is 200", async () => {
+    configure({ FCC_BDC_ENABLED: "true", FCC_BDC_API_KEY: "tok" });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ Block: { FIPS: "510079999001234" } }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [],
+          status_code: 405,
+          message: "Method Not Available",
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await lookupFccIsps(COORDS);
+
+    expect(result.status).toBe("error");
+    expect(result.reason).toBe("FCC request failed: status_code=405 Method Not Available");
+  });
+
   it("never reports serviceable for a non-ok result", () => {
     const degraded = {
       status: "not_configured" as const,

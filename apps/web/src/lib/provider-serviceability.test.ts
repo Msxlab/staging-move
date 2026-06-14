@@ -143,7 +143,12 @@ describe("provider serviceability source gaps", () => {
     });
 
     expect(lookupElectricUtilitiesMock).toHaveBeenCalledTimes(1);
-    expect(meta.electric).toEqual({ status: "ok", confirmedCount: 0, utilityCount: 1 });
+    expect(meta.electric).toEqual({
+      status: "ok",
+      confirmedCount: 0,
+      utilityCount: 1,
+      reason: null,
+    });
     expect(meta.sourceGaps).toEqual([
       expect.objectContaining({
         source: "OPENEI_URDB",
@@ -173,7 +178,12 @@ describe("provider serviceability source gaps", () => {
     });
 
     expect(providers[0]?.utilityServiceable).toBe(true);
-    expect(meta.electric).toEqual({ status: "ok", confirmedCount: 1, utilityCount: 1 });
+    expect(meta.electric).toEqual({
+      status: "ok",
+      confirmedCount: 1,
+      utilityCount: 1,
+      reason: null,
+    });
     expect(meta.sourceGaps).toEqual([]);
   });
 });
