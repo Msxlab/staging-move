@@ -36,11 +36,11 @@ Generated: 2026-04-18T17:41:23.376Z
   sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
 - SD: total=16, modeledAsStateOnly=8, resolved=8, partial=4, blocked=4, zipReady=4, liveAddressCheck=4, polygonOrCorridor=2, manualResearch=6
   sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
-- AR: total=14, modeledAsStateOnly=7, resolved=6, partial=5, blocked=3, zipReady=2, liveAddressCheck=5, polygonOrCorridor=1, manualResearch=6
-  sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
 - LA: total=15, modeledAsStateOnly=7, resolved=6, partial=5, blocked=4, zipReady=2, liveAddressCheck=5, polygonOrCorridor=2, manualResearch=6
   sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
 - WY: total=15, modeledAsStateOnly=7, resolved=8, partial=5, blocked=2, zipReady=3, liveAddressCheck=4, polygonOrCorridor=2, manualResearch=6
+  sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
+- AR: total=14, modeledAsStateOnly=6, resolved=6, partial=5, blocked=3, zipReady=2, liveAddressCheck=5, polygonOrCorridor=1, manualResearch=6
   sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink
 - WA: total=15, modeledAsStateOnly=6, resolved=8, partial=2, blocked=5, zipReady=2, liveAddressCheck=5, polygonOrCorridor=2, manualResearch=6
   sample: Xfinity (Comcast), Spectrum, AT&T Fiber, Verizon Fios, T-Mobile Home Internet, Starlink

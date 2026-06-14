@@ -36,7 +36,13 @@
     {
       "name": "Provider Quality",
       "short_name": "Quality",
-      "url": "/providers?source=pwa-shortcut",
+      "url": "/provider-quality?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Coverage Overview",
+      "short_name": "Coverage",
+      "url": "/providers/coverage?source=pwa-shortcut",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {

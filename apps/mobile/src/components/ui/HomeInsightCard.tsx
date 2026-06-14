@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Building2, ChevronDown, ChevronUp, Home, Wind } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { api } from "@/lib/api";
-import { readOfflineCache, writeOfflineCache } from "@/lib/offline-cache";
+import { fetchHomeDossier, readHomeDossierCache } from "@/lib/home-dossier-cache";
 import {
   getAirRow,
   getHousingRow,
@@ -14,14 +13,6 @@ import {
 interface HomeInsightCardProps {
   addressId?: string | null;
   label?: string | null;
-}
-
-const CACHE_PREFIX = "home-insight";
-
-function readInsightCache(raw: unknown): HomeDossierResponse | null {
-  if (typeof raw !== "object" || raw === null) return null;
-  const dossier = raw as HomeDossierResponse;
-  return typeof dossier.configured === "boolean" ? dossier : null;
 }
 
 function formatUsd(value: number | null): string {
@@ -40,36 +31,19 @@ export function HomeInsightCard({ addressId, label }: HomeInsightCardProps) {
 
   useEffect(() => {
     let cancelled = false;
-    let hadCached = false;
     if (!addressId) {
       setDossier(null);
       return;
     }
 
     (async () => {
-      const cacheKey = `${CACHE_PREFIX}.${addressId}`;
-      const cached = await readOfflineCache(cacheKey, readInsightCache);
-      if (!cancelled && cached?.data) {
-        hadCached = true;
-        setDossier(cached.data);
-      }
-
-      const res = await api.get<HomeDossierResponse>(
-        `/api/addresses/${addressId}/dossier`,
-        { summary: "1" },
-      );
+      const cached = await readHomeDossierCache(addressId, "summary");
+      if (!cancelled && cached) setDossier(cached.data);
+      const res = await fetchHomeDossier(addressId, "summary");
       if (cancelled) return;
-      if (res.error) {
-        if (!hadCached) setDossier(null);
-        return;
-      }
-      const next = res.data ?? null;
-      setDossier(next);
-      if (next) {
-        void writeOfflineCache(cacheKey, next);
-      }
+      setDossier(res.data ?? cached?.data ?? null);
     })().catch(() => {
-      if (!cancelled && !hadCached) setDossier(null);
+      if (!cancelled) setDossier(null);
     });
 
     return () => {

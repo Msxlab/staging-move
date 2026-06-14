@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Globe, Building2,
@@ -61,6 +61,11 @@ export default function NewServicePage() {
   const ts = useTranslations("services");
   const fromServiceId = searchParams.get("fromServiceId") || "";
   const prefillProviderId = searchParams.get("providerId") || "";
+  const providerIdsParam = searchParams.get("providerIds") || "";
+  const prefillProviderIds = useMemo(
+    () => providerIdsParam.split(",").map((id) => id.trim()).filter(Boolean),
+    [providerIdsParam],
+  );
   const prefillCategory = searchParams.get("category") || "";
   // Category-aware landing (briefing CTAs, migration flow): the preselected
   // merged display key, honored on the FIRST render — not via a late effect —
@@ -176,16 +181,19 @@ export default function NewServicePage() {
   }, [preselectedCategoryKey]);
 
   useEffect(() => {
-    if (!prefillProviderId || allProviders.length === 0) return;
-    const match = allProviders.find((p) => p.id === prefillProviderId);
-    if (match && !selectedProviders.has(match.id)) {
+    const requestedIds = Array.from(new Set([prefillProviderId, ...prefillProviderIds].filter(Boolean)));
+    if (requestedIds.length === 0 || allProviders.length === 0) return;
+    const matches = requestedIds
+      .map((id) => allProviders.find((p) => p.id === id))
+      .filter((provider): provider is ScoredProvider => Boolean(provider));
+    if (matches.length > 0) {
       setSelectedProviders((prev) => {
         const next = new Map(prev);
-        next.set(match.id, match);
+        for (const match of matches) next.set(match.id, match);
         return next;
       });
     }
-  }, [prefillProviderId, allProviders, selectedProviders]);
+  }, [prefillProviderId, prefillProviderIds, allProviders]);
 
   const addr = addresses.find((a) => a.id === selectedAddress);
 

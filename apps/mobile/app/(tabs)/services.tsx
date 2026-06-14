@@ -23,6 +23,7 @@ import {
   Check,
   X,
   Layers,
+  Sparkles,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
@@ -102,6 +103,28 @@ function getServiceCategoryIcon(category: string): string {
   return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || getCategoryIcon(getServiceCategoryGroup(category)) || "";
 }
 
+type RecommendationProviderPayload = {
+  id: string;
+  name: string;
+  category: string;
+  description?: string | null;
+  matchReasons?: string[] | null;
+  explanation?: { reason?: string | null; profileMatch?: string | null } | null;
+};
+
+type RecommendationGuideLane = {
+  key: string;
+  title: string;
+  description?: string | null;
+  providers?: RecommendationProviderPayload[] | null;
+};
+
+type RecommendationGuide = {
+  summary?: string | null;
+  lanes?: RecommendationGuideLane[] | null;
+  profileSignals?: string[] | null;
+};
+
 export default function ServicesScreen() {
 
   // theme: hook-injected styles
@@ -126,6 +149,8 @@ export default function ServicesScreen() {
   const [costValue, setCostValue] = useState("");
   const [savingCost, setSavingCost] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recommendationGuide, setRecommendationGuide] = useState<RecommendationGuide | null>(null);
+  const [missingCritical, setMissingCritical] = useState<string[]>([]);
   // Offline fallback: true when the live fetch failed but we still have data on
   // screen (from cache or a prior load). Mirrors the dashboard's offline chip.
   const [offline, setOffline] = useState(false);
@@ -183,10 +208,15 @@ export default function ServicesScreen() {
   );
 
   const fetchServices = useCallback(async () => {
-    const [servicesRes, addressesRes, allServicesRes] = await Promise.all([
+    const [servicesRes, addressesRes, allServicesRes, recommendationsRes] = await Promise.all([
       api.get<any>("/api/services", { ...(selectedAddressId ? { addressId: selectedAddressId } : {}), limit: "200" }),
       api.get<any>("/api/addresses", { limit: "200" }),
       selectedAddressId ? api.get<any>("/api/services", { limit: "200" }) : Promise.resolve(null),
+      api
+        .get<any>("/api/providers/recommendations", {
+          ...(selectedAddressId ? { addressId: selectedAddressId } : {}),
+        })
+        .catch((err) => ({ error: err instanceof Error ? err.message : "Could not load provider gaps." })),
     ]);
     if (servicesRes.error || addressesRes.error) {
       // OFFLINE FALLBACK: if we already have data on screen (cache or prior
@@ -208,6 +238,14 @@ export default function ServicesScreen() {
     setServices(svcs);
     setTotalServiceCount(accountServices.length);
     setAddresses(nextAddresses);
+    if (recommendationsRes && !recommendationsRes.error && "data" in recommendationsRes) {
+      setRecommendationGuide(recommendationsRes.data?.recommendationGuide || null);
+      const missing = recommendationsRes.data?.stats?.missingCritical;
+      setMissingCritical(Array.isArray(missing) ? missing.filter(Boolean) : []);
+    } else {
+      setRecommendationGuide(null);
+      setMissingCritical([]);
+    }
     setError(null);
     // Live data landed → back online; persist the last-known list for next time.
     setOffline(false);
@@ -374,14 +412,43 @@ export default function ServicesScreen() {
     if (!service.monthlyCost || service.monthlyCost <= 0) healthAttentionIds.add(service.id);
   }
   const healthAttentionCount = healthAttentionIds.size;
-  const serviceHealthPct = activeServiceCount > 0
-    ? Math.max(0, Math.round(((activeServiceCount - healthAttentionCount) / activeServiceCount) * 100))
+  const missingCriticalCategories = Array.from(new Set(missingCritical.filter(Boolean)));
+  const missingCategoryKeys = new Set(missingCriticalCategories.map((category) => getMergedDisplayCategoryKey(category)));
+  const providerGapItems = (recommendationGuide?.lanes || [])
+    .filter((lane) => lane.key === "setup_first" || lane.key === "best_matches")
+    .flatMap((lane) => lane.providers || [])
+    .filter((provider, index, providers) => {
+      if (!provider?.id || !provider.category) return false;
+      if (!missingCategoryKeys.has(getMergedDisplayCategoryKey(provider.category))) return false;
+      return providers.findIndex((item) => item.id === provider.id) === index;
+    })
+    .slice(0, 3);
+  const providerGapCount = missingCriticalCategories.length;
+  const serviceHealthIssueCount = healthAttentionCount + providerGapCount;
+  const serviceHealthBase = activeServiceCount + providerGapCount;
+  const serviceHealthPct = serviceHealthBase > 0
+    ? Math.max(0, Math.round(((activeServiceCount - healthAttentionCount) / serviceHealthBase) * 100))
     : services.length > 0
       ? 100
       : 0;
-  const serviceHealthTone = healthAttentionCount > 0
+  const serviceHealthTone = serviceHealthIssueCount > 0
     ? theme.colors.amber
     : theme.colors.emerald;
+  const providerGapLabels = missingCriticalCategories
+    .slice(0, 4)
+    .map((category) => serviceCategoryLabel(category));
+  const firstProviderGapCategory = providerGapItems[0]?.category || missingCriticalCategories[0];
+
+  const openProviderGap = (provider?: RecommendationProviderPayload) => {
+    const params: Record<string, string> = { guide: "services_health" };
+    if (selectedAddressId) params.addressId = selectedAddressId;
+    if (provider?.id) params.providerId = provider.id;
+    if (provider?.category || firstProviderGapCategory) params.category = provider?.category || firstProviderGapCategory;
+    if (!provider?.id && providerGapItems.length > 0) {
+      params.providerIds = providerGapItems.map((item) => item.id).join(",");
+    }
+    router.push({ pathname: "/services/new", params } as any);
+  };
 
   // Same headline copy as the detail screen (services/[id].tsx), reusing its keys.
   const renewalHeadline = (renewal: ServiceRenewal) =>
@@ -566,7 +633,7 @@ export default function ServicesScreen() {
                   { backgroundColor: serviceHealthTone.bg, borderColor: serviceHealthTone.border },
                 ]}
               >
-                {healthAttentionCount > 0 ? (
+                {serviceHealthIssueCount > 0 ? (
                   <AlertTriangle size={18} color={serviceHealthTone.text} />
                 ) : (
                   <Check size={18} color={serviceHealthTone.text} />
@@ -577,7 +644,13 @@ export default function ServicesScreen() {
                   {t("services.healthTitle", { defaultValue: "Service health" })}
                 </Text>
                 <Text style={styles.systemMeta} numberOfLines={2}>
-                  {attentionItems.length > 0
+                  {providerGapCount > 0
+                    ? t("services.healthProviderGaps", {
+                        count: providerGapCount,
+                        categories: providerGapLabels.join(", "),
+                        defaultValue: `Missing essentials: ${providerGapLabels.join(", ")}`,
+                      })
+                    : attentionItems.length > 0
                     ? t("services.healthAttention", {
                         count: attentionItems.length,
                         defaultValue: `${attentionItems.length} service needs attention`,
@@ -616,12 +689,85 @@ export default function ServicesScreen() {
                 </Text>
               </View>
               <View style={styles.systemStat}>
-                <Text style={styles.systemStatValue}>{healthAttentionCount}</Text>
+                <Text style={styles.systemStatValue}>{serviceHealthIssueCount}</Text>
                 <Text style={styles.systemStatLabel}>
                   {t("services.needsAttention")}
                 </Text>
               </View>
             </View>
+          </View>
+        )}
+
+        {!(error && services.length === 0) && providerGapCount > 0 && (
+          <View style={styles.gapPanel}>
+            <View style={styles.gapHead}>
+              <View style={styles.gapGlyph}>
+                <Sparkles size={17} color={theme.colors.amber.text} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.gapTitle}>
+                  {t("services.providerGapsTitle", { defaultValue: "Missing essentials" })}
+                </Text>
+                <Text style={styles.gapBody} numberOfLines={2}>
+                  {recommendationGuide?.summary ||
+                    t("services.providerGapsBody", {
+                      defaultValue: "Your address still needs a few critical providers before the setup feels complete.",
+                    })}
+                </Text>
+              </View>
+              <View style={styles.gapCountPill}>
+                <Text style={styles.gapCountText}>{providerGapCount}</Text>
+              </View>
+            </View>
+
+            <View style={styles.gapChips}>
+              {providerGapLabels.map((label) => (
+                <View key={label} style={styles.gapChip}>
+                  <Text style={styles.gapChipText} numberOfLines={1}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
+            {providerGapItems.length > 0 ? (
+              <View style={styles.gapRows}>
+                {providerGapItems.map((provider) => {
+                  const color = getServiceCategoryColor(provider.category);
+                  const reason = provider.explanation?.reason || provider.explanation?.profileMatch || provider.matchReasons?.[0] || serviceCategoryLabel(provider.category);
+                  return (
+                    <PressableScale
+                      key={provider.id}
+                      style={styles.gapRow}
+                      onPress={() => openProviderGap(provider)}
+                      accessibilityLabel={`${provider.name} ${serviceCategoryLabel(provider.category)}`}
+                    >
+                      <View style={[styles.gapRowIcon, { backgroundColor: color + "1F", borderColor: color + "55" }]}>
+                        <CategoryIcon emoji={getServiceCategoryIcon(provider.category)} size={15} color={color} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.gapRowTitle} numberOfLines={1}>{provider.name}</Text>
+                        <Text style={styles.gapRowSub} numberOfLines={1}>{reason}</Text>
+                      </View>
+                      <ArrowRight size={14} color={theme.colors.textMuted} />
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            ) : (
+              <Text style={styles.gapFallbackText}>
+                {t("services.providerGapsFallback", {
+                  defaultValue: "Open recommendations to add the right provider for these categories.",
+                })}
+              </Text>
+            )}
+
+            <PressableScale style={styles.gapCta} onPress={() => openProviderGap()}>
+              <Text style={styles.gapCtaText}>
+                {providerGapItems.length > 1
+                  ? t("services.providerGapsCtaBundle", { defaultValue: "Add recommended picks" })
+                  : t("services.providerGapsCta", { defaultValue: "Fix setup gaps" })}
+              </Text>
+              <ArrowRight size={15} color={theme.colors.amber.text} />
+            </PressableScale>
           </View>
         )}
 
@@ -976,6 +1122,90 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   systemStatValue: { fontSize: 18, fontWeight: "900", color: theme.colors.text, fontVariant: ["tabular-nums"] },
   systemStatLabel: { fontSize: 10, color: theme.colors.textTertiary, marginTop: 3, fontWeight: "700" },
+  gapPanel: {
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.amber.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.amber.border,
+    gap: 12,
+  },
+  gapHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+  gapGlyph: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.amber.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.amber.border,
+  },
+  gapTitle: { fontSize: 15, fontWeight: "900", color: theme.colors.text },
+  gapBody: { marginTop: 2, fontSize: 12, lineHeight: 17, color: theme.colors.textSecondary },
+  gapCountPill: {
+    minWidth: 30,
+    height: 30,
+    paddingHorizontal: 9,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.amber.border,
+  },
+  gapCountText: { fontSize: 13, fontWeight: "900", color: theme.colors.amber.text, fontVariant: ["tabular-nums"] },
+  gapChips: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  gapChip: {
+    maxWidth: "48%",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  gapChipText: { fontSize: 11, fontWeight: "800", color: theme.colors.textSecondary },
+  gapRows: { gap: 8 },
+  gapRow: {
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  gapRowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  gapRowTitle: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  gapRowSub: { marginTop: 1, fontSize: 11, color: theme.colors.textTertiary },
+  gapFallbackText: { fontSize: 12, lineHeight: 17, color: theme.colors.textSecondary },
+  gapCta: {
+    minHeight: 42,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: theme.colors.amber.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.amber.border,
+  },
+  gapCtaText: { fontSize: 13, fontWeight: "900", color: theme.colors.amber.text },
   // ── Needs attention ──
   secRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 },
   secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },

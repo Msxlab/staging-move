@@ -1,8 +1,10 @@
 import type { CoverageConfidence } from "@locateflow/shared";
-import { lookupFccIsps, isIspServiceable, type FccLookupResult } from "@/lib/fcc-isp";
+import { lookupFccIsps, isIspServiceable, normalizeIspName, type FccLookupResult } from "@/lib/fcc-isp";
 import {
   lookupElectricUtilities,
   isElectricUtilityServiceable,
+  normalizeUtilityName,
+  utilityNamesMatch,
   type ElectricLookupResult,
 } from "@/lib/electric-utility";
 import type { ProviderPresentationMatchLevel } from "@/lib/provider-matching";
@@ -12,6 +14,14 @@ export type ServiceabilityProvider = {
   category: string;
   fccServiceable?: boolean;
   utilityServiceable?: boolean;
+};
+
+export type ServiceabilitySourceGap = {
+  source: "FCC_BDC" | "OPENEI_URDB";
+  category: "UTILITY_INTERNET" | "UTILITY_ELECTRIC";
+  name: string;
+  sourceProviderId: string | null;
+  evidenceUrl: string;
 };
 
 export type ServiceabilityMeta = {
@@ -25,6 +35,7 @@ export type ServiceabilityMeta = {
     confirmedCount: number;
     utilityCount: number;
   };
+  sourceGaps: ServiceabilitySourceGap[];
 };
 
 export function providerServiceabilityGatedMeta(providers: ServiceabilityProvider[]): ServiceabilityMeta {
@@ -41,6 +52,7 @@ export function providerServiceabilityGatedMeta(providers: ServiceabilityProvide
       confirmedCount: 0,
       utilityCount: 0,
     },
+    sourceGaps: [],
   };
 }
 
@@ -62,15 +74,49 @@ export function applyProviderServiceabilityConfidence(
   return hasConfirmedProviderServiceability(provider) ? "AVAILABLE_AT_ADDRESS" : confidence;
 }
 
+function hasCatalogIspMatch(providers: ServiceabilityProvider[], sourceName: string): boolean {
+  const normalizedSource = normalizeIspName(sourceName);
+  if (!normalizedSource) return false;
+  return providers.some((provider) => {
+    if (provider.category !== "UTILITY_INTERNET") return false;
+    const normalizedProvider = normalizeIspName(provider.name);
+    if (!normalizedProvider || normalizedProvider.length < 4 || normalizedSource.length < 4) return false;
+    return normalizedProvider === normalizedSource ||
+      normalizedProvider.startsWith(normalizedSource) ||
+      normalizedSource.startsWith(normalizedProvider);
+  });
+}
+
+function hasCatalogElectricMatch(providers: ServiceabilityProvider[], sourceName: string): boolean {
+  const normalizedSource = normalizeUtilityName(sourceName);
+  if (!normalizedSource) return false;
+  return providers.some(
+    (provider) =>
+      provider.category === "UTILITY_ELECTRIC" &&
+      (normalizeUtilityName(provider.name) === normalizedSource ||
+        utilityNamesMatch(provider.name, sourceName)),
+  );
+}
+
 export async function enrichProviderServiceability<T extends ServiceabilityProvider>(
   providers: T[],
-  context: { latitude?: number | null; longitude?: number | null },
+  context: {
+    latitude?: number | null;
+    longitude?: number | null;
+    forceCategories?: Array<"UTILITY_ELECTRIC" | "UTILITY_INTERNET">;
+  },
 ): Promise<ServiceabilityMeta> {
   let fccLookup: FccLookupResult | null = null;
   let electricLookup: ElectricLookupResult | null = null;
+  const sourceGaps: ServiceabilitySourceGap[] = [];
 
-  const hasInternetCandidates = providers.some((provider) => provider.category === "UTILITY_INTERNET");
-  const hasElectricCandidates = providers.some((provider) => provider.category === "UTILITY_ELECTRIC");
+  const forcedCategories = new Set(context.forceCategories || []);
+  const hasInternetCandidates =
+    providers.some((provider) => provider.category === "UTILITY_INTERNET") ||
+    forcedCategories.has("UTILITY_INTERNET");
+  const hasElectricCandidates =
+    providers.some((provider) => provider.category === "UTILITY_ELECTRIC") ||
+    forcedCategories.has("UTILITY_ELECTRIC");
 
   if (hasInternetCandidates) {
     try {
@@ -83,6 +129,17 @@ export async function enrichProviderServiceability<T extends ServiceabilityProvi
           if (provider.category !== "UTILITY_INTERNET") continue;
           if (isIspServiceable(fccLookup, provider.name)) {
             provider.fccServiceable = true;
+          }
+        }
+        for (const sourceProvider of fccLookup.providers) {
+          if (!hasCatalogIspMatch(providers, sourceProvider.brandName)) {
+            sourceGaps.push({
+              source: "FCC_BDC",
+              category: "UTILITY_INTERNET",
+              name: sourceProvider.brandName,
+              sourceProviderId: sourceProvider.providerId,
+              evidenceUrl: fccLookup.source.url,
+            });
           }
         }
       }
@@ -104,6 +161,17 @@ export async function enrichProviderServiceability<T extends ServiceabilityProvi
             provider.utilityServiceable = true;
           }
         }
+        for (const utility of electricLookup.utilities) {
+          if (!hasCatalogElectricMatch(providers, utility.name)) {
+            sourceGaps.push({
+              source: "OPENEI_URDB",
+              category: "UTILITY_ELECTRIC",
+              name: utility.name,
+              sourceProviderId: utility.eiaId,
+              evidenceUrl: electricLookup.source.url,
+            });
+          }
+        }
       }
     } catch {
       electricLookup = null;
@@ -121,5 +189,6 @@ export async function enrichProviderServiceability<T extends ServiceabilityProvi
       confirmedCount: providers.filter((provider) => provider.utilityServiceable === true).length,
       utilityCount: electricLookup?.status === "ok" ? electricLookup.utilities.length : 0,
     },
+    sourceGaps,
   };
 }

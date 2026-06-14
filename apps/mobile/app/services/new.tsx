@@ -104,7 +104,9 @@ export default function NewServiceScreen() {
     addressId?: string | string[];
     fromServiceId?: string | string[];
     providerId?: string | string[];
+    providerIds?: string | string[];
     category?: string | string[];
+    guide?: string | string[];
     mode?: string | string[];
     suggest?: string | string[];
     providerName?: string | string[];
@@ -140,7 +142,18 @@ export default function NewServiceScreen() {
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
   const fromServiceId = Array.isArray(params.fromServiceId) ? params.fromServiceId[0] : params.fromServiceId || "";
   const prefillProviderId = Array.isArray(params.providerId) ? params.providerId[0] : params.providerId || "";
+  const prefillProviderIdsParam = Array.isArray(params.providerIds) ? params.providerIds[0] : params.providerIds || "";
+  const guideParam = Array.isArray(params.guide) ? params.guide[0] : params.guide || "";
   const prefillCategory = Array.isArray(params.category) ? params.category[0] : params.category || "";
+  const prefillProviderIds = useMemo(() => {
+    const ids = [
+      ...prefillProviderIdsParam.split(","),
+      prefillProviderId,
+    ]
+      .map((id) => id.trim())
+      .filter(Boolean);
+    return Array.from(new Set(ids));
+  }, [prefillProviderId, prefillProviderIdsParam]);
 
   // Manual form state
   const [manualForm, setManualForm] = useState<{
@@ -214,19 +227,23 @@ export default function NewServiceScreen() {
     })();
   }, [selectedAddress, addresses]);
 
-  // Auto-select provider from pre-fill params (migration flow)
+  // Auto-select provider(s) from pre-fill params (migration / smart setup flow).
   useEffect(() => {
-    if (!prefillProviderId || allProviders.length === 0) return;
-    const match = allProviders.find((p) => p.id === prefillProviderId);
-    if (match && !selectedProviders.has(match.id)) {
-      setSelectedProviders((prev) => {
-        const next = new Map(prev);
+    if (prefillProviderIds.length === 0 || allProviders.length === 0) return;
+    const wanted = new Set(prefillProviderIds);
+    const matches = allProviders.filter((p) => wanted.has(p.id));
+    if (matches.length === 0) return;
+    setSelectedProviders((prev) => {
+      const next = new Map(prev);
+      let changed = false;
+      for (const match of matches) {
+        if (next.has(match.id)) continue;
         next.set(match.id, match);
-        return next;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefillProviderId, allProviders]);
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [prefillProviderIds, allProviders]);
 
   const addr = addresses.find((a) => a.id === selectedAddress);
 
@@ -450,6 +467,8 @@ export default function NewServiceScreen() {
 
   const selectedCount = selectedProviders.size;
   const serviceLimitReached = serviceGate != null && serviceGate.current >= serviceGate.limit;
+  const smartSetupLanding = mode === "browse" && (prefillProviderIds.length > 0 || Boolean(guideParam));
+  const smartSetupSelectedCount = prefillProviderIds.filter((id) => selectedProviders.has(id)).length;
   const showServiceLimitAlert = (message?: string) => {
     hapticError();
     Alert.alert(
@@ -667,6 +686,51 @@ export default function NewServiceScreen() {
             <Text style={styles.stateLabel}>
               {t("services.showingProvidersFor")} <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{addr?.state || t("services.allStates")}</Text>
             </Text>
+
+            {smartSetupLanding && (
+              <View style={styles.smartSetupCard}>
+                <View style={styles.smartSetupTop}>
+                  <View style={styles.smartSetupIcon}>
+                    <Sparkles size={17} color={theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.smartSetupTitle}>
+                      {t("services.smartSetupTitle", { defaultValue: "Smart setup picks" })}
+                    </Text>
+                    <Text style={styles.smartSetupBody}>
+                      {t("services.smartSetupBody", {
+                        count: smartSetupSelectedCount || selectedCount,
+                        defaultValue: "We preselected the providers from your setup plan. Review them, then register the services.",
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.smartSetupCta,
+                    (selectedCount === 0 || saving) && styles.smartSetupCtaDisabled,
+                  ]}
+                  onPress={handleSaveAll}
+                  disabled={selectedCount === 0 || saving}
+                  activeOpacity={0.72}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("services.registerSelectedProviders", { count: selectedCount })}
+                  accessibilityHint={t("services.registerSelectedProvidersHint")}
+                  accessibilityState={{ disabled: selectedCount === 0 || saving }}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <Check size={15} color="#fff" />
+                      <Text style={styles.smartSetupCtaText}>
+                        {selectedCount > 1 ? t("services.registerAll") : t("services.register")}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Selected chips */}
             {selectedCount > 0 && (
@@ -1170,6 +1234,59 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   hint: { fontSize: 13, color: theme.colors.textMuted, fontStyle: "italic" },
   stateLabel: { fontSize: 13, color: theme.colors.textTertiary, marginBottom: 8 },
+  smartSetupCard: {
+    gap: 12,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.primaryFaded,
+    padding: 14,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  smartSetupTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  smartSetupIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  smartSetupTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  smartSetupBody: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    lineHeight: 17,
+    marginTop: 3,
+  },
+  smartSetupCta: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary,
+  },
+  smartSetupCtaDisabled: {
+    opacity: 0.55,
+  },
+  smartSetupCtaText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#fff",
+  },
 
   // Address chips
   addrChip: {

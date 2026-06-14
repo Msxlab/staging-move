@@ -23,6 +23,13 @@ vi.mock("@/lib/db", () => ({
     recommendationFeedback: {
       findMany: vi.fn(),
     },
+    savedProvider: {
+      findMany: vi.fn(),
+    },
+    providerGovernanceIssue: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -62,6 +69,10 @@ vi.mock("@/lib/recommendation-engine", () => ({
   })),
   getMergedDisplayCategoryLabel: vi.fn((c: string) => c),
   getMergedDisplayCategoryOrder: vi.fn(() => 0),
+  getEssentialSetupCategories: vi.fn(() => ({
+    critical: ["UTILITY_ELECTRIC"],
+    important: ["UTILITY_INTERNET"],
+  })),
 }));
 
 vi.mock("@/lib/fcc-isp", () => ({
@@ -78,6 +89,13 @@ vi.mock("@/lib/fcc-isp", () => ({
     },
   })),
   isIspServiceable: vi.fn(() => false),
+  normalizeIspName: vi.fn((name: string | null | undefined) =>
+    (name || "")
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "")
+      .replace(/internet|communications|telecom|broadband/g, ""),
+  ),
 }));
 
 // Electric-utility enrichment is mocked so the route tests can drive each
@@ -97,6 +115,29 @@ vi.mock("@/lib/electric-utility", () => ({
     },
   })),
   isElectricUtilityServiceable: vi.fn(() => false),
+  normalizeUtilityName: vi.fn((name: string | null | undefined) =>
+    (name || "")
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, " ")
+      .split(" ")
+      .filter((token) => token && !["city", "of", "energy", "electric", "utility", "company", "texas"].includes(token))
+      .sort()
+      .join(""),
+  ),
+  utilityNamesMatch: vi.fn((a: string | null | undefined, b: string | null | undefined) => {
+    const clean = (value: string | null | undefined) =>
+      (value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .split(" ")
+        .filter((token) => token && !["city", "of", "energy", "electric", "utility", "company", "texas"].includes(token));
+    const tokensA = new Set(clean(a));
+    const tokensB = new Set(clean(b));
+    if (tokensA.size === 0 || tokensB.size === 0) return false;
+    const [small, large] = tokensA.size <= tokensB.size ? [tokensA, tokensB] : [tokensB, tokensA];
+    return [...small].every((token) => large.has(token));
+  }),
 }));
 
 import { prisma } from "@/lib/db";
@@ -116,6 +157,11 @@ const mockMovingPlan = prisma.movingPlan as unknown as { findFirst: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Mock };
 const mockStateRule = prisma.stateRule as unknown as { findUnique: Mock };
 const mockRecFeedback = prisma.recommendationFeedback as unknown as { findMany: Mock };
+const mockSavedProvider = prisma.savedProvider as unknown as { findMany: Mock };
+const mockProviderGovernanceIssue = prisma.providerGovernanceIssue as unknown as {
+  findFirst: Mock;
+  create: Mock;
+};
 const rateLimitMock = rateLimit as unknown as Mock;
 const requestHasPlanFeatureMock = requestHasPlanFeature as unknown as Mock;
 const lookupFccIspsMock = lookupFccIsps as unknown as Mock;
@@ -194,6 +240,9 @@ describe("provider recommendations route", () => {
     mockServiceProvider.findMany.mockResolvedValue([]);
     mockStateRule.findUnique.mockResolvedValue(null);
     mockRecFeedback.findMany.mockResolvedValue([]);
+    mockSavedProvider.findMany.mockResolvedValue([]);
+    mockProviderGovernanceIssue.findFirst.mockResolvedValue(null);
+    mockProviderGovernanceIssue.create.mockResolvedValue({});
     requestHasPlanFeatureMock.mockResolvedValue(true);
     lookupFccIspsMock.mockResolvedValue(fccLookupResult());
     isIspServiceableMock.mockReturnValue(false);
@@ -299,6 +348,95 @@ describe("provider recommendations route", () => {
     });
   });
 
+  it("returns a recommendation guide with visible onboarding-derived signals", async () => {
+    mockProfile.findUnique.mockResolvedValue({
+      familyStatus: "FAMILY",
+      hasChildren: true,
+      childrenCount: 2,
+      hasPets: true,
+      petTypes: JSON.stringify(["dog"]),
+      carCount: 1,
+      needsStorage: true,
+      isBusinessOwner: false,
+      isImmigrant: false,
+      isMilitary: false,
+      moveType: "PERSONAL",
+    });
+    mockAddress.findMany.mockResolvedValue([
+      {
+        id: "addr-1",
+        isPrimary: true,
+        city: "Queens",
+        state: "NY",
+        zip: "11105",
+        ownership: "RENTER",
+        latitude: null,
+        longitude: null,
+        deletedAt: null,
+      },
+    ]);
+    mockServiceProvider.findMany.mockResolvedValue([dbProvider()]);
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.recommendationGuide).toBeTruthy();
+    expect(body.recommendationGuide.profileSignals).toEqual(
+      expect.arrayContaining([
+        "Queens, NY",
+        "Renter household",
+        "Family profile",
+        "2 children",
+        "Pets: dog",
+      ]),
+    );
+    expect(body.recommendationGuide.completion).toEqual(
+      expect.objectContaining({
+        score: 0,
+        completedCritical: 0,
+        missingCritical: 1,
+        missingLabels: ["UTILITY_ELECTRIC"],
+        nextBestCategory: "UTILITY_ELECTRIC",
+      }),
+    );
+    expect(body.recommendationGuide.setupPlan).toEqual(
+      expect.objectContaining({
+        primaryNextCategory: "UTILITY_ELECTRIC",
+        primaryNextLabel: "UTILITY_ELECTRIC",
+        totalOpenCategories: 2,
+      }),
+    );
+    expect(body.recommendationGuide.setupPlan.sections).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "move_in_essentials",
+          categories: expect.arrayContaining([
+            expect.objectContaining({
+              category: "UTILITY_ELECTRIC",
+              label: "UTILITY_ELECTRIC",
+              urgency: "CRITICAL",
+            }),
+            expect.objectContaining({
+              category: "UTILITY_INTERNET",
+              label: "UTILITY_INTERNET",
+              urgency: "IMPORTANT",
+            }),
+          ]),
+        }),
+      ]),
+    );
+    expect(body.recommendationGuide.decisionModel.factors).toEqual(
+      expect.arrayContaining([
+        "Move-in essentials are ranked before nice-to-have services.",
+        "Already tracked service categories are removed from setup gaps.",
+      ]),
+    );
+    expect(body.recommendationGuide.decisionModel.learningSignals).toEqual(
+      expect.arrayContaining(["6 profile signals tune the recommendation order."]),
+    );
+  });
+
   it("defaults the extended signals to no-signal when no profile row exists", async () => {
     mockServiceProvider.findMany.mockResolvedValue([dbProvider()]);
 
@@ -332,7 +470,7 @@ describe("provider recommendations route", () => {
     expect(body.meta.electric).toEqual({ status: "gated", confirmedCount: 0, utilityCount: 0 });
   });
 
-  it("skips the FCC lookup entirely when no internet candidates exist", async () => {
+  it("checks FCC source health for setup-critical internet even when no internet candidates exist", async () => {
     mockServiceProvider.findMany.mockResolvedValue([
       dbProvider({ id: "electric-1", name: "Austin Energy", category: "UTILITY_ELECTRIC" }),
     ]);
@@ -341,8 +479,8 @@ describe("provider recommendations route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(lookupFccIspsMock).not.toHaveBeenCalled();
-    expect(body.meta.fcc).toEqual({ status: "skipped", confirmedCount: 0, blockGeoid: null });
+    expect(lookupFccIspsMock).toHaveBeenCalledTimes(1);
+    expect(body.meta.fcc).toEqual({ status: "not_configured", confirmedCount: 0, blockGeoid: null });
   });
 
   it("flags matching internet providers fccServiceable when the FCC lookup confirms them", async () => {
@@ -418,7 +556,7 @@ describe("provider recommendations route", () => {
 
   // ── Electric-utility serviceability enrichment (mirrors the FCC block) ────
 
-  it("skips the electric lookup entirely when no electric candidates exist", async () => {
+  it("checks OpenEI source health for setup-critical electric even when no electric candidates exist", async () => {
     mockServiceProvider.findMany.mockResolvedValue([
       dbProvider({ id: "internet-1", name: "Comcast", category: "UTILITY_INTERNET" }),
     ]);
@@ -427,8 +565,8 @@ describe("provider recommendations route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(lookupElectricUtilitiesMock).not.toHaveBeenCalled();
-    expect(body.meta.electric).toEqual({ status: "skipped", confirmedCount: 0, utilityCount: 0 });
+    expect(lookupElectricUtilitiesMock).toHaveBeenCalledTimes(1);
+    expect(body.meta.electric).toEqual({ status: "not_configured", confirmedCount: 0, utilityCount: 0 });
   });
 
   it("flags matching electric providers utilityServiceable when the lookup confirms them", async () => {
@@ -464,6 +602,63 @@ describe("provider recommendations route", () => {
     expect(internet.utilityServiceable).toBeUndefined();
 
     expect(body.meta.electric).toEqual({ status: "ok", confirmedCount: 1, utilityCount: 1 });
+  });
+
+  it("records API-backed missing infrastructure providers for admin review", async () => {
+    mockAddress.findMany.mockResolvedValue([
+      {
+        id: "addr-austin",
+        isPrimary: true,
+        city: "Austin",
+        state: "TX",
+        zip: "78701",
+        latitude: 30.2672,
+        longitude: -97.7431,
+        deletedAt: null,
+      },
+    ]);
+    mockServiceProvider.findMany.mockResolvedValue([
+      dbProvider({ id: "electric-2", name: "Reliant Energy", category: "UTILITY_ELECTRIC" }),
+    ]);
+    lookupElectricUtilitiesMock.mockResolvedValue(
+      electricLookupResult({
+        status: "ok",
+        utilities: [{ name: "City of Austin, Texas (Utility Company)", eiaId: "16604" }],
+        normalizedNames: new Set(["austintexas"]),
+        reason: null,
+      }),
+    );
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(lookupElectricUtilitiesMock).toHaveBeenCalledTimes(1);
+    expect(body.meta.sourceGaps).toEqual([
+      expect.objectContaining({
+        source: "OPENEI_URDB",
+        category: "UTILITY_ELECTRIC",
+        name: "City of Austin, Texas (Utility Company)",
+        sourceProviderId: "16604",
+      }),
+    ]);
+    expect(mockProviderGovernanceIssue.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          issueType: "SOURCE_PROVIDER_MISSING",
+          severity: "HIGH",
+          title: "Source provider missing: UTILITY_ELECTRIC City of Austin, Texas (Utility Company)",
+          metadata: expect.objectContaining({
+            source: "OPENEI_URDB",
+            category: "UTILITY_ELECTRIC",
+            providerName: "City of Austin, Texas (Utility Company)",
+            state: "TX",
+            zip: "78701",
+            addressId: "addr-austin",
+          }),
+        }),
+      }),
+    );
   });
 
   it("leaves providers untouched when the electric lookup is not configured", async () => {

@@ -1,11 +1,10 @@
 {
-  "generatedAt": "2026-05-13T21:11:54.708Z",
+  "generatedAt": "2026-06-14T08:44:20.722Z",
   "providerCount": 1122,
   "criticalCategories": [
     "UTILITY_ELECTRIC",
     "UTILITY_GAS",
     "UTILITY_WATER",
-    "UTILITY_SEWER",
     "UTILITY_TRASH",
     "UTILITY_INTERNET",
     "UTILITY_CABLE",
@@ -77,20 +76,6 @@
       "federalCount": 0,
       "stateCount": 4,
       "zipRuleCount": 3,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "AL",
-      "category": "UTILITY_SEWER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -175,12 +160,12 @@
       "federalCount": 1,
       "stateCount": 1,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "AL",
@@ -293,20 +278,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "AK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "AK",
@@ -506,20 +477,6 @@
     },
     {
       "state": "AZ",
-      "category": "UTILITY_SEWER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "AZ",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -595,12 +552,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "AZ",
@@ -716,20 +673,6 @@
     },
     {
       "state": "AR",
-      "category": "UTILITY_SEWER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "AR",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -805,12 +748,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "AR",
@@ -926,20 +869,6 @@
     },
     {
       "state": "CA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "CA",
       "category": "UTILITY_TRASH",
       "count": 3,
       "federalCount": 2,
@@ -955,9 +884,9 @@
     {
       "state": "CA",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -1136,20 +1065,6 @@
     },
     {
       "state": "CO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "CO",
       "category": "UTILITY_TRASH",
       "count": 3,
       "federalCount": 2,
@@ -1346,20 +1261,6 @@
     },
     {
       "state": "CT",
-      "category": "UTILITY_SEWER",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 3,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "CT",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -1435,12 +1336,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "CT",
@@ -1556,20 +1457,6 @@
     },
     {
       "state": "DE",
-      "category": "UTILITY_SEWER",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 3,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "DE",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -1766,20 +1653,6 @@
     },
     {
       "state": "DC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "DC",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -1855,12 +1728,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "DC",
@@ -1976,20 +1849,6 @@
     },
     {
       "state": "FL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "FL",
       "category": "UTILITY_TRASH",
       "count": 3,
       "federalCount": 2,
@@ -2186,20 +2045,6 @@
     },
     {
       "state": "GA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "GA",
       "category": "UTILITY_TRASH",
       "count": 5,
       "federalCount": 2,
@@ -2396,20 +2241,6 @@
     },
     {
       "state": "HI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "HI",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -2485,12 +2316,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "HI",
@@ -2606,20 +2437,6 @@
     },
     {
       "state": "ID",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ID",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -2695,12 +2512,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "ID",
@@ -2816,20 +2633,6 @@
     },
     {
       "state": "IL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IL",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -3026,20 +2829,6 @@
     },
     {
       "state": "IN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IN",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -3115,12 +2904,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "IN",
@@ -3233,20 +3022,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "IA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "IA",
@@ -3325,12 +3100,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "IA",
@@ -3446,20 +3221,6 @@
     },
     {
       "state": "KS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "KS",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -3535,12 +3296,12 @@
       "federalCount": 1,
       "stateCount": 1,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "KS",
@@ -3653,20 +3414,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "KY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "KY",
@@ -3745,12 +3492,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "KY",
@@ -3866,20 +3613,6 @@
     },
     {
       "state": "LA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "LA",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -3955,12 +3688,12 @@
       "federalCount": 1,
       "stateCount": 1,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "LA",
@@ -4076,20 +3809,6 @@
     },
     {
       "state": "ME",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ME",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -4165,12 +3884,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "ME",
@@ -4283,20 +4002,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "MD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "MD",
@@ -4496,20 +4201,6 @@
     },
     {
       "state": "MA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MA",
       "category": "UTILITY_TRASH",
       "count": 6,
       "federalCount": 2,
@@ -4706,20 +4397,6 @@
     },
     {
       "state": "MI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MI",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -4795,12 +4472,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "MI",
@@ -4916,20 +4593,6 @@
     },
     {
       "state": "MN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MN",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -5005,12 +4668,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "MN",
@@ -5126,20 +4789,6 @@
     },
     {
       "state": "MS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MS",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -5215,12 +4864,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "MS",
@@ -5336,20 +4985,6 @@
     },
     {
       "state": "MO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MO",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -5425,12 +5060,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "MO",
@@ -5546,20 +5181,6 @@
     },
     {
       "state": "MT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MT",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -5635,12 +5256,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "MT",
@@ -5753,20 +5374,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NE",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "NE",
@@ -5845,12 +5452,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "NE",
@@ -5966,20 +5573,6 @@
     },
     {
       "state": "NV",
-      "category": "UTILITY_SEWER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "NV",
       "category": "UTILITY_TRASH",
       "count": 4,
       "federalCount": 2,
@@ -6055,12 +5648,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "NV",
@@ -6176,20 +5769,6 @@
     },
     {
       "state": "NH",
-      "category": "UTILITY_SEWER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "NH",
       "category": "UTILITY_TRASH",
       "count": 5,
       "federalCount": 2,
@@ -6386,20 +5965,6 @@
     },
     {
       "state": "NJ",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NJ",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -6596,20 +6161,6 @@
     },
     {
       "state": "NM",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NM",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -6685,12 +6236,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "NM",
@@ -6806,20 +6357,6 @@
     },
     {
       "state": "NY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NY",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -6835,9 +6372,9 @@
     {
       "state": "NY",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -6895,12 +6432,12 @@
       "federalCount": 1,
       "stateCount": 1,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "NY",
@@ -7016,20 +6553,6 @@
     },
     {
       "state": "NC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NC",
       "category": "UTILITY_TRASH",
       "count": 6,
       "federalCount": 2,
@@ -7045,9 +6568,9 @@
     {
       "state": "NC",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -7226,20 +6749,6 @@
     },
     {
       "state": "ND",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ND",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -7315,12 +6824,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "ND",
@@ -7436,20 +6945,6 @@
     },
     {
       "state": "OH",
-      "category": "UTILITY_SEWER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "OH",
       "category": "UTILITY_TRASH",
       "count": 4,
       "federalCount": 2,
@@ -7465,9 +6960,9 @@
     {
       "state": "OH",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -7646,20 +7141,6 @@
     },
     {
       "state": "OK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OK",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -7735,12 +7216,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "OK",
@@ -7856,20 +7337,6 @@
     },
     {
       "state": "OR",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OR",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -8063,20 +7530,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "PA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "PA",
@@ -8276,20 +7729,6 @@
     },
     {
       "state": "RI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "RI",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -8365,12 +7804,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "RI",
@@ -8486,20 +7925,6 @@
     },
     {
       "state": "SC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "SC",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -8696,20 +8121,6 @@
     },
     {
       "state": "SD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "SD",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -8785,12 +8196,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "SD",
@@ -8906,20 +8317,6 @@
     },
     {
       "state": "TN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "TN",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -8995,12 +8392,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "TN",
@@ -9116,20 +8513,6 @@
     },
     {
       "state": "TX",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "TX",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -9145,9 +8528,9 @@
     {
       "state": "TX",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -9323,20 +8706,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "UT",
@@ -9536,20 +8905,6 @@
     },
     {
       "state": "VT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VT",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -9625,12 +8980,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "VT",
@@ -9746,20 +9101,6 @@
     },
     {
       "state": "VA",
-      "category": "UTILITY_SEWER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "VA",
       "category": "UTILITY_TRASH",
       "count": 3,
       "federalCount": 2,
@@ -9835,12 +9176,12 @@
       "federalCount": 1,
       "stateCount": 1,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "VA",
@@ -9956,20 +9297,6 @@
     },
     {
       "state": "WA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WA",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -10166,20 +9493,6 @@
     },
     {
       "state": "WV",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WV",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -10255,12 +9568,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "WV",
@@ -10376,20 +9689,6 @@
     },
     {
       "state": "WI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WI",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -10405,9 +9704,9 @@
     {
       "state": "WI",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -10465,12 +9764,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "WI",
@@ -10583,20 +9882,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "WY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "WY",
@@ -10675,12 +9960,12 @@
       "federalCount": 1,
       "stateCount": 0,
       "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "covered",
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "WY",
@@ -10755,20 +10040,6 @@
   ],
   "missingCriticalCategories": [
     {
-      "state": "AK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "AR",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
@@ -10780,34 +10051,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "CA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "CO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
     },
     {
@@ -10825,76 +10068,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "DC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "FL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "GA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "HI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ID",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "ID",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
@@ -10906,48 +10079,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
     },
     {
@@ -10965,34 +10096,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "KS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "KY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "KY",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
@@ -11004,146 +10107,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "LA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ME",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NE",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
     },
     {
@@ -11161,76 +10124,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "NJ",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NM",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ND",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "ND",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
@@ -11242,202 +10135,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OR",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "PA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "RI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "SC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "SD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "TN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "TX",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WV",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
     }
   ],
@@ -11471,6 +10168,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "AL",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "AK",
       "category": "UTILITY_TRASH",
       "count": 2,
@@ -11527,6 +10238,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "AZ",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "AR",
       "category": "UTILITY_TRASH",
       "count": 2,
@@ -11555,11 +10280,25 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "AR",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "CA",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -11608,6 +10347,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "CT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -11681,6 +10434,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "DC",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "FL",
       "category": "UTILITY_INTERNET",
       "count": 12,
@@ -11751,6 +10518,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "HI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "ID",
       "category": "UTILITY_GAS",
       "count": 2,
@@ -11804,6 +10585,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ID",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -11888,6 +10683,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "IN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -11975,6 +10784,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "IA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "KS",
       "category": "UTILITY_ELECTRIC",
       "count": 2,
@@ -12045,6 +10868,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "KS",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "KY",
       "category": "UTILITY_GAS",
       "count": 1,
@@ -12084,6 +10921,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "KY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12140,6 +10991,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "LA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12210,6 +11075,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ME",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12283,6 +11162,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "MI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "MN",
       "category": "UTILITY_ELECTRIC",
       "count": 1,
@@ -12336,6 +11229,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12395,6 +11302,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "MS",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "MO",
       "category": "UTILITY_GAS",
       "count": 1,
@@ -12448,6 +11369,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MO",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12518,6 +11453,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12574,6 +11523,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NE",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12588,6 +11551,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NV",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12675,6 +11652,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "NM",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "NY",
       "category": "UTILITY_TRASH",
       "count": 2,
@@ -12691,15 +11682,29 @@
     {
       "state": "NY",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12719,9 +11724,9 @@
     {
       "state": "NC",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -12812,14 +11817,28 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ND",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "OH",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -12896,6 +11915,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "OK",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -12994,6 +12027,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "RI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -13109,6 +12156,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "SD",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "TN",
       "category": "UTILITY_GAS",
       "count": 1,
@@ -13152,6 +12213,20 @@
     },
     {
       "state": "TN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "TN",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 1,
       "federalCount": 0,
@@ -13181,9 +12256,9 @@
     {
       "state": "TX",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -13288,6 +12363,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "VT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -13305,6 +12394,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "VA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "WA",
       "category": "UTILITY_TRASH",
       "count": 2,
@@ -13389,6 +12492,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "WV",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "WI",
       "category": "UTILITY_TRASH",
       "count": 2,
@@ -13405,15 +12522,29 @@
     {
       "state": "WI",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "WI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -13484,6 +12615,20 @@
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "WY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
       "adminQueue": "Broad Coverage Review Queue"
     }
   ],
@@ -13504,20 +12649,6 @@
     },
     {
       "state": "AK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "AK",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -13617,9 +12748,9 @@
     {
       "state": "CA",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -13627,20 +12758,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "CO",
@@ -13657,20 +12774,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "CO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "CT",
       "category": "UTILITY_INTERNET",
       "count": 12,
@@ -13711,20 +12814,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "DC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "DC",
@@ -13783,20 +12872,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "FL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "GA",
       "category": "UTILITY_INTERNET",
       "count": 12,
@@ -13809,20 +12884,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "GA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "HI",
@@ -13851,20 +12912,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "HI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "HI",
@@ -13924,20 +12971,6 @@
     },
     {
       "state": "IA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IA",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -13994,20 +13027,6 @@
     },
     {
       "state": "ID",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ID",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14050,20 +13069,6 @@
     },
     {
       "state": "IL",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "IL",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14103,20 +13108,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "IN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "IN",
@@ -14190,20 +13181,6 @@
     },
     {
       "state": "KS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "KS",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14260,20 +13237,6 @@
     },
     {
       "state": "KY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "KY",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14313,20 +13276,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "LA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "LA",
@@ -14371,20 +13320,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "MA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "MD",
       "category": "UTILITY_INTERNET",
       "count": 9,
@@ -14399,20 +13334,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "MD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "ME",
       "category": "UTILITY_ELECTRIC",
       "count": 2,
@@ -14456,20 +13377,6 @@
     },
     {
       "state": "ME",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "ME",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14509,20 +13416,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "MI",
@@ -14596,20 +13489,6 @@
     },
     {
       "state": "MN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "MN",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -14649,20 +13528,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MO",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "MO",
@@ -14719,20 +13584,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MS",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "MS",
@@ -14803,20 +13654,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "MT",
@@ -14849,9 +13686,9 @@
     {
       "state": "NC",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -14859,20 +13696,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "ND",
@@ -14915,20 +13738,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "ND",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "ND",
@@ -14985,20 +13794,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NE",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "NE",
@@ -15058,20 +13853,6 @@
     },
     {
       "state": "NJ",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NJ",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15097,20 +13878,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NM",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "NM",
@@ -15157,9 +13924,9 @@
     {
       "state": "NY",
       "category": "UTILITY_INTERNET",
-      "count": 12,
+      "count": 11,
       "federalCount": 9,
-      "stateCount": 3,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -15167,20 +13934,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "NY",
@@ -15199,9 +13952,9 @@
     {
       "state": "OH",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -15254,20 +14007,6 @@
     },
     {
       "state": "OK",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OK",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15310,20 +14049,6 @@
     },
     {
       "state": "OR",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OR",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15352,20 +14077,6 @@
     },
     {
       "state": "PA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "PA",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15391,20 +14102,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "RI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "RI",
@@ -15450,20 +14147,6 @@
     },
     {
       "state": "SC",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "SC",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15517,20 +14200,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "SD",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "SD",
@@ -15590,20 +14259,6 @@
     },
     {
       "state": "TN",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "TN",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15619,9 +14274,9 @@
     {
       "state": "TX",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -15629,20 +14284,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "TX",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "TX",
@@ -15685,20 +14326,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "VA",
@@ -15744,20 +14371,6 @@
     },
     {
       "state": "VT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VT",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15800,20 +14413,6 @@
     },
     {
       "state": "WA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WA",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -15829,9 +14428,9 @@
     {
       "state": "WI",
       "category": "UTILITY_INTERNET",
-      "count": 13,
+      "count": 12,
       "federalCount": 9,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -15839,20 +14438,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "WI",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "WI",
@@ -15895,20 +14480,6 @@
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "WV",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
     },
     {
       "state": "WV",
@@ -15982,20 +14553,6 @@
     },
     {
       "state": "WY",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "WY",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -16023,6 +14580,34 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "AL",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "AR",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "AR",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
@@ -16035,6 +14620,34 @@
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
       "adminQueue": "Coverage Gap Queue"
+    },
+    {
+      "state": "AZ",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "CT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "CT",
@@ -16051,11 +14664,53 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
+      "state": "DC",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "DE",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "HI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "IA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16080,6 +14735,20 @@
     },
     {
       "state": "ID",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ID",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
       "federalCount": 0,
@@ -16094,10 +14763,52 @@
     },
     {
       "state": "IN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "IN",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "KS",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "KY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16121,11 +14832,123 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
+      "state": "LA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ME",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MO",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MS",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "MT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "NC",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 2,
       "federalCount": 0,
       "stateCount": 2,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "ND",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16150,6 +14973,20 @@
     },
     {
       "state": "NE",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NE",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 0,
       "federalCount": 0,
@@ -16161,6 +14998,48 @@
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
       "adminQueue": "Coverage Gap Queue"
+    },
+    {
+      "state": "NM",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NV",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "NY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "NY",
@@ -16177,11 +15056,67 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "OK",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "RI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "RI",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "SD",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "TN",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16210,6 +15145,76 @@
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "VA",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 2,
+      "federalCount": 1,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "VT",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "WI",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "WV",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
+      "state": "WY",
+      "category": "TRANSPORTATION_TOLL",
+      "count": 1,
+      "federalCount": 1,
+      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16323,35 +15328,35 @@
       ]
     },
     {
-      "code": "broad_state_coverage",
-      "label": "Broad state coverage",
-      "count": 118,
+      "code": "address_check_required",
+      "label": "Address check required",
+      "count": 181,
       "examples": [
-        "NJ E-ZPass (TRANSPORTATION_TOLL)",
-        "NJ Natural Gas (UTILITY_GAS)",
-        "MTA (TRANSPORTATION_TRANSIT)",
-        "NY E-ZPass (TRANSPORTATION_TOLL)",
-        "Optimum (UTILITY_INTERNET)",
-        "Reliant Energy (UTILITY_ELECTRIC)",
-        "CenterPoint Energy (UTILITY_GAS)",
-        "TxTag (TRANSPORTATION_TOLL)",
-        "DART (TRANSPORTATION_TRANSIT)",
-        "Houston METRO (TRANSPORTATION_TRANSIT)",
-        "VIA Metropolitan Transit (TRANSPORTATION_TRANSIT)",
-        "LA Metro (TRANSPORTATION_TRANSIT)",
-        "BART (TRANSPORTATION_TRANSIT)",
-        "SF Muni (TRANSPORTATION_TRANSIT)",
-        "Caltrain (TRANSPORTATION_TRANSIT)",
-        "San Diego MTS (TRANSPORTATION_TRANSIT)",
-        "VTA (TRANSPORTATION_TRANSIT)",
-        "Florida Power & Light Company (UTILITY_ELECTRIC)",
-        "SunPass (TRANSPORTATION_TOLL)",
-        "Lynx (TRANSPORTATION_TRANSIT)",
-        "UGI Utilities (UTILITY_GAS)",
-        "Illinois American Water (UTILITY_WATER)",
-        "Metra (TRANSPORTATION_TRANSIT)",
-        "RTA Cleveland (TRANSPORTATION_TRANSIT)",
-        "RTD (TRANSPORTATION_TRANSIT)"
+        "Xfinity (Comcast) (UTILITY_INTERNET)",
+        "Spectrum (UTILITY_INTERNET)",
+        "AT&T Fiber (UTILITY_INTERNET)",
+        "Verizon Fios (UTILITY_INTERNET)",
+        "Starlink (UTILITY_INTERNET)",
+        "Waste Management (UTILITY_TRASH)",
+        "Republic Services (UTILITY_TRASH)",
+        "Planet Fitness (FITNESS_GYM)",
+        "LA Fitness (FITNESS_GYM)",
+        "Anytime Fitness (FITNESS_GYM)",
+        "Equinox (FITNESS_GYM)",
+        "Orangetheory (FITNESS_GYM)",
+        "YMCA (FITNESS_GYM)",
+        "Peloton (FITNESS_GYM)",
+        "U-Haul (HOUSING_MOVING)",
+        "Penske Truck Rental (HOUSING_MOVING)",
+        "Budget Truck Rental (HOUSING_MOVING)",
+        "PODS (HOUSING_MOVING)",
+        "1-800-GOT-JUNK (HOUSING_MOVING)",
+        "Allied Van Lines (HOUSING_MOVING)",
+        "United Van Lines (HOUSING_MOVING)",
+        "Two Men and a Truck (HOUSING_MOVING)",
+        "Mayflower Moving (HOUSING_MOVING)",
+        "Public Storage (HOUSING_STORAGE)",
+        "Extra Space Storage (HOUSING_STORAGE)"
       ]
     },
     {
@@ -16384,38 +15389,6 @@
         "Apple Music (SHOPPING_SUBSCRIPTION)",
         "AARP (SHOPPING_SUBSCRIPTION)",
         "Costco Optical (HEALTHCARE_PHARMACY)"
-      ]
-    },
-    {
-      "code": "broad_national_coverage",
-      "label": "Broad national listing",
-      "count": 62,
-      "examples": [
-        "Xfinity (Comcast) (UTILITY_INTERNET)",
-        "Spectrum (UTILITY_INTERNET)",
-        "AT&T Fiber (UTILITY_INTERNET)",
-        "Verizon Fios (UTILITY_INTERNET)",
-        "T-Mobile Home Internet (UTILITY_INTERNET)",
-        "Starlink (UTILITY_INTERNET)",
-        "Waste Management (UTILITY_TRASH)",
-        "Republic Services (UTILITY_TRASH)",
-        "Planet Fitness (FITNESS_GYM)",
-        "LA Fitness (FITNESS_GYM)",
-        "Anytime Fitness (FITNESS_GYM)",
-        "Equinox (FITNESS_GYM)",
-        "Orangetheory (FITNESS_GYM)",
-        "YMCA (FITNESS_GYM)",
-        "Peloton (FITNESS_GYM)",
-        "U-Haul (HOUSING_MOVING)",
-        "Penske Truck Rental (HOUSING_MOVING)",
-        "Budget Truck Rental (HOUSING_MOVING)",
-        "PODS (HOUSING_MOVING)",
-        "1-800-GOT-JUNK (HOUSING_MOVING)",
-        "Allied Van Lines (HOUSING_MOVING)",
-        "United Van Lines (HOUSING_MOVING)",
-        "Two Men and a Truck (HOUSING_MOVING)",
-        "Mayflower Moving (HOUSING_MOVING)",
-        "Public Storage (HOUSING_STORAGE)"
       ]
     },
     {
@@ -18308,7 +17281,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18318,7 +17291,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18328,7 +17301,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18338,7 +17311,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18348,7 +17321,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18358,7 +17331,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18368,7 +17341,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18378,7 +17351,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18388,7 +17361,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18398,7 +17371,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18408,7 +17381,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18418,7 +17391,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18428,7 +17401,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18438,7 +17411,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18448,7 +17421,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18458,7 +17431,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18468,7 +17441,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18478,7 +17451,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18488,7 +17461,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18498,7 +17471,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18508,7 +17481,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18518,7 +17491,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18528,7 +17501,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18538,7 +17511,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18548,7 +17521,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18558,7 +17531,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18568,7 +17541,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18578,7 +17551,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18588,7 +17561,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18598,7 +17571,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18608,7 +17581,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18618,7 +17591,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18628,7 +17601,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18638,7 +17611,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18648,7 +17621,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18658,7 +17631,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18668,7 +17641,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18678,7 +17651,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18688,7 +17661,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18698,7 +17671,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18708,7 +17681,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18718,7 +17691,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18728,7 +17701,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18738,7 +17711,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18748,7 +17721,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18758,7 +17731,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18768,7 +17741,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18778,7 +17751,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18788,7 +17761,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18798,7 +17771,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18808,7 +17781,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -18820,7 +17793,17 @@
         "AL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
+      ]
+    },
+    {
+      "name": "E-ZPass",
+      "slug": "ezpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "FEDERAL",
+      "states": [],
+      "warnings": [
+        "Address check required"
       ]
     },
     {
@@ -18832,7 +17815,7 @@
         "VA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18844,7 +17827,7 @@
         "LA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18856,7 +17839,7 @@
         "KS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18868,7 +17851,7 @@
         "NJ"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18880,7 +17863,7 @@
         "NY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18892,7 +17875,7 @@
         "FL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18904,7 +17887,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18916,7 +17899,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18928,7 +17911,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18940,7 +17923,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18952,7 +17935,7 @@
         "DE"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18964,7 +17947,7 @@
         "NC"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18976,7 +17959,7 @@
         "NC"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -18988,7 +17971,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19000,7 +17983,7 @@
         "IN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19012,7 +17995,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19024,7 +18007,7 @@
         "FL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19036,7 +18019,7 @@
         "IL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19048,7 +18031,7 @@
         "NY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19060,7 +18043,7 @@
         "LA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19072,7 +18055,7 @@
         "RI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19084,7 +18067,7 @@
         "OH"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19096,7 +18079,7 @@
         "NV"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19108,7 +18091,7 @@
         "CO"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19120,7 +18103,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19132,7 +18115,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19144,7 +18127,7 @@
         "HI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19156,7 +18139,7 @@
         "UT"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19168,7 +18151,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19180,7 +18163,7 @@
         "CA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19192,7 +18175,7 @@
         "TN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19206,7 +18189,7 @@
         "MD"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19219,7 +18202,7 @@
         "WI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19231,7 +18214,7 @@
         "IL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19244,7 +18227,7 @@
         "VA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19260,7 +18243,7 @@
         "KS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19272,7 +18255,7 @@
         "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19284,7 +18267,7 @@
         "AK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19297,7 +18280,7 @@
         "MO"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19309,7 +18292,7 @@
         "FL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19321,7 +18304,7 @@
         "VT"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19333,7 +18316,7 @@
         "ID"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19345,7 +18328,7 @@
         "KY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19360,7 +18343,7 @@
         "WY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19372,7 +18355,7 @@
         "IA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19384,7 +18367,7 @@
         "WV"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19396,7 +18379,7 @@
         "TN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19408,7 +18391,7 @@
         "OK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19420,7 +18403,7 @@
         "NM"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19432,7 +18415,7 @@
         "OK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19444,7 +18427,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19458,7 +18441,7 @@
         "ID"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19470,7 +18453,7 @@
         "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19485,7 +18468,7 @@
         "SD"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19497,7 +18480,7 @@
         "KY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19509,7 +18492,7 @@
         "LA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19521,7 +18504,7 @@
         "MS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19533,7 +18516,7 @@
         "IA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19545,7 +18528,7 @@
         "NE"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19557,7 +18540,7 @@
         "TX"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19569,7 +18552,7 @@
         "MN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19581,7 +18564,7 @@
         "IN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19595,7 +18578,7 @@
         "ID"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19607,7 +18590,7 @@
         "AK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19619,7 +18602,7 @@
         "HI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19631,7 +18614,7 @@
         "ID"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19643,7 +18626,7 @@
         "KS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19655,7 +18638,7 @@
         "SD"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19667,7 +18650,7 @@
         "MN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19681,7 +18664,7 @@
         "WY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19693,7 +18676,7 @@
         "WV"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19705,7 +18688,7 @@
         "NJ"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19719,7 +18702,7 @@
         "NE"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19731,7 +18714,7 @@
         "OK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19743,7 +18726,7 @@
         "TN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19755,7 +18738,7 @@
         "WY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19767,7 +18750,7 @@
         "MO"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19779,7 +18762,7 @@
         "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19791,7 +18774,7 @@
         "PA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19803,7 +18786,7 @@
         "ND"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19813,7 +18796,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -19823,7 +18806,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -19864,7 +18847,7 @@
         "WI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19878,7 +18861,7 @@
         "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19905,7 +18888,7 @@
         "VA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19931,7 +18914,7 @@
         "WI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19943,7 +18926,7 @@
         "AK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19966,7 +18949,7 @@
         "IA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19978,7 +18961,7 @@
         "HI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -19990,7 +18973,7 @@
         "IA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20006,7 +18989,7 @@
         "KS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20020,7 +19003,7 @@
         "CT"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20030,7 +19013,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20039,16 +19022,10 @@
       "category": "UTILITY_INTERNET",
       "scope": "STATE",
       "states": [
-        "ME",
-        "NY",
-        "OH",
-        "TX",
-        "WI",
-        "NC",
-        "CA"
+        "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20058,7 +19035,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20068,7 +19045,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20078,7 +19055,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20088,7 +19065,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20098,7 +19075,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20108,7 +19085,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20118,7 +19095,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20128,7 +19105,7 @@
       "scope": "FEDERAL",
       "states": [],
       "warnings": [
-        "Broad national listing"
+        "Address check required"
       ]
     },
     {
@@ -20140,7 +19117,7 @@
         "NM"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20152,7 +19129,7 @@
         "AK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20164,7 +19141,7 @@
         "PA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20176,7 +19153,7 @@
         "DE"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20188,7 +19165,7 @@
         "AL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20200,7 +19177,7 @@
         "VT"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20212,7 +19189,7 @@
         "WY"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20224,7 +19201,7 @@
         "MT"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20236,7 +19213,7 @@
         "ND"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20248,7 +19225,7 @@
         "MI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20260,7 +19237,7 @@
         "IL"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20272,7 +19249,7 @@
         "IN"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20284,7 +19261,7 @@
         "IA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20296,7 +19273,7 @@
         "MS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20308,7 +19285,7 @@
         "ME"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20320,7 +19297,7 @@
         "NE"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20332,7 +19309,7 @@
         "MO"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20344,7 +19321,7 @@
         "OK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20356,7 +19333,7 @@
         "PA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20368,7 +19345,7 @@
         "RI"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20380,7 +19357,7 @@
         "LA"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20392,7 +19369,7 @@
         "SD"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20404,7 +19381,7 @@
         "ID"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20416,7 +19393,7 @@
         "OK"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20428,7 +19405,7 @@
         "KS"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     },
     {
@@ -20440,7 +19417,7 @@
         "WV"
       ],
       "warnings": [
-        "Broad state coverage"
+        "Address check required"
       ]
     }
   ],

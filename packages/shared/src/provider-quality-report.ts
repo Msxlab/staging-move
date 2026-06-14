@@ -139,7 +139,6 @@ const HIGH_RISK_UTILITY_CATEGORIES = new Set([
   "UTILITY_WATER",
   "UTILITY_INTERNET",
   "UTILITY_TRASH",
-  "UTILITY_SEWER",
 ]);
 const QUERY_MATCH_ORDER: ProviderQueryMatchLevel[] = [
   "exact_zip",
@@ -291,7 +290,7 @@ function buildPriorityItems(snapshot: Omit<ProviderQualitySnapshot, "priorityIte
     items.push({
       priority: "P1",
       title: "Tighten utility precision",
-      affectedArea: "Electric, gas, water, trash, sewer",
+      affectedArea: "Electric, gas, water, internet, trash",
       recommendation: "Prefer official service territory, ZIP, or address-confirmed utility data before showing high-confidence recommendations.",
       evidence: utilityStateModeRows
         .slice(0, 6)

@@ -10,9 +10,10 @@ import {
   Keyboard,
   Platform,
   Alert,
+  InputAccessoryView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   User,
   MapPin,
@@ -110,6 +111,7 @@ const STEP_KEYS = [
   "onboarding.step_services",
   "onboarding.step_moving",
 ] as const;
+const ONBOARDING_KEYBOARD_ACCESSORY_ID = "onboarding-keyboard-done";
 
 const FAMILY_STATUSES = [
   { value: "SINGLE", label: "Single" },
@@ -236,6 +238,7 @@ export default function OnboardingScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -936,13 +939,13 @@ export default function OnboardingScreen() {
         throw new Error(t("onboarding.error_onboardingIncomplete"));
       }
       hapticSuccess();
-      await maybeOfferPushSoftPrompt();
+      if (after !== "subscription") {
+        await maybeOfferPushSoftPrompt();
+      }
       if (after === "subscription") {
-        // Land on the dashboard underneath, then open the upgrade page — so
-        // dismissing the subscription screen leaves the user in the app, not
-        // back at onboarding.
-        router.replace("/(tabs)");
-        router.push("/settings/subscription");
+        // See Pro should land directly on the plan comparison. Push prompting
+        // stays on the dashboard path so it never interrupts the upgrade intent.
+        router.replace("/settings/subscription");
       } else {
         router.replace("/(tabs)");
       }
@@ -1273,6 +1276,7 @@ export default function OnboardingScreen() {
     (step === 0 && (!profile.firstName || !profile.lastName)) ||
     (step === 1 && missingRequiredAddress);
   const headerCompact = keyboardVisible || headerCollapsed;
+  const headerHidden = keyboardVisible && headerCollapsed;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1284,7 +1288,13 @@ export default function OnboardingScreen() {
         {/* Aurora onboarding chrome: compact brand stage + named step rail.
             Pure presentation; all production save/skip/payment paths below
             stay unchanged. */}
-        <View style={[styles.onboardingHeader, headerCompact && styles.onboardingHeaderCompact]}>
+        <View
+          style={[
+            styles.onboardingHeader,
+            headerCompact && styles.onboardingHeaderCompact,
+            headerHidden && styles.onboardingHeaderHidden,
+          ]}
+        >
           <LinearGradient
             colors={[`${theme.colors.primary}24`, `${theme.colors.accent}10`, "transparent"]}
             start={{ x: 0, y: 0 }}
@@ -1358,7 +1368,7 @@ export default function OnboardingScreen() {
           )}
           <OnboardingProgressBar step={step} total={STEP_KEYS.length} pulseTick={pulseTick} />
         </View>
-        {!headerCompact && (
+        {!headerCompact && !headerHidden && (
           <Text style={styles.stepLabel}>
             {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
           </Text>
@@ -1373,6 +1383,7 @@ export default function OnboardingScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             headerCompact && styles.scrollContentCompact,
+            headerHidden && styles.scrollContentHeaderHidden,
             keyboardVisible && styles.scrollContentKeyboard,
           ]}
           keyboardShouldPersistTaps="handled"
@@ -1410,12 +1421,18 @@ export default function OnboardingScreen() {
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("auth.firstName")} *`} placeholder="John" value={profile.firstName}
                     error={fieldErrors.firstName}
-                    onChangeText={(v: string) => updateProfile("firstName", v)} />
+                    onChangeText={(v: string) => updateProfile("firstName", v)}
+                    inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="next" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("auth.lastName")} *`} placeholder="Doe" value={profile.lastName}
                     error={fieldErrors.lastName}
-                    onChangeText={(v: string) => updateProfile("lastName", v)} />
+                    onChangeText={(v: string) => updateProfile("lastName", v)}
+                    inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()} />
                 </View>
               </View>
 
@@ -1616,22 +1633,40 @@ export default function OnboardingScreen() {
               </View>
 
               <Input label={t("addresses.nickname")} placeholder="e.g. Home, Apartment" value={address.nickname}
-                onChangeText={(v: string) => updateAddress("nickname", v)} containerStyle={{ marginTop: 24, width: "100%" }} />
+                onChangeText={(v: string) => updateAddress("nickname", v)}
+                inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                returnKeyType="done"
+                blurOnSubmit
+                onSubmitEditing={() => Keyboard.dismiss()}
+                containerStyle={{ marginTop: 24, width: "100%" }} />
               <AddressAutocompleteField label={`${t("addresses.street")} *`} placeholder="123 Main St" value={address.street}
                 onValueChange={(value) => updateAddress("street", value)} onSelect={handleAddressAutocompleteSelect} containerStyle={{ marginTop: 12, width: "100%" }} />
 
               <View style={[styles.row, { marginTop: 12 }]}>
                 <View style={{ flex: 2 }}>
                   <Input label={`${t("addresses.city")} *`} placeholder="Austin" value={address.city}
-                    onChangeText={(v: string) => updateAddress("city", v)} />
+                    onChangeText={(v: string) => updateAddress("city", v)}
+                    inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("addresses.state")} *`} placeholder="TX" value={address.state} maxLength={2}
-                    onChangeText={(v: string) => updateAddress("state", v.toUpperCase().slice(0, 2))} />
+                    onChangeText={(v: string) => updateAddress("state", v.toUpperCase().slice(0, 2))}
+                    autoCapitalize="characters"
+                    inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Input label={`${t("addresses.zip")} *`} placeholder="78701" value={address.zip} keyboardType="number-pad" maxLength={10}
-                    onChangeText={(v: string) => updateAddress("zip", v)} />
+                    onChangeText={(v: string) => updateAddress("zip", v)}
+                    inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()} />
                 </View>
               </View>
 
@@ -1873,6 +1908,10 @@ export default function OnboardingScreen() {
                                       placeholder={t("onboarding.billingCost")}
                                       placeholderTextColor={theme.colors.textMuted}
                                       keyboardType="decimal-pad"
+                                      inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                                      returnKeyType="done"
+                                      blurOnSubmit
+                                      onSubmitEditing={() => Keyboard.dismiss()}
                                       style={{ fontSize: 12, color: theme.colors.text, padding: 0 }}
                                       value={bd?.monthlyCost || ""}
                                       onChangeText={(v: string) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: v, billingCycle: prev[provider.id]?.billingCycle || "MONTHLY" } }))}
@@ -2002,15 +2041,28 @@ export default function OnboardingScreen() {
                   <View style={[styles.row]}>
                     <View style={{ flex: 2 }}>
                       <Input label={`${t("addresses.city")} *`} placeholder="Austin" value={movingForm.city}
-                        onChangeText={(v: string) => updateMoving("city", v)} />
+                        onChangeText={(v: string) => updateMoving("city", v)}
+                        inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Input label={`${t("addresses.state")} *`} placeholder="TX" value={movingForm.state} maxLength={2}
-                        onChangeText={(v: string) => updateMoving("state", v.toUpperCase().slice(0, 2))} />
+                        onChangeText={(v: string) => updateMoving("state", v.toUpperCase().slice(0, 2))}
+                        autoCapitalize="characters"
+                        inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Input label={`${t("addresses.zip")} *`} placeholder="78701" value={movingForm.zip} keyboardType="number-pad" maxLength={10}
-                        onChangeText={(v: string) => updateMoving("zip", v)} />
+                        onChangeText={(v: string) => updateMoving("zip", v)}
+                        inputAccessoryViewID={ONBOARDING_KEYBOARD_ACCESSORY_ID}
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
                   </View>
                   <View style={{ width: "100%" }}>
@@ -2019,7 +2071,11 @@ export default function OnboardingScreen() {
                       style={styles.dateButton}
                       onPress={() => {
                         Keyboard.dismiss();
-                        setShowMoveDatePicker(true);
+                        if (Platform.OS === "ios") {
+                          setTimeout(() => setShowMoveDatePicker(true), 80);
+                        } else {
+                          setShowMoveDatePicker(true);
+                        }
                       }}
                       activeOpacity={0.7}
                       accessibilityRole="button"
@@ -2149,7 +2205,13 @@ export default function OnboardingScreen() {
             Gating/submit logic is byte-for-byte the old behaviour: the same
             step-0 names condition, the same next/back/skipServices handlers. */}
         {step < 3 && (
-          <View style={[styles.bottomBar, keyboardVisible && styles.bottomBarKeyboard]}>
+          <View
+            style={[
+              styles.bottomBar,
+              keyboardVisible && styles.bottomBarKeyboard,
+              { paddingBottom: keyboardVisible ? 10 : Math.max(insets.bottom, 14) },
+            ]}
+          >
             {continueDisabled && (
               <Text style={styles.ctaHint} accessibilityLiveRegion="polite">
                 {step === 0
@@ -2194,6 +2256,20 @@ export default function OnboardingScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={ONBOARDING_KEYBOARD_ACCESSORY_ID}>
+          <View style={styles.keyboardAccessory}>
+            <TouchableOpacity
+              onPress={() => Keyboard.dismiss()}
+              style={styles.keyboardDoneButton}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.done")}
+            >
+              <Text style={styles.keyboardDoneText}>{t("common.done")}</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
     </SafeAreaView>
   );
 }
@@ -2216,6 +2292,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 8,
     padding: 10,
     borderRadius: 18,
+  },
+  onboardingHeaderHidden: {
+    display: "none",
   },
   headerBrandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   compactHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -2296,6 +2375,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   stepLabel: { fontSize: 13, color: theme.colors.textTertiary, textAlign: "center", marginTop: 12 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 140 },
   scrollContentCompact: { paddingTop: 14 },
+  scrollContentHeaderHidden: { paddingTop: 12 },
   scrollContentKeyboard: { paddingBottom: 92 },
   stepContent: { alignItems: "center" },
   stepIcon: {
@@ -2473,9 +2553,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   bottomBarKeyboard: {
     paddingTop: 10,
-    paddingBottom: 10,
     backgroundColor: theme.colors.background,
   },
+  keyboardAccessory: {
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+  },
+  keyboardDoneButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+  },
+  keyboardDoneText: { fontSize: 14, fontWeight: "800", color: theme.colors.primary },
   ctaHint: {
     fontSize: 12, lineHeight: 16, color: theme.colors.textTertiary, textAlign: "center",
   },

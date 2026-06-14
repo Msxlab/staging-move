@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, ArrowLeft, X, AlertTriangle, Scale, MapPin } from "lucide-react-native";
+import { Search, ArrowLeft, X, AlertTriangle, Scale, MapPin, Sparkles, PlusCircle } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -53,12 +53,66 @@ type ScoredProviderPayload = Provider & {
   explanation?: { reason?: string | null; profileMatch?: string | null } | null;
 };
 
+type RecommendationGuideAction = {
+  kind: "add_provider" | "verify_address" | "review_state_rules" | "finish_saved" | string;
+  label: string;
+  reason?: string | null;
+  category?: string | null;
+  providerId?: string | null;
+};
+
+type RecommendationGuideLane = {
+  key: string;
+  title: string;
+  description?: string | null;
+  providers: ScoredProviderPayload[];
+  action?: RecommendationGuideAction | null;
+};
+
+type RecommendationGuideSetupCategory = {
+  category: string;
+  label: string;
+  reason: string;
+  urgency?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
+};
+
+type RecommendationGuideSetupSection = {
+  key: string;
+  title: string;
+  description?: string | null;
+  categories?: RecommendationGuideSetupCategory[] | null;
+  providerCount?: number | null;
+  action?: RecommendationGuideAction | null;
+};
+
+type RecommendationGuide = {
+  summary?: string | null;
+  profileSignals?: string[] | null;
+  nextActions?: RecommendationGuideAction[] | null;
+  lanes?: RecommendationGuideLane[] | null;
+  setupPlan?: {
+    sections?: RecommendationGuideSetupSection[] | null;
+    primaryNextCategory?: string | null;
+    primaryNextLabel?: string | null;
+    totalOpenCategories?: number | null;
+  } | null;
+  dataCoverage?: {
+    availableAtAddress?: number;
+    exactZip?: number;
+    zipPrefix?: number;
+    addressCheckRequired?: number;
+  } | null;
+};
+
 type RecommendationsResponse = {
   clusters: Array<{
     tier: "CRITICAL" | "IMPORTANT" | "RECOMMENDED" | "OPTIONAL";
     providers: ScoredProviderPayload[];
   }>;
   stats?: { missingCritical?: string[] };
+  recommendationGuide?: RecommendationGuide;
   meta: { state?: string | null; currentPhase?: string };
 };
 
@@ -76,6 +130,7 @@ export default function ProvidersScreen() {
   const clearCompare = useCompareStore((s) => s.clear);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [recommended, setRecommended] = useState<RecommendedRowItem[]>([]);
+  const [recommendationGuide, setRecommendationGuide] = useState<RecommendationGuide | null>(null);
   // Essential CRITICAL categories the engine flagged with NO matching provider /
   // service for this address (stats.missingCritical). Surfaced as tappable "still
   // needed" gap chips — the same nudge onboarding shows, now where users shop.
@@ -149,21 +204,33 @@ export default function ProvidersScreen() {
     if (res.error) {
       setRecommended([]);
       setMissingCritical([]);
+      setRecommendationGuide(null);
       return false;
     }
+    const guide = res.data?.recommendationGuide || null;
+    setRecommendationGuide(guide);
     const clusters = res.data?.clusters || [];
-    const urgent = clusters
-      .filter((c) => c.tier === "CRITICAL" || c.tier === "IMPORTANT")
-      // Carry the engine's matchReasons + explanation through so each card can
-      // surface WHY it's recommended (the "directory → guide" flip).
-      .flatMap((c) =>
-        c.providers.map((p) => ({
-          ...p,
-          tier: c.tier,
-          matchReasons: p.matchReasons,
-          explanation: p.explanation,
-        })),
-      );
+    const guided = (guide?.lanes || [])
+      .flatMap((lane) => lane.providers || [])
+      .map((p) => ({
+        ...p,
+        matchReasons: p.matchReasons,
+        explanation: p.explanation,
+      }));
+    const urgent = guided.length > 0
+      ? guided
+      : clusters
+          .filter((c) => c.tier === "CRITICAL" || c.tier === "IMPORTANT")
+          // Carry the engine's matchReasons + explanation through so each card can
+          // surface WHY it's recommended (the "directory → guide" flip).
+          .flatMap((c) =>
+            c.providers.map((p) => ({
+              ...p,
+              tier: c.tier,
+              matchReasons: p.matchReasons,
+              explanation: p.explanation,
+            })),
+          );
     // Dedupe by id, keep first (CRITICAL first due to cluster order)
     const seen = new Set<string>();
     const unique: RecommendedRowItem[] = [];
@@ -228,6 +295,12 @@ export default function ProvidersScreen() {
     return chips.sort((a, b) => getCategoryOrder(a.value) - getCategoryOrder(b.value));
   }, [missingCritical, selectedCat, t]);
 
+  const guideLanes = useMemo(() => {
+    return (recommendationGuide?.lanes || [])
+      .filter((lane) => Array.isArray(lane.providers) && lane.providers.length > 0)
+      .slice(0, 3);
+  }, [recommendationGuide]);
+
   const selectGap = useCallback(
     (category: string) => {
       hapticLight();
@@ -287,6 +360,47 @@ export default function ProvidersScreen() {
   const openCompare = useCallback(() => {
     router.push("/providers/compare" as any);
   }, [router]);
+
+  const openGuideAction = useCallback(
+    (action: RecommendationGuideAction) => {
+      hapticLight();
+      if (action.kind === "review_state_rules") {
+        setSelectedCat("GOVERNMENT_DMV");
+        return;
+      }
+      if (action.category || action.providerId) {
+        const params: Record<string, string> = {};
+        if (primaryAddress?.id) params.addressId = primaryAddress.id;
+        if (action.category) params.category = action.category;
+        if (action.providerId) params.providerId = action.providerId;
+        router.push({ pathname: "/services/new", params } as any);
+        return;
+      }
+      if (action.providerId) {
+        router.push({ pathname: "/providers/[id]", params: { id: action.providerId } } as any);
+      }
+    },
+    [primaryAddress?.id, router],
+  );
+
+  const openGuideLane = useCallback(
+    (lane: RecommendationGuideLane) => {
+      const ids = (lane.providers || [])
+        .map((provider) => provider.id)
+        .filter(Boolean)
+        .slice(0, 4);
+      if (ids.length === 0) return;
+      hapticLight();
+      const params: Record<string, string> = {
+        providerIds: ids.join(","),
+        guide: lane.key,
+      };
+      if (primaryAddress?.id) params.addressId = primaryAddress.id;
+      if (lane.providers[0]?.category) params.category = lane.providers[0].category;
+      router.push({ pathname: "/services/new", params } as any);
+    },
+    [primaryAddress?.id, router],
+  );
 
   const selectedLabel = selectedCat ? t(`categories.${selectedCat}`, { defaultValue: getCategoryLabel(selectedCat) }) : null;
   const commandAddressLabel =
@@ -382,6 +496,94 @@ export default function ProvidersScreen() {
           </Text>
         </View>
 
+        {!search && recommendationGuide ? (
+          <View style={styles.smartGuide}>
+            <View style={styles.smartTitleRow}>
+              <Sparkles size={15} color={theme.colors.primary} />
+              <Text style={styles.smartTitle}>
+                {t("providers.smartGuideTitle", { defaultValue: "Smart setup plan" })}
+              </Text>
+            </View>
+            {recommendationGuide.summary ? (
+              <Text style={styles.smartSummary}>{recommendationGuide.summary}</Text>
+            ) : null}
+            {Array.isArray(recommendationGuide.profileSignals) && recommendationGuide.profileSignals.length > 0 ? (
+              <View style={styles.signalWrap}>
+                {recommendationGuide.profileSignals.slice(0, 4).map((signal) => (
+                  <View key={signal} style={styles.signalChip}>
+                    <Text style={styles.signalText} numberOfLines={1}>
+                      {signal}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            {Array.isArray(recommendationGuide.setupPlan?.sections) && recommendationGuide.setupPlan.sections.length > 0 ? (
+              <View style={styles.setupPlanWrap}>
+                {recommendationGuide.setupPlan.sections.slice(0, 3).map((section) => {
+                  const categories = (section.categories || []).slice(0, 3);
+                  if (categories.length === 0) return null;
+                  return (
+                    <View key={section.key} style={styles.setupSection}>
+                      <View style={styles.setupSectionHead}>
+                        <Text style={styles.setupSectionTitle} numberOfLines={1}>
+                          {section.title}
+                        </Text>
+                        {typeof section.providerCount === "number" ? (
+                          <Text style={styles.setupSectionMeta}>
+                            {section.providerCount}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {section.description ? (
+                        <Text style={styles.setupSectionDesc} numberOfLines={2}>
+                          {section.description}
+                        </Text>
+                      ) : null}
+                      <View style={styles.setupCategoryWrap}>
+                        {categories.map((item) => (
+                          <PressableScale
+                            key={`${section.key}-${item.category}`}
+                            onPress={() => item.category && selectGap(item.category)}
+                            style={styles.setupCategoryChip}
+                            accessibilityRole="button"
+                            accessibilityLabel={item.label}
+                            accessibilityHint={item.reason}
+                          >
+                            <CategoryIcon emoji={getCategoryIcon(item.category)} size={12} color={theme.colors.primary} />
+                            <Text style={styles.setupCategoryText} numberOfLines={1}>
+                              {item.label}
+                            </Text>
+                          </PressableScale>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+            {Array.isArray(recommendationGuide.nextActions) && recommendationGuide.nextActions.length > 0 ? (
+              <View style={styles.actionWrap}>
+                {recommendationGuide.nextActions.slice(0, 3).map((action) => (
+                  <PressableScale
+                    key={`${action.kind}-${action.category || ""}-${action.providerId || ""}-${action.label}`}
+                    onPress={() => openGuideAction(action)}
+                    style={styles.actionChip}
+                    accessibilityRole="button"
+                    accessibilityLabel={action.label}
+                    accessibilityHint={action.reason || undefined}
+                  >
+                    <PlusCircle size={13} color={theme.colors.primary} />
+                    <Text style={styles.actionText} numberOfLines={1}>
+                      {action.label}
+                    </Text>
+                  </PressableScale>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         {!search && categoryChips.length > 0 ? (
           <View style={styles.categoryRowWrap}>
             <CategoryChipRow
@@ -455,18 +657,50 @@ export default function ProvidersScreen() {
           </View>
         ) : null}
 
-        {!search && recommended.length > 0 ? (
-          <RecommendedRow
-              title={t("providers.forYourMove")}
-              description={
-                primaryAddress?.state
-                ? t("providers.recommendedForState", { state: primaryAddress.state })
-                : t("providers.recommendedTailored")
-            }
-            providers={recommended}
-            onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
-          />
-        ) : null}
+        {!search && guideLanes.length > 0
+          ? guideLanes.map((lane) => (
+              <React.Fragment key={lane.key}>
+                <RecommendedRow
+                  title={lane.title}
+                  description={lane.description || undefined}
+                  providers={lane.providers}
+                  onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
+                />
+                {lane.key === "setup_first" || lane.key === "best_matches" ? (
+                  <View style={styles.laneActionWrap}>
+                    <PressableScale
+                      onPress={() => openGuideLane(lane)}
+                      style={styles.laneActionButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("providers.addLaneA11y", {
+                        count: Math.min((lane.providers || []).length, 4),
+                        defaultValue: `Add ${Math.min((lane.providers || []).length, 4)} recommended providers`,
+                      })}
+                    >
+                      <PlusCircle size={14} color={theme.colors.primary} />
+                      <Text style={styles.laneActionText} numberOfLines={1}>
+                        {t("providers.addLane", {
+                          count: Math.min((lane.providers || []).length, 4),
+                          defaultValue: "Add these picks",
+                        })}
+                      </Text>
+                    </PressableScale>
+                  </View>
+                ) : null}
+              </React.Fragment>
+            ))
+          : !search && recommended.length > 0 ? (
+              <RecommendedRow
+                title={t("providers.forYourMove")}
+                description={
+                  primaryAddress?.state
+                    ? t("providers.recommendedForState", { state: primaryAddress.state })
+                    : t("providers.recommendedTailored")
+                }
+                providers={recommended}
+                onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
+              />
+            ) : null}
 
         {/* Directory section kicker — separates the recommended rail from the
             full browse list (Aurora section idiom). */}
@@ -507,6 +741,10 @@ export default function ProvidersScreen() {
     submitSearch,
     clearSearch,
     categoryChips,
+    recommendationGuide,
+    guideLanes,
+    openGuideAction,
+    openGuideLane,
   ]);
 
   const renderEmpty = useCallback(() => {
@@ -783,6 +1021,158 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     lineHeight: 17,
+  },
+  smartGuide: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  smartTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  smartTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  smartSummary: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 7,
+  },
+  signalWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7,
+    marginTop: 10,
+  },
+  signalChip: {
+    maxWidth: 150,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  signalText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.colors.textSecondary,
+  },
+  setupPlanWrap: {
+    gap: 8,
+    marginTop: 12,
+  },
+  setupSection: {
+    padding: 10,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  setupSectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  setupSectionTitle: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  setupSectionMeta: {
+    minWidth: 22,
+    textAlign: "center",
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    fontVariant: ["tabular-nums"],
+  },
+  setupSectionDesc: {
+    marginTop: 5,
+    fontSize: 11,
+    lineHeight: 16,
+    color: theme.colors.textTertiary,
+  },
+  setupCategoryWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7,
+    marginTop: 9,
+  },
+  setupCategoryChip: {
+    maxWidth: 180,
+    minHeight: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  setupCategoryText: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: "800",
+    color: theme.colors.primary,
+  },
+  actionWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  actionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: 220,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.primary,
+  },
+  laneActionWrap: {
+    paddingHorizontal: 20,
+    marginTop: -8,
+    marginBottom: 14,
+  },
+  laneActionButton: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primaryFaded,
+    borderWidth: 1,
+    borderColor: theme.colors.borderFocus,
+  },
+  laneActionText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.primary,
   },
   categoryRowWrap: {
     marginHorizontal: 0,

@@ -88,6 +88,35 @@ describe("tierProvidersFromDb", () => {
     );
   });
 
+  it("drops address-qualified utility providers when their ZIP prefilter misses", () => {
+    const providers = [
+      {
+        id: "fpl",
+        scope: "STATE",
+        coverageModel: "live_address" as const,
+        coverages: [{ state: "FL", zipPrefix: null, zipExact: null }],
+      },
+      {
+        id: "ouc",
+        scope: "STATE",
+        coverageModel: "live_address" as const,
+        coverages: [
+          { state: "FL", zipPrefix: "327", zipExact: null },
+          { state: "FL", zipPrefix: "328", zipExact: null },
+          { state: "FL", zipPrefix: "347", zipExact: null },
+        ],
+      },
+    ];
+
+    const result = tierProvidersFromDb(providers, { state: "FL", zip: "33101" });
+
+    expect(result.providers.map((provider) => provider.id)).toEqual(["fpl"]);
+    expect(getProviderCoverageConfidenceFromDb(providers[1]!, { state: "FL", zip: "33101" })).toBe("UNKNOWN");
+    expect(getProviderPresentationMatchLevelFromDb(providers[1]!, { state: "FL", zip: "33101" })).toBe(
+      "unknown",
+    );
+  });
+
   it("drops state-scoped providers when their coverage rows belong to another state", () => {
     const providers = [
       {

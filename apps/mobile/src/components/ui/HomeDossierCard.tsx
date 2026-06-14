@@ -17,12 +17,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { api } from "@/lib/api";
-import { readOfflineCache, writeOfflineCache } from "@/lib/offline-cache";
 import { hapticLight } from "@/lib/haptics";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { DossierAmbient } from "@/components/ui/DossierAmbient";
+import { fetchHomeDossier, readHomeDossierCache } from "@/lib/home-dossier-cache";
 import {
   ambientForSection,
   deriveHomeDossierView,
@@ -42,14 +41,6 @@ const RADON_ZONE_KEYS = {
   2: "dossier.radonZone2",
   3: "dossier.radonZone3",
 } as const;
-
-const DOSSIER_CACHE_PREFIX = "home-dossier";
-
-function readDossierCache(raw: unknown): HomeDossierResponse | null {
-  if (typeof raw !== "object" || raw === null) return null;
-  const dossier = raw as HomeDossierResponse;
-  return typeof dossier.configured === "boolean" ? dossier : null;
-}
 
 /**
  * Whole-dollar USD label, Hermes-safe (no Intl.NumberFormat — the app avoids
@@ -114,35 +105,20 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
 
   useEffect(() => {
     let cancelled = false;
-    let hadCached = false;
     if (!addressId) {
       setDossier(null);
       return;
     }
     (async () => {
-      const cacheKey = `${DOSSIER_CACHE_PREFIX}.${addressId}`;
-      const cached = await readOfflineCache(cacheKey, readDossierCache);
-      if (!cancelled && cached?.data) {
-        hadCached = true;
-        setDossier(cached.data);
-      }
-      const res = await api.get<HomeDossierResponse>(
-        `/api/addresses/${addressId}/dossier`,
-      );
+      const cached = await readHomeDossierCache(addressId, "full");
+      if (!cancelled && cached) setDossier(cached.data);
+      const res = await fetchHomeDossier(addressId, "full");
       if (cancelled) return;
-      // Any error (offline, 401, 404, 5xx) ⇒ render nothing. Same fail-open
-      // pattern as StateRulesCard — no error wall for a supplemental card.
-      if (res.error) {
-        if (!cached?.data) setDossier(null);
-        return;
-      }
-      const next = res.data ?? null;
-      setDossier(next);
-      if (next) {
-        void writeOfflineCache(cacheKey, next);
-      }
+      // Network errors keep cached data when present; otherwise this
+      // supplemental card hides quietly and never blocks the moving plan.
+      setDossier(res.data ?? cached?.data ?? null);
     })().catch(() => {
-      if (!cancelled && !hadCached) setDossier(null);
+      if (!cancelled) setDossier(null);
     });
     return () => {
       cancelled = true;

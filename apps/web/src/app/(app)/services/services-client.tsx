@@ -6,6 +6,7 @@ import {
   Plus, Zap, Search, Globe, ChevronRight, Star, MapPin, Home, Briefcase, Palmtree,
   AlertTriangle, Clock, ArrowRight, Baby, Car, ClipboardList, CreditCard, Dumbbell,
   Hospital, Landmark, ShoppingCart,
+  Sparkles,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -18,7 +19,7 @@ import {
   type RelocationChecklist,
   type ChecklistStateRuleContext,
 } from "@/lib/shared-relocation";
-import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { getMergedDisplayCategoryKey, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
 import { monthlyAmountForCycle, cycleLabel } from "@/lib/budget-planning";
 import {
   ServiceLogoMark,
@@ -217,6 +218,42 @@ export interface ServicesItem {
   createdAt?: string;
 }
 
+interface RecommendationProviderPayload {
+  id: string;
+  name: string;
+  category: string;
+  matchReasons?: string[] | null;
+  explanation?: { reason?: string | null; profileMatch?: string | null } | null;
+}
+
+interface RecommendationGuidePayload {
+  summary?: string | null;
+  completion?: {
+    score: number;
+    completedCritical: number;
+    missingCritical: number;
+    missingLabels: string[];
+    nextBestCategory: string | null;
+  } | null;
+  decisionModel?: {
+    title: string;
+    factors: string[];
+    learningSignals: string[];
+    coverageWarnings: string[];
+  } | null;
+  lanes?: Array<{
+    key: string;
+    title: string;
+    description?: string | null;
+    providers?: RecommendationProviderPayload[] | null;
+  }> | null;
+}
+
+interface ProviderPlanPayload {
+  stats?: { missingCritical?: string[]; completedCritical?: number };
+  recommendationGuide?: RecommendationGuidePayload | null;
+}
+
 export function ServicesClient({
   initialServices,
   initialAddresses,
@@ -234,6 +271,7 @@ export function ServicesClient({
   const [addressFilter, setAddressFilter] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "cost-desc" | "cost-asc" | "newest" | "oldest">("name");
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
+  const [providerPlan, setProviderPlan] = useState<ProviderPlanPayload | null>(null);
 
   // Build filter groups with translated labels
   const filterGroups = FILTER_GROUPS_KEYS.map((g) => ({
@@ -306,6 +344,28 @@ export function ServicesClient({
     })();
   }, [services]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (addressFilter) params.set("addressId", addressFilter);
+        const response = await fetch(`/api/providers/recommendations?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setProviderPlan(null);
+          return;
+        }
+        const json = (await response.json()) as ProviderPlanPayload;
+        setProviderPlan(json);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") setProviderPlan(null);
+      }
+    })();
+    return () => controller.abort();
+  }, [addressFilter]);
+
   const filtered = services
     .filter((s) => {
       if (search && !s.providerName.toLowerCase().includes(search.toLowerCase())) return false;
@@ -376,6 +436,28 @@ export function ServicesClient({
     }
   }
   attentionItems.sort((a, b) => a.renewal.days - b.renewal.days);
+  const providerMissingCategories = Array.from(new Set(providerPlan?.stats?.missingCritical || []));
+  const providerMissingKeys = new Set(providerMissingCategories.map((category) => getMergedDisplayCategoryKey(category)));
+  const providerGapItems = (providerPlan?.recommendationGuide?.lanes || [])
+    .filter((lane) => lane.key === "setup_first" || lane.key === "best_matches")
+    .flatMap((lane) => lane.providers || [])
+    .filter((provider, index, providers) => {
+      if (!provider?.id || !provider.category) return false;
+      if (!providerMissingKeys.has(getMergedDisplayCategoryKey(provider.category))) return false;
+      return providers.findIndex((item) => item.id === provider.id) === index;
+    })
+    .slice(0, 4);
+  const providerGapCount = providerMissingCategories.length;
+  const providerGapLabels = providerMissingCategories.slice(0, 5).map((category) => getMergedDisplayCategoryLabel(category));
+  const gapAddressId = addressFilter || addresses.find((address) => address.isPrimary)?.id || addresses[0]?.id || "";
+  const providerGapParams = new URLSearchParams();
+  if (gapAddressId) providerGapParams.set("addressId", gapAddressId);
+  if (providerGapItems.length > 0) providerGapParams.set("providerIds", providerGapItems.map((provider) => provider.id).join(","));
+  if (providerGapItems[0]?.category || providerMissingCategories[0]) {
+    providerGapParams.set("category", providerGapItems[0]?.category || providerMissingCategories[0]);
+  }
+  providerGapParams.set("guide", "services_health");
+  const providerGapHref = `/services/new?${providerGapParams.toString()}`;
 
   const renewalCopy = (days: number) =>
     days <= 0
@@ -431,7 +513,7 @@ export function ServicesClient({
       </div>
 
       {/* Aurora stat row — overall numbers, stable while filters pivot the list */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.6fr]">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_1.6fr]">
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t("stats.perMonth")}</p>
           <p className="mt-2 font-mono text-2xl font-bold text-foreground leading-none">{formatCurrency(overviewMonthly)}</p>
@@ -447,6 +529,15 @@ export function ServicesClient({
           <p className={`mt-2 font-mono text-2xl font-bold leading-none ${attentionItems.length > 0 ? "text-destructive" : "text-foreground"}`}>{attentionItems.length}</p>
           <p className="mt-2 text-[11px] text-foreground/45">
             {attentionItems.length > 0 ? t("stats.attentionHint", { days: RENEWAL_SOON_DAYS }) : t("stats.allClear")}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Setup gaps</p>
+          <p className={`mt-2 font-mono text-2xl font-bold leading-none ${providerGapCount > 0 ? "text-tone-honey-fg" : "text-foreground"}`}>
+            {providerGapCount}
+          </p>
+          <p className="mt-2 text-[11px] text-foreground/45">
+            {providerGapCount > 0 ? "Critical providers still missing" : "Core provider setup looks covered"}
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 sm:col-span-2 xl:col-span-1">
@@ -477,6 +568,57 @@ export function ServicesClient({
           )}
         </div>
       </div>
+
+      {providerGapCount > 0 && (
+        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-tone-honey-fg" />
+                <h2 className="text-sm font-bold text-foreground">Missing essentials</h2>
+                {providerPlan?.recommendationGuide?.completion ? (
+                  <span className="rounded-full border border-tone-honey-br bg-background px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                    {providerPlan.recommendationGuide.completion.score}% ready
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+                {providerPlan?.recommendationGuide?.summary ||
+                  `Your setup is missing ${providerGapLabels.join(", ")}. Add the right providers now so Services reflects the real move plan.`}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {providerGapLabels.map((label) => (
+                  <span key={label} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs text-tone-honey-fg">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Link href={providerGapHref} className="shrink-0">
+              <button className="inline-flex items-center gap-2 rounded-xl border border-tone-honey-br bg-background px-4 py-2 text-sm font-semibold text-tone-honey-fg transition hover:bg-tone-honey-bg">
+                Add recommended picks <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+          {providerGapItems.length > 0 && (
+            <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              {providerGapItems.map((provider) => (
+                <Link
+                  key={provider.id}
+                  href={`/services/new?addressId=${encodeURIComponent(gapAddressId)}&providerId=${encodeURIComponent(provider.id)}&category=${encodeURIComponent(provider.category)}&guide=services_health`}
+                  className="rounded-xl border border-border bg-card p-3 transition hover:bg-background"
+                >
+                  <p className="truncate text-sm font-semibold text-foreground">{provider.name}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{getMergedDisplayCategoryLabel(provider.category)}</p>
+                  <p className="mt-2 line-clamp-2 text-[11px] text-muted-foreground">
+                    {provider.explanation?.reason || provider.explanation?.profileMatch || provider.matchReasons?.[0] || "Recommended for this setup gap."}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {checklist && (
         <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5 space-y-4">

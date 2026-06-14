@@ -158,10 +158,17 @@ export async function GET(request: NextRequest) {
     }
 
     const canUseDataChecked = await optionalRequestHasPlanFeature(request, "addressValidation");
+    const forcedSourceCategories =
+      category === "UTILITY_ELECTRIC"
+        ? ["UTILITY_ELECTRIC" as const]
+        : category === "UTILITY_INTERNET"
+          ? ["UTILITY_INTERNET" as const]
+          : undefined;
     const serviceability = canUseDataChecked
       ? await enrichProviderServiceability(filtered, {
           latitude: normalizedLatitude,
           longitude: normalizedLongitude,
+          forceCategories: forcedSourceCategories,
         })
       : providerServiceabilityGatedMeta(filtered);
 
@@ -280,6 +287,7 @@ export async function GET(request: NextRequest) {
         },
         fcc: serviceability.fcc,
         electric: serviceability.electric,
+        sourceGaps: serviceability.sourceGaps,
       },
     });
   } catch (error) {

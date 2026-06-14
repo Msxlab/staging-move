@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, MapPin, Check, Calendar, Sparkles } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTranslation } from "react-i18next";
@@ -42,6 +42,7 @@ export default function NewAddressScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   // Drive the native date-picker wheel's text/background colors from the
   // active color scheme. A hardcoded "dark" themeVariant rendered near-white
   // wheel text that was invisible against the light-mode background.
@@ -248,9 +249,14 @@ export default function NewAddressScreen() {
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
+      <View style={styles.formShell}>
       <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          !addressLimitReached && styles.scrollContentWithFooter,
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <EmailVerificationBanner context={t("addresses.title")} />
@@ -464,7 +470,11 @@ export default function NewAddressScreen() {
             />
           </View>
         </View>
-
+        </>
+        )}
+      </ScrollView>
+      {!addressLimitReached && (
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
         {/* Save Button */}
         <TouchableOpacity
           style={[styles.saveBtn, loading && { opacity: 0.6 }]}
@@ -481,9 +491,9 @@ export default function NewAddressScreen() {
             </>
           )}
         </TouchableOpacity>
-        </>
-        )}
-      </ScrollView>
+        </View>
+      )}
+      </View>
       </KeyboardAvoidingView>
       <SuccessToast
         visible={showSuccess}
@@ -510,7 +520,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 160 },
+  formShell: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
+  scrollContentWithFooter: { paddingBottom: 136 },
   hero: {
     borderRadius: 24,
     padding: 16,
@@ -661,10 +674,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border,
   },
   switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    paddingVertical: 16, ...theme.shadow.glow,
   },
   saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });
