@@ -307,8 +307,10 @@ describe("provider recommendations route", () => {
     ]);
 
     const response = await GET(makeRequest("?state=NJ&zip=07470"));
+    const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(body.region).toEqual({ city: null, state: "NJ", zip: "07470", label: "07470, NJ" });
     expect(zipCentroidMock).toHaveBeenCalledWith("07470");
     expect(lookupElectricUtilitiesMock).toHaveBeenCalledWith({ latitude: 40.9254, longitude: -74.2765 });
     expect(lookupFccIspsMock).toHaveBeenCalledWith({ latitude: 40.9254, longitude: -74.2765 });
@@ -329,7 +331,7 @@ describe("provider recommendations route", () => {
 
     expect(response.status).toBe(200);
     // Region label comes straight from the address (no dataset needed).
-    expect(body.region).toEqual({ city: "Austin", state: "TX", label: "Austin, TX" });
+    expect(body.region).toEqual({ city: "Austin", state: "TX", zip: "78701", label: "Austin, TX" });
     // Pending CRITICAL/IMPORTANT category gets a region group with top-N providers.
     expect(Array.isArray(body.regionGroups)).toBe(true);
     const electricGroup = body.regionGroups.find((g: { category: string }) => g.category === "UTILITY_ELECTRIC");

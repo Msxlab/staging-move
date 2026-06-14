@@ -1363,12 +1363,21 @@ export async function GET(request: NextRequest) {
         return t !== 0 ? t : getMergedDisplayCategoryOrder(a.category) - getMergedDisplayCategoryOrder(b.category);
       });
 
-    const regionCity = primaryAddr?.city?.trim() || null;
-    const regionState = (primaryAddr?.state?.trim().toUpperCase() || effectiveState) || null;
+    const regionUsesQueryLocation = hasRequestedLocationOverride && !requestMatchesPrimaryAddress;
+    const regionCity = regionUsesQueryLocation ? null : primaryAddr?.city?.trim() || null;
+    const regionState = (regionUsesQueryLocation
+      ? effectiveState || requestedState
+      : primaryAddr?.state?.trim().toUpperCase() || effectiveState) || null;
+    const regionZip = regionUsesQueryLocation ? fallbackZip || requestedZip || null : primaryAddr?.zip?.trim() || null;
     const region = {
       city: regionCity,
       state: regionState,
-      label: regionCity && regionState ? `${regionCity}, ${regionState}` : regionState || null,
+      zip: regionZip,
+      label: regionCity && regionState
+        ? `${regionCity}, ${regionState}`
+        : regionZip && regionState
+          ? `${regionZip}, ${regionState}`
+          : regionState || null,
     };
 
     const recommendationGuide = buildRecommendationGuide({
