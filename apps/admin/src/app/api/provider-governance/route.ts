@@ -52,6 +52,100 @@ function warningTypeToQueue(code: string) {
   return "sourceValidation";
 }
 
+function asMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function metadataStringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function issueOccurrenceCount(issue: { metadata?: unknown }): number {
+  const metadata = asMetadata(issue.metadata);
+  return typeof metadata.occurrenceCount === "number" && Number.isFinite(metadata.occurrenceCount)
+    ? metadata.occurrenceCount
+    : 1;
+}
+
+function sourceGapAction(metadata: Record<string, unknown>): string {
+  const category = typeof metadata.category === "string" ? metadata.category : "";
+  if (category === "UTILITY_ELECTRIC") return "review_alias_or_add_electric_provider";
+  if (category === "UTILITY_INTERNET") return "review_fcc_brand_or_add_isp";
+  return "review_source_or_dismiss";
+}
+
+function buildAuditReport(input: {
+  queues: Record<string, any[]>;
+  issues: Array<{ issueType: string; severity: string; title: string; metadata?: unknown; createdAt: Date; updatedAt: Date }>;
+}) {
+  const sourceIssues = input.issues.filter((issue) => issue.issueType === "SOURCE_PROVIDER_MISSING");
+  const repeatedSourceIssues = sourceIssues.filter((issue) => issueOccurrenceCount(issue) > 1);
+  const bySource = sourceIssues.reduce<Record<string, number>>((acc, issue) => {
+    const source = String(asMetadata(issue.metadata).source || "UNKNOWN");
+    acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {});
+  const byCategory = sourceIssues.reduce<Record<string, number>>((acc, issue) => {
+    const category = String(asMetadata(issue.metadata).category || "UNKNOWN");
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const reviewCandidates = sourceIssues
+    .slice()
+    .sort((a, b) => issueOccurrenceCount(b) - issueOccurrenceCount(a))
+    .slice(0, 12)
+    .map((issue) => {
+      const metadata = asMetadata(issue.metadata);
+      return {
+        title: issue.title,
+        severity: issue.severity,
+        providerName: String(metadata.providerName || "Unknown provider"),
+        source: String(metadata.source || "UNKNOWN"),
+        category: String(metadata.category || "UNKNOWN"),
+        occurrenceCount: issueOccurrenceCount(issue),
+        states: metadataStringList(metadata.states),
+        zips: metadataStringList(metadata.zips),
+        sampleLocations: metadataStringList(metadata.sampleLocations),
+        evidenceUrl: typeof metadata.evidenceUrl === "string" ? metadata.evidenceUrl : null,
+        suggestedAction: sourceGapAction(metadata),
+      };
+    });
+
+  const recommendations: string[] = [];
+  if ((bySource.OPENEI_URDB || 0) > 0) {
+    recommendations.push("Prioritize electric utility alias mapping before adding new catalog rows; OpenEI names often use legal utility names.");
+  }
+  if ((bySource.FCC_BDC || 0) > 0) {
+    recommendations.push("Review FCC provider brands against existing internet catalog rows; add aliases before creating duplicate ISP providers.");
+  }
+  if (repeatedSourceIssues.length > 0) {
+    recommendations.push("Repeated source gaps should become operator tasks, because they affect multiple user recommendation sessions.");
+  }
+  if ((input.queues.userCreatedProviderReview?.length || 0) > 0) {
+    recommendations.push("Review user-submitted providers separately from source gaps; private custom providers should not auto-promote.");
+  }
+  if (recommendations.length === 0) {
+    recommendations.push("No urgent source-backed provider gaps are open. Keep monitoring live data readiness and broad coverage warnings.");
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: "deterministic_ai_ready",
+    estimatedLlmCostUsd: 0,
+    summary: {
+      openQueueCount: Object.values(input.queues).reduce((sum, rows) => sum + rows.length, 0),
+      sourceGapCount: sourceIssues.length,
+      repeatedSourceGapCount: repeatedSourceIssues.length,
+      highSeveritySourceGapCount: sourceIssues.filter((issue) => issue.severity === "HIGH").length,
+      bySource,
+      byCategory,
+    },
+    recommendations,
+    reviewCandidates,
+  };
+}
+
 async function writeAdminAudit(adminId: string, action: string, entityType: string, entityId: string, changes: unknown) {
   await prisma.adminAuditLog.create({
     data: {
@@ -210,6 +304,7 @@ export async function GET() {
       queues,
       issues,
       summary,
+      auditReport: buildAuditReport({ queues, issues }),
       metadata: {
         providerDataTrust: "listed_unverified",
         noOfficialVerificationWorkflow: true,

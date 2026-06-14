@@ -99,7 +99,7 @@ describe("nces-district school district lookup", () => {
   it("degrades to error when ArcGIS reports a failure inside an HTTP 200 body", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(jsonResponse({ error: { code: 400, message: "Invalid parameters" } })),
+      vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({ error: { code: 400, message: "Invalid parameters" } }))),
     );
     const result = await lookupSchoolDistrict(COORDS);
     expect(result.status).toBe("error");
@@ -124,10 +124,11 @@ describe("nces-district school district lookup", () => {
     const failingFetch = vi
       .fn()
       .mockRejectedValueOnce(new Error("blip"))
+      .mockRejectedValueOnce(new Error("fallback blip"))
       .mockResolvedValueOnce(jsonResponse(edgeFeatures([{ NAME: "Recovered", GEOID: "3333333" }])));
     vi.stubGlobal("fetch", failingFetch);
     expect((await lookupSchoolDistrict(COORDS)).status).toBe("error");
     expect((await lookupSchoolDistrict(COORDS)).status).toBe("ok");
-    expect(failingFetch).toHaveBeenCalledTimes(2);
+    expect(failingFetch).toHaveBeenCalledTimes(3);
   });
 });

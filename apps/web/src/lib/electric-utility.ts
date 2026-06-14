@@ -168,12 +168,55 @@ const GENERIC_UTILITY_TOKENS = new Set<string>([
   "rural", "works", "commission", "system",
 ]);
 
+const UTILITY_ALIAS_GROUPS = [
+  ["comed", "commonwealthedison", "commonwealthedisonco", "commonwealthedisoncompany"],
+  [
+    "jcpl",
+    "jcpandl",
+    "jerseycentralpowerlight",
+    "jerseycentralpowerandlight",
+    "jerseycentralpowerlt",
+    "jerseycentralpowerandlt",
+    "jerseycentralpowerltco",
+    "jerseycentralpowerandltco",
+    "jerseycentralpowerlightcompany",
+  ],
+  ["pseg", "pseandg", "publicserviceelectricgas", "publicserviceelectricandgas"],
+  ["fpl", "floridapowerlight", "floridapowerandlight", "floridapowerandlightcompany"],
+  ["pge", "pgande", "pacificgaselectric", "pacificgasandelectric", "pacificgasandelectriccompany"],
+  ["sce", "southerncaliforniaedison"],
+  ["sdge", "sdgande", "sandiegogaselectric", "sandiegogasandelectric"],
+  ["ladwp", "losangelesdepartmentwaterpower", "losangelesdepartmentofwaterandpower"],
+  ["bge", "baltimoregaselectric", "baltimoregasandelectric"],
+  ["pepco", "potomacelectricpower", "potomacelectricpowercompany"],
+] as const;
+
+const UTILITY_ALIAS_BY_KEY = new Map<string, string>(
+  UTILITY_ALIAS_GROUPS.flatMap((group) => group.map((key) => [key, group[0]] as const)),
+);
+
+function compactUtilityKey(name: string | null | undefined): string {
+  return (name || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function canonicalUtilityAlias(name: string | null | undefined): string | null {
+  const direct = UTILITY_ALIAS_BY_KEY.get(compactUtilityKey(name));
+  if (direct) return direct;
+  const tokenKey = [...significantUtilityTokens(name)].sort().join("");
+  return UTILITY_ALIAS_BY_KEY.get(tokenKey) || null;
+}
+
 /**
  * Normalize a utility company name for cross-source equality checks: lowercase,
  * "&" → "and", strip generic utility words and all non-alphanumerics. Catalog
  * "Austin Energy" and URDB "City of Austin" both normalize to "austin".
  */
 export function normalizeUtilityName(name: string | null | undefined): string {
+  const alias = canonicalUtilityAlias(name);
+  if (alias) return alias;
   return [...significantUtilityTokens(name)].sort().join("");
 }
 
@@ -205,6 +248,10 @@ export function significantUtilityTokens(name: string | null | undefined): Set<s
  * claim the wrong monopoly serves the address.
  */
 export function utilityNamesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  const aliasA = canonicalUtilityAlias(a);
+  const aliasB = canonicalUtilityAlias(b);
+  if (aliasA && aliasB && aliasA === aliasB) return true;
+
   const tokensA = significantUtilityTokens(a);
   const tokensB = significantUtilityTokens(b);
   if (tokensA.size === 0 || tokensB.size === 0) return false;

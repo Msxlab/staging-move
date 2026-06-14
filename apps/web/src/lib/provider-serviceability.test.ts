@@ -153,4 +153,27 @@ describe("provider serviceability source gaps", () => {
       }),
     ]);
   });
+
+  it("does not create source gaps for known electric utility aliases", async () => {
+    lookupElectricUtilitiesMock.mockResolvedValue(
+      electricResult({
+        status: "ok",
+        utilities: [{ name: "Commonwealth Edison Co", eiaId: "4110" }],
+        normalizedNames: new Set(["commonwealthedison"]),
+        reason: null,
+      }),
+    );
+    isElectricUtilityServiceableMock.mockImplementation((_result, name) => name === "ComEd");
+
+    const providers: ServiceabilityProvider[] = [{ name: "ComEd", category: "UTILITY_ELECTRIC" }];
+    const meta = await enrichProviderServiceability(providers, {
+      latitude: 41.883,
+      longitude: -87.632,
+      forceCategories: ["UTILITY_ELECTRIC"],
+    });
+
+    expect(providers[0]?.utilityServiceable).toBe(true);
+    expect(meta.electric).toEqual({ status: "ok", confirmedCount: 1, utilityCount: 1 });
+    expect(meta.sourceGaps).toEqual([]);
+  });
 });

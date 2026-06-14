@@ -328,7 +328,7 @@ export default function NewMovingPlanScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
         <View style={styles.formShell}>
@@ -675,7 +675,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   formShell: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
-  scrollContentWithFooter: { paddingBottom: 136 },
+  scrollContentWithFooter: { paddingBottom: 260 },
   hero: {
     borderRadius: 24,
     padding: 16,
@@ -765,9 +765,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   input: {
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
+    minHeight: 52,
     fontSize: 15, color: theme.colors.text,
   },
   footer: {
+    flexShrink: 0,
     paddingHorizontal: 20,
     paddingTop: 12,
     backgroundColor: theme.colors.background,

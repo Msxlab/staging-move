@@ -147,6 +147,13 @@ function degraded(status: WaterSystemLookupStatus, reason: string): WaterSystemL
   };
 }
 
+function waterCityCandidates(cityKey: string, stateKey: string): string[] {
+  const fallbackByStateCity: Record<string, string[]> = {
+    "FL:MIAMI BEACH": ["MIAMI"],
+  };
+  return [...new Set([cityKey, ...(fallbackByStateCity[`${stateKey}:${cityKey}`] || [])])];
+}
+
 function isFiniteNumber(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
 }
@@ -267,6 +274,10 @@ export async function lookupWaterSystem(input: WaterSystemLookupInput): Promise<
 
     const match = pickLargestCommunitySystem(systemsPayload as RawJoinedSystemRow[]);
     if (!match) {
+      const fallbackCity = waterCityCandidates(cityKey, stateKey).find((candidate) => candidate !== cityKey);
+      if (fallbackCity) {
+        return lookupWaterSystem({ city: fallbackCity, state: stateKey });
+      }
       // Authoritative "no active community system registered for this exact
       // city" (see KNOWN DATA GAP in the header) — honest nulls, cached.
       const result: WaterSystemLookupResult = {
