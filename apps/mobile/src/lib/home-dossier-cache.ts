@@ -80,6 +80,31 @@ export function clearHomeDossierMemoryCacheForTests() {
   memoryCache.clear();
 }
 
+export function peekHomeDossierMemoryCache(
+  addressId: string | null | undefined,
+  mode: HomeDossierCacheMode,
+  options: { maxAgeMs?: number; now?: Date } = {},
+): HomeDossierCacheEntry | null {
+  if (!addressId) return null;
+  const maxAgeMs = options.maxAgeMs ?? DEFAULT_FRESH_MS;
+  const nowMs = (options.now ?? new Date()).getTime();
+
+  for (const key of memoryKeysForRead(mode, addressId)) {
+    const entry = memoryCache.get(key);
+    if (!entry) continue;
+    const age = ageMs(entry.updatedAt, nowMs);
+    return {
+      data: entry.data,
+      updatedAt: entry.updatedAt,
+      ageMs: age,
+      stale: age > maxAgeMs,
+      source: "memory",
+    };
+  }
+
+  return null;
+}
+
 export async function readHomeDossierCache(
   addressId: string | null | undefined,
   mode: HomeDossierCacheMode,

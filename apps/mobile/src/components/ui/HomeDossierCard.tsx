@@ -21,7 +21,7 @@ import { hapticLight } from "@/lib/haptics";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { DossierAmbient } from "@/components/ui/DossierAmbient";
-import { fetchHomeDossier, readHomeDossierCache } from "@/lib/home-dossier-cache";
+import { fetchHomeDossier, peekHomeDossierMemoryCache, readHomeDossierCache } from "@/lib/home-dossier-cache";
 import {
   ambientForSection,
   deriveHomeDossierView,
@@ -101,7 +101,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const [dossier, setDossier] = useState<HomeDossierResponse | null>(null);
+  const [dossier, setDossier] = useState<HomeDossierResponse | null>(
+    () => peekHomeDossierMemoryCache(addressId, "full")?.data ?? null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +111,8 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
       setDossier(null);
       return;
     }
+    const memorySnapshot = peekHomeDossierMemoryCache(addressId, "full");
+    if (memorySnapshot) setDossier(memorySnapshot.data);
     (async () => {
       const cached = await readHomeDossierCache(addressId, "full");
       if (!cancelled && cached) setDossier(cached.data);

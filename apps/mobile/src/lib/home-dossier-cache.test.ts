@@ -28,6 +28,7 @@ vi.mock("@/lib/api", () => ({
 import {
   clearHomeDossierMemoryCacheForTests,
   fetchHomeDossier,
+  peekHomeDossierMemoryCache,
   readHomeDossierCache,
   writeHomeDossierCache,
 } from "./home-dossier-cache";
@@ -85,6 +86,28 @@ describe("home-dossier-cache", () => {
 
     expect(cached?.data.flood?.zone).toBe("X");
     expect(cached?.data.housing?.fairMarketRent?.twoBedroom).toBe(2660);
+  });
+
+  it("can synchronously hydrate mobile cards from memory cache", async () => {
+    await writeHomeDossierCache("addr_1", "full", dossier({ flood: { status: "ok", zone: "X", isHighRisk: false } }));
+
+    const full = peekHomeDossierMemoryCache("addr_1", "full");
+    const summary = peekHomeDossierMemoryCache("addr_1", "summary");
+
+    expect(full?.source).toBe("memory");
+    expect(full?.data.flood?.zone).toBe("X");
+    expect(summary?.source).toBe("memory");
+    expect(summary?.data.housing?.fairMarketRent?.twoBedroom).toBe(2660);
+  });
+
+  it("marks synchronous memory snapshots stale without hiding them", async () => {
+    const staleWrittenAt = new Date(Date.now() - 31 * 60 * 1000);
+    await writeHomeDossierCache("addr_1", "full", dossier(), staleWrittenAt);
+
+    const cached = peekHomeDossierMemoryCache("addr_1", "full");
+
+    expect(cached?.stale).toBe(true);
+    expect(cached?.data.air?.category).toBe("Good");
   });
 
   it("does not let a summary payload replace a full dossier fetch", async () => {

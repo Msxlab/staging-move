@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Building2, ChevronDown, ChevronUp, Home, Wind } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { fetchHomeDossier, readHomeDossierCache } from "@/lib/home-dossier-cache";
+import { fetchHomeDossier, peekHomeDossierMemoryCache, readHomeDossierCache } from "@/lib/home-dossier-cache";
 import {
   getAirRow,
   getHousingRow,
@@ -27,7 +27,9 @@ export function HomeInsightCard({ addressId, label }: HomeInsightCardProps) {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const [dossier, setDossier] = useState<HomeDossierResponse | null>(null);
+  const [dossier, setDossier] = useState<HomeDossierResponse | null>(
+    () => peekHomeDossierMemoryCache(addressId, "summary")?.data ?? null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +37,8 @@ export function HomeInsightCard({ addressId, label }: HomeInsightCardProps) {
       setDossier(null);
       return;
     }
+    const memorySnapshot = peekHomeDossierMemoryCache(addressId, "summary");
+    if (memorySnapshot) setDossier(memorySnapshot.data);
 
     (async () => {
       const cached = await readHomeDossierCache(addressId, "summary");
