@@ -324,20 +324,34 @@ export default function SubscriptionManagementPage({
     () => parseDateValue(initialNowIso) ?? new Date("1970-01-01T00:00:00.000Z"),
     [initialNowIso],
   );
+  const displaySubscription = useMemo<SubscriptionRecord | null>(() => {
+    if (!subscription && !entitlement) return null;
+    return {
+      ...(subscription || {}),
+      plan: entitlement?.plan || subscription?.plan || null,
+      status: entitlement?.status || subscription?.status || null,
+      provider: entitlement?.provider || subscription?.provider || null,
+      accessType: entitlement?.accessType || subscription?.accessType || null,
+      trialEndsAt: entitlement?.trialEndsAt ?? subscription?.trialEndsAt ?? null,
+      freeAccessEndsAt: entitlement?.freeAccessEndsAt ?? subscription?.freeAccessEndsAt ?? null,
+      currentPeriodEndsAt: entitlement?.currentPeriodEndsAt ?? subscription?.currentPeriodEndsAt ?? null,
+      cancelAtPeriodEnd: entitlement?.cancelAtPeriodEnd ?? subscription?.cancelAtPeriodEnd ?? null,
+      autoRenew: entitlement?.autoRenew ?? subscription?.autoRenew ?? null,
+    };
+  }, [entitlement, subscription]);
   const currentState = useMemo(
-    () => deriveUserSubscriptionState(subscription || null),
-    [subscription],
+    () => deriveUserSubscriptionState(displaySubscription || null),
+    [displaySubscription],
   );
-  const currentProvider = entitlement?.provider || subscription?.provider || "TRIAL";
-  const trialEndLabel = formatDateLabel(entitlement?.trialEndsAt || subscription?.trialEndsAt);
-  const freeAccessEndLabel = formatDateLabel(entitlement?.freeAccessEndsAt || subscription?.freeAccessEndsAt);
+  const currentProvider = displaySubscription?.provider || "TRIAL";
+  const trialEndLabel = formatDateLabel(displaySubscription?.trialEndsAt);
+  const freeAccessEndLabel = formatDateLabel(displaySubscription?.freeAccessEndsAt);
   const periodEndLabel = formatDateLabel(
-    entitlement?.currentPeriodEndsAt ||
-      subscription?.currentPeriodEndsAt ||
+    displaySubscription?.currentPeriodEndsAt ||
       subscription?.stripeCurrentPeriodEnd ||
       subscription?.premiumUntil,
   );
-  const subscriptionPlan = paidPlanFromValue(subscription?.plan);
+  const subscriptionPlan = paidPlanFromValue(displaySubscription?.plan);
   const subscriptionFirstChargeDate = parseDateValue(subscription?.firstChargeAt);
   const offerFirstChargeDate = addDays(stableNow, publicCampaign?.trialDays ?? 90);
   const firstChargeDate = subscriptionFirstChargeDate || offerFirstChargeDate;
@@ -568,6 +582,9 @@ export default function SubscriptionManagementPage({
     if (currentState === "ACTIVE" && pendingMonthly) {
       return `Annual access stays active until ${pendingMonthlyEffectiveLabel || periodEndLabel || "the renewal date"}. Monthly billing starts after that.`;
     }
+    if (currentState === "ACTIVE" && displaySubscription?.autoRenew === false && periodEndLabel) {
+      return `Your access remains active until ${periodEndLabel}.`;
+    }
     if (currentState === "ACTIVE") return `Renews on ${periodEndLabel || "the renewal date"}.`;
     if (currentState === "CANCEL_AT_PERIOD_END") return `Your plan remains active until ${periodEndLabel || "the period end date"}. It will not renew.`;
     if (currentState === "GRACE_PERIOD") return "Your payment needs attention. Access continues during the short grace period.";
@@ -631,17 +648,20 @@ export default function SubscriptionManagementPage({
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-foreground">{stateTitle(currentState, subscription)}</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{stateTitle(currentState, displaySubscription)}</h2>
                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusBadge(currentState)}`}>
                       {statusLabel(currentState)}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{primaryDetail}</p>
-                  {currentState === "TRIALING" ? (
+                  {currentState === "TRIALING" && displaySubscription?.autoRenew ? (
                     <p className="mt-1 text-sm text-muted-foreground">Auto-renewal: On</p>
                   ) : null}
-                  {currentState === "ACTIVE" ? (
+                  {currentState === "ACTIVE" && displaySubscription?.autoRenew ? (
                     <p className="mt-1 text-sm text-muted-foreground">Auto-renewal: On</p>
+                  ) : null}
+                  {(currentState === "ACTIVE" || currentState === "TRIALING") && displaySubscription?.autoRenew === false ? (
+                    <p className="mt-1 text-sm text-muted-foreground">Auto-renewal: Off</p>
                   ) : null}
                   {currentState === "TRIAL_CANCELED" || currentState === "CANCEL_AT_PERIOD_END" ? (
                     <p className="mt-1 text-sm text-muted-foreground">Auto-renewal: Off</p>
@@ -649,7 +669,7 @@ export default function SubscriptionManagementPage({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 sm:justify-end">
-                {currentState === "TRIALING" ? (
+                {currentState === "TRIALING" && canManageStripeBilling ? (
                   <button
                     type="button"
                     onClick={() => openCancelSurvey("trial")}
@@ -659,7 +679,7 @@ export default function SubscriptionManagementPage({
                     {processing === "cancel_trial" ? "Updating..." : "Cancel trial"}
                   </button>
                 ) : null}
-                {currentState === "ACTIVE" ? (
+                {currentState === "ACTIVE" && canManageStripeBilling ? (
                   <button
                     type="button"
                     onClick={() => openCancelSurvey("renewal")}

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
+import { getAddressAutocompleteSelectionError } from "@/lib/address-autocomplete-selection";
 import Link from "next/link";
 
 interface AddressOption {
@@ -402,6 +403,11 @@ export default function NewMovingPlanPage() {
                       placeholder={t("streetPlaceholder")}
                       onValueChange={(value) => update("destinationStreet", value)}
                       onSelect={handleDestinationAutocompleteSelect}
+                      validateSelection={(result) => getAddressAutocompleteSelectionError(
+                        { state: form.destinationState, zip: form.destinationZip },
+                        result,
+                      )}
+                      onSelectionRejected={(message) => setError(message)}
                     />
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="space-y-2 sm:col-span-1">

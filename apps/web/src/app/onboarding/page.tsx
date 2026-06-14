@@ -53,6 +53,7 @@ import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
+import { getAddressAutocompleteSelectionError } from "@/lib/address-autocomplete-selection";
 import {
   ServiceLimitUpsell,
   type ServiceLimitDetails,
@@ -1597,6 +1598,8 @@ export default function OnboardingPage() {
               required
               onValueChange={(value) => updateAddressField("street", value)}
               onSelect={handleAddressAutocompleteSelect}
+              validateSelection={(result) => getAddressAutocompleteSelectionError(address, result)}
+              onSelectionRejected={(message) => setError(message)}
             />
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -2064,6 +2067,8 @@ export default function OnboardingPage() {
                 placeholder="123 New St (optional)"
                 onValueChange={(value) => updateMovingField("street", value)}
                 onSelect={handleMovingAutocompleteSelect}
+                validateSelection={(result) => getAddressAutocompleteSelectionError(movingForm, result)}
+                onSelectionRejected={(message) => setError(message)}
               />
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
