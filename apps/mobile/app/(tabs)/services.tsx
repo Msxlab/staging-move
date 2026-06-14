@@ -569,54 +569,76 @@ export default function ServicesScreen() {
         </Text>
       </View>
 
-      {addresses.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressRow} contentContainerStyle={[styles.addressContent, styles.inScrollChipContent]}>
-          <TouchableOpacity
-            style={[styles.addressChip, !selectedAddressId && styles.addressChipActive]}
-            onPress={() => setSelectedAddressId(null)}
-          >
-            <Text style={[styles.addressChipText, !selectedAddressId && styles.addressChipTextActive]}>{t("addresses.all")}</Text>
-          </TouchableOpacity>
-          {addresses.map((address) => (
-            <TouchableOpacity
-              key={address.id}
-              style={[styles.addressChip, selectedAddressId === address.id && styles.addressChipActive]}
-              onPress={() => setSelectedAddressId(address.id)}
+      {(addresses.length > 0 || categories.length > 1) && (
+        <View style={styles.filterPanel}>
+          {addresses.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              bounces={false}
+              decelerationRate="fast"
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              style={styles.addressRow}
+              contentContainerStyle={[styles.addressContent, styles.inScrollChipContent]}
             >
-              <Text style={[styles.addressChipText, selectedAddressId === address.id && styles.addressChipTextActive]} numberOfLines={1} ellipsizeMode="tail">
-                {address.nickname || `${address.city}, ${address.state}`}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+              <TouchableOpacity
+                style={[styles.addressChip, !selectedAddressId && styles.addressChipActive]}
+                onPress={() => setSelectedAddressId(null)}
+              >
+                <Text style={[styles.addressChipText, !selectedAddressId && styles.addressChipTextActive]}>{t("addresses.all")}</Text>
+              </TouchableOpacity>
+              {addresses.map((address) => (
+                <TouchableOpacity
+                  key={address.id}
+                  style={[styles.addressChip, selectedAddressId === address.id && styles.addressChipActive]}
+                  onPress={() => setSelectedAddressId(address.id)}
+                >
+                  <Text style={[styles.addressChipText, selectedAddressId === address.id && styles.addressChipTextActive]} numberOfLines={1} ellipsizeMode="tail">
+                    {address.nickname || `${address.city}, ${address.state}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
-      {/* Category Filter */}
-      {categories.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={[styles.filterContent, styles.inScrollChipContent]}>
-          <TouchableOpacity
-            style={[styles.filterChip, !filterCat && styles.filterChipActive]}
-            onPress={() => setFilterCat(null)}
-          >
-            <Text style={[styles.filterText, !filterCat && styles.filterTextActive]}>{t("common.all")}</Text>
-          </TouchableOpacity>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.filterChip, filterCat === cat && styles.filterChipActive]}
-              onPress={() => setFilterCat(filterCat === cat ? null : cat)}
+          {/* Category Filter */}
+          {categories.length > 1 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              bounces={false}
+              decelerationRate="fast"
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              style={styles.filterRow}
+              contentContainerStyle={[styles.filterContent, styles.inScrollChipContent]}
             >
-              <CategoryIcon
-                emoji={getServiceCategoryIcon(cat)}
-                size={13}
-                color={filterCat === cat ? theme.colors.primary : getServiceCategoryColor(cat)}
-              />
-              <Text style={[styles.filterText, filterCat === cat && styles.filterTextActive]} numberOfLines={1} ellipsizeMode="tail">
-                {serviceCategoryLabel(cat)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <TouchableOpacity
+                style={[styles.filterChip, !filterCat && styles.filterChipActive]}
+                onPress={() => setFilterCat(null)}
+              >
+                <Text style={[styles.filterText, !filterCat && styles.filterTextActive]}>{t("common.all")}</Text>
+              </TouchableOpacity>
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.filterChip, filterCat === cat && styles.filterChipActive]}
+                  onPress={() => setFilterCat(filterCat === cat ? null : cat)}
+                >
+                  <CategoryIcon
+                    emoji={getServiceCategoryIcon(cat)}
+                    size={13}
+                    color={filterCat === cat ? theme.colors.primary : getServiceCategoryColor(cat)}
+                  />
+                  <Text style={[styles.filterText, filterCat === cat && styles.filterTextActive]} numberOfLines={1} ellipsizeMode="tail">
+                    {serviceCategoryLabel(cat)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       )}
 
         {/* Offline: live fetch failed but we hydrated the last-known list. */}
@@ -1258,42 +1280,51 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   statusPillDot: { width: 5, height: 5, borderRadius: 999 },
   statusPillText: { fontSize: 8, letterSpacing: 1, fontWeight: "700" },
-  addressRow: { marginHorizontal: 0, marginBottom: 6, overflow: "visible" },
-  addressContent: { paddingHorizontal: 0, paddingVertical: 4, gap: 7, alignItems: "center" },
-  inScrollChipContent: { paddingHorizontal: 0 },
+  filterPanel: {
+    marginBottom: 14,
+    paddingVertical: 7,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    overflow: "hidden",
+  },
+  addressRow: { marginHorizontal: 0, marginBottom: 4 },
+  addressContent: { paddingHorizontal: 8, paddingVertical: 3, gap: 8, alignItems: "center" },
+  inScrollChipContent: { paddingHorizontal: 8 },
   addressChip: {
     minWidth: 74,
     maxWidth: 180,
-    minHeight: 34,
+    minHeight: 38,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: "rgba(255,255,255,0.035)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
+  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.primary + "66" },
   addressChipText: { fontSize: 12, fontWeight: "800", color: theme.colors.textSecondary, textAlign: "center" },
   addressChipTextActive: { color: theme.colors.primary },
-  filterRow: { marginHorizontal: 0, marginBottom: 12, overflow: "visible" },
-  filterContent: { paddingHorizontal: 0, paddingVertical: 4, gap: 7, alignItems: "center" },
+  filterRow: { marginHorizontal: 0 },
+  filterContent: { paddingHorizontal: 8, paddingVertical: 3, gap: 8, alignItems: "center" },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    minHeight: 34,
+    minHeight: 38,
     minWidth: 68,
-    maxWidth: 168,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    maxWidth: 176,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: "rgba(255,255,255,0.035)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus },
+  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.primary + "66" },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
   filterText: { flexShrink: 1, fontSize: 12, color: theme.colors.textSecondary, fontWeight: "800" },
   filterTextActive: { color: theme.colors.primary },

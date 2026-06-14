@@ -173,7 +173,7 @@ export default function ExportScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.exportHero}>
           <View style={styles.exportHeroIcon}>
-            <Database size={22} color={theme.colors.primary} />
+            <Database size={22} color={theme.colors.accent} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.exportHeroTitle}>
@@ -241,7 +241,7 @@ export default function ExportScreen() {
             <View key={opt.type} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardIconBox}>
-                  <Icon size={20} color={theme.colors.primary} />
+                  <Icon size={20} color={theme.colors.accent} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.cardTitle}>{opt.title}</Text>
@@ -265,10 +265,10 @@ export default function ExportScreen() {
                       activeOpacity={0.7}
                     >
                       {isLoading ? (
-                        <ActivityIndicator color={theme.colors.primary} size="small" />
+                        <ActivityIndicator color={theme.colors.accent} size="small" />
                       ) : (
                         <>
-                          <Download size={14} color={theme.colors.primary} />
+                          <Download size={14} color={theme.colors.accent} />
                           <Text style={styles.formatBtnText}>{fmt}</Text>
                         </>
                       )}
@@ -313,9 +313,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.amber.bg,
     borderWidth: 1,
-    borderColor: "rgba(127, 182, 232,0.24)",
+    borderColor: theme.colors.amber.border,
   },
   exportHeroTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
   exportHeroText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginTop: 3 },
@@ -358,15 +358,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   exportStatusText: { flex: 1, fontSize: 11, lineHeight: 16, color: theme.colors.textTertiary },
-  card: { backgroundColor: theme.colors.card, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, padding: 12, marginBottom: 9 },
+  card: { backgroundColor: theme.colors.glass.bg, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.glass.highlight, padding: 12, marginBottom: 9 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 9 },
-  cardIconBox: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  cardIconBox: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.amber.bg, borderWidth: 1, borderColor: theme.colors.amber.border, alignItems: "center", justifyContent: "center" },
   cardTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
   cardDesc: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, fontWeight: "700", textTransform: "uppercase" },
   formatRow: { flexDirection: "row", gap: 8 },
-  formatBtn: { flex: 1, minHeight: 38, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 8, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.035)", borderWidth: 1, borderColor: theme.colors.border },
+  formatBtn: { flex: 1, minHeight: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.colors.amber.bg, borderWidth: 1, borderColor: theme.colors.amber.border },
   formatBtnDisabled: { opacity: 0.45, backgroundColor: "rgba(255,255,255,0.035)", borderColor: theme.colors.border },
-  formatBtnText: { fontSize: 13, fontWeight: "800", color: theme.colors.primary },
+  formatBtnText: { fontSize: 13, fontWeight: "800", color: theme.colors.accent },
   gdprNote: { marginTop: 12, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: theme.colors.border },
   gdprText: { fontSize: 12, color: theme.colors.textMuted, lineHeight: 18 },
 });

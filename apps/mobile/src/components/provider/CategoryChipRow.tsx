@@ -33,6 +33,10 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      bounces={false}
+      decelerationRate="fast"
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       contentContainerStyle={styles.row}
     >
       {showAll ? (
@@ -87,28 +91,31 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   row: {
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-    gap: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    gap: 8,
+    alignItems: "center",
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    minHeight: 34,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    gap: 6,
+    minHeight: 38,
+    maxWidth: 190,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: "rgba(255,255,255,0.035)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.075)",
+    borderColor: theme.colors.border,
   },
   chipSelected: {
     backgroundColor: theme.colors.primaryFaded,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.primary + "66",
   },
   chipText: {
-    fontSize: 11,
+    flexShrink: 1,
+    fontSize: 12,
     fontWeight: "800",
     color: theme.colors.textSecondary,
   },
@@ -120,12 +127,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: theme.colors.glass.highlight,
     alignItems: "center",
     justifyContent: "center",
   },
   countPillSelected: {
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.card,
   },
   countText: {
     fontSize: 10,

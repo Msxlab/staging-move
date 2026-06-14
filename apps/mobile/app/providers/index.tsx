@@ -1175,9 +1175,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.primary,
   },
   categoryRowWrap: {
-    marginHorizontal: 0,
+    marginHorizontal: 20,
     marginBottom: 12,
-    overflow: "visible",
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.glass.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    overflow: "hidden",
   },
   addressSwitchWrap: {
     flexDirection: "row",
