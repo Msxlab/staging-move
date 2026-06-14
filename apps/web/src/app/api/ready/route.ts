@@ -27,6 +27,22 @@ import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const READINESS_PROBE_TIMEOUT_MS = 2_500;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function probeDatabase(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -37,9 +53,13 @@ async function probeDatabase(): Promise<boolean> {
 }
 
 export async function GET() {
-  const effectiveConfig = await getRequiredRuntimeConfigValues(getReadinessConfigKeys());
+  const effectiveConfig =
+    (await withTimeout(
+      getRequiredRuntimeConfigValues(getReadinessConfigKeys()),
+      READINESS_PROBE_TIMEOUT_MS,
+    )) ?? undefined;
   const report = buildReadinessReport(process.env, undefined, effectiveConfig);
-  const dbReady = await probeDatabase();
+  const dbReady = (await withTimeout(probeDatabase(), READINESS_PROBE_TIMEOUT_MS)) === true;
 
   const overallReady = report.ready && dbReady;
   const summary = summarizeReadinessForResponse(report);
