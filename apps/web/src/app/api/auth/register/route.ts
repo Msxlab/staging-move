@@ -13,6 +13,7 @@ import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { ensureWorkspaceDefaults } from "@/lib/workspace-provisioning";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import {
+  applyQaPersonaSubscriptionForUser,
   isAllowlistedQaEmail,
   resetAllowlistedQaAccountForSignup,
 } from "@/lib/qa-account";
@@ -169,6 +170,9 @@ export async function POST(request: NextRequest) {
     },
   });
   await ensureSubscriptionDefaults(user.id);
+  if (isAllowlistedQaEmail(email)) {
+    await applyQaPersonaSubscriptionForUser({ userId: user.id, email });
+  }
   await ensureWorkspaceDefaults(user.id);
 
   // Owner alert: instant new-signup notification. Fire-and-forget — the

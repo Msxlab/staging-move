@@ -217,6 +217,20 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Deployment env only. This key must never contain a comma-separated allowlist.",
   },
   {
+    key: "QA_PERSONA_ACCOUNTS",
+    label: "QA Persona Accounts",
+    description: "Comma-separated exact QA emails with auto-granted plans in email:PLAN format. These accounts auto-verify, self-heal entitlements, and hard-reset on logout/cron.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app auth", "mobile QA", "admin QA"],
+    validation: "comma-separated email:PLAN entries; plans: FREE_TRIAL, INDIVIDUAL, FAMILY, PRO",
+    note: "Deployment env only. Keep this limited to exact internal/review QA addresses; it grants entitlements without a billing provider.",
+  },
+  {
     key: "STORE_REVIEW_ACCOUNT_EMAILS",
     label: "Store Review Account Emails",
     description: "Comma-separated Google Play/App Store review emails that may auto-verify on signup and reset themselves only during a fresh signup. Leave unset outside controlled review.",
@@ -2154,6 +2168,22 @@ export function validateRuntimeConfigValueShape(
 
   if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") {
     return validEmailAddress(value) ? valid() : invalid("email_required");
+  }
+  if (key === "QA_PERSONA_ACCOUNTS") {
+    const validPlans = new Set(["FREE", "FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"]);
+    const entries = value.split(/[,\n;]/).map((entry) => entry.trim()).filter(Boolean);
+    return entries.length > 0 && entries.every((entry) => {
+      const [email, plan, ...extra] = entry.split(":").map((part) => part.trim());
+      return (
+        Boolean(email) &&
+        Boolean(plan) &&
+        extra.length === 0 &&
+        validEmailAddress(email) &&
+        validPlans.has(plan.toUpperCase())
+      );
+    })
+      ? valid()
+      : invalid("qa_persona_accounts_required");
   }
   if (
     key === "STORE_REVIEW_ACCOUNT_EMAILS" ||

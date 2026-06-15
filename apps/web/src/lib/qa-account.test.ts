@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   userFindUnique: vi.fn(),
+  subscriptionUpsert: vi.fn(),
   txWorkspaceFindMany: vi.fn(),
   txWorkspaceMemberFindFirst: vi.fn(),
   txWorkspaceAuthChallengeDeleteMany: vi.fn(),
@@ -55,12 +56,19 @@ vi.mock("@/lib/db", () => ({
     user: {
       findUnique: (...args: unknown[]) => mocks.userFindUnique(...args),
     },
+    subscription: {
+      upsert: (...args: unknown[]) => mocks.subscriptionUpsert(...args),
+    },
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
   },
 }));
 
 import {
+  applyQaPersonaSubscriptionForUser,
+  getQaPersonaAccounts,
+  getQaPersonaAccountForEmail,
   getQaResettableAccountEmail,
+  getQaResettableAccountEmails,
   getStoreReviewAccountEmails,
   isAutoVerifiedTestEmail,
   isAllowlistedQaEmail,
@@ -71,12 +79,15 @@ import {
 
 describe("QA resettable account guard", () => {
   const OLD_QA_RESETTABLE_EMAIL = process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+  const OLD_QA_PERSONA_ACCOUNTS = process.env.QA_PERSONA_ACCOUNTS;
   const OLD_STORE_REVIEW_EMAILS = process.env.STORE_REVIEW_ACCOUNT_EMAILS;
 
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    delete process.env.QA_PERSONA_ACCOUNTS;
     delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
+    mocks.subscriptionUpsert.mockResolvedValue({ id: "sub-1" });
     mocks.userFindUnique.mockResolvedValue({ id: "qa-user", email: "qa@example.com" });
     mocks.txWorkspaceFindMany.mockResolvedValue([]);
     mocks.txWorkspaceMemberFindFirst.mockResolvedValue(null);
@@ -97,6 +108,8 @@ describe("QA resettable account guard", () => {
   afterEach(() => {
     if (OLD_QA_RESETTABLE_EMAIL === undefined) delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
     else process.env.QA_RESETTABLE_ACCOUNT_EMAIL = OLD_QA_RESETTABLE_EMAIL;
+    if (OLD_QA_PERSONA_ACCOUNTS === undefined) delete process.env.QA_PERSONA_ACCOUNTS;
+    else process.env.QA_PERSONA_ACCOUNTS = OLD_QA_PERSONA_ACCOUNTS;
     if (OLD_STORE_REVIEW_EMAILS === undefined) delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
     else process.env.STORE_REVIEW_ACCOUNT_EMAILS = OLD_STORE_REVIEW_EMAILS;
   });
@@ -114,6 +127,47 @@ describe("QA resettable account guard", () => {
 
     expect(isAllowlistedQaEmail("QA@Example.com", env)).toBe(true);
     expect(isAllowlistedQaEmail("user@example.com", env)).toBe(false);
+  });
+
+  it("normalizes exact QA persona accounts and keeps the legacy reset account as free", () => {
+    const env = {
+      QA_RESETTABLE_ACCOUNT_EMAIL: "Mobile.QA@LocateFlow.com",
+      QA_PERSONA_ACCOUNTS: [
+        "MobileIndividual@LocateFlow.com:individual",
+        "mobilefamily@locateflow.com:FAMILY",
+        "mobilepro@locateflow.com:PRO",
+      ].join(","),
+    };
+
+    expect(getQaPersonaAccounts(env)).toEqual([
+      { email: "mobile.qa@locateflow.com", plan: "FREE_TRIAL" },
+      { email: "mobileindividual@locateflow.com", plan: "INDIVIDUAL" },
+      { email: "mobilefamily@locateflow.com", plan: "FAMILY" },
+      { email: "mobilepro@locateflow.com", plan: "PRO" },
+    ]);
+    expect(getQaResettableAccountEmails(env)).toEqual([
+      "mobile.qa@locateflow.com",
+      "mobileindividual@locateflow.com",
+      "mobilefamily@locateflow.com",
+      "mobilepro@locateflow.com",
+    ]);
+    expect(getQaPersonaAccountForEmail("MOBILEFAMILY@locateflow.com", env)).toEqual({
+      email: "mobilefamily@locateflow.com",
+      plan: "FAMILY",
+    });
+  });
+
+  it("rejects malformed QA persona account config", () => {
+    expect(
+      getQaPersonaAccounts({
+        QA_PERSONA_ACCOUNTS: "mobileindividual@locateflow.com:INDIVIDUAL,broken",
+      }),
+    ).toEqual([]);
+    expect(
+      getQaPersonaAccounts({
+        QA_PERSONA_ACCOUNTS: "mobileindividual@locateflow.com:ENTERPRISE",
+      }),
+    ).toEqual([]);
   });
 
   it("normalizes store review emails from a deployment allowlist", () => {
@@ -147,6 +201,16 @@ describe("QA resettable account guard", () => {
     expect(isAutoVerifiedTestEmail("QA@Example.com", env)).toBe(true);
     expect(isStoreReviewAccountEmail("GoogleReview@LocateFlow.com", env)).toBe(true);
     expect(isAutoVerifiedTestEmail("user@example.com", env)).toBe(false);
+  });
+
+  it("auto-verifies persona QA accounts without making them store-review accounts", () => {
+    const env = {
+      QA_PERSONA_ACCOUNTS: "mobileindividual@locateflow.com:INDIVIDUAL",
+    };
+
+    expect(isAllowlistedQaEmail("MobileIndividual@LocateFlow.com", env)).toBe(true);
+    expect(isAutoVerifiedTestEmail("MobileIndividual@LocateFlow.com", env)).toBe(true);
+    expect(isStoreReviewAccountEmail("MobileIndividual@LocateFlow.com", env)).toBe(false);
   });
 
   it("does nothing when config is disabled", async () => {
@@ -200,6 +264,102 @@ describe("QA resettable account guard", () => {
         sessionEmail: "googlereview@locateflow.com",
       }),
     ).resolves.toEqual({ reset: false, reason: "config_disabled" });
+  });
+
+  it("hard-resets an exact persona QA account on logout", async () => {
+    process.env.QA_PERSONA_ACCOUNTS = "mobileindividual@locateflow.com:INDIVIDUAL";
+    mocks.userFindUnique.mockResolvedValue({
+      id: "qa-individual",
+      email: "mobileindividual@locateflow.com",
+    });
+
+    await expect(
+      resetAllowlistedQaAccountOnLogout({
+        userId: "qa-individual",
+        sessionEmail: "MobileIndividual@LocateFlow.com",
+      }),
+    ).resolves.toEqual({ reset: true });
+
+    expect(mocks.userFindUnique).toHaveBeenCalledWith({
+      where: { id: "qa-individual" },
+      select: { id: true, email: true },
+    });
+    expect(mocks.txUserDelete).toHaveBeenCalledWith({ where: { id: "qa-individual" } });
+  });
+
+  it("applies a free QA persona subscription grant without touching billing providers", async () => {
+    process.env.QA_PERSONA_ACCOUNTS = "mobile.qa@locateflow.com:FREE_TRIAL";
+    const now = new Date("2026-06-14T12:00:00.000Z");
+
+    await expect(
+      applyQaPersonaSubscriptionForUser({
+        userId: "qa-user",
+        email: "mobile.qa@locateflow.com",
+        now,
+      }),
+    ).resolves.toEqual({
+      applied: true,
+      email: "mobile.qa@locateflow.com",
+      plan: "FREE_TRIAL",
+    });
+
+    expect(mocks.subscriptionUpsert).toHaveBeenCalledWith({
+      where: { userId: "qa-user" },
+      update: expect.objectContaining({
+        plan: "FREE_TRIAL",
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        accessType: "FREE_ACCESS",
+        freeAccessEndsAt: new Date("2026-06-28T12:00:00.000Z"),
+        premiumGrantedBy: null,
+      }),
+      create: expect.objectContaining({
+        userId: "qa-user",
+        plan: "FREE_TRIAL",
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        accessType: "FREE_ACCESS",
+      }),
+    });
+  });
+
+  it("applies a paid QA persona as an admin premium grant with no billing token", async () => {
+    process.env.QA_PERSONA_ACCOUNTS = "mobilepro@locateflow.com:PRO";
+    const now = new Date("2026-06-14T12:00:00.000Z");
+
+    await expect(
+      applyQaPersonaSubscriptionForUser({
+        userId: "qa-pro",
+        email: "mobilepro@locateflow.com",
+        now,
+      }),
+    ).resolves.toEqual({
+      applied: true,
+      email: "mobilepro@locateflow.com",
+      plan: "PRO",
+    });
+
+    expect(mocks.subscriptionUpsert).toHaveBeenCalledWith({
+      where: { userId: "qa-pro" },
+      update: expect.objectContaining({
+        plan: "PRO",
+        status: "ACTIVE",
+        provider: "ADMIN",
+        platform: null,
+        accessType: "PAID",
+        premiumUntil: new Date("2036-06-14T12:00:00.000Z"),
+        premiumGrantedBy: "QA_PERSONA",
+      }),
+      create: expect.objectContaining({
+        userId: "qa-pro",
+        plan: "PRO",
+        status: "ACTIVE",
+        provider: "ADMIN",
+        platform: null,
+        accessType: "PAID",
+        premiumGrantedBy: "QA_PERSONA",
+      }),
+    });
   });
 
   it("does not reset when the database user email does not match the allowlisted account", async () => {

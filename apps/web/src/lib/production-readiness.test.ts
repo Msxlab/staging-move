@@ -154,6 +154,16 @@ describe("buildReadinessReport", () => {
     expect(report.issues.find((i) => i.key === "CENSUS_API_KEY")?.severity).toBe("warn");
   });
 
+  it("fails fast when QA persona env is malformed in production", () => {
+    const env = {
+      ...validProdEnv,
+      QA_PERSONA_ACCOUNTS: "mobileindividual@locateflow.com:ENTERPRISE",
+    };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(false);
+    expect(report.issues.find((i) => i.key === "QA_PERSONA_ACCOUNTS")?.severity).toBe("fail");
+  });
+
   it("flags placeholder Redis env in production", () => {
     const env = {
       ...validProdEnv,

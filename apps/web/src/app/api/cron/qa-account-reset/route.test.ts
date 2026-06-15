@@ -6,19 +6,19 @@ vi.mock("@/lib/cron-guard", () => ({
 }));
 
 vi.mock("@/lib/qa-account", () => ({
-  getQaResettableAccountEmail: vi.fn(() => "mobile.qa@locateflow.com"),
+  getQaResettableAccountEmails: vi.fn(() => ["mobile.qa@locateflow.com"]),
   resetAllowlistedQaAccountForSignup: vi.fn(() => Promise.resolve({ reset: true })),
 }));
 
 import { guardCronRequest } from "@/lib/cron-guard";
 import {
-  getQaResettableAccountEmail,
+  getQaResettableAccountEmails,
   resetAllowlistedQaAccountForSignup,
 } from "@/lib/qa-account";
 import { GET, POST } from "./route";
 
 const guardCronRequestMock = guardCronRequest as unknown as Mock;
-const getQaResettableAccountEmailMock = getQaResettableAccountEmail as unknown as Mock;
+const getQaResettableAccountEmailsMock = getQaResettableAccountEmails as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 
 function makeRequest(method = "GET") {
@@ -32,32 +32,50 @@ describe("qa-account-reset cron route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     guardCronRequestMock.mockResolvedValue({ ok: true });
-    getQaResettableAccountEmailMock.mockReturnValue("mobile.qa@locateflow.com");
+    getQaResettableAccountEmailsMock.mockReturnValue(["mobile.qa@locateflow.com"]);
     resetAllowlistedQaAccountForSignupMock.mockResolvedValue({ reset: true });
   });
 
-  it("hard-resets only the configured QA account", async () => {
+  it("hard-resets all configured QA persona accounts", async () => {
+    getQaResettableAccountEmailsMock.mockReturnValue([
+      "mobile.qa@locateflow.com",
+      "mobileindividual@locateflow.com",
+    ]);
+    resetAllowlistedQaAccountForSignupMock
+      .mockResolvedValueOnce({ reset: true })
+      .mockResolvedValueOnce({ reset: false, reason: "email_not_allowlisted" });
+
     const response = await GET(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,
-      email: "mobile.qa@locateflow.com",
       reset: true,
+      accounts: [
+        { email: "mobile.qa@locateflow.com", reset: true },
+        {
+          email: "mobileindividual@locateflow.com",
+          reset: false,
+          reason: "email_not_allowlisted",
+        },
+      ],
     });
     expect(guardCronRequestMock).toHaveBeenCalledWith(
       expect.any(NextRequest),
       "qa-account-reset",
       { limit: 3, windowSeconds: 60 },
     );
-    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenCalledWith({
+    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenNthCalledWith(1, {
       email: "mobile.qa@locateflow.com",
+    });
+    expect(resetAllowlistedQaAccountForSignupMock).toHaveBeenNthCalledWith(2, {
+      email: "mobileindividual@locateflow.com",
     });
   });
 
   it("does nothing when the QA reset account is not configured", async () => {
-    getQaResettableAccountEmailMock.mockReturnValueOnce(null);
+    getQaResettableAccountEmailsMock.mockReturnValueOnce([]);
 
     const response = await GET(makeRequest());
     const body = await response.json();

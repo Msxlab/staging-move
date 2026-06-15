@@ -613,6 +613,16 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     note: "Deployment env only. Must be one exact email, not a comma-separated allowlist.",
   },
   {
+    key: "QA_PERSONA_ACCOUNTS",
+    classification: "optional",
+    label: "QA Persona Accounts",
+    description: "Comma-separated exact QA emails with auto-granted plans in email:PLAN format.",
+    apps: ["web", "mobile", "admin"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "Deployment env only. Plans: FREE_TRIAL, INDIVIDUAL, FAMILY, PRO. These accounts auto-verify, self-heal entitlements, and hard-reset on logout/cron.",
+  },
+  {
     key: "STORE_REVIEW_ACCOUNT_EMAILS",
     classification: "optional",
     label: "Store Review Account Emails",

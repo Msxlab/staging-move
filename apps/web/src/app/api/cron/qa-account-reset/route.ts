@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardCronRequest } from "@/lib/cron-guard";
 import {
-  getQaResettableAccountEmail,
+  getQaResettableAccountEmails,
   resetAllowlistedQaAccountForSignup,
 } from "@/lib/qa-account";
 
@@ -14,8 +14,8 @@ async function handle(request: NextRequest) {
   });
   if (!guard.ok) return guard.response;
 
-  const email = getQaResettableAccountEmail();
-  if (!email) {
+  const emails = getQaResettableAccountEmails();
+  if (emails.length === 0) {
     return NextResponse.json({
       ok: true,
       reset: false,
@@ -23,8 +23,17 @@ async function handle(request: NextRequest) {
     });
   }
 
-  const result = await resetAllowlistedQaAccountForSignup({ email });
-  return NextResponse.json({ ok: true, email, ...result });
+  const accounts = [];
+  for (const email of emails) {
+    const result = await resetAllowlistedQaAccountForSignup({ email });
+    accounts.push({ email, ...result });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    reset: accounts.some((account) => account.reset),
+    accounts,
+  });
 }
 
 export async function GET(request: NextRequest) {

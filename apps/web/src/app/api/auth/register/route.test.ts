@@ -46,6 +46,11 @@ vi.mock("@/lib/qa-account", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/qa-account")>();
   return {
     ...actual,
+    applyQaPersonaSubscriptionForUser: vi.fn(() => Promise.resolve({
+      applied: true,
+      email: "qa@example.com",
+      plan: "FREE_TRIAL",
+    })),
     resetAllowlistedQaAccountForSignup: vi.fn(() => Promise.resolve({ reset: true })),
   };
 });
@@ -84,7 +89,10 @@ import { prisma, rawPrisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
 import { recordLegalAcceptance } from "@/lib/legal-acceptance";
-import { resetAllowlistedQaAccountForSignup } from "@/lib/qa-account";
+import {
+  applyQaPersonaSubscriptionForUser,
+  resetAllowlistedQaAccountForSignup,
+} from "@/lib/qa-account";
 import { sendAdminSignupAlert } from "@/lib/admin-alerts";
 import { areSignupsKilled } from "@/lib/kill-switches";
 import {
@@ -105,6 +113,7 @@ const tokenMock = prisma.emailVerificationToken as unknown as { create: Mock };
 const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as Mock;
 const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
+const applyQaPersonaSubscriptionForUserMock = applyQaPersonaSubscriptionForUser as unknown as Mock;
 const resetAllowlistedQaAccountForSignupMock = resetAllowlistedQaAccountForSignup as unknown as Mock;
 const sendAdminSignupAlertMock = sendAdminSignupAlert as unknown as Mock;
 const areSignupsKilledMock = areSignupsKilled as unknown as Mock;
@@ -128,6 +137,7 @@ function makeRequest(body: unknown) {
 
 describe("register route", () => {
   const OLD_QA_RESETTABLE_EMAIL = process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+  const OLD_QA_PERSONA_ACCOUNTS = process.env.QA_PERSONA_ACCOUNTS;
   const OLD_STORE_REVIEW_EMAILS = process.env.STORE_REVIEW_ACCOUNT_EMAILS;
   const OLD_AGE_GATE = process.env.COPPA_AGE_GATE_ENABLED;
 
@@ -141,8 +151,14 @@ describe("register route", () => {
     areSignupsKilledMock.mockResolvedValue(false);
     getConfiguredStoreReviewAccountEmailsMock.mockResolvedValue([]);
     provisionStoreReviewAccountMock.mockResolvedValue(undefined);
+    applyQaPersonaSubscriptionForUserMock.mockResolvedValue({
+      applied: true,
+      email: "qa@example.com",
+      plan: "FREE_TRIAL",
+    });
     delete process.env.COPPA_AGE_GATE_ENABLED;
     delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
+    delete process.env.QA_PERSONA_ACCOUNTS;
     delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
   });
 
@@ -151,6 +167,8 @@ describe("register route", () => {
     else process.env.COPPA_AGE_GATE_ENABLED = OLD_AGE_GATE;
     if (OLD_QA_RESETTABLE_EMAIL === undefined) delete process.env.QA_RESETTABLE_ACCOUNT_EMAIL;
     else process.env.QA_RESETTABLE_ACCOUNT_EMAIL = OLD_QA_RESETTABLE_EMAIL;
+    if (OLD_QA_PERSONA_ACCOUNTS === undefined) delete process.env.QA_PERSONA_ACCOUNTS;
+    else process.env.QA_PERSONA_ACCOUNTS = OLD_QA_PERSONA_ACCOUNTS;
     if (OLD_STORE_REVIEW_EMAILS === undefined) delete process.env.STORE_REVIEW_ACCOUNT_EMAILS;
     else process.env.STORE_REVIEW_ACCOUNT_EMAILS = OLD_STORE_REVIEW_EMAILS;
   });
@@ -244,6 +262,7 @@ describe("register route", () => {
     });
     expect(tokenMock.create).toHaveBeenCalled();
     expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new");
+    expect(applyQaPersonaSubscriptionForUserMock).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).toHaveBeenCalledWith({
       userEmail: "new@example.com",
       userName: "New",
@@ -285,10 +304,43 @@ describe("register route", () => {
     expect(tokenMock.create).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
     expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("qa-user");
+    expect(applyQaPersonaSubscriptionForUserMock).toHaveBeenCalledWith({
+      userId: "qa-user",
+      email: "qa@example.com",
+    });
     // Owner alert excluded for the QA account (route gate; the helper also
     // suppresses it internally as the single enforcement point).
     expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
     expect(provisionStoreReviewAccountMock).not.toHaveBeenCalled();
+  });
+
+  it("auto-verifies a persona QA account and applies its configured plan", async () => {
+    process.env.QA_PERSONA_ACCOUNTS = "mobileindividual@locateflow.com:INDIVIDUAL";
+    userMock.create.mockResolvedValue({
+      id: "qa-individual",
+      email: "mobileindividual@locateflow.com",
+    });
+    applyQaPersonaSubscriptionForUserMock.mockResolvedValue({
+      applied: true,
+      email: "mobileindividual@locateflow.com",
+      plan: "INDIVIDUAL",
+    });
+
+    const response = await POST(makeRequest({
+      ...validBody,
+      email: "MobileIndividual@LocateFlow.com",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.userId).toBe("qa-individual");
+    expect(body.emailVerified).toBe(true);
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(applyQaPersonaSubscriptionForUserMock).toHaveBeenCalledWith({
+      userId: "qa-individual",
+      email: "mobileindividual@locateflow.com",
+    });
+    expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
   });
 
   it("auto-verifies a store review account without sending verification or owner alerts", async () => {
@@ -321,6 +373,7 @@ describe("register route", () => {
     expect(tokenMock.create).not.toHaveBeenCalled();
     expect(sendEmailVerificationEmailMock).not.toHaveBeenCalled();
     expect(sendAdminSignupAlertMock).not.toHaveBeenCalled();
+    expect(applyQaPersonaSubscriptionForUserMock).not.toHaveBeenCalled();
     expect(provisionStoreReviewAccountMock).toHaveBeenCalledWith({
       userId: "review-user",
       request: expect.any(NextRequest),

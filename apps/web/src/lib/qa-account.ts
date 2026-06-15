@@ -1,13 +1,28 @@
 import { rawPrisma } from "@/lib/db";
+import {
+  DEFAULT_BILLING_PLAN,
+  type BillingPlan,
+} from "@/lib/shared-billing";
 import { normalizeRuntimeConfigValue } from "@/lib/shared-runtime-config";
 
 export const QA_RESETTABLE_ACCOUNT_EMAIL_KEY = "QA_RESETTABLE_ACCOUNT_EMAIL";
+export const QA_PERSONA_ACCOUNTS_KEY = "QA_PERSONA_ACCOUNTS";
 export const STORE_REVIEW_ACCOUNT_EMAILS_KEY = "STORE_REVIEW_ACCOUNT_EMAILS";
 const STORE_REVIEW_ACCOUNT_EMAIL_KEYS = [
   STORE_REVIEW_ACCOUNT_EMAILS_KEY,
   "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
   "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
 ] as const;
+
+const QA_PERSONA_GRANT_SOURCE = "QA_PERSONA";
+const QA_PERSONA_PREMIUM_YEARS = 10;
+const QA_FREE_ACCESS_DAYS = 14;
+const QA_PERSONA_PLANS = new Set<BillingPlan>([
+  "FREE_TRIAL",
+  "INDIVIDUAL",
+  "FAMILY",
+  "PRO",
+]);
 
 type QaAccountResetSkipReason =
   | "config_disabled"
@@ -19,6 +34,15 @@ type QaAccountResetSkipReason =
 export type QaAccountResetResult =
   | { reset: true }
   | { reset: false; reason: QaAccountResetSkipReason };
+
+export type QaPersonaGrantResult =
+  | { applied: true; email: string; plan: BillingPlan }
+  | { applied: false; reason: "not_qa_persona" | "config_disabled" };
+
+export interface QaPersonaAccount {
+  email: string;
+  plan: BillingPlan;
+}
 
 const SINGLE_EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 
@@ -37,6 +61,64 @@ function parseEmailList(value: string | null | undefined): string[] {
     return [];
   }
   return [...new Set(emails)];
+}
+
+function parseQaPersonaPlan(value: string | null | undefined): BillingPlan | null {
+  const raw = normalizeRuntimeConfigValue(value)?.toUpperCase();
+  if (!raw) return null;
+  const plan = raw === "FREE" ? DEFAULT_BILLING_PLAN : raw;
+  return QA_PERSONA_PLANS.has(plan as BillingPlan) ? (plan as BillingPlan) : null;
+}
+
+function parseQaPersonaAccounts(value: string | null | undefined): QaPersonaAccount[] {
+  const raw = normalizeRuntimeConfigValue(value);
+  if (!raw) return [];
+  const entries = raw
+    .split(/[,\n;]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (entries.length === 0) return [];
+
+  const parsed: QaPersonaAccount[] = [];
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    const [emailRaw, planRaw, ...extra] = entry.split(":");
+    if (!emailRaw || !planRaw || extra.length > 0) return [];
+    const email = normalizeEmail(emailRaw);
+    const plan = parseQaPersonaPlan(planRaw);
+    if (!email || !SINGLE_EMAIL_PATTERN.test(email) || !plan) return [];
+    if (!seen.has(email)) {
+      parsed.push({ email, plan });
+      seen.add(email);
+    }
+  }
+  return parsed;
+}
+
+export function getQaPersonaAccounts(
+  env: Record<string, string | undefined> = process.env,
+): QaPersonaAccount[] {
+  const personas = parseQaPersonaAccounts(env[QA_PERSONA_ACCOUNTS_KEY]);
+  const legacyQaEmail = getQaResettableAccountEmail(env);
+  if (legacyQaEmail && !personas.some((persona) => persona.email === legacyQaEmail)) {
+    personas.unshift({ email: legacyQaEmail, plan: DEFAULT_BILLING_PLAN });
+  }
+  return personas;
+}
+
+export function getQaPersonaAccountForEmail(
+  email: string | null | undefined,
+  env: Record<string, string | undefined> = process.env,
+): QaPersonaAccount | null {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  return getQaPersonaAccounts(env).find((persona) => persona.email === normalized) ?? null;
+}
+
+export function getQaResettableAccountEmails(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  return getQaPersonaAccounts(env).map((persona) => persona.email);
 }
 
 export function getQaResettableAccountEmail(
@@ -59,8 +141,7 @@ export function isAllowlistedQaEmail(
   email: string | null | undefined,
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  const allowlistedEmail = getQaResettableAccountEmail(env);
-  return Boolean(allowlistedEmail && normalizeEmail(email) === allowlistedEmail);
+  return Boolean(getQaPersonaAccountForEmail(email, env));
 }
 
 export function isStoreReviewAccountEmail(
@@ -85,13 +166,108 @@ function getSignupResettableTestEmail(
 ): string | null {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
-  const qaEmail = getQaResettableAccountEmail(env);
-  if (qaEmail && normalized === qaEmail) return qaEmail;
+  if (getQaPersonaAccountForEmail(normalized, env)) return normalized;
   const reviewEmails = new Set([
     ...getStoreReviewAccountEmails(env),
     ...extraStoreReviewEmails.map((item) => normalizeEmail(item)).filter((item): item is string => Boolean(item)),
   ]);
   return reviewEmails.has(normalized) ? normalized : null;
+}
+
+function qaFreeAccessEndsAt(now: Date): Date {
+  return new Date(now.getTime() + QA_FREE_ACCESS_DAYS * 24 * 60 * 60 * 1000);
+}
+
+function qaPremiumUntil(now: Date): Date {
+  const premiumUntil = new Date(now);
+  premiumUntil.setFullYear(premiumUntil.getFullYear() + QA_PERSONA_PREMIUM_YEARS);
+  return premiumUntil;
+}
+
+export async function applyQaPersonaSubscriptionForUser(input: {
+  userId: string;
+  email: string | null | undefined;
+  now?: Date;
+}): Promise<QaPersonaGrantResult> {
+  const persona = getQaPersonaAccountForEmail(input.email);
+  if (!persona) {
+    return {
+      applied: false,
+      reason: getQaPersonaAccounts().length > 0 ? "not_qa_persona" : "config_disabled",
+    };
+  }
+
+  const now = input.now ?? new Date();
+  const premiumNote = `Auto-granted for ${persona.email} QA persona. No billing provider.`;
+  if (persona.plan === DEFAULT_BILLING_PLAN) {
+    const freeAccessEndsAt = qaFreeAccessEndsAt(now);
+    await rawPrisma.subscription.upsert({
+      where: { userId: input.userId },
+      update: {
+        plan: DEFAULT_BILLING_PLAN,
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        platform: "web",
+        accessType: "FREE_ACCESS",
+        freeAccessEndsAt,
+        trialEndsAt: null,
+        premiumUntil: null,
+        premiumGrantedBy: null,
+        premiumGrantedAt: null,
+        premiumNote: null,
+        cancelAtPeriodEnd: false,
+        autoRenew: false,
+      },
+      create: {
+        userId: input.userId,
+        plan: DEFAULT_BILLING_PLAN,
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        platform: "web",
+        accessType: "FREE_ACCESS",
+        freeAccessEndsAt,
+      },
+    });
+    return { applied: true, email: persona.email, plan: persona.plan };
+  }
+
+  const premiumUntil = qaPremiumUntil(now);
+  await rawPrisma.subscription.upsert({
+    where: { userId: input.userId },
+    update: {
+      plan: persona.plan,
+      status: "ACTIVE",
+      provider: "ADMIN",
+      platform: null,
+      accessType: "PAID",
+      currentPeriodEndsAt: null,
+      freeAccessEndsAt: null,
+      trialEndsAt: null,
+      premiumUntil,
+      premiumGrantedBy: QA_PERSONA_GRANT_SOURCE,
+      premiumGrantedAt: now,
+      premiumNote,
+      cancelAtPeriodEnd: false,
+      autoRenew: false,
+      canceledAt: null,
+    },
+    create: {
+      userId: input.userId,
+      plan: persona.plan,
+      status: "ACTIVE",
+      provider: "ADMIN",
+      platform: null,
+      accessType: "PAID",
+      premiumUntil,
+      premiumGrantedBy: QA_PERSONA_GRANT_SOURCE,
+      premiumGrantedAt: now,
+      premiumNote,
+      cancelAtPeriodEnd: false,
+      autoRenew: false,
+    },
+  });
+
+  return { applied: true, email: persona.email, plan: persona.plan };
 }
 
 async function resetExactAllowlistedQaUser(input: {
@@ -178,7 +354,7 @@ export async function resetAllowlistedQaAccountForSignup(input: {
   );
   if (!allowlistedEmail) {
     const hasResettableConfig =
-      Boolean(getQaResettableAccountEmail()) ||
+      getQaPersonaAccounts().length > 0 ||
       getStoreReviewAccountEmails().length > 0 ||
       Boolean(input.storeReviewEmails?.length);
     return {
@@ -204,10 +380,15 @@ export async function resetAllowlistedQaAccountOnLogout(input: {
   userId: string | null | undefined;
   sessionEmail: string | null | undefined;
 }): Promise<QaAccountResetResult> {
-  const allowlistedEmail = getQaResettableAccountEmail();
-  if (!allowlistedEmail) return { reset: false, reason: "config_disabled" };
+  const persona = getQaPersonaAccountForEmail(input.sessionEmail);
+  if (!persona) {
+    return {
+      reset: false,
+      reason: getQaPersonaAccounts().length > 0 ? "session_not_allowlisted" : "config_disabled",
+    };
+  }
 
-  if (!input.userId || normalizeEmail(input.sessionEmail) !== allowlistedEmail) {
+  if (!input.userId || normalizeEmail(input.sessionEmail) !== persona.email) {
     return { reset: false, reason: "session_not_allowlisted" };
   }
 
@@ -215,9 +396,9 @@ export async function resetAllowlistedQaAccountOnLogout(input: {
     where: { id: input.userId },
     select: { id: true, email: true },
   });
-  if (!user || normalizeEmail(user.email) !== allowlistedEmail) {
+  if (!user || normalizeEmail(user.email) !== persona.email) {
     return { reset: false, reason: "user_not_allowlisted" };
   }
 
-  return resetExactAllowlistedQaUser({ user, allowlistedEmail });
+  return resetExactAllowlistedQaUser({ user, allowlistedEmail: persona.email });
 }

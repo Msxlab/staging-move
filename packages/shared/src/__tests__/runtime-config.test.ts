@@ -233,6 +233,17 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
     expect(isRuntimeConfigDbBackedKeyAllowed("QA_RESETTABLE_ACCOUNT_EMAIL")).toBe(false);
   });
 
+  it("registers QA persona accounts as deployment-only plan grants", () => {
+    expect(getRuntimeConfigDefinition("QA_PERSONA_ACCOUNTS")).toMatchObject({
+      category: "SECURITY",
+      maskStrategy: "plain",
+      runtimeEditable: false,
+      requiredInProduction: false,
+    });
+    expect(isManagedRuntimeConfigKey("QA_PERSONA_ACCOUNTS")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("QA_PERSONA_ACCOUNTS")).toBe(false);
+  });
+
   it("registers store review accounts as deployment-only email config", () => {
     expect(getRuntimeConfigDefinition("STORE_REVIEW_ACCOUNT_EMAILS")).toMatchObject({
       category: "SECURITY",
@@ -451,6 +462,31 @@ describe("validateRuntimeConfigValueShape hardening", () => {
         productionLike: false,
       }),
     ).toMatchObject({ ok: false, reason: "email_required" });
+  });
+
+  it("validates QA persona accounts as email:plan entries", () => {
+    expect(
+      validateRuntimeConfigValueShape(
+        "QA_PERSONA_ACCOUNTS",
+        "mobile.qa@locateflow.com:FREE_TRIAL,mobileindividual@locateflow.com:INDIVIDUAL",
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilefamily@locateflow.com:FAMILY", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilepro@locateflow.com:ENTERPRISE", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "qa_persona_accounts_required" });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilepro@locateflow.com", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "qa_persona_accounts_required" });
   });
 
   it("validates store review accounts as a comma-separated email allowlist", () => {

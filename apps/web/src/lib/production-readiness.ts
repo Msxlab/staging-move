@@ -37,6 +37,9 @@ export const READINESS_CONFIG_KEYS = [
   "CRON_SECRET",
   "INTERNAL_WEBHOOK_SECRET",
   "IMPERSONATION_HANDOFF_SECRET",
+  "QA_RESETTABLE_ACCOUNT_EMAIL",
+  "QA_PERSONA_ACCOUNTS",
+  "STORE_REVIEW_ACCOUNT_EMAILS",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
   "RESEND_API_KEY",
@@ -308,6 +311,17 @@ export function buildReadinessReport(
     const value = readConfig(key);
     if (!value) continue;
     const validation = validateRuntimeConfigValueShape(key, value);
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+
+  for (const key of [
+    "QA_RESETTABLE_ACCOUNT_EMAIL",
+    "QA_PERSONA_ACCOUNTS",
+    "STORE_REVIEW_ACCOUNT_EMAILS",
+  ] as const) {
+    const value = readConfig(key);
+    if (!value) continue;
+    const validation = validateRuntimeConfigValueShape(key, value, { productionLike });
     if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
   }
 

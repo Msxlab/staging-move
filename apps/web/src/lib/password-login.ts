@@ -30,6 +30,7 @@ import {
   getConfiguredStoreReviewAccountEmails,
   provisionStoreReviewAccount,
 } from "@/lib/store-review-account";
+import { applyQaPersonaSubscriptionForUser } from "@/lib/qa-account";
 
 const loginSchema = z.object({
   email: z.string().email().max(191).transform((v) => v.toLowerCase()),
@@ -399,6 +400,9 @@ export async function handlePasswordLogin(
   }
 
   await clearLoginFailures(lockKey).catch(() => null);
+  await applyQaPersonaSubscriptionForUser({ userId: user.id, email: user.email }).catch((error) => {
+    console.warn("Failed to apply QA persona subscription during login:", error);
+  });
 
   const parsedUA = parseUA(ua, request.headers.get("x-client-platform"));
   const fp = options.clientType === "mobile"
