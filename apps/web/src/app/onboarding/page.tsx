@@ -133,6 +133,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("onboarding");
+  const ts = useTranslations("services");
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1740,23 +1741,23 @@ export default function OnboardingPage() {
             <div>
               <h2 className="h2 text-2xl text-foreground">{t.rich("aurora_step2Title", richEm)}</h2>
               <p className="text-sm text-muted-foreground">
-                Choose a listed provider or add a local/custom provider later to create a tracked service.
+                {ts("newPageDescription")}
               </p>
               <p className="mt-1 text-xs text-foreground/45">
-                Showing unverified directory entries for <span className="text-tone-orange-fg font-medium">{address.state || "all states"}</span>.
+                {ts("listedProvidersScope", { state: address.state || ts("listedProvidersAllStates") })}.
               </p>
             </div>
             {selectedProviders.size > 0 && (
               <span className="px-3 py-1 rounded-full bg-tone-orange-bg text-tone-orange-fg text-xs font-medium">
-                {selectedProviders.size} selected
+                {ts("selectedCount", { count: selectedProviders.size })}
               </span>
             )}
           </div>
 
           <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
-            <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
+            <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">{ts("listedProvidersWarningTitle")}</p>
             <p className="mt-1 text-[11px] leading-relaxed text-tone-honey-fg/80 dark:text-tone-honey-fg/75">
-              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
+              {ts("listedProvidersWarningBody")}
             </p>
           </div>
 
@@ -1805,7 +1806,7 @@ export default function OnboardingPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               className="w-full rounded-xl border border-border bg-foreground/5 pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-              placeholder="Search listed providers..."
+              placeholder={ts("searchListedProviders")}
               value={providerSearch}
               onChange={(e) => setProviderSearch(e.target.value)}
             />
@@ -1818,7 +1819,7 @@ export default function OnboardingPage() {
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
             >
               {showCategories ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {showCategories ? "Hide categories" : "Browse by category"}
+              {showCategories ? ts("hideCategories") : ts("browseByCategory")}
               <span className="text-foreground/45">({allCategories.length})</span>
             </button>
             {showCategories && (
@@ -1828,7 +1829,7 @@ export default function OnboardingPage() {
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
                     !activeCategory ? "bg-tone-orange-fg text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                   }`}
-                >All ({providers.length})</button>
+                >{ts("filterGroups.all")} ({providers.length})</button>
                 {allCategories.map((cat) => {
                   const count = providers.filter((p) => getMergedDisplayCategoryKey(p.category) === cat).length;
                   return (
@@ -1854,8 +1855,8 @@ export default function OnboardingPage() {
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-tone-honey-fg" />
-                <h3 className="text-sm font-semibold text-foreground">Recommended Listed Providers</h3>
-                <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
+                <h3 className="text-sm font-semibold text-foreground">{ts("recommendedListedProviders")}</h3>
+                <span className="text-[10px] text-foreground/45 ml-auto">{ts("manualTracking")}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
@@ -1893,7 +1894,7 @@ export default function OnboardingPage() {
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-tone-orange-fg" />
-              <span className="ml-2 text-muted-foreground text-sm">Loading providers...</span>
+              <span className="ml-2 text-muted-foreground text-sm">{ts("loadingProviders")}</span>
             </div>
           ) : sortedCategories.length === 0 ? (
             <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-center">
@@ -1962,7 +1963,7 @@ export default function OnboardingPage() {
                                       <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                                         provider.scope === "FEDERAL" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-tone-emerald-bg text-tone-emerald-fg"
                                       }`}>
-                                        {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
+                                        {provider.scope === "FEDERAL" ? ts("federal") : provider.states.join(", ")}
                                       </span>
                                       {provider.website && (
                                         <span className="text-[9px] text-foreground/45 flex items-center gap-0.5">

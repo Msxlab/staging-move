@@ -21,7 +21,10 @@ export const runtime = "nodejs";
  */
 export async function GET() {
   const off = await workspaceFeatureGate();
-  if (off) return off;
+  // This endpoint is polled by the global app shell. When the workspace model is
+  // disabled, return an empty list instead of the generic feature-gate 404 so
+  // every authenticated page does not emit a noisy browser console error.
+  if (off) return NextResponse.json([]);
   try {
     const userId = await requireVerifiedUser();
 

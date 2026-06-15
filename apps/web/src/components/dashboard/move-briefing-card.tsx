@@ -268,7 +268,11 @@ export function MoveBriefingCard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/onboarding/briefing", { method: "POST" });
+        const res = await fetch("/api/onboarding/briefing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
         if (!res.ok) return;
         const next = deriveBriefingState(await res.json());
         if (cancelled || next.kind === "hidden") return;

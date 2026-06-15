@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Search,
   Sparkles,
@@ -227,6 +228,8 @@ export function ProvidersClient({
   initialZip: string | null;
   initialAddressId: string | null;
 }) {
+  const tp = useTranslations("providers");
+  const ts = useTranslations("services");
   const [providers, setProviders] = useState<ProviderItem[]>(initialProviders);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -520,9 +523,9 @@ export function ProvidersClient({
       {/* Header */}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Providers</em></h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>{tp("title")}</em></h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
+            {tp("subtitle")}
           </p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-2">
@@ -556,9 +559,9 @@ export function ProvidersClient({
       <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 flex gap-3">
         <AlertTriangle className="h-4 w-4 text-tone-honey-fg dark:text-tone-honey-fg shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
+          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">{ts("listedProvidersWarningTitle")}</p>
           <p className="text-[11px] text-tone-honey-fg/80 dark:text-tone-honey-fg/75 mt-1 leading-relaxed">
-            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding this provider creates a LocateFlow service record; it does not update your address with the provider.
+            {ts("listedProvidersWarningBody")}
           </p>
         </div>
       </div>
@@ -732,7 +735,7 @@ export function ProvidersClient({
         <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" />
         <input
           type="text"
-          placeholder="Search listed providers, tags, or descriptions..."
+          placeholder={tp("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-tone-orange-br"
@@ -760,7 +763,7 @@ export function ProvidersClient({
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            All · {providers.length}
+            {ts("filterGroups.all")} · {providers.length}
           </button>
           {shortlist.length > 0 && (
             <button
@@ -798,7 +801,7 @@ export function ProvidersClient({
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
+          <Loader2 className="h-4 w-4 animate-spin" /> {ts("loadingProviders")}
         </div>
       ) : loadError ? (
         <EmptyState
@@ -910,7 +913,7 @@ export function ProvidersClient({
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
                 )}
                 <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
-                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
+                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} {ts("manualTracking")}.
                 </p>
                 <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (

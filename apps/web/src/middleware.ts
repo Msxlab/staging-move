@@ -92,6 +92,7 @@ const PUBLIC_API_EXACT = [
   "/api/auth/reset-password",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
+  "/api/user/locale",
   "/api/mobile/auth/login",
   "/api/mobile/auth/exchange",
   "/api/mobile/auth/apple/native",

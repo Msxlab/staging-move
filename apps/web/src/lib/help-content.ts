@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/db";
-import { FALLBACK_FAQS, FALLBACK_HELP_ARTICLES } from "@/lib/help-fallback";
+import {
+  FALLBACK_FAQS,
+  FALLBACK_FAQS_ES,
+  FALLBACK_HELP_ARTICLES,
+  FALLBACK_HELP_ARTICLES_ES,
+} from "@/lib/help-fallback";
 
 export interface HelpArticle {
   id: string;
@@ -44,7 +49,28 @@ function currentProductFaqs<T extends { question: string; answer: string }>(faqs
   return faqs.filter((faq) => !staleFutureScopePattern.test(`${faq.question} ${faq.answer}`));
 }
 
-export async function getHelpContent(): Promise<HelpContent> {
+function fallbackContent(locale?: string) {
+  const isSpanish = locale?.toLowerCase().startsWith("es");
+  return {
+    articles: isSpanish ? FALLBACK_HELP_ARTICLES_ES : FALLBACK_HELP_ARTICLES,
+    faqs: isSpanish ? FALLBACK_FAQS_ES : FALLBACK_FAQS,
+  };
+}
+
+export async function getHelpContent(locale?: string): Promise<HelpContent> {
+  const fallback = fallbackContent(locale);
+
+  // HelpArticle/FAQ records do not have a locale column yet. Until the CMS is
+  // locale-aware, Spanish pages should use curated Spanish copy instead of
+  // showing English CMS records inside a Spanish shell.
+  if (locale?.toLowerCase().startsWith("es")) {
+    return {
+      articles: fallback.articles,
+      faqs: fallback.faqs,
+      fallback: true,
+    };
+  }
+
   try {
     const [articles, faqs] = await Promise.all([
       prisma.helpArticle.findMany({
@@ -80,14 +106,14 @@ export async function getHelpContent(): Promise<HelpContent> {
     const safeFaqs = currentProductFaqs(faqs);
 
     return {
-      articles: safeArticles.length > 0 ? safeArticles : FALLBACK_HELP_ARTICLES,
-      faqs: safeFaqs.length > 0 ? safeFaqs : FALLBACK_FAQS,
+      articles: safeArticles.length > 0 ? safeArticles : fallback.articles,
+      faqs: safeFaqs.length > 0 ? safeFaqs : fallback.faqs,
       fallback: safeArticles.length === 0 || safeFaqs.length === 0,
     };
   } catch {
     return {
-      articles: FALLBACK_HELP_ARTICLES,
-      faqs: FALLBACK_FAQS,
+      articles: fallback.articles,
+      faqs: fallback.faqs,
       fallback: true,
     };
   }

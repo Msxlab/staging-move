@@ -58,6 +58,19 @@ describe("GET /api/invitations/pending", () => {
     expect(mocks.invitationFindMany).not.toHaveBeenCalled();
   });
 
+  it("returns an empty list when the workspace feature is disabled", async () => {
+    mocks.workspaceFeatureGate.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
+    );
+
+    const res = await GET();
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual([]);
+    expect(mocks.requireVerifiedUser).not.toHaveBeenCalled();
+    expect(mocks.invitationFindMany).not.toHaveBeenCalled();
+  });
+
   it("lists only invites for the verified caller email", async () => {
     const res = await GET();
     const body = await res.json();
