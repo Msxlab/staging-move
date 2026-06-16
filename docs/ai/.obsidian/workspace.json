@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "68191fabfe322c8f",
+    "type": "split",
+    "children": [
+      {
+        "id": "5f7f0f4718ed2eb2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a548deec2f982c13",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "00_PRODUCT_BRAIN_DASHBOARD.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "00_PRODUCT_BRAIN_DASHBOARD"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "775e93da9e1c48b6",
+    "type": "split",
+    "children": [
+      {
+        "id": "db8e516132cb342c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1fe1af6351ef48b4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "df69a0c2ae45836f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "8e3c7eb2731225c4",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "e42621791d8614d7",
+    "type": "split",
+    "children": [
+      {
+        "id": "8b86238cd9bba038",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fdcdeac3ed119734",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "00_PRODUCT_BRAIN_DASHBOARD.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 00_PRODUCT_BRAIN_DASHBOARD"
+            }
+          },
+          {
+            "id": "e689f7a895b493da",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "00_PRODUCT_BRAIN_DASHBOARD.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 00_PRODUCT_BRAIN_DASHBOARD"
+            }
+          },
+          {
+            "id": "64ee230c07a22104",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "449e48e0ecbffb84",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "60f54da54553e51f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "00_PRODUCT_BRAIN_DASHBOARD.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 00_PRODUCT_BRAIN_DASHBOARD"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "a548deec2f982c13",
+  "lastOpenFiles": [
+    "handoffs/2026-06-16-114758-product-brain-versioned.md",
+    "handoffs/2026-06-16-113528-phase1-ci-green.md",
+    "handoffs/2026-06-16-111804-phase1-integration.md",
+    "handoffs/2026-06-16-110550-briefing-typecheck-fix.md",
+    "handoffs/2026-06-16-104732-user-event-retention-sampling.md",
+    "analytics/DATA_RETENTION_POLICY.md",
+    "handoffs/2026-06-16-103440-phase1-qa-results.md",
+    "handoffs/2026-06-16-101705-phase1-telemetry-persistence.md",
+    "handoffs/2026-06-16-095549-onboarding-teaser-running.md",
+    "handoffs/2026-06-15-182942-point-of-action-trust-confirmation-running.md",
+    "experiments/QA_EXP1_COMMAND_CENTER_DEPENDABILITY.md",
+    "handoffs/2026-06-15-180707-command-center-dependability-running.md",
+    "handoffs/2026-06-15-171432-active-strategy-roadmap.md",
+    "02_ACTIVE_EXPERIMENTS.md",
+    "01_ACTIVE_STRATEGY.md",
+    "handoffs/20260615-163949-vision-ingested-into-product-brain.md",
+    "vision/VISION_DECISION_SUMMARY.md",
+    "vision/90_180_365_DAY_PLAN.md",
+    "vision/RISK_AND_COMPLIANCE_GUARDRAILS.md",
+    "vision/DATA_MOAT_STRATEGY.md",
+    "vision/API_INTEGRATION_ROADMAP.md",
+    "vision/OUTREACH_PLAYBOOK.md",
+    "vision/SEO_GEO_SITE_STRATEGY.md",
+    "vision/MONETIZATION_MAP.md",
+    "vision/PARTNERSHIP_TARGET_MAP.md",
+    "vision/API_OPPORTUNITY_MATRIX.md",
+    "vision",
+    "analytics",
+    "experience"
+  ]
+}

@@ -1,0 +1,19 @@
+﻿You are Codex working on one verified audit finding.
+
+Rules:
+- Pick exactly one finding ID from docs/ai/memory/RISK_REGISTER.md or the audit report.
+- Create a small branch name suggestion.
+- Do not touch unrelated files.
+- Do not read secrets.
+- Add or update tests when practical.
+- Run relevant lint/typecheck/tests.
+- Update docs/ai/handoffs/ with what changed.
+- Do not deploy or push without approval.
+
+Required output:
+- finding selected
+- files changed
+- commands run
+- test results
+- remaining risks
+- next recommended task

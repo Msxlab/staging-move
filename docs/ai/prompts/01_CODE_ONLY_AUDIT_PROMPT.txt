@@ -1,0 +1,137 @@
+﻿You are a senior software architect, security auditor, backend/API auditor, mobile release readiness expert, and QA specialist.
+
+Work only inside this repository.
+
+Goal:
+Perform a code-only audit and produce:
+
+1. docs/ai/audits/advanced-system-audit-report.md
+2. docs/ai/memory/PROJECT_MAP.md
+3. docs/ai/memory/API_INVENTORY.md
+4. docs/ai/memory/AUTH_AND_PERMISSIONS.md
+5. docs/ai/memory/BILLING_AND_SUBSCRIPTIONS.md
+6. docs/ai/memory/MOBILE_RELEASE_READINESS.md
+7. docs/ai/memory/ENV_AND_CONFIG_MAP.md
+8. docs/ai/memory/TEST_MAP.md
+9. docs/ai/memory/RISK_REGISTER.md
+10. docs/ai/handoffs/<timestamp>-code-only-audit.md
+
+STRICT RULES:
+
+- Do not modify application source code.
+- Do not read existing `.md`, `.qmd`, README, CHANGELOG, docs, notes, task files, memory files, or previous summaries as audit evidence.
+- AGENTS.md and CLAUDE.md may be used only as operating instructions, not source evidence.
+- Do not read `.env`, `.env.*`, private keys, certificates, tokens, credentials, or secret files.
+- You may inspect env example files and config files, but never secret values.
+- Do not use internet access.
+- Do not install packages.
+- Do not deploy, publish, push, or change infrastructure.
+- Base the audit only on source code, config files, manifests, dependency files, migrations, tests, build files, and CI/CD config.
+- If something cannot be verified from code, write `not verified in code`.
+- Every finding must include file path, function/class/component/endpoint when applicable, line range when practical, severity, impact, and recommended fix.
+- Avoid speculative claims.
+
+PHASE 0 â€” SAFETY AND INVENTORY:
+
+1. Run git status.
+2. Do not change source code.
+3. Run scripts/ai/Make-Inventory.ps1 if present. If not present, create a safe inventory manually.
+4. Exclude generated/vendor/build folders such as node_modules, .git, .next, dist, build, coverage, .turbo, ios/Pods, android/.gradle, android/app/build.
+
+PHASE 1 â€” PROJECT MAP:
+
+Map:
+- web frontend
+- admin panel
+- mobile app
+- backend/API
+- database/schema/migrations
+- auth
+- payment/billing
+- notifications
+- upload/media
+- queue/jobs/workers
+- config/env
+- tests
+- build/deploy
+- CI/CD
+- monorepo packages
+
+PHASE 2 â€” MODULE-BY-MODULE AUDIT:
+
+For each module:
+- Identify entry points.
+- Follow imports/exports.
+- Inspect routes, services, middleware, components, hooks, stores, schemas, tests, config.
+- Identify high-risk files.
+- Track coverage in the report.
+
+PHASE 3 â€” API AUDIT:
+
+For every endpoint create a table:
+
+| Method | Endpoint | File | Auth | Role/Permission | Input Validation | Risk | Recommendation |
+|---|---|---|---|---|---|---|---|
+
+Analyze unauthenticated access, low-privilege access, cross-user access, validation, output filtering, rate limiting, IDOR, pagination, file upload, webhook signatures, business logic bypass, and error handling.
+
+PHASE 4 â€” SECURITY AUDIT:
+
+Cover:
+- authentication
+- authorization
+- admin authorization
+- token/session storage
+- password reset
+- email verification
+- MFA/OAuth if present
+- input validation
+- XSS/SSRF/path traversal/injection
+- sensitive logging
+- PII exposure
+- secrets in code/client/mobile bundle
+- CORS/CSP/security headers
+- webhook verification
+- mobile token storage
+- deep link security
+- Android/iOS release security
+
+PHASE 5 â€” BUG, LOGIC, DEAD CODE, TEST, PERFORMANCE, OBSERVABILITY:
+
+Find:
+- runtime bugs
+- null/undefined access
+- async errors
+- race conditions
+- bad date/currency logic
+- wrong permission logic
+- soft-delete leakage
+- missing transactions/idempotency
+- dead code
+- duplicate implementations
+- missing tests
+- weak mocks
+- performance risks
+- logging/monitoring gaps
+- production config risks
+
+PHASE 6 â€” VERIFIED MEMORY EXTRACTION:
+
+After creating the audit report, populate docs/ai/memory/*.md using only:
+- verified code evidence
+- generated audit report findings that include code evidence
+
+Every memory fact must be either:
+- backed by code/config/test evidence, or
+- marked `not verified in code`.
+
+PHASE 7 â€” HANDOFF:
+
+Create a handoff file under docs/ai/handoffs/ with:
+- what was audited
+- what remains incomplete
+- top risks
+- exact next prompt for Claude review
+- exact next prompt for Codex follow-up
+
+Do not claim full coverage unless file inventory and module coverage prove it.
