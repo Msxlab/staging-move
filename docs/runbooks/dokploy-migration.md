@@ -126,6 +126,12 @@ Add source DB credentials only to Dokploy environment variables or another
 approved secret surface, never to chat or committed files. Remove temporary
 source credentials after the copy and count comparison are complete.
 
+2026-06-16 rehearsal note: the UI-only DB copy path was run successfully. The
+one-shot `locateflow-dbcopy` container exited `0`, source/target counts matched,
+temporary DigitalOcean restore access was removed, and the Dokploy Raw compose
+was switched back to MySQL-only prep so the restore job is not rerun
+accidentally.
+
 ## 3. Rehearsal Restore
 
 Use a fresh rehearsal dump from DigitalOcean managed MySQL. Do not run these

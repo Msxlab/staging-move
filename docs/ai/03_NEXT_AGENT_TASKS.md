@@ -13,14 +13,22 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1600-dokploy-dbprep-ui-only]]
-- Dokploy UI-only DB prep succeeded: `locateflow-mysql` is running healthy on
-  the Dokploy server using a temporary Raw DB-only compose. DigitalOcean remains
-  live and DNS was not changed.
-- Next step: restore source MySQL data into the Dokploy `locateflow-mysql`
-  container without exposing source DB credentials in chat, then compare
-  `scripts/dokploy-db-counts.sql` counts. Full app deploy also needs GitHub
-  clone auth resolved because unauthenticated HTTPS clone failed.
+  [[handoffs/2026-06-16-1625-dokploy-dbcopy-restore]]
+- Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
+  streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
+  source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
+  `RuntimeConfigEntry_active`, users, subscriptions, addresses, providers,
+  saved/custom providers, tasks, email logs, connector dispatches, and address
+  change events. `locateflow-mysql` remains running healthy.
+- Temporary DigitalOcean restore access was removed after the copy: the
+  temporary restore user was deleted and the temporary Dokploy-server DB
+  firewall rule was removed. DigitalOcean remains live and DNS was not changed.
+- Next step: resolve full app deploy on Dokploy. The previous unauthenticated
+  GitHub HTTPS clone failed, so configure a GitHub provider/deploy key or use an
+  approved alternative build path. Then switch Dokploy from the temporary
+  MySQL-only Raw compose back to the full app compose and run health checks.
+- Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
+  Dokploy env if it is still present. Do not reveal or record its value.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
   be paused, final dump can be taken, final restore can be counted, health
   checks pass, and DNS/cron can be moved in that order.
