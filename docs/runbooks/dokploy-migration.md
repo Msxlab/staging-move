@@ -114,6 +114,18 @@ docker-compose.dokploy.yml
 Do not enable live domains or cron until the final dump/restore and health
 checks are complete.
 
+For a UI-only restore, use the one-off DB copy compose:
+
+```text
+docker-compose.dokploy-dbcopy.yml
+```
+
+It keeps `mysql` on the shared `mysql_data` volume and adds a one-shot `dbcopy`
+container that streams the DigitalOcean MySQL dump directly into Dokploy MySQL.
+Add source DB credentials only to Dokploy environment variables or another
+approved secret surface, never to chat or committed files. Remove temporary
+source credentials after the copy and count comparison are complete.
+
 ## 3. Rehearsal Restore
 
 Use a fresh rehearsal dump from DigitalOcean managed MySQL. Do not run these
