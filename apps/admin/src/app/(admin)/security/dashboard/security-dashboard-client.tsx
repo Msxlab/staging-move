@@ -7,10 +7,10 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import {
   Shield, ShieldAlert, Monitor, Clock, XCircle, CheckCircle2, Loader2,
   ChevronLeft, ChevronRight, Power, Globe, Smartphone, Laptop, ArrowLeft,
-  AlertTriangle, KeyRound, Eye, Ban, RefreshCw, Download,
+  AlertTriangle, KeyRound, Eye, Ban, RefreshCw, Download, ShieldCheck,
 } from "lucide-react";
 
-type Tab = "sessions" | "login-history" | "events";
+type Tab = "sessions" | "trusted-devices" | "login-history" | "events";
 type PendingSessionAction =
   | { type: "revoke"; revokeHandle: string; currentSession: boolean; requiresStepUp: boolean }
   | { type: "revoke_all"; scope: string; currentSession: boolean; requiresStepUp: boolean };
@@ -27,11 +27,24 @@ function relativeTime(date: string) {
   return new Date(date).toLocaleDateString();
 }
 
+function timeUntil(date: string) {
+  const diff = new Date(date).getTime() - Date.now();
+  if (diff <= 0) return "expired";
+  const mins = Math.ceil(diff / 60000);
+  if (mins < 60) return `in ${mins}m`;
+  const hrs = Math.ceil(mins / 60);
+  if (hrs < 24) return `in ${hrs}h`;
+  const days = Math.ceil(hrs / 24);
+  if (days < 31) return `in ${days}d`;
+  return new Date(date).toLocaleDateString();
+}
+
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function SecurityDashboardClient() {
   const [tab, setTab] = useState<Tab>("sessions");
   const [sessions, setSessions] = useState<any[]>([]);
+  const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
   const [loginLogs, setLoginLogs] = useState<any[]>([]);
   const [loginStats, setLoginStats] = useState<any>({});
   const [securityEvents, setSecurityEvents] = useState<any[]>([]);
@@ -55,6 +68,15 @@ export default function SecurityDashboardClient() {
       setIsSuperAdmin(data.isSuperAdmin || false);
     } catch { toast.error("Failed to load sessions"); }
   }, [showAll]);
+
+  const loadTrustedDevices = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/mfa/trusted-devices");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load trusted devices");
+      setTrustedDevices(data.devices || []);
+    } catch { toast.error("Failed to load trusted devices"); }
+  }, []);
 
   const loadLoginHistory = useCallback(async () => {
     try {
@@ -87,8 +109,42 @@ export default function SecurityDashboardClient() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadSessions(), loadLoginHistory(), loadSecurityEvents()]).finally(() => setLoading(false));
-  }, [loadSessions, loadLoginHistory, loadSecurityEvents]);
+    Promise.all([loadSessions(), loadTrustedDevices(), loadLoginHistory(), loadSecurityEvents()]).finally(() => setLoading(false));
+  }, [loadSessions, loadTrustedDevices, loadLoginHistory, loadSecurityEvents]);
+
+  async function revokeTrustedDevice(deviceId: string) {
+    if (!confirm("Forget this trusted MFA device? The next login on that device will require MFA.")) return;
+    try {
+      const res = await fetch("/api/auth/mfa/trusted-devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revoke", deviceId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to forget device");
+      toast.success("Trusted device forgotten");
+      loadTrustedDevices();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to forget device");
+    }
+  }
+
+  async function revokeAllTrustedDevices() {
+    if (!confirm("Forget all trusted MFA devices? Every admin login will require MFA again on this account.")) return;
+    try {
+      const res = await fetch("/api/auth/mfa/trusted-devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revoke_all" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to forget devices");
+      toast.success(`${data.revoked || 0} trusted device(s) forgotten`);
+      loadTrustedDevices();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to forget devices");
+    }
+  }
 
   async function submitSessionAction(action: PendingSessionAction) {
     const stepUpPayload = action.requiresStepUp
@@ -202,10 +258,10 @@ export default function SecurityDashboardClient() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Logins (24h)</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.total24h || 0}</p>
+              <p className="text-xs font-medium text-muted-foreground">Trusted Devices</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{trustedDevices.length}</p>
             </div>
-            <div className="rounded-lg bg-tone-sky-bg p-2.5"><KeyRound className="h-5 w-5 text-tone-sky-fg" /></div>
+            <div className="rounded-lg bg-tone-sky-bg p-2.5"><ShieldCheck className="h-5 w-5 text-tone-sky-fg" /></div>
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
@@ -231,11 +287,16 @@ export default function SecurityDashboardClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-between gap-4 border-b border-border">
-        <div className="flex gap-2">
-          {([["sessions", "Active Sessions", Monitor], ["login-history", "Login History", KeyRound], ["events", "Security Events", ShieldAlert]] as const).map(([key, label, Icon]) => (
+      <div className="flex flex-col gap-2 border-b border-border sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex gap-2 overflow-x-auto overscroll-x-contain -mb-px">
+          {([
+            ["sessions", "Active Sessions", Monitor],
+            ["trusted-devices", "Trusted Devices", ShieldCheck],
+            ["login-history", "Login History", KeyRound],
+            ["events", "Security Events", ShieldAlert],
+          ] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setTab(key as Tab)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Icon className="h-4 w-4" /> {label}
             </button>
           ))}
@@ -253,9 +314,9 @@ export default function SecurityDashboardClient() {
       {/* Active Sessions Tab */}
       {tab === "sessions" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">{activeSessions.length} active session(s)</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => loadSessions()} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>
@@ -299,6 +360,67 @@ export default function SecurityDashboardClient() {
                     <button onClick={() => revokeSession(s)} aria-label="Revoke session"
                       className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
                       <Power className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Trusted Devices Tab */}
+      {tab === "trusted-devices" && (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{trustedDevices.length} trusted MFA device(s)</p>
+              <p className="text-xs text-muted-foreground">Trusted devices can skip MFA on familiar networks for up to 30 days.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => loadTrustedDevices()} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+                <RefreshCw className="h-3 w-3" /> Refresh
+              </button>
+              {trustedDevices.length > 0 && (
+                <button onClick={() => revokeAllTrustedDevices()} className="flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+                  <Ban className="h-3 w-3" /> Forget All
+                </button>
+              )}
+            </div>
+          </div>
+
+          {trustedDevices.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-12 text-center">
+              <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">No trusted MFA devices yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {trustedDevices.map((device) => (
+                <div key={device.id} className={`rounded-xl border p-5 transition ${device.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-lg bg-tone-sky-bg p-2.5">
+                        <ShieldCheck className="h-5 w-5 text-tone-sky-fg" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-foreground">{device.deviceLabel || "Trusted device"}</p>
+                          {device.isCurrent && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Current browser</span>}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {device.ipAddress || "unknown IP"}</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Expires {timeUntil(device.expiresAt)}</span>
+                          {device.lastUsedAt && <span>Last used {relativeTime(device.lastUsedAt)}</span>}
+                        </div>
+                        {device.userAgent && (
+                          <p className="mt-2 max-w-2xl truncate text-[11px] text-muted-foreground">{device.userAgent}</p>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={() => revokeTrustedDevice(device.id)}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+                      <XCircle className="h-3.5 w-3.5" /> Forget
                     </button>
                   </div>
                 </div>

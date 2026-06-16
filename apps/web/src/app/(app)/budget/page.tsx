@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale } from "next-intl";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CardSkeleton } from "@/components/shared/loading-state";
 import {
@@ -88,6 +89,123 @@ const statTone = {
   red: { box: "bg-destructive/10 border-destructive", icon: "text-destructive" },
 } as const;
 
+const BUDGET_COPY = {
+  en: {
+    command: "Money command",
+    title: "Budget",
+    subtitle: "Plan monthly commitments, confirm real costs, and keep move-related spending in one place.",
+    month: "Month",
+    address: "Address",
+    allAddresses: "All addresses",
+    selectedAddress: "Selected address",
+    cancel: "Cancel",
+    manageLimits: "Manage Budget Limits",
+    limits: "Limits",
+    projectedThisMonth: "Projected this month",
+    recurringPlusOneTime: (recurring: string, oneTime: string) => `${recurring} recurring plus ${oneTime} one-time`,
+    noRecurringCosts: "No recurring costs in this filter yet",
+    limit: "Limit",
+    notSet: "Not set",
+    monthlyCommitted: "Monthly Committed",
+    recurringServiceCount: (count: number) => `${count} recurring service${count === 1 ? "" : "s"}`,
+    monthlyBudgetLimit: "Monthly Budget Limit",
+    overUnderBudget: "Over / Under Budget",
+    setBudget: "Set budget",
+    noMonthlyLimit: "No monthly limit yet",
+    underBudget: "Under budget",
+    overBudget: "Over budget",
+    projected: "Projected This Month",
+    oneTime: "one-time",
+    realSavings: "Your Real Savings",
+    logActualsHint: "Log what your services actually cost below to see substantiated savings vs. your estimates.",
+    logActualCosts: "Log Actual Costs",
+    confirmed: "confirmed",
+    loggingMonth: (month: string) => `Logging ${month}. Confirm the estimate or enter what each service actually cost that month. We compare it to our projection to prove your savings.`,
+    noActiveCosts: "No active costed services in this filter yet.",
+    estimateVsActual: "Estimate vs Actual by Category",
+    confirmCostHint: "Confirm a service cost to see where you beat or missed your estimate.",
+    oneTimeCosts: "One-time Costs This Month",
+    noOneTimeCosts: (month: string) => `No one-time service costs for ${month}.`,
+    servicesMissingCost: "Services Missing Cost",
+    allCosted: "All active services in this filter have cost data.",
+    addCost: "Add cost",
+    moreMissing: (count: number) => `+${count} more services missing cost data`,
+    budgetHistory: "Budget History",
+    noBudgetTitle: "No budget limits yet",
+    noBudgetWithCosts: (total: string) => `Your active services currently total ${total}/mo. Set a monthly budget to compare your costs.`,
+    noBudgetNoCosts: "Add costs to your services to enable budget tracking.",
+    setMonthlyBudget: "Set Monthly Budget",
+    loadFailed: "Failed to load budget data",
+    savedActual: "Saved actual cost",
+    clearedActual: "Cleared actual cost",
+    saveActualFailed: "Failed to save actual cost",
+    enterActual: "Enter what you actually paid, or tap Looks right.",
+    invalidAmount: "Enter a valid amount.",
+    setLimitError: "Set a monthly budget limit or at least one category limit.",
+    savedBudget: "Monthly budget saved",
+    saveBudgetFailed: "Failed to save budget",
+  },
+  es: {
+    command: "Comando de dinero",
+    title: "Presupuesto",
+    subtitle: "Planifica compromisos mensuales, confirma costos reales y mantiene gastos de mudanza en un solo lugar.",
+    month: "Mes",
+    address: "Direccion",
+    allAddresses: "Todas las direcciones",
+    selectedAddress: "Direccion seleccionada",
+    cancel: "Cancelar",
+    manageLimits: "Gestionar limites",
+    limits: "Limites",
+    projectedThisMonth: "Proyectado este mes",
+    recurringPlusOneTime: (recurring: string, oneTime: string) => `${recurring} recurrente mas ${oneTime} unico`,
+    noRecurringCosts: "Aun no hay costos recurrentes en este filtro",
+    limit: "Limite",
+    notSet: "No definido",
+    monthlyCommitted: "Compromiso mensual",
+    recurringServiceCount: (count: number) => `${count} servicio${count === 1 ? "" : "s"} recurrente${count === 1 ? "" : "s"}`,
+    monthlyBudgetLimit: "Limite mensual",
+    overUnderBudget: "Sobre / bajo presupuesto",
+    setBudget: "Definir presupuesto",
+    noMonthlyLimit: "Aun no hay limite mensual",
+    underBudget: "Bajo presupuesto",
+    overBudget: "Sobre presupuesto",
+    projected: "Proyectado este mes",
+    oneTime: "unico",
+    realSavings: "Tus ahorros reales",
+    logActualsHint: "Registra cuanto costaron realmente tus servicios para ver ahorros comprobados contra tus estimados.",
+    logActualCosts: "Registrar costos reales",
+    confirmed: "confirmado",
+    loggingMonth: (month: string) => `Registrando ${month}. Confirma el estimado o ingresa el costo real de cada servicio ese mes.`,
+    noActiveCosts: "No hay servicios activos con costo en este filtro.",
+    estimateVsActual: "Estimado vs real por categoria",
+    confirmCostHint: "Confirma el costo de un servicio para ver donde superaste o fallaste el estimado.",
+    oneTimeCosts: "Costos unicos este mes",
+    noOneTimeCosts: (month: string) => `No hay costos unicos para ${month}.`,
+    servicesMissingCost: "Servicios sin costo",
+    allCosted: "Todos los servicios activos en este filtro tienen costo.",
+    addCost: "Agregar costo",
+    moreMissing: (count: number) => `+${count} servicios mas sin costo`,
+    budgetHistory: "Historial de presupuesto",
+    noBudgetTitle: "Aun no hay limites de presupuesto",
+    noBudgetWithCosts: (total: string) => `Tus servicios activos suman ${total}/mes. Define un presupuesto mensual para comparar costos.`,
+    noBudgetNoCosts: "Agrega costos a tus servicios para activar el seguimiento de presupuesto.",
+    setMonthlyBudget: "Definir presupuesto mensual",
+    loadFailed: "No se pudo cargar el presupuesto",
+    savedActual: "Costo real guardado",
+    clearedActual: "Costo real borrado",
+    saveActualFailed: "No se pudo guardar el costo real",
+    enterActual: "Ingresa lo que realmente pagaste o toca Se ve correcto.",
+    invalidAmount: "Ingresa un monto valido.",
+    setLimitError: "Define un limite mensual o al menos un limite por categoria.",
+    savedBudget: "Presupuesto mensual guardado",
+    saveBudgetFailed: "No se pudo guardar el presupuesto",
+  },
+} as const;
+
+function copyForLocale(locale: string) {
+  return locale.toLowerCase().startsWith("es") ? BUDGET_COPY.es : BUDGET_COPY.en;
+}
+
 function currentMonthKey() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -119,10 +237,10 @@ function emptyForm(): BudgetFormState {
   };
 }
 
-function addressLabel(addresses: AddressOption[], addressId?: string | null) {
-  if (!addressId) return "All addresses";
+function addressLabel(addresses: AddressOption[], addressId?: string | null, allLabel = "All addresses", selectedLabel = "Selected address") {
+  if (!addressId) return allLabel;
   const address = addresses.find((item) => item.id === addressId);
-  return address ? address.nickname || `${address.city}, ${address.state}` : "Selected address";
+  return address ? address.nickname || `${address.city}, ${address.state}` : selectedLabel;
 }
 
 function toServices(rows: any[]): ServiceCostInput[] {
@@ -144,6 +262,8 @@ function toServices(rows: any[]): ServiceCostInput[] {
 }
 
 export default function BudgetPage() {
+  const locale = useLocale();
+  const copy = copyForLocale(locale);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [services, setServices] = useState<ServiceCostInput[]>([]);
@@ -171,7 +291,7 @@ export default function BudgetPage() {
         setServices(toServices(serviceData.services || []));
       })
       .catch(() => {
-        toast.error("Failed to load budget data");
+        toast.error(copy.loadFailed);
       })
       .finally(() => setLoading(false));
   };
@@ -293,9 +413,9 @@ export default function BudgetPage() {
       // Refresh the saved Budget rows so "Budget History" reflects the new actual
       // (the server recomputes the month's snapshot when an actual is logged).
       loadBudgetData();
-      toast.success(amount === null ? "Cleared actual cost" : "Saved actual cost");
+      toast.success(amount === null ? copy.clearedActual : copy.savedActual);
     } catch {
-      toast.error("Failed to save actual cost");
+      toast.error(copy.saveActualFailed);
     } finally {
       setSavingActualId(null);
     }
@@ -309,12 +429,12 @@ export default function BudgetPage() {
   const saveActualDraft = (service: ServiceCostInput) => {
     const raw = actualDrafts[service.id];
     if (raw === undefined || raw.trim() === "") {
-      toast.error("Enter what you actually paid, or tap Looks right.");
+      toast.error(copy.enterActual);
       return;
     }
     const value = Number(raw);
     if (!Number.isFinite(value) || value < 0) {
-      toast.error("Enter a valid amount.");
+      toast.error(copy.invalidAmount);
       return;
     }
     persistServiceActual(service.id, value);
@@ -348,7 +468,7 @@ export default function BudgetPage() {
 
   const handleSave = async () => {
     if (!form.budgetLimit && !Object.values(form.categories).some((value) => value && Number(value) > 0)) {
-      toast.error("Set a monthly budget limit or at least one category limit.");
+      toast.error(copy.setLimitError);
       return;
     }
 
@@ -380,13 +500,13 @@ export default function BudgetPage() {
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error("Failed to save budget");
-      toast.success("Monthly budget saved");
+      toast.success(copy.savedBudget);
       setSelectedMonth(form.month);
       setSelectedAddressId(form.addressId);
       closeBudgetForm();
       loadBudgetData();
     } catch {
-      toast.error("Failed to save budget");
+      toast.error(copy.saveBudgetFailed);
     } finally {
       setSaving(false);
     }
@@ -396,30 +516,30 @@ export default function BudgetPage() {
 
   const overviewStats = [
     {
-      label: "Monthly Committed",
+      label: copy.monthlyCommitted,
       value: formatCurrency(budgetSummary.monthlyCommitted),
-      sub: `${budgetSummary.costedRecurringServices.length} recurring service${budgetSummary.costedRecurringServices.length === 1 ? "" : "s"}`,
+      sub: copy.recurringServiceCount(budgetSummary.costedRecurringServices.length),
       icon: DollarSign,
       tone: "orange" as const,
     },
     {
-      label: "Monthly Budget Limit",
-      value: budgetLimit > 0 ? formatCurrency(budgetLimit) : "Not set",
-      sub: addressLabel(addresses, selectedAddressId),
+      label: copy.monthlyBudgetLimit,
+      value: budgetLimit > 0 ? formatCurrency(budgetLimit) : copy.notSet,
+      sub: addressLabel(addresses, selectedAddressId, copy.allAddresses, copy.selectedAddress),
       icon: Target,
       tone: "cyan" as const,
     },
     {
-      label: "Projected This Month",
+      label: copy.projected,
       value: formatCurrency(budgetSummary.projectedThisMonth),
-      sub: budgetSummary.oneTimeThisMonth > 0 ? `${formatCurrency(budgetSummary.oneTimeThisMonth)} one-time` : monthLabel(selectedMonth),
+      sub: budgetSummary.oneTimeThisMonth > 0 ? `${formatCurrency(budgetSummary.oneTimeThisMonth)} ${copy.oneTime}` : monthLabel(selectedMonth),
       icon: Calendar,
       tone: "emerald" as const,
     },
     {
-      label: "Over / Under Budget",
-      value: budgetDelta === null ? "Set budget" : formatCurrency(Math.abs(budgetDelta)),
-      sub: budgetDelta === null ? "No monthly limit yet" : budgetDelta >= 0 ? "Under budget" : "Over budget",
+      label: copy.overUnderBudget,
+      value: budgetDelta === null ? copy.setBudget : formatCurrency(Math.abs(budgetDelta)),
+      sub: budgetDelta === null ? copy.noMonthlyLimit : budgetDelta >= 0 ? copy.underBudget : copy.overBudget,
       icon: PiggyBank,
       tone: budgetDelta !== null && budgetDelta < 0 ? "red" as const : "emerald" as const,
     },
@@ -437,22 +557,22 @@ export default function BudgetPage() {
                 </button>
               </Link>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Money command</p>
-                <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">Budget</h1>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.command}</p>
+                <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">{copy.title}</h1>
                 <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                  Plan monthly commitments, confirm real costs, and keep move-related spending in one place.
+                  {copy.subtitle}
                 </p>
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(150px,190px)_minmax(180px,240px)_auto]">
               <label className="space-y-1.5">
-                <span className={labelCls}>Month</span>
+                <span className={labelCls}>{copy.month}</span>
                 <input className={inputCls} type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} />
               </label>
               <label className="space-y-1.5">
-                <span className={labelCls}>Address</span>
+                <span className={labelCls}>{copy.address}</span>
                 <select className={inputCls} value={selectedAddressId} onChange={(event) => setSelectedAddressId(event.target.value)}>
-                  <option value="">All addresses</option>
+                  <option value="">{copy.allAddresses}</option>
                   {addresses.map((address) => (
                     <option key={address.id} value={address.id}>
                       {address.nickname || `${address.city}, ${address.state}`}
@@ -464,7 +584,7 @@ export default function BudgetPage() {
                 className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 onClick={showForm ? closeBudgetForm : openBudgetForm}
               >
-                {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" /><span className="hidden sm:inline">Manage Budget Limits</span><span className="sm:hidden">Limits</span></>}
+                {showForm ? <><X className="h-4 w-4" />{copy.cancel}</> : <><Plus className="h-4 w-4" /><span className="hidden sm:inline">{copy.manageLimits}</span><span className="sm:hidden">{copy.limits}</span></>}
               </button>
             </div>
           </div>
@@ -474,20 +594,20 @@ export default function BudgetPage() {
           <div className="rounded-2xl border border-border bg-background/55 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">Projected this month</p>
+                <p className="text-[11px] font-medium text-muted-foreground">{copy.projectedThisMonth}</p>
                 <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
                   {formatCurrency(budgetSummary.projectedThisMonth)}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {budgetSummary.monthlyCommitted > 0
-                    ? `${formatCurrency(budgetSummary.monthlyCommitted)} recurring plus ${formatCurrency(budgetSummary.oneTimeThisMonth)} one-time`
-                    : "No recurring costs in this filter yet"}
+                    ? copy.recurringPlusOneTime(formatCurrency(budgetSummary.monthlyCommitted), formatCurrency(budgetSummary.oneTimeThisMonth))
+                    : copy.noRecurringCosts}
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-2 text-right">
-                <p className="text-[10px] text-muted-foreground">Limit</p>
+                <p className="text-[10px] text-muted-foreground">{copy.limit}</p>
                 <p className="text-sm font-semibold text-foreground">
-                  {budgetLimit > 0 ? formatCurrency(budgetLimit) : "Not set"}
+                  {budgetLimit > 0 ? formatCurrency(budgetLimit) : copy.notSet}
                 </p>
               </div>
             </div>
@@ -717,11 +837,11 @@ export default function BudgetPage() {
       <section className="rounded-2xl border border-tone-emerald-br bg-tone-emerald-bg/40 backdrop-blur-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="h-4 w-4 text-tone-emerald-fg" />
-          <h2 className="text-sm font-semibold text-foreground">Your Real Savings</h2>
+          <h2 className="text-sm font-semibold text-foreground">{copy.realSavings}</h2>
         </div>
         {budgetActuals.loggedServiceCount === 0 ? (
           <p className="text-xs text-foreground/50 text-center py-4">
-            Log what your services actually cost below to see substantiated savings vs. your estimates.
+            {copy.logActualsHint}
           </p>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -767,17 +887,17 @@ export default function BudgetPage() {
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-tone-orange-fg" />
-              <h2 className="text-sm font-semibold text-foreground">Log Actual Costs</h2>
+              <h2 className="text-sm font-semibold text-foreground">{copy.logActualCosts}</h2>
             </div>
             <span className="text-[10px] text-muted-foreground">
-              {loggedActualCount}/{trackableServices.length} confirmed
+              {loggedActualCount}/{trackableServices.length} {copy.confirmed}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            Logging {monthLabel(selectedMonth)}. Confirm the estimate or enter what each service actually cost that month. We compare it to our projection to prove your savings.
+            {copy.loggingMonth(monthLabel(selectedMonth))}
           </p>
           {trackableServices.length === 0 ? (
-            <p className="text-xs text-foreground/40 text-center py-6">No active costed services in this filter yet.</p>
+            <p className="text-xs text-foreground/40 text-center py-6">{copy.noActiveCosts}</p>
           ) : (
             <div className="space-y-2">
               {trackableServices.map((service) => {
@@ -869,11 +989,11 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="h-4 w-4 text-tone-cyan-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Estimate vs Actual by Category</h2>
+            <h2 className="text-sm font-semibold text-foreground">{copy.estimateVsActual}</h2>
           </div>
           {budgetActuals.loggedServiceCount === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">
-              Confirm a service cost to see where you beat or missed your estimate.
+              {copy.confirmCostHint}
             </p>
           ) : (
             <div className="space-y-3">
@@ -908,10 +1028,10 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <WalletCards className="h-4 w-4 text-tone-honey-fg" />
-            <h2 className="text-sm font-semibold text-foreground">One-time Costs This Month</h2>
+            <h2 className="text-sm font-semibold text-foreground">{copy.oneTimeCosts}</h2>
           </div>
           {budgetSummary.oneTimeServicesThisMonth.length === 0 ? (
-            <p className="text-xs text-foreground/40 text-center py-6">No one-time service costs for {monthLabel(selectedMonth)}.</p>
+            <p className="text-xs text-foreground/40 text-center py-6">{copy.noOneTimeCosts(monthLabel(selectedMonth))}</p>
           ) : (
             <div className="space-y-2">
               {budgetSummary.oneTimeServicesThisMonth.map((service) => (
@@ -930,10 +1050,10 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-4 w-4 text-tone-honey-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Services Missing Cost</h2>
+            <h2 className="text-sm font-semibold text-foreground">{copy.servicesMissingCost}</h2>
           </div>
           {budgetSummary.missingCostServices.length === 0 ? (
-            <p className="text-xs text-foreground/40 text-center py-6">All active services in this filter have cost data.</p>
+            <p className="text-xs text-foreground/40 text-center py-6">{copy.allCosted}</p>
           ) : (
             <div className="space-y-2">
               {budgetSummary.missingCostServices.slice(0, 8).map((service) => (
@@ -943,12 +1063,12 @@ export default function BudgetPage() {
                     <p className="text-[11px] text-muted-foreground">{service.friendlyCategory} - {service.budgetCategory}</p>
                   </div>
                   <Link className="text-xs font-medium text-tone-orange-fg hover:text-tone-orange-fg shrink-0" href={`/services/${service.id}/edit`}>
-                    Add cost
+                    {copy.addCost}
                   </Link>
                 </div>
               ))}
               {budgetSummary.missingCostServices.length > 8 && (
-                <p className="text-[11px] text-foreground/40">+{budgetSummary.missingCostServices.length - 8} more services missing cost data</p>
+                <p className="text-[11px] text-foreground/40">{copy.moreMissing(budgetSummary.missingCostServices.length - 8)}</p>
               )}
             </div>
           )}
@@ -958,18 +1078,18 @@ export default function BudgetPage() {
       <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="h-4 w-4 text-tone-orange-fg" />
-          <h2 className="text-sm font-semibold text-foreground">Budget History</h2>
+          <h2 className="text-sm font-semibold text-foreground">{copy.budgetHistory}</h2>
         </div>
         {budgets.length === 0 ? (
           <EmptyState
             icon={DollarSign}
-            title="No budget limits yet"
+            title={copy.noBudgetTitle}
             description={
               hasServiceCosts
-                ? `Your active services currently total ${formatCurrency(budgetSummary.monthlyCommitted)}/mo. Set a monthly budget to compare your costs.`
-                : "Add costs to your services to enable budget tracking."
+                ? copy.noBudgetWithCosts(formatCurrency(budgetSummary.monthlyCommitted))
+                : copy.noBudgetNoCosts
             }
-            actionLabel="Set Monthly Budget"
+            actionLabel={copy.setMonthlyBudget}
             onAction={openBudgetForm}
           />
         ) : (

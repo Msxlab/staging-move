@@ -95,6 +95,7 @@ describe("admin service worker", () => {
     expect(isPublicStaticPath("/sw.js")).toBe(true);
     expect(isPublicStaticPath("/register-sw.js")).toBe(true);
     expect(isPublicStaticPath("/manifest.json")).toBe(true);
+    expect(isPublicStaticPath("/manifest.webmanifest")).toBe(true);
     expect(isPublicStaticPath("/offline.html")).toBe(true);
     expect(isPublicStaticPath("/logo-mark.svg")).toBe(true);
     expect(isPublicStaticPath("/icon-192.png")).toBe(true);
@@ -111,7 +112,9 @@ describe("admin service worker", () => {
     expect(sw).toContain("self.clients");
     expect(sw).toContain(".claim()");
     expect(sw).toContain('const CACHE_PREFIX = "locateflow-admin-"');
+    expect(sw).toContain("static-v5");
     expect(sw).toContain("/manifest.json");
+    expect(sw).toContain("/manifest.webmanifest");
     expect(fetchHandler).toContain("if (!isSameOrigin(url)) return;");
     expect(fetchHandler).toContain('if (url.pathname.startsWith("/api/")) return;');
     expect(fetchHandler).toContain('if (request.mode === "navigate")');
@@ -128,15 +131,21 @@ describe("admin service worker", () => {
 
     expect(register).toContain('navigator.serviceWorker');
     expect(register).toContain('.register("/sw.js"');
+    expect(register).toContain('registration.addEventListener("updatefound"');
+    expect(register).toContain('navigator.serviceWorker.addEventListener("controllerchange"');
     expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} suppressHydrationWarning />');
     expect(layout).toContain('manifest: "/manifest.json"');
     expect(layout).toContain('<meta name="mobile-web-app-capable" content="yes" />');
     expect(nextConfig).toContain('source: "/register-sw.js"');
     expect(nextConfig).toContain('source: "/manifest.json"');
+    expect(nextConfig).toContain('source: "/manifest.webmanifest"');
     expect(nextConfig).toContain('source: "/offline.html"');
     expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
     expect(manifest).toContain('"display": "standalone"');
     expect(manifest).toContain('"display_override"');
+    expect(manifest).toContain('"launch_handler"');
+    expect(manifest).toContain('"handle_links": "preferred"');
+    expect(manifest).toContain('"purpose": "any maskable"');
     expect(manifest).toContain('"shortcuts"');
     expect(manifest).toContain('"/icon-192.png"');
   });

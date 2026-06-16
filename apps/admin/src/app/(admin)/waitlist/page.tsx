@@ -292,7 +292,7 @@ export default function WaitlistPage() {
           : "No source segmentation data recorded yet."}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-card">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
         ) : signups.length === 0 ? (
@@ -302,7 +302,7 @@ export default function WaitlistPage() {
             description="Try adjusting or clearing the filters above."
           />
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Email</th>

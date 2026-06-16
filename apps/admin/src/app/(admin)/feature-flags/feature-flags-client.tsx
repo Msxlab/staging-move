@@ -150,7 +150,7 @@ export default function FeatureFlagsClient() {
         }
       />
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Flags</p><p className="mt-1 text-2xl font-bold text-foreground">{flags.length}</p></div>
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{flags.filter(f => f.enabled).length}</p></div>
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Disabled</p><p className="mt-1 text-2xl font-bold text-destructive">{flags.filter(f => !f.enabled).length}</p></div>
@@ -159,12 +159,12 @@ export default function FeatureFlagsClient() {
       {showForm && (
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">{editing ? "Edit Flag" : "New Feature Flag"}</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Name</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} disabled={!!editing} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50" placeholder="feature_new_dashboard" /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Target Type</label><select value={form.targetType} onChange={e => setForm({ ...form, targetType: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">{TARGET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-            <div className="col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Description</label><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Description..." /></div>
+            <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">Description</label><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Description..." /></div>
             {form.targetType !== "ALL" && (
-              <div className="col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">{form.targetType === "PERCENTAGE" ? "Percentage (0-100)" : form.targetType === "USER_LIST" ? "User IDs (comma-separated)" : "Plans (comma-separated)"}</label><input value={form.targetValue} onChange={e => setForm({ ...form, targetValue: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></div>
+              <div className="sm:col-span-2"><label className="block text-sm font-medium text-muted-foreground mb-1">{form.targetType === "PERCENTAGE" ? "Percentage (0-100)" : form.targetType === "USER_LIST" ? "User IDs (comma-separated)" : "Plans (comma-separated)"}</label><input value={form.targetValue} onChange={e => setForm({ ...form, targetValue: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></div>
             )}
             <div><label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} className="accent-primary" /> Enabled</label></div>
           </div>

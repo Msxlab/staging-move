@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   adminLoginLogCreate: vi.fn(),
   adminAuditLogCreate: vi.fn(),
   adminSessionCreate: vi.fn(),
+  adminSessionFindMany: vi.fn(() => Promise.resolve([])),
   adminMfaTrustedDeviceFindFirst: vi.fn(),
   adminMfaTrustedDeviceCreate: vi.fn(),
   adminMfaTrustedDeviceUpdateMany: vi.fn(),
@@ -17,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   verifyTOTP: vi.fn(),
   verifyBackupCode: vi.fn(),
   getRuntimeConfigValues: vi.fn(() => Promise.resolve({} as Record<string, string | null>)),
+  isKnownAdminLoginIp: vi.fn(() => Promise.resolve(true)),
+  sendAdminNewLocationAlert: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -29,7 +32,7 @@ vi.mock("@/lib/db", () => ({
     },
     adminLoginLog: { create: mocks.adminLoginLogCreate },
     adminAuditLog: { create: mocks.adminAuditLogCreate },
-    adminSession: { create: mocks.adminSessionCreate },
+    adminSession: { create: mocks.adminSessionCreate, findMany: mocks.adminSessionFindMany },
     adminMfaTrustedDevice: {
       findFirst: mocks.adminMfaTrustedDeviceFindFirst,
       create: mocks.adminMfaTrustedDeviceCreate,
@@ -44,10 +47,16 @@ vi.mock("bcryptjs", () => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
+  ADMIN_SESSION_TTL_SECONDS: 60 * 60 * 24 * 30,
   createSession: vi.fn(() => Promise.resolve("admin-session-token")),
   generateFingerprint: vi.fn(() => Promise.resolve("fingerprint")),
   hashSessionToken: vi.fn(() => Promise.resolve("session-hash")),
   shouldUseSecureAdminCookies: vi.fn(() => false),
+}));
+
+vi.mock("@/lib/admin-known-ip", () => ({
+  isKnownAdminLoginIp: mocks.isKnownAdminLoginIp,
+  sendAdminNewLocationAlert: mocks.sendAdminNewLocationAlert,
 }));
 
 vi.mock("@/lib/security-monitor", () => ({
@@ -270,6 +279,47 @@ describe("admin login rate limiting", () => {
         action: "LOGIN_SUCCESS",
         changes: expect.stringContaining('"trustedDevice":true'),
       }),
+    }));
+  });
+
+  it("forces MFA and emails the operator on a login from an unfamiliar network", async () => {
+    mocks.compare.mockResolvedValue(true);
+    mocks.isKnownAdminLoginIp.mockResolvedValueOnce(false);
+    mocks.adminFindUnique.mockResolvedValue({
+      id: "admin-roaming",
+      email: "roaming-admin@example.com",
+      password: "hash",
+      firstName: "Roaming",
+      lastName: "Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: "enc-secret",
+    });
+    // A device that WOULD otherwise be trusted — proves the unfamiliar network
+    // overrides the trusted-device skip.
+    mocks.adminMfaTrustedDeviceFindFirst.mockResolvedValue({
+      id: "trusted-device-2",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const response = await POST(request(
+      "roaming-admin@example.com",
+      { password: "correct-password" },
+      { cookie: "admin_mfa_trust=trusted-token-value-that-is-long-enough" },
+    ));
+    const body = await response.json();
+
+    // Unfamiliar /24 → fresh MFA challenge despite the trusted-device cookie.
+    expect(response.status).toBe(403);
+    expect(body.requiresMfa).toBe(true);
+    expect(mocks.adminSessionCreate).not.toHaveBeenCalled();
+    // Operator is alerted and the event is audited.
+    expect(mocks.sendAdminNewLocationAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "roaming-admin@example.com" }),
+    );
+    expect(mocks.adminAuditLogCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: "LOGIN_NEW_LOCATION" }),
     }));
   });
 

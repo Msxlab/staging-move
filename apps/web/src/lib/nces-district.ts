@@ -59,9 +59,10 @@ export interface SchoolDistrictLookupInput {
 
 // Service + layer VERIFIED 2026-06-10 (newest composite, single layer id 1).
 // See the module header before changing these.
-const NCES_DISTRICT_SERVICE = "EDGE_SCHOOLDISTRICT_TL25_SY2425";
-const NCES_DISTRICT_LAYER_ID = 1;
-const NCES_QUERY_BASE = `https://nces.ed.gov/opengis/rest/services/School_District_Boundaries/${NCES_DISTRICT_SERVICE}/MapServer/${NCES_DISTRICT_LAYER_ID}/query`;
+const NCES_DISTRICT_SERVICES = [
+  { service: "EDGE_SCHOOLDISTRICT_TL25_SY2425", layerId: 1 },
+  { service: "EDGE_SCHOOLDISTRICT_TL24_SY2324", layerId: 1 },
+] as const;
 
 const REQUEST_TIMEOUT_MS = 3000;
 
@@ -162,49 +163,62 @@ export async function lookupSchoolDistrict(
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
-  try {
-    const params = new URLSearchParams({
-      geometry: `${lng},${lat}`,
-      geometryType: "esriGeometryPoint",
-      inSR: "4326",
-      spatialRel: "esriSpatialRelIntersects",
-      outFields: "NAME,GEOID",
-      returnGeometry: "false",
-      f: "json",
-    });
-    const payload = await fetchJson(`${NCES_QUERY_BASE}?${params.toString()}`);
+  const params = new URLSearchParams({
+    geometry: `${lng},${lat}`,
+    geometryType: "esriGeometryPoint",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    outFields: "NAME,GEOID",
+    returnGeometry: "false",
+    f: "json",
+  });
 
-    if (!payload || typeof payload !== "object") {
-      return degraded("error", "unexpected_response_shape");
+  let lastReason = "nces_request_failed";
+  for (const { service, layerId } of NCES_DISTRICT_SERVICES) {
+    try {
+      const queryBase = `https://nces.ed.gov/opengis/rest/services/School_District_Boundaries/${service}/MapServer/${layerId}/query`;
+      const payload = await fetchJson(`${queryBase}?${params.toString()}`);
+
+      if (!payload || typeof payload !== "object") {
+        lastReason = "unexpected_response_shape";
+        continue;
+      }
+      const obj = payload as { error?: unknown; features?: unknown };
+      // ArcGIS reports failures as HTTP 200 + an `error` object in the body.
+      if (obj.error) {
+        lastReason = "arcgis_error_payload";
+        continue;
+      }
+      if (!Array.isArray(obj.features)) {
+        lastReason = "unexpected_response_shape";
+        continue;
+      }
+
+      const features = obj.features as RawEdgeFeature[];
+      let districtName: string | null = null;
+      let ncesId: string | null = null;
+      for (const feature of features) {
+        const name = (feature?.attributes?.NAME || "").trim();
+        if (!name) continue;
+        districtName = name;
+        ncesId = (feature?.attributes?.GEOID || "").trim() || null;
+        break;
+      }
+
+      const result: SchoolDistrictLookupResult = {
+        status: "ok",
+        districtName,
+        ncesId,
+        reason: null,
+        source: SOURCE,
+      };
+      cacheSet(cacheKey, result);
+      return result;
+    } catch (error) {
+      // Network error, timeout (AbortError), non-2xx, or JSON parse failure.
+      lastReason = error instanceof Error ? error.message : "nces_request_failed";
     }
-    const obj = payload as { error?: unknown; features?: unknown };
-    // ArcGIS reports failures as HTTP 200 + an `error` object in the body.
-    if (obj.error) return degraded("error", "arcgis_error_payload");
-    if (!Array.isArray(obj.features)) return degraded("error", "unexpected_response_shape");
-
-    const features = obj.features as RawEdgeFeature[];
-    let districtName: string | null = null;
-    let ncesId: string | null = null;
-    for (const feature of features) {
-      const name = (feature?.attributes?.NAME || "").trim();
-      if (!name) continue;
-      districtName = name;
-      ncesId = (feature?.attributes?.GEOID || "").trim() || null;
-      break;
-    }
-
-    const result: SchoolDistrictLookupResult = {
-      status: "ok",
-      districtName,
-      ncesId,
-      reason: null,
-      source: SOURCE,
-    };
-    cacheSet(cacheKey, result);
-    return result;
-  } catch (error) {
-    // Network error, timeout (AbortError), non-2xx, or JSON parse failure.
-    const reason = error instanceof Error ? error.message : "nces_request_failed";
-    return degraded("error", reason);
   }
+
+  return degraded("error", lastReason);
 }

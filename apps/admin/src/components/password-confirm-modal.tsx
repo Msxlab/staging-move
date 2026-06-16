@@ -66,7 +66,7 @@ export function PasswordConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:pb-4"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !busy) onClose();
@@ -77,7 +77,7 @@ export function PasswordConfirmModal({
         aria-modal="true"
         aria-labelledby="password-confirm-title"
         aria-describedby="password-confirm-description"
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className="w-full max-w-md max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>

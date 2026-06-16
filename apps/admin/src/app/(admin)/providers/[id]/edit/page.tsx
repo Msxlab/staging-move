@@ -141,7 +141,7 @@ export default function EditProviderPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-foreground">Basic Information</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">Name *</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
@@ -151,7 +151,7 @@ export default function EditProviderPage() {
               <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">Category *</label>
               <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">
@@ -173,7 +173,7 @@ export default function EditProviderPage() {
 
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-foreground">Contact & Links</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">Website</label>
               <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
@@ -233,7 +233,7 @@ export default function EditProviderPage() {
 
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-foreground">Scope & Coverage</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">Scope</label>
               <select value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none">

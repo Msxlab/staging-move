@@ -25,6 +25,7 @@ import {
 } from "@/lib/provider-serviceability";
 import {
   buildMoveTransitionContext,
+  buildMoveTaskTitle,
   buildMoveTaskDueDate,
   buildMoveTaskIdempotencyKey,
   buildChecklistTaskIdempotencyKey,
@@ -146,6 +147,32 @@ describe("buildMoveTransitionContext", () => {
       name: "Xfinity",
       coverageConfidence: "AVAILABLE_AT_ADDRESS",
     });
+  });
+});
+
+describe("buildMoveTaskTitle", () => {
+  it("uses the destination candidate for destination setup tasks", () => {
+    expect(
+      buildMoveTaskTitle({
+        actionLabel: "Start destination service",
+        actionType: "START_SERVICE",
+        serviceProviderName: "JCP&L",
+        serviceCategory: "UTILITY_ELECTRIC",
+        destinationProviderCandidates: [{ id: "con-ed", name: "Con Edison" }],
+      } as any),
+    ).toBe("Start destination service: Con Edison");
+  });
+
+  it("keeps the current provider for old-address tasks", () => {
+    expect(
+      buildMoveTaskTitle({
+        actionLabel: "Stop old service",
+        actionType: "STOP_SERVICE",
+        serviceProviderName: "JCP&L",
+        serviceCategory: "UTILITY_ELECTRIC",
+        destinationProviderCandidates: [{ id: "con-ed", name: "Con Edison" }],
+      } as any),
+    ).toBe("Stop old service: JCP&L");
   });
 });
 

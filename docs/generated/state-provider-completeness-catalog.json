@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generatedAt": "2026-05-31T19:23:57.050Z",
+    "generatedAt": "2026-06-14T21:51:28.464Z",
     "catalogEntries": 310,
     "statesCovered": [
       "AL",
@@ -56,10 +56,10 @@
       "WY"
     ],
     "coverageModelCounts": {
-      "state": 15,
+      "state": 14,
       "zipPrefix": 197,
       "polygon": 5,
-      "liveAddress": 93
+      "liveAddress": 94
     },
     "statusCounts": {
       "alreadyPresent": 3,
@@ -3163,8 +3163,8 @@
       ],
       "category": "TRANSPORTATION_TOLL",
       "officialUrl": "https://www.ezpassva.com/",
-      "coverageModel": "state",
-      "note": "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on driving/toll use rather than residence utility territory.",
+      "coverageModel": "live_address",
+      "note": "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on address and driving/toll use rather than residence utility territory.",
       "legacyNames": [
         "Virginia E-ZPass",
         "E-ZPass VA"
@@ -34839,8 +34839,8 @@
           ],
           "category": "TRANSPORTATION_TOLL",
           "officialUrl": "https://www.ezpassva.com/",
-          "coverageModel": "state",
-          "note": "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on driving/toll use rather than residence utility territory.",
+          "coverageModel": "live_address",
+          "note": "Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on address and driving/toll use rather than residence utility territory.",
           "legacyNames": [
             "Virginia E-ZPass",
             "E-ZPass VA"

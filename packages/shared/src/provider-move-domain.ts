@@ -227,7 +227,7 @@ const COVERAGE_CONFIDENCE_COPY: Record<
     // when an authoritative serviceability source confirms the provider.
     label: "Available at your address",
     description:
-      "An authoritative broadband-availability source (e.g. the FCC National Broadband Map) confirms this provider reports service at this address. Final plans and pricing are still set by the provider.",
+      "An authoritative address-level source confirms this provider reports service at this location. Final plans, pricing, and eligibility are still set by the provider.",
     rank: 700,
     requiresCaveat: false,
   },

@@ -124,6 +124,13 @@ export interface DataTablePageProps<Row extends { id: string }> {
   // Rows
   rowActions?: (row: Row) => ReactNode;
   rowClassName?: (row: Row, selected: boolean) => string;
+  /**
+   * Make the whole row tappable. Essential on mobile, where per-row controls
+   * live in the trailing actions column that scrolls off-screen — without this
+   * a phone user can't open a record. Taps inside the bulk-select checkbox or
+   * the actions cell are ignored so they don't double-fire.
+   */
+  onRowActivate?: (row: Row) => void;
 
   // Empty state
   emptyIcon: React.ElementType;
@@ -177,6 +184,7 @@ export function DataTablePage<Row extends { id: string }>(
     bulkActions,
     rowActions,
     rowClassName,
+    onRowActivate,
     emptyIcon,
     emptyTitle,
     emptyDescription,
@@ -419,7 +427,7 @@ export function DataTablePage<Row extends { id: string }>(
 
         {showFilters && filters.length > 0 ? (
           <div className="mt-3 border-t border-border pt-3">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
               {filters.map((f) => (
                 <div key={f.key}>
                   <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
@@ -462,7 +470,7 @@ export function DataTablePage<Row extends { id: string }>(
 
       {/* Bulk Actions */}
       {selectable && bulk.count > 0 && bulkActions ? (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
           <span className="text-sm font-medium text-primary">{bulk.count} selected</span>
           <div className="h-4 w-px bg-border" />
           {bulkActions({
@@ -480,9 +488,12 @@ export function DataTablePage<Row extends { id: string }>(
         </div>
       ) : null}
 
-      {/* Table — admin-panel chrome (foil hairline + warm hover) */}
-      <div className="admin-panel overflow-hidden">
-        <table className="w-full">
+      {/* Table — admin-panel chrome (foil hairline + warm hover). The inner
+          scroller keeps wide tables inside their own card on phones instead
+          of panning the whole page; min-w keeps columns legible. */}
+      <div className="admin-panel">
+        <div className="overflow-x-auto overscroll-x-contain">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-muted/50">
             <tr>
               {selectable ? (
@@ -579,14 +590,31 @@ export function DataTablePage<Row extends { id: string }>(
                 return (
                   <tr
                     key={row.id}
+                    {...(onRowActivate
+                      ? {
+                          role: "button" as const,
+                          tabIndex: 0,
+                          onClick: (e: React.MouseEvent) => {
+                            if ((e.target as HTMLElement).closest("[data-row-interactive]")) return;
+                            onRowActivate(row);
+                          },
+                          onKeyDown: (e: React.KeyboardEvent) => {
+                            if (e.key !== "Enter" && e.key !== " ") return;
+                            if ((e.target as HTMLElement).closest("[data-row-interactive]")) return;
+                            e.preventDefault();
+                            onRowActivate(row);
+                          },
+                        }
+                      : {})}
                     className={cn(
                       "bg-card transition-colors",
                       selected ? "bg-primary/5" : "hover:bg-accent/50",
+                      onRowActivate && "cursor-pointer",
                       rowClassName?.(row, Boolean(selected)),
                     )}
                   >
                     {selectable ? (
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3" data-row-interactive>
                         <button
                           onClick={() => canSelect && bulk.toggle(row.id)}
                           disabled={!canSelect}
@@ -611,7 +639,7 @@ export function DataTablePage<Row extends { id: string }>(
                       );
                     })}
                     {rowActions ? (
-                      <td className="px-3 py-3 text-right">
+                      <td className="px-3 py-3 text-right" data-row-interactive>
                         <div className="flex items-center justify-end gap-1">
                           {rowActions(row)}
                         </div>
@@ -623,14 +651,15 @@ export function DataTablePage<Row extends { id: string }>(
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {afterTable ? afterTable(ctx) : null}
 
       {/* Pagination */}
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
             Showing {(query.state.page - 1) * query.state.perPage + 1}–
             {Math.min(query.state.page * query.state.perPage, total)} of {total}
           </p>

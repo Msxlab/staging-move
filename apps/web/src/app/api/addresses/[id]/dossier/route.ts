@@ -54,8 +54,53 @@ import { planFeatures } from "@locateflow/shared";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const WEATHER_WINDOW_DAYS = 7;
+const DOSSIER_SUMMARY_CACHE_TTL_MS = 15 * 60 * 1000;
+const DOSSIER_FULL_CACHE_TTL_MS = 10 * 60 * 1000;
 // Mirrors the "active plan" definition used by daily-digest move reminders.
 const ACTIVE_PLAN_STATUSES = ["PLANNING", "IN_PROGRESS"];
+
+type DossierCacheEntry = {
+  expiresAt: number;
+  payload: unknown;
+};
+
+const dossierCache = new Map<string, DossierCacheEntry>();
+
+export function clearDossierCacheForTests() {
+  dossierCache.clear();
+}
+
+function getDossierCache(key: string): unknown | null {
+  const cached = dossierCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    dossierCache.delete(key);
+    return null;
+  }
+  return cached.payload;
+}
+
+function setDossierCache(key: string, payload: unknown, ttlMs: number) {
+  // Tiny in-process LRU guard. Dossier keys are per-user/per-address, so keep
+  // the cap conservative and evict oldest insertion when the worker gets busy.
+  if (dossierCache.size > 250) {
+    const oldest = dossierCache.keys().next().value;
+    if (oldest) dossierCache.delete(oldest);
+  }
+  dossierCache.set(key, { expiresAt: Date.now() + ttlMs, payload });
+}
+
+function dossierJson(payload: unknown, cacheState: "HIT" | "MISS" | "BYPASS", ttlMs?: number) {
+  const headers: Record<string, string> = { "X-Dossier-Cache": cacheState };
+  if (ttlMs) headers["Cache-Control"] = `private, max-age=${Math.floor(ttlMs / 1000)}`;
+  return NextResponse.json(payload, { headers });
+}
+
+function addressVersion(address: { updatedAt?: Date | string | null }): string {
+  const value = address.updatedAt;
+  if (!value) return "unknown";
+  return value instanceof Date ? value.toISOString() : String(value);
+}
 
 interface FloodSection {
   status: "ok" | "no_location" | "error";
@@ -417,6 +462,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         zip: true,
         latitude: true,
         longitude: true,
+        updatedAt: true,
       },
     });
     if (!address || address.deletedAt) {
@@ -432,6 +478,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const features = planFeatures(planInfo.plan);
 
     const addressPayload = { id: address.id, city: address.city, state: address.state, zip: address.zip };
+    const scopeKey = `${scope.workspaceId || "personal"}:${scope.memberRole || "owner"}`;
+    const addressCacheVersion = addressVersion(address);
 
     const hasLocation =
       typeof address.latitude === "number" &&
@@ -443,6 +491,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // and HUD rent/income area context, so the paid full-dossier gate below
     // remains intact and the route avoids FEMA/NCES/NWS/NRI/water/EV/Census.
     if (new URL(request.url).searchParams.get("summary") === "1") {
+      const summaryCacheKey = [
+        "summary",
+        userId,
+        scopeKey,
+        address.id,
+        addressCacheVersion,
+        address.zip || "",
+        address.latitude ?? "no-lat",
+        address.longitude ?? "no-lng",
+      ].join(":");
+      const cachedSummary = getDossierCache(summaryCacheKey);
+      if (cachedSummary) {
+        return dossierJson(cachedSummary, "HIT", DOSSIER_SUMMARY_CACHE_TTL_MS);
+      }
       if (!hasLocation) {
         const summary = {
           configured: true,
@@ -455,7 +517,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           hud_housing: summary.housing.status,
           dossier: "summary",
         });
-        return NextResponse.json(summary, { headers: { "Cache-Control": "private, max-age=900" } });
+        setDossierCache(summaryCacheKey, summary, DOSSIER_SUMMARY_CACHE_TTL_MS);
+        return dossierJson(summary, "MISS", DOSSIER_SUMMARY_CACHE_TTL_MS);
       }
 
       const [airSettled, housingSettled] = await Promise.allSettled([
@@ -473,7 +536,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         hud_housing: summary.housing.status,
         dossier: "summary",
       });
-      return NextResponse.json(summary, { headers: { "Cache-Control": "private, max-age=900" } });
+      setDossierCache(summaryCacheKey, summary, DOSSIER_SUMMARY_CACHE_TTL_MS);
+      return dossierJson(summary, "MISS", DOSSIER_SUMMARY_CACHE_TTL_MS);
     }
 
     // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
@@ -486,11 +550,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       // dossier request spent no external lookups, so only the composite
       // 'dossier' counter records it.
       recordIntegrationOutcome("dossier", "gated");
-      return NextResponse.json({
+      return dossierJson({
         configured: true,
         entitled: false,
         upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
-      });
+      }, "BYPASS");
     }
 
     // No coordinates → nothing to look up; every section is "no_location" and
@@ -498,6 +562,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // address is an incomplete address — the uniform short-circuit keeps the
     // "no coordinates = zero external calls" guarantee simple and true.)
     if (!hasLocation) {
+      const noLocationCacheKey = [
+        "full",
+        userId,
+        scopeKey,
+        address.id,
+        addressCacheVersion,
+        planInfo.plan,
+        features.dossierPdf ? "pdf" : "no-pdf",
+        features.neighborhoodIntel ? "pro" : "standard",
+        "no-location",
+      ].join(":");
+      const cachedNoLocation = getDossierCache(noLocationCacheKey);
+      if (cachedNoLocation) {
+        return dossierJson(cachedNoLocation, "HIT", DOSSIER_FULL_CACHE_TTL_MS);
+      }
       // Neighborhood Intelligence is Pro-gated: a non-Pro plan gets the teaser
       // (no lookup, no_location is moot); a Pro plan reports no_location like
       // the rest. census telemetry: 'gated' for the teaser, 'no_location' else.
@@ -517,7 +596,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         schools: features.neighborhoodIntel ? "no_location" : "gated",
         dossier: "ok",
       });
-      return NextResponse.json({
+      const noLocationDossier = {
         configured: true,
         dossierPdf: features.dossierPdf,
         address: addressPayload,
@@ -531,7 +610,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         housing: emptyHousing("no_location", address.zip),
         evCharging: emptyEvCharging("no_location"),
         neighborhood,
-      });
+      };
+      setDossierCache(noLocationCacheKey, noLocationDossier, DOSSIER_FULL_CACHE_TTL_MS);
+      return dossierJson(noLocationDossier, "MISS", DOSSIER_FULL_CACHE_TTL_MS);
     }
 
     // Decide the weather window: earliest UPCOMING active plan that moves TO
@@ -552,6 +633,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const withinWindow =
       plan !== null && plan.moveDate.getTime() - now.getTime() <= WEATHER_WINDOW_DAYS * MS_PER_DAY;
     const weatherTargetDate = withinWindow ? plan.moveDate.toISOString().slice(0, 10) : null;
+    const fullCacheKey = [
+      "full",
+      userId,
+      scopeKey,
+      address.id,
+      addressCacheVersion,
+      planInfo.plan,
+      features.dossierPdf ? "pdf" : "no-pdf",
+      features.neighborhoodIntel ? "pro" : "standard",
+      weatherTargetDate || "no-weather",
+    ].join(":");
+    const cachedFull = getDossierCache(fullCacheKey);
+    if (cachedFull) {
+      return dossierJson(cachedFull, "HIT", DOSSIER_FULL_CACHE_TTL_MS);
+    }
 
     // The libs never throw by contract, but allSettled keeps one misbehaving
     // lookup from ever taking down the other sections (belt and braces).
@@ -642,7 +738,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       dossier: "ok",
     });
 
-    return NextResponse.json(dossier);
+    setDossierCache(fullCacheKey, dossier, DOSSIER_FULL_CACHE_TTL_MS);
+    return dossierJson(dossier, "MISS", DOSSIER_FULL_CACHE_TTL_MS);
   } catch (error) {
     const authResponse = apiGateErrorResponse(error);
     if (authResponse) return authResponse;

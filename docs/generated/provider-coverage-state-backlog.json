@@ -322,26 +322,6 @@
       ]
     },
     {
-      "state": "AR",
-      "totalProviders": 14,
-      "modeledAsStateOnly": 7,
-      "resolved": 6,
-      "partial": 5,
-      "blocked": 3,
-      "zipReady": 2,
-      "liveAddressCheck": 5,
-      "polygonOrCorridor": 1,
-      "manualResearch": 6,
-      "sampleProviders": [
-        "Xfinity (Comcast)",
-        "Spectrum",
-        "AT&T Fiber",
-        "Verizon Fios",
-        "T-Mobile Home Internet",
-        "Starlink"
-      ]
-    },
-    {
       "state": "LA",
       "totalProviders": 15,
       "modeledAsStateOnly": 7,
@@ -371,6 +351,26 @@
       "zipReady": 3,
       "liveAddressCheck": 4,
       "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "AR",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 6,
+      "resolved": 6,
+      "partial": 5,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
       "manualResearch": 6,
       "sampleProviders": [
         "Xfinity (Comcast)",

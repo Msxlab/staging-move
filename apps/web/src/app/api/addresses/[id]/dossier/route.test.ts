@@ -81,7 +81,7 @@ import { lookupWalkability } from "@/lib/epa-walkability";
 import { lookupNearbySchools } from "@/lib/nces-schools";
 import { lookupHudHousing } from "@/lib/hud-housing";
 import { lookupEvCharging } from "@/lib/nlr-alt-fuel-stations";
-import { GET } from "./route";
+import { GET, clearDossierCacheForTests } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
 const mockGetPlanForLimitScope = getPlanForLimitScope as unknown as Mock;
@@ -263,6 +263,7 @@ const SCHOOLS_OK = {
 describe("address dossier route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearDossierCacheForTests();
     mockRequireDbUserId.mockResolvedValue("user-1");
     mockGetPlanForLimitScope.mockResolvedValue({ plan: "INDIVIDUAL", hasPremium: true, isActive: true });
     mockAddressFindUnique.mockResolvedValue({ ...BASE_ADDRESS });
@@ -385,6 +386,28 @@ describe("address dossier route", () => {
     expect(mockLookupEvCharging).not.toHaveBeenCalled();
     expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
     expect(mockPlanFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("summary mode serves repeated requests from the dossier cache", async () => {
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+
+    const first = await GET(dossierSummaryRequest(), addressParams() as any);
+    expect(first.headers.get("X-Dossier-Cache")).toBe("MISS");
+    await first.json();
+
+    vi.clearAllMocks();
+    mockRequireDbUserId.mockResolvedValue("user-1");
+    mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    mockAddressFindUnique.mockResolvedValue({ ...BASE_ADDRESS });
+
+    const second = await GET(dossierSummaryRequest(), addressParams() as any);
+    const body = await second.json();
+
+    expect(second.status).toBe(200);
+    expect(second.headers.get("X-Dossier-Cache")).toBe("HIT");
+    expect(body.air).toEqual({ status: "ok", aqi: 52, category: "Moderate" });
+    expect(mockLookupAirQuality).not.toHaveBeenCalled();
+    expect(mockLookupHudHousing).not.toHaveBeenCalled();
   });
 
   it("404 still wins over the teaser for a free user's foreign address id", async () => {

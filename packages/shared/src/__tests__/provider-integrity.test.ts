@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getProviderCoverageConfidence,
+  getProviderQualityProfile,
   getProviderQualityWarnings,
   getProviderTrustSummary,
   inferProviderCoverageModel,
@@ -75,6 +76,7 @@ describe("provider trust helpers", () => {
     expect(summary.statusLabel).toBe("Listed provider");
     expect(summary.manualTrackingLabel).toBe("Manual tracking only");
     expect(summary.verificationLabel).toBe("Unverified directory data");
+    expect(summary.qualityProfile.recommendedAction).toBe("tighten_coverage");
     expect(summary.qualityWarnings.map((warning) => warning.code)).toContain(
       "address_check_required",
     );
@@ -199,5 +201,39 @@ describe("provider trust helpers", () => {
 
     // No updatedAt → no freshness claim (don't fabricate staleness).
     expect(getProviderQualityWarnings({ ...base }, now).map((w) => w.code)).not.toContain("stale_record");
+  });
+
+  it("turns coverage and completeness signals into an operator quality profile", () => {
+    const weak = getProviderQualityProfile({
+      name: "Unknown ISP",
+      category: "UTILITY_INTERNET",
+      scope: "FEDERAL",
+      coverageModel: "live_address",
+      description: "Internet provider",
+    });
+
+    expect(weak.score).toBeLessThan(60);
+    expect(weak.level).toBe("weak");
+    expect(weak.recommendedAction).toBe("add_contact");
+    expect(weak.gaps.map((gap) => gap.code)).toEqual(
+      expect.arrayContaining(["missing_website", "missing_phone", "address_check_required"]),
+    );
+
+    const strong = getProviderQualityProfile({
+      name: "Austin Energy",
+      category: "UTILITY_ELECTRIC",
+      scope: "STATE",
+      states: ["TX"],
+      coverageMatchLevel: "available_at_address",
+      website: "https://austinenergy.com",
+      phone: "512-494-9400",
+      logoUrl: "https://austinenergy.com/logo.png",
+      description: "Austin Energy provides electric service for Austin-area customers.",
+    });
+
+    expect(strong.score).toBeGreaterThanOrEqual(88);
+    expect(strong.level).toBe("excellent");
+    expect(strong.recommendedAction).toBe("ready");
+    expect(strong.strengths).toContain("Phone present");
   });
 });

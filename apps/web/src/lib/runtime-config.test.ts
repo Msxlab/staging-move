@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
+  findMany: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   prisma: {
     runtimeConfigEntry: {
       findUnique: mocks.findUnique,
+      findMany: mocks.findMany,
     },
   },
 }));
@@ -16,7 +18,7 @@ vi.mock("@/lib/shared-encryption", () => ({
   decrypt: (value: string) => value,
 }));
 
-import { getRuntimeConfigValue } from "./runtime-config";
+import { getRequiredRuntimeConfigValues, getRuntimeConfigValue } from "./runtime-config";
 
 describe("runtime config env precedence", () => {
   const originalEnv = { ...process.env };
@@ -122,5 +124,34 @@ describe("runtime config env precedence", () => {
     mocks.findUnique.mockResolvedValue(null);
 
     await expect(getRuntimeConfigValue("RESEND_API_KEY")).resolves.toBeNull();
+  });
+
+  it("loads required runtime config values with one batched DB lookup", async () => {
+    delete process.env.RESEND_API_KEY;
+    process.env.SUPPORT_EMAIL = "support@example.com";
+    mocks.findMany.mockResolvedValue([
+      {
+        key: "RESEND_API_KEY",
+        isSecret: true,
+        valueEncrypted: "re_db_value",
+        valuePlain: null,
+        isActive: true,
+        source: "DB",
+      },
+    ]);
+
+    await expect(
+      getRequiredRuntimeConfigValues(["RESEND_API_KEY", "SUPPORT_EMAIL", "RESEND_API_KEY"]),
+    ).resolves.toEqual({
+      RESEND_API_KEY: "re_db_value",
+      SUPPORT_EMAIL: "support@example.com",
+    });
+    expect(mocks.findMany).toHaveBeenCalledTimes(1);
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { key: { in: ["RESEND_API_KEY"] } },
+      }),
+    );
+    expect(mocks.findUnique).not.toHaveBeenCalled();
   });
 });

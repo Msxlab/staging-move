@@ -205,6 +205,23 @@ describe("upsertRuntimeConfigEntry value validation", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("accepts mobile store tester email allowlists as runtime config", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+        value: "googlereview@locateflow.com,qa@locateflow.com",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+        value: "apple-review@locateflow.com",
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("rejects malformed Google Play OAuth client IDs", async () => {
     await expect(
       upsertRuntimeConfigEntry({

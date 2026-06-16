@@ -73,6 +73,7 @@
       "react-native-gesture-handler@2.30.1": "patches/react-native-gesture-handler@2.30.1.patch"
     },
     "overrides": {
+      "esbuild": "0.28.1",
       "node-forge": "^1.4.0",
       "tar": "^7.5.8"
     },

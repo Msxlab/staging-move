@@ -442,17 +442,14 @@ export function MoveBriefingCard({
     };
     (async () => {
       try {
-        const res = await fetch("/api/onboarding/briefing", { method: "POST" });
-        if (!res.ok) {
-          setFallbackIfEnabled();
-          return;
-        }
-        const next = deriveBriefingState(await res.json(), uxAiBriefingExperienceVariant);
-        if (cancelled) return;
-        if (next.kind === "hidden" || next.kind === "teaser") {
-          emitAiBriefingViewed(next);
-        }
-        if (next.kind === "hidden") return;
+        const res = await fetch("/api/onboarding/briefing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        if (!res.ok) return;
+        const next = deriveBriefingState(await res.json());
+        if (cancelled || next.kind === "hidden") return;
         setState(next);
       } catch {
         setFallbackIfEnabled();

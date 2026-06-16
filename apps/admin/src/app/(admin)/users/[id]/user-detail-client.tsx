@@ -870,18 +870,18 @@ export default function UserDetailClient() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           {editing ? (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <input
-                className="rounded-lg border border-input bg-background px-3 py-1.5 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={editForm.firstName}
                 onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
                 placeholder="First name"
               />
               <input
-                className="rounded-lg border border-input bg-background px-3 py-1.5 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={editForm.lastName}
                 onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                 placeholder="Last name"
@@ -902,8 +902,8 @@ export default function UserDetailClient() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-bold text-foreground break-words">{user.firstName} {user.lastName}</h1>
               {isDeleted && (
                 <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
                   Blocked / Deleted
@@ -924,7 +924,7 @@ export default function UserDetailClient() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Effective plan — READ-ONLY. The old header <select> PATCHed only
               Subscription.plan, which the entitlement resolver ignores for
               free users and which silently desyncs Stripe payers. Plan

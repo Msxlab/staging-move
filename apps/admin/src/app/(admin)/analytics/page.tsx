@@ -412,7 +412,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* All-time totals (context) */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: "Total Users (all-time)", value: data.activeUsers.total, icon: Users, color: "text-foreground", bg: "bg-card" },
           { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },

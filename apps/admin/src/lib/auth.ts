@@ -29,6 +29,19 @@ function getAdminJwtSecret(): Uint8Array {
 export const ADMIN_SESSION_COOKIE_NAME = "admin_session";
 const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
 
+/**
+ * Admin session lifetime. Long-lived so a trusted operator stays signed in
+ * across browser restarts instead of being kicked out every 8h. Safe to keep
+ * long because the session is bound to the IP-bucket + UA fingerprint: a cookie
+ * replayed from another network/device is rejected, and an anomalous-IP login
+ * still triggers the step-up + alert path. Override with ADMIN_SESSION_TTL_DAYS.
+ */
+export const ADMIN_SESSION_TTL_SECONDS = (() => {
+  const days = Number(process.env.ADMIN_SESSION_TTL_DAYS);
+  const d = Number.isFinite(days) && days > 0 ? days : 30;
+  return Math.floor(d * 24 * 60 * 60);
+})();
+
 export function shouldUseSecureAdminCookies(): boolean {
   const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").toLowerCase();
@@ -147,14 +160,14 @@ export async function createSession(
 
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("8h")
+    .setExpirationTime(Math.floor(Date.now() / 1000) + ADMIN_SESSION_TTL_SECONDS)
     .setIssuedAt()
     .sign(getAdminJwtSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     ...adminSessionCookieOptions(),
-    maxAge: 60 * 60 * 8, // 8 hours
+    maxAge: ADMIN_SESSION_TTL_SECONDS,
   });
 
   return token;
@@ -207,7 +220,7 @@ export async function refreshSessionCookie(
     data: {
       adminUserId: session.adminId,
       tokenHash: newHash,
-      expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + ADMIN_SESSION_TTL_SECONDS * 1000),
     },
   }).catch(() => null);
 

@@ -93,6 +93,35 @@ export interface ProviderQualityWarning {
   severity: "info" | "warning" | "critical";
 }
 
+export type ProviderQualityLevel = "excellent" | "good" | "needs_review" | "weak";
+
+export type ProviderQualityAction =
+  | "ready"
+  | "refresh_source"
+  | "add_contact"
+  | "tighten_coverage"
+  | "merge_duplicate"
+  | "complete_profile";
+
+export interface ProviderQualityGap {
+  code: ProviderQualityWarning["code"] | "weak_coverage_confidence";
+  label: string;
+  severity: ProviderQualityWarning["severity"];
+  action: ProviderQualityAction;
+}
+
+export interface ProviderQualityProfile {
+  score: number;
+  level: ProviderQualityLevel;
+  label: string;
+  summary: string;
+  recommendedAction: ProviderQualityAction;
+  strengths: string[];
+  gaps: ProviderQualityGap[];
+  coverageConfidence: ProviderCoverageConfidence;
+  lastReviewedAt: string | null;
+}
+
 /** A catalog row not reviewed within this many days is flagged stale (info). */
 export const PROVIDER_STALE_AFTER_DAYS = 180;
 
@@ -107,6 +136,7 @@ export interface ProviderTrustSummary {
   verificationDescription: string;
   coverageConfidence: ProviderCoverageConfidence;
   qualityWarnings: ProviderQualityWarning[];
+  qualityProfile: ProviderQualityProfile;
 }
 
 export const LOCATION_SENSITIVE_PROVIDER_CATEGORIES = new Set([
@@ -304,6 +334,8 @@ export function getProviderQualityWarnings(
   const zipCodes = normalizeZipCodes(record.zipCodes);
   const domain = normalizeProviderUrlDomain(record.website);
   const coverageModel = inferProviderCoverageModel(record);
+  const resolvedCoverageConfidence = getProviderCoverageConfidence(record).confidence;
+  const hasAddressLevelEvidence = resolvedCoverageConfidence === "AVAILABLE_AT_ADDRESS";
   const hasExternalCoverageModel =
     coverageModel === "live_address" || coverageModel === "polygon";
 
@@ -398,7 +430,7 @@ export function getProviderQualityWarnings(
     });
   }
 
-  if (record.requiresAddressCheck || coverageModel === "live_address") {
+  if (!hasAddressLevelEvidence && (record.requiresAddressCheck || coverageModel === "live_address")) {
     warnings.push({
       code: "address_check_required",
       label: "Address check required",
@@ -407,7 +439,7 @@ export function getProviderQualityWarnings(
     });
   }
 
-  if (record.requiresPolygonCheck || coverageModel === "polygon") {
+  if (!hasAddressLevelEvidence && (record.requiresPolygonCheck || coverageModel === "polygon")) {
     warnings.push({
       code: "polygon_check_required",
       label: "Mapped coverage",
@@ -438,10 +470,137 @@ export function getProviderQualityWarnings(
   return warnings;
 }
 
+function warningAction(code: ProviderQualityWarning["code"]): ProviderQualityAction {
+  if (code === "missing_phone" || code === "missing_website") return "add_contact";
+  if (code === "duplicate_domain") return "merge_duplicate";
+  if (
+    code === "broad_state_coverage" ||
+    code === "broad_national_coverage" ||
+    code === "address_check_required" ||
+    code === "polygon_check_required"
+  ) {
+    return "tighten_coverage";
+  }
+  if (code === "stale_record") return "refresh_source";
+  return "complete_profile";
+}
+
+function coveragePenalty(confidence: CoverageConfidence): number {
+  switch (confidence) {
+    case "AVAILABLE_AT_ADDRESS":
+    case "EXACT_ZIP":
+      return 0;
+    case "ZIP_PREFIX":
+    case "MAPPED_SERVICE_AREA":
+      return 8;
+    case "STATE_LEVEL":
+    case "NATIONAL_OR_FEDERAL":
+      return 18;
+    case "ADDRESS_CHECK_REQUIRED":
+      return 22;
+    case "UNKNOWN":
+    default:
+      return 28;
+  }
+}
+
+function qualityLevel(score: number): ProviderQualityLevel {
+  if (score >= 88) return "excellent";
+  if (score >= 72) return "good";
+  if (score >= 50) return "needs_review";
+  return "weak";
+}
+
+function qualityLabel(level: ProviderQualityLevel): string {
+  if (level === "excellent") return "High-confidence listing";
+  if (level === "good") return "Usable listing";
+  if (level === "needs_review") return "Needs review";
+  return "Weak listing";
+}
+
+function qualitySummary(level: ProviderQualityLevel, gaps: ProviderQualityGap[]): string {
+  if (level === "excellent") return "Core provider details and coverage signals look strong.";
+  if (level === "good") return "Usable for manual tracking, with minor data improvements recommended.";
+  const topGap = gaps[0]?.label;
+  if (topGap) return `${topGap} is the first operator fix before this listing feels reliable.`;
+  return "Provider record needs operator review before it should be treated as reliable.";
+}
+
+function selectRecommendedAction(gaps: ProviderQualityGap[]): ProviderQualityAction {
+  if (gaps.some((gap) => gap.action === "add_contact" && gap.severity === "critical")) return "add_contact";
+  if (gaps.some((gap) => gap.action === "tighten_coverage")) return "tighten_coverage";
+  if (gaps.some((gap) => gap.action === "merge_duplicate")) return "merge_duplicate";
+  if (gaps.some((gap) => gap.action === "refresh_source")) return "refresh_source";
+  if (gaps.length > 0) return "complete_profile";
+  return "ready";
+}
+
+function normalizeLastReviewedAt(value: ProviderTrustRecord["updatedAt"]): string | null {
+  if (value == null) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+export function getProviderQualityProfile(
+  record: ProviderTrustRecord,
+  now: number = Date.now(),
+): ProviderQualityProfile {
+  const coverageConfidence = getProviderCoverageConfidence(record);
+  const warnings = getProviderQualityWarnings(record, now);
+  const gaps: ProviderQualityGap[] = warnings.map((warning) => ({
+    code: warning.code,
+    label: warning.label,
+    severity: warning.severity,
+    action: warningAction(warning.code),
+  }));
+
+  const coverageLoss = coveragePenalty(coverageConfidence.confidence);
+  if (coverageLoss >= 18 && !gaps.some((gap) => gap.code === "weak_coverage_confidence")) {
+    gaps.push({
+      code: "weak_coverage_confidence",
+      label: coverageConfidence.label,
+      severity: coverageLoss >= 28 ? "critical" : "warning",
+      action: "tighten_coverage",
+    });
+  }
+
+  const warningLoss = warnings.reduce((sum, warning) => {
+    if (warning.severity === "critical") return sum + 18;
+    if (warning.severity === "warning") return sum + 9;
+    return sum + 4;
+  }, 0);
+
+  const score = Math.max(0, Math.min(100, 100 - coverageLoss - warningLoss));
+  const level = qualityLevel(score);
+  const strengths: string[] = [];
+  if (record.website) strengths.push("Website present");
+  if (record.phone) strengths.push("Phone present");
+  if (record.logoUrl) strengths.push("Logo present");
+  if (record.description && !isGenericProviderDescription(record.description, record.name)) {
+    strengths.push("Useful description");
+  }
+  if (coverageConfidence.level === "high") strengths.push(coverageConfidence.label);
+
+  return {
+    score,
+    level,
+    label: qualityLabel(level),
+    summary: qualitySummary(level, gaps),
+    recommendedAction: selectRecommendedAction(gaps),
+    strengths,
+    gaps,
+    coverageConfidence,
+    lastReviewedAt: normalizeLastReviewedAt(record.updatedAt),
+  };
+}
+
 export function getProviderTrustSummary(
   record: ProviderTrustRecord,
 ): ProviderTrustSummary {
   const trust = getProviderTrustPresentation("LISTED");
+  const coverageConfidence = getProviderCoverageConfidence(record);
+  const qualityWarnings = getProviderQualityWarnings(record);
+  const qualityProfile = getProviderQualityProfile(record);
 
   return {
     status: trust.status,
@@ -454,8 +613,9 @@ export function getProviderTrustSummary(
     verificationLabel: "Unverified directory data",
     verificationDescription:
       "Provider details should be confirmed with the official provider before you act.",
-    coverageConfidence: getProviderCoverageConfidence(record),
-    qualityWarnings: getProviderQualityWarnings(record),
+    coverageConfidence,
+    qualityWarnings,
+    qualityProfile,
   };
 }
 

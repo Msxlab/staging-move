@@ -601,6 +601,38 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     maskStrategy: "url",
   },
 
+  // Controlled test and store-review accounts
+  {
+    key: "QA_RESETTABLE_ACCOUNT_EMAIL",
+    classification: "optional",
+    label: "QA Resettable Account Email",
+    description: "Single QA email that auto-verifies on signup and hard-resets itself on logout.",
+    apps: ["web", "mobile"],
+    isSecret: false,
+    maskStrategy: "email",
+    note: "Deployment env only. Must be one exact email, not a comma-separated allowlist.",
+  },
+  {
+    key: "QA_PERSONA_ACCOUNTS",
+    classification: "optional",
+    label: "QA Persona Accounts",
+    description: "Comma-separated exact QA emails with auto-granted plans in email:PLAN format.",
+    apps: ["web", "mobile", "admin"],
+    isSecret: false,
+    maskStrategy: "plain",
+    note: "Deployment env only. Plans: FREE_TRIAL, INDIVIDUAL, FAMILY, PRO. These accounts auto-verify, self-heal entitlements, and hard-reset on logout/cron.",
+  },
+  {
+    key: "STORE_REVIEW_ACCOUNT_EMAILS",
+    classification: "optional",
+    label: "Store Review Account Emails",
+    description: "Comma-separated Google Play/App Store reviewer emails that auto-verify on signup.",
+    apps: ["web", "mobile"],
+    isSecret: false,
+    maskStrategy: "email",
+    note: "Deployment env only. These reset only on fresh signup, not on logout.",
+  },
+
   // Connector launch + guided partners
   {
     key: "FEATURE_API_CONNECTORS",
@@ -792,6 +824,24 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     apps: ["web", "mobile"],
     isSecret: true,
     maskStrategy: "secret",
+  },
+  {
+    key: "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+    classification: "optional",
+    label: "Google Play Test Purchase Emails",
+    description: "Comma-separated Play tester/reviewer user emails allowed to claim Google test purchases and receive review-ready onboarding.",
+    apps: ["web", "mobile"],
+    isSecret: false,
+    maskStrategy: "email",
+  },
+  {
+    key: "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+    classification: "optional",
+    label: "Apple Sandbox Purchase Emails",
+    description: "Comma-separated App Store reviewer/sandbox user emails allowed to claim Apple sandbox purchases and receive review-ready onboarding.",
+    apps: ["web", "mobile"],
+    isSecret: false,
+    maskStrategy: "email",
   },
   {
     key: "GOOGLE_OAUTH_CLIENT_ID",

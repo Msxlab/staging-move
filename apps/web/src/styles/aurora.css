@@ -178,8 +178,10 @@
   background-position: 0 0, 1px 2px;
 }
 
-/* Anything inside the wrapper sits above the aurora layers */
-.lf-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
+/* Anything inside the wrapper sits above the aurora layers. Portal overlays
+   are direct body children too; do not rewrite `.fixed` modals/search palettes
+   into relative layout boxes or they stop behaving like overlays. */
+.lf-aurora > *:not(.au-aurora):not(.au-grain):not(.fixed) { position: relative; z-index: 2; }
 
 /* === Glass card ==================================================== */
 .lf-aurora .au-card {

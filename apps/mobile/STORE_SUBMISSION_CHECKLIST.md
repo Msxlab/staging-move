@@ -51,7 +51,7 @@ Status legend: `DONE` · `TODO` · `HUMAN VERIFICATION REQUIRED` · `NOT APPLICA
 | Age rating questionnaire | TODO | No objectionable / gambling / UGC moderation needed |
 | iPhone screenshots: 6.7" (mandatory) + 6.5" + 5.5" | HUMAN VERIFICATION REQUIRED | Assets generated and committed at `store-assets/mobile-screenshots/2026-06-13-premium/{ios-6.7,ios-6.5,ios-5.5}`. App Store Connect currently shows live `iOS App Version 1.0` as `Ready for Distribution`; create a new `1.0.2` version before uploading refreshed screenshots and attaching build `26`. |
 | iPad screenshots | NOT APPLICABLE | `supportsTablet: false` |
-| App Review notes + demo credentials | HUMAN VERIFICATION REQUIRED | Use `docs/deploy/mobile-store-submission-copy.md`. Demo password must be supplied out-of-band; do not commit it. Include IAP path: `More -> Subscription`. Apple previously rejected build 12 because IAP was not locatable. |
+| App Review notes + demo credentials | HUMAN VERIFICATION REQUIRED | Use `docs/deploy/mobile-store-submission-copy.md`. Demo password must be supplied out-of-band; do not commit it. Include IAP path: `More -> Subscription`. Apple previously rejected build 12 because IAP was not locatable. Latest iOS build submitted from EAS is `1.0.2 (28)`. |
 | Encryption export compliance: `ITSAppUsesNonExemptEncryption=false` | DONE | `app.json` |
 | App Tracking Transparency declaration: "No tracking" | DONE | App does not use IDFA, ad SDKs, or cross-site tracking |
 | App Privacy form filled from `MOBILE_DATA_INVENTORY.md` | HUMAN VERIFICATION REQUIRED | Use `apps/mobile/MOBILE_DATA_INVENTORY.md` plus `docs/deploy/mobile-store-submission-copy.md` for console copy. |
@@ -77,7 +77,7 @@ Source of truth: `apps/mobile/MOBILE_DATA_INVENTORY.md`. Default to “Linked to
 | Privacy Policy URL: `https://locateflow.com/privacy` | DONE | Public page is live and renders the real legal entity/address. |
 | Account deletion URL: `https://locateflow.com/account/delete` | DONE | Page exists, OAuth-only users supported |
 | Phone screenshots | HUMAN VERIFICATION REQUIRED | 8 refreshed phone screenshots generated and committed at `store-assets/mobile-screenshots/2026-06-13-premium/android-phone`. Play Console currently has 8 existing phone screenshots; replacing them changes public store listing assets and requires explicit operator approval before remove/upload/save. |
-| App access instructions / demo credentials | HUMAN VERIFICATION REQUIRED | Draft copy exists in `docs/deploy/mobile-store-submission-copy.md`; demo password must be supplied out-of-band and not committed. |
+| App access instructions / demo credentials | HUMAN VERIFICATION REQUIRED | Draft copy exists in `docs/deploy/mobile-store-submission-copy.md`; demo password must be supplied out-of-band and not committed. Android production OTA is live for runtime `sdk55-1.0.0`; a fresh native AAB is blocked by EAS Android build quota until reset/plan upgrade or a Linux/macOS build host with signing credentials is available. |
 | Content rating questionnaire (IARC) | TODO | |
 | Target audience: 18+ (recommended) | TODO | |
 | Ads declaration: "No ads" | TODO | |

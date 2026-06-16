@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     user: {
       findFirst: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
     },
     auditLog: {
@@ -37,6 +38,11 @@ vi.mock("@/lib/security-alerts", () => ({
   recordFailedLoginForAlerting: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock("@/lib/store-review-account", () => ({
+  getConfiguredStoreReviewAccountEmails: vi.fn(() => Promise.resolve([])),
+  provisionStoreReviewAccount: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock("@/lib/shared-encryption", () => ({
   decrypt: vi.fn(() => "totp-secret"),
 }));
@@ -56,18 +62,22 @@ import { verifyPassword, createUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordLoginFailure } from "@/lib/login-lockout";
 import { recordFailedLoginForAlerting } from "@/lib/security-alerts";
+import { getConfiguredStoreReviewAccountEmails, provisionStoreReviewAccount } from "@/lib/store-review-account";
 import { verifyBackupCode } from "@/lib/totp";
 import { createAuditLog } from "@/lib/audit";
 import { POST } from "./route";
 import { POST as MOBILE_POST } from "../../mobile/auth/login/route";
 
 const userMock = prisma.user as unknown as { findFirst: Mock };
+const userUpdateMock = prisma.user as unknown as { update: Mock };
 const auditLogMock = prisma.auditLog as unknown as { create: Mock };
 const verifyPasswordMock = verifyPassword as unknown as Mock;
 const createUserSessionMock = createUserSession as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
 const recordLoginFailureMock = recordLoginFailure as unknown as Mock;
 const recordFailedLoginForAlertingMock = recordFailedLoginForAlerting as unknown as Mock;
+const getConfiguredStoreReviewAccountEmailsMock = getConfiguredStoreReviewAccountEmails as unknown as Mock;
+const provisionStoreReviewAccountMock = provisionStoreReviewAccount as unknown as Mock;
 const verifyBackupCodeMock = verifyBackupCode as unknown as Mock;
 const createAuditLogMock = createAuditLog as unknown as Mock;
 
@@ -83,12 +93,15 @@ describe("login route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userMock.findFirst.mockResolvedValue(null);
+    userUpdateMock.update.mockResolvedValue({});
     auditLogMock.create.mockResolvedValue({});
     verifyPasswordMock.mockResolvedValue(false);
     createUserSessionMock.mockResolvedValue("session-token");
     rateLimitMock.mockResolvedValue({ success: true, resetAt: Date.now() + 60_000 });
     recordLoginFailureMock.mockResolvedValue({ locked: false });
     verifyBackupCodeMock.mockResolvedValue(-1);
+    getConfiguredStoreReviewAccountEmailsMock.mockResolvedValue([]);
+    provisionStoreReviewAccountMock.mockResolvedValue(undefined);
   });
 
   it("only looks up active non-deleted password users and returns a generic failure", async () => {
@@ -281,6 +294,36 @@ describe("login route", () => {
     expect(createUserSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({ clientType: "mobile" }),
     );
+  });
+
+  it("verifies and provisions the configured store review account on successful login", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "review-user",
+      email: "googlereview@locateflow.com",
+      firstName: "Google",
+      lastName: "Review",
+      imageUrl: null,
+      emailVerifiedAt: null,
+      passwordHash: "hash",
+      mfaEnabled: false,
+      mfaSecret: null,
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+    getConfiguredStoreReviewAccountEmailsMock.mockResolvedValue(["googlereview@locateflow.com"]);
+
+    const response = await MOBILE_POST(makeRequest({ email: "googlereview@locateflow.com", password: "Password-2026!" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.user.emailVerified).toBe(true);
+    expect(userUpdateMock.update).toHaveBeenCalledWith({
+      where: { id: "review-user" },
+      data: { emailVerifiedAt: expect.any(Date) },
+    });
+    expect(provisionStoreReviewAccountMock).toHaveBeenCalledWith({
+      userId: "review-user",
+      request: expect.any(NextRequest),
+    });
   });
 
   it("handles corrupt backup-code JSON without returning a 500", async () => {
