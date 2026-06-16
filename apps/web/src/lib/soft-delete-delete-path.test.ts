@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@locateflow/db";
 import { withSoftDelete } from "@locateflow/db";
 
 /**

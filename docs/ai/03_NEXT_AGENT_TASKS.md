@@ -13,7 +13,7 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1625-dokploy-dbcopy-restore]]
+  [[handoffs/2026-06-16-1719-dokploy-build-fixes]]
 - Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
   streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
   source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
@@ -23,11 +23,12 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 - Temporary DigitalOcean restore access was removed after the copy: the
   temporary restore user was deleted and the temporary Dokploy-server DB
   firewall rule was removed. DigitalOcean remains live and DNS was not changed.
-- Next step: resolve full app deploy on Dokploy. The previous unauthenticated
-  GitHub HTTPS clone failed, so configure a GitHub provider/deploy key or use an
-  approved alternative build path. The Dokploy compose now keeps `cron` behind
-  the `cron` profile, so the first full app rehearsal should deploy web/admin
-  without scheduled jobs. Do not enable the `cron` profile until final cutover.
+- GitHub provider is configured in Dokploy for `Msxlab/move-main` on branch
+  `codex/dokploy-migration`. Local web/admin production Docker builds now pass
+  after build-blocker fixes. Next step: push the fixes and trigger full app
+  deploy in Dokploy. The Dokploy compose keeps `cron` behind the `cron` profile,
+  so the first full app rehearsal should deploy web/admin without scheduled
+  jobs. Do not enable the `cron` profile until final cutover.
 - Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
   Dokploy env if it is still present. Do not reveal or record its value.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can

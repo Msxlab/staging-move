@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { isBotUserAgent, isBlogLocale } from "@locateflow/shared";
