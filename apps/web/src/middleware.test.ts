@@ -516,6 +516,21 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("keeps the legacy partner-consent refresh path sealed outside the cron namespace", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/partner-consents/consent-1/refresh", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer cron-secret" },
+        body: "{}",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("x-middleware-next")).not.toBe("1");
+    expect(body.code).toBe("UNAUTHORIZED");
+  });
+
   it("lets anonymous unsubscribe GET and RFC8058 form POST reach token validation", async () => {
     const getResponse = await middleware(
       request("https://locateflow.com/api/unsubscribe?t=token.kind"),

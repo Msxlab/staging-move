@@ -89,6 +89,30 @@ function quoteIdentifier(value: string): string {
   return `\`${value.replace(/`/g, "``")}\``;
 }
 
+function sanitizeAttachmentFilename(value: string): string {
+  const safe = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/["\\/:*?<>|\r\n\t]+/g, "-")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[.-]+|[.-]+$/g, "")
+    .slice(0, 180);
+  return safe || "locateflow-database-dump.sql.gz";
+}
+
+function encodeRfc5987Value(value: string): string {
+  return encodeURIComponent(value).replace(/['()*]/g, (char) =>
+    `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function contentDispositionAttachment(rawFileName: string): string {
+  const safeFileName = sanitizeAttachmentFilename(rawFileName);
+  return `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodeRfc5987Value(safeFileName)}`;
+}
+
 function quoteSqlValue(value: unknown): string {
   if (value === null || value === undefined) return "NULL";
   if (typeof value === "bigint") return value.toString();
@@ -423,7 +447,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/gzip",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Disposition": contentDispositionAttachment(fileName),
         "Cache-Control": "no-store",
         "X-Accel-Buffering": "no",
       },
