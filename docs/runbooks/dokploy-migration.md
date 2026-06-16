@@ -75,6 +75,12 @@ The script prints key names only. It does not print values.
 ./docker-compose.dokploy.yml
 ```
 
+During rehearsal deploys, leave the `cron` Compose profile disabled. The
+Dokploy compose file keeps `cron` behind the `cron` profile so web/admin can be
+tested without firing scheduled jobs against the restored rehearsal database.
+Enable the profile only during the real cutover after GitHub scheduled cron is
+disabled and health checks pass.
+
 3. Configure Dokploy environment variables from DigitalOcean and Runtime Config
    inventory. Values must be copied by the operator, not pasted into chat.
 4. Configure Dokploy domains:

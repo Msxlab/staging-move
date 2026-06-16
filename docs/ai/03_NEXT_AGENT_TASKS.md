@@ -25,8 +25,9 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
   firewall rule was removed. DigitalOcean remains live and DNS was not changed.
 - Next step: resolve full app deploy on Dokploy. The previous unauthenticated
   GitHub HTTPS clone failed, so configure a GitHub provider/deploy key or use an
-  approved alternative build path. Then switch Dokploy from the temporary
-  MySQL-only Raw compose back to the full app compose and run health checks.
+  approved alternative build path. The Dokploy compose now keeps `cron` behind
+  the `cron` profile, so the first full app rehearsal should deploy web/admin
+  without scheduled jobs. Do not enable the `cron` profile until final cutover.
 - Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
   Dokploy env if it is still present. Do not reveal or record its value.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can

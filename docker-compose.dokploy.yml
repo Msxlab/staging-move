@@ -12,7 +12,9 @@
 #   img.locateflow.com -> service imgproxy, port 8080
 # - Add web, admin, and imgproxy to dokploy-network so Traefik can reach
 #   them. Internal services stay on the default project network only.
-# - Keep GitHub scheduled cron disabled when this cron service is running.
+# - The cron service is behind the `cron` Compose profile. Keep it disabled
+#   during rehearsal deploys; enable it only after final cutover health checks
+#   and after GitHub scheduled cron has been disabled.
 # ---------------------------------------------------------------
 
 name: locateflow
@@ -343,6 +345,7 @@ services:
   cron:
     image: mcuadros/ofelia:latest
     container_name: locateflow-cron
+    profiles: ["cron"]
     restart: unless-stopped
     depends_on:
       - web
