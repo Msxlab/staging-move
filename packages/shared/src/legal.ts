@@ -2,6 +2,10 @@ export const LEGAL_CONSENT_VERSION = "2026-06-10";
 export const LEGAL_CONSENT_EVENT = "LEGAL_CONSENT_ACCEPTED";
 export const ONBOARDING_COMPLETED_EVENT = "ONBOARDING_COMPLETED";
 export const LEGAL_CONSENT_STORAGE_KEY = "locateflow_pending_legal_consents";
+export const PROVIDER_ACCOUNT_UNCHANGED_COPY =
+  "Completing a task in LocateFlow does not update an external provider account unless the product screen expressly says a supported integration performed that action.";
+export const MOVE_BRIEFING_NOT_ADVICE_COPY =
+  "A read on your own data — not legal/tax advice; verify timing with your provider/state.";
 
 export type LegalConsentDocumentKey = "terms" | "disclaimer";
 
@@ -48,7 +52,7 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
       heading: "1. Service scope",
       paragraphs: [
         "LocateFlow helps individuals and permitted professional users organize relocation-related workflows, including address records, service-provider lists, moving tasks, reminders, budget records, support communications, subscription access, and supporting documents.",
-        "LocateFlow is not a provider marketplace, legal filing service, regulated brokerage, public-record certification tool, payment card processor, or commercial data resale product. Completing a task in LocateFlow does not update an external provider account unless the product screen expressly says a supported integration performed that action.",
+        `LocateFlow is not a provider marketplace, legal filing service, regulated brokerage, public-record certification tool, payment card processor, or commercial data resale product. ${PROVIDER_ACCOUNT_UNCHANGED_COPY}`,
       ],
     },
     {

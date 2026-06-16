@@ -1,5 +1,12 @@
 import { getUserSession } from "@/lib/auth";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { loadUserPreferences } from "@/lib/user-preferences";
+import {
+  UX_AI_BRIEFING_EXPERIENCE_FLAG,
+  UX_TRUST_COPY_FLAG,
+  type UxAiBriefingExperienceVariant,
+  type UxTrustCopyVariant,
+} from "@locateflow/shared";
 import DashboardClient, { type DashboardWidgetPrefs } from "./dashboard-client";
 
 export const dynamic = "force-dynamic";
@@ -41,5 +48,20 @@ async function loadWidgetPrefs(): Promise<DashboardWidgetPrefs | null> {
 
 export default async function DashboardPage() {
   const initialPrefs = await loadWidgetPrefs();
-  return <DashboardClient initialPrefs={initialPrefs} />;
+  const session = await getUserSession();
+  const flagEnabled = session
+    ? await isFeatureEnabled(UX_AI_BRIEFING_EXPERIENCE_FLAG, { userId: session.userId })
+    : false;
+  const trustFlagEnabled = session
+    ? await isFeatureEnabled(UX_TRUST_COPY_FLAG, { userId: session.userId })
+    : false;
+  const uxAiBriefingExperienceVariant: UxAiBriefingExperienceVariant = flagEnabled ? "variant" : "control";
+  const uxTrustCopyVariant: UxTrustCopyVariant = trustFlagEnabled ? "variant" : "control";
+  return (
+    <DashboardClient
+      initialPrefs={initialPrefs}
+      uxAiBriefingExperienceVariant={uxAiBriefingExperienceVariant}
+      uxTrustCopyVariant={uxTrustCopyVariant}
+    />
+  );
 }

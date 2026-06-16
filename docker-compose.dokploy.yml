@@ -1,0 +1,373 @@
+# ---------------------------------------------------------------
+# LocateFlow - Dokploy production compose
+#
+# Use this file for Dokploy-hosted deployments. It is intentionally
+# separate from docker-compose.prod.yml because Dokploy provides Traefik
+# and domain management; this stack does not start Caddy.
+#
+# Dokploy notes:
+# - Configure domains in the Dokploy UI:
+#   locateflow.com -> service web, port 3000
+#   admin.locateflow.com -> service admin, port 3001
+#   img.locateflow.com -> service imgproxy, port 8080
+# - Add web, admin, and imgproxy to dokploy-network so Traefik can reach
+#   them. Internal services stay on the default project network only.
+# - Keep GitHub scheduled cron disabled when this cron service is running.
+# ---------------------------------------------------------------
+
+name: locateflow
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_ENV: ${APP_ENV:-production}
+  TRUSTED_PROXY_HEADERS: ${TRUSTED_PROXY_HEADERS:-standard}
+
+  APP_URL: ${APP_URL:?APP_URL is required}
+  NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+  NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
+  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+  SITE_URL: ${SITE_URL:-}
+  SITE_LAST_MODIFIED: ${SITE_LAST_MODIFIED:-}
+  PUBLIC_SEO_CANONICAL_URL: ${PUBLIC_SEO_CANONICAL_URL:-}
+
+  USER_JWT_SECRET: ${USER_JWT_SECRET:?USER_JWT_SECRET is required}
+  ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
+  FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
+  CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
+  INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:?INTERNAL_WEBHOOK_SECRET is required}
+  IMPERSONATION_HANDOFF_SECRET: ${IMPERSONATION_HANDOFF_SECRET:?IMPERSONATION_HANDOFF_SECRET is required}
+  ADMIN_ACTION_OTP_SECRET: ${ADMIN_ACTION_OTP_SECRET:-}
+  ADMIN_SESSION_HANDLE_SECRET: ${ADMIN_SESSION_HANDLE_SECRET:-}
+  ACCOUNT_RESTORE_SECRET: ${ACCOUNT_RESTORE_SECRET:-}
+  EMAIL_UNSUBSCRIBE_SECRET: ${EMAIL_UNSUBSCRIBE_SECRET:-}
+
+  UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:?UPSTASH_REDIS_REST_URL is required}
+  UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required}
+
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY is required}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required}
+  STRIPE_PRICE_INDIVIDUAL_MONTHLY: ${STRIPE_PRICE_INDIVIDUAL_MONTHLY:?STRIPE_PRICE_INDIVIDUAL_MONTHLY is required}
+  STRIPE_PRICE_INDIVIDUAL_YEARLY: ${STRIPE_PRICE_INDIVIDUAL_YEARLY:?STRIPE_PRICE_INDIVIDUAL_YEARLY is required}
+  STRIPE_PRICE_FAMILY_MONTHLY: ${STRIPE_PRICE_FAMILY_MONTHLY:?STRIPE_PRICE_FAMILY_MONTHLY is required}
+  STRIPE_PRICE_FAMILY_YEARLY: ${STRIPE_PRICE_FAMILY_YEARLY:?STRIPE_PRICE_FAMILY_YEARLY is required}
+  STRIPE_PRICE_PRO_MONTHLY: ${STRIPE_PRICE_PRO_MONTHLY:?STRIPE_PRICE_PRO_MONTHLY is required}
+  STRIPE_PRICE_PRO_YEARLY: ${STRIPE_PRICE_PRO_YEARLY:?STRIPE_PRICE_PRO_YEARLY is required}
+  STRIPE_PRICE_INDIVIDUAL: ${STRIPE_PRICE_INDIVIDUAL:-}
+  STRIPE_ANNUAL_TRIAL_DAYS: ${STRIPE_ANNUAL_TRIAL_DAYS:-90}
+  STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED: ${STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED:-false}
+  STRIPE_ALLOW_LIVE_WEBHOOKS_OUTSIDE_PRODUCTION: ${STRIPE_ALLOW_LIVE_WEBHOOKS_OUTSIDE_PRODUCTION:-}
+  ALLOW_STRIPE_LIVE_EVENTS_IN_NON_PRODUCTION: ${ALLOW_STRIPE_LIVE_EVENTS_IN_NON_PRODUCTION:-}
+
+  RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+  RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
+  EMAIL_FROM: ${EMAIL_FROM:?EMAIL_FROM is required}
+  RESEND_FROM: ${RESEND_FROM:-}
+  MAIL_FROM: ${MAIL_FROM:-}
+  EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+  SUPPORT_EMAIL: ${SUPPORT_EMAIL:?SUPPORT_EMAIL is required}
+  ADMIN_ALERT_EMAIL: ${ADMIN_ALERT_EMAIL:-}
+  ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-}
+  ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+
+  GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:?GOOGLE_MAPS_API_KEY is required}
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+  PLACES_AUTOCOMPLETE_ENABLED: ${PLACES_AUTOCOMPLETE_ENABLED:-}
+  PLACES_AUTOCOMPLETE_DAILY_LIMIT: ${PLACES_AUTOCOMPLETE_DAILY_LIMIT:-}
+  PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT: ${PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT:-}
+  PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT: ${PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT:-}
+  PLACES_DETAILS_DAILY_USER_LIMIT: ${PLACES_DETAILS_DAILY_USER_LIMIT:-}
+  PLACES_DETAILS_DAILY_IP_LIMIT: ${PLACES_DETAILS_DAILY_IP_LIMIT:-}
+  GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+  NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: ${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}
+  NEXT_PUBLIC_GTM_ID: ${NEXT_PUBLIC_GTM_ID:-}
+
+  R2_ENDPOINT: ${R2_ENDPOINT:?R2_ENDPOINT is required}
+  R2_REGION: ${R2_REGION:-auto}
+  R2_BUCKET: ${R2_BUCKET:?R2_BUCKET is required}
+  R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}
+  R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}
+  R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+  IMGPROXY_KEY: ${IMGPROXY_KEY:?IMGPROXY_KEY is required}
+  IMGPROXY_SALT: ${IMGPROXY_SALT:?IMGPROXY_SALT is required}
+  NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:?NEXT_PUBLIC_IMGPROXY_URL is required}
+
+  BACKUP_STORAGE_PROVIDER: ${BACKUP_STORAGE_PROVIDER:-}
+  BACKUP_STORAGE_BUCKET: ${BACKUP_STORAGE_BUCKET:-}
+  BACKUP_STORAGE_REGION: ${BACKUP_STORAGE_REGION:-}
+  BACKUP_STORAGE_ENDPOINT: ${BACKUP_STORAGE_ENDPOINT:-}
+  BACKUP_STORAGE_ACCESS_KEY_ID: ${BACKUP_STORAGE_ACCESS_KEY_ID:-}
+  BACKUP_STORAGE_SECRET_ACCESS_KEY: ${BACKUP_STORAGE_SECRET_ACCESS_KEY:-}
+  BACKUP_RETENTION_DELETE_OFFSITE: ${BACKUP_RETENTION_DELETE_OFFSITE:-}
+  BACKUP_HMAC_SECRET: ${BACKUP_HMAC_SECRET:-}
+  GDRIVE_BACKUP_ENABLED: ${GDRIVE_BACKUP_ENABLED:-}
+  GDRIVE_SERVICE_ACCOUNT_EMAIL: ${GDRIVE_SERVICE_ACCOUNT_EMAIL:-}
+  GDRIVE_SERVICE_ACCOUNT_KEY: ${GDRIVE_SERVICE_ACCOUNT_KEY:-}
+  GDRIVE_BACKUP_FOLDER_ID: ${GDRIVE_BACKUP_FOLDER_ID:-}
+
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  FEATURE_API_CONNECTORS: ${FEATURE_API_CONNECTORS:-}
+  GUIDED_PARTNERS: ${GUIDED_PARTNERS:-}
+  WORKSPACE_MODEL_ENABLED: ${WORKSPACE_MODEL_ENABLED:-}
+  RECOMMENDATION_SCORING_WEIGHTS: ${RECOMMENDATION_SCORING_WEIGHTS:-}
+  SPONSORED_ENABLED: ${SPONSORED_ENABLED:-}
+  MOVER_REGISTRATION_ENABLED: ${MOVER_REGISTRATION_ENABLED:-}
+  DAILY_DIGEST_ENABLED: ${DAILY_DIGEST_ENABLED:-}
+  NOTIFICATION_PUSH_ENABLED: ${NOTIFICATION_PUSH_ENABLED:-}
+  NOTIFICATION_SMS_ENABLED: ${NOTIFICATION_SMS_ENABLED:-}
+  SECURITY_ALERTS_ENABLED: ${SECURITY_ALERTS_ENABLED:-}
+  SECURITY_ALERT_WEBHOOK_URL: ${SECURITY_ALERT_WEBHOOK_URL:-}
+  SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+  KILL_SIGNUPS: ${KILL_SIGNUPS:-}
+  KILL_OUTBOUND_EMAIL: ${KILL_OUTBOUND_EMAIL:-}
+  COPPA_AGE_GATE_ENABLED: ${COPPA_AGE_GATE_ENABLED:-}
+  QA_RESETTABLE_ACCOUNT_EMAIL: ${QA_RESETTABLE_ACCOUNT_EMAIL:-}
+
+  FCC_BDC_ENABLED: ${FCC_BDC_ENABLED:-}
+  FCC_BDC_API_KEY: ${FCC_BDC_API_KEY:-}
+  FCC_BDC_USERNAME: ${FCC_BDC_USERNAME:-}
+  FCC_BDC_API_BASE: ${FCC_BDC_API_BASE:-}
+  ELECTRIC_LOOKUP_ENABLED: ${ELECTRIC_LOOKUP_ENABLED:-}
+  OPENEI_API_KEY: ${OPENEI_API_KEY:-}
+  AIRNOW_API_KEY: ${AIRNOW_API_KEY:-}
+  CENSUS_API_KEY: ${CENSUS_API_KEY:-}
+  HUD_HOUSING_DATA_ENABLED: ${HUD_HOUSING_DATA_ENABLED:-}
+  HUD_USER_API_TOKEN: ${HUD_USER_API_TOKEN:-}
+  NLR_ALT_FUEL_STATIONS_ENABLED: ${NLR_ALT_FUEL_STATIONS_ENABLED:-}
+  NLR_API_KEY: ${NLR_API_KEY:-}
+  FMCSA_WEBKEY: ${FMCSA_WEBKEY:-}
+
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+  APPLE_OAUTH_CLIENT_ID: ${APPLE_OAUTH_CLIENT_ID:-}
+  APPLE_OAUTH_TEAM_ID: ${APPLE_OAUTH_TEAM_ID:-}
+  APPLE_OAUTH_KEY_ID: ${APPLE_OAUTH_KEY_ID:-}
+  APPLE_OAUTH_PRIVATE_KEY: ${APPLE_OAUTH_PRIVATE_KEY:-}
+  APPLE_BUNDLE_ID: ${APPLE_BUNDLE_ID:-}
+  APPLE_APP_STORE_ISSUER_ID: ${APPLE_APP_STORE_ISSUER_ID:-}
+  APPLE_APP_STORE_KEY_ID: ${APPLE_APP_STORE_KEY_ID:-}
+  APPLE_APP_STORE_PRIVATE_KEY: ${APPLE_APP_STORE_PRIVATE_KEY:-}
+  APPLE_APP_STORE_ENVIRONMENT: ${APPLE_APP_STORE_ENVIRONMENT:-}
+  GOOGLE_PLAY_PACKAGE_NAME: ${GOOGLE_PLAY_PACKAGE_NAME:-}
+  GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL:-}
+  GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY:-}
+  GOOGLE_PLAY_OAUTH_CLIENT_ID: ${GOOGLE_PLAY_OAUTH_CLIENT_ID:-}
+  GOOGLE_PLAY_OAUTH_CLIENT_SECRET: ${GOOGLE_PLAY_OAUTH_CLIENT_SECRET:-}
+  GOOGLE_PLAY_OAUTH_REFRESH_TOKEN: ${GOOGLE_PLAY_OAUTH_REFRESH_TOKEN:-}
+  GOOGLE_PLAY_RTDN_AUDIENCE: ${GOOGLE_PLAY_RTDN_AUDIENCE:-}
+  EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL: ${EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL:-}
+  EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT: ${EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT:-}
+  MOBILE_IOS_PRODUCT_INDIVIDUAL: ${MOBILE_IOS_PRODUCT_INDIVIDUAL:-}
+  MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY: ${MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY:-}
+  MOBILE_IOS_PRODUCT_FAMILY: ${MOBILE_IOS_PRODUCT_FAMILY:-}
+  MOBILE_IOS_PRODUCT_FAMILY_YEARLY: ${MOBILE_IOS_PRODUCT_FAMILY_YEARLY:-}
+  MOBILE_IOS_PRODUCT_PRO: ${MOBILE_IOS_PRODUCT_PRO:-}
+  MOBILE_IOS_PRODUCT_PRO_YEARLY: ${MOBILE_IOS_PRODUCT_PRO_YEARLY:-}
+  MOBILE_ANDROID_PRODUCT_INDIVIDUAL: ${MOBILE_ANDROID_PRODUCT_INDIVIDUAL:-}
+  MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY: ${MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY:-}
+  MOBILE_ANDROID_PRODUCT_FAMILY: ${MOBILE_ANDROID_PRODUCT_FAMILY:-}
+  MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY: ${MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY:-}
+  MOBILE_ANDROID_PRODUCT_PRO: ${MOBILE_ANDROID_PRODUCT_PRO:-}
+  MOBILE_ANDROID_PRODUCT_PRO_YEARLY: ${MOBILE_ANDROID_PRODUCT_PRO_YEARLY:-}
+
+  NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+  NEXT_PUBLIC_IOS_APP_STORE_URL: ${NEXT_PUBLIC_IOS_APP_STORE_URL:-}
+  NEXT_PUBLIC_ANDROID_PLAY_STORE_URL: ${NEXT_PUBLIC_ANDROID_PLAY_STORE_URL:-}
+  NEXT_PUBLIC_IOS_APP_STORE_ID: ${NEXT_PUBLIC_IOS_APP_STORE_ID:-}
+  NEXT_PUBLIC_LEGAL_ENTITY_NAME: ${NEXT_PUBLIC_LEGAL_ENTITY_NAME:-}
+  NEXT_PUBLIC_COMPANY_ADDRESS: ${NEXT_PUBLIC_COMPANY_ADDRESS:-}
+  INDEXNOW_KEY: ${INDEXNOW_KEY:-}
+  UPTIME_WEB_BASE_URL: ${UPTIME_WEB_BASE_URL:-}
+  UPTIME_ADMIN_BASE_URL: ${UPTIME_ADMIN_BASE_URL:-}
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: locateflow-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?MYSQL_DATABASE is required}
+      MYSQL_USER: ${MYSQL_USER:?MYSQL_USER is required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-connections=200
+      - --innodb-buffer-pool-size=512M
+      - --slow-query-log=1
+      - --long-query-time=2
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    container_name: locateflow-migrate
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:?ADMIN_SEED_EMAIL is required}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?ADMIN_SEED_PASSWORD is required}
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.prod.Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        SITE_URL: ${SITE_URL:-}
+        APP_ENV: ${APP_ENV:-production}
+        NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:?NEXT_PUBLIC_IMGPROXY_URL is required}
+    container_name: locateflow-web
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    expose:
+      - "3000"
+    networks:
+      - default
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/admin.prod.Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:?NEXT_PUBLIC_ADMIN_URL is required}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        SITE_URL: ${SITE_URL:-}
+        APP_ENV: ${APP_ENV:-production}
+    container_name: locateflow-admin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+    expose:
+      - "3001"
+    networks:
+      - default
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    container_name: locateflow-imgproxy
+    restart: unless-stopped
+    environment:
+      IMGPROXY_KEY: ${IMGPROXY_KEY:?IMGPROXY_KEY is required}
+      IMGPROXY_SALT: ${IMGPROXY_SALT:?IMGPROXY_SALT is required}
+      IMGPROXY_USE_S3: "true"
+      IMGPROXY_S3_ENDPOINT: ${R2_ENDPOINT:?R2_ENDPOINT is required}
+      IMGPROXY_S3_REGION: ${R2_REGION:-auto}
+      AWS_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}
+      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
+      IMGPROXY_ENABLE_AVIF_DETECTION: "true"
+      IMGPROXY_STRIP_METADATA: "true"
+      IMGPROXY_MAX_SRC_RESOLUTION: "50"
+      IMGPROXY_MAX_SRC_FILE_SIZE: "20971520"
+    expose:
+      - "8080"
+    networks:
+      - dokploy-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cron:
+    image: mcuadros/ofelia:latest
+    container_name: locateflow-cron
+    restart: unless-stopped
+    depends_on:
+      - web
+      - admin
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: daemon --config /etc/ofelia.conf
+    configs:
+      - source: ofelia
+        target: /etc/ofelia.conf
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+configs:
+  ofelia:
+    file: ./docker/ofelia.ini
+
+volumes:
+  mysql_data:
+
+networks:
+  dokploy-network:
+    external: true

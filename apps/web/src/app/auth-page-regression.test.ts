@@ -69,7 +69,7 @@ describe("auth page regressions", () => {
   });
 
   it("keeps the onboarding legal gate open until legal acceptance is saved", () => {
-    const onboarding = read("src/app/onboarding/page.tsx");
+    const onboarding = read("src/app/onboarding/onboarding-client.tsx");
 
     expect(onboarding).toContain("legalAcceptedOnServer");
     expect(onboarding).toContain("setLegalAcceptedOnServer(hasLegal)");

@@ -1,4 +1,7 @@
-﻿"use client";
+import { getUserSession } from "@/lib/auth";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { UX_ONBOARDING_TEASER_FLAG, type UxOnboardingTeaserVariant } from "@locateflow/shared";
+import OnboardingClient from "./onboarding-client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ONBOARDING_FUNNEL_STEPS } from "@/lib/onboarding-progress";
@@ -60,15 +63,12 @@ import {
 } from "@/components/shared/service-limit-upsell";
 import { trackEvent } from "@/lib/analytics";
 
-// Edition VII note: the design prototype opens with a plan-picker step. That
-// step is DELIBERATELY absent here — billing stays post-onboarding (owner
-// decision), so the wizard remains Profile → Address → Services → Moving.
-const STEPS = [
-  { icon: User, label: "Profile" },
-  { icon: MapPin, label: "Address" },
-  { icon: Zap, label: "Services" },
-  { icon: Truck, label: "Moving" },
-];
+export default async function OnboardingPage() {
+  const session = await getUserSession();
+  const flagEnabled = session
+    ? await isFeatureEnabled(UX_ONBOARDING_TEASER_FLAG, { userId: session.userId })
+    : false;
+  const uxOnboardingTeaserVariant: UxOnboardingTeaserVariant = flagEnabled ? "variant" : "control";
 
 // Client draft for transient Step-3 inputs (move intent + typed destination/date)
 // so a mid-wizard refresh doesn't drop typed-but-uncommitted work. Cleared on

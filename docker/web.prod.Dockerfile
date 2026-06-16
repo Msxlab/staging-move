@@ -45,11 +45,19 @@ ENV NODE_ENV=production
 # secret manager) or the runtime validator throws on first request.
 ENV BUILD_PHASE=true
 
-ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
-ENV NEXT_PUBLIC_SITE_URL=https://locateflow.com
-ENV SITE_URL=https://locateflow.com
-ENV APP_ENV=production
-ENV NEXT_PUBLIC_IMGPROXY_URL=https://img.locateflow.com
+ARG NEXT_PUBLIC_APP_URL=https://locateflow.com
+ARG NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+ARG NEXT_PUBLIC_SITE_URL=https://locateflow.com
+ARG SITE_URL=https://locateflow.com
+ARG APP_ENV=production
+ARG NEXT_PUBLIC_IMGPROXY_URL=https://img.locateflow.com
+
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV SITE_URL=$SITE_URL
+ENV APP_ENV=$APP_ENV
+ENV NEXT_PUBLIC_IMGPROXY_URL=$NEXT_PUBLIC_IMGPROXY_URL
 
 # IMPORTANT: secrets MUST NOT be baked into image layers via ENV.
 # - USER_JWT_SECRET, ADMIN_JWT_SECRET, FIELD_ENCRYPTION_KEY, CRON_SECRET,

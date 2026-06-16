@@ -299,7 +299,7 @@
     "family_feature_together_body": "Agrega miembros, asigna roles y coordinen mudanzas juntos — sin exponer los datos privados de nadie.",
     "connector_eyebrow": "Sincronización de dirección",
     "connector_title": "Actualiza una vez. Te ayudamos con el resto.",
-    "connector_subtitle": "Para los socios compatibles que autorices, LocateFlow puede enviar tu nueva dirección en tu nombre; si no hay API compatible, te guiamos al flujo correcto.",
+    "connector_subtitle": "LocateFlow te guía por la ruta correcta de actualización para cada proveedor. Cuando haya un conector compatible y autorizado, la pantalla del producto lo indicará antes de enviar algo en tu nombre.",
     "connector_feature_authorize_title": "Tú autorizas cada una",
     "connector_feature_authorize_body": "Conecta un socio con un inicio de sesión seguro. LocateFlow nunca ve las contraseñas de tus socios.",
     "connector_feature_submit_title": "Solo socios compatibles",

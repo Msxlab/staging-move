@@ -16,11 +16,15 @@ vi.mock("lucide-react", () => {
 });
 // next/link → plain anchor so the teaser CTA href is assertable without a router.
 vi.mock("next/link", () => ({
-  default: ({ href, children, className }: { href?: string; children?: unknown; className?: string }) => (
-    <a href={href} className={className}>
+  default: ({ href, children, className, onClick }: { href?: string; children?: unknown; className?: string; onClick?: () => void }) => (
+    <a href={href} className={className} onClick={onClick}>
       {children as never}
     </a>
   ),
+}));
+
+vi.mock("@/lib/analytics", () => ({
+  trackEvent: vi.fn(),
 }));
 
 // Resolve translations from the REAL en.json catalog so the teaser tests pin
@@ -45,11 +49,19 @@ vi.mock("next-intl", async () => {
 
 import {
   actionHref,
+  briefingActionTelemetryType,
+  briefingProvenanceLabel,
+  briefingTelemetryForState,
   deriveBriefingState,
+  fallbackBriefingStateForExperience,
+  MoveBriefingProvenance,
   MoveBriefingTeaser,
+  MoveBriefingTrustFooter,
   parseBriefing,
+  shouldShowBriefingForStage,
   type BriefingAction,
 } from "./move-briefing-card";
+import { MOVE_BRIEFING_NOT_ADVICE_COPY } from "@locateflow/shared";
 
 const SENTINEL = "<<<LF_BRIEFING_META>>>";
 
@@ -245,6 +257,90 @@ describe("deriveBriefingState — GATE-API plan gate (entitled:false, HTTP 200)"
   });
 });
 
+describe("deriveBriefingState - ux_ai_briefing_experience_v1 variant", () => {
+  it("keeps flag-off control behavior unchanged", () => {
+    expect(fallbackBriefingStateForExperience("control")).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState({ configured: false }, "control")).toEqual({ kind: "hidden" });
+    expect(deriveBriefingState({ configured: true }, "control")).toEqual({ kind: "hidden" });
+  });
+
+  it("renders a rule-based fallback instead of hidden when the AI path is unavailable", () => {
+    for (const payload of [null, { configured: false }, { configured: true }, { configured: true, briefing: 42 }]) {
+      const state = deriveBriefingState(payload, "variant");
+      expect(state.kind).toBe("briefing");
+      if (state.kind === "briefing") {
+        expect(state.aiGenerated).toBe(false);
+        expect(parseBriefing(state.briefing).proseLines[0]).toContain("move command center");
+      }
+    }
+  });
+
+  it("still renders the existing gated teaser under the variant", () => {
+    expect(deriveBriefingState({ configured: true, entitled: false }, "variant")).toEqual({ kind: "teaser" });
+    expect(deriveBriefingState({ configured: true, upgradeRequired: true }, "variant")).toEqual({ kind: "teaser" });
+  });
+
+  it("re-shows after a move-stage change but not for the same dismissed stage", () => {
+    expect(
+      shouldShowBriefingForStage({
+        variant: "variant",
+        moveStage: "planning",
+        seenStage: null,
+        dismissedStage: "planning",
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowBriefingForStage({
+        variant: "variant",
+        moveStage: "in_progress",
+        seenStage: null,
+        dismissedStage: "planning",
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowBriefingForStage({
+        variant: "control",
+        moveStage: "in_progress",
+        seenStage: null,
+        sessionDismissed: true,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("briefing telemetry helpers", () => {
+  it("classifies visible, fallback, gated, empty, and hidden briefing states", () => {
+    expect(briefingTelemetryForState({ kind: "hidden" })).toEqual({
+      briefingState: "hidden",
+      briefingMode: "unknown",
+    });
+    expect(briefingTelemetryForState({ kind: "teaser" })).toEqual({
+      briefingState: "teaser",
+      briefingMode: "gated_teaser",
+    });
+    expect(briefingTelemetryForState({ kind: "briefing", briefing: "AI prose", aiGenerated: true })).toEqual({
+      briefingState: "content",
+      briefingMode: "ai_generated",
+    });
+    expect(briefingTelemetryForState({ kind: "briefing", briefing: "Rule prose", aiGenerated: false })).toEqual({
+      briefingState: "fallback",
+      briefingMode: "rule_based",
+    });
+    expect(briefingTelemetryForState({ kind: "briefing", briefing: "", aiGenerated: false })).toEqual({
+      briefingState: "empty",
+      briefingMode: "rule_based",
+    });
+  });
+
+  it("classifies briefing actions into closed analytics buckets", () => {
+    expect(briefingActionTelemetryType({ title: "t", why: "w", target: { kind: "category", category: "UTILITY_INTERNET" } })).toBe("service_category");
+    expect(briefingActionTelemetryType({ title: "t", why: "w", target: { kind: "state_rule", state: "NJ" } })).toBe("state_rule");
+    expect(briefingActionTelemetryType({ title: "t", why: "w", target: { kind: "plan" } })).toBe("plan");
+    expect(briefingActionTelemetryType({ title: "t", why: "w", deeplink: { type: "services" } })).toBe("services");
+    expect(briefingActionTelemetryType({ title: "t", why: "w" } as BriefingAction)).toBe("unknown");
+  });
+});
+
 describe("MoveBriefingTeaser rendering", () => {
   it("renders the honest pitch, a CSS-only blurred strip (no readable fake text), and the /pricing CTA", () => {
     const markup = renderToStaticMarkup(<MoveBriefingTeaser />);
@@ -266,6 +362,48 @@ describe("MoveBriefingTeaser rendering", () => {
   it("shows the dismiss affordance only when a handler is provided", () => {
     expect(renderToStaticMarkup(<MoveBriefingTeaser />)).not.toContain("Dismiss briefing");
     expect(renderToStaticMarkup(<MoveBriefingTeaser onDismiss={() => {}} />)).toContain("Dismiss briefing");
+  });
+});
+
+describe("ux_trust_copy_v1 briefing provenance and footer", () => {
+  it("keeps flag-off provenance behavior unchanged", () => {
+    expect(briefingProvenanceLabel(true, "control")).toBe("AI-generated");
+    expect(briefingProvenanceLabel(false, "control")).toBeNull();
+    expect(renderToStaticMarkup(<MoveBriefingProvenance aiGenerated={false} uxTrustCopyVariant="control" />)).toBe("");
+    expect(renderToStaticMarkup(<MoveBriefingTrustFooter uxTrustCopyVariant="control" />)).toBe("");
+  });
+
+  it("renders provenance and the not-advice footer for AI and rule-based states under the variant", () => {
+    const aiMarkup = renderToStaticMarkup(
+      <>
+        <MoveBriefingProvenance aiGenerated uxTrustCopyVariant="variant" />
+        <MoveBriefingTrustFooter uxTrustCopyVariant="variant" />
+      </>,
+    );
+    const ruleMarkup = renderToStaticMarkup(
+      <>
+        <MoveBriefingProvenance aiGenerated={false} uxTrustCopyVariant="variant" />
+        <MoveBriefingTrustFooter uxTrustCopyVariant="variant" />
+      </>,
+    );
+
+    expect(aiMarkup).toContain("AI-generated");
+    expect(ruleMarkup).toContain("Rule-based");
+    expect(aiMarkup).toContain(MOVE_BRIEFING_NOT_ADVICE_COPY);
+    expect(ruleMarkup).toContain(MOVE_BRIEFING_NOT_ADVICE_COPY);
+  });
+
+  it("does not add blocked trust phrases to briefing trust copy", () => {
+    const markup = renderToStaticMarkup(
+      <>
+        <MoveBriefingProvenance aiGenerated={false} uxTrustCopyVariant="variant" />
+        <MoveBriefingTrustFooter uxTrustCopyVariant="variant" />
+      </>,
+    ).toLowerCase();
+
+    for (const phrase of ["auto-sync", "verified sync", "official partner", "official USPS", "provider offer"]) {
+      expect(markup).not.toContain(phrase.toLowerCase());
+    }
   });
 });
 

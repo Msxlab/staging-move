@@ -61,6 +61,34 @@ For the current LocateFlow production server (`locateflow-prod-nyc3`), always
 use the DigitalOcean override. Running `docker-compose.prod.yml` by itself will
 start a fresh local MySQL container and will not use the managed production DB.
 
+## Dokploy Migration Target
+
+Use `docker-compose.dokploy.yml` for Dokploy-hosted production. Do not deploy
+`docker-compose.prod.yml` directly in Dokploy: that file starts Caddy and has
+edge-domain requirements that are meant for a plain VPS, while Dokploy already
+provides Traefik and domain management.
+
+Dokploy service/domain mapping:
+
+- `web` on port `3000` -> `locateflow.com`
+- `admin` on port `3001` -> `admin.locateflow.com`
+- `imgproxy` on port `8080` -> `img.locateflow.com`
+
+Before cutover, follow the full runbook in
+`docs/runbooks/dokploy-migration.md`. The migration is whole-MySQL-dump based;
+app-level backup archives are not sufficient because `RuntimeConfigEntry` and
+all encrypted operational data must move together with the same
+`FIELD_ENCRYPTION_KEY`.
+
+Presence-only env check:
+
+```bash
+node scripts/dokploy-env-audit.mjs --env-file .env
+```
+
+This reports only key names and missing/duplicate status. It does not print
+values.
+
 ## Generating secrets
 
 ```bash

@@ -299,7 +299,7 @@
     "family_feature_together_body": "Add members, assign roles, and coordinate moves together — without exposing anyone's private data.",
     "connector_eyebrow": "Address sync",
     "connector_title": "Update once. We help with the rest.",
-    "connector_subtitle": "For supported partners you authorize, LocateFlow can submit your new address on your behalf; otherwise we guide you to the right update path.",
+    "connector_subtitle": "LocateFlow guides you through the right update path for each provider. When a supported authorized connector is available, the product screen says so before any submission on your behalf.",
     "connector_feature_authorize_title": "You authorize each one",
     "connector_feature_authorize_body": "Connect a partner with a secure sign-in. LocateFlow never sees your partner passwords.",
     "connector_feature_submit_title": "Supported partners only",

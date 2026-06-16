@@ -34,7 +34,13 @@ import {
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { planFeatures } from "@locateflow/shared";
+import { planFeatures, type UxAiBriefingExperienceVariant, type UxTrustCopyVariant } from "@locateflow/shared";
+import {
+  DASHBOARD_DETAILS_WIDGETS,
+  resolveDashboardTopSlots,
+  shouldUseDashboardDetailsSection,
+  splitDashboardDetailWidgets,
+} from "./dashboard-ux-experiment";
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 const categoryColors: Record<string, string> = {
@@ -207,7 +213,15 @@ function CollapsibleWidget({ title, expanded, onToggle, toggleLabel, children }:
   );
 }
 
-export default function DashboardClient({ initialPrefs }: { initialPrefs: DashboardWidgetPrefs | null }) {
+export default function DashboardClient({
+  initialPrefs,
+  uxAiBriefingExperienceVariant = "control",
+  uxTrustCopyVariant = "control",
+}: {
+  initialPrefs: DashboardWidgetPrefs | null;
+  uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
+  uxTrustCopyVariant?: UxTrustCopyVariant;
+}) {
   const t = useTranslations("services");
   const td = useTranslations("dashboard");
   const widgetLabels: Record<WidgetKey, string> = {
@@ -328,8 +342,18 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   // Which column each widget belongs to
   const leftWidgets: WidgetKey[] = ["nextCritical", "moving", "homeDossier", "spending", "routeMap", "milestones", "recent"];
   const rightWidgets: WidgetKey[] = ["bills", "budgetDonut", "monthlySpark", "categories", "topSpending"];
-  const orderedLeft = widgetOrder.filter((k) => leftWidgets.includes(k));
-  const orderedRight = widgetOrder.filter((k) => rightWidgets.includes(k));
+  const useDetailsSection = shouldUseDashboardDetailsSection(uxAiBriefingExperienceVariant, initialPrefs);
+  const topSlots = resolveDashboardTopSlots(uxAiBriefingExperienceVariant);
+  const orderedLeftBase = widgetOrder.filter((k) => leftWidgets.includes(k));
+  const orderedRightBase = widgetOrder.filter((k) => rightWidgets.includes(k));
+  const { primary: orderedLeft, details: leftDetailWidgets } = useDetailsSection
+    ? splitDashboardDetailWidgets(orderedLeftBase, DASHBOARD_DETAILS_WIDGETS)
+    : { primary: orderedLeftBase, details: [] as WidgetKey[] };
+  const { primary: orderedRight, details: rightDetailWidgets } = useDetailsSection
+    ? splitDashboardDetailWidgets(orderedRightBase, DASHBOARD_DETAILS_WIDGETS)
+    : { primary: orderedRightBase, details: [] as WidgetKey[] };
+  const detailWidgets = [...leftDetailWidgets, ...rightDetailWidgets];
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
 
   useEffect(() => {
     Promise.allSettled([
@@ -936,6 +960,48 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
     );
   };
 
+  const renderTopSlot = (slot: string) => {
+    switch (slot) {
+      case "briefing":
+        return (
+          <MoveBriefingCard
+            key={slot}
+            uxAiBriefingExperienceVariant={uxAiBriefingExperienceVariant}
+            uxTrustCopyVariant={uxTrustCopyVariant}
+          />
+        );
+      case "householdActivation":
+        return <HouseholdActivationCard key={slot} plan={premiumPlan} />;
+      case "commandCenter":
+        return (
+          <MoveCommandCenter
+            key={slot}
+            activePlan={stats.activePlan}
+            checklist={checklist}
+            topAction={topAction}
+            missingCriticalCount={criticalReadiness.missing}
+            completedCriticalCount={criticalReadiness.completed}
+            state={primaryState}
+            hasOriginDestination={hasOriginDestination}
+            isPremium={isPremium}
+            t={td}
+          />
+        );
+      case "nextCriticalActions":
+        return (
+          <UpNext
+            key={slot}
+            planId={stats.activePlan?.id ?? null}
+            locale="en-US"
+            onCompleted={refreshReadiness}
+            t={td}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Resume nudge: the lifecycle-nudge cron only re-engages users with NO plan
@@ -965,44 +1031,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           </button>
         </div>
       )}
-      {/* AI move briefing — plain-English situation summary + top next actions.
-          Parity with mobile; renders nothing when not configured or already seen
-          for this move stage. */}
-      <MoveBriefingCard />
-      {/* HOUSEHOLD ACTIVATION — Family/Pro owners with a member-empty household
-          get a one-time guided "invite your household" card. A top-level card
-          like the pending-invite banner, NOT a widget key (never part of the
-          order/visibility/collapse prefs). Self-hides when the workspace flag
-          is off, members or invites already exist, or after dismissal
-          (localStorage, same pattern as the briefing card). Also handles the
-          ?household=setup deep link from checkout success. */}
-      <HouseholdActivationCard plan={premiumPlan} />
-      {/* MOVE COMMAND CENTER — pinned hero: countdown + readiness + next action.
-          When there's no active move it renders a warm "start your move" hero
-          instead of a cold empty grid. */}
-      <MoveCommandCenter
-        activePlan={stats.activePlan}
-        checklist={checklist}
-        topAction={topAction}
-        missingCriticalCount={criticalReadiness.missing}
-        completedCriticalCount={criticalReadiness.completed}
-        state={primaryState}
-        hasOriginDestination={hasOriginDestination}
-        isPremium={isPremium}
-        t={td}
-      />
-
-      {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each with
-          a one-tap inline checkbox that completes via the same
-          PATCH /api/move-tasks { event: "COMPLETE" } the plan screen uses (with
-          Undo). Self-hides with no active plan / no open tasks. onCompleted
-          re-syncs the readiness ring. Parity with the mobile UpNext strip. */}
-      <UpNext
-        planId={stats.activePlan?.id ?? null}
-        locale="en-US"
-        onCompleted={refreshReadiness}
-        t={td}
-      />
+      {topSlots.map((slot) => renderTopSlot(slot))}
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1094,6 +1123,19 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             <StatsCard title={td("stat_addresses")} value={stats.addressCount} icon={MapPin} description={stats.addressCount > 0 ? td("stat_addresses_primary", { count: addresses.filter(a => a.isPrimary).length }) : undefined} />
             <StatsCard title={td("stat_services")} value={stats.serviceCount} description={stats.monthlyExpenses > 0 ? td("stat_services_total", { amount: formatCurrency(stats.monthlyExpenses) }) : td("stat_services_acrossAll")} icon={Zap} />
             <Link href="/budget"><StatsCard title={td("stat_monthly")} value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? td("stat_monthly_categories", { count: sortedCats.length }) : undefined} /></Link>
+          </div>
+        </CollapsibleWidget>
+      )}
+
+      {useDetailsSection && detailWidgets.some((key) => w(key)) && (
+        <CollapsibleWidget
+          title="Details"
+          expanded={detailsExpanded}
+          onToggle={() => setDetailsExpanded((prev) => !prev)}
+          toggleLabel={detailsExpanded ? td("widget_collapse") : td("widget_expand")}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {detailWidgets.map((key) => renderColumnWidget(key))}
           </div>
         </CollapsibleWidget>
       )}

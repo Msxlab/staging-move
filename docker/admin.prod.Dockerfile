@@ -40,11 +40,17 @@ ENV NODE_ENV=production
 # first request.
 ENV BUILD_PHASE=true
 
-ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
-ENV NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
-ENV NEXT_PUBLIC_SITE_URL=https://locateflow.com
-ENV SITE_URL=https://locateflow.com
-ENV APP_ENV=production
+ARG NEXT_PUBLIC_APP_URL=https://locateflow.com
+ARG NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+ARG NEXT_PUBLIC_SITE_URL=https://locateflow.com
+ARG SITE_URL=https://locateflow.com
+ARG APP_ENV=production
+
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV SITE_URL=$SITE_URL
+ENV APP_ENV=$APP_ENV
 
 # IMPORTANT: secrets MUST NOT be baked into image layers via ENV.
 # Real values for ADMIN_JWT_SECRET / USER_JWT_SECRET /

@@ -1,0 +1,24 @@
+﻿You are extracting verified project memory from a generated code audit.
+
+Use only:
+- docs/ai/audits/advanced-system-audit-report.md
+- source/config/test files needed to verify claims
+
+Do not use old docs, README, previous summaries, or assumptions.
+
+Update:
+- docs/ai/memory/PROJECT_MAP.md
+- docs/ai/memory/API_INVENTORY.md
+- docs/ai/memory/AUTH_AND_PERMISSIONS.md
+- docs/ai/memory/BILLING_AND_SUBSCRIPTIONS.md
+- docs/ai/memory/MOBILE_RELEASE_READINESS.md
+- docs/ai/memory/ENV_AND_CONFIG_MAP.md
+- docs/ai/memory/TEST_MAP.md
+- docs/ai/memory/RISK_REGISTER.md
+
+Rules:
+- No secrets.
+- No unsupported facts.
+- Use file path and line evidence where practical.
+- Mark unknown items as `not verified in code`.
+- Keep memory concise and reusable for future development.

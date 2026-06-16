@@ -174,17 +174,19 @@ export function pageView(url: string, title?: string) {
 
 export function trackEvent(name: string, params: AnalyticsParams = {}) {
   if (typeof window === "undefined" || !hasAnalyticsConsent()) return;
-  const destination = googleDestination();
-  if (!destination) return;
 
   const eventName = name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "_")
-    .slice(0, 40);
+    .slice(0, 50);
   if (!eventName) return;
 
   const payload = sanitizeAnalyticsParams(params);
+  trackInternalEvent(eventName, undefined, payload);
+
+  const destination = googleDestination();
+  if (!destination) return;
 
   if (destination === "gtm") {
     ensureDataLayer()?.push({ event: eventName, ...payload });
