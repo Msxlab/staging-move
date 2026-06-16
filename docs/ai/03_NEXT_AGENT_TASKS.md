@@ -13,7 +13,7 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1746-dokploy-migrate-seed-bypass]]
+  [[handoffs/2026-06-16-1814-dokploy-ready-green-dns-pending]]
 - Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
   streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
   source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
@@ -36,6 +36,12 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
   cutover.
 - Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
   Dokploy env if it is still present. Do not reveal or record its value.
+- Dokploy rehearsal health is green when live hostnames are forced to the
+  Dokploy server IP: web `/api/health`, web `/api/ready`, and admin
+  `/api/healthz` returned `200`. Public DNS still points through
+  Cloudflare/DigitalOcean, no DNS cutover has happened, and strict TLS directly
+  against the Dokploy IP is not trusted yet. The next risky step is a planned
+  final cutover with DNS/certificate handling.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
   be paused, final dump can be taken, final restore can be counted, health
   checks pass, and DNS/cron can be moved in that order.
