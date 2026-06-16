@@ -13,7 +13,7 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1719-dokploy-build-fixes]]
+  [[handoffs/2026-06-16-1746-dokploy-migrate-seed-bypass]]
 - Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
   streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
   source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
@@ -25,10 +25,15 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
   firewall rule was removed. DigitalOcean remains live and DNS was not changed.
 - GitHub provider is configured in Dokploy for `Msxlab/move-main` on branch
   `codex/dokploy-migration`. Local web/admin production Docker builds now pass
-  after build-blocker fixes. Next step: push the fixes and trigger full app
-  deploy in Dokploy. The Dokploy compose keeps `cron` behind the `cron` profile,
-  so the first full app rehearsal should deploy web/admin without scheduled
-  jobs. Do not enable the `cron` profile until final cutover.
+  after build-blocker fixes. The first full app deploy reached container startup,
+  but `locateflow-migrate` failed after `prisma migrate deploy` because the
+  admin seed password did not satisfy `seed-admin.ts` policy. Dokploy compose now
+  overrides `migrate` to run only `prisma migrate deploy`, because the restored
+  DB already includes the migrated admin user. Next step: push this compose fix,
+  redeploy in Dokploy, and confirm `migrate`, `web`, and `admin` are healthy.
+  The Dokploy compose keeps `cron` behind the `cron` profile, so rehearsal deploys
+  should not start scheduled jobs. Do not enable the `cron` profile until final
+  cutover.
 - Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
   Dokploy env if it is still present. Do not reveal or record its value.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
