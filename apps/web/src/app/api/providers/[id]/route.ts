@@ -30,6 +30,12 @@ type ProviderRow = {
   userCount?: number;
   affiliateActive?: boolean;
   fccServiceable?: boolean;
+  fccProviderId?: string | null;
+  fccMaxDownloadMbps?: number | null;
+  fccMaxUploadMbps?: number | null;
+  fccTechnologyCodes?: number[];
+  fccTechnologyLabel?: string;
+  fccQualityBand?: string;
   utilityServiceable?: boolean;
   coverages?: Array<{
     state: string | null;
@@ -183,6 +189,17 @@ function shape(p: ProviderRow, coverageContext: CoverageContext) {
     displayOrder: p.displayOrder,
     userCount: p.userCount || 0,
     fccServiceable: p.fccServiceable === true,
+    internetServiceability: p.category === "UTILITY_INTERNET" && p.fccServiceable === true
+      ? {
+          source: "FCC_BDC",
+          providerId: p.fccProviderId ?? null,
+          maxDownloadMbps: p.fccMaxDownloadMbps ?? null,
+          maxUploadMbps: p.fccMaxUploadMbps ?? null,
+          technologyCodes: p.fccTechnologyCodes ?? [],
+          technology: p.fccTechnologyLabel ?? "unknown",
+          qualityBand: p.fccQualityBand ?? "unknown",
+        }
+      : null,
     utilityServiceable: p.utilityServiceable === true,
     coverageModel,
     coverageMatchLevel,

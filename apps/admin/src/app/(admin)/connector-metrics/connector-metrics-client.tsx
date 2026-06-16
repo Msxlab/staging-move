@@ -54,8 +54,8 @@ export default function ConnectorMetricsClient() {
           description="Per-connector health appears here once a connector is enabled and users trigger address changes."
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-foreground/10">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-foreground/10">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-foreground/10 text-xs text-muted-foreground">
                 <th className="px-4 py-2 text-left font-medium">Connector</th>

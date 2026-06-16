@@ -26,6 +26,11 @@ import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { extractRequestMeta } from "@/lib/audit";
 import { recordUserSecurityAudit } from "@/lib/user-security-audit";
+import {
+  getConfiguredStoreReviewAccountEmails,
+  provisionStoreReviewAccount,
+} from "@/lib/store-review-account";
+import { applyQaPersonaSubscriptionForUser } from "@/lib/qa-account";
 
 const loginSchema = z.object({
   email: z.string().email().max(191).transform((v) => v.toLowerCase()),
@@ -270,6 +275,22 @@ export async function handlePasswordLogin(
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
+  let emailVerifiedAt = user.emailVerifiedAt;
+  const storeReviewEmails: string[] = await getConfiguredStoreReviewAccountEmails().catch((): string[] => []);
+  const isStoreReviewAccount = storeReviewEmails.includes(user.email.toLowerCase());
+  if (isStoreReviewAccount) {
+    if (!emailVerifiedAt) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerifiedAt: new Date() },
+      });
+      emailVerifiedAt = new Date();
+    }
+    await provisionStoreReviewAccount({ userId: user.id, request }).catch((error) => {
+      console.warn("Failed to provision store review account during login:", error);
+    });
+  }
+
   if (user.mfaEnabled && user.mfaSecret) {
     if (!mfaCode && !backupCode) {
       return NextResponse.json(
@@ -379,6 +400,9 @@ export async function handlePasswordLogin(
   }
 
   await clearLoginFailures(lockKey).catch(() => null);
+  await applyQaPersonaSubscriptionForUser({ userId: user.id, email: user.email }).catch((error) => {
+    console.warn("Failed to apply QA persona subscription during login:", error);
+  });
 
   const parsedUA = parseUA(ua, request.headers.get("x-client-platform"));
   const fp = options.clientType === "mobile"
@@ -412,7 +436,7 @@ export async function handlePasswordLogin(
       firstName: user.firstName,
       lastName: user.lastName,
       imageUrl: user.imageUrl,
-      emailVerified: Boolean(user.emailVerifiedAt),
+      emailVerified: Boolean(emailVerifiedAt),
       hasPasswordLogin: Boolean(user.passwordHash),
       // Password-login path only succeeds when the user supplied a valid
       // password, so by definition they don't need to set one.

@@ -334,6 +334,23 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
   });
 
+  it("lets anonymous users update the locale cookie through the public locale API", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/user/locale", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-requested-with": "locateflow",
+          origin: "https://locateflow.com",
+        },
+        body: JSON.stringify({ locale: "es" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
   it("lets the public help center render without a session or noindex header", async () => {
     const response = await middleware(request("https://locateflow.com/help"));
 

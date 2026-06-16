@@ -232,6 +232,41 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
     expect(isManagedRuntimeConfigKey("QA_RESETTABLE_ACCOUNT_EMAIL")).toBe(true);
     expect(isRuntimeConfigDbBackedKeyAllowed("QA_RESETTABLE_ACCOUNT_EMAIL")).toBe(false);
   });
+
+  it("registers QA persona accounts as deployment-only plan grants", () => {
+    expect(getRuntimeConfigDefinition("QA_PERSONA_ACCOUNTS")).toMatchObject({
+      category: "SECURITY",
+      maskStrategy: "plain",
+      runtimeEditable: false,
+      requiredInProduction: false,
+    });
+    expect(isManagedRuntimeConfigKey("QA_PERSONA_ACCOUNTS")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("QA_PERSONA_ACCOUNTS")).toBe(false);
+  });
+
+  it("registers store review accounts as deployment-only email config", () => {
+    expect(getRuntimeConfigDefinition("STORE_REVIEW_ACCOUNT_EMAILS")).toMatchObject({
+      category: "SECURITY",
+      maskStrategy: "email",
+      runtimeEditable: false,
+      requiredInProduction: false,
+    });
+    expect(isManagedRuntimeConfigKey("STORE_REVIEW_ACCOUNT_EMAILS")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("STORE_REVIEW_ACCOUNT_EMAILS")).toBe(false);
+  });
+
+  it("registers mobile store tester email allowlists as DB-backed managed config", () => {
+    for (const key of ["GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS", "APPLE_SANDBOX_PURCHASE_USER_EMAILS"]) {
+      expect(getRuntimeConfigDefinition(key)).toMatchObject({
+        category: "MOBILE_BILLING",
+        maskStrategy: "email",
+        runtimeEditable: true,
+        requiredInProduction: false,
+      });
+      expect(isManagedRuntimeConfigKey(key)).toBe(true);
+      expect(isRuntimeConfigDbBackedKeyAllowed(key)).toBe(true);
+    }
+  });
 });
 
 describe("validateRuntimeConfigValueShape hardening", () => {
@@ -425,6 +460,61 @@ describe("validateRuntimeConfigValueShape hardening", () => {
     expect(
       validateRuntimeConfigValueShape("QA_RESETTABLE_ACCOUNT_EMAIL", "QA <qa@example.com>", {
         productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "email_required" });
+  });
+
+  it("validates QA persona accounts as email:plan entries", () => {
+    expect(
+      validateRuntimeConfigValueShape(
+        "QA_PERSONA_ACCOUNTS",
+        "mobile.qa@locateflow.com:FREE_TRIAL,mobileindividual@locateflow.com:INDIVIDUAL",
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilefamily@locateflow.com:FAMILY", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilepro@locateflow.com:ENTERPRISE", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "qa_persona_accounts_required" });
+    expect(
+      validateRuntimeConfigValueShape("QA_PERSONA_ACCOUNTS", "mobilepro@locateflow.com", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "qa_persona_accounts_required" });
+  });
+
+  it("validates store review accounts as a comma-separated email allowlist", () => {
+    expect(
+      validateRuntimeConfigValueShape(
+        "STORE_REVIEW_ACCOUNT_EMAILS",
+        "googlereview@locateflow.com, apple-review@locateflow.com",
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("STORE_REVIEW_ACCOUNT_EMAILS", "Google <google@locateflow.com>", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "email_required" });
+  });
+
+  it("validates mobile store tester email allowlists", () => {
+    expect(
+      validateRuntimeConfigValueShape(
+        "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+        "googlereview@locateflow.com,qa@locateflow.com",
+        { productionLike: true },
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("APPLE_SANDBOX_PURCHASE_USER_EMAILS", "bad-email", {
+        productionLike: true,
       }),
     ).toMatchObject({ ok: false, reason: "email_required" });
   });

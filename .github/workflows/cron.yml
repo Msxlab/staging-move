@@ -15,10 +15,16 @@ name: Scheduled cron jobs
 #
 # Times are UTC. GitHub cron has ~5 min granularity and may be delayed a few
 # minutes under load — fine for these jobs.
+#
+# COST GUARD: GitHub Actions' free minute pool is not a real scheduler budget.
+# A */5 Ubuntu job burns thousands of minutes per month before CI even runs.
+# Keep the GitHub fallback scheduler hourly and use a dedicated scheduler
+# (DigitalOcean job/worker, cron-job.org, or similar) for sub-hourly production
+# dispatch if the product needs tighter latency.
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # high-frequency: checkout-cleanup; connector-dispatch + scheduled-delivery (10m); blog-publish (hourly)
+    - cron: "0 * * * *" # hourly fallback: cleanup, connector dispatch, scheduled delivery, blog publish, uptime check
     - cron: "15 3 * * *" # daily 03:15: stripe-reconcile, workspace-purge, provider-stats, blog-cleanup, blog-image-cleanup (R2 orphan prune)
     - cron: "0 6 * * *" # daily 06:00: non-user-facing daily jobs (trial-check, admin digest, admin backup, data-retention)
     # ── Daily user-facing reminder batch, fired once per US-zone-hour so each
@@ -75,20 +81,13 @@ jobs:
           }
           echo "Schedule: ${SCHED:-manual}"
           case "${SCHED:-manual}" in
-            "*/5 * * * *")
+            "0 * * * *")
               hit "$WEB/api/cron/checkout-cleanup"
-              # These sub-jobs ride the */5 slot but must run on a coarser
-              # cadence. Use a WINDOW (`% 10 -lt 5`, `% 60 -lt 5`) instead of an
-              # exact-minute equality: GitHub cron is routinely delayed 1–10 min,
-              # so a `== :00` / `% 10 == 0` gate almost never matches the delayed
-              # wall-clock minute and the jobs STARVE (connector outbox and
-              # scheduled blog posts can go untriggered for hours). The window
-              # matches the delayed run to the first 5-minute bucket of each
-              # period; routes are idempotent/dedupe'd so an occasional double
-              # fire is a no-op. (Mirrors the uptime job's quarter-hour gate.)
-              if [ $(( 10#$(date -u +%M) % 10 )) -lt 5 ]; then hit "$WEB/api/cron/connector-dispatch"; fi
-              if [ $(( 10#$(date -u +%M) % 10 )) -lt 5 ]; then hit "$WEB/api/cron/scheduled-delivery"; fi
-              if [ $(( 10#$(date -u +%M) % 60 )) -lt 5 ]; then hit "$WEB/api/cron/blog-publish"; fi
+              hit "$WEB/api/cron/connector-dispatch"
+              hit "$WEB/api/cron/scheduled-delivery"
+              hit "$WEB/api/cron/blog-publish"
+              hit "$WEB/api/cron/store-review-accounts"
+              hit "$WEB/api/cron/uptime-check"
               ;;
             "15 3 * * *")
               hit "$WEB/api/cron/stripe-reconcile"
@@ -165,17 +164,18 @@ jobs:
   # emails the admin-alert recipients on any failure (deduped to once per UTC
   # day per target), and records availability telemetry under source "uptime".
   #
-  # Rides the existing */5 slot and self-gates to ~every 15 minutes
-  # (:00/:15/:30/:45) instead of adding a new schedule entry — a new entry
-  # would also fire the `cron` job above, whose `*)` fallback smoke-tests
-  # trial-check/stripe-reconcile on unknown schedules.
+  # Kept here as disabled historical context only. The active hourly `cron`
+  # job above calls /api/cron/uptime-check so scheduled Actions minutes are not
+  # doubled by a second job.
   #
   # Deliberately NO continue-on-error and default failure visibility: when the
   # web app is fully down, the route hosting the monitor cannot run (or email),
   # this curl gets a non-2xx, the job FAILS, and GitHub's default
   # workflow-failure notification email is the backstop alert for total outage.
   uptime:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+    # Disabled as a separate GitHub job to avoid doubling scheduled Actions
+    # minutes. The hourly `cron` job calls /api/cron/uptime-check instead.
+    if: false
     runs-on: ubuntu-latest
     env:
       WEB: https://locateflow.com

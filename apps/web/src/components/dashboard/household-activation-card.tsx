@@ -138,8 +138,8 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
   }, []);
 
   // Eligibility fetch — only for Family/Pro and only once dismissal is known
-  // (a dismissed card costs zero requests). Any failure renders nothing:
-  // 404 on /api/workspaces is WORKSPACE_MODEL_ENABLED off.
+  // (a dismissed card costs zero requests). Any failure renders nothing; when
+  // workspace mode is disabled, GET /api/workspaces returns an empty list.
   useEffect(() => {
     if (dismissed !== false || !isHouseholdPlan(plan)) return;
     let cancelled = false;
@@ -148,6 +148,7 @@ export function HouseholdActivationCard({ plan }: { plan: string | null }) {
         const wsRes = await fetch("/api/workspaces", { cache: "no-store" });
         if (!wsRes.ok) return;
         const wsData = await wsRes.json().catch(() => ({}));
+        if (wsData.workspaceModelEnabled === false) return;
         const list: ActivationWorkspace[] = Array.isArray(wsData.workspaces)
           ? wsData.workspaces
           : [];

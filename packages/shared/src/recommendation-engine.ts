@@ -26,6 +26,10 @@ import {
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
 } from "./provider-move-domain";
+import {
+  getProviderQualityProfile,
+  type ProviderQualityProfile,
+} from "./provider-integrity";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -110,6 +114,12 @@ export interface Provider {
    * engine falls back to the existing catalog-based confidence — no crash.
    */
   fccServiceable?: boolean;
+  fccProviderId?: string | null;
+  fccMaxDownloadMbps?: number | null;
+  fccMaxUploadMbps?: number | null;
+  fccTechnologyCodes?: number[];
+  fccTechnologyLabel?: "fiber" | "cable" | "copper_dsl" | "fixed_wireless" | "satellite" | "mixed" | "unknown";
+  fccQualityBand?: "excellent" | "strong" | "standard" | "limited" | "unknown";
   /**
    * Set by an upstream authoritative address-level serviceability lookup for
    * ELECTRIC utilities (the OpenEI U.S. Utility Rate Database — see
@@ -141,6 +151,7 @@ export interface RecommendationExplanation {
   reason: string;
   coverageConfidence: CoverageConfidence;
   coverageLabel: string;
+  qualityProfile: ProviderQualityProfile;
   caveat?: string;
   manualConfirmationNote: string;
   recommendationUse: "MANUAL_TRACKING_CANDIDATE";
@@ -258,6 +269,22 @@ function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
     coverageModel: provider.coverageModel,
     requiresAddressCheck: provider.requiresAddressCheck,
     requiresPolygonCheck: provider.requiresPolygonCheck,
+  });
+}
+
+function getRecommendationQualityProfile(
+  provider: Provider,
+  coverageConfidence: CoverageConfidence,
+): ProviderQualityProfile {
+  const isAddressConfirmed = coverageConfidence === "AVAILABLE_AT_ADDRESS";
+  return getProviderQualityProfile({
+    ...provider,
+    slug: provider.slug ?? provider.id,
+    coverageMatchLevel: isAddressConfirmed
+      ? "available_at_address"
+      : provider.coverageMatchLevel,
+    requiresAddressCheck: isAddressConfirmed ? false : provider.requiresAddressCheck,
+    requiresPolygonCheck: isAddressConfirmed ? false : provider.requiresPolygonCheck,
   });
 }
 
@@ -950,6 +977,7 @@ export function scoreProviders(
       const addressSensitive = isCoverageAddressSensitive(provider.category);
       const coverageConfidence = getProviderCoverageConfidence(provider);
       const coveragePresentation = getCoverageConfidencePresentation(coverageConfidence);
+      const qualityProfile = getRecommendationQualityProfile(provider, coverageConfidence);
 
       // 0. Urgency tier (primary sort signal)
       const urgencyTier = getUrgencyTier(provider.category, profile);
@@ -1245,6 +1273,7 @@ export function scoreProviders(
         reason: reasons.slice(0, 3).join(" · ") || getCategoryLabel(provider.category),
         coverageConfidence,
         coverageLabel: coveragePresentation.label,
+        qualityProfile,
         caveat: coveragePresentation.requiresCaveat ? coveragePresentation.description : undefined,
         manualConfirmationNote: "Confirm details and availability with the provider. LocateFlow recommendations are manual guidance only.",
         recommendationUse: "MANUAL_TRACKING_CANDIDATE",

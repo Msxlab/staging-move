@@ -29,6 +29,21 @@ export interface AddressAutocompleteFormFields {
   longitude?: number | null;
 }
 
+export interface AddressAutocompleteSelectionFields {
+  state?: string | null;
+  zip?: string | null;
+}
+
+export type AddressAutocompleteSelectionConflictKind = "STATE" | "ZIP";
+
+export interface AddressAutocompleteSelectionConflict {
+  kind: AddressAutocompleteSelectionConflictKind;
+  typedState: string | null;
+  resultState: string | null;
+  typedZip: string | null;
+  resultZip: string | null;
+}
+
 export interface AddressAutocompleteSearchResponse {
   enabled: boolean;
   predictions: AddressAutocompletePrediction[];
@@ -66,4 +81,52 @@ export function applyAddressAutocompleteResult<T extends AddressAutocompleteForm
     latitude: result.latitude,
     longitude: result.longitude,
   };
+}
+
+function normalizeState(value?: string | null) {
+  const state = (value || "").trim().toUpperCase();
+  return state.length === 2 ? state : null;
+}
+
+function normalizeZip5(value?: string | null) {
+  const match = (value || "").trim().match(/^\d{5}/);
+  return match ? match[0] : null;
+}
+
+export function getAddressAutocompleteSelectionConflict(
+  typed: AddressAutocompleteSelectionFields,
+  result: AddressAutocompleteResult,
+): AddressAutocompleteSelectionConflict | null {
+  const typedState = normalizeState(typed.state);
+  const resultState = normalizeState(result.state);
+  if (typedState && resultState && typedState !== resultState) {
+    return {
+      kind: "STATE",
+      typedState,
+      resultState,
+      typedZip: normalizeZip5(typed.zip),
+      resultZip: normalizeZip5(result.zip),
+    };
+  }
+
+  const typedZip = normalizeZip5(typed.zip);
+  const resultZip = normalizeZip5(result.zip);
+  if (typedZip && resultZip && typedZip !== resultZip) {
+    return {
+      kind: "ZIP",
+      typedState,
+      resultState,
+      typedZip,
+      resultZip,
+    };
+  }
+
+  return null;
+}
+
+export function formatAddressAutocompleteSelectionConflict(conflict: AddressAutocompleteSelectionConflict) {
+  if (conflict.kind === "STATE") {
+    return `That suggestion is in ${conflict.resultState}, but the entered state is ${conflict.typedState}.`;
+  }
+  return `That suggestion uses ZIP ${conflict.resultZip}, but the entered ZIP is ${conflict.typedZip}.`;
 }

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata } from "@/lib/shared-address-autocomplete";
+import { getAddressAutocompleteSelectionError } from "@/lib/address-autocomplete-selection";
 import {
   ServiceLimitUpsell,
   type ServiceLimitDetails,
@@ -289,6 +290,8 @@ export default function NewAddressPage() {
               required
               onValueChange={(value) => updateField("street", value)}
               onSelect={handleAutocompleteSelect}
+              validateSelection={(result) => getAddressAutocompleteSelectionError(form, result)}
+              onSelectionRejected={(message) => setError(message)}
             />
             <div className="space-y-2">
               <Label htmlFor="street2">{t("apt")}</Label>

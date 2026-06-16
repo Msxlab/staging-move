@@ -4,7 +4,12 @@ export {
   type AddressAutocompleteSearchResponse,
   type AddressAutocompleteDetailsResponse,
   type AddressAutocompleteFormFields,
+  type AddressAutocompleteSelectionFields,
+  type AddressAutocompleteSelectionConflict,
+  type AddressAutocompleteSelectionConflictKind,
   createAddressAutocompleteSessionToken,
   clearAddressAutocompleteMetadata,
   applyAddressAutocompleteResult,
+  getAddressAutocompleteSelectionConflict,
+  formatAddressAutocompleteSelectionConflict,
 } from "../../../../packages/shared/src/address-autocomplete";

@@ -25,6 +25,8 @@ interface AddressAutocompleteInputProps {
   onValueChange: (value: string) => void;
   onSelect: (result: AddressAutocompleteResult) => void;
   onManualChange?: () => void;
+  validateSelection?: (result: AddressAutocompleteResult) => string | null | undefined;
+  onSelectionRejected?: (message: string, result: AddressAutocompleteResult) => void;
 }
 
 export function AddressAutocompleteInput({
@@ -38,6 +40,8 @@ export function AddressAutocompleteInput({
   onValueChange,
   onSelect,
   onManualChange,
+  validateSelection,
+  onSelectionRejected,
 }: AddressAutocompleteInputProps) {
   const sessionTokenRef = useRef(createAddressAutocompleteSessionToken());
   const skipNextQueryRef = useRef<string | null>(null);
@@ -128,6 +132,14 @@ export function AddressAutocompleteInput({
       }
       const data = (await response.json()) as AddressAutocompleteDetailsResponse;
       if (!data.result) {
+        return;
+      }
+      const rejectionMessage = validateSelection?.(data.result);
+      if (rejectionMessage) {
+        setPredictions([]);
+        setOpen(false);
+        setActiveIndex(-1);
+        onSelectionRejected?.(rejectionMessage, data.result);
         return;
       }
       skipNextQueryRef.current = data.result.street || prediction.primaryText;

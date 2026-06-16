@@ -1,6 +1,6 @@
 # State Provider Completeness Catalog
 
-Generated: 2026-05-31T19:23:57.050Z
+Generated: 2026-06-14T21:51:28.464Z
 
 ## Summary
 
@@ -9,7 +9,7 @@ Generated: 2026-05-31T19:23:57.050Z
 - Already present in raw seed: 3
 - Newly added in merged seed: 301
 - Catalog-only backlog entries: 6
-- Coverage models: state=15, zip_prefix=197, polygon=5, live_address=93
+- Coverage models: state=14, zip_prefix=197, polygon=5, live_address=94
 - Official URL validation: ok=310, redirect=0, error=0
 
 ## Per-State Diff
@@ -822,8 +822,8 @@ Generated: 2026-05-31T19:23:57.050Z
 
 - Repo before: Appalachian Power, Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Dominion Energy Virginia, E-ZPass, Fairfax Water, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Virginia American Water, Washington Gas, WMATA (Metro), WOW! Internet, Xfinity (Comcast)
 - Repo after: Appalachian Power, Arlington County Water-Sewer-Refuse Utility, Astound Broadband, AT&T Fiber, Central Virginia Electric Cooperative, CenturyLink (Lumen), City of Virginia Beach Public Utilities, Columbia Gas of Virginia, Cox Communications, Dominion Energy Virginia, E-ZPass, E-ZPass Virginia, Fairfax Water, Hampton Roads Transit, Loudoun Water, Northern Virginia Electric Cooperative, Old Dominion Power, Prince William Water, Rappahannock Electric Cooperative, Richmond Gas Works, Roanoke Gas Company, Shenandoah Valley Electric Cooperative, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Virginia American Water, Virginia Natural Gas, Washington Gas, WMATA (Metro), WOW! Internet, Xfinity (Comcast)
-- E-ZPass Virginia | TRANSPORTATION_TOLL | newly_added | state | https://www.ezpassva.com/
-  note: Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on driving/toll use rather than residence utility territory.
+- E-ZPass Virginia | TRANSPORTATION_TOLL | newly_added | live_address | https://www.ezpassva.com/
+  note: Virginia E-ZPass is the statewide toll account issuer for Virginia toll facilities; account relevance depends on address and driving/toll use rather than residence utility territory.
 - Old Dominion Power | UTILITY_ELECTRIC | newly_added | live_address | https://lge-ku.com/odp
   note: Old Dominion Power is the Virginia customer-facing KU electric surface; exact ZIPs are southwest Virginia prefilters and service should be confirmed by address.
 - Northern Virginia Electric Cooperative | UTILITY_ELECTRIC | newly_added | live_address | https://www.novec.com/Customer_Services/Apply-for-Service.cfm

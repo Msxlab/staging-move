@@ -204,11 +204,18 @@ export async function buildMoveTransitionContext(
   };
 }
 
-function buildTaskTitle(plan: MoveServiceTransitionPlan): string {
-  const subject =
-    plan.serviceProviderName ||
-    plan.destinationProviderCandidates[0]?.name ||
-    plan.serviceCategory.replace(/_/g, " ").toLowerCase();
+export function buildMoveTaskTitle(plan: MoveServiceTransitionPlan): string {
+  const categorySubject = plan.serviceCategory.replace(/_/g, " ").toLowerCase();
+  const destinationSubject = plan.destinationProviderCandidates[0]?.name || null;
+  const currentSubject = plan.serviceProviderName || null;
+  const actionUsesDestination =
+    plan.actionType === "START_SERVICE" ||
+    plan.actionType === "VERIFY_AVAILABILITY" ||
+    plan.actionType === "SHOP_PROVIDER" ||
+    plan.actionType === "FIND_REPLACEMENT";
+  const subject = actionUsesDestination
+    ? destinationSubject || categorySubject
+    : currentSubject || destinationSubject || categorySubject;
   return `${plan.actionLabel}: ${subject}`;
 }
 
@@ -582,7 +589,7 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
       actionType: plan.actionType,
       source: "CLASSIFIER",
       templateId: classifierTemplateId,
-      title: buildTaskTitle(plan),
+      title: buildMoveTaskTitle(plan),
       description: plan.userFacingCopy,
       reason: plan.primaryReason,
       caveats: plan.caveats,

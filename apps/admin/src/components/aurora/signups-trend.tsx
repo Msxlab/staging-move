@@ -57,7 +57,7 @@ export function SignupsTrendBody({ weeks }: { weeks: SignupWeekPoint[] }) {
   const px = (i: number) => 4 + (n > 1 ? (i / (n - 1)) * (W - 8) : 0);
   const py = (v: number) => H - 14 - (v / max) * (H - 26);
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = wrapRef.current;
     if (!el || n < 2) return;
     const rect = el.getBoundingClientRect();
@@ -98,8 +98,11 @@ export function SignupsTrendBody({ weeks }: { weeks: SignupWeekPoint[] }) {
       <div
         ref={wrapRef}
         className="au-chartwrap"
-        onMouseMove={onMove}
-        onMouseLeave={() => setIdx(null)}
+        onPointerDown={onMove}
+        onPointerMove={onMove}
+        onPointerLeave={() => setIdx(null)}
+        onPointerUp={() => setIdx(null)}
+        onPointerCancel={() => setIdx(null)}
       >
         <svg
           viewBox={`0 0 ${W} ${H}`}

@@ -6,9 +6,9 @@
  * - NEVER throw. These helpers are called from registration, OAuth account
  *   creation, the Stripe webhook, and IAP verification — a broken alert must
  *   never break any of those flows. Every failure is caught and logged.
- * - QA exclusion is enforced HERE (single enforcement point): events for the
- *   allowlisted QA account (QA_RESETTABLE_ACCOUNT_EMAIL) are suppressed even
- *   when a caller forgets to gate.
+ * - QA/store-review exclusion is enforced HERE (single enforcement point):
+ *   events for controlled test/review accounts are suppressed even when a
+ *   caller forgets to gate.
  * - Recipients come from runtime config ADMIN_ALERT_EMAIL, falling back to
  *   ALERT_EMAIL_TO (same resolution as the admin-daily-digest cron). Both
  *   accept a comma-separated list.
@@ -23,7 +23,7 @@
 
 import { escapeHtml, htmlToPlainText } from "@/lib/email";
 import { sendLoggedEmail } from "@/lib/email-service";
-import { isAllowlistedQaEmail } from "@/lib/qa-account";
+import { isAutoVerifiedTestEmail } from "@/lib/qa-account";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 const LOG_PREFIX = "[ADMIN-ALERT]";
@@ -148,7 +148,7 @@ export async function sendAdminSignupAlert(opts: {
   source: string;
 }): Promise<boolean> {
   try {
-    if (isAllowlistedQaEmail(opts.email)) return false;
+    if (isAutoVerifiedTestEmail(opts.email)) return false;
     return await dispatchAdminAlert({
       kind: "admin-signup-alert",
       eventKey: `signup:${opts.userId}`,
@@ -189,7 +189,7 @@ export async function sendAdminPurchaseAlert(opts: {
   dedupeKey: string;
 }): Promise<boolean> {
   try {
-    if (isAllowlistedQaEmail(opts.email)) return false;
+    if (isAutoVerifiedTestEmail(opts.email)) return false;
     const label = planLabel(opts.plan);
     return await dispatchAdminAlert({
       kind: "admin-purchase-alert",

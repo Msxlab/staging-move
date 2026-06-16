@@ -17,6 +17,27 @@ describe("provider coverage overrides", () => {
     expect(cta?.zipCodes).toEqual(["606", "607", "608"]);
   });
 
+  it("keeps Austin electric utility coverage available for Austin ZIPs", () => {
+    const allProviders = [...FEDERAL_NEW, ...STATE_PROVIDERS];
+    const austinEnergy = allProviders.find((provider) => provider.slug === "austin-energy");
+
+    expect(austinEnergy).toBeDefined();
+    expect(austinEnergy?.category).toBe("UTILITY_ELECTRIC");
+    expect(austinEnergy?.states).toEqual(["TX"]);
+    expect(austinEnergy?.zipCodes).toEqual(expect.arrayContaining(["786", "787"]));
+  });
+
+  it("keeps OUC electric coverage scoped away from Miami ZIPs", () => {
+    const allProviders = [...FEDERAL_NEW, ...STATE_PROVIDERS];
+    const ouc = allProviders.find((provider) => provider.slug === "ouc");
+
+    expect(ouc).toBeDefined();
+    expect(ouc?.category).toBe("UTILITY_ELECTRIC");
+    expect(ouc?.states).toEqual(["FL"]);
+    expect(ouc?.zipCodes).toEqual(expect.arrayContaining(["327", "328", "347"]));
+    expect(ouc?.zipCodes).not.toContain("331");
+  });
+
   it("expands overridden ZIP prefixes into coverage rows instead of whole-state rows", () => {
     const allProviders = [...FEDERAL_NEW, ...STATE_PROVIDERS];
     const septa = allProviders.find((provider) => provider.slug === "septa");

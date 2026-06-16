@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { ActivityIndicator, Image, Keyboard, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
 import { MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/Input";
@@ -102,6 +102,9 @@ export function AddressAutocompleteField({
         label={label}
         value={value}
         placeholder={placeholder}
+        returnKeyType="done"
+        blurOnSubmit
+        onSubmitEditing={() => Keyboard.dismiss()}
         onChangeText={(nextValue) => {
           onValueChange(nextValue);
           onManualChange?.();

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Bell, Loader2, Receipt, Calendar, Mail, Users, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import { WEB_NOTIFICATION_PREFERENCE_DEFINITIONS } from "@/lib/notification-preferences";
 
 interface NotifGroup {
@@ -13,60 +14,145 @@ interface NotifGroup {
   items: { key: string; label: string; description: string }[];
 }
 
-const notifGroups: NotifGroup[] = [
-  {
-    title: "Billing & Payments",
-    icon: Receipt,
-    iconColor: "text-tone-honey-fg",
-    items: [
-      { key: "billReminder", label: "Bill Due Reminders", description: "Get notified 3 days before a bill is due" },
-      { key: "billOverdue", label: "Overdue Alerts", description: "Alert when a bill passes its due date" },
-      { key: "contractExpiring", label: "Contract Expiring", description: "Alert when a service contract is ending soon" },
+const NOTIFICATION_COPY = {
+  en: {
+    back: "Back",
+    title: "Notifications",
+    enabled: (enabled: number, total: number) => `${enabled} of ${total} notifications enabled`,
+    emailDelivery: "Email Delivery",
+    weeklyDigestDay: "Weekly Digest Day",
+    reminderLeadTime: "Bill Reminder Lead Time",
+    before: (days: string) => `${days} day${days === "1" ? "" : "s"} before`,
+    enableEmail: "Enable Email Notifications",
+    enableEmailDescription: "Send enabled notifications via email",
+    saving: "Saving...",
+    save: "Save Preferences",
+    saved: "Notification preferences saved!",
+    failed: "Failed to save preferences",
+    groups: [
+      {
+        title: "Billing & Payments",
+        icon: Receipt,
+        iconColor: "text-tone-honey-fg",
+        items: [
+          { key: "billReminder", label: "Bill Due Reminders", description: "Get notified 3 days before a bill is due" },
+          { key: "billOverdue", label: "Overdue Alerts", description: "Alert when a bill passes its due date" },
+          { key: "contractExpiring", label: "Contract Expiring", description: "Alert when a service contract is ending soon" },
+        ],
+      },
+      {
+        title: "Moving & Tasks",
+        icon: Calendar,
+        iconColor: "text-tone-cyan-fg",
+        items: [
+          { key: "taskReminder", label: "Task Reminders", description: "Reminders for upcoming moving tasks" },
+          { key: "moveUpdate", label: "Moving Plan Updates", description: "Updates on your active moving plan progress" },
+        ],
+      },
+      {
+        title: "Reports & Summary",
+        icon: Mail,
+        iconColor: "text-destructive",
+        items: [
+          { key: "weeklySummary", label: "Weekly Summary", description: "Weekly digest of activity and upcoming items" },
+          { key: "monthlyReport", label: "Monthly Report", description: "Monthly expense summary and trends" },
+        ],
+      },
+      {
+        title: "Workspace & Connections",
+        icon: Users,
+        iconColor: "text-tone-sky-fg",
+        items: [
+          { key: "connectorActionNeeded", label: "Connection action needed", description: "When a connected service needs you to reconnect or finish a sync" },
+          { key: "workspaceMembership", label: "Workspace updates", description: "When you're invited, your role changes, or you're added to or removed from a shared workspace" },
+        ],
+      },
+      {
+        title: "Helpful Nudges",
+        icon: Sparkles,
+        iconColor: "text-tone-orange-fg",
+        items: [
+          { key: "lifecycleNudge", label: "Setup & move reminders", description: "Occasional nudges to finish setting up your move, or a heads-up when your move is coming up and tasks are still open" },
+        ],
+      },
     ],
   },
-  {
-    title: "Moving & Tasks",
-    icon: Calendar,
-    iconColor: "text-tone-cyan-fg",
-    items: [
-      { key: "taskReminder", label: "Task Reminders", description: "Reminders for upcoming moving tasks" },
-      { key: "moveUpdate", label: "Moving Plan Updates", description: "Updates on your active moving plan progress" },
+  es: {
+    back: "Volver",
+    title: "Notificaciones",
+    enabled: (enabled: number, total: number) => `${enabled} de ${total} notificaciones activadas`,
+    emailDelivery: "Entrega por email",
+    weeklyDigestDay: "Dia del resumen semanal",
+    reminderLeadTime: "Anticipacion de recordatorio",
+    before: (days: string) => `${days} dia${days === "1" ? "" : "s"} antes`,
+    enableEmail: "Activar notificaciones por email",
+    enableEmailDescription: "Enviar por email las notificaciones activadas",
+    saving: "Guardando...",
+    save: "Guardar preferencias",
+    saved: "Preferencias de notificacion guardadas",
+    failed: "No se pudieron guardar las preferencias",
+    groups: [
+      {
+        title: "Facturacion y pagos",
+        icon: Receipt,
+        iconColor: "text-tone-honey-fg",
+        items: [
+          { key: "billReminder", label: "Recordatorios de factura", description: "Aviso 3 dias antes de que venza una factura" },
+          { key: "billOverdue", label: "Alertas vencidas", description: "Aviso cuando una factura pasa su fecha limite" },
+          { key: "contractExpiring", label: "Contrato por vencer", description: "Aviso cuando un contrato de servicio esta por terminar" },
+        ],
+      },
+      {
+        title: "Mudanza y tareas",
+        icon: Calendar,
+        iconColor: "text-tone-cyan-fg",
+        items: [
+          { key: "taskReminder", label: "Recordatorios de tareas", description: "Recordatorios para tareas proximas de mudanza" },
+          { key: "moveUpdate", label: "Actualizaciones de mudanza", description: "Progreso de tu plan de mudanza activo" },
+        ],
+      },
+      {
+        title: "Informes y resumen",
+        icon: Mail,
+        iconColor: "text-destructive",
+        items: [
+          { key: "weeklySummary", label: "Resumen semanal", description: "Resumen semanal de actividad y pendientes" },
+          { key: "monthlyReport", label: "Informe mensual", description: "Resumen mensual de gastos y tendencias" },
+        ],
+      },
+      {
+        title: "Workspace y conexiones",
+        icon: Users,
+        iconColor: "text-tone-sky-fg",
+        items: [
+          { key: "connectorActionNeeded", label: "Conexion requiere accion", description: "Cuando un servicio conectado necesita reconexion o completar una sincronizacion" },
+          { key: "workspaceMembership", label: "Actualizaciones de workspace", description: "Cuando te invitan, cambia tu rol o te agregan/quitan de un workspace compartido" },
+        ],
+      },
+      {
+        title: "Sugerencias utiles",
+        icon: Sparkles,
+        iconColor: "text-tone-orange-fg",
+        items: [
+          { key: "lifecycleNudge", label: "Recordatorios de setup y mudanza", description: "Avisos ocasionales para terminar tu setup o revisar tareas abiertas antes de mudarte" },
+        ],
+      },
     ],
   },
-  {
-    title: "Reports & Summary",
-    icon: Mail,
-    iconColor: "text-destructive",
-    items: [
-      { key: "weeklySummary", label: "Weekly Summary", description: "Weekly digest of activity and upcoming items" },
-      { key: "monthlyReport", label: "Monthly Report", description: "Monthly expense summary and trends" },
-    ],
-  },
-  {
-    title: "Workspace & Connections",
-    icon: Users,
-    iconColor: "text-tone-sky-fg",
-    items: [
-      { key: "connectorActionNeeded", label: "Connection action needed", description: "When a connected service needs you to reconnect or finish a sync" },
-      { key: "workspaceMembership", label: "Workspace updates", description: "When you're invited, your role changes, or you're added to or removed from a shared workspace" },
-    ],
-  },
-  {
-    title: "Helpful Nudges",
-    icon: Sparkles,
-    iconColor: "text-tone-orange-fg",
-    items: [
-      { key: "lifecycleNudge", label: "Setup & move reminders", description: "Occasional nudges to finish setting up your move, or a heads-up when your move is coming up and tasks are still open" },
-    ],
-  },
-];
+} as const;
 
-const allKeys = notifGroups.flatMap((g) => g.items.map((i) => i.key));
+function copyForLocale(locale: string) {
+  return locale.toLowerCase().startsWith("es") ? NOTIFICATION_COPY.es : NOTIFICATION_COPY.en;
+}
+
+const allKeys = NOTIFICATION_COPY.en.groups.flatMap((g) => g.items.map((i) => i.key));
 const DEFAULT_SETTINGS = Object.fromEntries(
   WEB_NOTIFICATION_PREFERENCE_DEFINITIONS.map((definition) => [definition.key, definition.defaultEnabled])
 ) as Record<string, boolean>;
 
 export default function NotificationsPage() {
+  const locale = useLocale();
+  const copy = copyForLocale(locale);
   const [settings, setSettings] = useState<Record<string, boolean>>(
     DEFAULT_SETTINGS
   );
@@ -109,9 +195,9 @@ export default function NotificationsPage() {
         }),
       });
       if (!res.ok) throw new Error();
-      toast.success("Notification preferences saved!");
+      toast.success(copy.saved);
     } catch {
-      toast.error("Failed to save preferences");
+      toast.error(copy.failed);
     }
     setSaving(false);
   };
@@ -121,16 +207,16 @@ export default function NotificationsPage() {
       <div className="flex items-center gap-4">
         <Link href="/settings">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-            <ArrowLeft className="h-4 w-4" />Back
+            <ArrowLeft className="h-4 w-4" />{copy.back}
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-sm text-muted-foreground">{enabledCount} of {allKeys.length} notifications enabled</p>
+          <h1 className="text-2xl font-bold text-foreground">{copy.title}</h1>
+          <p className="text-sm text-muted-foreground">{copy.enabled(enabledCount, allKeys.length)}</p>
         </div>
       </div>
 
-      {notifGroups.map((group) => {
+      {copy.groups.map((group) => {
         const Icon = group.icon;
         return (
           <div key={group.title} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
@@ -170,12 +256,12 @@ export default function NotificationsPage() {
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <Mail className="h-4 w-4 text-tone-orange-fg" />
-          <h3 className="text-sm font-semibold text-foreground">Email Delivery</h3>
+          <h3 className="text-sm font-semibold text-foreground">{copy.emailDelivery}</h3>
         </div>
         <div className="px-5 pb-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Weekly Digest Day</label>
+              <label className="text-xs font-medium text-muted-foreground">{copy.weeklyDigestDay}</label>
               <select
                 className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                 value={digestDay}
@@ -187,30 +273,29 @@ export default function NotificationsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Bill Reminder Lead Time</label>
+              <label className="text-xs font-medium text-muted-foreground">{copy.reminderLeadTime}</label>
               <select
                 className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                 value={reminderDays}
                 onChange={(e) => setReminderDays(e.target.value)}
               >
-                <option value="1">1 day before</option>
-                <option value="3">3 days before</option>
-                <option value="5">5 days before</option>
-                <option value="7">7 days before</option>
+                {["1", "3", "5", "7"].map((days) => (
+                  <option key={days} value={days}>{copy.before(days)}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="flex items-center justify-between py-3 border-t border-foreground/[0.03]">
             <div>
-              <p className="text-sm font-medium text-foreground/80">Enable Email Notifications</p>
-              <p className="text-[11px] text-foreground/40">Send enabled notifications via email</p>
+              <p className="text-sm font-medium text-foreground/80">{copy.enableEmail}</p>
+              <p className="text-[11px] text-foreground/40">{copy.enableEmailDescription}</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={emailEnabled}
-              aria-label="Enable email notifications"
+              aria-label={copy.enableEmail}
               onClick={() => setEmailEnabled(!emailEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
                 emailEnabled ? "bg-tone-orange-fg" : "bg-foreground/10"
@@ -227,7 +312,7 @@ export default function NotificationsPage() {
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving}
           className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
-          {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : "Save Preferences"}
+          {saving ? <><Loader2 className="h-4 w-4 animate-spin" />{copy.saving}</> : copy.save}
         </button>
       </div>
     </div>

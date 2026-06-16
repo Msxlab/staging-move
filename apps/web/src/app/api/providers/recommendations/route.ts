@@ -7,10 +7,12 @@ import { apiGateErrorResponse } from "@/lib/api-gates";
 import {
   scoreProviders,
   buildRecommendationClusters,
+  getEssentialSetupCategories,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
   type UserProfile,
   type Provider,
+  type ScoredProvider,
   type UrgencyTier,
 } from "@/lib/recommendation-engine";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
@@ -20,9 +22,956 @@ import { getScoringWeightOverrides } from "@/lib/recommendation-weights";
 import { getCommunityPopularity } from "@/lib/community-popularity";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { resolveWorkspaceDataScope, scopedRecordWhere } from "@/lib/workspace-data-scope";
-import { enrichProviderServiceability, providerServiceabilityGatedMeta } from "@/lib/provider-serviceability";
+import {
+  enrichProviderServiceability,
+  providerServiceabilityGatedMeta,
+  type ServiceabilityMeta,
+  type ServiceabilitySourceGap,
+} from "@/lib/provider-serviceability";
 import { requestHasPlanFeature } from "@/lib/request-entitlements";
 import type { ProviderCoverageMetadata } from "@locateflow/db";
+
+const GUIDE_LANE_PROVIDER_LIMIT = 8;
+const GUIDE_SIGNAL_LIMIT = 6;
+
+type RecommendationGuideAction = {
+  kind: "add_provider" | "verify_address" | "review_state_rules" | "finish_saved";
+  label: string;
+  reason: string;
+  category?: string;
+  providerId?: string;
+};
+
+type RecommendationGuideLane = {
+  key: "setup_first" | "best_matches" | "address_check" | "saved_for_later";
+  title: string;
+  description: string;
+  providers: ScoredProvider[];
+  action?: RecommendationGuideAction;
+};
+
+type RecommendationGuideCompletion = {
+  score: number;
+  completedCritical: number;
+  missingCritical: number;
+  missingLabels: string[];
+  nextBestCategory: string | null;
+};
+
+type RecommendationGuideSetupCategory = {
+  category: string;
+  label: string;
+  reason: string;
+  urgency: UrgencyTier;
+  providerId?: string;
+  providerName?: string;
+};
+
+type RecommendationGuideSetupSection = {
+  key: "move_in_essentials" | "household_specific" | "address_checks" | "finish_later";
+  title: string;
+  description: string;
+  categories: RecommendationGuideSetupCategory[];
+  providerCount: number;
+  action?: RecommendationGuideAction;
+};
+
+type RecommendationGuideSetupPlan = {
+  sections: RecommendationGuideSetupSection[];
+  primaryNextCategory: string | null;
+  primaryNextLabel: string | null;
+  totalOpenCategories: number;
+};
+
+type RecommendationGuideDecisionModel = {
+  title: string;
+  factors: string[];
+  learningSignals: string[];
+  coverageWarnings: string[];
+};
+
+type ProfileSignalSource = {
+  moveType?: string | null;
+} | null;
+
+function uniqueScoredProviders(providers: ScoredProvider[]): ScoredProvider[] {
+  const seen = new Set<string>();
+  const unique: ScoredProvider[] = [];
+  for (const provider of providers) {
+    if (!provider?.id || seen.has(provider.id)) continue;
+    seen.add(provider.id);
+    unique.push(provider);
+  }
+  return unique;
+}
+
+function categoryLabel(category: string): string {
+  return getMergedDisplayCategoryLabel(category) || category.replace(/_/g, " ");
+}
+
+function providerNeedsAddressCheck(provider: ScoredProvider): boolean {
+  const confidence = provider.explanation?.coverageConfidence;
+  return (
+    provider.requiresAddressCheck === true ||
+    provider.coverageMatchLevel === "live_address" ||
+    confidence === "ADDRESS_CHECK_REQUIRED" ||
+    confidence === "STATE_LEVEL" ||
+    confidence === "NATIONAL_OR_FEDERAL" ||
+    confidence === "UNKNOWN"
+  );
+}
+
+function buildProfileSignals(input: {
+  profile: ProfileSignalSource;
+  userProfile: UserProfile;
+  regionLabel: string | null;
+}): string[] {
+  const { profile, userProfile, regionLabel } = input;
+  const signals: string[] = [];
+  if (regionLabel) signals.push(regionLabel);
+
+  if (userProfile.ownership === "RENT") signals.push("Renter household");
+  else if (userProfile.ownership === "OWN") signals.push("Owner household");
+
+  const familyStatus = typeof userProfile.familyStatus === "string" ? userProfile.familyStatus.toUpperCase() : "";
+  if (familyStatus === "FAMILY") signals.push("Family profile");
+  else if (familyStatus === "COUPLE") signals.push("Couple profile");
+
+  if (userProfile.hasChildren) {
+    signals.push(userProfile.childrenCount > 0 ? `${userProfile.childrenCount} children` : "Has children");
+  }
+  if (userProfile.hasPets) {
+    const petTypes = Array.isArray(userProfile.petTypes)
+      ? userProfile.petTypes.filter((p) => typeof p === "string" && p.trim()).slice(0, 2)
+      : [];
+    signals.push(petTypes.length > 0 ? `Pets: ${petTypes.join(", ")}` : "Has pets");
+  }
+  if (userProfile.carCount > 0) signals.push(`${userProfile.carCount} vehicle${userProfile.carCount === 1 ? "" : "s"}`);
+  if (userProfile.needsStorage) signals.push("Needs storage");
+  if (userProfile.isMilitary || profile?.moveType === "MILITARY") signals.push("Military move");
+  if (userProfile.isBusinessOwner) signals.push("Business relocation");
+  if (userProfile.isImmigrant) signals.push("Immigration tasks");
+  if (typeof userProfile.daysUntilMove === "number") {
+    if (userProfile.daysUntilMove >= 0) signals.push(`Move in ${userProfile.daysUntilMove} days`);
+    else signals.push("Move already started");
+  }
+
+  return uniqueStrings(signals).slice(0, GUIDE_SIGNAL_LIMIT);
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    const clean = value.trim();
+    if (!clean || seen.has(clean.toLowerCase())) continue;
+    seen.add(clean.toLowerCase());
+    unique.push(clean);
+  }
+  return unique;
+}
+
+function uniqueCategories(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    const clean = (value || "").trim().toUpperCase();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    unique.push(clean);
+  }
+  return unique.sort((a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b));
+}
+
+function buildRecommendationGuide(input: {
+  scored: ScoredProvider[];
+  nextCriticalActions: ScoredProvider[];
+  regionGroups: Array<{ category: string; label: string; tier: UrgencyTier; providers: ScoredProvider[] }>;
+  savedProviderIds: Set<string>;
+  missingCritical: string[];
+  completedCritical: number;
+  completedCategories: string[];
+  serviceCount: number;
+  dismissedCount: number;
+  profile: ProfileSignalSource;
+  userProfile: UserProfile;
+  regionLabel: string | null;
+  stateRuleAvailable: boolean;
+  coordinatesUsed: boolean;
+  fccStatus?: string | null;
+  electricStatus?: string | null;
+}) {
+  const setupFirst = uniqueScoredProviders(input.nextCriticalActions)
+    .slice(0, GUIDE_LANE_PROVIDER_LIMIT);
+  const bestMatches = uniqueScoredProviders(input.regionGroups.flatMap((group) => group.providers))
+    .filter((provider) => !setupFirst.some((p) => p.id === provider.id))
+    .slice(0, GUIDE_LANE_PROVIDER_LIMIT);
+  const addressCheck = uniqueScoredProviders(input.scored)
+    .filter((provider) => providerNeedsAddressCheck(provider))
+    .filter((provider) => !setupFirst.some((p) => p.id === provider.id))
+    .slice(0, GUIDE_LANE_PROVIDER_LIMIT);
+  const savedProviders = input.savedProviderIds.size
+    ? uniqueScoredProviders(input.scored)
+        .filter((provider) => input.savedProviderIds.has(provider.id))
+        .slice(0, GUIDE_LANE_PROVIDER_LIMIT)
+    : [];
+
+  const lanes: RecommendationGuideLane[] = [];
+  if (setupFirst.length > 0) {
+    lanes.push({
+      key: "setup_first",
+      title: "Set up first",
+      description: "Critical services and move tasks matched to this address.",
+      providers: setupFirst,
+      action: providerToAddAction(setupFirst[0]),
+    });
+  }
+  if (bestMatches.length > 0) {
+    lanes.push({
+      key: "best_matches",
+      title: input.regionLabel ? `Best matches near ${input.regionLabel}` : "Best matches",
+      description: "Top address-aware picks grouped by the services you still need.",
+      providers: bestMatches,
+      action: providerToAddAction(bestMatches[0]),
+    });
+  }
+  if (addressCheck.length > 0) {
+    lanes.push({
+      key: "address_check",
+      title: "Check by address",
+      description: "These providers may fit the area, but availability should be confirmed before relying on them.",
+      providers: addressCheck,
+      action: {
+        kind: "verify_address",
+        label: `Check ${categoryLabel(addressCheck[0].category)}`,
+        reason: addressCheck[0].explanation?.caveat || "Availability may vary by exact address.",
+        category: addressCheck[0].category,
+        providerId: addressCheck[0].id,
+      },
+    });
+  }
+  if (savedProviders.length > 0) {
+    lanes.push({
+      key: "saved_for_later",
+      title: "Saved for later",
+      description: "Providers you saved so you can finish setup without searching again.",
+      providers: savedProviders,
+      action: {
+        kind: "finish_saved",
+        label: "Finish saved setup",
+        reason: "You saved these providers but have not added them as tracked services yet.",
+        providerId: savedProviders[0].id,
+        category: savedProviders[0].category,
+      },
+    });
+  }
+
+  const nextActions = uniqueGuideActions([
+    ...setupFirst.slice(0, 3).map(providerToAddAction),
+    ...(addressCheck[0]
+      ? [{
+          kind: "verify_address" as const,
+          label: `Verify ${categoryLabel(addressCheck[0].category)}`,
+          reason: addressCheck[0].explanation?.caveat || "Confirm address-level service before depending on it.",
+          category: addressCheck[0].category,
+          providerId: addressCheck[0].id,
+        }]
+      : []),
+    ...(input.stateRuleAvailable
+      ? [{
+          kind: "review_state_rules" as const,
+          label: "Review state rules",
+          reason: "DMV, voter, or tax guidance is available for this destination state.",
+        }]
+      : []),
+  ]).slice(0, 4);
+
+  const essentialSetup = getEssentialSetupCategories(input.userProfile, input.completedCategories);
+  const planMissingCritical = uniqueCategories([
+    ...input.missingCritical,
+    ...essentialSetup.critical,
+  ]);
+  const missingLabels = planMissingCritical.slice(0, 4).map(categoryLabel);
+  const profileSignals = buildProfileSignals({
+    profile: input.profile,
+    userProfile: input.userProfile,
+    regionLabel: input.regionLabel,
+  });
+  const completion = buildGuideCompletion({
+    completedCritical: input.completedCritical,
+    missingCritical: planMissingCritical,
+  });
+  const setupPlan = buildGuideSetupPlan({
+    scored: input.scored,
+    essentialCritical: essentialSetup.critical,
+    essentialImportant: essentialSetup.important,
+    addressCheck,
+    savedProviders,
+    userProfile: input.userProfile,
+  });
+  const decisionModel = buildGuideDecisionModel({
+    hasCoordinates: input.coordinatesUsed,
+    stateRuleAvailable: input.stateRuleAvailable,
+    profileSignals,
+    serviceCount: input.serviceCount,
+    completedCategories: input.completedCategories,
+    savedCount: input.savedProviderIds.size,
+    dismissedCount: input.dismissedCount,
+    addressCheckCount: addressCheck.length,
+    fccStatus: input.fccStatus,
+    electricStatus: input.electricStatus,
+  });
+  const summary = buildGuideSummary({
+    regionLabel: input.regionLabel,
+    missingLabels,
+    lanes,
+    profileSignals,
+  });
+
+  return {
+    version: 1,
+    source: "rules_with_api_evidence",
+    summary,
+    completion,
+    setupPlan,
+    decisionModel,
+    profileSignals,
+    nextActions,
+    lanes,
+    dataCoverage: {
+      availableAtAddress: input.scored.filter((p) => p.explanation?.coverageConfidence === "AVAILABLE_AT_ADDRESS").length,
+      exactZip: input.scored.filter((p) => p.explanation?.coverageConfidence === "EXACT_ZIP").length,
+      zipPrefix: input.scored.filter((p) => p.explanation?.coverageConfidence === "ZIP_PREFIX").length,
+      addressCheckRequired: input.scored.filter(providerNeedsAddressCheck).length,
+    },
+  };
+}
+
+function firstProviderForCategory(providers: ScoredProvider[], category: string): ScoredProvider | null {
+  return providers.find((provider) => provider.category === category) || null;
+}
+
+function setupCategoryReason(category: string, userProfile: UserProfile, provider?: ScoredProvider | null): string {
+  if (category === "FINANCIAL_INSURANCE_RENTERS") return "Renter profile: protect liability, belongings, and lease requirements.";
+  if (category === "FINANCIAL_INSURANCE_HOME") return "Owner profile: keep property coverage aligned with the new address.";
+  if (category === "FINANCIAL_MORTGAGE") return "Owner profile: mortgage and escrow records may need the new address.";
+  if (category === "FINANCIAL_INSURANCE_AUTO") return `${Math.max(userProfile.carCount || 0, 1)} vehicle profile: update insurance for the new state.`;
+  if (category === "TRANSPORTATION_TOLL" || category === "TRANSPORTATION_AUTO" || category === "TRANSPORTATION_PARKING") {
+    return "Vehicle profile: driving, tolls, and parking may change after the move.";
+  }
+  if (category === "KIDS_SCHOOL" || category === "KIDS_DAYCARE" || category === "KIDS_ACTIVITY") {
+    return userProfile.childrenCount > 0
+      ? `${userProfile.childrenCount} child${userProfile.childrenCount === 1 ? "" : "ren"} on profile: handle school and childcare setup.`
+      : "Family profile: handle school and childcare setup.";
+  }
+  if (category === "HEALTHCARE_VET" || category === "FINANCIAL_INSURANCE_PET" || category === "PET_SERVICES") {
+    return "Pet profile: line up local care before the move settles in.";
+  }
+  if (category === "HEALTHCARE_SENIOR") return "Senior household signal: keep care and benefits continuity clear.";
+  if (category === "HOUSING_STORAGE") return "Storage need selected during onboarding.";
+  if (category === "GOVERNMENT_IMMIGRATION") return "Immigration status signal: address updates may be time-sensitive.";
+  if (category === "GOVERNMENT_DMV") return "State move: ID, license, or registration rules may apply.";
+  if (category === "GOVERNMENT_POSTAL") return "Mail forwarding should be set before the move.";
+  if (category.startsWith("UTILITY_")) return "Move-in essential: confirm service before day one.";
+  if (category === "FINANCIAL_BANK" || category === "FINANCIAL_CREDIT_CARD") return "Financial records should follow your new address.";
+  return provider?.explanation?.reason || "Recommended by your address, move timing, and onboarding details.";
+}
+
+function setupCategory(
+  category: string,
+  urgency: UrgencyTier,
+  providers: ScoredProvider[],
+  userProfile: UserProfile,
+): RecommendationGuideSetupCategory {
+  const provider = firstProviderForCategory(providers, category);
+  return {
+    category,
+    label: categoryLabel(category),
+    reason: setupCategoryReason(category, userProfile, provider),
+    urgency,
+    providerId: provider?.id,
+    providerName: provider?.name,
+  };
+}
+
+function buildGuideSetupPlan(input: {
+  scored: ScoredProvider[];
+  essentialCritical: string[];
+  essentialImportant: string[];
+  addressCheck: ScoredProvider[];
+  savedProviders: ScoredProvider[];
+  userProfile: UserProfile;
+}): RecommendationGuideSetupPlan {
+  const sections: RecommendationGuideSetupSection[] = [];
+  const critical = uniqueCategories(input.essentialCritical);
+  const important = uniqueCategories(input.essentialImportant);
+  const moveIn = uniqueCategories([...critical, ...important.slice(0, 4)])
+    .slice(0, 8)
+    .map((category) =>
+      setupCategory(
+        category,
+        critical.includes(category) ? "CRITICAL" : "IMPORTANT",
+        input.scored,
+        input.userProfile,
+      ),
+    );
+  if (moveIn.length > 0) {
+    sections.push({
+      key: "move_in_essentials",
+      title: "Move-in essentials",
+      description: "Services and records that should be ready before, or right after, move-in.",
+      categories: moveIn,
+      providerCount: moveIn.filter((item) => item.providerId).length,
+      action: moveIn[0]
+        ? {
+            kind: "add_provider",
+            label: `Add ${moveIn[0].label}`,
+            reason: moveIn[0].reason,
+            category: moveIn[0].category,
+            providerId: moveIn[0].providerId,
+          }
+        : undefined,
+    });
+  }
+
+  const householdCategories = uniqueCategories(
+    input.scored
+      .filter((provider) => {
+        const reasons = provider.matchReasons || [];
+        const profileReason = provider.explanation?.profileMatch || "";
+        return (
+          reasons.some((reason) =>
+            /child|family|pet|vehicle|car|storage|senior|immigration|business|military/i.test(reason),
+          ) ||
+          /child|family|pet|vehicle|car|storage|senior|immigration|business|military/i.test(profileReason)
+        );
+      })
+      .map((provider) => provider.category),
+  )
+    .filter((category) => !moveIn.some((item) => item.category === category))
+    .slice(0, 6)
+    .map((category) => setupCategory(category, "RECOMMENDED", input.scored, input.userProfile));
+  if (householdCategories.length > 0) {
+    sections.push({
+      key: "household_specific",
+      title: "Household-specific",
+      description: "Extra setup surfaced from children, pets, vehicles, storage, business, or immigration answers.",
+      categories: householdCategories,
+      providerCount: householdCategories.filter((item) => item.providerId).length,
+      action: householdCategories[0]
+        ? {
+            kind: "add_provider",
+            label: `Add ${householdCategories[0].label}`,
+            reason: householdCategories[0].reason,
+            category: householdCategories[0].category,
+            providerId: householdCategories[0].providerId,
+          }
+        : undefined,
+    });
+  }
+
+  const addressCategories = uniqueCategories(input.addressCheck.map((provider) => provider.category))
+    .slice(0, 5)
+    .map((category) => setupCategory(category, "IMPORTANT", input.addressCheck, input.userProfile));
+  if (addressCategories.length > 0) {
+    sections.push({
+      key: "address_checks",
+      title: "Verify by address",
+      description: "These providers may serve the area, but should be confirmed for the exact address.",
+      categories: addressCategories,
+      providerCount: addressCategories.filter((item) => item.providerId).length,
+      action: addressCategories[0]
+        ? {
+            kind: "verify_address",
+            label: `Verify ${addressCategories[0].label}`,
+            reason: addressCategories[0].reason,
+            category: addressCategories[0].category,
+            providerId: addressCategories[0].providerId,
+          }
+        : undefined,
+    });
+  }
+
+  const savedCategories = uniqueCategories(input.savedProviders.map((provider) => provider.category))
+    .slice(0, 5)
+    .map((category) => setupCategory(category, "RECOMMENDED", input.savedProviders, input.userProfile));
+  if (savedCategories.length > 0) {
+    sections.push({
+      key: "finish_later",
+      title: "Saved for later",
+      description: "Providers you saved but have not finished tracking yet.",
+      categories: savedCategories,
+      providerCount: savedCategories.filter((item) => item.providerId).length,
+      action: savedCategories[0]
+        ? {
+            kind: "finish_saved",
+            label: `Finish ${savedCategories[0].label}`,
+            reason: savedCategories[0].reason,
+            category: savedCategories[0].category,
+            providerId: savedCategories[0].providerId,
+          }
+        : undefined,
+    });
+  }
+
+  const flat = sections.flatMap((section) => section.categories);
+  return {
+    sections,
+    primaryNextCategory: flat[0]?.category || null,
+    primaryNextLabel: flat[0]?.label || null,
+    totalOpenCategories: uniqueCategories(flat.map((item) => item.category)).length,
+  };
+}
+
+function buildGuideCompletion(input: {
+  completedCritical: number;
+  missingCritical: string[];
+}): RecommendationGuideCompletion {
+  const missingLabels = input.missingCritical.slice(0, 6).map(categoryLabel);
+  const totalCritical = input.completedCritical + input.missingCritical.length;
+  const score = totalCritical > 0 ? Math.round((input.completedCritical / totalCritical) * 100) : 100;
+  return {
+    score,
+    completedCritical: input.completedCritical,
+    missingCritical: input.missingCritical.length,
+    missingLabels,
+    nextBestCategory: input.missingCritical[0] || null,
+  };
+}
+
+function buildGuideDecisionModel(input: {
+  hasCoordinates: boolean;
+  stateRuleAvailable: boolean;
+  profileSignals: string[];
+  serviceCount: number;
+  completedCategories: string[];
+  savedCount: number;
+  dismissedCount: number;
+  addressCheckCount: number;
+  fccStatus?: string | null;
+  electricStatus?: string | null;
+}): RecommendationGuideDecisionModel {
+  const factors = [
+    "Move-in essentials are ranked before nice-to-have services.",
+    "Already tracked service categories are removed from setup gaps.",
+    "Coverage confidence decides whether a provider is a direct pick or an address-check candidate.",
+  ];
+  if (input.profileSignals.length > 0) {
+    factors.push("Onboarding details tune the order, such as household type, pets, vehicles, move timing, and destination.");
+  }
+  if (input.stateRuleAvailable) {
+    factors.push("Destination state rules can lift DMV, voter, tax, or compliance tasks.");
+  }
+
+  const learningSignals: string[] = [];
+  if (input.serviceCount > 0) {
+    learningSignals.push(`${input.serviceCount} tracked service${input.serviceCount === 1 ? "" : "s"} shape what is still missing.`);
+  }
+  if (input.completedCategories.length > 0) {
+    learningSignals.push(`${input.completedCategories.length} completed categor${input.completedCategories.length === 1 ? "y" : "ies"} suppress duplicate recommendations.`);
+  }
+  if (input.profileSignals.length > 0) {
+    learningSignals.push(`${input.profileSignals.length} profile signal${input.profileSignals.length === 1 ? "" : "s"} tune the recommendation order.`);
+  }
+  if (input.savedCount > 0) {
+    learningSignals.push(`${input.savedCount} saved provider${input.savedCount === 1 ? "" : "s"} stay available as finish-later picks.`);
+  }
+  if (input.dismissedCount > 0) {
+    learningSignals.push(`${input.dismissedCount} dismissed provider${input.dismissedCount === 1 ? "" : "s"} are hidden from this plan.`);
+  }
+  if (input.hasCoordinates) {
+    learningSignals.push("Address coordinates improve local coverage and distance ranking.");
+  }
+  if (learningSignals.length === 0) {
+    learningSignals.push("Add an address, move date, and profile details to make the plan sharper.");
+  }
+
+  const coverageWarnings: string[] = [];
+  if (input.addressCheckCount > 0) {
+    coverageWarnings.push(`${input.addressCheckCount} provider${input.addressCheckCount === 1 ? "" : "s"} should be verified at the exact address.`);
+  }
+  if (input.fccStatus && input.fccStatus !== "ok") {
+    coverageWarnings.push(`Internet serviceability source: ${input.fccStatus}.`);
+  }
+  if (input.electricStatus && input.electricStatus !== "ok") {
+    coverageWarnings.push(`Electric utility source: ${input.electricStatus}.`);
+  }
+  if (coverageWarnings.length === 0) {
+    coverageWarnings.push("No major coverage caveats for the current recommendation set.");
+  }
+
+  return {
+    title: "How this plan is ranked",
+    factors,
+    learningSignals,
+    coverageWarnings,
+  };
+}
+
+function providerToAddAction(provider: ScoredProvider): RecommendationGuideAction {
+  return {
+    kind: "add_provider",
+    label: `Add ${categoryLabel(provider.category)}`,
+    reason: provider.explanation?.reason || provider.matchReasons?.[0] || provider.name,
+    category: provider.category,
+    providerId: provider.id,
+  };
+}
+
+function uniqueGuideActions(actions: RecommendationGuideAction[]): RecommendationGuideAction[] {
+  const seen = new Set<string>();
+  const unique: RecommendationGuideAction[] = [];
+  for (const action of actions) {
+    const key = `${action.kind}:${action.category || ""}:${action.providerId || ""}:${action.label}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(action);
+  }
+  return unique;
+}
+
+function buildGuideSummary(input: {
+  regionLabel: string | null;
+  missingLabels: string[];
+  lanes: RecommendationGuideLane[];
+  profileSignals: string[];
+}): string {
+  const place = input.regionLabel ? ` for ${input.regionLabel}` : "";
+  if (input.missingLabels.length > 0) {
+    return `Your setup${place} has ${input.missingLabels.length} priority area${input.missingLabels.length === 1 ? "" : "s"} to resolve: ${input.missingLabels.join(", ")}.`;
+  }
+  if (input.lanes.length > 0) {
+    return `Your provider plan${place} is organized by priority, coverage confidence, and the profile details you shared.`;
+  }
+  if (input.profileSignals.length > 0) {
+    return `Your provider plan is ready and tuned to ${input.profileSignals.slice(0, 3).join(", ")}.`;
+  }
+  return "Your provider plan is ready. Add an address or move details to make recommendations more precise.";
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as Record<string, unknown>) } : {};
+}
+
+function metadataStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function appendUniqueLimited(values: string[], next: string | null | undefined, limit = 12): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of [...values, next || ""]) {
+    const clean = value.trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    result.push(clean);
+    if (result.length >= limit) break;
+  }
+  return result;
+}
+
+function sourceGapSeverity(gap: ServiceabilitySourceGap): "HIGH" | "MEDIUM" {
+  return gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET" ? "HIGH" : "MEDIUM";
+}
+
+function sourceGapSuggestedAction(gap: ServiceabilitySourceGap): string {
+  if (gap.category === "UTILITY_ELECTRIC") return "review_alias_or_add_electric_provider";
+  if (gap.category === "UTILITY_INTERNET") return "review_fcc_brand_or_add_isp";
+  return "review_source_or_dismiss";
+}
+
+function sourceGapFieldsToCollect(gap: ServiceabilitySourceGap): string[] {
+  if (gap.category === "UTILITY_ELECTRIC") {
+    return ["official utility name", "service territory", "customer support URL", "phone", "catalog alias"];
+  }
+  if (gap.category === "UTILITY_INTERNET") {
+    return ["official brand name", "availability URL", "phone", "FCC provider ID", "speed/technology evidence"];
+  }
+  return ["official name", "website", "phone", "coverage evidence"];
+}
+
+function sourceGapQualityProfile(gap: ServiceabilitySourceGap, occurrenceCount: number) {
+  const isCriticalInfrastructure = gap.category === "UTILITY_ELECTRIC" || gap.category === "UTILITY_INTERNET";
+  const score = Math.max(20, isCriticalInfrastructure ? 42 - Math.min(occurrenceCount, 10) : 58 - Math.min(occurrenceCount, 10));
+  return {
+    score,
+    level: score >= 50 ? "needs_review" : "weak",
+    label: isCriticalInfrastructure ? "Critical infrastructure gap" : "Source-backed catalog gap",
+    summary:
+      `${gap.source} returned this provider for a user location, but the active catalog has no confident match.`,
+    recommendedAction: sourceGapSuggestedAction(gap),
+    strengths: ["Official source returned a candidate"],
+    gaps: [
+      {
+        code: "missing_catalog_match",
+        label: "No active catalog match",
+        severity: isCriticalInfrastructure ? "critical" : "warning",
+        action: sourceGapSuggestedAction(gap),
+      },
+    ],
+  };
+}
+
+function sourceHealthSuggestedAction(source: "FCC_BDC" | "OPENEI_URDB"): string {
+  if (source === "FCC_BDC") return "fix_fcc_integration";
+  return "fix_electric_integration";
+}
+
+function sourceHealthFieldsToCollect(source: "FCC_BDC" | "OPENEI_URDB"): string[] {
+  if (source === "FCC_BDC") {
+    return ["live endpoint response", "FCC API username", "hash_value freshness", "API spec/path", "sample block GEOID"];
+  }
+  return ["live endpoint response", "OpenEI API key", "sample lat/lng", "utility result payload"];
+}
+
+function sourceHealthQualityProfile(input: {
+  source: "FCC_BDC" | "OPENEI_URDB";
+  label: string;
+  status: string;
+  reason: string | null;
+  occurrenceCount: number;
+}) {
+  const score = Math.max(15, 38 - Math.min(input.occurrenceCount, 10));
+  return {
+    score,
+    level: "weak",
+    label: `${input.label} source health`,
+    summary: `${input.label} returned ${input.status}${input.reason ? `: ${input.reason}` : ""}. Recommendations fell back to catalog evidence.`,
+    recommendedAction: sourceHealthSuggestedAction(input.source),
+    strengths: ["Fallback preserved recommendations"],
+    gaps: [
+      {
+        code: "source_unavailable",
+        label: "Live source unavailable",
+        severity: "critical",
+        action: sourceHealthSuggestedAction(input.source),
+      },
+    ],
+  };
+}
+
+async function upsertProviderSourceHealthIssue(input: {
+  source: "FCC_BDC" | "OPENEI_URDB";
+  label: string;
+  category: "UTILITY_INTERNET" | "UTILITY_ELECTRIC";
+  status: string;
+  reason: string | null;
+  state: string | null | undefined;
+  zip: string | null | undefined;
+  addressId: string | null | undefined;
+  latitude: number | null | undefined;
+  longitude: number | null | undefined;
+  sourceBlockGeoid?: string | null;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  const title = `Source health: ${input.source} ${input.status}`;
+  const state = input.state || null;
+  const zip = input.zip || null;
+  const locationLabel = [state, zip].filter(Boolean).join(" ") || null;
+  const baseMetadata = {
+    source: input.source,
+    category: input.category,
+    providerName: input.label,
+    status: input.status,
+    reason: input.reason,
+    sourceBlockGeoid: input.sourceBlockGeoid || null,
+    suggestedAction: sourceHealthSuggestedAction(input.source),
+    fieldsToCollect: sourceHealthFieldsToCollect(input.source),
+    qualityProfile: sourceHealthQualityProfile({ ...input, occurrenceCount: 1 }),
+    state,
+    zip,
+    addressId: input.addressId || null,
+    latitude: input.latitude ?? null,
+    longitude: input.longitude ?? null,
+  };
+
+  const existing = await prisma.providerGovernanceIssue.findFirst({
+    where: {
+      issueType: "SOURCE_HEALTH_WARNING",
+      status: "OPEN",
+      title,
+    },
+    select: { id: true, metadata: true },
+  });
+
+  if (existing) {
+    const previous = metadataRecord(existing.metadata);
+    const previousCount = typeof previous.occurrenceCount === "number" && Number.isFinite(previous.occurrenceCount)
+      ? previous.occurrenceCount
+      : 1;
+    await prisma.providerGovernanceIssue.update({
+      where: { id: existing.id },
+      data: {
+        severity: "HIGH",
+        metadata: {
+          ...previous,
+          ...baseMetadata,
+          occurrenceCount: previousCount + 1,
+          qualityProfile: sourceHealthQualityProfile({ ...input, occurrenceCount: previousCount + 1 }),
+          firstSeen: typeof previous.firstSeen === "string" ? previous.firstSeen : now,
+          lastSeen: now,
+          states: appendUniqueLimited(metadataStringArray(previous.states), state),
+          zips: appendUniqueLimited(metadataStringArray(previous.zips), zip),
+          sampleAddressIds: appendUniqueLimited(metadataStringArray(previous.sampleAddressIds), input.addressId),
+          sampleLocations: appendUniqueLimited(metadataStringArray(previous.sampleLocations), locationLabel),
+        },
+      },
+    });
+    return;
+  }
+
+  await prisma.providerGovernanceIssue.create({
+    data: {
+      issueType: "SOURCE_HEALTH_WARNING",
+      status: "OPEN",
+      severity: "HIGH",
+      title,
+      description:
+        `${input.label} returned ${input.status}${input.reason ? ` (${input.reason})` : ""}. ` +
+        "Provider recommendations fell back to catalog evidence; fix the integration before treating live serviceability as complete.",
+      metadata: {
+        ...baseMetadata,
+        occurrenceCount: 1,
+        firstSeen: now,
+        lastSeen: now,
+        states: appendUniqueLimited([], state),
+        zips: appendUniqueLimited([], zip),
+        sampleAddressIds: appendUniqueLimited([], input.addressId),
+        sampleLocations: appendUniqueLimited([], locationLabel),
+      },
+    },
+  });
+}
+
+async function recordProviderSourceHealth(
+  serviceability: ServiceabilityMeta,
+  context: {
+    state: string | null | undefined;
+    zip: string | null | undefined;
+    addressId: string | null | undefined;
+    latitude: number | null | undefined;
+    longitude: number | null | undefined;
+  },
+): Promise<void> {
+  const writes: Array<Promise<void>> = [];
+  if (serviceability.fcc.status === "error") {
+    writes.push(
+      upsertProviderSourceHealthIssue({
+        source: "FCC_BDC",
+        label: "FCC Broadband",
+        category: "UTILITY_INTERNET",
+        status: serviceability.fcc.status,
+        reason: serviceability.fcc.reason,
+        sourceBlockGeoid: serviceability.fcc.blockGeoid,
+        ...context,
+      }),
+    );
+  }
+  if (serviceability.electric.status === "error") {
+    writes.push(
+      upsertProviderSourceHealthIssue({
+        source: "OPENEI_URDB",
+        label: "OpenEI Utility Rates",
+        category: "UTILITY_ELECTRIC",
+        status: serviceability.electric.status,
+        reason: serviceability.electric.reason,
+        ...context,
+      }),
+    );
+  }
+  if (writes.length > 0) await Promise.all(writes);
+}
+
+async function recordProviderSourceGaps(
+  gaps: ServiceabilitySourceGap[],
+  context: {
+    state: string | null | undefined;
+    zip: string | null | undefined;
+    addressId: string | null | undefined;
+    latitude: number | null | undefined;
+    longitude: number | null | undefined;
+  },
+): Promise<void> {
+  if (gaps.length === 0) return;
+
+  for (const gap of gaps.slice(0, 8)) {
+    const now = new Date().toISOString();
+    const title = `Source provider missing: ${gap.category} ${gap.name}`;
+    const state = context.state || null;
+    const zip = context.zip || null;
+    const locationLabel = [state, zip].filter(Boolean).join(" ") || null;
+    const baseMetadata = {
+      source: gap.source,
+      category: gap.category,
+      providerName: gap.name,
+      sourceProviderId: gap.sourceProviderId,
+      evidenceUrl: gap.evidenceUrl,
+      suggestedAction: sourceGapSuggestedAction(gap),
+      fieldsToCollect: sourceGapFieldsToCollect(gap),
+      qualityProfile: sourceGapQualityProfile(gap, 1),
+      state,
+      zip,
+      addressId: context.addressId || null,
+      latitude: context.latitude ?? null,
+      longitude: context.longitude ?? null,
+    };
+    const existing = await prisma.providerGovernanceIssue.findFirst({
+      where: {
+        issueType: "SOURCE_PROVIDER_MISSING",
+        status: "OPEN",
+        title,
+      },
+      select: { id: true, metadata: true },
+    });
+    if (existing) {
+      const previous = metadataRecord(existing.metadata);
+      const previousCount = typeof previous.occurrenceCount === "number" && Number.isFinite(previous.occurrenceCount)
+        ? previous.occurrenceCount
+        : 1;
+      await prisma.providerGovernanceIssue.update({
+        where: { id: existing.id },
+        data: {
+          severity: sourceGapSeverity(gap),
+          metadata: {
+            ...previous,
+            ...baseMetadata,
+            occurrenceCount: previousCount + 1,
+            qualityProfile: sourceGapQualityProfile(gap, previousCount + 1),
+            firstSeen: typeof previous.firstSeen === "string" ? previous.firstSeen : now,
+            lastSeen: now,
+            states: appendUniqueLimited(metadataStringArray(previous.states), state),
+            zips: appendUniqueLimited(metadataStringArray(previous.zips), zip),
+            sampleAddressIds: appendUniqueLimited(metadataStringArray(previous.sampleAddressIds), context.addressId),
+            sampleLocations: appendUniqueLimited(metadataStringArray(previous.sampleLocations), locationLabel),
+          },
+        },
+      });
+      continue;
+    }
+
+    await prisma.providerGovernanceIssue.create({
+      data: {
+        issueType: "SOURCE_PROVIDER_MISSING",
+        status: "OPEN",
+        severity: sourceGapSeverity(gap),
+        title,
+        description:
+          `${gap.source} returned ${gap.name} for the requested location, but no matching active catalog provider was found. ` +
+          "Review the official source, add/update the provider, and attach precise coverage before surfacing it as an actionable recommendation.",
+        metadata: {
+          ...baseMetadata,
+          occurrenceCount: 1,
+          firstSeen: now,
+          lastSeen: now,
+          states: appendUniqueLimited([], state),
+          zips: appendUniqueLimited([], zip),
+          sampleAddressIds: appendUniqueLimited([], context.addressId),
+          sampleLocations: appendUniqueLimited([], locationLabel),
+        },
+      },
+    });
+  }
+}
 
 // Representative geo coordinate for a GEO-BEARING provider: the centroid of its
 // mapped service-area polygon(s). Returned only when the provider has polygon
@@ -81,7 +1030,7 @@ export async function GET(request: NextRequest) {
     const queryLatitude = Number.isFinite(requestedLatitude) ? requestedLatitude : null;
     const queryLongitude = Number.isFinite(requestedLongitude) ? requestedLongitude : null;
 
-    const [profile, addresses, services, movingPlan, recFeedback] = await Promise.all([
+    const [profile, addresses, services, movingPlan, recFeedback, savedProviders] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
       prisma.address.findMany({
         where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
@@ -110,9 +1059,17 @@ export async function GET(request: NextRequest) {
           select: { providerId: true },
         })
         .catch(() => [] as Array<{ providerId: string }>),
+      prisma.savedProvider
+        .findMany({
+          where: { userId },
+          select: { providerId: true },
+          orderBy: { createdAt: "desc" },
+        })
+        .catch(() => [] as Array<{ providerId: string }>),
     ]);
 
     const dismissedProviderIds = new Set(recFeedback.map((f) => f.providerId));
+    const savedProviderIds = new Set(savedProviders.map((p) => p.providerId));
 
     const selectedAddress = addresses.find((a) => a.id === requestedAddressId);
     const primaryAddr = selectedAddress || addresses.find((a) => a.isPrimary) || addresses[0];
@@ -120,8 +1077,24 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
-    let fallbackLatitude = queryLatitude ?? primaryAddr?.latitude ?? null;
-    let fallbackLongitude = queryLongitude ?? primaryAddr?.longitude ?? null;
+    const hasRequestedLocationOverride = Boolean(requestedState || requestedZip);
+    const requestMatchesPrimaryAddress = Boolean(
+      primaryAddr &&
+        (!requestedState || requestedState === primaryAddr.state?.trim().toUpperCase()) &&
+        (!requestedZip || requestedZip === primaryAddr.zip?.trim()),
+    );
+    const canUseStoredAddressCoordinates = Boolean(selectedAddress) || !hasRequestedLocationOverride || requestMatchesPrimaryAddress;
+    const hasQueryCoordinates = queryLatitude !== null && queryLongitude !== null;
+    let fallbackLatitude = hasQueryCoordinates
+      ? queryLatitude
+      : canUseStoredAddressCoordinates
+        ? primaryAddr?.latitude ?? null
+        : null;
+    let fallbackLongitude = hasQueryCoordinates
+      ? queryLongitude
+      : canUseStoredAddressCoordinates
+        ? primaryAddr?.longitude ?? null
+        : null;
     // No stored/queried coordinates but we have a ZIP → resolve its ZCTA centroid
     // (Census gazetteer) so distance-based provider ranking still works for ANY
     // address with a ZIP, instead of only those with geocoded lat/lng. This is the
@@ -289,6 +1262,12 @@ export async function GET(request: NextRequest) {
         longitude: ("geoLongitude" in p ? (p as { geoLongitude?: number | null }).geoLongitude : null) ?? null,
         requiresAddressCheck: coverageModel === "live_address",
         requiresPolygonCheck: coverageModel === "polygon",
+        fccProviderId: null,
+        fccMaxDownloadMbps: null,
+        fccMaxUploadMbps: null,
+        fccTechnologyCodes: [],
+        fccTechnologyLabel: "unknown",
+        fccQualityBand: "unknown",
       };
     });
 
@@ -297,8 +1276,27 @@ export async function GET(request: NextRequest) {
       ? await enrichProviderServiceability(parsedProviders, {
           latitude: fallbackLatitude,
           longitude: fallbackLongitude,
+          forceCategories: ["UTILITY_ELECTRIC", "UTILITY_INTERNET"],
         })
       : providerServiceabilityGatedMeta(parsedProviders);
+    await recordProviderSourceGaps(serviceability.sourceGaps, {
+      state: effectiveState || requestedState || null,
+      zip: fallbackZip || requestedZip || null,
+      addressId: primaryAddr?.id || null,
+      latitude: fallbackLatitude,
+      longitude: fallbackLongitude,
+    }).catch((error) => {
+      console.warn("Failed to record provider source gaps:", error);
+    });
+    await recordProviderSourceHealth(serviceability, {
+      state: effectiveState || requestedState || null,
+      zip: fallbackZip || requestedZip || null,
+      addressId: primaryAddr?.id || null,
+      latitude: fallbackLatitude,
+      longitude: fallbackLongitude,
+    }).catch((error) => {
+      console.warn("Failed to record provider source health:", error);
+    });
 
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
     const completedCategories = [...new Set(services.map((s) => s.category).filter(Boolean))];
@@ -365,13 +1363,41 @@ export async function GET(request: NextRequest) {
         return t !== 0 ? t : getMergedDisplayCategoryOrder(a.category) - getMergedDisplayCategoryOrder(b.category);
       });
 
-    const regionCity = primaryAddr?.city?.trim() || null;
-    const regionState = (primaryAddr?.state?.trim().toUpperCase() || effectiveState) || null;
+    const regionUsesQueryLocation = hasRequestedLocationOverride && !requestMatchesPrimaryAddress;
+    const regionCity = regionUsesQueryLocation ? null : primaryAddr?.city?.trim() || null;
+    const regionState = (regionUsesQueryLocation
+      ? effectiveState || requestedState
+      : primaryAddr?.state?.trim().toUpperCase() || effectiveState) || null;
+    const regionZip = regionUsesQueryLocation ? fallbackZip || requestedZip || null : primaryAddr?.zip?.trim() || null;
     const region = {
       city: regionCity,
       state: regionState,
-      label: regionCity && regionState ? `${regionCity}, ${regionState}` : regionState || null,
+      zip: regionZip,
+      label: regionCity && regionState
+        ? `${regionCity}, ${regionState}`
+        : regionZip && regionState
+          ? `${regionZip}, ${regionState}`
+          : regionState || null,
     };
+
+    const recommendationGuide = buildRecommendationGuide({
+      scored,
+      nextCriticalActions: Array.isArray(result.nextCriticalActions) ? result.nextCriticalActions : [],
+      regionGroups,
+      savedProviderIds,
+      missingCritical: Array.isArray(result.stats?.missingCritical) ? result.stats.missingCritical : [],
+      completedCritical: Number(result.stats?.completedCritical) || 0,
+      completedCategories,
+      serviceCount: services.length,
+      dismissedCount: dismissedProviderIds.size,
+      profile,
+      userProfile,
+      regionLabel: region.label,
+      stateRuleAvailable: Boolean(stateRule?.dmvRules || stateRule?.voterRegistration || stateRule?.taxInfo),
+      coordinatesUsed: fallbackLatitude !== null && fallbackLongitude !== null,
+      fccStatus: serviceability.fcc.status,
+      electricStatus: serviceability.electric.status,
+    });
 
     // Fire-and-forget integration telemetry (synchronous in-process buffer —
     // never throws, never adds latency). Mirrors the fcc/electric statuses
@@ -386,6 +1412,8 @@ export async function GET(request: NextRequest) {
       ...result,
       region,
       regionGroups,
+      savedProviderIds: [...savedProviderIds],
+      recommendationGuide,
       meta: {
         state: effectiveState,
         requestedState: requestedState || null,
@@ -410,6 +1438,7 @@ export async function GET(request: NextRequest) {
         // many electric providers were confirmed at the address. Never
         // user-facing copy — for dashboards / debugging only.
         electric: serviceability.electric,
+        sourceGaps: serviceability.sourceGaps,
         addressId: primaryAddr?.id || null,
         currentPhase,
         totalServices: services.length,

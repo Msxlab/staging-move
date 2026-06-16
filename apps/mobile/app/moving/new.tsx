@@ -12,9 +12,10 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  InputAccessoryView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Check, MapPin, ArrowRight, Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
@@ -22,10 +23,12 @@ import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type 
 import { useTranslation } from "react-i18next";
 import { useAppTheme, useThemePreference, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { formatLocalDateKey } from "@/lib/date-only";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { UPSELL_GATE_CODES } from "@/lib/subscription-gate";
 
 type DestinationMode = "existing" | "new";
+const MOVING_KEYBOARD_ACCESSORY_ID = "moving-plan-keyboard-done";
 
 type AddressOption = {
   id: string;
@@ -42,6 +45,7 @@ export default function NewMovingPlanScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { resolvedScheme } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -163,7 +167,11 @@ export default function NewMovingPlanScreen() {
 
   const openDatePicker = () => {
     Keyboard.dismiss();
-    setShowDatePicker(true);
+    if (Platform.OS === "ios") {
+      setTimeout(() => setShowDatePicker(true), 80);
+    } else {
+      setShowDatePicker(true);
+    }
   };
 
   const handleDestinationAutocompleteSelect = (result: AddressAutocompleteResult) => {
@@ -320,12 +328,17 @@ export default function NewMovingPlanScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
+        <View style={styles.formShell}>
         <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            addresses.length > 0 && styles.scrollContentWithFooter,
+          ]}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.hero}>
@@ -450,6 +463,10 @@ export default function NewMovingPlanScreen() {
                     placeholderTextColor={theme.colors.textMuted}
                     value={form.destinationNickname}
                     onChangeText={(v) => update("destinationNickname", v)}
+                    inputAccessoryViewID={MOVING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()}
                   />
 
                   <AddressAutocompleteField
@@ -467,6 +484,10 @@ export default function NewMovingPlanScreen() {
                     placeholderTextColor={theme.colors.textMuted}
                     value={form.destinationCity}
                     onChangeText={(v) => update("destinationCity", v)}
+                    inputAccessoryViewID={MOVING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()}
                   />
 
                   <View style={styles.rowFields}>
@@ -479,6 +500,11 @@ export default function NewMovingPlanScreen() {
                         value={form.destinationState}
                         onChangeText={(v) => update("destinationState", v.toUpperCase().slice(0, 2))}
                         maxLength={2}
+                        autoCapitalize="characters"
+                        inputAccessoryViewID={MOVING_KEYBOARD_ACCESSORY_ID}
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -490,6 +516,10 @@ export default function NewMovingPlanScreen() {
                         value={form.destinationZip}
                         onChangeText={(v) => update("destinationZip", v)}
                         keyboardType="number-pad"
+                        inputAccessoryViewID={MOVING_KEYBOARD_ACCESSORY_ID}
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()}
                       />
                     </View>
                   </View>
@@ -533,7 +563,7 @@ export default function NewMovingPlanScreen() {
                     onChange={(_event: any, date?: Date) => {
                       if (date) {
                         setSelectedDate(date);
-                        update("moveDate", date.toISOString().slice(0, 10));
+                        update("moveDate", formatLocalDateKey(date));
                       }
                     }}
                     themeVariant={resolvedScheme}
@@ -550,7 +580,7 @@ export default function NewMovingPlanScreen() {
                     setShowDatePicker(false);
                     if (date) {
                       setSelectedDate(date);
-                      update("moveDate", date.toISOString().slice(0, 10));
+                      update("moveDate", formatLocalDateKey(date));
                     }
                   }}
                   themeVariant={resolvedScheme}
@@ -579,31 +609,53 @@ export default function NewMovingPlanScreen() {
                     value={form.estimatedDuration}
                     onChangeText={(v) => update("estimatedDuration", v)}
                     keyboardType="number-pad"
+                    inputAccessoryViewID={MOVING_KEYBOARD_ACCESSORY_ID}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => Keyboard.dismiss()}
                   />
                 </>
               )}
               </View>
-
-              {/* Save */}
-              <TouchableOpacity
-                style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-                onPress={handleSave}
-                disabled={saving}
-                activeOpacity={0.7}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Check size={18} color="#fff" />
-                    <Text style={styles.saveBtnText}>{t("moving.createPlan")}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </>
           )}
         </ScrollView>
+        {addresses.length > 0 && (
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+            {/* Save */}
+            <TouchableOpacity
+              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
+              activeOpacity={0.7}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Check size={18} color="#fff" />
+                  <Text style={styles.saveBtnText}>{t("moving.createPlan")}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+        </View>
       </KeyboardAvoidingView>
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={MOVING_KEYBOARD_ACCESSORY_ID}>
+          <View style={styles.keyboardAccessory}>
+            <TouchableOpacity
+              onPress={() => Keyboard.dismiss()}
+              style={styles.keyboardDoneButton}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.done")}
+            >
+              <Text style={styles.keyboardDoneText}>{t("common.done")}</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
     </SafeAreaView>
   );
 }
@@ -620,7 +672,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 160 },
+  formShell: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
+  scrollContentWithFooter: { paddingBottom: 260 },
   hero: {
     borderRadius: 24,
     padding: 16,
@@ -710,8 +765,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   input: {
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
+    minHeight: 52,
     fontSize: 15, color: theme.colors.text,
   },
+  footer: {
+    flexShrink: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  keyboardAccessory: {
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+  },
+  keyboardDoneButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryFaded,
+  },
+  keyboardDoneText: { fontSize: 14, fontWeight: "800", color: theme.colors.primary },
   dateButton: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
@@ -811,7 +891,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    paddingVertical: 16, ...theme.shadow.glow,
   },
   saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

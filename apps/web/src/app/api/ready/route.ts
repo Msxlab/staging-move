@@ -15,7 +15,7 @@
  * nothing they couldn't already infer from a 500 on /api/auth/login.
  */
 
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   buildReadinessReport,
@@ -27,6 +27,22 @@ import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const READINESS_PROBE_TIMEOUT_MS = 2_500;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function probeDatabase(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -36,22 +52,28 @@ async function probeDatabase(): Promise<boolean> {
   }
 }
 
-export async function GET() {
-  const effectiveConfig = await getRequiredRuntimeConfigValues(getReadinessConfigKeys());
+export async function GET(request: NextRequest) {
+  const effectiveConfig =
+    (await withTimeout(
+      getRequiredRuntimeConfigValues(getReadinessConfigKeys()),
+      READINESS_PROBE_TIMEOUT_MS,
+    )) ?? undefined;
   const report = buildReadinessReport(process.env, undefined, effectiveConfig);
-  const dbReady = await probeDatabase();
+  const dbReady = (await withTimeout(probeDatabase(), READINESS_PROBE_TIMEOUT_MS)) === true;
 
   const overallReady = report.ready && dbReady;
   const summary = summarizeReadinessForResponse(report);
+  const soft = request.nextUrl.searchParams.get("soft") === "1";
 
   return NextResponse.json(
     {
       ...summary,
       database: dbReady ? "ready" : "unavailable",
+      ...(soft ? { soft: true, readinessStatus: overallReady ? 200 : 503 } : {}),
       timestamp: new Date().toISOString(),
     },
     {
-      status: overallReady ? 200 : 503,
+      status: soft ? 200 : overallReady ? 200 : 503,
       headers: { "Cache-Control": "no-store" },
     },
   );

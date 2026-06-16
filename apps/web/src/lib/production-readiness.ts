@@ -37,6 +37,9 @@ export const READINESS_CONFIG_KEYS = [
   "CRON_SECRET",
   "INTERNAL_WEBHOOK_SECRET",
   "IMPERSONATION_HANDOFF_SECRET",
+  "QA_RESETTABLE_ACCOUNT_EMAIL",
+  "QA_PERSONA_ACCOUNTS",
+  "STORE_REVIEW_ACCOUNT_EMAILS",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
   "RESEND_API_KEY",
@@ -82,6 +85,9 @@ export const READINESS_CONFIG_KEYS = [
   "GOOGLE_PLAY_PACKAGE_NAME",
   "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+  "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+  "GOOGLE_PLAY_OAUTH_CLIENT_SECRET",
+  "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
   "GOOGLE_PLAY_RTDN_AUDIENCE",
   "APPLE_BUNDLE_ID",
   "APPLE_TEAM_ID",
@@ -308,6 +314,17 @@ export function buildReadinessReport(
     if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
   }
 
+  for (const key of [
+    "QA_RESETTABLE_ACCOUNT_EMAIL",
+    "QA_PERSONA_ACCOUNTS",
+    "STORE_REVIEW_ACCOUNT_EMAILS",
+  ] as const) {
+    const value = readConfig(key);
+    if (!value) continue;
+    const validation = validateRuntimeConfigValueShape(key, value, { productionLike });
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+
   const requiredStripeKeys = [
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
@@ -396,13 +413,27 @@ export function buildReadinessReport(
     "GOOGLE_PLAY_PACKAGE_NAME",
     "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
     "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+    "GOOGLE_PLAY_OAUTH_CLIENT_ID",
+    "GOOGLE_PLAY_OAUTH_REFRESH_TOKEN",
     "GOOGLE_PLAY_RTDN_AUDIENCE",
   ] as const;
   if (googlePlayIapKeys.some((key) => Boolean(readConfig(key)))) {
-    for (const key of googlePlayIapKeys) {
+    for (const key of ["GOOGLE_PLAY_PACKAGE_NAME", "GOOGLE_PLAY_RTDN_AUDIENCE"] as const) {
       if (!readConfig(key)) {
         fail(key, `${key} is required when Google Play in-app purchases are configured (mobile billing is live).`);
       }
+    }
+    const hasServiceAccountAuth =
+      Boolean(readConfig("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL")) &&
+      Boolean(readConfig("GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY"));
+    const hasOauthFallbackAuth =
+      Boolean(readConfig("GOOGLE_PLAY_OAUTH_CLIENT_ID")) &&
+      Boolean(readConfig("GOOGLE_PLAY_OAUTH_REFRESH_TOKEN"));
+    if (!hasServiceAccountAuth && !hasOauthFallbackAuth) {
+      fail(
+        "GOOGLE_PLAY_AUTH",
+        "Google Play purchase validation needs either service-account auth (GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL + GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY) or OAuth fallback auth (GOOGLE_PLAY_OAUTH_CLIENT_ID + GOOGLE_PLAY_OAUTH_REFRESH_TOKEN).",
+      );
     }
   }
   // The App Store Server Notification handler fails closed in production without

@@ -193,6 +193,11 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  /* Mobile overflow backstop — no admin surface should let the page pan
+     sideways. `clip` (not `hidden`) avoids creating a scroll container, so
+     position:sticky chrome keeps pinning. Specific wide elements still get
+     their own wrap/scroll fixes; this is the safety floor. */
+  html, body { overflow-x: clip; }
   h1, h2, h3 {
     font-family: var(--font-sans);
     font-weight: inherit;
@@ -371,6 +376,7 @@
 }
 .admin-panel-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;

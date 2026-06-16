@@ -195,7 +195,7 @@ export default function ProviderDetailPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6">
-        <div className="flex items-start gap-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
           <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-2xl">
             {provider.logoUrl ? (
               <img
@@ -210,9 +210,9 @@ export default function ProviderDetailPage() {
               <span>{getCategoryIcon(provider.category)}</span>
             )}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{provider.name}</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground break-words">{provider.name}</h1>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                   provider.isActive
@@ -228,7 +228,7 @@ export default function ProviderDetailPage() {
               <p className="mt-2 text-sm text-foreground/80">{provider.description}</p>
             )}
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-4xl font-bold text-foreground">{provider.popularityScore}</p>
             <p className="text-xs text-muted-foreground">Popularity Score</p>
           </div>

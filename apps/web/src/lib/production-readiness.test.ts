@@ -82,11 +82,11 @@ describe("buildReadinessReport", () => {
     expect(report.warnCount).toBeGreaterThan(0);
   });
 
-  it("requires the full Google Play IAP identity set once any key is configured (audit P1-10)", () => {
+  it("requires Google Play package, RTDN audience, and one API auth method once any key is configured (audit P1-10)", () => {
     const env = { ...validProdEnv, GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile" };
     const report = buildReadinessReport(env, true);
     expect(report.ready).toBe(false);
-    expect(report.issues.find((i) => i.key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL")?.severity).toBe("fail");
+    expect(report.issues.find((i) => i.key === "GOOGLE_PLAY_AUTH")?.severity).toBe("fail");
     expect(report.issues.find((i) => i.key === "GOOGLE_PLAY_RTDN_AUDIENCE")?.severity).toBe("fail");
   });
 
@@ -96,6 +96,18 @@ describe("buildReadinessReport", () => {
       GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
       GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL: "play-api@example.iam.gserviceaccount.com",
       GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----",
+      GOOGLE_PLAY_RTDN_AUDIENCE: "https://app.example.com/api/webhooks/playstore",
+    } as unknown as NodeJS.ProcessEnv;
+    const report = buildReadinessReport(env, true);
+    expect(report.issues.some((i) => i.key.startsWith("GOOGLE_PLAY_"))).toBe(false);
+  });
+
+  it("passes when Google Play OAuth fallback auth is complete", () => {
+    const env = {
+      ...validProdEnv,
+      GOOGLE_PLAY_PACKAGE_NAME: "com.locateflow.mobile",
+      GOOGLE_PLAY_OAUTH_CLIENT_ID: "123456789012-abcdef.apps.googleusercontent.com",
+      GOOGLE_PLAY_OAUTH_REFRESH_TOKEN: "1//refresh-token",
       GOOGLE_PLAY_RTDN_AUDIENCE: "https://app.example.com/api/webhooks/playstore",
     } as unknown as NodeJS.ProcessEnv;
     const report = buildReadinessReport(env, true);
@@ -140,6 +152,16 @@ describe("buildReadinessReport", () => {
     expect(report.ready).toBe(true);
     expect(report.issues.find((i) => i.key === "AIRNOW_API_KEY")?.severity).toBe("warn");
     expect(report.issues.find((i) => i.key === "CENSUS_API_KEY")?.severity).toBe("warn");
+  });
+
+  it("fails fast when QA persona env is malformed in production", () => {
+    const env = {
+      ...validProdEnv,
+      QA_PERSONA_ACCOUNTS: "mobileindividual@locateflow.com:ENTERPRISE",
+    };
+    const report = buildReadinessReport(env, true);
+    expect(report.ready).toBe(false);
+    expect(report.issues.find((i) => i.key === "QA_PERSONA_ACCOUNTS")?.severity).toBe("fail");
   });
 
   it("flags placeholder Redis env in production", () => {

@@ -130,6 +130,32 @@ export async function GET(_request: NextRequest) {
       .filter((c) => !c.isFederal && c.statesCovered < ALL_STATES.length)
       .sort((a, b) => a.statesCovered - b.statesCovered);
 
+    const categoryByName = new Map(categories.map((category) => [category.category, category]));
+    const priorityGaps = states
+      .flatMap((stateRow) =>
+        stateRow.missingCategories.map((category) => {
+          const categoryRow = categoryByName.get(category);
+          const statesCovered = categoryRow?.statesCovered ?? 0;
+          const score =
+            (stateRow.isThin ? 100 : 0) +
+            Math.max(0, THIN_STATE_PROVIDER_THRESHOLD - stateRow.stateProviderCount) * 20 +
+            (ALL_STATES.length - statesCovered);
+          return {
+            state: stateRow.state,
+            category,
+            stateProviderCount: stateRow.stateProviderCount,
+            statesCovered,
+            statesMissing: categoryRow?.statesMissing ?? ALL_STATES.length,
+            priorityScore: score,
+            reason: stateRow.isThin
+              ? "Thin state with missing category coverage"
+              : "Category missing from this state",
+          };
+        }),
+      )
+      .sort((a, b) => b.priorityScore - a.priorityScore || a.state.localeCompare(b.state))
+      .slice(0, 24);
+
     return NextResponse.json({
       summary: {
         totalStates: ALL_STATES.length,
@@ -145,6 +171,7 @@ export async function GET(_request: NextRequest) {
       categories,
       thinStates,
       thinCategories,
+      priorityGaps,
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

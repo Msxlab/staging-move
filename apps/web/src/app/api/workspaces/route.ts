@@ -9,11 +9,18 @@ export const runtime = "nodejs";
 /**
  * GET /api/workspaces — the workspaces the caller belongs to.
  * POST /api/workspaces — create a workspace (Family/Pro plan required).
- * Both gated by WORKSPACE_MODEL_ENABLED (404 when off).
+ * POST stays gated by WORKSPACE_MODEL_ENABLED (404 when off). GET returns an
+ * empty list when the feature is off so passive dashboard/settings probes do
+ * not create browser console errors.
  */
 export async function GET() {
   const off = await workspaceFeatureGate();
-  if (off) return off;
+  if (off) {
+    return NextResponse.json(
+      { workspaces: [], workspaceModelEnabled: false },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const session = await getUserSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

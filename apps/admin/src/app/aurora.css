@@ -253,8 +253,13 @@ html:not(.dark) .adm-aurora .adp-topbar {
           backdrop-filter: none;
 }
 
-/* Anything inside the wrapper sits above the aurora layers */
-.adm-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
+/* Anything inside the wrapper sits above the aurora layers.
+   Exclude the fixed-position mobile chrome (dock + section sheet): without
+   the exclusion this rule's higher specificity (0,3,0) overrode their
+   `position: fixed` (0,2,0), forcing them `relative` — which dropped the
+   mobile dock back into normal flow as a flex sibling of <main>, collapsing
+   the content column. Keep them out so they pin to the viewport as intended. */
+.adm-aurora > *:not(.au-aurora):not(.au-grain):not(.adp-mobile-dock):not(.adp-mobile-sheet) { position: relative; z-index: 2; }
 
 /* === Card — toned-down glass (dark) / flat solid (light) =========== */
 .adm-aurora .au-card {
@@ -992,11 +997,17 @@ html:not(.dark) .adm-aurora .admin-workspace {
     height: 58px;
     padding: 0 12px;
     padding-top: env(safe-area-inset-top);
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
   }
 
   .adm-aurora .adp-topbar .adp-crumb {
     max-width: 42%;
     font-size: 12px;
+  }
+
+  .adm-aurora .adp-topbar .adp-crumb b {
+    max-width: 50vw;
   }
 
   .adm-aurora .adp-topbar .adp-crumb span:not(:first-child),
@@ -1006,7 +1017,7 @@ html:not(.dark) .adm-aurora .admin-workspace {
 
   .adm-aurora .adp-tsearch {
     width: 44px;
-    height: 38px;
+    height: 44px;
     justify-content: center;
     padding: 0;
   }
@@ -1016,19 +1027,25 @@ html:not(.dark) .adm-aurora .admin-workspace {
     display: none;
   }
 
-  .adm-aurora .adp-iconbtn,
+  .adm-aurora .adp-iconbtn {
+    width: 44px;
+    height: 44px;
+  }
+
   .adm-aurora .adp-avatar {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
   }
 
   .adm-aurora .admin-workspace {
     min-height: calc(100dvh - 58px);
     padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+    overflow-x: clip;
   }
 
   .adm-aurora .admin-workspace-inner {
     max-width: none;
+    min-width: 0;
   }
 }
 
@@ -1107,6 +1124,22 @@ html:not(.dark) .adm-aurora .admin-workspace {
   .adm-aurora .adp-tsearch { width: 240px; }
 }
 
+/* Mobile topbar sizing — MUST come after the base .adp-tsearch / .adp-iconbtn /
+   .adp-avatar widths above. The earlier max-width:1023px block (≈line 986) is
+   placed before those base rules, so on equal specificity the base widths
+   (search 300/240, iconbtn 38, avatar 34) win on phones and the right cluster
+   (bell / help / identity) overflows the bar. Re-assert the collapsed sizes
+   here so the search shrinks to an icon and the cluster fits. */
+@media (max-width: 1023px) {
+  .adm-aurora .adp-tsearch {
+    width: 44px; height: 44px; padding: 0; justify-content: center; flex-shrink: 0;
+  }
+  .adm-aurora .adp-tsearch .ph,
+  .adm-aurora .adp-tsearch .kbd { display: none; }
+  .adm-aurora .adp-iconbtn { width: 44px; height: 44px; flex-shrink: 0; }
+  .adm-aurora .adp-avatar { width: 40px; height: 40px; flex-shrink: 0; }
+}
+
 /* =========================================================================
    F3-E · LIST EXPERIENCE — ministat strip, filter chips, quick-look drawer
    -------------------------------------------------------------------------
@@ -1152,6 +1185,16 @@ html:not(.dark) .adm-aurora {
   .adm-aurora .au-mini--wrap {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+/* Phones: fold KPI strips to 2-up, then 1-up — a 4-up strip crushes values
+   to "1…" on a 390px screen. Source order after the 1500px rule wins. */
+@media (max-width: 640px) {
+  .adm-aurora .au-mini,
+  .adm-aurora .au-mini--wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 400px) {
+  .adm-aurora .au-mini,
+  .adm-aurora .au-mini--wrap { grid-template-columns: 1fr; }
 }
 .adm-aurora .au-ministat {
   margin: 0;
@@ -1246,14 +1289,14 @@ html:not(.dark) .adm-aurora {
 
 /* --- Quick-look drawer ------------------------------------------------ */
 .adm-aurora .au-qscrim {
-  position: fixed; inset: 0; z-index: 40;
+  position: fixed; inset: 0; z-index: 56;
   background: var(--au-scrim);
   -webkit-backdrop-filter: blur(2px);
           backdrop-filter: blur(2px);
   animation: au-q-fade 200ms ease both;
 }
 .adm-aurora .au-qdrawer {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 57;
   width: 432px; max-width: calc(100vw - 48px);
   display: flex; flex-direction: column;
   background:
@@ -1394,8 +1437,9 @@ html:not(.dark) .adm-aurora {
 .adm-aurora .au-qrow .s { font-size: 11px; color: var(--au-ink-3); margin-top: 2px; }
 
 .adm-aurora .au-qact {
-  display: flex; gap: 8px;
+  display: flex; flex-wrap: wrap; gap: 8px;
   padding: 14px 18px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--au-rule);
   background: color-mix(in srgb, var(--au-flat-2) 62%, transparent);
 }
@@ -1461,7 +1505,7 @@ html:not(.dark) .adm-aurora {
 }
 
 /* Interactive chart hover — crosshair + point dot + flipping tooltip */
-.adm-aurora .au-chartwrap { position: relative; cursor: crosshair; }
+.adm-aurora .au-chartwrap { position: relative; cursor: crosshair; touch-action: pan-y; }
 .adm-aurora .au-chart-cross {
   position: absolute; top: 4px; bottom: 12px; width: 1px;
   background: var(--au-rule-2);
@@ -1552,7 +1596,8 @@ html:not(.dark) .adm-aurora .au-tip {
   color: var(--au-accent);
   background: var(--au-accent-soft);
   border-radius: 5px; padding: 1px 5px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .adm-aurora .au-fwhen {
   margin: 4px 0 0;
@@ -1683,26 +1728,28 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
 
 .adm-aurora .adp-mobile-dock {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  max-width: 620px;
+  margin-inline: auto;
   z-index: 55;
   border: 1px solid var(--au-rule-2);
   border-radius: 18px;
   background: color-mix(in srgb, var(--au-surface) 88%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
           backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 var(--au-edge);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24), inset 0 1px 0 var(--au-edge);
   overflow: hidden;
 }
 
 .adm-aurora .adp-mobile-dock-scroll {
   display: flex;
   gap: 4px;
-  min-height: 66px;
+  min-height: 62px;
   align-items: stretch;
   overflow-x: auto;
-  padding: 7px;
+  padding: 6px;
   scrollbar-width: none;
 }
 
@@ -1711,14 +1758,14 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
 }
 
 .adm-aurora .adp-mobile-dock-item {
-  min-width: 72px;
-  flex: 0 0 auto;
+  min-width: 58px;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border-radius: 13px;
+  border-radius: 12px;
   color: var(--au-ink-3);
   font: 700 9.5px/1 var(--font-mono, ui-monospace, monospace);
   text-transform: uppercase;
@@ -1737,6 +1784,79 @@ html:not(.dark) .adm-aurora .adp-rail .mark { color: #FFFFFF; }
 
 .adm-aurora .adp-mobile-dock-item:active {
   transform: translateY(1px);
+}
+
+/* ── Mobile section sheet — a tapped dock group's sub-pages ──────────── */
+.adm-aurora .adp-mobile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.adm-aurora .adp-mobile-sheet-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: var(--au-scrim, rgba(8, 12, 20, 0.55));
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  animation: adp-sheet-fade 160ms ease;
+}
+.adm-aurora .adp-mobile-sheet-panel {
+  position: relative;
+  width: min(620px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  margin: 0 auto calc(82px + env(safe-area-inset-bottom));
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--au-rule-2);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--au-surface) 96%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+          backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34), inset 0 1px 0 var(--au-edge);
+  overflow: hidden;
+  animation: adp-sheet-rise 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.adm-aurora .adp-mobile-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px 16px;
+  border-bottom: 1px solid var(--au-rule);
+}
+.adm-aurora .adp-mobile-sheet-title {
+  font: 600 13px/1 var(--font-sans, system-ui, sans-serif);
+  color: var(--au-ink);
+}
+.adm-aurora .adp-mobile-sheet-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+}
+@keyframes adp-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adp-sheet-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .adp-mobile-sheet-scrim,
+  .adm-aurora .adp-mobile-sheet-panel { animation: none; }
+}
+
+@media (display-mode: standalone) and (max-width: 1023px) {
+  .adm-aurora .adp-topbar {
+    padding-top: max(env(safe-area-inset-top), 8px);
+  }
+
+  .adm-aurora .admin-workspace {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
 }
 
 /* ── Ministat card — module-page stats strip ────────────────────────── */

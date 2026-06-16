@@ -217,6 +217,34 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     note: "Deployment env only. This key must never contain a comma-separated allowlist.",
   },
   {
+    key: "QA_PERSONA_ACCOUNTS",
+    label: "QA Persona Accounts",
+    description: "Comma-separated exact QA emails with auto-granted plans in email:PLAN format. These accounts auto-verify, self-heal entitlements, and hard-reset on logout/cron.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app auth", "mobile QA", "admin QA"],
+    validation: "comma-separated email:PLAN entries; plans: FREE_TRIAL, INDIVIDUAL, FAMILY, PRO",
+    note: "Deployment env only. Keep this limited to exact internal/review QA addresses; it grants entitlements without a billing provider.",
+  },
+  {
+    key: "STORE_REVIEW_ACCOUNT_EMAILS",
+    label: "Store Review Account Emails",
+    description: "Comma-separated Google Play/App Store review emails that may auto-verify on signup and reset themselves only during a fresh signup. Leave unset outside controlled review.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: false,
+    usedBy: ["web app auth", "mobile store review"],
+    validation: "comma-separated email addresses",
+    note: "Deployment env only. Review accounts are not hard-reset on logout like the QA account.",
+  },
+  {
     key: "TRUSTED_PROXY_HEADERS",
     label: "Trusted Proxy Headers",
     description: "Controls which edge proxy IP header family the web and admin apps trust for rate limits, audit logs, cron guards, and auth telemetry. Use cloudflare behind Cloudflare, vercel behind Vercel, standard behind a trusted reverse proxy, or none to ignore forwarded headers.",
@@ -1084,15 +1112,15 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     key: "ANTHROPIC_API_KEY",
     label: "Anthropic API Key",
     description:
-      "Server-side Anthropic Messages API key (x-api-key) used to generate the personalized AI move briefing on the onboarding-complete / dashboard first-run screen. Optional: when unset the briefing falls back to a deterministic rule-based summary built from the user's own checklist, and the mobile AI section hides gracefully. Get a key at https://console.anthropic.com/ (Settings -> API Keys). Only coarse, non-PII move signals are ever sent to the API.",
-    scope: "WEB",
+      "Server-side Anthropic Messages API key (x-api-key) used for the personalized AI move briefing and the admin on-demand provider source-gap audit. Optional: when unset the briefing falls back to deterministic text, the mobile AI section hides gracefully, and admin provider governance keeps its zero-cost deterministic report. Get a key at https://console.anthropic.com/ (Settings -> API Keys). Only coarse/non-PII move signals or source/provider metadata are ever sent to the API.",
+    scope: "GLOBAL",
     category: "AI",
     isSecret: true,
     requiredInProduction: false,
     maskStrategy: "secret",
     runtimeEditable: true,
-    usedBy: ["web app onboarding briefing"],
-    note: "Optional. Only needed to enable the LLM-generated move briefing; never required. The briefing endpoint sends only coarse signals (hasKids/hasPets/carCount/state/moveType/own-vs-rent/senior/business) — never name, address, email, or account numbers.",
+    usedBy: ["web app onboarding briefing", "admin provider gap audit"],
+    note: "Optional. Only needed to enable LLM-generated summaries; never required. The briefing endpoint sends only coarse signals (hasKids/hasPets/carCount/state/moveType/own-vs-rent/senior/business). The admin gap audit sends only provider/source metadata. Neither path sends name, address, email, account numbers, address IDs, latitude, or longitude.",
   },
   {
     key: "APP_URL",
@@ -1497,6 +1525,32 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: false,
     maskStrategy: "secret",
+  },
+  {
+    key: "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS",
+    label: "Google Play Test Purchase User Emails",
+    description: "Comma-separated production-safe tester/reviewer user emails allowed to claim Google Play test purchases and receive review-ready onboarding provisioning.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: true,
+    usedBy: ["web app", "mobile IAP verification", "mobile store review"],
+    validation: "comma-separated email addresses",
+  },
+  {
+    key: "APPLE_SANDBOX_PURCHASE_USER_EMAILS",
+    label: "Apple Sandbox Purchase User Emails",
+    description: "Comma-separated production-safe tester/reviewer user emails allowed to claim App Store sandbox purchases and receive review-ready onboarding provisioning.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+    runtimeEditable: true,
+    usedBy: ["web app", "mobile IAP verification", "mobile store review"],
+    validation: "comma-separated email addresses",
   },
   {
     key: "GOOGLE_PLAY_OAUTH_CLIENT_ID",
@@ -2174,6 +2228,32 @@ export function validateRuntimeConfigValueShape(
 
   if (key === "QA_RESETTABLE_ACCOUNT_EMAIL") {
     return validEmailAddress(value) ? valid() : invalid("email_required");
+  }
+  if (key === "QA_PERSONA_ACCOUNTS") {
+    const validPlans = new Set(["FREE", "FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"]);
+    const entries = value.split(/[,\n;]/).map((entry) => entry.trim()).filter(Boolean);
+    return entries.length > 0 && entries.every((entry) => {
+      const [email, plan, ...extra] = entry.split(":").map((part) => part.trim());
+      return (
+        Boolean(email) &&
+        Boolean(plan) &&
+        extra.length === 0 &&
+        validEmailAddress(email) &&
+        validPlans.has(plan.toUpperCase())
+      );
+    })
+      ? valid()
+      : invalid("qa_persona_accounts_required");
+  }
+  if (
+    key === "STORE_REVIEW_ACCOUNT_EMAILS" ||
+    key === "GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS" ||
+    key === "APPLE_SANDBOX_PURCHASE_USER_EMAILS"
+  ) {
+    const emails = value.split(",").map((email) => email.trim()).filter(Boolean);
+    return emails.length > 0 && emails.every(validEmailAddress)
+      ? valid()
+      : invalid("email_required");
   }
 
   const EMAIL_KEYS = new Set([

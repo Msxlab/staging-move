@@ -158,10 +158,17 @@ export async function GET(request: NextRequest) {
     }
 
     const canUseDataChecked = await optionalRequestHasPlanFeature(request, "addressValidation");
+    const forcedSourceCategories =
+      category === "UTILITY_ELECTRIC"
+        ? ["UTILITY_ELECTRIC" as const]
+        : category === "UTILITY_INTERNET"
+          ? ["UTILITY_INTERNET" as const]
+          : undefined;
     const serviceability = canUseDataChecked
       ? await enrichProviderServiceability(filtered, {
           latitude: normalizedLatitude,
           longitude: normalizedLongitude,
+          forceCategories: forcedSourceCategories,
         })
       : providerServiceabilityGatedMeta(filtered);
 
@@ -205,7 +212,16 @@ export async function GET(request: NextRequest) {
       const coverageModel =
         p.coverageModel || inferProviderCoverageModel({ category: p.category, scope: p.scope, zipCodes });
       const coverageMatchLevel = coverageByProvider.get(p)!.matchLevel;
-      const serviceabilityFlags = p as typeof p & { fccServiceable?: boolean; utilityServiceable?: boolean };
+      const serviceabilityFlags = p as typeof p & {
+        fccServiceable?: boolean;
+        fccProviderId?: string | null;
+        fccMaxDownloadMbps?: number | null;
+        fccMaxUploadMbps?: number | null;
+        fccTechnologyCodes?: number[];
+        fccTechnologyLabel?: string;
+        fccQualityBand?: string;
+        utilityServiceable?: boolean;
+      };
       const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;
       const coverageSourceUrl = ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null;
       const requiresAddressCheck = coverageModel === "live_address";
@@ -247,6 +263,17 @@ export async function GET(request: NextRequest) {
         displayOrder: p.displayOrder,
         affiliateActive: Boolean((p as { affiliateActive?: boolean }).affiliateActive),
         fccServiceable: serviceabilityFlags.fccServiceable === true,
+        internetServiceability: p.category === "UTILITY_INTERNET" && serviceabilityFlags.fccServiceable === true
+          ? {
+              source: "FCC_BDC",
+              providerId: serviceabilityFlags.fccProviderId ?? null,
+              maxDownloadMbps: serviceabilityFlags.fccMaxDownloadMbps ?? null,
+              maxUploadMbps: serviceabilityFlags.fccMaxUploadMbps ?? null,
+              technologyCodes: serviceabilityFlags.fccTechnologyCodes ?? [],
+              technology: serviceabilityFlags.fccTechnologyLabel ?? "unknown",
+              qualityBand: serviceabilityFlags.fccQualityBand ?? "unknown",
+            }
+          : null,
         utilityServiceable: serviceabilityFlags.utilityServiceable === true,
         coverageModel,
         coverageMatchLevel,
@@ -280,6 +307,7 @@ export async function GET(request: NextRequest) {
         },
         fcc: serviceability.fcc,
         electric: serviceability.electric,
+        sourceGaps: serviceability.sourceGaps,
       },
     });
   } catch (error) {

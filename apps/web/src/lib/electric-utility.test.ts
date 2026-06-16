@@ -45,6 +45,14 @@ describe("utility name normalization & matching", () => {
     expect(utilityNamesMatch("Pacific Gas & Electric", "Pacific Gas and Electric Company")).toBe(true);
   });
 
+  it("matches common utility abbreviations to official source names", () => {
+    expect(normalizeUtilityName("ComEd")).toBe(normalizeUtilityName("Commonwealth Edison Co"));
+    expect(utilityNamesMatch("ComEd", "Commonwealth Edison Company")).toBe(true);
+    expect(utilityNamesMatch("JCP&L", "Jersey Central Power & Lt Co")).toBe(true);
+    expect(utilityNamesMatch("PSE&G", "Public Service Electric and Gas")).toBe(true);
+    expect(utilityNamesMatch("FPL", "Florida Power & Light Company")).toBe(true);
+  });
+
   it("is conservative: different brands never match", () => {
     expect(utilityNamesMatch("Georgia Power", "Florida Power & Light")).toBe(false);
     expect(utilityNamesMatch("Austin Energy", "Reliant Energy")).toBe(false);

@@ -56,6 +56,13 @@ const nextConfig = {
         ],
       },
       {
+        source: "/manifest.webmanifest",
+        headers: [
+          ...securityHeaders,
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        ],
+      },
+      {
         source: "/offline.html",
         headers: [
           ...securityHeaders,

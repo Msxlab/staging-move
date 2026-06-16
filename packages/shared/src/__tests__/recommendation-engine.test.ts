@@ -191,6 +191,8 @@ describe("provider recommendation safety", () => {
     const unconfirmed = scored.find((p) => p.id === "unconfirmed-electric")!;
 
     expect(confirmed.explanation.coverageConfidence).toBe("AVAILABLE_AT_ADDRESS");
+    expect(confirmed.explanation.qualityProfile.score).toBeGreaterThan(unconfirmed.explanation.qualityProfile.score);
+    expect(confirmed.explanation.qualityProfile.gaps.map((gap) => gap.code)).not.toContain("coverage_precision");
     expect(confirmed.matchReasons).toContain("Available at your address");
     expect(unconfirmed.explanation.coverageConfidence).toBe("ADDRESS_CHECK_REQUIRED");
     expect(confirmed.recommendationScore).toBeGreaterThan(unconfirmed.recommendationScore);

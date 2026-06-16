@@ -81,7 +81,10 @@ export function LanguageSelector({
     startTransition(async () => {
       await fetch("/api/user/locale", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "locateflow",
+        },
         body: JSON.stringify({ locale: next }),
       }).catch(() => null);
       // Hard reload — next-intl's getRequestConfig reads the cookie at

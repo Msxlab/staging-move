@@ -3,6 +3,7 @@ import { revalidateProvidersCatalog } from "@/lib/providers-revalidate";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import {
+  getProviderQualityProfile,
   getProviderQualityWarnings,
   normalizeProviderUrlDomain,
   slugifyProviderName,
@@ -52,6 +53,120 @@ function warningTypeToQueue(code: string) {
   return "sourceValidation";
 }
 
+function asMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function metadataStringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function issueOccurrenceCount(issue: { metadata?: unknown }): number {
+  const metadata = asMetadata(issue.metadata);
+  return typeof metadata.occurrenceCount === "number" && Number.isFinite(metadata.occurrenceCount)
+    ? metadata.occurrenceCount
+    : 1;
+}
+
+function sourceGapAction(metadata: Record<string, unknown>): string {
+  const category = typeof metadata.category === "string" ? metadata.category : "";
+  if (category === "UTILITY_ELECTRIC") return "review_alias_or_add_electric_provider";
+  if (category === "UTILITY_INTERNET") return "review_fcc_brand_or_add_isp";
+  return "review_source_or_dismiss";
+}
+
+function sourceGapFieldsToCollect(metadata: Record<string, unknown>): string[] {
+  const category = typeof metadata.category === "string" ? metadata.category : "";
+  if (category === "UTILITY_ELECTRIC") {
+    return ["official utility name", "service territory", "customer support URL", "phone", "catalog alias"];
+  }
+  if (category === "UTILITY_INTERNET") {
+    return ["official brand name", "availability URL", "phone", "FCC provider ID", "speed/technology evidence"];
+  }
+  return ["official name", "website", "phone", "coverage evidence"];
+}
+
+function buildAuditReport(input: {
+  queues: Record<string, any[]>;
+  issues: Array<{ issueType: string; severity: string; title: string; metadata?: unknown; createdAt: Date; updatedAt: Date }>;
+}) {
+  const sourceIssues = input.issues.filter((issue) => issue.issueType === "SOURCE_PROVIDER_MISSING");
+  const sourceHealthIssues = input.issues.filter((issue) => issue.issueType === "SOURCE_HEALTH_WARNING");
+  const repeatedSourceIssues = sourceIssues.filter((issue) => issueOccurrenceCount(issue) > 1);
+  const bySource = sourceIssues.reduce<Record<string, number>>((acc, issue) => {
+    const source = String(asMetadata(issue.metadata).source || "UNKNOWN");
+    acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {});
+  const byCategory = sourceIssues.reduce<Record<string, number>>((acc, issue) => {
+    const category = String(asMetadata(issue.metadata).category || "UNKNOWN");
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const reviewCandidates = sourceIssues
+    .slice()
+    .sort((a, b) => issueOccurrenceCount(b) - issueOccurrenceCount(a))
+    .slice(0, 12)
+    .map((issue) => {
+      const metadata = asMetadata(issue.metadata);
+      return {
+        title: issue.title,
+        severity: issue.severity,
+        providerName: String(metadata.providerName || "Unknown provider"),
+        source: String(metadata.source || "UNKNOWN"),
+        category: String(metadata.category || "UNKNOWN"),
+        occurrenceCount: issueOccurrenceCount(issue),
+        states: metadataStringList(metadata.states),
+        zips: metadataStringList(metadata.zips),
+        sampleLocations: metadataStringList(metadata.sampleLocations),
+        evidenceUrl: typeof metadata.evidenceUrl === "string" ? metadata.evidenceUrl : null,
+        suggestedAction: sourceGapAction(metadata),
+        fieldsToCollect: metadataStringList(metadata.fieldsToCollect).length > 0
+          ? metadataStringList(metadata.fieldsToCollect)
+          : sourceGapFieldsToCollect(metadata),
+        qualityProfile: asMetadata(metadata.qualityProfile),
+      };
+    });
+
+  const recommendations: string[] = [];
+  if ((bySource.OPENEI_URDB || 0) > 0) {
+    recommendations.push("Prioritize electric utility alias mapping before adding new catalog rows; OpenEI names often use legal utility names.");
+  }
+  if ((bySource.FCC_BDC || 0) > 0) {
+    recommendations.push("Review FCC provider brands against existing internet catalog rows; add aliases before creating duplicate ISP providers.");
+  }
+  if (sourceHealthIssues.length > 0) {
+    recommendations.push("Fix live source health issues before judging provider coverage completeness; failed FCC/OpenEI lookups mean recommendations are falling back to catalog evidence.");
+  }
+  if (repeatedSourceIssues.length > 0) {
+    recommendations.push("Repeated source gaps should become operator tasks, because they affect multiple user recommendation sessions.");
+  }
+  if ((input.queues.userCreatedProviderReview?.length || 0) > 0) {
+    recommendations.push("Review user-submitted providers separately from source gaps; private custom providers should not auto-promote.");
+  }
+  if (recommendations.length === 0) {
+    recommendations.push("No urgent source-backed provider gaps are open. Keep monitoring live data readiness and broad coverage warnings.");
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: "deterministic_ai_ready",
+    estimatedLlmCostUsd: 0,
+    summary: {
+      openQueueCount: Object.values(input.queues).reduce((sum, rows) => sum + rows.length, 0),
+      sourceGapCount: sourceIssues.length,
+      sourceHealthIssueCount: sourceHealthIssues.length,
+      repeatedSourceGapCount: repeatedSourceIssues.length,
+      highSeveritySourceGapCount: sourceIssues.filter((issue) => issue.severity === "HIGH").length,
+      bySource,
+      byCategory,
+    },
+    recommendations,
+    reviewCandidates,
+  };
+}
+
 async function writeAdminAudit(adminId: string, action: string, entityType: string, entityId: string, changes: unknown) {
   await prisma.adminAuditLog.create({
     data: {
@@ -83,7 +198,9 @@ export async function GET() {
           scope: true,
           states: true,
           zipCodes: true,
+          coverageModel: true,
           isActive: true,
+          updatedAt: true,
         },
         take: 2000,
       }),
@@ -122,15 +239,18 @@ export async function GET() {
 
     for (const provider of providers) {
       const domain = normalizeProviderUrlDomain(provider.website);
-      const warnings = getProviderQualityWarnings({
+      const providerQualityInput = {
         ...provider,
         duplicateDomainCount: domain ? domainCounts.get(domain) || 0 : 0,
-      });
+      };
+      const warnings = getProviderQualityWarnings(providerQualityInput);
+      const qualityProfile = getProviderQualityProfile(providerQualityInput);
       for (const warning of warnings) {
         queues[warningTypeToQueue(warning.code)].push({
-          provider,
+          provider: { ...provider, qualityProfile },
           warning,
           domain,
+          qualityProfile,
         });
       }
     }
@@ -161,6 +281,44 @@ export async function GET() {
       }
     }
 
+    for (const issue of issues) {
+      const metadata = issue.metadata && typeof issue.metadata === "object"
+        ? issue.metadata as Record<string, unknown>
+        : {};
+      const sourceProviderName =
+        typeof metadata.providerName === "string" && metadata.providerName.trim()
+          ? metadata.providerName.trim()
+          : issue.provider?.name || issue.customProvider?.name || "Unknown provider";
+      const category =
+        typeof metadata.category === "string" && metadata.category.trim()
+          ? metadata.category.trim()
+          : issue.provider?.category || issue.customProvider?.category || "Unknown category";
+      const queueKey = issue.issueType === "SOURCE_PROVIDER_MISSING" ? "coverageGap" : "sourceValidation";
+
+      queues[queueKey].push({
+        issue,
+        provider: {
+          id: issue.provider?.id || issue.customProvider?.id || issue.id,
+          name: sourceProviderName,
+          category,
+          scope: typeof metadata.source === "string" ? metadata.source : "Source-backed",
+          website: typeof metadata.evidenceUrl === "string" ? metadata.evidenceUrl : null,
+        },
+        warning: {
+          code: issue.issueType,
+          label: issue.title,
+          message: issue.description || "Source-backed provider data needs admin review.",
+        },
+        metadata: {
+          ...metadata,
+          suggestedAction: typeof metadata.suggestedAction === "string" ? metadata.suggestedAction : sourceGapAction(metadata),
+          fieldsToCollect: metadataStringList(metadata.fieldsToCollect).length > 0
+            ? metadataStringList(metadata.fieldsToCollect)
+            : sourceGapFieldsToCollect(metadata),
+        },
+      });
+    }
+
     queues.userCreatedProviderReview.sort((a, b) => {
       const aPriority = CUSTOM_REVIEW_PRIORITY[a.provider.adminReviewStatus] ?? 99;
       const bPriority = CUSTOM_REVIEW_PRIORITY[b.provider.adminReviewStatus] ?? 99;
@@ -178,6 +336,7 @@ export async function GET() {
       queues,
       issues,
       summary,
+      auditReport: buildAuditReport({ queues, issues }),
       metadata: {
         providerDataTrust: "listed_unverified",
         noOfficialVerificationWorkflow: true,

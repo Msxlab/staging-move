@@ -249,18 +249,23 @@ export default function ReportsPage() {
                   Object.entries(data.dailyUsers).map(([date, count]) => {
                     const max = Math.max(...Object.values(data.dailyUsers), 1);
                     return (
-                      <div key={date} className="flex-1 group relative">
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-border rounded px-1.5 py-0.5 text-[9px] text-foreground whitespace-nowrap z-10">
+                      <button
+                        key={date}
+                        type="button"
+                        aria-label={`${date}: ${count} registrations`}
+                        className="group relative flex h-full flex-1 items-end appearance-none bg-transparent p-0"
+                      >
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block group-focus:block bg-card border border-border rounded px-1.5 py-0.5 text-[9px] text-foreground whitespace-nowrap z-10">
                           {date}: {count}
                         </div>
                         <div
-                          className="w-full bg-tone-sky-bg rounded-t hover:bg-tone-sky-fg"
+                          className="w-full bg-tone-sky-bg rounded-t group-hover:bg-tone-sky-fg group-focus:bg-tone-sky-fg"
                           style={{
                             height: `${(count / max) * 100}%`,
                             minHeight: "2px",
                           }}
                         />
-                      </div>
+                      </button>
                     );
                   })
                 )}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Search,
   Sparkles,
@@ -16,6 +17,7 @@ import {
   X,
   Scale,
   Star,
+  ArrowRight,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
@@ -97,6 +99,46 @@ interface RecommendationsResponse {
   region?: { city: string | null; state: string | null; label: string | null };
   /** Top-N region-relevant providers per pending CRITICAL/IMPORTANT category. */
   regionGroups?: Array<{ category: string; label: string; tier: UrgencyTier; providers: ScoredProvider[] }>;
+  recommendationGuide?: {
+    summary?: string | null;
+    completion?: {
+      score: number;
+      completedCritical: number;
+      missingCritical: number;
+      missingLabels: string[];
+      nextBestCategory: string | null;
+    } | null;
+    decisionModel?: {
+      title: string;
+      factors: string[];
+      learningSignals: string[];
+      coverageWarnings: string[];
+    } | null;
+    lanes?: Array<{
+      key: string;
+      title: string;
+      description?: string | null;
+      providers?: ScoredProvider[] | null;
+    }> | null;
+    setupPlan?: {
+      sections?: Array<{
+        key: string;
+        title: string;
+        description?: string | null;
+        providerCount?: number | null;
+        categories?: Array<{
+          category: string;
+          label: string;
+          reason?: string | null;
+          providerId?: string | null;
+          providerName?: string | null;
+        }> | null;
+      }> | null;
+      primaryNextCategory?: string | null;
+      primaryNextLabel?: string | null;
+      totalOpenCategories?: number | null;
+    } | null;
+  } | null;
   meta?: {
     state?: string;
     currentPhase?: number;
@@ -186,6 +228,8 @@ export function ProvidersClient({
   initialZip: string | null;
   initialAddressId: string | null;
 }) {
+  const tp = useTranslations("providers");
+  const ts = useTranslations("services");
   const [providers, setProviders] = useState<ProviderItem[]>(initialProviders);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -451,6 +495,16 @@ export function ProvidersClient({
     search,
     hasCategoryFilter: Boolean(categoryFilter),
   });
+  const setupLane = recs?.recommendationGuide?.lanes?.find((lane) => lane.key === "setup_first");
+  const setupLaneProviders = (setupLane?.providers || []).slice(0, 4);
+  const setupLaneParams = new URLSearchParams();
+  if (selectedAddressId) setupLaneParams.set("addressId", selectedAddressId);
+  if (setupLaneProviders.length > 0) setupLaneParams.set("providerIds", setupLaneProviders.map((provider) => provider.id).join(","));
+  if (setupLaneProviders[0]?.category || recs?.recommendationGuide?.completion?.nextBestCategory) {
+    setupLaneParams.set("category", setupLaneProviders[0]?.category || recs?.recommendationGuide?.completion?.nextBestCategory || "");
+  }
+  setupLaneParams.set("guide", "providers_smart_plan");
+  const setupLaneHref = `/services/new?${setupLaneParams.toString()}`;
 
   const onAddressChange = (addressId: string) => {
     const match = addresses.find((a) => a.id === addressId) || null;
@@ -469,9 +523,9 @@ export function ProvidersClient({
       {/* Header */}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>Providers</em></h1>
+          <h1 className="h1 text-2xl md:text-3xl text-foreground"><em>{tp("title")}</em></h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
+            {tp("subtitle")}
           </p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-2">
@@ -505,12 +559,91 @@ export function ProvidersClient({
       <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 flex gap-3">
         <AlertTriangle className="h-4 w-4 text-tone-honey-fg dark:text-tone-honey-fg shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
+          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">{ts("listedProvidersWarningTitle")}</p>
           <p className="text-[11px] text-tone-honey-fg/80 dark:text-tone-honey-fg/75 mt-1 leading-relaxed">
-            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding this provider creates a LocateFlow service record; it does not update your address with the provider.
+            {ts("listedProvidersWarningBody")}
           </p>
         </div>
       </div>
+
+      {recs?.recommendationGuide && (
+        <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Sparkles className="h-4 w-4 text-tone-orange-fg" />
+                <h2 className="text-sm font-semibold text-foreground">Smart setup plan</h2>
+                {recs.recommendationGuide.completion ? (
+                  <span className="rounded-full border border-tone-orange-br bg-background px-2 py-0.5 text-[10px] font-semibold text-tone-orange-fg">
+                    {recs.recommendationGuide.completion.score}% ready
+                  </span>
+                ) : null}
+                {recs.recommendationGuide.completion?.missingCritical ? (
+                  <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                    {recs.recommendationGuide.completion.missingCritical} gaps
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+                {recs.recommendationGuide.summary}
+              </p>
+              {recs.recommendationGuide.decisionModel?.learningSignals?.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {recs.recommendationGuide.decisionModel.learningSignals.slice(0, 4).map((signal) => (
+                    <span key={signal} className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground">
+                      {signal}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {recs.recommendationGuide.setupPlan?.sections?.length ? (
+                <div className="mt-4 grid gap-2 md:grid-cols-3">
+                  {recs.recommendationGuide.setupPlan.sections.slice(0, 3).map((section) => (
+                    <div key={section.key} className="rounded-xl border border-border bg-background/70 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-xs font-semibold text-foreground">{section.title}</p>
+                        {typeof section.providerCount === "number" ? (
+                          <span className="font-mono text-[10px] font-semibold text-primary">{section.providerCount}</span>
+                        ) : null}
+                      </div>
+                      {section.description ? (
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                          {section.description}
+                        </p>
+                      ) : null}
+                      {section.categories?.length ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {section.categories.slice(0, 3).map((item) => (
+                            <span key={item.category} className="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              {item.label}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {setupLaneProviders.length > 0 && (
+              <Link href={setupLaneHref} className="shrink-0">
+                <button className="inline-flex items-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                  Add setup picks <ArrowRight className="h-4 w-4" />
+                </button>
+              </Link>
+            )}
+          </div>
+          {recs.recommendationGuide.decisionModel?.factors?.length ? (
+            <div className="mt-4 grid gap-2 md:grid-cols-3">
+              {recs.recommendationGuide.decisionModel.factors.slice(0, 3).map((factor) => (
+                <div key={factor} className="rounded-xl border border-border bg-foreground/[0.03] p-3 text-[11px] leading-relaxed text-muted-foreground">
+                  {factor}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Recommended for you */}
       {highlightProviders.length > 0 && (
@@ -602,7 +735,7 @@ export function ProvidersClient({
         <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" />
         <input
           type="text"
-          placeholder="Search listed providers, tags, or descriptions..."
+          placeholder={tp("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-tone-orange-br"
@@ -630,7 +763,7 @@ export function ProvidersClient({
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            All · {providers.length}
+            {ts("filterGroups.all")} · {providers.length}
           </button>
           {shortlist.length > 0 && (
             <button
@@ -668,7 +801,7 @@ export function ProvidersClient({
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
+          <Loader2 className="h-4 w-4 animate-spin" /> {ts("loadingProviders")}
         </div>
       ) : loadError ? (
         <EmptyState
@@ -780,7 +913,7 @@ export function ProvidersClient({
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
                 )}
                 <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
-                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
+                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} {ts("manualTracking")}.
                 </p>
                 <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (

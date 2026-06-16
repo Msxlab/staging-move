@@ -158,8 +158,9 @@ export function AffiliateConversionsClient() {
       ) : rows.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No conversions in this view.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <>
+        <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-2 py-2">Provider</th>
@@ -208,6 +209,45 @@ export function AffiliateConversionsClient() {
             </tbody>
           </table>
         </div>
+        <div className="space-y-2.5 sm:hidden">
+          {rows.map((c) => (
+            <div key={c.id} className="rounded-xl border border-border bg-card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{c.providerName}</p>
+                  <p className="text-xs text-muted-foreground">{c.network}</p>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(c.status)}`}>{c.status}</span>
+              </div>
+              <p className="mt-2 text-sm font-medium tabular-nums text-foreground">{fmtUsd(c.amountCents, c.currency)}</p>
+              {(c.status === "PENDING" || c.status === "APPROVED") && (
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {c.status === "PENDING" && (
+                    <>
+                      <button onClick={() => start(c.id, "APPROVED")} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-sky-500/40 px-3 py-2 text-xs font-medium text-sky-600 hover:bg-sky-500/10">
+                        <Check className="h-3.5 w-3.5" /> Approve
+                      </button>
+                      <button onClick={() => start(c.id, "REJECTED")} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
+                        <X className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    </>
+                  )}
+                  {c.status === "APPROVED" && (
+                    <>
+                      <button onClick={() => start(c.id, "PAID")} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10">
+                        <BadgeDollarSign className="h-3.5 w-3.5" /> Mark paid
+                      </button>
+                      <button onClick={() => start(c.id, "REJECTED")} className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
+                        <X className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        </>
       )}
 
       <PasswordConfirmModal

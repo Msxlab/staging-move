@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
+import { getAddressAutocompleteSelectionError } from "@/lib/address-autocomplete-selection";
 import { toast } from "sonner";
 
 export default function EditAddressPage() {
@@ -170,6 +171,8 @@ export default function EditAddressPage() {
               required
               onValueChange={(value) => update("street", value)}
               onSelect={handleAutocompleteSelect}
+              validateSelection={(result) => getAddressAutocompleteSelectionError(form, result)}
+              onSelectionRejected={(message) => setError(message)}
             />
             <div className="space-y-2">
               <Label>Street Address 2</Label>

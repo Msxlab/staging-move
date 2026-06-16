@@ -1,6 +1,6 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-31T19:23:57.050Z
+Generated: 2026-06-14T21:51:28.464Z
 
 - newly added: 301
 - already present: 3
@@ -65,7 +65,7 @@ Generated: 2026-05-31T19:23:57.050Z
 - North Texas Tollway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.ntta.org
 - UDOT Express Pass | TRANSPORTATION_TOLL | polygon | https://www.expresspass.utah.gov/
 - Green Mountain Transit | TRANSPORTATION_TRANSIT | zip_prefix | https://ridegmt.com
-- E-ZPass Virginia | TRANSPORTATION_TOLL | state | https://www.ezpassva.com/
+- E-ZPass Virginia | TRANSPORTATION_TOLL | live_address | https://www.ezpassva.com/
 - Old Dominion Power | UTILITY_ELECTRIC | live_address | https://lge-ku.com/odp
 - Northern Virginia Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.novec.com/Customer_Services/Apply-for-Service.cfm
 - Rappahannock Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.myrec.coop/startstop-service

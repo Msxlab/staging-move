@@ -473,8 +473,9 @@ export default function SponsoredClient({
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+          <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">{t("table.target")}</th>
@@ -559,6 +560,61 @@ export default function SponsoredClient({
               </tbody>
             </table>
           </div>
+          <div className="space-y-2.5 sm:hidden">
+            {placements.map((placement) => {
+              const status = placementStatus(placement, now);
+              return (
+                <div key={placement.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {placement.target?.name || <span className="text-destructive">{t("table.orphanTarget")}</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t(`kind.${placement.kind}`)}
+                        {placement.target?.detail ? ` · ${placement.target.detail}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleActive(placement)}
+                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_PILL_CLASS[status]}`}
+                      title={placement.active ? t("table.deactivateHint") : t("table.activateHint")}
+                    >
+                      {t(`status.${status}`)}
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-foreground">
+                      <BadgeDollarSign className="h-3 w-3" aria-hidden="true" /> {placement.label}
+                    </span>
+                    <span>
+                      {placement.stateScope || t("table.allStates")}
+                      {placement.categoryScope ? ` · ${placement.categoryScope}` : ""}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 font-mono text-xs text-muted-foreground">
+                    {new Date(placement.startsAt).toLocaleDateString()} → {new Date(placement.endsAt).toLocaleDateString()}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <div className="flex gap-3 font-mono text-xs tabular-nums text-muted-foreground">
+                      <span>{placement.impressions.toLocaleString()}↑</span>
+                      <span>{placement.clicks.toLocaleString()}↗</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => startEdit(placement)} aria-label={t("table.edit")} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground">
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => requestDelete(placement)} aria-label={t("table.delete")} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          </>
         )}
         {total > PAGE_SIZE ? (
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">

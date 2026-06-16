@@ -7,12 +7,92 @@ import {
   Lock, Fingerprint, QrCode, CheckCircle2, Monitor, Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale } from "next-intl";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition";
+
+const PRIVACY_COPY = {
+  en: {
+    back: "Back",
+    title: "Privacy & Security",
+    subtitle: "Manage passwords, sessions, and data",
+    accountAccess: "Account Access",
+    loadingSecurity: "Loading account security...",
+    securityLoadFailed: "Account security state could not be loaded. Refresh and try again.",
+    email: "Email",
+    verified: "Verified",
+    needsVerification: "Needs verification",
+    password: "Password",
+    enabled: "Enabled",
+    notSet: "Not set",
+    mfa: "MFA",
+    off: "Off",
+    linkedMethods: "Linked sign-in methods",
+    notEnabled: "not enabled",
+    oauthPasswordHint: "This account can sign in through linked OAuth, but password and MFA management require setting a password first.",
+    loginSessions: "Login sessions",
+    activeSessions: (count: number) => `${count} active session(s)`,
+    revokeOtherSessions: "Revoke other sessions",
+    noSessions: "No authenticated sessions are currently recorded.",
+    unknownBrowser: "Unknown browser",
+    current: "Current",
+    revoked: "Revoked",
+    noIp: "No IP",
+    lastActive: "Last active",
+    revoke: "Revoke",
+    dataPrivacy: "Data Privacy",
+    downloadData: "Download My Data",
+    exportData: "Export supported account data",
+    export: "Export",
+    dangerZone: "Danger Zone",
+    deleteAccount: "Delete Account",
+    deleteBody: "Permanently delete all data. Cannot be undone.",
+  },
+  es: {
+    back: "Volver",
+    title: "Privacidad y seguridad",
+    subtitle: "Administra contrasenas, sesiones y datos",
+    accountAccess: "Acceso de cuenta",
+    loadingSecurity: "Cargando seguridad de la cuenta...",
+    securityLoadFailed: "No se pudo cargar el estado de seguridad. Actualiza e intenta de nuevo.",
+    email: "Email",
+    verified: "Verificado",
+    needsVerification: "Requiere verificacion",
+    password: "Contrasena",
+    enabled: "Activa",
+    notSet: "No configurada",
+    mfa: "MFA",
+    off: "Desactivado",
+    linkedMethods: "Metodos de inicio vinculados",
+    notEnabled: "no activado",
+    oauthPasswordHint: "Esta cuenta puede iniciar sesion con OAuth vinculado, pero para administrar password y MFA primero debe configurar una contrasena.",
+    loginSessions: "Sesiones de login",
+    activeSessions: (count: number) => `${count} sesion(es) activa(s)`,
+    revokeOtherSessions: "Revocar otras sesiones",
+    noSessions: "No hay sesiones autenticadas registradas.",
+    unknownBrowser: "Navegador desconocido",
+    current: "Actual",
+    revoked: "Revocada",
+    noIp: "Sin IP",
+    lastActive: "Ultima actividad",
+    revoke: "Revocar",
+    dataPrivacy: "Privacidad de datos",
+    downloadData: "Descargar mis datos",
+    exportData: "Exportar datos soportados de la cuenta",
+    export: "Exportar",
+    dangerZone: "Zona de riesgo",
+    deleteAccount: "Eliminar cuenta",
+    deleteBody: "Elimina todos los datos permanentemente. No se puede deshacer.",
+  },
+} as const;
+
+function copyForLocale(locale: string) {
+  return locale.toLowerCase().startsWith("es") ? PRIVACY_COPY.es : PRIVACY_COPY.en;
+}
 
 interface AccountSecurityState {
   account: {
@@ -49,6 +129,8 @@ interface AccountSecurityState {
 }
 
 export default function PrivacyPage() {
+  const locale = useLocale();
+  const copy = copyForLocale(locale);
   const { user, loading, refresh } = useCurrentUser();
   const [securityState, setSecurityState] = useState<AccountSecurityState | null>(null);
   const [securityLoading, setSecurityLoading] = useState(true);
@@ -292,8 +374,8 @@ export default function PrivacyPage() {
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Privacy & Security</h1>
-          <p className="text-sm text-muted-foreground">Manage passwords, sessions, and data</p>
+          <h1 className="text-2xl font-bold text-foreground">{copy.title}</h1>
+          <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
         </div>
       </div>
 
@@ -301,39 +383,39 @@ export default function PrivacyPage() {
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-tone-orange-fg" />
-          <h2 className="text-sm font-semibold text-foreground">Account Access</h2>
+          <h2 className="text-sm font-semibold text-foreground">{copy.accountAccess}</h2>
         </div>
         <div className="px-5 pb-5 space-y-4">
           {securityLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading account security...
+              <Loader2 className="h-4 w-4 animate-spin" /> {copy.loadingSecurity}
             </div>
           ) : !securityState ? (
             <div className="rounded-xl border border-destructive bg-destructive/5 p-3 text-sm text-destructive">
-              Account security state could not be loaded. Refresh and try again.
+              {copy.securityLoadFailed}
             </div>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-3">
                 <SecuritySummaryCard
-                  label="Email"
-                  value={securityState.account.emailVerified ? "Verified" : "Needs verification"}
+                  label={copy.email}
+                  value={securityState.account.emailVerified ? copy.verified : copy.needsVerification}
                   tone={securityState.account.emailVerified ? "ok" : "warn"}
                 />
                 <SecuritySummaryCard
-                  label="Password"
-                  value={hasPasswordLogin ? "Enabled" : "Not set"}
+                  label={copy.password}
+                  value={hasPasswordLogin ? copy.enabled : copy.notSet}
                   tone={hasPasswordLogin ? "ok" : "warn"}
                 />
                 <SecuritySummaryCard
-                  label="MFA"
-                  value={twoFaEnabled ? "Enabled" : "Off"}
+                  label={copy.mfa}
+                  value={twoFaEnabled ? copy.enabled : copy.off}
                   tone={twoFaEnabled ? "ok" : "neutral"}
                 />
               </div>
 
               <div className="rounded-xl border border-border bg-black/20 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Linked sign-in methods</p>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{copy.linkedMethods}</p>
                 <div className="flex flex-wrap gap-2">
                   {securityState.linkedMethods.map((method) => (
                     <span
@@ -344,13 +426,13 @@ export default function PrivacyPage() {
                           : "bg-foreground/5 text-foreground/35"
                       }`}
                     >
-                      {method.label}{method.enabled ? "" : " not enabled"}
+                      {method.label}{method.enabled ? "" : ` ${copy.notEnabled}`}
                     </span>
                   ))}
                 </div>
                 {!hasPasswordLogin && (
                   <p className="mt-3 text-xs text-tone-honey-fg/70">
-                    This account can sign in through linked OAuth, but password and MFA management require setting a password first.
+                    {copy.oauthPasswordHint}
                   </p>
                 )}
               </div>
@@ -358,20 +440,20 @@ export default function PrivacyPage() {
               <div className="rounded-xl border border-border bg-black/20 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Login sessions</p>
-                    <p className="mt-1 text-xs text-foreground/40">{activeSessions.length} active session(s)</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{copy.loginSessions}</p>
+                    <p className="mt-1 text-xs text-foreground/40">{copy.activeSessions(activeSessions.length)}</p>
                   </div>
                   <button
                     onClick={handleRevokeOtherSessions}
                     disabled={securityBusy || otherActiveSessions.length === 0}
                     className="rounded-xl border border-destructive px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
                   >
-                    Revoke other sessions
+                    {copy.revokeOtherSessions}
                   </button>
                 </div>
                 <div className="space-y-2">
                   {securityState.sessions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No authenticated sessions are currently recorded.</p>
+                    <p className="text-sm text-muted-foreground">{copy.noSessions}</p>
                   ) : (
                     securityState.sessions.slice(0, 6).map((session) => (
                       <div key={session.id} className="flex items-start justify-between gap-3 rounded-xl border border-border bg-foreground/[0.03] p-3">
@@ -383,13 +465,13 @@ export default function PrivacyPage() {
                               <Monitor className="h-4 w-4 text-foreground/35" />
                             )}
                             <p className="truncate text-sm font-medium text-foreground/80">
-                              {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}
+                              {session.browser || copy.unknownBrowser}{session.os ? ` / ${session.os}` : ""}
                             </p>
-                            {session.current && <span className="rounded-full bg-tone-orange-bg px-2 py-0.5 text-[10px] text-tone-orange-fg">Current</span>}
-                            {!session.isActive && <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/35">Revoked</span>}
+                            {session.current && <span className="rounded-full bg-tone-orange-bg px-2 py-0.5 text-[10px] text-tone-orange-fg">{copy.current}</span>}
+                            {!session.isActive && <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/35">{copy.revoked}</span>}
                           </div>
                           <p className="mt-1 text-xs text-foreground/35">
-                            {session.ipAddress || "No IP"} · Last active {new Date(session.lastActivity).toLocaleString()}
+                            {session.ipAddress || copy.noIp} · {copy.lastActive} {new Date(session.lastActivity).toLocaleString()}
                           </p>
                         </div>
                         {session.isActive && (
@@ -398,7 +480,7 @@ export default function PrivacyPage() {
                             disabled={securityBusy}
                             className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground/45 hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
                           >
-                            Revoke
+                            {copy.revoke}
                           </button>
                         )}
                       </div>
@@ -620,17 +702,17 @@ export default function PrivacyPage() {
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-tone-emerald-fg" />
-          <h2 className="text-sm font-semibold text-foreground">Data Privacy</h2>
+          <h2 className="text-sm font-semibold text-foreground">{copy.dataPrivacy}</h2>
         </div>
         <div className="px-5 pb-5 space-y-3">
           <div className="flex items-center justify-between p-3 rounded-xl bg-foreground/[0.02] border border-border">
             <div>
-              <p className="text-sm text-foreground/80">Download My Data</p>
-              <p className="text-[11px] text-foreground/40">Export supported account data</p>
+              <p className="text-sm text-foreground/80">{copy.downloadData}</p>
+              <p className="text-[11px] text-foreground/40">{copy.exportData}</p>
             </div>
             <Link href="/settings/export">
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
-                <Download className="h-3 w-3" />Export
+                <Download className="h-3 w-3" />{copy.export}
               </button>
             </Link>
           </div>
@@ -641,19 +723,19 @@ export default function PrivacyPage() {
       <div className="rounded-2xl border border-destructive bg-destructive/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Trash2 className="h-4 w-4 text-destructive" />
-          <h2 className="text-sm font-semibold text-destructive">Danger Zone</h2>
+          <h2 className="text-sm font-semibold text-destructive">{copy.dangerZone}</h2>
         </div>
         <div className="px-5 pb-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground/80">Delete Account</p>
-              <p className="text-xs text-foreground/40">Permanently delete all data. Cannot be undone.</p>
+              <p className="text-sm font-medium text-foreground/80">{copy.deleteAccount}</p>
+              <p className="text-xs text-foreground/40">{copy.deleteBody}</p>
             </div>
             <button
               onClick={() => setDeleteOpen(true)}
               className="px-3 py-1.5 rounded-xl bg-destructive/10 border border-destructive text-destructive text-xs font-medium hover:bg-destructive transition"
             >
-              Delete Account
+              {copy.deleteAccount}
             </button>
           </div>
         </div>

@@ -48,6 +48,15 @@ interface OverviewData {
   categories: CategoryRow[];
   thinStates: Array<{ state: string; stateProviderCount: number }>;
   thinCategories: CategoryRow[];
+  priorityGaps: Array<{
+    state: string;
+    category: string;
+    stateProviderCount: number;
+    statesCovered: number;
+    statesMissing: number;
+    priorityScore: number;
+    reason: string;
+  }>;
 }
 
 export default function CoverageOverviewPage() {
@@ -80,6 +89,11 @@ export default function CoverageOverviewPage() {
     // Thinnest first so gaps float to the top.
     return [...rows].sort((a, b) => a.stateProviderCount - b.stateProviderCount);
   }, [data, search]);
+
+  const coverageScore = data
+    ? Math.round((data.summary.fullyCoveredCategoryCount / Math.max(data.summary.observedCategoryCount, 1)) * 100)
+    : 0;
+  const topGap = data?.priorityGaps?.[0] || null;
 
   return (
     <div className="space-y-5">
@@ -124,6 +138,60 @@ export default function CoverageOverviewPage() {
                 <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Operator cockpit</p>
+                <div className="mt-3 flex items-end gap-3">
+                  <p className="text-4xl font-semibold text-foreground">{coverageScore}%</p>
+                  <p className="pb-1 text-sm text-muted-foreground">category coverage completeness</p>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${coverageScore}%` }} />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
+                    <p className="font-semibold">{data.priorityGaps.length}</p>
+                    <p className="mt-0.5 opacity-80">priority gaps queued</p>
+                  </div>
+                  <div className="rounded-xl border border-tone-sky-br bg-tone-sky-bg p-3 text-tone-sky-fg">
+                    <p className="font-semibold">{data.summary.thinStateCount}</p>
+                    <p className="mt-0.5 opacity-80">thin states</p>
+                  </div>
+                </div>
+                {topGap ? (
+                  <div className="mt-4 rounded-xl border border-border bg-background p-3">
+                    <p className="text-xs font-medium text-muted-foreground">Next best fill</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {topGap.state} · {getCategoryLabel(topGap.category)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{topGap.reason}</p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                {(data.priorityGaps || []).slice(0, 8).map((gap) => (
+                  <div key={`${gap.state}-${gap.category}`} className="rounded-xl border border-border bg-background p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                          {gap.state} · {getCategoryLabel(gap.category)}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {gap.stateProviderCount} state providers · category in {gap.statesCovered}/{data.summary.totalStates} states
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                        {gap.priorityScore}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Gap callouts */}

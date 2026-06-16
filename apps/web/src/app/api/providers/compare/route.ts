@@ -55,6 +55,12 @@ type CompareProviderRow = {
   userCount: number;
   affiliateActive: boolean;
   fccServiceable?: boolean;
+  fccProviderId?: string | null;
+  fccMaxDownloadMbps?: number | null;
+  fccMaxUploadMbps?: number | null;
+  fccTechnologyCodes?: number[];
+  fccTechnologyLabel?: string;
+  fccQualityBand?: string;
   utilityServiceable?: boolean;
   coverages: Array<{ state: string | null; zipPrefix: string | null; zipExact: string | null }>;
 };
@@ -217,6 +223,17 @@ export async function GET(req: NextRequest) {
         popularityRank: popularityRank.get(p.id) ?? null,
         userCount: p.userCount || 0,
         fccServiceable: p.fccServiceable === true,
+        internetServiceability: p.category === "UTILITY_INTERNET" && p.fccServiceable === true
+          ? {
+              source: "FCC_BDC",
+              providerId: p.fccProviderId ?? null,
+              maxDownloadMbps: p.fccMaxDownloadMbps ?? null,
+              maxUploadMbps: p.fccMaxUploadMbps ?? null,
+              technologyCodes: p.fccTechnologyCodes ?? [],
+              technology: p.fccTechnologyLabel ?? "unknown",
+              qualityBand: p.fccQualityBand ?? "unknown",
+            }
+          : null,
         utilityServiceable: p.utilityServiceable === true,
         // "Official link" = the provider exposes an outbound affiliate/official
         // link we surface; otherwise it's a directory listing only.
