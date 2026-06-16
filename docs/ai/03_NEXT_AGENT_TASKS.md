@@ -13,10 +13,13 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-132506-dokploy-migration-live-prep]]
-- Next step: human operator enters Dokploy env values from a secure source
-  without exposing raw secrets to Codex/chat, then reports only missing key names
-  from the presence-only audit.
+  [[handoffs/2026-06-16-1524-dokploy-db-rehearsal]]
+- Next step: prepare the Dokploy-side final restore path without switching DNS.
+  The DigitalOcean source DB dump/restore rehearsal succeeded with matching
+  count-only checks, including `RuntimeConfigEntry` and `ServiceProvider`.
+- Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
+  be paused, final dump can be taken, final restore can be counted, health
+  checks pass, and DNS/cron can be moved in that order.
 
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 

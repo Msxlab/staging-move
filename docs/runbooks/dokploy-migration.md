@@ -110,6 +110,7 @@ mysqldump \
   --triggers \
   --events \
   --hex-blob \
+  --set-gtid-purged=OFF \
   --default-character-set=utf8mb4 \
   "$DO_DB_NAME" \
   > locateflow-rehearsal.sql
@@ -134,17 +135,22 @@ docker compose --env-file .env -f docker-compose.dokploy.yml run --rm migrate \
 
 Compare source and target:
 
-```sql
-SELECT COUNT(*) AS migrations FROM _prisma_migrations;
-SELECT COUNT(*) AS runtime_config_entries FROM RuntimeConfigEntry;
-SELECT COUNT(*) AS active_runtime_config_entries FROM RuntimeConfigEntry WHERE isActive = 1;
-SELECT COUNT(*) AS users FROM User;
-SELECT COUNT(*) AS admin_users FROM AdminUser;
-SELECT COUNT(*) AS addresses FROM Address;
-SELECT COUNT(*) AS services FROM Service;
-SELECT COUNT(*) AS move_tasks FROM MoveTask;
-SELECT COUNT(*) AS subscriptions FROM Subscription;
+```bash
+mysql --host="$DO_DB_HOST" --port="$DO_DB_PORT" --user="$DO_DB_USER" \
+  --password --database="$DO_DB_NAME" \
+  < scripts/dokploy-db-counts.sql \
+  > source-counts.txt
+
+docker compose --env-file .env -f docker-compose.dokploy.yml exec -T mysql \
+  mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" \
+  < scripts/dokploy-db-counts.sql \
+  > target-counts.txt
+
+diff -u source-counts.txt target-counts.txt
 ```
+
+`scripts/dokploy-db-counts.sql` prints counts only. It does not print customer
+rows, secrets, addresses, emails, tokens, or runtime config values.
 
 Then start the app stack:
 
