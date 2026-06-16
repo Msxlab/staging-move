@@ -13,6 +13,7 @@ function installBrowser() {
   const listeners: Record<string, unknown> = {};
   const windowMock = {
     dataLayer: [] as unknown[],
+    location: { pathname: "/test" },
     addEventListener: vi.fn((event: string, handler: unknown) => {
       listeners[event] = handler;
     }),
@@ -38,6 +39,7 @@ function installBrowser() {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.resetModules();
@@ -45,14 +47,16 @@ afterEach(() => {
 });
 
 describe("Google analytics wrapper", () => {
-  it("is a no-op when analytics is not configured", async () => {
+  it("does not send Google events when analytics is not configured", async () => {
     const { windowMock } = installBrowser();
     consentMock.hasAnalyticsConsent.mockReturnValue(true);
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true })));
     const analytics = await import("./analytics");
 
     analytics.trackEvent("pricing_viewed", { plan: "individual" });
 
     expect(windowMock.dataLayer).toEqual([]);
+    analytics.consentDenied();
   });
 
   it("does not load or send events without consent", async () => {
@@ -68,8 +72,56 @@ describe("Google analytics wrapper", () => {
     expect(windowMock.dataLayer).toEqual([]);
   });
 
+  it("queues consented trackEvent calls to the internal UserEvent pipeline", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    installBrowser();
+    consentMock.hasAnalyticsConsent.mockReturnValue(true);
+    const analytics = await import("./analytics");
+
+    analytics.trackEvent("AI Briefing Viewed", {
+      surface: "dashboard",
+      email: "person@example.com",
+      briefing_state: "fallback",
+    });
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/tracking/event", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events: [
+          {
+            event: "ai_briefing_viewed",
+            page: "/test",
+            metadata: {
+              surface: "dashboard",
+              briefing_state: "fallback",
+            },
+          },
+        ],
+      }),
+    });
+  });
+
+  it("does not emit internal events without analytics consent", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    installBrowser();
+    consentMock.hasAnalyticsConsent.mockReturnValue(false);
+    const analytics = await import("./analytics");
+
+    analytics.trackEvent("ai_briefing_viewed", { surface: "dashboard" });
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("loads GTM after consent and strips sensitive event parameters", async () => {
     vi.stubEnv("NEXT_PUBLIC_GTM_ID", "GTM-TEST");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true })));
     const { windowMock, appendedScripts } = installBrowser();
     consentMock.hasAnalyticsConsent.mockReturnValue(true);
     const analytics = await import("./analytics");
@@ -102,5 +154,6 @@ describe("Google analytics wrapper", () => {
         phone: expect.any(String),
       }),
     );
+    analytics.consentDenied();
   });
 });

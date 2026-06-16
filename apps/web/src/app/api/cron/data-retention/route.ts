@@ -3,7 +3,14 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { processPendingAccountDeletionRequests } from "@/lib/account-deletion";
 import { guardCronRequest } from "@/lib/cron-guard";
-import { LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import {
+  pruneOldUserEvents,
+  resolveUserEventRetentionConfig,
+  USER_EVENT_RETENTION_BATCH_SIZE_KEY,
+  USER_EVENT_RETENTION_DAYS_KEY,
+  USER_EVENT_RETENTION_ENABLED_KEY,
+} from "@/lib/user-event-retention";
 
 /**
  * Data retention cron endpoint.
@@ -20,7 +27,7 @@ async function handleCron(request: NextRequest) {
   if (!guard.ok) return guard.response;
 
   const now = new Date();
-  const results: Record<string, number> = {};
+  const results: Record<string, unknown> = {};
 
   try {
     // Delete UserSession records older than 90 days
@@ -30,15 +37,27 @@ async function handleCron(request: NextRequest) {
     });
     results.userSessions = deletedSessions.count;
 
-    // Delete UserEvent records older than 90 days
-    const eventCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    const deletedEvents = await prisma.userEvent.deleteMany({
-      where: {
-        createdAt: { lt: eventCutoff },
-        event: { notIn: [LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT] },
+    const userEventRetention = await pruneOldUserEvents(
+      prisma.userEvent,
+      resolveUserEventRetentionConfig({
+        retentionDays: await getRuntimeConfigValue(USER_EVENT_RETENTION_DAYS_KEY),
+        enabled: await getRuntimeConfigValue(USER_EVENT_RETENTION_ENABLED_KEY),
+        batchSize: await getRuntimeConfigValue(USER_EVENT_RETENTION_BATCH_SIZE_KEY),
+      }),
+      now,
+    );
+    results.userEvents = userEventRetention.deletedCount;
+    results.userEventRetention = userEventRetention;
+
+    logger.info(
+      userEventRetention.enabled
+        ? "UserEvent retention cleanup completed"
+        : "UserEvent retention dry-run completed",
+      {
+        action: "USER_EVENT_RETENTION",
+        ...userEventRetention,
       },
-    });
-    results.userEvents = deletedEvents.count;
+    );
 
     // Delete RateLimitLog records older than 30 days
     const rateLimitCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

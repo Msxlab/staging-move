@@ -1,15 +1,27 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Sparkles, X, ChevronRight, Lock, ArrowRight } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  buildAiBriefingActionClickedMetadata,
+  buildAiBriefingViewedMetadata,
+  buildUpgradeClickedMetadata,
+  PHASE1_ANALYTICS_EVENTS,
+  UX_AI_BRIEFING_EXPERIENCE_FLAG,
+  type BriefingActionType,
+  type BriefingMode,
+  type BriefingState,
+  type UxAiBriefingExperienceVariant,
+} from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import {
   parseBriefing,
   pickActivePlanId,
@@ -38,7 +50,35 @@ interface MoveBriefingCardProps {
    * keep today's behavior unchanged.
    */
   entitled?: boolean;
+  uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
   onDismiss?: () => void;
+}
+
+function mobilePlatform() {
+  return Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "unknown";
+}
+
+function mobileBriefingTelemetry(input: {
+  entitled: boolean;
+  aiGenerated: boolean;
+  proseCount: number;
+  actionCount: number;
+}): { briefingState: BriefingState; briefingMode: BriefingMode } {
+  if (!input.entitled) return { briefingState: "teaser", briefingMode: "gated_teaser" };
+  if (input.proseCount === 0 && input.actionCount === 0) {
+    return { briefingState: "empty", briefingMode: input.aiGenerated ? "ai_generated" : "rule_based" };
+  }
+  return input.aiGenerated
+    ? { briefingState: "content", briefingMode: "ai_generated" }
+    : { briefingState: "fallback", briefingMode: "rule_based" };
+}
+
+function mobileBriefingActionType(action: ParsedBriefingAction): BriefingActionType {
+  if (action.target.kind === "category") return "service_category";
+  if (action.target.kind === "state_rule") return "state_rule";
+  if (action.target.kind === "plan") return "plan";
+  if (action.target.kind === "services") return "services";
+  return "unknown";
 }
 
 // ── Per-stage "seen" persistence ──────────────────────────────
@@ -75,6 +115,7 @@ export function MoveBriefingCard({
   briefing = "",
   aiGenerated = false,
   entitled = true,
+  uxAiBriefingExperienceVariant = "control",
   onDismiss,
 }: MoveBriefingCardProps) {
   const theme = useAppTheme();
@@ -87,6 +128,7 @@ export function MoveBriefingCard({
   // Visibility gating. `null` while we read AsyncStorage (render nothing yet to
   // avoid a flash, then hide-or-show based on the per-stage / never markers).
   const [visible, setVisible] = useState<boolean | null>(null);
+  const trackedBriefingViewRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -176,10 +218,45 @@ export function MoveBriefingCard({
     };
   }, [wantsPlanRoute, visible]);
   const activePlanId = parsed.planId ?? fetchedPlanId;
+  const telemetry = mobileBriefingTelemetry({
+    entitled,
+    aiGenerated,
+    proseCount: parsed.proseLines.length,
+    actionCount: parsed.actions.length,
+  });
+
+  useEffect(() => {
+    if (visible !== true) return;
+    const key = `${uxAiBriefingExperienceVariant}:${telemetry.briefingState}:${telemetry.briefingMode}`;
+    if (trackedBriefingViewRef.current.has(key)) return;
+    trackedBriefingViewRef.current.add(key);
+    trackEvent(
+      PHASE1_ANALYTICS_EVENTS.AI_BRIEFING_VIEWED,
+      "Dashboard",
+      buildAiBriefingViewedMetadata({
+        briefingState: telemetry.briefingState,
+        briefingMode: telemetry.briefingMode,
+        variant: uxAiBriefingExperienceVariant,
+        platform: mobilePlatform(),
+        surface: "mobile_home",
+      }),
+    );
+  }, [telemetry.briefingMode, telemetry.briefingState, uxAiBriefingExperienceVariant, visible]);
 
   const navigate = useCallback(
     (action: ParsedBriefingAction) => {
       hapticLight();
+      trackEvent(
+        PHASE1_ANALYTICS_EVENTS.AI_BRIEFING_ACTION_CLICKED,
+        "Dashboard",
+        buildAiBriefingActionClickedMetadata({
+          actionType: mobileBriefingActionType(action),
+          briefingMode: telemetry.briefingMode,
+          variant: uxAiBriefingExperienceVariant,
+          platform: mobilePlatform(),
+          surface: "mobile_home",
+        }),
+      );
       const route = resolveBriefingActionRoute(action.target, activePlanId);
       switch (route.pathname) {
         case "/services/new":
@@ -195,13 +272,26 @@ export function MoveBriefingCard({
           break;
       }
     },
-    [router, activePlanId],
+    [router, activePlanId, telemetry.briefingMode, uxAiBriefingExperienceVariant],
   );
 
   const handleUnlock = useCallback(() => {
     hapticLight();
+    trackEvent(
+      PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
+      "Dashboard",
+      buildUpgradeClickedMetadata({
+        upgradeSurface: "ai_briefing",
+        targetPlanTier: "family",
+        featureGate: "ai_briefing",
+        surface: "dashboard",
+        variant: uxAiBriefingExperienceVariant,
+        experimentFlag: UX_AI_BRIEFING_EXPERIENCE_FLAG,
+        platform: mobilePlatform(),
+      }),
+    );
     router.push("/settings/subscription");
-  }, [router]);
+  }, [router, uxAiBriefingExperienceVariant]);
 
   if (visible === null || visible === false) return null;
 

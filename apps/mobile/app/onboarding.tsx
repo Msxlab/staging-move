@@ -67,11 +67,19 @@ import {
   setPendingLegalConsents,
 } from "@/lib/legal";
 import {
+  buildOnboardingTeaserViewedMetadata,
+  buildUpgradeClickedMetadata,
   detectStateZipMismatch,
   generateChecklist,
+  getOnboardingTeaserPrimaryAction,
+  PHASE1_ANALYTICS_EVENTS,
+  resolveUxOnboardingTeaserVariant,
+  shouldShowOnboardingTeaser,
+  UX_ONBOARDING_TEASER_FLAG,
   type UserChecklistProfile,
   type RelocationChecklist,
   type ChecklistStateRuleContext,
+  type UxOnboardingTeaserVariant,
 } from "@locateflow/shared";
 import { MoveTeaserCard } from "@/components/ui/MoveTeaserCard";
 import { LogoBrand } from "@/components/ui/LogoBrand";
@@ -102,6 +110,7 @@ import { coachCopyKeys } from "@/components/ui/ob-coach-state";
 import { computeOnboardingDataQuality } from "@/lib/onboarding-data-quality";
 import { NotificationPrimingCard } from "@/components/onboarding/NotificationPrimingCard";
 import { serviceLimitForPlan } from "@/lib/plan-comparison";
+import { trackEvent } from "@/lib/analytics";
 
 const STEP_KEYS = [
   "onboarding.step_profile",
@@ -240,6 +249,10 @@ export default function OnboardingScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const uxOnboardingTeaserVariant: UxOnboardingTeaserVariant = useMemo(
+    () => resolveUxOnboardingTeaserVariant(process.env.EXPO_PUBLIC_UX_ONBOARDING_TEASER_V1),
+    [],
+  );
   const user = useAuthStore((s) => s.user);
   const planTier = useAuthStore((s) => s.planTier);
   const [step, setStep] = useState(0);
@@ -856,16 +869,24 @@ export default function OnboardingScreen() {
     return true;
   };
 
+  const hasMoveDestinationAndDate = (): boolean =>
+    Boolean(
+      movingForm.city.trim() &&
+        movingForm.state.trim() &&
+        movingForm.zip.trim() &&
+        movingForm.moveDate,
+    );
+
   // FREE PATH: compute the value-first teaser from the entered move details and
   // the shared checklist engine — NO MovingPlan is persisted (contract: free
   // never creates a plan). Every step/reason shown comes from real
   // STATE_DMV_DEADLINES data + the user's own profile, never invented.
-  const buildTeaser = async () => {
+  const buildTeaser = async (): Promise<boolean> => {
     hapticLight();
     if (!validateMoveDestination()) {
       hapticError();
       shake();
-      return;
+      return false;
     }
     setError("");
     setBuildingTeaser(true);
@@ -905,13 +926,24 @@ export default function OnboardingScreen() {
       );
       setTeaserChecklist(cl);
       setTeaserMeta({ fromState, toState, moveDate: movingForm.moveDate });
+      trackEvent(
+        PHASE1_ANALYTICS_EVENTS.ONBOARDING_TEASER_VIEWED,
+        "Onboarding",
+        buildOnboardingTeaserViewedMetadata({
+          planTier: isPremium ? "unknown" : "free",
+          variant: uxOnboardingTeaserVariant,
+          platform: Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "unknown",
+        }),
+      );
       hapticSuccess();
+      return true;
     } catch {
       // The engine is pure + local, so a failure here is unexpected; fall back to
       // the no-dead-end rule by routing the user to the dashboard via skip.
       setError(t("onboarding.error_savePlan"));
       hapticError();
       shake();
+      return false;
     } finally {
       setBuildingTeaser(false);
     }
@@ -956,7 +988,23 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = async (options: { skipTeaser?: boolean } = {}) => {
+    if (!options.skipTeaser && wantsToMove && !isPremium) {
+      return buildTeaser();
+    }
+
+    if (
+      !options.skipTeaser &&
+      wantsToMove &&
+      shouldShowOnboardingTeaser({
+        hasDestinationAndDate: hasMoveDestinationAndDate(),
+        isPremium,
+        variant: uxOnboardingTeaserVariant,
+      })
+    ) {
+      return buildTeaser();
+    }
+
     const planId = await saveMovingPlan();
     if (planId === false) {
       // saveMovingPlan already set the coral error message; mirror the inline
@@ -1003,6 +1051,27 @@ export default function OnboardingScreen() {
       setError(e?.message || t("onboarding.error_completeOnboarding"));
       return false;
     } finally { setSaving(false); }
+  };
+
+  const handleTeaserPrimary = () => {
+    const action = getOnboardingTeaserPrimaryAction({ isPremium });
+    if (action === "create_plan") {
+      return handleComplete({ skipTeaser: true });
+    }
+    trackEvent(
+      PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
+      "Onboarding",
+      buildUpgradeClickedMetadata({
+        upgradeSurface: "onboarding_teaser",
+        targetPlanTier: "individual",
+        featureGate: "onboarding_teaser",
+        surface: "onboarding",
+        variant: uxOnboardingTeaserVariant,
+        experimentFlag: UX_ONBOARDING_TEASER_FLAG,
+        platform: Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "unknown",
+      }),
+    );
+    return completeWithoutPlan("subscription");
   };
 
   const maybeOfferPushSoftPrompt = async () => {
@@ -1962,10 +2031,10 @@ export default function OnboardingScreen() {
                 </View>
               )}
 
-              {/* FREE TEASER: once we've computed the ephemeral preview, show the
-                  value-first teaser card (countdown + top personalized steps +
-                  Unlock CTA) in place of the form. No MovingPlan was persisted. */}
-              {wantsToMove === true && !isPremium && teaserChecklist && teaserMeta && (
+              {/* TEASER: once we've computed the ephemeral preview, show the
+                  value-first teaser card in place of the form. No MovingPlan
+                  was persisted; paid users create it from the next CTA. */}
+              {wantsToMove === true && teaserChecklist && teaserMeta && (
                 <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
                   <MoveTeaserCard
                     checklist={teaserChecklist}
@@ -1973,15 +2042,35 @@ export default function OnboardingScreen() {
                     toState={teaserMeta.toState}
                     moveDate={teaserMeta.moveDate}
                     busy={saving}
-                    onUnlock={() => completeWithoutPlan("subscription")}
+                    onUnlock={handleTeaserPrimary}
+                    ctaLabel={
+                      isPremium
+                        ? t("onboarding.teaser_continuePlan", { defaultValue: "Continue to your plan" })
+                        : undefined
+                    }
+                    ctaAccessibilityLabel={
+                      isPremium
+                        ? t("onboarding.teaser_continuePlanA11y", { defaultValue: "Continue to your moving plan" })
+                        : undefined
+                    }
+                    ctaIcon={isPremium ? "arrow" : "lock"}
+                    footerHint={
+                      isPremium
+                        ? t("onboarding.teaser_continuePlanHint", {
+                            defaultValue: "Create the live moving plan from this preview and keep working from your plan page.",
+                          })
+                        : undefined
+                    }
                   />
-                  <Button
-                    title={t("onboarding.teaser_continueFree", { defaultValue: "Continue with the free plan" })}
-                    onPress={() => completeWithoutPlan("dashboard")}
-                    variant="ghost"
-                    fullWidth
-                    loading={saving}
-                  />
+                  {!isPremium && (
+                    <Button
+                      title={t("onboarding.teaser_continueFree", { defaultValue: "Continue with the free plan" })}
+                      onPress={() => completeWithoutPlan("dashboard")}
+                      variant="ghost"
+                      fullWidth
+                      loading={saving}
+                    />
+                  )}
                   <Button
                     title={t("onboarding.teaser_editMove", { defaultValue: "Edit move details" })}
                     onPress={() => { setTeaserChecklist(null); setTeaserMeta(null); }}
@@ -1990,7 +2079,7 @@ export default function OnboardingScreen() {
                 </View>
               )}
 
-              {wantsToMove === true && !(!isPremium && teaserChecklist) && (
+              {wantsToMove === true && !teaserChecklist && (
                 <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <MapPin size={16} color={theme.colors.primary} />
@@ -2110,12 +2199,24 @@ export default function OnboardingScreen() {
                     <View style={{ flex: 1 }}>
                       {isPremium ? (
                         // Paid user → the unchanged create-the-plan flow.
-                        <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="cta" />
+                        <Button
+                          title={
+                            saving
+                              ? t("common.loading")
+                              : uxOnboardingTeaserVariant === "variant"
+                                ? t("onboarding.teaser_preview", { defaultValue: "See my plan preview" })
+                                : t("moving.newPlan")
+                          }
+                          onPress={() => handleComplete()}
+                          loading={saving}
+                          fullWidth
+                          size="cta"
+                        />
                       ) : (
                         // Free user → compute the value-first teaser (no plan persisted).
                         <Button
                           title={buildingTeaser ? t("common.loading") : t("onboarding.teaser_preview", { defaultValue: "See my plan preview" })}
-                          onPress={buildTeaser}
+                          onPress={() => buildTeaser()}
                           loading={buildingTeaser}
                           fullWidth
                           size="cta"

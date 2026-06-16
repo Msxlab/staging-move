@@ -52,6 +52,10 @@ type Props = {
   busy?: boolean;
   /** Compact variant for the dashboard (slightly tighter spacing). */
   variant?: "onboarding" | "dashboard";
+  ctaLabel?: string;
+  ctaAccessibilityLabel?: string;
+  ctaIcon?: "lock" | "arrow";
+  footerHint?: string;
 };
 
 const MAX_STEPS = 4;
@@ -101,6 +105,10 @@ export function MoveTeaserCard({
   onUnlock,
   busy = false,
   variant = "onboarding",
+  ctaLabel,
+  ctaAccessibilityLabel,
+  ctaIcon = "lock",
+  footerHint,
 }: Props) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -204,10 +212,11 @@ export function MoveTeaserCard({
       {/* Unlock CTA */}
       <View style={styles.unlockWrap}>
         <Text style={styles.unlockHint}>
-          {t("teaser.unlockHint", {
-            defaultValue:
-              "Unlock your full plan: a personalized checklist, deadline countdown, and move tracking.",
-          })}
+          {footerHint ??
+            t("teaser.unlockHint", {
+              defaultValue:
+                "Unlock your full plan: a personalized checklist, deadline countdown, and move tracking.",
+            })}
         </Text>
         <TouchableOpacity
           style={[styles.unlockBtn, busy && styles.unlockBtnDisabled]}
@@ -215,16 +224,19 @@ export function MoveTeaserCard({
           disabled={busy}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={t("teaser.unlockCta", { defaultValue: "Unlock your full move plan with Individual" })}
+          accessibilityLabel={
+            ctaAccessibilityLabel ??
+            t("teaser.unlockCta", { defaultValue: "Unlock your full move plan with Individual" })
+          }
           accessibilityState={{ disabled: busy }}
         >
           {busy ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
-              <Lock size={16} color="#fff" />
+              {ctaIcon === "lock" ? <Lock size={16} color="#fff" /> : null}
               <Text style={styles.unlockBtnText}>
-                {t("teaser.unlockCta", { defaultValue: "Unlock with Individual" })}
+                {ctaLabel ?? t("teaser.unlockCta", { defaultValue: "Unlock with Individual" })}
               </Text>
               <ArrowRight size={16} color="#fff" />
             </>

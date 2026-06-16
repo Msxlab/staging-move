@@ -16,6 +16,8 @@ export * from "./relocation-checklist";
 export * from "./budget-planning";
 export * from "./migration-engine";
 export * from "./runtime-config";
+export * from "./ux-experiments";
+export * from "./phase1-experiment-analytics";
 export * from "./env-catalog";
 export * from "./provider-coverage";
 export * from "./provider-integrity";

@@ -66,6 +66,13 @@ import {
   snapshotRelativeAge,
   type DashboardSnapshot,
 } from "@/lib/dashboard-snapshot";
+import {
+  deriveMobileBriefingState,
+  fallbackMobileBriefingState,
+  getMobileUxAiBriefingExperienceVariant,
+  shouldSkipMobileBriefingForInstallDismissal,
+  type MobileMoveBriefingState,
+} from "@/lib/ai-briefing-experience";
 import { Card } from "@/components/ui/Card";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
@@ -104,11 +111,6 @@ const PUSH_PROMPT_CARD_DISMISSED_KEY = "locateflow.pushPromptCardDismissed";
 // again on this install. The briefing is a one-time welcome surface, not a
 // persistent dashboard widget.
 const BRIEFING_CARD_DISMISSED_KEY = "locateflow.moveBriefingDismissed";
-
-interface MoveBriefingState {
-  briefing: string;
-  aiGenerated: boolean;
-}
 
 // ──────────────────────────────────────────────────────────────────────
 // Aurora "card module" helpers (Edition VII home regroup)
@@ -364,10 +366,12 @@ export default function DashboardScreen() {
   // haven't dismissed the card. `null` = still deciding (render nothing).
   const [showPushPrompt, setShowPushPrompt] = useState<boolean | null>(null);
   const [pushPromptBusy, setPushPromptBusy] = useState(false);
-  // First-run AI move briefing. `null` = not loaded / hidden (the feature gate
-  // is off server-side, the user dismissed it, or the fetch failed). Best-effort
-  // and fully decoupled from the core dashboard payload.
-  const [briefing, setBriefing] = useState<MoveBriefingState | null>(null);
+  // First-run AI move briefing. `null` = not loaded / hidden. Best-effort and
+  // fully decoupled from the core dashboard payload; the v1 UX flag makes
+  // unavailable AI render deterministic fallback/teaser states instead of a
+  // permanent empty slot.
+  const uxAiBriefingExperienceVariant = useMemo(() => getMobileUxAiBriefingExperienceVariant(), []);
+  const [briefing, setBriefing] = useState<MobileMoveBriefingState | null>(null);
   // OFFLINE COLD-START: the last-known snapshot we hydrated the screen from, plus
   // a flag set when the live fetch fails so we keep showing the hydrated data
   // (instead of the error wall) under an "Offline · last updated …" chip. The
@@ -890,43 +894,45 @@ export default function DashboardScreen() {
   }, []);
 
   // First-run AI move briefing. Best-effort, gated, and graceful:
-  //   - Skip entirely once the user has dismissed the card on this install.
-  //   - POST /api/onboarding/briefing returns { configured: false } when the
-  //     server has no ANTHROPIC_API_KEY — in that case we render nothing.
-  //   - Any error (network, timeout, non-2xx) just leaves the card hidden; it
-  //     never blocks or disturbs the rest of the dashboard.
+  //   - Control skips once the user has dismissed the card on this install.
+  //   - The v1 UX experiment keeps the slot occupied with fallback/teaser
+  //     content when configured content is unavailable.
+  //   - Any error (network, timeout, non-2xx) never blocks or disturbs the rest
+  //     of the dashboard.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const dismissed = await AsyncStorage.getItem(BRIEFING_CARD_DISMISSED_KEY);
-        if (cancelled || dismissed === "true") return;
+        if (cancelled || shouldSkipMobileBriefingForInstallDismissal(uxAiBriefingExperienceVariant, dismissed)) return;
         const res = await api.post<{
           configured?: boolean;
-          briefing?: string;
+          entitled?: boolean;
+          upgradeRequired?: unknown;
+          briefing?: unknown;
           aiGenerated?: boolean;
         }>("/api/onboarding/briefing");
         if (cancelled) return;
-        if (res.error || !res.data || res.data.configured === false || !res.data.briefing) {
-          return; // hide gracefully
+        if (res.error) {
+          setBriefing(fallbackMobileBriefingState(uxAiBriefingExperienceVariant));
+          return;
         }
-        setBriefing({
-          briefing: res.data.briefing,
-          aiGenerated: res.data.aiGenerated === true,
-        });
+        setBriefing(deriveMobileBriefingState(res.data, uxAiBriefingExperienceVariant));
       } catch {
-        // Non-blocking: leave the briefing hidden.
+        setBriefing(fallbackMobileBriefingState(uxAiBriefingExperienceVariant));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [uxAiBriefingExperienceVariant]);
 
   const handleDismissBriefing = useCallback(() => {
     setBriefing(null);
-    void AsyncStorage.setItem(BRIEFING_CARD_DISMISSED_KEY, "true").catch(() => {});
-  }, []);
+    if (uxAiBriefingExperienceVariant === "control") {
+      void AsyncStorage.setItem(BRIEFING_CARD_DISMISSED_KEY, "true").catch(() => {});
+    }
+  }, [uxAiBriefingExperienceVariant]);
 
   // MILESTONE CELEBRATION — parity with the old MoveCommandCenter hero: one
   // success haptic when readiness hits 100% or move day arrives. Latched per
@@ -1279,6 +1285,8 @@ export default function DashboardScreen() {
           <MoveBriefingCard
             briefing={briefing.briefing}
             aiGenerated={briefing.aiGenerated}
+            entitled={briefing.entitled}
+            uxAiBriefingExperienceVariant={uxAiBriefingExperienceVariant}
             onDismiss={handleDismissBriefing}
           />
         )}

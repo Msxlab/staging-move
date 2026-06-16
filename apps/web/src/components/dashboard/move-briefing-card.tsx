@@ -1,9 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Sparkles, X, ChevronRight } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
+import {
+  buildAiBriefingActionClickedMetadata,
+  buildAiBriefingViewedMetadata,
+  buildUpgradeClickedMetadata,
+  MOVE_BRIEFING_NOT_ADVICE_COPY,
+  PHASE1_ANALYTICS_EVENTS,
+  UX_AI_BRIEFING_EXPERIENCE_FLAG,
+  type BriefingActionType,
+  type BriefingMode,
+  type BriefingState,
+  type UxAiBriefingExperienceVariant,
+  type UxTrustCopyVariant,
+} from "@locateflow/shared";
 
 /**
  * Web "move briefing" card — parity with the mobile MoveBriefingCard. Calls the
@@ -11,14 +25,32 @@ import { Sparkles, X, ChevronRight } from "lucide-react";
  * plain-English situation summary + the top 3 next actions as deep-linked rows,
  * and recurs once per move stage (dismiss marks the current stage seen).
  *
- * The card is a nice-to-have layered on the deterministic dashboard: it renders
- * nothing when the briefing isn't configured (no ANTHROPIC_API_KEY) or the fetch
- * fails. Self-contained parsing (sentinel + JSON tail) mirrors mobile so it works
- * on a server cache hit too, where `actions` is only present inside `briefing`.
+ * The card is a nice-to-have layered on the deterministic dashboard: control
+ * renders nothing when the briefing isn't configured or the fetch fails, while
+ * the v1 UX experiment renders deterministic fallback content. Self-contained
+ * parsing (sentinel + JSON tail) mirrors mobile so it works on a server cache
+ * hit too, where `actions` is only present inside `briefing`.
  */
 
 const BRIEFING_META_SENTINEL = "<<<LF_BRIEFING_META>>>";
 const SEEN_STAGE_KEY = "locateflow.moveBriefing.seenStage";
+const FALLBACK_STAGE: MoveStage = "no_move";
+
+export const UX_AI_BRIEFING_EXPERIENCE_FALLBACK_BRIEFING = `Your move command center is still ready. Use your next critical actions and move plan to keep address-linked tasks moving.\n${BRIEFING_META_SENTINEL}\n${JSON.stringify({
+  actions: [
+    {
+      title: "Review your move plan",
+      why: "The deterministic checklist works even when AI is unavailable.",
+      target: { kind: "plan" },
+    },
+    {
+      title: "Check tracked services",
+      why: "Keep providers and address-linked obligations in one place.",
+      deeplink: { type: "services" },
+    },
+  ],
+  moveStage: FALLBACK_STAGE,
+})}`;
 
 export type BriefingDeeplink =
   | { type: "category"; category: string }
@@ -136,8 +168,22 @@ export type BriefingFetchState =
   | { kind: "teaser" }
   | { kind: "briefing"; briefing: string; aiGenerated: boolean };
 
-export function deriveBriefingState(json: unknown): BriefingFetchState {
-  if (!json || typeof json !== "object") return { kind: "hidden" };
+export function fallbackBriefingStateForExperience(
+  variant: UxAiBriefingExperienceVariant = "control",
+): BriefingFetchState {
+  if (variant !== "variant") return { kind: "hidden" };
+  return {
+    kind: "briefing",
+    briefing: UX_AI_BRIEFING_EXPERIENCE_FALLBACK_BRIEFING,
+    aiGenerated: false,
+  };
+}
+
+export function deriveBriefingState(
+  json: unknown,
+  variant: UxAiBriefingExperienceVariant = "control",
+): BriefingFetchState {
+  if (!json || typeof json !== "object") return fallbackBriefingStateForExperience(variant);
   const j = json as {
     configured?: unknown;
     entitled?: unknown;
@@ -145,12 +191,25 @@ export function deriveBriefingState(json: unknown): BriefingFetchState {
     briefing?: unknown;
     aiGenerated?: unknown;
   };
-  // configured:false (key absent) hides everything — never tease a feature the
-  // deployment can't serve once the user upgrades.
-  if (j.configured !== true) return { kind: "hidden" };
+  // configured:false (key absent) hides everything in control. Under the v1 UX
+  // flag, the slot stays occupied by the deterministic rule-based fallback.
+  if (j.configured !== true) return fallbackBriefingStateForExperience(variant);
   if (j.entitled === false || j.upgradeRequired === true) return { kind: "teaser" };
-  if (typeof j.briefing !== "string") return { kind: "hidden" };
+  if (typeof j.briefing !== "string") return fallbackBriefingStateForExperience(variant);
   return { kind: "briefing", briefing: j.briefing, aiGenerated: j.aiGenerated === true };
+}
+
+export function shouldShowBriefingForStage(input: {
+  variant?: UxAiBriefingExperienceVariant;
+  moveStage: MoveStage | null;
+  seenStage: string | null | undefined;
+  dismissedStage?: string | null;
+  sessionDismissed?: boolean;
+}): boolean {
+  if (input.sessionDismissed && input.variant !== "variant") return false;
+  if (input.variant === "variant" && input.dismissedStage && input.moveStage === input.dismissedStage) return false;
+  if (input.moveStage && input.seenStage === input.moveStage) return false;
+  return true;
 }
 
 function deeplinkHref(d: BriefingDeeplink): string {
@@ -196,6 +255,36 @@ export function actionHref(action: BriefingAction): string {
   return "/services";
 }
 
+export function briefingTelemetryForState(state: BriefingFetchState): {
+  briefingState: BriefingState;
+  briefingMode: BriefingMode;
+} {
+  if (state.kind === "hidden") return { briefingState: "hidden", briefingMode: "unknown" };
+  if (state.kind === "teaser") return { briefingState: "teaser", briefingMode: "gated_teaser" };
+  const parsed = parseBriefing(state.briefing);
+  if (parsed.proseLines.length === 0 && parsed.actions.length === 0) {
+    return { briefingState: "empty", briefingMode: state.aiGenerated ? "ai_generated" : "rule_based" };
+  }
+  return state.aiGenerated
+    ? { briefingState: "content", briefingMode: "ai_generated" }
+    : { briefingState: "fallback", briefingMode: "rule_based" };
+}
+
+export function briefingActionTelemetryType(action: BriefingAction): BriefingActionType {
+  if (isTarget(action.target)) {
+    if (action.target.kind === "category") return "service_category";
+    if (action.target.kind === "state_rule") return "state_rule";
+    if (action.target.kind === "plan") return "plan";
+  }
+  if (isDeeplink(action.deeplink)) {
+    if (action.deeplink.type === "category") return "service_category";
+    if (action.deeplink.type === "state-rules") return "state_rule";
+    if (action.deeplink.type === "plan") return "plan";
+    if (action.deeplink.type === "services") return "services";
+  }
+  return "unknown";
+}
+
 /**
  * Value-first upgrade teaser for FREE/FREE_TRIAL (GATE-API entitled:false).
  * Keeps the briefing card chrome (sparkle badge, title, dismiss), pitches the
@@ -204,7 +293,13 @@ export function actionHref(action: BriefingAction): string {
  * Visual language mirrors the existing MOVING_PLAN upgrade teaser
  * (move-command-center free hero).
  */
-export function MoveBriefingTeaser({ onDismiss }: { onDismiss?: () => void }) {
+export function MoveBriefingTeaser({
+  onDismiss,
+  uxAiBriefingExperienceVariant = "control",
+}: {
+  onDismiss?: () => void;
+  uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
+}) {
   const td = useTranslations("dashboard");
   return (
     <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-5">
@@ -240,6 +335,19 @@ export function MoveBriefingTeaser({ onDismiss }: { onDismiss?: () => void }) {
       <div className="mt-4">
         <Link
           href="/pricing"
+          onClick={() => {
+            trackEvent(
+              PHASE1_ANALYTICS_EVENTS.UPGRADE_CLICKED,
+              buildUpgradeClickedMetadata({
+                upgradeSurface: "ai_briefing",
+                targetPlanTier: "family",
+                featureGate: "ai_briefing",
+                surface: "dashboard",
+                variant: uxAiBriefingExperienceVariant,
+                experimentFlag: UX_AI_BRIEFING_EXPERIENCE_FLAG,
+              }),
+            );
+          }}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
         >
           <Sparkles className="h-4 w-4" /> {td("briefing_teaser_cta")}
@@ -249,11 +357,72 @@ export function MoveBriefingTeaser({ onDismiss }: { onDismiss?: () => void }) {
   );
 }
 
-export function MoveBriefingCard() {
+export function briefingProvenanceLabel(
+  aiGenerated: boolean,
+  uxTrustCopyVariant: UxTrustCopyVariant = "control",
+): string | null {
+  if (uxTrustCopyVariant === "variant") return aiGenerated ? "AI-generated" : "Rule-based";
+  return aiGenerated ? "AI-generated" : null;
+}
+
+export function MoveBriefingProvenance({
+  aiGenerated,
+  uxTrustCopyVariant = "control",
+}: {
+  aiGenerated: boolean;
+  uxTrustCopyVariant?: UxTrustCopyVariant;
+}) {
+  const label = briefingProvenanceLabel(aiGenerated, uxTrustCopyVariant);
+  if (!label) return null;
+  return <p className="text-[10px] font-semibold tracking-wide text-muted-foreground mt-0.5">{label}</p>;
+}
+
+export function MoveBriefingTrustFooter({
+  uxTrustCopyVariant = "control",
+}: {
+  uxTrustCopyVariant?: UxTrustCopyVariant;
+}) {
+  if (uxTrustCopyVariant !== "variant") return null;
+  return (
+    <p className="mt-3 border-t border-border pt-3 text-[11px] leading-5 text-muted-foreground">
+      {MOVE_BRIEFING_NOT_ADVICE_COPY}
+    </p>
+  );
+}
+
+export function MoveBriefingCard({
+  uxAiBriefingExperienceVariant = "control",
+  uxTrustCopyVariant = "control",
+}: {
+  uxAiBriefingExperienceVariant?: UxAiBriefingExperienceVariant;
+  uxTrustCopyVariant?: UxTrustCopyVariant;
+}) {
   const [state, setState] = useState<BriefingFetchState | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [dismissedStage, setDismissedStage] = useState<string | null>(null);
   // null while reading localStorage (avoid a flash before we know the seen state).
   const [seenStage, setSeenStage] = useState<string | null | undefined>(undefined);
+  const trackedBriefingResolutionRef = useRef<Set<string>>(new Set());
+
+  const emitAiBriefingViewed = useCallback(
+    (next: BriefingFetchState) => {
+      const telemetry = briefingTelemetryForState(next);
+      const key = `${uxAiBriefingExperienceVariant}:${telemetry.briefingState}:${telemetry.briefingMode}`;
+      if (trackedBriefingResolutionRef.current.has(key)) return;
+      trackedBriefingResolutionRef.current.add(key);
+      trackEvent(
+        PHASE1_ANALYTICS_EVENTS.AI_BRIEFING_VIEWED,
+        buildAiBriefingViewedMetadata({
+          briefingState: telemetry.briefingState,
+          briefingMode: telemetry.briefingMode,
+          variant: uxAiBriefingExperienceVariant,
+          platform: "web",
+          surface: "dashboard",
+        }),
+      );
+    },
+    [uxAiBriefingExperienceVariant],
+  );
 
   useEffect(() => {
     try {
@@ -266,39 +435,90 @@ export function MoveBriefingCard() {
   useEffect(() => {
     if (seenStage === undefined) return; // wait for localStorage hydration
     let cancelled = false;
+    const setFallbackIfEnabled = () => {
+      const next = fallbackBriefingStateForExperience(uxAiBriefingExperienceVariant);
+      emitAiBriefingViewed(next);
+      if (!cancelled && next.kind !== "hidden") setState(next);
+    };
     (async () => {
       try {
         const res = await fetch("/api/onboarding/briefing", { method: "POST" });
-        if (!res.ok) return;
-        const next = deriveBriefingState(await res.json());
-        if (cancelled || next.kind === "hidden") return;
+        if (!res.ok) {
+          setFallbackIfEnabled();
+          return;
+        }
+        const next = deriveBriefingState(await res.json(), uxAiBriefingExperienceVariant);
+        if (cancelled) return;
+        if (next.kind === "hidden" || next.kind === "teaser") {
+          emitAiBriefingViewed(next);
+        }
+        if (next.kind === "hidden") return;
         setState(next);
       } catch {
-        // nice-to-have — degrade silently to no card
+        setFallbackIfEnabled();
+        // Control degrades silently to no card; the v1 UX flag renders fallback.
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [seenStage]);
+  }, [emitAiBriefingViewed, seenStage, uxAiBriefingExperienceVariant]);
 
   const data = state?.kind === "briefing" ? state : null;
   const parsed = useMemo(() => (data ? parseBriefing(data.briefing) : null), [data]);
+  const shouldEmitBriefingResolution =
+    Boolean(data && parsed && seenStage !== undefined) &&
+    !(dismissed && uxAiBriefingExperienceVariant !== "variant") &&
+    Boolean(
+      parsed &&
+        shouldShowBriefingForStage({
+          variant: uxAiBriefingExperienceVariant,
+          moveStage: parsed.moveStage,
+          seenStage,
+          dismissedStage,
+          sessionDismissed: dismissed,
+        }),
+    );
 
-  if (seenStage === undefined || dismissed || !state) return null;
+  useEffect(() => {
+    if (!data || !shouldEmitBriefingResolution) return;
+    emitAiBriefingViewed(data);
+  }, [data, emitAiBriefingViewed, shouldEmitBriefingResolution]);
+
+  if (seenStage === undefined || (dismissed && uxAiBriefingExperienceVariant !== "variant") || !state) return null;
 
   // Plan-gated → value-first teaser (session-dismissable; no stage to persist).
   if (state.kind === "teaser") {
-    return <MoveBriefingTeaser onDismiss={() => setDismissed(true)} />;
+    return (
+      <MoveBriefingTeaser
+        onDismiss={() => setDismissed(true)}
+        uxAiBriefingExperienceVariant={uxAiBriefingExperienceVariant}
+      />
+    );
   }
 
-  if (!parsed) return null;
+  if (!data || !parsed) return null;
   // Re-show once per stage: hide if the user already dismissed this exact stage.
-  if (parsed.moveStage && seenStage === parsed.moveStage) return null;
+  if (
+    !shouldShowBriefingForStage({
+      variant: uxAiBriefingExperienceVariant,
+      moveStage: parsed.moveStage,
+      seenStage,
+      dismissedStage,
+      sessionDismissed: dismissed,
+    })
+  ) {
+    return null;
+  }
   if (parsed.proseLines.length === 0 && parsed.actions.length === 0) return null;
+  const briefingTelemetry = briefingTelemetryForState(data);
 
   const handleDismiss = () => {
-    setDismissed(true);
+    if (uxAiBriefingExperienceVariant === "variant") {
+      setDismissedStage(parsed.moveStage ?? FALLBACK_STAGE);
+    } else {
+      setDismissed(true);
+    }
     if (parsed.moveStage) {
       try {
         localStorage.setItem(SEEN_STAGE_KEY, parsed.moveStage);
@@ -316,9 +536,10 @@ export function MoveBriefingCard() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">Your move briefing</p>
-          {data?.aiGenerated && (
-            <p className="text-[10px] font-semibold tracking-wide text-muted-foreground mt-0.5">AI-generated</p>
-          )}
+          <MoveBriefingProvenance
+            aiGenerated={data?.aiGenerated === true}
+            uxTrustCopyVariant={uxTrustCopyVariant}
+          />
         </div>
         <button
           type="button"
@@ -346,6 +567,18 @@ export function MoveBriefingCard() {
             <Link
               key={i}
               href={actionHref(action)}
+              onClick={() => {
+                trackEvent(
+                  PHASE1_ANALYTICS_EVENTS.AI_BRIEFING_ACTION_CLICKED,
+                  buildAiBriefingActionClickedMetadata({
+                    actionType: briefingActionTelemetryType(action),
+                    briefingMode: briefingTelemetry.briefingMode,
+                    variant: uxAiBriefingExperienceVariant,
+                    platform: "web",
+                    surface: "dashboard",
+                  }),
+                );
+              }}
               className="flex items-center gap-3 p-3 hover:bg-foreground/[0.05] transition group"
             >
               <span className="h-7 w-7 rounded-lg bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center text-xs font-bold text-tone-orange-fg shrink-0">
@@ -360,6 +593,8 @@ export function MoveBriefingCard() {
           ))}
         </div>
       )}
+
+      <MoveBriefingTrustFooter uxTrustCopyVariant={uxTrustCopyVariant} />
     </div>
   );
 }
