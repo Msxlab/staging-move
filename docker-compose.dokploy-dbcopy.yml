@@ -51,6 +51,8 @@ services:
     image: busybox:1.36
     container_name: locateflow-web
     restart: unless-stopped
+    expose:
+      - "3000"
     command:
       - sh
       - -ec
@@ -63,6 +65,8 @@ services:
     image: busybox:1.36
     container_name: locateflow-admin
     restart: unless-stopped
+    expose:
+      - "3001"
     command:
       - sh
       - -ec
@@ -75,6 +79,8 @@ services:
     image: busybox:1.36
     container_name: locateflow-imgproxy
     restart: unless-stopped
+    expose:
+      - "8080"
     command:
       - sh
       - -ec
