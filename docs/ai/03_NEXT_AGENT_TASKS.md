@@ -13,7 +13,7 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1814-dokploy-ready-green-dns-pending]]
+  [[handoffs/2026-06-16-1829-dokploy-cron-parity]]
 - Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
   streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
   source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
@@ -45,6 +45,10 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
   be paused, final dump can be taken, final restore can be counted, health
   checks pass, and DNS/cron can be moved in that order.
+- Dokploy/Ofelia cron parity is prepared but still disabled behind the `cron`
+  Compose profile. `docker/ofelia.ini` now covers every `/api/cron/*` endpoint
+  used by `.github/workflows/cron.yml`; enable it only after GitHub scheduled
+  cron is disabled and DNS/final DB restore are healthy.
 
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 
