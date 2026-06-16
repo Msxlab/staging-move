@@ -13,10 +13,14 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 ## Active Ops Task
 
 - Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1524-dokploy-db-rehearsal]]
-- Next step: prepare the Dokploy-side final restore path without switching DNS.
-  The DigitalOcean source DB dump/restore rehearsal succeeded with matching
-  count-only checks, including `RuntimeConfigEntry` and `ServiceProvider`.
+  [[handoffs/2026-06-16-1600-dokploy-dbprep-ui-only]]
+- Dokploy UI-only DB prep succeeded: `locateflow-mysql` is running healthy on
+  the Dokploy server using a temporary Raw DB-only compose. DigitalOcean remains
+  live and DNS was not changed.
+- Next step: restore source MySQL data into the Dokploy `locateflow-mysql`
+  container without exposing source DB credentials in chat, then compare
+  `scripts/dokploy-db-counts.sql` counts. Full app deploy also needs GitHub
+  clone auth resolved because unauthenticated HTTPS clone failed.
 - Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
   be paused, final dump can be taken, final restore can be counted, health
   checks pass, and DNS/cron can be moved in that order.
