@@ -47,6 +47,42 @@ x-count-sql: &count-sql |
   WHERE `isActive` = TRUE;
 
 services:
+  web:
+    image: busybox:1.36
+    container_name: locateflow-web
+    restart: unless-stopped
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p /www
+        printf '%s\n' 'LocateFlow maintenance' > /www/index.html
+        httpd -f -p 3000 -h /www
+
+  admin:
+    image: busybox:1.36
+    container_name: locateflow-admin
+    restart: unless-stopped
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p /www
+        printf '%s\n' 'LocateFlow admin maintenance' > /www/index.html
+        httpd -f -p 3001 -h /www
+
+  imgproxy:
+    image: busybox:1.36
+    container_name: locateflow-imgproxy
+    restart: unless-stopped
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p /www
+        printf '%s\n' 'LocateFlow image service maintenance' > /www/index.html
+        httpd -f -p 8080 -h /www
+
   mysql:
     image: mysql:8.0
     container_name: locateflow-mysql
