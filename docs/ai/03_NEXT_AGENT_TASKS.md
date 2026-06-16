@@ -10,6 +10,14 @@ Dashboard: [[00_PRODUCT_BRAIN_DASHBOARD]]
 Experience layer: [[experience/USER_JOURNEY_MAP]], [[experience/FRICTION_LOG]], [[experience/AHA_MOMENT_MAP]], [[experience/EXPERIENCE_BACKLOG]]
 Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]], [[vision/90_180_365_DAY_PLAN]]
 
+## Active Ops Task
+
+- Dokploy migration preparation is in progress. Current handoff:
+  [[handoffs/2026-06-16-132506-dokploy-migration-live-prep]]
+- Next step: human operator enters Dokploy env values from a secure source
+  without exposing raw secrets to Codex/chat, then reports only missing key names
+  from the presence-only audit.
+
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 
 Current strategy:
