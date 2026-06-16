@@ -92,6 +92,28 @@ docker compose --env-file .env -f docker-compose.dokploy.yml config --quiet
 7. Confirm no public host port is published for MySQL. The `mysql` service must
    use only the internal Docker network and the `mysql_data` volume.
 
+### SSH-less DB Prep Fallback
+
+If host SSH is not available, temporarily point the Dokploy compose path to:
+
+```text
+docker-compose.dokploy-dbprep.yml
+```
+
+This starts only `mysql` with the same Compose project name and `mysql_data`
+volume used by the full Dokploy stack. It intentionally does not start `web`,
+`admin`, `imgproxy`, or `cron`.
+
+After the database has been restored and verified, switch the compose path back
+to:
+
+```text
+docker-compose.dokploy.yml
+```
+
+Do not enable live domains or cron until the final dump/restore and health
+checks are complete.
+
 ## 3. Rehearsal Restore
 
 Use a fresh rehearsal dump from DigitalOcean managed MySQL. Do not run these
