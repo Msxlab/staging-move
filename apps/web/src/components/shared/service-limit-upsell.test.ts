@@ -8,16 +8,16 @@ describe("buildServiceLimitCopy", () => {
       limit: 10,
       campaign: {
         code: "SPRING90",
-        publicHeadline: "Start with 90 days free",
+        publicHeadline: "Start with 14 days free",
         displayPriceLabel: "$24/year",
-        trialDays: 90,
+        trialDays: 14,
       },
     });
     expect(copy.title).toBe("You've reached your service limit");
     expect(copy.body).toContain("Free Access includes up to 10 active services");
-    expect(copy.body).toContain("Start with 90 days free");
+    expect(copy.body).toContain("Start with 14 days free");
     expect(copy.body).toContain("$24/year after trial");
-    expect(copy.primary).toBe("Start with 90 days free");
+    expect(copy.primary).toBe("Start with 14 days free");
     expect(copy.secondary).toBe("Maybe later");
   });
 
@@ -48,7 +48,7 @@ describe("buildServiceLimitCopy", () => {
   it("treats trialing/active users (eligibleForTrial=false) as paid for upsell purposes", () => {
     // Stripe-backed paid users hit a different ceiling and there is no
     // higher tier to sell - the upsell modal must not advertise the
-    // 3-months-free trial back to them.
+    // free trial back to them.
     const copy = buildServiceLimitCopy({
       accessType: "FREE_TRIAL",
       eligibleForTrial: false,
@@ -64,19 +64,19 @@ describe("buildServiceLimitCopy", () => {
       limit: 10,
       campaign: {
         code: "SPRING90",
-        publicHeadline: "Start with 90 days free",
+        publicHeadline: "Start with 14 days free",
         displayPriceLabel: "$24/year",
-        trialDays: 90,
+        trialDays: 14,
       },
     });
     expect(copy.body).toContain("Free Trial includes up to 10");
-    expect(copy.primary).toBe("Start with 90 days free");
+    expect(copy.primary).toBe("Start with 14 days free");
   });
 
   it("falls back safely when no campaign is available", () => {
     const copy = buildServiceLimitCopy({ accessType: "FREE_ACCESS", limit: 10 });
     expect(copy.body).toContain("Upgrade to Individual Annual");
-    expect(copy.body).not.toContain("3 months free");
+    expect(copy.body).not.toContain("90 days free");
     expect(copy.primary).toBe("Upgrade to Individual Annual");
   });
 

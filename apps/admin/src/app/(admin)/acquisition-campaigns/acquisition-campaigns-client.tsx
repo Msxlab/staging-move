@@ -74,7 +74,7 @@ const emptyForm = {
   code: "",
   accessType: "FREE_TRIAL",
   billingInterval: "YEAR",
-  trialDays: "90",
+  trialDays: "14",
   freeAccessDays: "30",
   stripePriceId: "",
   displayPriceLabel: "",
@@ -90,15 +90,15 @@ const emptyForm = {
 
 const annualTrialPreset: typeof emptyForm = {
   ...emptyForm,
-  name: "Individual Annual - 3 months free",
+  name: "Individual Annual - 14-day trial",
   code: "INDIVIDUAL90",
   accessType: "FREE_TRIAL",
   billingInterval: "YEAR",
-  trialDays: "90",
+  trialDays: "14",
   displayPriceLabel: "$24/year",
-  publicHeadline: "Start with 3 months free",
+  publicHeadline: "Start with 14 days free",
   publicSubheadline: "Individual Annual starts after your trial.",
-  checkoutDisclosureCopy: "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
+  checkoutDisclosureCopy: "Today: $0. Trial: 14 days. Your annual plan starts after the trial. You can cancel before then in Settings.",
 };
 
 const monthlyPaidPreset: typeof emptyForm = {
@@ -141,7 +141,7 @@ function campaignToForm(campaign: Campaign) {
     code: campaign.code || "",
     accessType: campaign.accessType || "FREE_TRIAL",
     billingInterval: campaign.billingInterval || (campaign.accessType === "PAID" ? "MONTH" : "YEAR"),
-    trialDays: String(campaign.trialDays || 90),
+    trialDays: String(campaign.trialDays || 14),
     freeAccessDays: String(campaign.freeAccessDays || 30),
     stripePriceId: campaign.stripePriceId || "",
     displayPriceLabel: campaign.displayPriceLabel || "",
@@ -171,7 +171,7 @@ function buildCampaignPayload(form: typeof emptyForm) {
       : normalizedAccessType === "PAID"
         ? form.billingInterval
         : null,
-    trialDays: normalizedAccessType === "FREE_TRIAL" ? Number(form.trialDays || 90) : null,
+    trialDays: normalizedAccessType === "FREE_TRIAL" ? Number(form.trialDays || 14) : null,
     freeAccessDays: normalizedAccessType === "FREE_ACCESS" ? Number(form.freeAccessDays || 30) : null,
     stripePriceId: paymentRequired ? form.stripePriceId : "",
     maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
@@ -496,9 +496,9 @@ export default function AcquisitionCampaignsClient() {
         accessType,
         billingInterval: "YEAR",
         displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$24/year",
-        publicHeadline: current.accessType === "FREE_TRIAL" ? current.publicHeadline : "Start with 3 months free",
+        publicHeadline: current.accessType === "FREE_TRIAL" ? current.publicHeadline : "Start with 14 days free",
         publicSubheadline: current.accessType === "FREE_TRIAL" ? current.publicSubheadline : "Individual Annual starts after your trial.",
-        checkoutDisclosureCopy: current.accessType === "FREE_TRIAL" ? current.checkoutDisclosureCopy : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
+        checkoutDisclosureCopy: current.accessType === "FREE_TRIAL" ? current.checkoutDisclosureCopy : "Today: $0. Trial: 14 days. Your annual plan starts after the trial. You can cancel before then in Settings.",
       };
     });
   }
@@ -980,7 +980,7 @@ export default function AcquisitionCampaignsClient() {
                       <span>Plan: Individual</span>
                       <span>
                         {campaign.accessType === "FREE_TRIAL"
-                          ? `Trial: ${campaign.trialDays || 90} days`
+                          ? `Trial: ${campaign.trialDays || 14} days`
                           : campaign.accessType === "PAID"
                             ? `Billing: ${campaign.billingInterval === "YEAR" ? "Yearly" : "Monthly"}`
                             : `Free Access: ${campaign.freeAccessDays || 0} days`}

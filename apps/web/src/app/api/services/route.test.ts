@@ -45,15 +45,15 @@ vi.mock("@/lib/acquisition-campaigns", () => ({
       annualTrial: {
         campaignCode: "SPRING90",
         accessType: "FREE_TRIAL",
-        publicHeadline: "Start with 90 days free",
+        publicHeadline: "Start with 14 days free",
         publicSubheadline: "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: null,
         displayPriceLabel: "$24/year",
-        trialDays: 90,
+        trialDays: 14,
         billingInterval: "YEAR",
-        ctaText: "Start 90 days free",
+        ctaText: "Start 14 days free",
         priceCopy: "$24/year after trial",
-        trialLabel: "3 months",
+        trialLabel: "14 days",
       },
       monthlyPaid: {
         campaignCode: "MONTHLY",
@@ -127,15 +127,15 @@ describe("services route", () => {
       annualTrial: {
         campaignCode: "SPRING90",
         accessType: "FREE_TRIAL",
-        publicHeadline: "Start with 90 days free",
+        publicHeadline: "Start with 14 days free",
         publicSubheadline: "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: null,
         displayPriceLabel: "$24/year",
-        trialDays: 90,
+        trialDays: 14,
         billingInterval: "YEAR",
-        ctaText: "Start 90 days free",
+        ctaText: "Start 14 days free",
         priceCopy: "$24/year after trial",
-        trialLabel: "3 months",
+        trialLabel: "14 days",
       },
       monthlyPaid: {
         campaignCode: "MONTHLY",
@@ -506,9 +506,9 @@ describe("services route", () => {
       },
       campaign: {
         code: "SPRING90",
-        publicHeadline: "Start with 90 days free",
+        publicHeadline: "Start with 14 days free",
         displayPriceLabel: "$24/year",
-        trialDays: 90,
+        trialDays: 14,
       },
     });
   });

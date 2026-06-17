@@ -5,7 +5,7 @@
  * the Price IDs you should paste into `.env.production`
  * (STRIPE_PRICE_INDIVIDUAL_MONTHLY + STRIPE_PRICE_INDIVIDUAL_YEARLY).
  *
- * The 3-month free trial on the annual plan is enforced at Checkout
+ * The 14-day free trial on the annual plan is enforced at Checkout
  * (subscription_data.trial_period_days), not on the Price itself, so the
  * yearly Price stays a plain $24/year recurring entry.
  *

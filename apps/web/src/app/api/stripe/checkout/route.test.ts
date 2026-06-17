@@ -119,7 +119,7 @@ describe("stripe checkout route", () => {
       mocks.lastStripePriceRequest = { plan, interval };
       return interval === "YEAR" ? "price_yearly" : "price_monthly";
     });
-    mocks.getStripeAnnualTrialDays.mockResolvedValue(90);
+    mocks.getStripeAnnualTrialDays.mockResolvedValue(14);
     const activeCampaign = {
       id: "camp_1",
       name: "Individual Annual Trial",
@@ -128,7 +128,7 @@ describe("stripe checkout route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -379,7 +379,7 @@ describe("stripe checkout route", () => {
         payment_method_collection: "always",
         cancel_url: "https://locateflow.com/api/stripe/checkout/cancel",
         subscription_data: expect.objectContaining({
-          trial_period_days: 90,
+          trial_period_days: 14,
           metadata: expect.objectContaining({
             userId: "user_1",
             plan: "INDIVIDUAL",
@@ -548,7 +548,7 @@ describe("stripe checkout route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -588,7 +588,7 @@ describe("stripe checkout route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       displayPriceLabel: "$24/year",
       stripePriceId: "price_yearly",
       requiresPaymentMethod: true,
@@ -610,7 +610,7 @@ describe("stripe checkout route", () => {
       expect.objectContaining({
         line_items: [{ price: "price_yearly", quantity: 1 }],
         subscription_data: expect.objectContaining({
-          trial_period_days: 90,
+          trial_period_days: 14,
           metadata: expect.objectContaining({
             campaignCode: "SPRING90",
             cycle: "yearly",
@@ -631,7 +631,7 @@ describe("stripe checkout route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,

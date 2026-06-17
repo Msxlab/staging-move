@@ -26,7 +26,7 @@ Required web staging env:
 - `STRIPE_PRICE_FAMILY_YEARLY`
 - `STRIPE_PRICE_PRO_MONTHLY`
 - `STRIPE_PRICE_PRO_YEARLY`
-- `STRIPE_ANNUAL_TRIAL_DAYS=90`
+- `STRIPE_ANNUAL_TRIAL_DAYS=14`
 - `APP_URL=https://locateflow.com`
 - `NEXT_PUBLIC_APP_URL=https://locateflow.com`
 
@@ -37,7 +37,7 @@ Stripe Dashboard (start in Test Mode, mirror to Live Mode for production):
 1. Switch the dashboard to Test Mode.
 2. Products -> New product -> "LocateFlow Individual" with metadata `locateflow_plan=INDIVIDUAL`.
 3. Create Individual monthly recurring Price: USD 4.99 / month -> save as `STRIPE_PRICE_INDIVIDUAL_MONTHLY`.
-4. Create Individual annual recurring Price: USD 24 / year -> save as `STRIPE_PRICE_INDIVIDUAL_YEARLY`. Do not add a Stripe-side trial on the Price; the 90-day trial is applied at Checkout via `subscription_data.trial_period_days = STRIPE_ANNUAL_TRIAL_DAYS`.
+4. Create Individual annual recurring Price: USD 24 / year -> save as `STRIPE_PRICE_INDIVIDUAL_YEARLY`. Do not add a Stripe-side trial on the Price; the 14-day trial is applied at Checkout via `subscription_data.trial_period_days = STRIPE_ANNUAL_TRIAL_DAYS`.
 5. Products -> New product -> "LocateFlow Family" with metadata `locateflow_plan=FAMILY`.
 6. Create Family monthly recurring Price: USD 7.99 / month -> save as `STRIPE_PRICE_FAMILY_MONTHLY`.
 7. Create Family annual recurring Price: USD 39 / year -> save as `STRIPE_PRICE_FAMILY_YEARLY`.
@@ -75,12 +75,12 @@ pnpm campaigns:sync-billing
 pnpm campaigns:sync-billing -- --apply
 ```
 
-The sync updates active `INDIVIDUAL90` copy to `$24/year` and active `INDIVIDUALMONTHLY` copy to `$4.99/month`. It counts active subscriptions first. Existing subscriptions keep their current Stripe Price IDs; clone a new campaign instead of mutating the old one when immutable reporting or grandfathered campaign copy is required.
+The sync updates active `INDIVIDUAL90` copy to the standard 14-day `$24/year` offer and active `INDIVIDUALMONTHLY` copy to `$4.99/month`. It counts active subscriptions first. Existing subscriptions keep their current Stripe Price IDs and persisted trial dates; clone a new campaign instead of mutating the old one when immutable campaign reporting is required.
 
 ## Stripe QA
 
 - [ ] Checkout session creates for Individual monthly ($4.99/month).
-- [ ] Checkout session creates for Individual annual ($24/year) and starts in `trialing` status with a `trial_end` 90 days out.
+- [ ] Checkout session creates for Individual annual ($24/year) and starts in `trialing` status with a `trial_end` 14 days out.
 - [ ] Checkout session creates for Family monthly ($7.99/month) and activates `FAMILY` / `PAID`.
 - [ ] Checkout session creates for Family annual ($39/year) and activates `FAMILY` / `PAID`.
 - [ ] Checkout session creates for Pro monthly ($11.99/month) and activates `PRO` / `PAID`.
@@ -151,7 +151,7 @@ Play Console setup (use Internal Testing track first):
 4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly subscriptions for those tiers too: `locateflow_family_monthly` (target USD 7.99), `locateflow_family_annual` (target USD 39), `locateflow_pro_monthly` (target USD 11.99), and `locateflow_pro_annual` (target USD 59). Play price tiers may not exactly equal web prices; the operator must choose whether to match the nearest tier, absorb the store fee, or steer price-sensitive upgrades to web.
 5. Play Console -> Setup -> API access: link the project that owns the service account whose email is configured in `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, or complete the OAuth fallback path if service-account key creation is blocked. Grant `View financial data, orders, cancellation survey responses` and `Manage orders and subscriptions`.
 6. Real-Time Developer Notifications: create a Pub/Sub topic, point it at `https://locateflow.com/api/webhooks/playstore`, configure the `aud` claim to match `GOOGLE_PLAY_RTDN_AUDIENCE`, and set `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` to the authenticated push service account. The webhook rejects payloads without that audience or expected identity in production.
-7. License testers: Play Console -> Settings -> License testing -> add at least one Google account; test purchases on that account skip the 3-month grace and surface as `testPurchase=true`. Production only persists those verified test purchases for the configured QA account allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` plus optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`); test/staging accepts them normally.
+7. License testers: Play Console -> Settings -> License testing -> add at least one Google account; test purchases on that account skip the store trial/grace path and surface as `testPurchase=true`. Production only persists those verified test purchases for the configured QA account allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` plus optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`); test/staging accepts them normally.
 
 If IAP credentials are missing:
 
@@ -163,7 +163,7 @@ If IAP credentials are missing:
 
 - [ ] `/api/mobile/iap/products` returns all shipped plan/cycle IDs for each platform (currently six per platform when Individual, Family, and Pro are configured).
 - [ ] Mobile paywall shows the plan/cycle options that match the configured store catalog.
-- [ ] Individual annual CTA shows the "First 3 months free" badge and the annual savings badge from localized prices.
+- [ ] Individual annual CTA shows the "First 14 days free" badge and the annual savings badge from localized prices.
 - [ ] iOS sandbox receipt verifies on `/api/mobile/iap/verify` when Apple credentials are present.
 - [ ] iOS introductory offer activates: a new sandbox tester sees status `TRIALING` after annual Individual purchase; the unified entitlement resolver returns `accessType=FREE_TRIAL` and `currentPeriodEndsAt` matches Apple's `expiresDate`.
 - [ ] iOS sandbox renewal flips status to `ACTIVE` and `accessType` to `PAID` on the next cycle.

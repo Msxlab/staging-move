@@ -67,23 +67,23 @@ describe("PricingSection", () => {
         ctaIntent="upgrade"
         campaign={{
           accessType: "FREE_TRIAL",
-          publicHeadline: "Start with 90 days free",
+          publicHeadline: "Start with 14 days free",
           publicSubheadline: "Individual Annual starts after your trial.",
           displayPriceLabel: "$24/year",
-          trialDays: 90,
+          trialDays: 14,
           billingInterval: "YEAR",
-          ctaText: "Start 3 months free",
+          ctaText: "Start 14 days free",
           priceCopy: "$24/year after trial",
-          trialLabel: "3 months",
+          trialLabel: "14 days",
         }}
       />,
     );
 
-    expect(html).toContain("Start with 90 days free");
+    expect(html).toContain("Start with 14 days free");
     expect(html).toContain("Individual Annual starts after your trial.");
     expect(html).toContain("$24");
     expect(html).toContain("/year after trial");
-    expect(html).toContain("Start 3 months free");
+    expect(html).toContain("Start 14 days free");
   });
 
   it("renders safe generic annual copy when no active campaign exists", () => {
@@ -99,7 +99,7 @@ describe("PricingSection", () => {
     expect(html).toContain("Simple pricing for every move and household");
     expect(html).toContain("Choose Individual");
     expect(html).not.toContain("Today: $0");
-    expect(html).not.toContain("3 months free, then annual billing");
+    expect(html).not.toContain("90 days free, then annual billing");
   });
 
   it("can render the section headline as an h1 on the standalone pricing page", () => {
@@ -216,14 +216,14 @@ describe("PricingSection", () => {
         offers={{
           annualTrial: {
             accessType: "FREE_TRIAL",
-            publicHeadline: "Start with 90 days free",
+            publicHeadline: "Start with 14 days free",
             publicSubheadline: "Individual Annual starts after your trial.",
             displayPriceLabel: "$24/year",
-            trialDays: 90,
+            trialDays: 14,
             billingInterval: "YEAR",
-            ctaText: "Start 3 months free",
+            ctaText: "Start 14 days free",
             priceCopy: "$24/year after trial",
-            trialLabel: "3 months",
+            trialLabel: "14 days",
           },
           monthlyPaid: {
             accessType: "PAID",
@@ -240,7 +240,7 @@ describe("PricingSection", () => {
       />,
     );
 
-    expect(html).toContain("Start with 90 days free");
+    expect(html).toContain("Start with 14 days free");
     expect(html).toContain("Monthly");
     expect(html).toContain("Family");
     expect(html).toContain("Pro");

@@ -120,7 +120,7 @@ Apple takes 15–30% of each subscription.
    - Localizations, screenshots, review info: follow the prompts. Apple
      requires screenshots of the subscribe screen for review.
 3. Add the remaining shipped subscription products in the same subscription group:
-   - `com.locateflow.individual.annual` - target USD 24/year, annual-first hero, 90-day introductory trial when approved.
+   - `com.locateflow.individual.annual` - target USD 24/year, annual-first hero, 14-day introductory trial when approved.
    - `com.locateflow.family.monthly` - target USD 7.99/month.
    - `com.locateflow.family.annual` - target USD 39/year.
    - `com.locateflow.pro.monthly` - target USD 11.99/month.

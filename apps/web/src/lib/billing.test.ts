@@ -241,10 +241,10 @@ describe("billing helpers", () => {
     expect(select.purchaseToken).toBeUndefined();
   });
 
-  it("defaults annual Stripe trials to 90 days when the env key is missing", async () => {
+  it("defaults annual Stripe trials to 14 days when the env key is missing", async () => {
     mocks.getRuntimeConfigValue.mockResolvedValue(null);
 
-    await expect(getStripeAnnualTrialDays()).resolves.toBe(90);
+    await expect(getStripeAnnualTrialDays()).resolves.toBe(14);
   });
 
   it("treats free-trial subscriptions with null trialEndsAt as inactive", () => {

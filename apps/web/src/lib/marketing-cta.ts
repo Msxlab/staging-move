@@ -9,7 +9,7 @@ export interface MarketingCtaTarget {
 }
 
 /**
- * Resolve the destination for the homepage / pricing "Start 3 months free"
+ * Resolve the destination for the homepage / pricing annual trial CTA
  * CTA based on the user's current subscription state.
  *
  * - Anonymous: /sign-up so we can capture the intent.

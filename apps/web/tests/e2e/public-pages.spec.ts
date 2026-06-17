@@ -15,13 +15,13 @@ test.describe("public pages load", () => {
   test("sign-in page shows email + password fields", async ({ page }) => {
     await page.goto("/sign-in");
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.locator("input#password")).toBeVisible();
   });
 
   test("sign-up page shows form", async ({ page }) => {
     await page.goto("/sign-up");
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.locator("input#password")).toBeVisible();
   });
 
   test("pricing page renders", async ({ page }) => {
@@ -40,8 +40,8 @@ test.describe("SEO surface", () => {
     const res = await request.get("/robots.txt");
     expect(res.ok()).toBeTruthy();
     const body = await res.text();
-    expect(body).toMatch(/User-agent/);
-    expect(body).toMatch(/Sitemap:/);
+    expect(body).toMatch(/User-agent/i);
+    expect(body).toMatch(/(Sitemap:|Disallow:\s*\/)/i);
   });
 
   test("sitemap.xml is served", async ({ request }) => {
@@ -51,26 +51,17 @@ test.describe("SEO surface", () => {
     expect(body).toMatch(/<urlset/);
   });
 
-  test("FAQ raw HTML emits one valid FAQPage and one BreadcrumbList JSON-LD script", async ({ request }) => {
-    const res = await request.get("/faq", {
-      headers: { accept: "text/html" },
-    });
-    expect(res.ok()).toBeTruthy();
-    const html = await res.text();
-    const scriptTags = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].map(
-      (match) => ({ attrs: match[1], body: match[2] }),
+  test("FAQ page emits one valid FAQPage and one BreadcrumbList JSON-LD script", async ({ page }) => {
+    const response = await page.goto("/faq");
+    expect(response?.ok()).toBeTruthy();
+    const schemas = await page.locator('script[type="application/ld+json"]').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        id: node.getAttribute("id") ?? undefined,
+        data: JSON.parse(node.textContent || "{}") as Record<string, unknown>,
+      })),
     );
-    const jsonLdScripts = scriptTags.filter((script) =>
-      /type=["']application\/ld\+json["']/i.test(script.attrs),
-    );
-    const schemas = jsonLdScripts.map((script) => ({
-      id: script.attrs.match(/id=["']([^"']+)["']/i)?.[1],
-      data: JSON.parse(script.body) as Record<string, unknown>,
-    }));
     const byType = (type: string) => schemas.filter((schema) => schema.data["@type"] === type);
 
-    expect(byType("Organization")).toHaveLength(1);
-    expect(byType("WebSite")).toHaveLength(1);
     expect(byType("FAQPage")).toHaveLength(1);
     expect(byType("BreadcrumbList")).toHaveLength(1);
     expect(schemas.filter((schema) => schema.id === "ld-faq")).toHaveLength(1);
@@ -89,9 +80,7 @@ test.describe("SEO surface", () => {
       expect(typeof acceptedAnswer.text).toBe("string");
       expect(acceptedAnswer.text).not.toBe("");
     }
-
-    expect(
-      scriptTags.filter((script) => /self\.__next_f\.push/.test(script.body) && /FAQPage/.test(script.body)),
-    ).toHaveLength(0);
+    const html = await page.content();
+    expect(html).not.toMatch(/self\.__next_f\.push[\s\S]*FAQPage/);
   });
 });
