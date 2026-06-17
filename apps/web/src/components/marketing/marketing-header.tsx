@@ -6,6 +6,7 @@ import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle"
 import { Wordmark } from "@/components/marketing/logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { MarketingUserMenu } from "@/components/marketing/marketing-user-menu";
+import { MarketingMobileNav } from "@/components/marketing/marketing-mobile-nav";
 
 type MarketingHeaderProps = {
   userId?: string | null;
@@ -17,6 +18,14 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
   const tCommon = await getTranslations("common");
   const tLanding = await getTranslations("landing");
   const tPricing = await getTranslations("pricing");
+
+  const navLinks = [
+    { href: "/#features", label: "Features" },
+    { href: "/#pricing", label: tPricing("title").split(".")[0] },
+    { href: "/how-it-works", label: tLanding("section_how_title") },
+    { href: "/blog", label: "Blog" },
+    { href: "/faq", label: "FAQ" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -40,6 +49,13 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
           </Link>
         </nav>
         <div className="flex items-center gap-1 md:gap-2">
+          <MarketingMobileNav
+            links={navLinks}
+            userId={userId}
+            signInLabel={tCommon("signIn")}
+            signUpLabel={tLanding("heroCta")}
+            menuLabel="Menu"
+          />
           <LanguageSelector variant="icon" />
           <LandingThemeToggle variant="compact" />
           {userId ? (
