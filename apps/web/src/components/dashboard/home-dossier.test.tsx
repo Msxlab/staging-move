@@ -197,6 +197,28 @@ function degradedExtended(status: "no_location" | "error"): Pick<HomeDossierResp
   };
 }
 
+function previewDossier(): HomeDossierResponse {
+  return {
+    configured: true,
+    preview: true,
+    homeDossierPreview: true,
+    fullDossier: false,
+    dossierPdf: false,
+    address: { id: "addr-1", city: "Austin", state: "TX" },
+    lockedSections: ["hazards", "radon", "water", "air", "housing", "evCharging", "neighborhood", "pdf"],
+    flood: { status: "ok", zone: "X", isHighRisk: false },
+    school: { status: "ok", districtName: "Austin ISD", ncesId: "4808940" },
+    weather: {
+      status: "ok",
+      forecastDate: "2026-06-12",
+      summary: "Sunny",
+      tempHighF: 84,
+      tempLowF: 62,
+      precipChancePct: 10,
+    },
+  };
+}
+
 describe("deriveDossierView", () => {
   it("hides the whole card when every section is no_location", () => {
     const view = deriveDossierView(
@@ -329,6 +351,28 @@ describe("deriveDossierView", () => {
     expect(deriveDossierView(undefined).visible).toBe(false);
     expect(deriveDossierView(dossier({ configured: false })).visible).toBe(false);
     expect(deriveDossierView({ configured: true } as HomeDossierResponse).visible).toBe(false);
+  });
+
+  it("renders a free preview payload from only flood, school, and moving-day weather", () => {
+    const view = deriveDossierView(previewDossier());
+    expect(view.visible).toBe(true);
+    expect(view.preview).toBe(true);
+    expect(view.flood).toEqual({ zone: "X", isHighRisk: false });
+    expect(view.school).toEqual({ districtName: "Austin ISD" });
+    expect(view.weather).toEqual({
+      forecastDate: "2026-06-12",
+      summary: "Sunny",
+      tempHighF: 84,
+      tempLowF: 62,
+      precipChancePct: 10,
+    });
+    expect(view.hazards).toBeNull();
+    expect(view.radon).toBeNull();
+    expect(view.water).toBeNull();
+    expect(view.air).toBeNull();
+    expect(view.housing).toBeNull();
+    expect(view.evCharging).toBeNull();
+    expect(view.neighborhood).toBeNull();
   });
 });
 
@@ -519,6 +563,29 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).not.toContain("FEMA");
     expect(markup).not.toContain("EPA");
     expect(markup).not.toContain("AQI");
+  });
+
+  it("renders the free preview subset with an upgrade CTA and no full dossier rows", () => {
+    const markup = renderToStaticMarkup(<HomeDossierCard data={previewDossier()} />);
+
+    expect(markup).toContain("Free preview");
+    expect(markup).toContain("Zone X");
+    expect(markup).toContain("Served by Austin ISD");
+    expect(markup).toContain("Moving day:");
+    expect(markup).toContain("Sunny");
+    expect(markup).toContain("High 84");
+    expect(markup).toContain("Unlock the full Home Dossier");
+    expect(markup).toContain("Natural hazards, radon, water, air, housing, and EV charging unlock with Individual.");
+    expect(markup).toContain("Neighborhood Intelligence and PDF export unlock with Pro.");
+    expect(markup).not.toContain("Unlock the full Home Dossier + PDF");
+    expect(markup).toContain('href="/pricing"');
+    expect(markup).not.toContain("Natural hazard profile");
+    expect(markup).not.toContain("Radon");
+    expect(markup).not.toContain("Drinking water");
+    expect(markup).not.toContain("Air quality");
+    expect(markup).not.toContain("Housing context");
+    expect(markup).not.toContain("EV charging nearby");
+    expect(markup).not.toContain("Export PDF");
   });
 
   it("renders nothing when every section degrades", () => {

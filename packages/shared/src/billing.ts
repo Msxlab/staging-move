@@ -71,7 +71,7 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
       "Bill & renewal reminders",
       "Provider suggestions from our catalog",
       "Basic moving checklist preview",
-      "Home Dossier preview (upgrade to unlock the full report and PDF)",
+      "Home Dossier preview (upgrade for the full report; PDF export is Pro)",
     ],
   },
   INDIVIDUAL: {

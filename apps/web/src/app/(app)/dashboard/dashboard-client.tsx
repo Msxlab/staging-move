@@ -31,6 +31,11 @@ import {
   type RelocationChecklist,
   type ChecklistStateRuleContext,
 } from "@/lib/shared-relocation";
+import {
+  readFreeMovePreviewContext,
+  selectFreeMovePreviewSteps,
+  type FreeMovePreviewStep,
+} from "@/lib/free-move-preview";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -67,6 +72,14 @@ interface AddressInfo {
 interface DashboardStats {
   addressCount: number; serviceCount: number; monthlyExpenses: number;
   activePlan: { id: string; fromCity: string; toCity: string; moveDate: string; status: string } | null;
+}
+
+interface FreeMoveDashboardPreview {
+  checklist: RelocationChecklist;
+  fromState: string;
+  toState: string;
+  moveDate: string;
+  steps: FreeMovePreviewStep[];
 }
 
 // Aurora (Edition VII) additions: routeMap + milestones slot in after the
@@ -250,6 +263,7 @@ export default function DashboardClient({
   const [loading, setLoading] = useState(true);
   const [showWidgetPanel, setShowWidgetPanel] = useState(false);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
+  const [freeMovePreview, setFreeMovePreview] = useState<FreeMoveDashboardPreview | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [premiumPlan, setPremiumPlan] = useState("");
   // Resume nudge for users who bounced out of onboarding before finishing.
@@ -481,6 +495,7 @@ export default function DashboardClient({
               stateRule,
             );
             setChecklist(cl);
+            setFreeMovePreview(null);
             // Capture the inputs so UpNext can re-derive the ring after a
             // completion without re-running the whole dashboard load.
             checklistInputsRef.current = {
@@ -489,6 +504,54 @@ export default function DashboardClient({
               stateRule,
             };
           } catch { /* non-blocking */ }
+        } else if (!hasPremium) {
+          const previewContext = readFreeMovePreviewContext();
+          if (previewContext) {
+            try {
+              const checklistProfile: UserChecklistProfile = {
+                hasChildren: profile.hasChildren ?? false,
+                childrenCount: profile.childrenCount ?? 0,
+                hasPets: profile.hasPets ?? false,
+                hasSenior: profile.hasSenior ?? false,
+                carCount: profile.carCount ?? 0,
+                hasDisability: profile.hasDisability ?? false,
+                needsStorage: profile.needsStorage ?? false,
+                hasMotorcycle: profile.hasMotorcycle ?? false,
+                hasBoatRV: profile.hasBoatRV ?? false,
+                isImmigrant: profile.isImmigrant ?? false,
+                isBusinessOwner: profile.isBusinessOwner ?? false,
+                moveType: profile.moveType || "PERSONAL",
+              };
+              let stateRule: ChecklistStateRuleContext | null = null;
+              if (previewContext.toState) {
+                try {
+                  const stateRuleRes = await fetch(`/api/state-rules?state=${previewContext.toState}`).then((r) => r.json());
+                  stateRule = stateRuleRes.stateRule || null;
+                } catch {
+                  stateRule = null;
+                }
+              }
+              const freeChecklist = generateChecklist(
+                checklistProfile,
+                new Date(previewContext.moveDate),
+                previewContext.fromState,
+                previewContext.toState,
+                new Set<string>(),
+                stateRule,
+              );
+              setFreeMovePreview({
+                ...previewContext,
+                checklist: freeChecklist,
+                steps: selectFreeMovePreviewSteps(freeChecklist, 5),
+              });
+            } catch {
+              setFreeMovePreview(null);
+            }
+          } else {
+            setFreeMovePreview(null);
+          }
+        } else {
+          setFreeMovePreview(null);
         }
       })
       .catch(() => { toast.error(td("loadFailed")); })
@@ -984,6 +1047,7 @@ export default function DashboardClient({
             state={primaryState}
             hasOriginDestination={hasOriginDestination}
             isPremium={isPremium}
+            freePreview={freeMovePreview}
             t={td}
           />
         );

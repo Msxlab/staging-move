@@ -31,6 +31,7 @@ import {
   Truck,
   PackageCheck,
   Lock,
+  CheckCircle2,
 } from "lucide-react";
 import {
   getMoveCountdown,
@@ -38,6 +39,7 @@ import {
   type RelocationChecklist,
 } from "@locateflow/shared";
 import { trackEvent } from "@/lib/analytics";
+import type { FreeMovePreviewStep } from "@/lib/free-move-preview";
 
 export interface CommandCenterAction {
   id: string;
@@ -74,6 +76,13 @@ export interface MoveCommandCenterProps {
    * deep-links to /moving/new (which would 403 for them).
    */
   isPremium?: boolean;
+  freePreview?: {
+    checklist: RelocationChecklist;
+    fromState: string;
+    toState: string;
+    moveDate: string;
+    steps: FreeMovePreviewStep[];
+  } | null;
   /** Localised copy. Keyed access keeps this component i18n-agnostic. */
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
@@ -197,8 +206,90 @@ export function MoveCommandCenter({
   state,
   hasOriginDestination,
   isPremium = true,
+  freePreview = null,
   t,
 }: MoveCommandCenterProps) {
+  // ── NO-PLAN + FREE + SAVED PREVIEW: read-only personalized checklist ─────
+  if (!activePlan && !isPremium && freePreview) {
+    const countdown = getMoveCountdown(freePreview.moveDate, {
+      state: freePreview.toState || state || null,
+    });
+    const countdownLine = (() => {
+      if (countdown.phase === "today") return t("commandCenter_movingDay");
+      if (countdown.phase === "past") return t("commandCenter_daysAgo", { count: countdown.absDays });
+      if (countdown.absDays === 1) return t("commandCenter_oneDay");
+      return t("commandCenter_daysToGo", { count: countdown.absDays });
+    })();
+    const route =
+      freePreview.fromState && freePreview.toState
+        ? `${freePreview.fromState} → ${freePreview.toState}`
+        : freePreview.toState || freePreview.fromState || t("commandCenter_freePreviewRouteFallback");
+    const hiddenSteps = Math.max(0, freePreview.checklist.totalItems - freePreview.steps.length);
+
+    return (
+      <div className="relative overflow-hidden rounded-3xl border border-tone-orange-br bg-gradient-to-br from-primary/10 via-foreground/[0.03] to-transparent p-6 sm:p-8">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+            <div className="h-14 w-14 shrink-0 rounded-2xl bg-tone-orange-bg border border-tone-orange-br flex items-center justify-center">
+              <PackageCheck className="h-7 w-7 text-tone-orange-fg" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-tone-orange-fg">
+                  {t("commandCenter_freePreviewEyebrow")}
+                </p>
+                <span className="rounded-full border border-border bg-foreground/[0.04] px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  {t("commandCenter_freePreviewReadOnly")}
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mt-1">
+                {t("commandCenter_freePreviewTitle", {
+                  count: freePreview.checklist.totalItems,
+                  route,
+                })}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+                {countdownLine} · {t("commandCenter_freePreviewBody")}
+              </p>
+            </div>
+            <Link href="/settings/subscription?returnTo=%2Fdashboard" className="shrink-0">
+              <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
+                <Sparkles className="h-4 w-4" /> {t("commandCenter_freePreviewCta")}
+              </button>
+            </Link>
+          </div>
+
+          {freePreview.steps.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {freePreview.steps.map((step) => (
+                <div
+                  key={step.id}
+                  className="flex items-start gap-3 rounded-2xl border border-border bg-foreground/[0.035] p-3"
+                >
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-primary/10 text-primary">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">{step.title}</p>
+                    {step.reason && (
+                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{step.reason}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {hiddenSteps > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {t("commandCenter_freePreviewMore", { count: hiddenSteps })}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // ── NO-PLAN + FREE: upgrade teaser hero ───────────────────────────────────
   // Free users can't create a MovingPlan, so the full Command Center is gated.
   // Show an honest "unlock the move" card instead of a CTA that would 403.

@@ -38,7 +38,7 @@ import { DossierAmbient, ambientForSection, useDossierCountUp } from "./dossier-
  *   9. public active EV charging near the destination (NLR/AFDC), and
  *   10. Pro-only neighborhood intelligence.
  *
- * GRACEFUL DEGRADATION (same contract style as apps/web/src/lib/fcc-isp.ts):
+ * GRACEFUL DEGRADATION (same contract style as the dossier lookup libs):
  * the card consumes GET /api/addresses/{id}/dossier, whose sections each carry
  * a status union. Anything non-"ok" simply hides that row; when EVERY section
  * is degraded (no_location/error) the whole card disappears — never an empty
@@ -100,12 +100,17 @@ export interface HomeDossierResponse {
   /** Gate code (e.g. an *_UPGRADE_REQUIRED constant) — informational only here. */
   code?: string;
   /**
-   * Pro-only PDF export entitlement (FEATURES.dossierPdf). When true the card
+   * Pro PDF export entitlement (FEATURES.dossierPdf). When true the card
    * shows the "Export PDF" affordance wired to the dossier PDF route. Absent
-   * on older payloads and on non-Pro tiers → the button stays hidden, so a
+   * on older payloads and on Free → the button stays hidden, so a
    * non-entitled user never sees a button that would only return the teaser.
    */
   dossierPdf?: boolean;
+  /** Free-tier payload marker: only preview sections are present. */
+  preview?: boolean;
+  homeDossierPreview?: boolean;
+  fullDossier?: boolean;
+  lockedSections?: string[];
   /** Sections are absent on gated payloads; the teaser never reads them. */
   address?: { id: string; city: string; state: string };
   flood?: { status: DossierSectionStatus; zone: string | null; isHighRisk: boolean | null };
@@ -201,6 +206,8 @@ export function isDossierGated(data: HomeDossierResponse | null | undefined): bo
 export interface HomeDossierView {
   /** False → render nothing at all (never show an empty shell). */
   visible: boolean;
+  /** True when the server returned the Free preview subset, not the full dossier. */
+  preview: boolean;
   flood: { zone: string; isHighRisk: boolean | null } | null;
   school: { districtName: string } | null;
   weather: {
@@ -254,6 +261,7 @@ export interface HomeDossierView {
 
 const HIDDEN_VIEW: HomeDossierView = {
   visible: false,
+  preview: false,
   flood: null,
   school: null,
   weather: null,
@@ -283,11 +291,16 @@ const DEGRADED_STATUSES = new Set(["no_location", "error", "not_configured", "di
  * skipped rather than rendered empty.
  */
 export function deriveDossierView(data: HomeDossierResponse | null | undefined): HomeDossierView {
-  if (!data || data.configured !== true || !data.address || !data.flood || !data.school || !data.weather) {
+  if (!data || data.configured !== true || !data.address || !data.flood || !data.school) {
+    return HIDDEN_VIEW;
+  }
+  const preview = data.preview === true || data.homeDossierPreview === true || data.fullDossier === false;
+  if (!preview && !data.weather) {
     return HIDDEN_VIEW;
   }
 
-  const statuses: string[] = [data.flood.status, data.school.status, data.weather.status];
+  const statuses: string[] = [data.flood.status, data.school.status];
+  if (typeof data.weather?.status === "string") statuses.push(data.weather.status);
   // Extended sections are optional — older payloads simply don't vote.
   for (const status of [data.hazards?.status, data.radon?.status, data.water?.status, data.air?.status]) {
     if (typeof status === "string") statuses.push(status);
@@ -316,19 +329,20 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
       ? { districtName: data.school.districtName.trim() }
       : null;
 
+  const weatherData = data.weather;
   const hasWeatherFigure =
-    data.weather.status === "ok" &&
-    (typeof data.weather.summary === "string" ||
-      typeof data.weather.tempHighF === "number" ||
-      typeof data.weather.tempLowF === "number" ||
-      typeof data.weather.precipChancePct === "number");
-  const weather = hasWeatherFigure
+    weatherData?.status === "ok" &&
+    (typeof weatherData.summary === "string" ||
+      typeof weatherData.tempHighF === "number" ||
+      typeof weatherData.tempLowF === "number" ||
+      typeof weatherData.precipChancePct === "number");
+  const weather = hasWeatherFigure && weatherData
     ? {
-        forecastDate: data.weather.forecastDate ?? null,
-        summary: data.weather.summary ?? null,
-        tempHighF: data.weather.tempHighF ?? null,
-        tempLowF: data.weather.tempLowF ?? null,
-        precipChancePct: data.weather.precipChancePct ?? null,
+        forecastDate: weatherData.forecastDate ?? null,
+        summary: weatherData.summary ?? null,
+        tempHighF: weatherData.tempHighF ?? null,
+        tempLowF: weatherData.tempLowF ?? null,
+        precipChancePct: weatherData.precipChancePct ?? null,
       }
     : null;
 
@@ -412,7 +426,7 @@ export function deriveDossierView(data: HomeDossierResponse | null | undefined):
   );
   if (!visible) return HIDDEN_VIEW;
 
-  return { visible, flood, school, weather, hazards, radon, water, air, housing, evCharging, neighborhood, showLocationHint };
+  return { visible, preview, flood, school, weather, hazards, radon, water, air, housing, evCharging, neighborhood, showLocationHint };
 }
 
 /** Positive whole-dollar/whole-number figure; null for absent/invalid/≤0. */
@@ -684,6 +698,11 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
           <h3 className="h2 text-xl text-foreground truncate">
             {td.rich("dossier_title", { em: (chunks) => <em>{chunks}</em> })}
           </h3>
+          {view.preview && (
+            <span className="inline-flex shrink-0 rounded-full border border-tone-orange-br bg-tone-orange-bg px-2 py-0.5 text-[10px] font-semibold text-tone-orange-fg">
+              {td("dossier_preview_pill")}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {place && (
@@ -691,7 +710,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               {place}
             </span>
           )}
-          {/* Pro-only PDF export — only rendered when the payload says the user
+          {/* Pro PDF export — only rendered when the payload says the user
               is entitled to dossierPdf, so the link never lands on the teaser.
               A plain GET link to the route triggers the attachment download. */}
           {data.dossierPdf === true && data.address?.id && (
@@ -1141,6 +1160,29 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
         )}
 
         {/* Honest hint when a precise location is missing — no fabricated rows */}
+        {view.preview && (
+          <div className="p-3 rounded-xl border border-tone-orange-br bg-tone-orange-bg/35">
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-background/40 border border-tone-orange-br flex items-center justify-center shrink-0">
+                <Lock className="h-4 w-4 text-tone-orange-fg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">{td("dossier_preview_unlock_title")}</p>
+                <p className="mt-1 text-xs leading-5 text-tone-orange-fg/90">
+                  {td("dossier_preview_unlock_body")}
+                </p>
+                <Link
+                  href="/pricing"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
+                >
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  {td("dossier_preview_unlock_cta")}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {view.showLocationHint && (
           <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-border bg-foreground/[0.02]">
             <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />

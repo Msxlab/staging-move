@@ -124,11 +124,8 @@ describe("PricingSection", () => {
     // does NOT list it. The Family card states it; the Pro card rolls it up under
     // "Everything in Family". So: Family card bullet + one compare-table row = 2.
     expect(html.match(/AI move briefing/g)).toHaveLength(2);
-    // New Home Dossier appears on all three paid cards (Individual/Family screen,
-    // Pro lists the PDF export) + two compare rows (the dossier screen + the
-    // Pro-only PDF export). Assert on substrings without "&" ?
-    // renderToStaticMarkup escapes it to &amp;.
-    expect(html.match(/New Home Dossier/g)).toHaveLength(5);
+    expect(html).toContain("New Home Dossier: flood zone, school district");
+    expect(html).toContain("New Home Dossier PDF export");
     // Individual + Family card bullets + the subscription-terms box line = 3
     // (the Pro card rolls it up under "Everything in Family"; the compare-table
     // row label is worded without "with", so neither is counted).
@@ -170,6 +167,7 @@ describe("PricingSection", () => {
     // Individual: data-checked suggestions + dossier + VIN + weather; NO AI.
     expect(indiv).toContain("Data-checked provider suggestions");
     expect(indiv).toContain("New Home Dossier");
+    expect(indiv).not.toContain("New Home Dossier PDF export");
     expect(indiv).toContain("VIN recall check");
     expect(indiv).toContain("weather alerts & weekly digest");
     expect(indiv).not.toContain("AI move briefing");
@@ -183,7 +181,7 @@ describe("PricingSection", () => {
     // Pro: inherits Family + the Pro-only differentiators.
     expect(pro).toContain("Everything in Family");
     expect(pro).toContain("Licensed mover suggestions");
-    expect(pro).toContain("New Home Dossier PDF export");
+    expect(pro).toContain("New Home Dossier PDF exports");
     expect(pro).toContain("Up to 3 move plans at once");
     expect(pro).toContain("Priority support");
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
 // getPlanForLimitScope is mocked (no DB); planFeatures stays REAL so the dossierPdf gate
-// exercises the actual @locateflow/shared matrix (Pro-only). The dossier data
+// exercises the actual @locateflow/shared matrix (Pro only). The dossier data
 // route and the pdfkit generator are mocked at their boundaries.
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
@@ -113,7 +113,9 @@ describe("GET /api/addresses/:id/dossier/pdf — dossierPdf gate (Pro only)", ()
     },
   );
 
-  it("renders a PDF for an entitled PRO user", async () => {
+  it("renders a PDF for an entitled Pro user", async () => {
+    const plan = "PRO";
+    mockGetPlanForLimitScope.mockResolvedValue({ plan });
     const res = await GET(req(), ctx());
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/pdf");

@@ -55,6 +55,14 @@ describe("billing plan catalog (doc 62 cascade)", () => {
     });
   });
 
+  it("keeps New Home Dossier PDF export copy on Pro only", () => {
+    expect(BILLING_PLAN_DEFINITIONS.FREE_TRIAL.features.join("\n")).toContain("PDF export is Pro");
+    expect(BILLING_PLAN_DEFINITIONS.FREE_TRIAL.features.join("\n")).not.toContain("full report and PDF");
+    expect(BILLING_PLAN_DEFINITIONS.INDIVIDUAL.features.join("\n")).not.toContain("New Home Dossier PDF");
+    expect(BILLING_PLAN_DEFINITIONS.FAMILY.features.join("\n")).not.toContain("New Home Dossier PDF");
+    expect(BILLING_PLAN_DEFINITIONS.PRO.features.join("\n")).toContain("New Home Dossier PDF exports");
+  });
+
   it("resolves Family/Pro through getBillingPlanDefinition and falls back to Free Trial for unknowns", () => {
     expect(getBillingPlanDefinition("FAMILY").displayName).toBe("Family");
     expect(getBillingPlanDefinition("PRO").displayName).toBe("Pro");

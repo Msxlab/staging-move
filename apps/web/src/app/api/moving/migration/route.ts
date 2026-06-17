@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
+import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
@@ -43,6 +44,14 @@ export async function GET(request: NextRequest) {
 
     if (!planId) {
       return NextResponse.json({ error: "planId is required" }, { status: 400 });
+    }
+
+    const entitlement = await canGenerateMoveTasks(userId);
+    if (!entitlement.allowed) {
+      return NextResponse.json(
+        { error: entitlement.reason, code: entitlement.code, upgradeRequired: entitlement.upgradeRequired },
+        { status: 403 },
+      );
     }
 
     // Fetch moving plan with addresses

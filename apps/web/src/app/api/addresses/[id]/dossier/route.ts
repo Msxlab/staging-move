@@ -55,6 +55,7 @@ import { planFeatures } from "@locateflow/shared";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const WEATHER_WINDOW_DAYS = 7;
 const DOSSIER_SUMMARY_CACHE_TTL_MS = 15 * 60 * 1000;
+const DOSSIER_PREVIEW_CACHE_TTL_MS = 10 * 60 * 1000;
 const DOSSIER_FULL_CACHE_TTL_MS = 10 * 60 * 1000;
 // Mirrors the "active plan" definition used by daily-digest move reminders.
 const ACTIVE_PLAN_STATUSES = ["PLANNING", "IN_PROGRESS"];
@@ -541,11 +542,99 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Paid-plan gate (owner decision): the dossier is INDIVIDUAL and up.
-    // FREE/FREE_TRIAL get a value-first upgrade teaser instead. HTTP 200 —
-    // never 403 — and the address/section blocks are omitted, so old clients
-    // (which require them) fail soft to a hidden card and no external lookups
-    // or plan queries are spent on a gated request. 401/404 above still win.
+    // FREE/FREE_TRIAL get only the preview subset (flood / school /
+    // moving-day weather) and never receive the full dossier payload. HTTP
+    // 200 — never 403. 401/404 above still win.
     if (!features.homeDossier) {
+      if (features.homeDossierPreview) {
+        const previewBase = {
+          configured: true,
+          preview: true,
+          homeDossierPreview: true,
+          fullDossier: false,
+          dossierPdf: false,
+          address: addressPayload,
+          lockedSections: [
+            "hazards",
+            "radon",
+            "water",
+            "air",
+            "housing",
+            "evCharging",
+            "neighborhood",
+            "pdf",
+          ],
+        };
+
+        if (!hasLocation) {
+          const previewNoLocation = {
+            ...previewBase,
+            flood: { status: "no_location", zone: null, isHighRisk: null } satisfies FloodSection,
+            school: { status: "no_location", districtName: null, ncesId: null } satisfies SchoolSection,
+            weather: emptyWeather("no_location"),
+          };
+          recordIntegrationOutcomes({
+            nws: previewNoLocation.weather.status,
+            dossier: "preview",
+          });
+          return dossierJson(previewNoLocation, "BYPASS");
+        }
+
+        const now = new Date();
+        const todayStartUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const plan = await prisma.movingPlan.findFirst({
+          where: scopedRecordWhere(scope, {
+            toAddressId: id,
+            deletedAt: null,
+            status: { in: ACTIVE_PLAN_STATUSES },
+            moveDate: { gte: todayStartUtc },
+          }),
+          orderBy: { moveDate: "asc" },
+          select: { moveDate: true },
+        });
+        const withinWindow =
+          plan !== null && plan.moveDate.getTime() - now.getTime() <= WEATHER_WINDOW_DAYS * MS_PER_DAY;
+        const weatherTargetDate = withinWindow ? plan.moveDate.toISOString().slice(0, 10) : null;
+        const previewCacheKey = [
+          "preview",
+          userId,
+          scopeKey,
+          address.id,
+          addressCacheVersion,
+          address.latitude ?? "no-lat",
+          address.longitude ?? "no-lng",
+          weatherTargetDate || "no-weather",
+        ].join(":");
+        const cachedPreview = getDossierCache(previewCacheKey);
+        if (cachedPreview) {
+          return dossierJson(cachedPreview, "HIT", DOSSIER_PREVIEW_CACHE_TTL_MS);
+        }
+
+        const [floodSettled, schoolSettled, weatherSettled] = await Promise.allSettled([
+          lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
+          lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
+          weatherTargetDate
+            ? lookupMoveDayForecast({
+                latitude: address.latitude,
+                longitude: address.longitude,
+                targetDate: weatherTargetDate,
+              })
+            : Promise.resolve(null),
+        ]);
+        const preview = {
+          ...previewBase,
+          flood: floodSection(floodSettled),
+          school: schoolSection(schoolSettled),
+          weather: weatherSection(weatherSettled),
+        };
+        recordIntegrationOutcomes({
+          nws: preview.weather.status,
+          dossier: "preview",
+        });
+        setDossierCache(previewCacheKey, preview, DOSSIER_PREVIEW_CACHE_TTL_MS);
+        return dossierJson(preview, "MISS", DOSSIER_PREVIEW_CACHE_TTL_MS);
+      }
+
       // Fire-and-forget telemetry (never throws, never adds latency): a gated
       // dossier request spent no external lookups, so only the composite
       // 'dossier' counter records it.

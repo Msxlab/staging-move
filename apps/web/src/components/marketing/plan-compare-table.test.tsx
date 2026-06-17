@@ -102,7 +102,7 @@ describe("COMPARE_GROUPS - every cell pinned to the enforced ground truth", () =
     expect(cells("rowRealMap")).toEqual(familyUp); // FEATURES.realMap
   });
 
-  it("movers, dossier-PDF, and priority support are Pro only; concurrent plans are 1/1/1/3", () => {
+  it("dossier-PDF, movers, and priority support are Pro only", () => {
     const proOnly = [excluded, excluded, excluded, included];
     expect(cells("rowMoverSuggestions")).toEqual(proOnly); // FEATURES.moverSuggestions
     expect(cells("rowDossierPdf")).toEqual(proOnly); // FEATURES.dossierPdf

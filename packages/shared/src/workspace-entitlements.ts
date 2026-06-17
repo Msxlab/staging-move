@@ -24,6 +24,8 @@ export interface WorkspacePlanFeatures {
   addressValidation: boolean;
   /** AI move briefing (LLM situation summary on the dashboard). Family and up. */
   aiBriefing: boolean;
+  /** Free preview subset of the New Home Dossier (flood / school / moving-day weather). */
+  homeDossierPreview: boolean;
   /** New Home Dossier (flood / school district / move-day weather). Individual and up. */
   homeDossier: boolean;
   /** FMCSA-registered household-goods mover suggestions on the moving plan. Pro only. */
@@ -47,13 +49,14 @@ export interface WorkspacePlanFeatures {
 // Owner-ratified tier ladder (2026-06-10): Free is a thin teaser tier; the
 // data-checked recommendations, VIN check, weather/digest, dossier and AI
 // live behind paid plans; AI is Family+Pro only (same experience — the cap
-// is cost control, not a tier line); movers, dossier-PDF, multi-plan and
-// priority support are Pro-only so Pro is meaningfully differentiated.
+// is cost control, not a tier line); movers, dossier-PDF, multi-plan,
+// neighborhood intel, and priority support are Pro-only so Pro is meaningfully
+// differentiated.
 const FEATURES: Record<string, WorkspacePlanFeatures> = {
-  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: true, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: true, neighborhoodIntel: true, prioritySupport: true, concurrentPlanLimit: 3 },
-  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
-  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: false, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
-  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossier: false, moverSuggestions: false, vehicleCheck: false, weatherDigest: false, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  PRO: { seatLimit: 10, apiConnectors: true, manualConnectors: true, partnerHub: true, addressLabels: true, advancedExport: true, addressValidation: true, aiBriefing: true, homeDossierPreview: true, homeDossier: true, moverSuggestions: true, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: true, neighborhoodIntel: true, prioritySupport: true, concurrentPlanLimit: 3 },
+  FAMILY: { seatLimit: 6, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: true, advancedExport: false, addressValidation: true, aiBriefing: true, homeDossierPreview: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: true, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  INDIVIDUAL: { seatLimit: 1, apiConnectors: false, manualConnectors: true, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: true, aiBriefing: false, homeDossierPreview: true, homeDossier: true, moverSuggestions: false, vehicleCheck: true, weatherDigest: true, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
+  FREE_TRIAL: { seatLimit: 1, apiConnectors: false, manualConnectors: false, partnerHub: false, addressLabels: false, advancedExport: false, addressValidation: false, aiBriefing: false, homeDossierPreview: true, homeDossier: false, moverSuggestions: false, vehicleCheck: false, weatherDigest: false, realMap: false, dossierPdf: false, neighborhoodIntel: false, prioritySupport: false, concurrentPlanLimit: 1 },
 };
 
 const DEFAULT_FEATURES: WorkspacePlanFeatures = FEATURES.FREE_TRIAL;

@@ -38,7 +38,7 @@ export type WalkBand = "least" | "below_average" | "above_average" | "most";
 export interface HomeDossierResponse {
   configured: boolean;
   /**
-   * Plan entitlement (paid-plans-only packaging). `false` ⇒ render the
+   * Plan entitlement (Pro-only PDF packaging). `false` ⇒ render the
    * value-first upgrade teaser instead of data rows. Absent (older servers
    * that predate the flag) ⇒ treated as entitled, so a half-rolled-out
    * backend never hides real data from a paying user.
@@ -48,7 +48,7 @@ export interface HomeDossierResponse {
   upgradeRequired?: boolean | string;
   /** Gate code (for diagnostics only; rendering is driven by entitlement/gate). */
   code?: string;
-  /** Pro-only PDF entitlement. Present for parity with the web dossier payload. */
+  /** Pro PDF entitlement. Present for parity with the web dossier payload. */
   dossierPdf?: boolean;
   address?: { id: string; city: string; state: string };
   /** Data sections may be omitted entirely on unentitled payloads. */
