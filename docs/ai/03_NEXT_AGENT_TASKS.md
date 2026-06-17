@@ -12,43 +12,28 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 
 ## Active Ops Task
 
-- Dokploy migration preparation is in progress. Current handoff:
-  [[handoffs/2026-06-16-1829-dokploy-cron-parity]]
-- Dokploy UI-only DB copy succeeded: the one-shot `locateflow-dbcopy` container
-  streamed the DigitalOcean MySQL data into Dokploy MySQL, exited `0`, and
-  source/target counts matched for `_prisma_migrations`, `RuntimeConfigEntry`,
-  `RuntimeConfigEntry_active`, users, subscriptions, addresses, providers,
-  saved/custom providers, tasks, email logs, connector dispatches, and address
-  change events. `locateflow-mysql` remains running healthy.
-- Temporary DigitalOcean restore access was removed after the copy: the
-  temporary restore user was deleted and the temporary Dokploy-server DB
-  firewall rule was removed. DigitalOcean remains live and DNS was not changed.
-- GitHub provider is configured in Dokploy for `Msxlab/move-main` on branch
-  `codex/dokploy-migration`. Local web/admin production Docker builds now pass
-  after build-blocker fixes. The first full app deploy reached container startup,
-  but `locateflow-migrate` failed after `prisma migrate deploy` because the
-  admin seed password did not satisfy `seed-admin.ts` policy. Dokploy compose now
-  overrides `migrate` to run only `prisma migrate deploy`, because the restored
-  DB already includes the migrated admin user. Next step: push this compose fix,
-  redeploy in Dokploy, and confirm `migrate`, `web`, and `admin` are healthy.
-  The Dokploy compose keeps `cron` behind the `cron` profile, so rehearsal deploys
-  should not start scheduled jobs. Do not enable the `cron` profile until final
-  cutover.
-- Cleanup reminder: remove the temporary `SOURCE_MYSQL_PASSWORD` key from
-  Dokploy env if it is still present. Do not reveal or record its value.
-- Dokploy rehearsal health is green when live hostnames are forced to the
-  Dokploy server IP: web `/api/health`, web `/api/ready`, and admin
-  `/api/healthz` returned `200`. Public DNS still points through
-  Cloudflare/DigitalOcean, no DNS cutover has happened, and strict TLS directly
-  against the Dokploy IP is not trusted yet. The next risky step is a planned
-  final cutover with DNS/certificate handling.
-- Do not deploy/cut over until writes can be frozen, GitHub scheduled cron can
-  be paused, final dump can be taken, final restore can be counted, health
-  checks pass, and DNS/cron can be moved in that order.
-- Dokploy/Ofelia cron parity is prepared but still disabled behind the `cron`
-  Compose profile. `docker/ofelia.ini` now covers every `/api/cron/*` endpoint
-  used by `.github/workflows/cron.yml`; enable it only after GitHub scheduled
-  cron is disabled and DNS/final DB restore are healthy.
+- Dokploy production cutover is complete. Current handoff:
+  [[handoffs/2026-06-16-2313-dokploy-cutover-complete]]
+- Cloudflare DNS now routes `locateflow.com`, `www.locateflow.com`,
+  `admin.locateflow.com`, and `img.locateflow.com` to Dokploy via proxied A
+  records for `89.117.149.77`.
+- Final DigitalOcean MySQL to Dokploy MySQL restore completed through
+  `docker-compose.dokploy-dbcopy.yml`, exited `0`, and source/target counts
+  matched for the checked core tables including users, subscriptions, addresses,
+  providers, runtime config rows, and Prisma migrations.
+- Dokploy latest deployed commit is `6dbe3fbb` (`chore: enable dokploy cron
+  service`). Containers are healthy/running: `locateflow-web`,
+  `locateflow-admin`, `locateflow-mysql`, `locateflow-imgproxy`, and
+  `locateflow-cron`; `locateflow-migrate` exited `0`.
+- Public smoke checks after DNS and final deploy returned `200` for root
+  health, root ready, admin healthz, www after redirect, and imgproxy root.
+- GitHub scheduled cron was disabled before cutover. Dokploy Ofelia cron is now
+  the intended single cron source; keep GitHub scheduled cron disabled.
+- DigitalOcean source DB firewall is now empty. Keep the old DigitalOcean app
+  and DB untouched for 7-14 days as rollback archive.
+- Cleanup reminder: remove temporary Dokploy env keys `SOURCE_MYSQL_HOST`,
+  `SOURCE_MYSQL_PORT`, `SOURCE_MYSQL_USER`, `SOURCE_MYSQL_PASSWORD`, and
+  `SOURCE_MYSQL_DATABASE`. Do not reveal or record their values.
 
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 
