@@ -201,17 +201,17 @@ export default async function LandingPage() {
               {t("productDefinition")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href={primaryHref}>
-                <Button size="lg" className="w-full sm:w-auto text-base px-8">
+              <Button asChild size="lg" className="w-full sm:w-auto text-base px-8">
+                <Link href={primaryHref}>
                   {userId ? tErrors("goToDashboard") : t("heroCta")}
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/how-it-works">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
+                <Link href="/how-it-works">
                   {t("heroSecondary")}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
@@ -525,7 +525,7 @@ export default async function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-tone-honey-fg animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-tone-honey-fg motion-safe:animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
             <h2 className="text-3xl font-bold tracking-tight">{t("mobile_title")}</h2>
@@ -560,12 +560,12 @@ export default async function LandingPage() {
           <p className="text-lg opacity-80 max-w-xl mx-auto">
             {t("trust_retention")} · {t("noCreditCard")}
           </p>
-          <Link href={primaryHref}>
-            <Button size="lg" variant="secondary" className="text-base px-8">
+          <Button asChild size="lg" variant="secondary" className="text-base px-8">
+            <Link href={primaryHref}>
               {userId ? tErrors("goToDashboard") : t("heroCta")}
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </section>
 

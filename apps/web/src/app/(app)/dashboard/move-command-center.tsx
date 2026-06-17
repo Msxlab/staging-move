@@ -152,14 +152,16 @@ function ReadinessRing({ percent, label }: { percent: number; label: string }) {
           r={radius}
           fill="none"
           stroke="currentColor"
-          className="text-tone-orange-fg transition-all duration-700 ease-out"
+          className="text-tone-orange-fg transition-[stroke-dasharray] duration-700 ease-out motion-reduce:transition-none"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-foreground leading-none">{percent}%</span>
+        {/* aria-hidden: the wrapping ring already exposes the value via role=img +
+            aria-label, so the visible % must not be read a second time. */}
+        <span aria-hidden="true" className="text-xl font-bold text-foreground leading-none">{percent}%</span>
       </div>
     </div>
   );
@@ -478,7 +480,9 @@ export function MoveCommandCenter({
           <ReadinessRing percent={readiness} label={t("commandCenter_readinessLabel", { percent: readiness })} />
           <div className="lg:text-center">
             <p className="text-sm font-semibold text-foreground">{t("commandCenter_readiness")}</p>
-            <p className="text-xs text-muted-foreground">
+            {/* aria-live: announce readiness changes (e.g. after completing a task)
+                to screen readers, since the ring itself is a static role=img. */}
+            <p className="text-xs text-muted-foreground" aria-live="polite">
               {checklist
                 ? t("commandCenter_readinessDetail", {
                     done: checklist.completedItems,

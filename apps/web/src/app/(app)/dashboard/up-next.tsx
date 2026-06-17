@@ -276,6 +276,8 @@ export function UpNext({
         {/* Transient "Completed — Undo" affordance. */}
         {undoTask && (
           <div
+            role="status"
+            aria-live="polite"
             className={`flex items-center gap-2 rounded-xl border border-tone-emerald-br bg-tone-emerald-bg px-3 py-2.5 ${
               visible.length > 0 ? "mt-2" : ""
             }`}

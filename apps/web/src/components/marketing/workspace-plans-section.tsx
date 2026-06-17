@@ -104,11 +104,11 @@ function PlanCard({
         ))}
       </ul>
       <div className="mt-6">
-        <Link href={planHref(ctaHref, planId)} className="block">
-          <Button variant={highlight ? "default" : "outline"} className="w-full">
+        <Button asChild variant={highlight ? "default" : "outline"} className="w-full">
+          <Link href={planHref(ctaHref, planId)}>
             {ctaLabel}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     </div>
   );
