@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2, Users, ShieldCheck } from "lucide-r
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
 import { PasswordInput } from "@/components/ui/password-input";
+import { AuthFormSkeleton } from "@/components/shared/loading-state";
 import { trackEvent } from "@/lib/analytics";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
@@ -307,7 +308,7 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AuthFormSkeleton />}>
       <SignUpForm />
     </Suspense>
   );
