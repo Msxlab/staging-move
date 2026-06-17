@@ -12,7 +12,9 @@
 #   img.locateflow.com -> service imgproxy, port 8080
 # - Add web, admin, and imgproxy to dokploy-network so Traefik can reach
 #   them. Internal services stay on the default project network only.
-# - Keep GitHub scheduled cron disabled when this cron service is running.
+# - The cron service is behind the `cron` Compose profile. Keep it disabled
+#   during rehearsal deploys; enable it only after final cutover health checks
+#   and after GitHub scheduled cron has been disabled.
 # ---------------------------------------------------------------
 
 name: locateflow
@@ -223,8 +225,12 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
-      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:?ADMIN_SEED_EMAIL is required}
-      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?ADMIN_SEED_PASSWORD is required}
+    # Dokploy restores an existing production DB, including AdminUser.
+    # Do not run seed-admin here; it can reset or block migrated admin access.
+    command:
+      - sh
+      - -lc
+      - pnpm --filter @locateflow/db exec prisma migrate deploy
     restart: "no"
     logging:
       driver: json-file

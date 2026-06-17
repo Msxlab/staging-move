@@ -24,6 +24,7 @@ COPY apps/mobile/package.json              apps/mobile/package.json
 COPY packages/db/package.json              packages/db/package.json
 COPY packages/shared/package.json          packages/shared/package.json
 COPY packages/connectors/package.json      packages/connectors/package.json
+COPY packages/db/prisma                    packages/db/prisma
 COPY patches                               patches
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \

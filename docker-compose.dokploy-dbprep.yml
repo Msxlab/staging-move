@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------
+# LocateFlow - Dokploy DB preparation compose
+#
+# Temporary compose target for SSH-less migration prep. It starts only the
+# MySQL service with the same project name and volume as the full Dokploy
+# stack, so a restored database can be reused when switching back to
+# docker-compose.dokploy.yml.
+#
+# Do not bind MySQL to a public host port. Use Dokploy's container terminal
+# or the final full compose stack for follow-up operations.
+# ---------------------------------------------------------------
+
+name: locateflow
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: locateflow-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?MYSQL_DATABASE is required}
+      MYSQL_USER: ${MYSQL_USER:?MYSQL_USER is required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-connections=200
+      - --innodb-buffer-pool-size=512M
+      - --slow-query-log=1
+      - --long-query-time=2
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mysql_data:
+

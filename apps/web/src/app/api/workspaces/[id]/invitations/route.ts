@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, getEffectiveEntitlement, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";

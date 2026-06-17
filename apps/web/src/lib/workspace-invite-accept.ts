@@ -17,8 +17,7 @@
  */
 
 import { getEffectiveEntitlement } from "@locateflow/shared";
-import { Prisma } from "@prisma/client";
-import type { WorkspaceInvitation } from "@prisma/client";
+import { Prisma, type WorkspaceInvitation } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { seatLimitForPlan } from "@/lib/workspace-invitations";
 import { createInAppNotification } from "@/lib/in-app-notifications";

@@ -5,7 +5,7 @@ import { guardCronRequest } from "@/lib/cron-guard";
 import { INDIVIDUAL_ANNUAL_PRICE_LABEL } from "@/lib/shared-billing";
 import { reconcileSeatsForOwner } from "@/lib/workspace-ownership";
 import { DEFAULT_US_TIME_ZONE, formatInUserTimeZone } from "@locateflow/shared";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@locateflow/db";
 
 export const runtime = "nodejs";
 

@@ -10,6 +10,31 @@ Dashboard: [[00_PRODUCT_BRAIN_DASHBOARD]]
 Experience layer: [[experience/USER_JOURNEY_MAP]], [[experience/FRICTION_LOG]], [[experience/AHA_MOMENT_MAP]], [[experience/EXPERIENCE_BACKLOG]]
 Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]], [[vision/90_180_365_DAY_PLAN]]
 
+## Active Ops Task
+
+- Dokploy production cutover is complete. Current handoff:
+  [[handoffs/2026-06-16-2313-dokploy-cutover-complete]]
+- Cloudflare DNS now routes `locateflow.com`, `www.locateflow.com`,
+  `admin.locateflow.com`, and `img.locateflow.com` to Dokploy via proxied A
+  records for `89.117.149.77`.
+- Final DigitalOcean MySQL to Dokploy MySQL restore completed through
+  `docker-compose.dokploy-dbcopy.yml`, exited `0`, and source/target counts
+  matched for the checked core tables including users, subscriptions, addresses,
+  providers, runtime config rows, and Prisma migrations.
+- Dokploy latest deployed commit is `6dbe3fbb` (`chore: enable dokploy cron
+  service`). Containers are healthy/running: `locateflow-web`,
+  `locateflow-admin`, `locateflow-mysql`, `locateflow-imgproxy`, and
+  `locateflow-cron`; `locateflow-migrate` exited `0`.
+- Public smoke checks after DNS and final deploy returned `200` for root
+  health, root ready, admin healthz, www after redirect, and imgproxy root.
+- GitHub scheduled cron was disabled before cutover. Dokploy Ofelia cron is now
+  the intended single cron source; keep GitHub scheduled cron disabled.
+- DigitalOcean source DB firewall is now empty. Keep the old DigitalOcean app
+  and DB untouched for 7-14 days as rollback archive.
+- Cleanup reminder: remove temporary Dokploy env keys `SOURCE_MYSQL_HOST`,
+  `SOURCE_MYSQL_PORT`, `SOURCE_MYSQL_USER`, `SOURCE_MYSQL_PASSWORD`, and
+  `SOURCE_MYSQL_DATABASE`. Do not reveal or record their values.
+
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 
 Current strategy:

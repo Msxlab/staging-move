@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";

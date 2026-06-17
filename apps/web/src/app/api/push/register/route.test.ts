@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@locateflow/db";
 
 const mocks = vi.hoisted(() => ({
   requireDbUserId: vi.fn(),

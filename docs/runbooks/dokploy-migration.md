@@ -75,6 +75,12 @@ The script prints key names only. It does not print values.
 ./docker-compose.dokploy.yml
 ```
 
+During rehearsal deploys, leave the `cron` Compose profile disabled. The
+Dokploy compose file keeps `cron` behind the `cron` profile so web/admin can be
+tested without firing scheduled jobs against the restored rehearsal database.
+Enable the profile only during the real cutover after GitHub scheduled cron is
+disabled and health checks pass.
+
 3. Configure Dokploy environment variables from DigitalOcean and Runtime Config
    inventory. Values must be copied by the operator, not pasted into chat.
 4. Configure Dokploy domains:
@@ -91,6 +97,46 @@ docker compose --env-file .env -f docker-compose.dokploy.yml config --quiet
 
 7. Confirm no public host port is published for MySQL. The `mysql` service must
    use only the internal Docker network and the `mysql_data` volume.
+
+### SSH-less DB Prep Fallback
+
+If host SSH is not available, temporarily point the Dokploy compose path to:
+
+```text
+docker-compose.dokploy-dbprep.yml
+```
+
+This starts only `mysql` with the same Compose project name and `mysql_data`
+volume used by the full Dokploy stack. It intentionally does not start `web`,
+`admin`, `imgproxy`, or `cron`.
+
+After the database has been restored and verified, switch the compose path back
+to:
+
+```text
+docker-compose.dokploy.yml
+```
+
+Do not enable live domains or cron until the final dump/restore and health
+checks are complete.
+
+For a UI-only restore, use the one-off DB copy compose:
+
+```text
+docker-compose.dokploy-dbcopy.yml
+```
+
+It keeps `mysql` on the shared `mysql_data` volume and adds a one-shot `dbcopy`
+container that streams the DigitalOcean MySQL dump directly into Dokploy MySQL.
+Add source DB credentials only to Dokploy environment variables or another
+approved secret surface, never to chat or committed files. Remove temporary
+source credentials after the copy and count comparison are complete.
+
+2026-06-16 rehearsal note: the UI-only DB copy path was run successfully. The
+one-shot `locateflow-dbcopy` container exited `0`, source/target counts matched,
+temporary DigitalOcean restore access was removed, and the Dokploy Raw compose
+was switched back to MySQL-only prep so the restore job is not rerun
+accidentally.
 
 ## 3. Rehearsal Restore
 
@@ -110,6 +156,7 @@ mysqldump \
   --triggers \
   --events \
   --hex-blob \
+  --set-gtid-purged=OFF \
   --default-character-set=utf8mb4 \
   "$DO_DB_NAME" \
   > locateflow-rehearsal.sql
@@ -134,17 +181,22 @@ docker compose --env-file .env -f docker-compose.dokploy.yml run --rm migrate \
 
 Compare source and target:
 
-```sql
-SELECT COUNT(*) AS migrations FROM _prisma_migrations;
-SELECT COUNT(*) AS runtime_config_entries FROM RuntimeConfigEntry;
-SELECT COUNT(*) AS active_runtime_config_entries FROM RuntimeConfigEntry WHERE isActive = 1;
-SELECT COUNT(*) AS users FROM User;
-SELECT COUNT(*) AS admin_users FROM AdminUser;
-SELECT COUNT(*) AS addresses FROM Address;
-SELECT COUNT(*) AS services FROM Service;
-SELECT COUNT(*) AS move_tasks FROM MoveTask;
-SELECT COUNT(*) AS subscriptions FROM Subscription;
+```bash
+mysql --host="$DO_DB_HOST" --port="$DO_DB_PORT" --user="$DO_DB_USER" \
+  --password --database="$DO_DB_NAME" \
+  < scripts/dokploy-db-counts.sql \
+  > source-counts.txt
+
+docker compose --env-file .env -f docker-compose.dokploy.yml exec -T mysql \
+  mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" \
+  < scripts/dokploy-db-counts.sql \
+  > target-counts.txt
+
+diff -u source-counts.txt target-counts.txt
 ```
+
+`scripts/dokploy-db-counts.sql` prints counts only. It does not print customer
+rows, secrets, addresses, emails, tokens, or runtime config values.
 
 Then start the app stack:
 
