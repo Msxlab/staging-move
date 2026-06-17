@@ -116,25 +116,39 @@ Apple takes 15–30% of each subscription.
    - Product ID: `com.locateflow.individual.monthly`
    - Subscription group: create one called `LocateFlow Premium`
    - Subscription duration: 1 month
-   - Pricing: $4.99/mo (or whatever you choose)
+   - Pricing: target USD 4.99/month, or the nearest App Store price tier the operator intentionally chooses.
    - Localizations, screenshots, review info: follow the prompts. Apple
      requires screenshots of the subscribe screen for review.
-3. **Users and Access → Integrations → App Store Server API**
+3. Add the remaining shipped subscription products in the same subscription group:
+   - `com.locateflow.individual.annual` - target USD 24/year, annual-first hero, 90-day introductory trial when approved.
+   - `com.locateflow.family.monthly` - target USD 7.99/month.
+   - `com.locateflow.family.annual` - target USD 39/year.
+   - `com.locateflow.pro.monthly` - target USD 11.99/month.
+   - `com.locateflow.pro.annual` - target USD 59/year.
+   App Store price tiers and Apple fees may make exact web parity a business
+   decision: match the nearest tier, absorb the fee, or steer price-sensitive
+   upgrades to web. Code cannot change App Store prices.
+4. **Users and Access → Integrations → App Store Server API**
    - Generate a new key. Download the `.p8`. Note the **Key ID**.
    - Note the **Issuer ID** at the top of the page.
-4. **App Information → App Store Server Notifications V2**
+5. **App Information → App Store Server Notifications V2**
    - Production URL:
      `https://app.yourdomain.com/api/webhooks/appstore`
    - Sandbox URL (for TestFlight):
      `https://app.yourdomain.com/api/webhooks/appstore`
    - Version: **V2 JWS**
-5. In the admin panel → **Runtime Config**:
+6. In the admin panel → **Runtime Config**:
    - `APPLE_BUNDLE_ID`                = `com.locateflow.mobile`
    - `APPLE_APP_STORE_ISSUER_ID`      = issuer ID from step 3
    - `APPLE_APP_STORE_KEY_ID`         = key ID from step 3
    - `APPLE_APP_STORE_PRIVATE_KEY`    = full `.p8` contents
    - `APPLE_APP_STORE_ENVIRONMENT`    = `Production` once live, `Sandbox` for TestFlight
    - `MOBILE_IOS_PRODUCT_INDIVIDUAL`  = `com.locateflow.individual.monthly`
+   - `MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY` = `com.locateflow.individual.annual`
+   - `MOBILE_IOS_PRODUCT_FAMILY`      = `com.locateflow.family.monthly`
+   - `MOBILE_IOS_PRODUCT_FAMILY_YEARLY` = `com.locateflow.family.annual`
+   - `MOBILE_IOS_PRODUCT_PRO`         = `com.locateflow.pro.monthly`
+   - `MOBILE_IOS_PRODUCT_PRO_YEARLY`  = `com.locateflow.pro.annual`
 
 > The same App Store Connect private key is **different** from the Sign in
 > with Apple key. Generate separately; don't reuse.
@@ -151,8 +165,17 @@ Google takes 15–30% of each subscription.
 3. **Monetize → Products → Subscriptions → Create subscription**
    - Product ID: `locateflow_individual_monthly`
    - Base plan: `monthly-auto` (auto-renewing, 1-month period)
-   - Price: $4.99/mo
-4. **Setup → API access** (inside Play Console)
+   - Price: target USD 4.99/month, or the nearest Play price tier the operator intentionally chooses.
+4. Add the remaining shipped subscriptions/base plans:
+   - `locateflow_individual_annual` - target USD 24/year, annual-first hero, introductory trial offer when approved.
+   - `locateflow_family_monthly` - target USD 7.99/month.
+   - `locateflow_family_annual` - target USD 39/year.
+   - `locateflow_pro_monthly` - target USD 11.99/month.
+   - `locateflow_pro_annual` - target USD 59/year.
+   Play price tiers and Google fees may make exact web parity a business
+   decision: match the nearest tier, absorb the fee, or steer price-sensitive
+   upgrades to web. Code cannot change Play prices.
+5. **Setup → API access** (inside Play Console)
    - Link a Google Cloud project (or create one).
    - Click **Create new service account** — opens Google Cloud Console.
      - Name: `locateflow-play-api`
@@ -161,11 +184,11 @@ Google takes 15–30% of each subscription.
    - Back in Play Console: click **Grant access** on the newly created account.
      - Permissions: **View financial data, orders, and cancellation survey
        responses** + **Manage orders and subscriptions**.
-5. **Monetize → Monetization setup → Real-time developer notifications**
+6. **Monetize → Monetization setup → Real-time developer notifications**
    - Create a Pub/Sub topic in Google Cloud (e.g. `play-rtdn`).
    - In Play Console, paste the full topic name:
      `projects/<gcp-project>/topics/play-rtdn`.
-6. In Google Cloud Console:
+7. In Google Cloud Console:
    - **Pub/Sub → Topics → play-rtdn → Subscriptions → Create**
      - Delivery type: **Push**
      - Endpoint URL: `https://app.yourdomain.com/api/webhooks/playstore`
@@ -174,7 +197,7 @@ Google takes 15–30% of each subscription.
        OIDC tokens on behalf of that account.
      - **Audience** field: leave as the endpoint URL (this is what our
        backend expects).
-7. In the admin panel → **Runtime Config**:
+8. In the admin panel → **Runtime Config**:
    - `GOOGLE_PLAY_PACKAGE_NAME`                  = `com.locateflow.mobile`
    - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`         = from the JSON (`client_email`)
    - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`   = from the JSON (`private_key`),
@@ -183,6 +206,11 @@ Google takes 15–30% of each subscription.
      (same as the Pub/Sub subscription's audience; production webhooks reject when this is missing)
    - `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` = Pub/Sub push auth service account email
    - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL`         = `locateflow_individual_monthly`
+   - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY`  = `locateflow_individual_annual`
+   - `MOBILE_ANDROID_PRODUCT_FAMILY`             = `locateflow_family_monthly`
+   - `MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY`      = `locateflow_family_annual`
+   - `MOBILE_ANDROID_PRODUCT_PRO`                = `locateflow_pro_monthly`
+   - `MOBILE_ANDROID_PRODUCT_PRO_YEARLY`         = `locateflow_pro_annual`
 
 ---
 
