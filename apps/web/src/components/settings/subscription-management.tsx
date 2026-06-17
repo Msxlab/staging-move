@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, Check, Crown, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   BILLING_PLAN_DEFINITIONS,
+  billingPriceLabelForInterval,
   buildCheckoutDisclosureText,
   buildTrialConsentLabel,
   deriveUserSubscriptionState,
@@ -100,13 +101,11 @@ function planDisplayName(subscription?: SubscriptionRecord | null) {
 }
 
 function yearlyPriceLabel(plan: Exclude<BillingPlan, "FREE_TRIAL">) {
-  const definition = BILLING_PLAN_DEFINITIONS[plan];
-  return definition.yearlyPriceLabel || `$${definition.yearlyPriceUsd ?? ""}/year`;
+  return billingPriceLabelForInterval(plan, "YEAR");
 }
 
 function monthlyPriceLabel(plan: Exclude<BillingPlan, "FREE_TRIAL">) {
-  const definition = BILLING_PLAN_DEFINITIONS[plan];
-  return `${definition.priceLabel}${definition.periodLabel}`;
+  return billingPriceLabelForInterval(plan, "MONTH");
 }
 
 function intervalLabel(subscription: SubscriptionRecord | null | undefined) {
@@ -765,10 +764,8 @@ export default function SubscriptionManagementPage({
             (() => {
               const isOnMonthly = subscription.billingInterval === "MONTH";
               const targetInterval = isOnMonthly ? "YEAR" : "MONTH";
-              const monthlyUsd =
-                BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd ?? 3.99;
-              const yearlyUsd =
-                BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 39.99;
+              const monthlyUsd = BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd;
+              const yearlyUsd = BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 24;
               const annualOfMonthly = monthlyUsd * 12;
               const annualSavings = Math.max(annualOfMonthly - yearlyUsd, 0);
               const savingsPercent = annualOfMonthly > 0

@@ -2,26 +2,31 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Minus } from "lucide-react";
-import { BILLING_PLAN_DEFINITIONS, planFeatures, type BillingPlan } from "@locateflow/shared";
+import {
+  BILLING_PLAN_DEFINITIONS,
+  billingPriceLabelForInterval,
+  planFeatures,
+  type BillingPlan,
+} from "@locateflow/shared";
 
 /**
  * Honest "Compare plans" matrix rendered under the pricing cards.
  *
- * Every cell is DERIVED from the constants the app actually enforces — no
+ * Every cell is DERIVED from the constants the app actually enforces - no
  * invented claims:
  *
  *   - packages/shared/src/billing.ts
- *       BILLING_PLAN_DEFINITIONS → prices, isPaid (the paid-tier gate), and
+ *       BILLING_PLAN_DEFINITIONS - prices, isPaid (the paid-tier gate), and
  *       the marketing feature lines (smart suggestions presence).
  *   - packages/shared/src/workspace-entitlements.ts
- *       FEATURES via planFeatures() → seatLimit, partnerHub, advancedExport,
+ *       FEATURES via planFeatures() - seatLimit, partnerHub, advancedExport,
  *       addressValidation, aiBriefing, homeDossier, vehicleCheck, weatherDigest,
  *       realMap, moverSuggestions, dossierPdf, prioritySupport,
  *       concurrentPlanLimit. This is the same matrix the server gates read, so
  *       a row here flips exactly when the entitlement flips for a real user
  *       ("what you see is what the plan enforces").
  *   - apps/web/src/lib/plan-limits.ts
- *       PLAN_LIMITS → address/service caps. That module is server-only (it
+ *       PLAN_LIMITS - address/service caps. That module is server-only (it
  *       imports prisma) and PLAN_LIMITS is not exported, so the caps are
  *       mirrored as literals below; plan-compare-table.test.tsx pins the
  *       mirrored values so drift fails CI instead of shipping a false cell.
@@ -33,7 +38,7 @@ const COMPARE_PLANS: readonly BillingPlan[] = ["FREE_TRIAL", "INDIVIDUAL", "FAMI
 /**
  * Per-plan accent for the column header. Reuses the canonical .plan-free /
  * .plan-family / .plan-pro classes from globals.css (Free pink, Family teal,
- * Pro honey); Individual carries NO class — absent class = base Aurora cool,
+ * Pro honey); Individual carries NO class - absent class = base Aurora cool,
  * the same convention AppShell uses for member tiers.
  */
 const PLAN_HEADER: Record<BillingPlan, { nameKey: string; accentClass: string }> = {
@@ -43,7 +48,7 @@ const PLAN_HEADER: Record<BillingPlan, { nameKey: string; accentClass: string }>
   PRO: { nameKey: "compare.planPro", accentClass: "plan-pro" },
 };
 
-// Source: PLAN_LIMITS[plan].maxAddresses — apps/web/src/lib/plan-limits.ts.
+// Source: PLAN_LIMITS[plan].maxAddresses - apps/web/src/lib/plan-limits.ts.
 const MAX_ADDRESSES: Record<BillingPlan, number> = {
   FREE_TRIAL: 3,
   INDIVIDUAL: 10,
@@ -51,7 +56,7 @@ const MAX_ADDRESSES: Record<BillingPlan, number> = {
   PRO: 25,
 };
 
-// Source: PLAN_LIMITS[plan].maxServices — apps/web/src/lib/plan-limits.ts.
+// Source: PLAN_LIMITS[plan].maxServices - apps/web/src/lib/plan-limits.ts.
 // Free is a thin teaser tier (10 services); no UNLIMITED tier remains.
 const MAX_SERVICES: Record<BillingPlan, number | null> = {
   FREE_TRIAL: 10,
@@ -85,9 +90,9 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   {
     labelKey: "groupEssentials",
     rows: [
-      // Row source: PLAN_LIMITS[plan].maxAddresses (apps/web/src/lib/plan-limits.ts) — 3/10/17/25.
+      // Row source: PLAN_LIMITS[plan].maxAddresses (apps/web/src/lib/plan-limits.ts) - 3/10/15/25.
       { labelKey: "rowAddresses", cell: (plan) => ({ kind: "value", value: MAX_ADDRESSES[plan] }) },
-      // Row source: PLAN_LIMITS[plan].maxServices (apps/web/src/lib/plan-limits.ts) — UNLIMITED/100/250/1000.
+      // Row source: PLAN_LIMITS[plan].maxServices (apps/web/src/lib/plan-limits.ts) - 10/100/500/1000.
       {
         labelKey: "rowServices",
         cell: (plan) => {
@@ -95,12 +100,12 @@ export const COMPARE_GROUPS: CompareGroup[] = [
           return max === null ? { kind: "unlimited" } : { kind: "value", value: max };
         },
       },
-      // Row source: BILLING_PLAN_DEFINITIONS[*].features (packages/shared/src/billing.ts) — provider
+      // Row source: BILLING_PLAN_DEFINITIONS[*].features (packages/shared/src/billing.ts) - provider
       // tracking + bill/renewal reminders ship on every tier ("Bill & renewal reminders" on
       // Free/Individual, "Consolidated household reminders" on Family, "Everything in Family" on Pro).
       { labelKey: "rowProvidersReminders", cell: () => INCLUDED },
       // Row source: FEATURES[plan].addressValidation (packages/shared/src/workspace-entitlements.ts)
-      // — the FCC-broadband + utility DATA-CHECK is Individual and up; Free gets catalog-only
+      // - the FCC-broadband + utility DATA-CHECK is Individual and up; Free gets catalog-only
       // suggestions (covered by rowProvidersReminders), so this row is honestly off for Free.
       {
         labelKey: "rowSmartSuggestions",
@@ -112,30 +117,30 @@ export const COMPARE_GROUPS: CompareGroup[] = [
     labelKey: "groupMoving",
     rows: [
       // Row source: canCreateMovingPlan / canGenerateMoveTasks (apps/web/src/lib/plan-limits.ts)
-      // gate the move plan on paid tiers only — mirrored via BILLING_PLAN_DEFINITIONS[plan].isPaid.
+      // gate the move plan on paid tiers only - mirrored via BILLING_PLAN_DEFINITIONS[plan].isPaid.
       { labelKey: "rowMovePlan", cell: (plan) => onOff(BILLING_PLAN_DEFINITIONS[plan].isPaid) },
-      // Row source: FEATURES[plan].homeDossier (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].homeDossier (packages/shared/src/workspace-entitlements.ts).
       // Individual and up (the dossier *screen*; the PDF export is a separate Pro-only row below).
       { labelKey: "rowHomeDossier", cell: (plan) => onOff(planFeatures(plan).homeDossier) },
-      // Row source: FEATURES[plan].vehicleCheck (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].vehicleCheck (packages/shared/src/workspace-entitlements.ts).
       // VIN decode + NHTSA recall check on vehicle tasks, Individual and up.
       { labelKey: "rowVehicleCheck", cell: (plan) => onOff(planFeatures(plan).vehicleCheck) },
-      // Row source: FEATURES[plan].weatherDigest (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].weatherDigest (packages/shared/src/workspace-entitlements.ts).
       // move-week weather/flood push + weekly digest email, Individual and up.
       { labelKey: "rowWeatherDigest", cell: (plan) => onOff(planFeatures(plan).weatherDigest) },
-      // Row source: FEATURES[plan].aiBriefing (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].aiBriefing (packages/shared/src/workspace-entitlements.ts).
       // Family and Pro only (same AI experience; the cap is cost control, not a tier line).
       { labelKey: "rowAiBriefing", cell: (plan) => onOff(planFeatures(plan).aiBriefing) },
-      // Row source: FEATURES[plan].realMap (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].realMap (packages/shared/src/workspace-entitlements.ts).
       // real Google Static map on route/address cards, Family and Pro (lower tiers see the canvas).
       { labelKey: "rowRealMap", cell: (plan) => onOff(planFeatures(plan).realMap) },
-      // Row source: FEATURES[plan].moverSuggestions (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].moverSuggestions (packages/shared/src/workspace-entitlements.ts).
       // FMCSA-registered household-goods mover suggestions on the moving plan, Pro only.
       { labelKey: "rowMoverSuggestions", cell: (plan) => onOff(planFeatures(plan).moverSuggestions) },
-      // Row source: FEATURES[plan].dossierPdf (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].dossierPdf (packages/shared/src/workspace-entitlements.ts).
       // New Home Dossier PDF export, Pro only.
       { labelKey: "rowDossierPdf", cell: (plan) => onOff(planFeatures(plan).dossierPdf) },
-      // Row source: FEATURES[plan].concurrentPlanLimit (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].concurrentPlanLimit (packages/shared/src/workspace-entitlements.ts).
       // max concurrent (non-archived) move plans, 1/1/1/3. Pro runs several at once.
       { labelKey: "rowConcurrentPlans", cell: (plan) => ({ kind: "value", value: planFeatures(plan).concurrentPlanLimit }) },
     ],
@@ -143,12 +148,12 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   {
     labelKey: "groupHousehold",
     rows: [
-      // Row source: FEATURES[plan].seatLimit (packages/shared/src/workspace-entitlements.ts) — 1/1/6/10.
+      // Row source: FEATURES[plan].seatLimit (packages/shared/src/workspace-entitlements.ts) - 1/1/6/10.
       { labelKey: "rowMembers", cell: (plan) => ({ kind: "value", value: planFeatures(plan).seatLimit }) },
-      // Row source: FEATURES[plan].seatLimit > 1 (packages/shared/src/workspace-entitlements.ts) —
+      // Row source: FEATURES[plan].seatLimit > 1 (packages/shared/src/workspace-entitlements.ts).
       // a shared household workspace is exactly "more than the owner seat", i.e. Family and up.
       { labelKey: "rowSharedWorkspace", cell: (plan) => onOff(planFeatures(plan).seatLimit > 1) },
-      // Row source: child accounts ride the multi-seat workspace — BILLING_PLAN_DEFINITIONS Family/Pro
+      // Row source: child accounts ride the multi-seat workspace - BILLING_PLAN_DEFINITIONS Family/Pro
       // feature line "Child accounts (no financial visibility)" (packages/shared/src/billing.ts),
       // gated in practice by FEATURES[plan].seatLimit > 1.
       { labelKey: "rowChildAccounts", cell: (plan) => onOff(planFeatures(plan).seatLimit > 1) },
@@ -157,17 +162,17 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   {
     labelKey: "groupPower",
     rows: [
-      // Row source: "Export anytime (CSV, PDF)" ships on every paid tier — BILLING_PLAN_DEFINITIONS
+      // Row source: "Export anytime (CSV, PDF)" ships on every paid tier - BILLING_PLAN_DEFINITIONS
       // features (packages/shared/src/billing.ts; Pro via "Everything in Family" + its tax-export
-      // line) — keyed off BILLING_PLAN_DEFINITIONS[plan].isPaid.
+      // line) - keyed off BILLING_PLAN_DEFINITIONS[plan].isPaid.
       { labelKey: "rowExport", cell: (plan) => onOff(BILLING_PLAN_DEFINITIONS[plan].isPaid) },
-      // Row source: FEATURES[plan].advancedExport (packages/shared/src/workspace-entitlements.ts) — Pro only.
+      // Row source: FEATURES[plan].advancedExport (packages/shared/src/workspace-entitlements.ts) - Pro only.
       { labelKey: "rowTaxExport", cell: (plan) => onOff(planFeatures(plan).advancedExport) },
-      // Row source: FEATURES[plan].partnerHub (packages/shared/src/workspace-entitlements.ts) — Pro only.
+      // Row source: FEATURES[plan].partnerHub (packages/shared/src/workspace-entitlements.ts) - Pro only.
       { labelKey: "rowPartnerHub", cell: (plan) => onOff(planFeatures(plan).partnerHub) },
-      // Row source: FEATURES[plan].addressValidation (packages/shared/src/workspace-entitlements.ts) — paid plans.
+      // Row source: FEATURES[plan].addressValidation (packages/shared/src/workspace-entitlements.ts) - paid plans.
       { labelKey: "rowAddressValidation", cell: (plan) => onOff(planFeatures(plan).addressValidation) },
-      // Row source: FEATURES[plan].prioritySupport (packages/shared/src/workspace-entitlements.ts) — Pro only.
+      // Row source: FEATURES[plan].prioritySupport (packages/shared/src/workspace-entitlements.ts) - Pro only.
       { labelKey: "rowPrioritySupport", cell: (plan) => onOff(planFeatures(plan).prioritySupport) },
     ],
   },
@@ -241,9 +246,8 @@ export function PlanCompareTable() {
                   >
                     <span className="block text-sm font-semibold text-primary">{t(header.nameKey)}</span>
                     <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {/* Price source: BILLING_PLAN_DEFINITIONS[plan] — $0 for the free tier,
-                          priceLabel + localized period for paid tiers. */}
-                      {def.isPaid ? `${def.priceLabel}${t("perMonth")}` : "$0"}
+                      {/* Price source: BILLING_PLAN_DEFINITIONS[plan] - annual label for paid tiers. */}
+                      {def.isPaid ? billingPriceLabelForInterval(plan, "YEAR") : "$0"}
                     </span>
                   </th>
                 );

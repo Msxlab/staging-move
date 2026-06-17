@@ -24,7 +24,7 @@ describe("validateStripeCampaignPrice", () => {
     mocks.pricesRetrieve.mockResolvedValue({
       active: true,
       currency: "usd",
-      unit_amount: 3999,
+      unit_amount: 2400,
       recurring: { interval: "year" },
     });
     mocks.stripeConstructor.mockImplementation(function StripeMock() {
@@ -45,8 +45,8 @@ describe("validateStripeCampaignPrice", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(result.displayPriceLabel).toBe("$39.99/year");
-    expect(result.canonicalDisplayPriceLabel).toBe("$39.99/year");
+    expect(result.displayPriceLabel).toBe("$24/year");
+    expect(result.canonicalDisplayPriceLabel).toBe("$24/year");
   });
 
   it("allows equivalent decimal display labels", async () => {
@@ -54,7 +54,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       billingInterval: "YEAR",
       status: "ACTIVE",
     });
@@ -67,7 +67,7 @@ describe("validateStripeCampaignPrice", () => {
     mocks.pricesRetrieve.mockResolvedValueOnce({
       active: true,
       currency: "usd",
-      unit_amount: 399,
+      unit_amount: 499,
       recurring: { interval: "month" },
     });
 
@@ -81,7 +81,7 @@ describe("validateStripeCampaignPrice", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(result.displayPriceLabel).toBe("$3.99/month");
+    expect(result.displayPriceLabel).toBe("$4.99/month");
     expect(result.price?.interval).toBe("month");
   });
 
@@ -90,7 +90,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "PAID",
       requiresPaymentMethod: true,
       stripePriceId: "price_wrong_interval",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       billingInterval: "MONTH",
       status: "ACTIVE",
     });
@@ -105,13 +105,13 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$99/year",
+      displayPriceLabel: "$39/year",
       billingInterval: "YEAR",
       status: "DRAFT",
     });
 
     expect(result.ok).toBe(true);
-    expect(result.warning).toContain("Stripe price is $39.99/year");
+    expect(result.warning).toContain("Stripe price is $24/year");
   });
 
   it("blocks active mismatch with PRICE_VALIDATION_FAILED", async () => {
@@ -119,7 +119,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$99/year",
+      displayPriceLabel: "$39/year",
       billingInterval: "YEAR",
       status: "ACTIVE",
     });
@@ -148,7 +148,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       billingInterval: "YEAR",
       status: "DRAFT",
     })).resolves.toMatchObject({ ok: true, warning: expect.any(String) });
@@ -157,7 +157,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       billingInterval: "YEAR",
       status: "ACTIVE",
     })).resolves.toMatchObject({ ok: false, code: "PRICE_VALIDATION_FAILED" });
@@ -170,7 +170,7 @@ describe("validateStripeCampaignPrice", () => {
       accessType: "FREE_TRIAL",
       requiresPaymentMethod: true,
       stripePriceId: "price_annual",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       billingInterval: "YEAR",
       status: "ACTIVE",
     });

@@ -15,13 +15,13 @@ describe("public trial campaign endpoint", () => {
     mocks.getPublicSubscriptionOffersViewModel.mockResolvedValue({
       annualTrial: {
         campaignCode: "INDIVIDUAL90",
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         checkoutDisclosureCopy:
-          "Annual plan includes a 90-day free trial, then renews at $39.99/year unless canceled.",
+          "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
       },
       monthlyPaid: {
         campaignCode: "INDIVIDUALMONTHLY",
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
       },
     });
 
@@ -30,10 +30,10 @@ describe("public trial campaign endpoint", () => {
 
     expect(body.campaign).toMatchObject({
       campaignCode: "INDIVIDUAL90",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
     });
     expect(body.offers.monthlyPaid).toMatchObject({
-      displayPriceLabel: "$3.99/month",
+      displayPriceLabel: "$4.99/month",
     });
     expect(JSON.stringify(body)).not.toContain("$79/year");
   });

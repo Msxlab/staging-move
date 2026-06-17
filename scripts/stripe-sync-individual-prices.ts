@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 /**
  * Stripe price sync — creates the Individual Product + two Prices
- * (monthly $3.99 and yearly $39.99) on your Stripe account, then prints
+ * (monthly $4.99 and yearly $24) on your Stripe account, then prints
  * the Price IDs you should paste into `.env.production`
  * (STRIPE_PRICE_INDIVIDUAL_MONTHLY + STRIPE_PRICE_INDIVIDUAL_YEARLY).
  *
  * The 3-month free trial on the annual plan is enforced at Checkout
  * (subscription_data.trial_period_days), not on the Price itself, so the
- * yearly Price stays a plain $39.99/year recurring entry.
+ * yearly Price stays a plain $24/year recurring entry.
  *
  * Runs ONLY on your machine / server — reads STRIPE_SECRET_KEY from the
  * environment. Never paste that secret into chat.
@@ -21,7 +21,7 @@
  *
  *   # Custom prices (cents):
  *   STRIPE_SECRET_KEY=sk_live_... pnpm stripe:sync-prices -- \
- *     --monthly-cents=399 --yearly-cents=3999 --apply
+ *     --monthly-cents=499 --yearly-cents=2400 --apply
  *
  * Idempotency: looks up a Product whose metadata has
  * `locateflow_plan=INDIVIDUAL` and reuses it; skips Prices that already
@@ -46,8 +46,8 @@ interface CliFlags {
 function parseFlags(argv: string[]): CliFlags {
   const flags: CliFlags = {
     apply: false,
-    monthlyCents: 399,
-    yearlyCents: 3999,
+    monthlyCents: 499,
+    yearlyCents: 2400,
     productName: "LocateFlow Individual",
   };
   for (const arg of argv.slice(2)) {

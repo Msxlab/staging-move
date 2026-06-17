@@ -21,7 +21,7 @@ export function getAnnualActionLabels(opts: {
     : (opts.startLabel || "Start annual");
 
   return {
-    buttonLabel: `${prefix} · ${opts.yearlyDisplayPrice}`,
+    buttonLabel: `${prefix} - ${opts.yearlyDisplayPrice}`,
     metaText: opts.trialBadge || null,
   };
 }

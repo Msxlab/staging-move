@@ -69,11 +69,11 @@ describe("PricingSection", () => {
           accessType: "FREE_TRIAL",
           publicHeadline: "Start with 90 days free",
           publicSubheadline: "Individual Annual starts after your trial.",
-          displayPriceLabel: "$39.99/year",
+          displayPriceLabel: "$24/year",
           trialDays: 90,
           billingInterval: "YEAR",
           ctaText: "Start 3 months free",
-          priceCopy: "$39.99/year after trial",
+          priceCopy: "$24/year after trial",
           trialLabel: "3 months",
         }}
       />,
@@ -81,7 +81,7 @@ describe("PricingSection", () => {
 
     expect(html).toContain("Start with 90 days free");
     expect(html).toContain("Individual Annual starts after your trial.");
-    expect(html).toContain("$39.99");
+    expect(html).toContain("$24");
     expect(html).toContain("/year after trial");
     expect(html).toContain("Start 3 months free");
   });
@@ -120,13 +120,13 @@ describe("PricingSection", () => {
       <PricingSection ctaHref="/sign-up" ctaLabelLoggedIn={false} />,
     );
 
-    // AI move briefing is Family+Pro only now (FEATURES.aiBriefing) — Individual
+    // AI move briefing is Family+Pro only now (FEATURES.aiBriefing) - Individual
     // does NOT list it. The Family card states it; the Pro card rolls it up under
     // "Everything in Family". So: Family card bullet + one compare-table row = 2.
     expect(html.match(/AI move briefing/g)).toHaveLength(2);
     // New Home Dossier appears on all three paid cards (Individual/Family screen,
     // Pro lists the PDF export) + two compare rows (the dossier screen + the
-    // Pro-only PDF export). Assert on substrings without "&" —
+    // Pro-only PDF export). Assert on substrings without "&" ?
     // renderToStaticMarkup escapes it to &amp;.
     expect(html.match(/New Home Dossier/g)).toHaveLength(5);
     // Individual + Family card bullets + the subscription-terms box line = 3
@@ -187,8 +187,9 @@ describe("PricingSection", () => {
     expect(pro).toContain("Up to 3 move plans at once");
     expect(pro).toContain("Priority support");
 
-    // Free: thin tier — catalog suggestions only, no data-check / AI / dossier.
+    // Free: generous preview tier - catalog suggestions + Home Dossier preview, no data-check / AI / full dossier.
     expect(free).toContain("Provider suggestions from our catalog");
+    expect(free).toContain("Home Dossier preview");
     expect(free).not.toContain("Data-checked");
     expect(free).not.toContain("AI move briefing");
     expect(free).not.toContain("New Home Dossier:");
@@ -201,7 +202,7 @@ describe("PricingSection", () => {
 
     expect(html).toContain("Compare plans");
     // The Free tier has no card, but it must appear in the matrix with its
-    // real enforced limits (PLAN_LIMITS / FEATURES — see plan-compare-table).
+    // real enforced limits (PLAN_LIMITS / FEATURES - see plan-compare-table).
     expect(html).toContain("plan-free");
     expect(html).toContain("$0");
     // The matrix renders after the card grid.
@@ -219,22 +220,22 @@ describe("PricingSection", () => {
             accessType: "FREE_TRIAL",
             publicHeadline: "Start with 90 days free",
             publicSubheadline: "Individual Annual starts after your trial.",
-            displayPriceLabel: "$39.99/year",
+            displayPriceLabel: "$24/year",
             trialDays: 90,
             billingInterval: "YEAR",
             ctaText: "Start 3 months free",
-            priceCopy: "$39.99/year after trial",
+            priceCopy: "$24/year after trial",
             trialLabel: "3 months",
           },
           monthlyPaid: {
             accessType: "PAID",
             publicHeadline: "Subscribe monthly",
             publicSubheadline: "Simple monthly billing.",
-            displayPriceLabel: "$3.99/month",
+            displayPriceLabel: "$4.99/month",
             trialDays: null,
             billingInterval: "MONTH",
             ctaText: "Subscribe monthly",
-            priceCopy: "$3.99/month",
+            priceCopy: "$4.99/month",
             trialLabel: null,
           },
         }}
@@ -245,7 +246,7 @@ describe("PricingSection", () => {
     expect(html).toContain("Monthly");
     expect(html).toContain("Family");
     expect(html).toContain("Pro");
-    expect(html).toContain("$39.99");
+    expect(html).toContain("$24");
     expect(html).toContain("/year after trial");
     expect(html).toContain('id="tab-monthly"');
   });

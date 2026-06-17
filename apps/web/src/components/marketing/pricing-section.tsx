@@ -24,7 +24,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+import { BILLING_PLAN_DEFINITIONS, billingPriceLabelForInterval } from "@locateflow/shared";
 import { PlanCompareTable } from "./plan-compare-table";
 
 type BillingCycle = "yearly" | "monthly";
@@ -154,10 +154,10 @@ function priceLabelForPlan(
   const def = BILLING_PLAN_DEFINITIONS[planId];
   if (cycle === "monthly") {
     if (planId === "INDIVIDUAL" && monthlyOffer) return monthlyOffer.displayPriceLabel;
-    return `${def.priceLabel}${def.periodLabel}`;
+    return billingPriceLabelForInterval(planId, "MONTH");
   }
   if (planId === "INDIVIDUAL" && annualOffer) return annualOffer.displayPriceLabel;
-  return def.yearlyPriceLabel || `$${(def.monthlyPriceUsd * 12).toFixed(2)}/year`;
+  return def.yearlyPriceLabel || billingPriceLabelForInterval(planId, "YEAR");
 }
 
 function planHref(href: string, planId: PaidPlanId, cycle: BillingCycle): string {
@@ -227,7 +227,7 @@ function BillingTabs({
                 : "bg-tone-emerald-bg text-tone-emerald-fg"
             }`}
           >
-            Save up to {bestSavings}%
+            Best value - save up to {bestSavings}%
           </span>
         ) : null}
       </button>

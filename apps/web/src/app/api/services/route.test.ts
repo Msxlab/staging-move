@@ -48,11 +48,11 @@ vi.mock("@/lib/acquisition-campaigns", () => ({
         publicHeadline: "Start with 90 days free",
         publicSubheadline: "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: null,
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         trialDays: 90,
         billingInterval: "YEAR",
         ctaText: "Start 90 days free",
-        priceCopy: "$39.99/year after trial",
+        priceCopy: "$24/year after trial",
         trialLabel: "3 months",
       },
       monthlyPaid: {
@@ -61,11 +61,11 @@ vi.mock("@/lib/acquisition-campaigns", () => ({
         publicHeadline: "Subscribe monthly",
         publicSubheadline: "Simple monthly billing.",
         checkoutDisclosureCopy: null,
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
         trialDays: null,
         billingInterval: "MONTH",
         ctaText: "Subscribe monthly",
-        priceCopy: "$3.99/month",
+        priceCopy: "$4.99/month",
         trialLabel: null,
       },
     }),
@@ -130,11 +130,11 @@ describe("services route", () => {
         publicHeadline: "Start with 90 days free",
         publicSubheadline: "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: null,
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         trialDays: 90,
         billingInterval: "YEAR",
         ctaText: "Start 90 days free",
-        priceCopy: "$39.99/year after trial",
+        priceCopy: "$24/year after trial",
         trialLabel: "3 months",
       },
       monthlyPaid: {
@@ -143,11 +143,11 @@ describe("services route", () => {
         publicHeadline: "Subscribe monthly",
         publicSubheadline: "Simple monthly billing.",
         checkoutDisclosureCopy: null,
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
         trialDays: null,
         billingInterval: "MONTH",
         ctaText: "Subscribe monthly",
-        priceCopy: "$3.99/month",
+        priceCopy: "$4.99/month",
         trialLabel: null,
       },
     });
@@ -167,9 +167,9 @@ describe("services route", () => {
   });
 
   it("keeps the renewal honesty fields (contractEndDate, autoRenewal) in the list payload", async () => {
-    // These are plain scalars (not in the encrypted/redacted sensitive set) —
+    // These are plain scalars (not in the encrypted/redacted sensitive set) -
     // mobile's needs-attention + renewal derivations depend on them, so the
-    // list payload must keep passing them through decrypt → enrich → redact.
+    // list payload must keep passing them through decrypt - enrich - redact.
     mockService.findMany.mockResolvedValueOnce([
       {
         id: "service-1",
@@ -507,7 +507,7 @@ describe("services route", () => {
       campaign: {
         code: "SPRING90",
         publicHeadline: "Start with 90 days free",
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         trialDays: 90,
       },
     });
@@ -578,11 +578,11 @@ describe("services route", () => {
         publicHeadline: "Subscribe monthly",
         publicSubheadline: "Simple monthly billing.",
         checkoutDisclosureCopy: null,
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
         trialDays: null,
         billingInterval: "MONTH",
         ctaText: "Subscribe monthly",
-        priceCopy: "$3.99/month",
+        priceCopy: "$4.99/month",
         trialLabel: null,
       },
     });

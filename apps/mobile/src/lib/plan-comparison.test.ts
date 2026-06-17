@@ -105,8 +105,8 @@ describe("buildPlanComparison", () => {
     }
   });
 
-  // Caps and seats mirror the web compare table — drift fails CI here.
-  it("mirrors web address/service caps (3/10/15/25 · 10/100/500/1000) and seats (1/1/6/10)", () => {
+  // Caps and seats mirror the web compare table - drift fails CI here.
+  it("mirrors web address/service caps (3/10/15/25 - 10/100/500/1000) and seats (1/1/6/10)", () => {
     const entries = buildPlanComparison(webInput);
     expect(valueOf(entries, "FREE_TRIAL", "subscription_featAddresses")).toBe(3);
     expect(valueOf(entries, "INDIVIDUAL", "subscription_featAddresses")).toBe(10);
@@ -119,7 +119,7 @@ describe("buildPlanComparison", () => {
     expect(valueOf(entries, "PRO", "subscription_featServices")).toBe(1000);
 
     // Members only listed on shared tiers (seatLimit > 1): Family 6 (owner + 5),
-    // Pro 10 — pinned against FEATURES[plan].seatLimit and the web compare table.
+    // Pro 10 - pinned against FEATURES[plan].seatLimit and the web compare table.
     expect(hasFeature(entries, "FREE_TRIAL", "subscription_featMembers")).toBe(false);
     expect(hasFeature(entries, "INDIVIDUAL", "subscription_featMembers")).toBe(false);
     expect(valueOf(entries, "FAMILY", "subscription_featMembers")).toBe(6);
@@ -151,7 +151,7 @@ describe("buildPlanComparison", () => {
   it("shows definition prices off-store and hides paid prices when store commerce is not advertisable", () => {
     const web = buildPlanComparison(webInput);
     expect(web.find((e) => e.key === "FREE_TRIAL")?.priceLabel).toBe("Free");
-    expect(web.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$3.99/month · $39.99/year");
+    expect(web.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$24/year - $4.99/month");
 
     const store = buildPlanComparison({
       currentPlanKey: "FREE_TRIAL",
@@ -172,10 +172,10 @@ describe("buildPlanComparison", () => {
       mobileStoreCommerceAdvertisable: true,
       hasAvailableNativeSku: (planKey) => planKey === "INDIVIDUAL",
     });
-    expect(entries.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$3.99/month · $39.99/year");
+    expect(entries.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$24/year - $4.99/month");
     expect(entries.find((e) => e.key === "FAMILY")?.priceLabel).toBe("");
     // The user's own plan stays priced even without a native SKU.
-    expect(entries.find((e) => e.key === "PRO")?.priceLabel).toBe("$19.99/month · $199/year");
+    expect(entries.find((e) => e.key === "PRO")?.priceLabel).toBe("$59/year - $11.99/month");
   });
 
   it("prefers localized store prices when loaded", () => {
@@ -187,13 +187,13 @@ describe("buildPlanComparison", () => {
       getStorePriceLabel: (planKey, cycle) =>
         planKey === "INDIVIDUAL" ? (cycle === "monthly" ? "$3.49" : "$34.99") : null,
     });
-    expect(entries.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$3.49/month · $34.99/year");
+    expect(entries.find((e) => e.key === "INDIVIDUAL")?.priceLabel).toBe("$34.99/year - $3.49/month");
   });
 });
 
 describe("comparisonPriceLabel", () => {
   it("falls back to definition labels when no localized price exists", () => {
-    expect(comparisonPriceLabel("FAMILY")).toBe("$9.99/month · $99/year");
+    expect(comparisonPriceLabel("FAMILY")).toBe("$39/year - $7.99/month");
     expect(comparisonPriceLabel("FREE_TRIAL")).toBe("Free");
   });
 });

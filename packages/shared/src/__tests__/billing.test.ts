@@ -23,18 +23,34 @@ describe("billing plan catalog (doc 62 cascade)", () => {
   });
 
   it("defines Family and Pro with their canonical prices", () => {
+    expect(BILLING_PLAN_DEFINITIONS.INDIVIDUAL).toMatchObject({
+      id: "INDIVIDUAL",
+      displayName: "Individual",
+      primaryBillingInterval: "YEAR",
+      monthlyPriceUsd: 4.99,
+      monthlyPriceLabel: "$4.99/month",
+      yearlyPriceUsd: 24,
+      yearlyPriceLabel: "$24/year",
+      isPaid: true,
+    });
     expect(BILLING_PLAN_DEFINITIONS.FAMILY).toMatchObject({
       id: "FAMILY",
       displayName: "Family",
-      monthlyPriceUsd: 9.99,
-      yearlyPriceUsd: 99,
+      primaryBillingInterval: "YEAR",
+      monthlyPriceUsd: 7.99,
+      monthlyPriceLabel: "$7.99/month",
+      yearlyPriceUsd: 39,
+      yearlyPriceLabel: "$39/year",
       isPaid: true,
     });
     expect(BILLING_PLAN_DEFINITIONS.PRO).toMatchObject({
       id: "PRO",
       displayName: "Pro",
-      monthlyPriceUsd: 19.99,
-      yearlyPriceUsd: 199,
+      primaryBillingInterval: "YEAR",
+      monthlyPriceUsd: 11.99,
+      monthlyPriceLabel: "$11.99/month",
+      yearlyPriceUsd: 59,
+      yearlyPriceLabel: "$59/year",
       isPaid: true,
     });
   });

@@ -39,13 +39,17 @@ export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS_VALUES)[number];
 export const DEFAULT_BILLING_PLAN: BillingPlan = "FREE_TRIAL";
 export const DEFAULT_SUBSCRIPTION_STATUS: SubscriptionStatus = "FREE_ACCESS";
 
+export type BillingInterval = "MONTH" | "YEAR";
+
 export interface BillingPlanDefinition {
   id: BillingPlan;
   displayName: string;
   shortDescription: string;
+  primaryBillingInterval?: BillingInterval;
   priceLabel: string;
   periodLabel: string;
   monthlyPriceUsd: number;
+  monthlyPriceLabel?: string;
   yearlyPriceLabel?: string;
   yearlyPriceUsd?: number;
   isPaid: boolean;
@@ -56,7 +60,7 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
   FREE_TRIAL: {
     id: "FREE_TRIAL",
     displayName: "Free",
-    shortDescription: "Organize your home — no payment method required.",
+    shortDescription: "Basic move checklist, address tracking, and Home Dossier preview.",
     priceLabel: "Free",
     periodLabel: "",
     monthlyPriceUsd: 0,
@@ -66,18 +70,21 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
       "Keep your providers & accounts in one place",
       "Bill & renewal reminders",
       "Provider suggestions from our catalog",
-      "Preview the data-checked plan, dossier & AI briefing (upgrade to unlock)",
+      "Basic moving checklist preview",
+      "Home Dossier preview (upgrade to unlock the full report and PDF)",
     ],
   },
   INDIVIDUAL: {
     id: "INDIVIDUAL",
     displayName: "Individual",
     shortDescription: "Unlock the full move: personalized plan, tracking, and migration.",
-    priceLabel: "$3.99",
-    periodLabel: "/month",
-    monthlyPriceUsd: 3.99,
-    yearlyPriceLabel: "$39.99/year",
-    yearlyPriceUsd: 39.99,
+    primaryBillingInterval: "YEAR",
+    priceLabel: "$24",
+    periodLabel: "/year",
+    monthlyPriceUsd: 4.99,
+    monthlyPriceLabel: "$4.99/month",
+    yearlyPriceLabel: "$24/year",
+    yearlyPriceUsd: 24,
     isPaid: true,
     features: [
       "Full personalized move plan + tracking",
@@ -97,11 +104,13 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
     id: "FAMILY",
     displayName: "Family",
     shortDescription: "For households sharing a home and bills. Up to 6 members.",
-    priceLabel: "$9.99",
-    periodLabel: "/month",
-    monthlyPriceUsd: 9.99,
-    yearlyPriceLabel: "$99/year",
-    yearlyPriceUsd: 99,
+    primaryBillingInterval: "YEAR",
+    priceLabel: "$39",
+    periodLabel: "/year",
+    monthlyPriceUsd: 7.99,
+    monthlyPriceLabel: "$7.99/month",
+    yearlyPriceLabel: "$39/year",
+    yearlyPriceUsd: 39,
     isPaid: true,
     features: [
       "Everything in Individual, up to 6 members (1 owner + 5)",
@@ -119,11 +128,13 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
     id: "PRO",
     displayName: "Pro",
     shortDescription: "For power users, portfolios, and home-office pros. Up to 10 members.",
-    priceLabel: "$19.99",
-    periodLabel: "/month",
-    monthlyPriceUsd: 19.99,
-    yearlyPriceLabel: "$199/year",
-    yearlyPriceUsd: 199,
+    primaryBillingInterval: "YEAR",
+    priceLabel: "$59",
+    periodLabel: "/year",
+    monthlyPriceUsd: 11.99,
+    monthlyPriceLabel: "$11.99/month",
+    yearlyPriceLabel: "$59/year",
+    yearlyPriceUsd: 59,
     isPaid: true,
     features: [
       "Everything in Family, up to 10 members",
@@ -183,6 +194,22 @@ export function isPaidBillingPlan(plan: string | null | undefined): plan is Paid
  */
 export function isBillingPlan(plan: string | null | undefined): plan is BillingPlan {
   return BILLING_PLAN_ORDER.includes(plan as BillingPlan);
+}
+
+export function billingPriceLabelForInterval(plan: BillingPlan, interval: BillingInterval): string {
+  const definition = BILLING_PLAN_DEFINITIONS[plan];
+  if (!definition.isPaid) return definition.priceLabel;
+  if (interval === "YEAR") {
+    return definition.yearlyPriceLabel || `${definition.priceLabel}${definition.periodLabel}`;
+  }
+  return definition.monthlyPriceLabel || `$${definition.monthlyPriceUsd}/month`;
+}
+
+export function billingAmountUsdForInterval(plan: BillingPlan, interval: BillingInterval): number {
+  const definition = BILLING_PLAN_DEFINITIONS[plan];
+  if (!definition.isPaid) return 0;
+  if (interval === "YEAR") return definition.yearlyPriceUsd ?? definition.monthlyPriceUsd * 12;
+  return definition.monthlyPriceUsd;
 }
 
 export function isActiveSubscriptionStatus(status: string | null | undefined): boolean {

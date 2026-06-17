@@ -50,7 +50,7 @@ export type EmbeddedCheckoutCardProps = {
   billingInterval: "MONTH" | "YEAR";
   /** Acquisition campaign code, when the visitor is on a campaign offer. */
   campaignCode?: string | null;
-  /** Compact label for the trigger button (e.g. "Subscribe — $3.99/mo"). */
+  /** Compact label for the trigger button (e.g. "Subscribe - $4.99/mo"). */
   triggerLabel: string;
   disabled?: boolean;
   onPendingChange?: (pending: boolean) => void;

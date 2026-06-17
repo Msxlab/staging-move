@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getUserSession } from "@/lib/user-auth";
@@ -150,16 +150,16 @@ export default async function LandingPage() {
       },
       {
         "@type": "Offer",
-        name: individualPlan.displayName,
-        price: String(individualPlan.monthlyPriceUsd),
+        name: `${individualPlan.displayName} Annual`,
+        price: String(individualPlan.yearlyPriceUsd ?? 24),
         priceCurrency: "USD",
       },
-      ...(individualPlan.yearlyPriceUsd
+      ...(individualPlan.monthlyPriceUsd
         ? [
             {
               "@type": "Offer",
-              name: `${individualPlan.displayName} Annual`,
-              price: String(individualPlan.yearlyPriceUsd),
+              name: `${individualPlan.displayName} Monthly`,
+              price: String(individualPlan.monthlyPriceUsd),
               priceCurrency: "USD",
             },
           ]

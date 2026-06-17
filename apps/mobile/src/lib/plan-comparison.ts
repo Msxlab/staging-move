@@ -1,6 +1,7 @@
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
+  billingPriceLabelForInterval,
   type BillingPlan,
 } from "@locateflow/shared";
 
@@ -12,7 +13,7 @@ export type ComparisonCycle = "monthly" | "yearly";
  * localized; `value` carries the interpolation payload for count rows
  * (addresses / services / members). Lines are emitted only for the plans
  * that actually include the capability, so the bullet list is an honest
- * "what you get" — never a list of features with a cross next to them.
+ * "what you get" - never a list of features with a cross next to them.
  */
 export interface PlanComparisonFeature {
   key: string;
@@ -46,7 +47,7 @@ export interface PlanComparisonInput {
  * Address / service caps and member seats per plan.
  *
  * MIRRORED from the web "Compare plans" matrix
- * (apps/web/src/components/marketing/plan-compare-table.tsx — MAX_ADDRESSES /
+ * (apps/web/src/components/marketing/plan-compare-table.tsx - MAX_ADDRESSES /
  * MAX_SERVICES and FEATURES[plan].seatLimit) so web and mobile never disagree.
  * The web table pins these against ground truth in its own test; the colocated
  * plan-comparison.test.ts pins the mirrored values here so drift fails CI
@@ -81,7 +82,7 @@ const MEMBER_SEATS: Record<BillingPlan, number> = {
   // 6 = owner + 5 members, matching FEATURES.FAMILY.seatLimit in
   // packages/shared/src/workspace-entitlements.ts and the web compare table
   // (plan-compare-table.tsx, which renders seatLimit directly). Previously 5
-  // here — an off-by-one that under-promised Family on the IAP screen.
+  // here - an off-by-one that under-promised Family on the IAP screen.
   FAMILY: 6,
   PRO: 10,
 };
@@ -94,14 +95,14 @@ interface PlanCapabilities {
   aiBriefing: boolean;
   realMap: boolean;
   moverSuggestions: boolean;
-  /** seatLimit > 1 — a shared household workspace (Family and up). */
+  /** seatLimit > 1 means a shared household workspace (Family and up). */
   sharedWorkspace: boolean;
   addressValidation: boolean;
   dossierPdf: boolean;
-  /** advancedExport — Pro tax/property export. */
+  /** advancedExport means Pro tax/property export. */
   advancedExport: boolean;
   partnerHub: boolean;
-  /** concurrentPlanLimit > 1 — multiple move plans at once (Pro). */
+  /** concurrentPlanLimit > 1 means multiple move plans at once (Pro). */
   multiPlan: boolean;
   prioritySupport: boolean;
 }
@@ -109,7 +110,7 @@ interface PlanCapabilities {
 /**
  * Per-plan capability matrix.
  *
- * MIRRORED from FEATURES in packages/shared/src/workspace-entitlements.ts — the
+ * MIRRORED from FEATURES in packages/shared/src/workspace-entitlements.ts - the
  * single source of truth the API actually gates on. The mobile `@locateflow/
  * shared` bundle (index.mobile.ts) deliberately omits workspace-entitlements,
  * so the booleans are duplicated here as literals (the same pattern the web
@@ -164,7 +165,7 @@ function normalizePlanKey(planKey: string | null | undefined): BillingPlan {
  * Mirrors the purchase-card price rule (`canAdvertiseThisMobilePlan` /
  * `hideUnavailableMobileCommerce` in app/settings/subscription.tsx): on a
  * native store platform a paid plan's price is shown only when store commerce
- * is advertisable AND the store returned a purchasable product — or when the
+ * is advertisable AND the store returned a purchasable product - or when the
  * user already holds the plan. Free plans and non-store platforms always show.
  */
 export function shouldShowComparisonPrice({
@@ -186,7 +187,7 @@ export function shouldShowComparisonPrice({
 
 /**
  * Compact price line for a comparison row: "Free", or
- * "$3.99/month · $39.99/year". Prefers localized store prices when loaded so
+ * "$24/year - $4.99/month". Prefers localized store prices when loaded so
  * the informational matrix never contradicts the purchase buttons.
  */
 export function comparisonPriceLabel(
@@ -199,20 +200,20 @@ export function comparisonPriceLabel(
   const localizedYearly = getStorePriceLabel?.(planKey, "yearly") || null;
   const monthly = localizedMonthly
     ? `${localizedMonthly}/month`
-    : `${def.priceLabel}${def.periodLabel}`;
+    : billingPriceLabelForInterval(planKey, "MONTH");
   const yearly = localizedYearly
     ? `${localizedYearly}/year`
-    : def.yearlyPriceLabel || null;
-  return yearly ? `${monthly} · ${yearly}` : monthly;
+    : billingPriceLabelForInterval(planKey, "YEAR");
+  return yearly ? `${yearly} - ${monthly}` : monthly;
 }
 
 /**
  * The accordion "what you get" lines for one tier, in display order.
  *
- * EVERY toggle is DERIVED from the same constants the app enforces — the
+ * EVERY toggle is DERIVED from the same constants the app enforces - the
  * overhauled FEATURES matrix in packages/shared/src/workspace-entitlements.ts
  * (via planFeatures), BILLING_PLAN_DEFINITIONS.isPaid, and the caps/seats
- * mirrored above — so this list and the web compare table describe the exact
+ * mirrored above - so this list and the web compare table describe the exact
  * same matrix. Owner-ratified ladder (2026-06-10):
  *   - VIN check + weather/digest + New Home Dossier + address validation:
  *     Individual and up.
@@ -220,7 +221,7 @@ export function comparisonPriceLabel(
  *     Family and up.
  *   - FMCSA mover suggestions + dossier PDF export + multiple concurrent move
  *     plans + Partner Hub + tax/property export + priority support: Pro only.
- * Lines appear only when the plan includes the capability — the bullet list is
+ * Lines appear only when the plan includes the capability - the bullet list is
  * a positive "included" list, never feature-with-a-cross.
  */
 export function planComparisonFeatures(planKey: BillingPlan): PlanComparisonFeature[] {
@@ -228,13 +229,13 @@ export function planComparisonFeatures(planKey: BillingPlan): PlanComparisonFeat
   const f = PLAN_MATRIX[planKey];
   const lines: PlanComparisonFeature[] = [];
 
-  // Essentials — every tier.
+  // Essentials - every tier.
   lines.push({ key: "subscription_featAddresses", value: MAX_ADDRESSES[planKey] });
   lines.push({ key: "subscription_featServices", value: MAX_SERVICES[planKey] });
   lines.push({ key: "subscription_featProvidersReminders" });
   lines.push({ key: "subscription_featSmartSuggestions" });
 
-  // Moving — Free previews the plan, paid tiers unlock it.
+  // Moving - Free previews the plan, paid tiers unlock it.
   lines.push(
     def.isPaid
       ? { key: "subscription_featMovePlanFull" }
@@ -247,7 +248,7 @@ export function planComparisonFeatures(planKey: BillingPlan): PlanComparisonFeat
   if (f.realMap) lines.push({ key: "subscription_featRealMap" });
   if (f.moverSuggestions) lines.push({ key: "subscription_featMovers" });
 
-  // Household — shared seats unlock the workspace + child accounts.
+  // Household - shared seats unlock the workspace + child accounts.
   if (f.sharedWorkspace) {
     lines.push({ key: "subscription_featMembers", value: MEMBER_SEATS[planKey] });
     lines.push({ key: "subscription_featSharedWorkspace" });
@@ -271,7 +272,7 @@ export function planComparisonFeatures(planKey: BillingPlan): PlanComparisonFeat
 /**
  * Side-by-side "what you get with each plan" rows for the subscription screen.
  * Feature lines come from planComparisonFeatures (the overhauled entitlement
- * matrix) so the copy stays in lockstep with the web compare table — no
+ * matrix) so the copy stays in lockstep with the web compare table - no
  * duplicated hardcoded lists. Always returns every tier, even ones whose
  * purchase cards are hidden on this platform.
  */
