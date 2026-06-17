@@ -55,15 +55,18 @@ describe("buildPlanComparison", () => {
     expect(hasFeature(entries, "INDIVIDUAL", "subscription_featAiBriefing")).toBe(false);
   });
 
-  // New Home Dossier (the dossier screen) + VIN/weather/digest start at Individual.
-  it("puts New Home Dossier, vehicle check and weather digest in Individual and up, not Free", () => {
+  // Free gets only the Home Dossier preview; full dossier + VIN/weather/digest start at Individual.
+  it("puts Home Dossier preview in Free and full dossier, vehicle check and weather digest in Individual and up", () => {
     const entries = buildPlanComparison(webInput);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featHomeDossierPreview")).toBe(true);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featHomeDossier")).toBe(false);
     for (const paid of ["INDIVIDUAL", "FAMILY", "PRO"]) {
       expect(hasFeature(entries, paid, "subscription_featHomeDossier")).toBe(true);
+      expect(hasFeature(entries, paid, "subscription_featHomeDossierPreview")).toBe(false);
       expect(hasFeature(entries, paid, "subscription_featVehicleCheck")).toBe(true);
       expect(hasFeature(entries, paid, "subscription_featWeatherDigest")).toBe(true);
     }
-    for (const k of ["subscription_featHomeDossier", "subscription_featVehicleCheck", "subscription_featWeatherDigest"]) {
+    for (const k of ["subscription_featVehicleCheck", "subscription_featWeatherDigest"]) {
       expect(hasFeature(entries, "FREE_TRIAL", k)).toBe(false);
     }
   });
@@ -77,12 +80,11 @@ describe("buildPlanComparison", () => {
     expect(hasFeature(entries, "INDIVIDUAL", "subscription_featRealMap")).toBe(false);
   });
 
-  // Movers, dossier PDF, multiple concurrent plans and priority support are Pro-only.
-  it("puts movers, dossier PDF, multi-plan and priority support in Pro only", () => {
+  // Movers, multiple concurrent plans and priority support are Pro-only.
+  it("puts movers, multi-plan and priority support in Pro only", () => {
     const entries = buildPlanComparison(webInput);
     const proOnly = [
       "subscription_featMovers",
-      "subscription_featDossierPdf",
       "subscription_featConcurrentPlans",
       "subscription_featPrioritySupport",
       "subscription_featPartnerHub",
@@ -96,6 +98,14 @@ describe("buildPlanComparison", () => {
     }
     // Pro advertises running 3 move plans at once.
     expect(valueOf(entries, "PRO", "subscription_featConcurrentPlans")).toBe(3);
+  });
+
+  it("puts dossier PDF export in every paid tier, not Free", () => {
+    const entries = buildPlanComparison(webInput);
+    expect(hasFeature(entries, "FREE_TRIAL", "subscription_featDossierPdf")).toBe(false);
+    for (const paid of ["INDIVIDUAL", "FAMILY", "PRO"]) {
+      expect(hasFeature(entries, paid, "subscription_featDossierPdf")).toBe(true);
+    }
   });
 
   it("includes smart provider suggestions with FCC & utility data in every tier, including Free", () => {

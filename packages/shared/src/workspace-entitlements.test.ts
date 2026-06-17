@@ -39,16 +39,21 @@ describe("planFeatures", () => {
     expect(planFeatures("FAMILY").homeDossier).toBe(true);
     expect(planFeatures("INDIVIDUAL").homeDossier).toBe(true);
     expect(planFeatures("FREE_TRIAL").homeDossier).toBe(false);
+    expect(planFeatures("FREE_TRIAL").homeDossierPreview).toBe(true);
     // Unknown / missing plans fall to the Free Trial floor (no dossier).
     expect(planFeatures(null).homeDossier).toBe(false);
+    expect(planFeatures(null).homeDossierPreview).toBe(true);
     expect(planFeatures("WHATEVER").homeDossier).toBe(false);
+    expect(planFeatures("WHATEVER").homeDossierPreview).toBe(true);
   });
 
-  it("Pro-only differentiators: movers, dossier PDF, priority support, multi-plan", () => {
+  it("Pro-only differentiators: movers, priority support, multi-plan", () => {
     expect(planFeatures("PRO").moverSuggestions).toBe(true);
     expect(planFeatures("FAMILY").moverSuggestions).toBe(false);
+    expect(planFeatures("INDIVIDUAL").dossierPdf).toBe(true);
+    expect(planFeatures("FAMILY").dossierPdf).toBe(true);
     expect(planFeatures("PRO").dossierPdf).toBe(true);
-    expect(planFeatures("FAMILY").dossierPdf).toBe(false);
+    expect(planFeatures("FREE_TRIAL").dossierPdf).toBe(false);
     expect(planFeatures("PRO").prioritySupport).toBe(true);
     expect(planFeatures("PRO").concurrentPlanLimit).toBe(3);
     expect(planFeatures("FAMILY").concurrentPlanLimit).toBe(1);

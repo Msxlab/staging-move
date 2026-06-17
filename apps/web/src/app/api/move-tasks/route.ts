@@ -275,6 +275,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "id and valid event are required" }, { status: 400 });
     }
 
+    const entitlement = await canGenerateMoveTasks(userId, planLimitScopeForDataScope(scope));
+    if (!entitlement.allowed) {
+      return NextResponse.json(
+        { error: entitlement.reason, code: entitlement.code, upgradeRequired: entitlement.upgradeRequired },
+        { status: 403 },
+      );
+    }
+
     const existing = await prisma.moveTask.findFirst({
       where: moveTaskWhereForScope(scope, { id }),
       include: { movingPlan: { select: { workspaceId: true } } },

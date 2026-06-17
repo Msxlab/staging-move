@@ -9,9 +9,9 @@ import { generateDossierReportPdf } from "@/lib/pdf/dossier-report";
 import type { PdfDossier } from "@/lib/pdf/types";
 import { GET as getDossier } from "../route";
 
-// GET /api/addresses/:id/dossier/pdf — Pro-only New Home Dossier PDF export.
+// GET /api/addresses/:id/dossier/pdf — paid New Home Dossier PDF export.
 //
-// Gate (owner decision): `dossierPdf` is Pro-only. Free/Individual/Family get
+// Gate (owner decision): `dossierPdf` starts at Individual. Free gets
 // the value-first teaser contract (HTTP 200, no payload) exactly like the
 // other plan gates — never 403 — so the client renders an upgrade CTA.
 //
@@ -29,8 +29,9 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     const userId = await requireDbUserId();
     const scope = await resolveWorkspaceDataScope(request, userId);
 
-    // Pro-only gate. Inactive/expired Pro resolves to FREE_TRIAL in the plan lookup,
-    // so this also blocks lapsed Pro. Spend nothing beyond the plan read.
+    // Paid gate. Inactive/expired paid plans resolve to FREE_TRIAL in the plan
+    // lookup, so this also blocks lapsed subscriptions. Spend nothing beyond
+    // the plan read.
     const planInfo = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
     if (!planFeatures(planInfo.plan).dossierPdf) {
       return NextResponse.json({
@@ -48,8 +49,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
     const data = await dossierResponse.json();
 
-    // The homeDossier gate inside the dossier route should never fire for a Pro
-    // user (Pro has homeDossier), but if entitlement ever drifts, surface the
+    // The homeDossier gate inside the dossier route should never fire for a
+    // dossierPdf-entitled user, but if entitlement ever drifts, surface the
     // teaser rather than an empty PDF.
     if (data?.entitled === false) {
       return NextResponse.json(data);

@@ -324,29 +324,71 @@ describe("address dossier route", () => {
     expect(mockLookupMoveDayForecast).not.toHaveBeenCalled();
   });
 
-  it("free plan gets the 200 upgrade teaser — address block omitted, no lookups spent", async () => {
+  it("free plan gets only the preview subset: flood, school, and moving-day weather", async () => {
     mockGetPlanForLimitScope.mockResolvedValue({ plan: "FREE_TRIAL", hasPremium: false, isActive: true });
+    const moveDate = new Date(Date.now() + 3 * MS_PER_DAY);
+    const targetDate = moveDate.toISOString().slice(0, 10);
+    mockPlanFindFirst.mockResolvedValueOnce({ moveDate });
+    mockLookupMoveDayForecast.mockImplementationOnce(async () => ({ ...WEATHER_OK, forecastDate: targetDate }));
 
     const response = await GET(dossierRequest(), addressParams() as any);
     const body = await response.json();
 
-    // 200 (never 403) so old clients — which require the address/section
-    // blocks — fail soft to a hidden card. toEqual pins that NO address,
-    // flood, school, or weather data leaks to an unentitled caller.
+    // 200 (never 403) and server returns ONLY the free preview subset. Full
+    // dossier sections are not sent to the client and hidden there.
     expect(response.status).toBe(200);
     expect(body).toEqual({
       configured: true,
-      entitled: false,
-      upgradeRequired: "HOME_DOSSIER_UPGRADE_REQUIRED",
+      preview: true,
+      homeDossierPreview: true,
+      fullDossier: false,
+      dossierPdf: false,
+      address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
+      lockedSections: [
+        "hazards",
+        "radon",
+        "water",
+        "air",
+        "housing",
+        "evCharging",
+        "neighborhood",
+        "pdf",
+      ],
+      flood: { status: "ok", zone: "AE", isHighRisk: true },
+      school: { status: "ok", districtName: "Austin Independent School District", ncesId: "4808940" },
+      weather: {
+        status: "ok",
+        forecastDate: targetDate,
+        summary: "Partly Sunny",
+        tempHighF: 91,
+        tempLowF: 76,
+        precipChancePct: 40,
+      },
     });
-    expect(mockLookupFloodZone).not.toHaveBeenCalled();
-    expect(mockLookupSchoolDistrict).not.toHaveBeenCalled();
-    expect(mockLookupMoveDayForecast).not.toHaveBeenCalled();
+    expect(mockLookupFloodZone).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    expect(mockLookupSchoolDistrict).toHaveBeenCalledWith({ latitude: 30.2672, longitude: -97.7431 });
+    expect(mockLookupMoveDayForecast).toHaveBeenCalledWith({
+      latitude: 30.2672,
+      longitude: -97.7431,
+      targetDate,
+    });
     expect(mockLookupHazardRisks).not.toHaveBeenCalled();
     expect(mockLookupRadonZone).not.toHaveBeenCalled();
     expect(mockLookupWaterSystem).not.toHaveBeenCalled();
     expect(mockLookupAirQuality).not.toHaveBeenCalled();
-    expect(mockPlanFindFirst).not.toHaveBeenCalled();
+    expect(mockLookupHudHousing).not.toHaveBeenCalled();
+    expect(mockLookupEvCharging).not.toHaveBeenCalled();
+    expect(mockLookupNeighborhoodAcs).not.toHaveBeenCalled();
+    expect(mockLookupWalkability).not.toHaveBeenCalled();
+    expect(mockLookupNearbySchools).not.toHaveBeenCalled();
+    expect(body).not.toHaveProperty("internet");
+    expect(body).not.toHaveProperty("hazards");
+    expect(body).not.toHaveProperty("radon");
+    expect(body).not.toHaveProperty("water");
+    expect(body).not.toHaveProperty("air");
+    expect(body).not.toHaveProperty("housing");
+    expect(body).not.toHaveProperty("evCharging");
+    expect(body).not.toHaveProperty("neighborhood");
   });
 
   it("summary mode returns only current-home air and HUD context even for a free plan", async () => {
@@ -419,8 +461,8 @@ describe("address dossier route", () => {
     expect(response.status).toBe(404);
   });
 
-  it("every paid tier passes the gate (FAMILY and PRO included)", async () => {
-    for (const plan of ["FAMILY", "PRO"]) {
+  it("every paid tier passes the gate", async () => {
+    for (const plan of ["INDIVIDUAL", "FAMILY", "PRO"]) {
       mockGetPlanForLimitScope.mockResolvedValueOnce({ plan, hasPremium: true, isActive: true });
 
       const response = await GET(dossierRequest(), addressParams() as any);
@@ -446,7 +488,7 @@ describe("address dossier route", () => {
     // must NOT leak into the response.
     expect(body).toEqual({
       configured: true,
-      dossierPdf: false,
+      dossierPdf: true,
       address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "ok", zone: "AE", isHighRisk: true },
       school: { status: "ok", districtName: "Austin Independent School District", ncesId: "4808940" },
@@ -585,7 +627,7 @@ describe("address dossier route", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       configured: true,
-      dossierPdf: false,
+      dossierPdf: true,
       address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "no_location", zone: null, isHighRisk: null },
       school: { status: "no_location", districtName: null, ncesId: null },

@@ -19,6 +19,10 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => Promise.resolve({ success: true })),
 }));
 
+vi.mock("@/lib/plan-limits", () => ({
+  canGenerateMoveTasks: vi.fn(),
+}));
+
 vi.mock("@/lib/provider-serviceability", () => ({
   enrichProviderServiceability: vi.fn(async () => ({
     fcc: { status: "skipped", confirmedCount: 0, blockGeoid: null },
@@ -32,6 +36,7 @@ vi.mock("@/lib/provider-serviceability", () => ({
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import {
   applyProviderServiceabilityConfidence,
   enrichProviderServiceability,
@@ -40,6 +45,7 @@ import { GET } from "./route";
 
 const requireDbUserIdMock = requireDbUserId as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
+const canGenerateMoveTasksMock = canGenerateMoveTasks as unknown as Mock;
 const movingPlanMock = prisma.movingPlan as unknown as { findFirst: Mock };
 const serviceMock = prisma.service as unknown as { findMany: Mock };
 const serviceProviderMock = prisma.serviceProvider as unknown as { findMany: Mock };
@@ -55,6 +61,7 @@ describe("moving migration auth handling", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     requireDbUserIdMock.mockResolvedValue("user-1");
+    canGenerateMoveTasksMock.mockResolvedValue({ allowed: true });
     movingPlanMock.findFirst.mockResolvedValue(null);
     serviceMock.findMany.mockResolvedValue([]);
     serviceProviderMock.findMany.mockResolvedValue([]);
@@ -83,6 +90,28 @@ describe("moving migration auth handling", () => {
     expect(body.code).toBe("UNAUTHORIZED");
     expect(rateLimitMock).not.toHaveBeenCalled();
     expect(movingPlanMock.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("blocks free users before provider migration analysis work", async () => {
+    canGenerateMoveTasksMock.mockResolvedValueOnce({
+      allowed: false,
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      reason: "Upgrade to create a full moving plan.",
+      upgradeRequired: true,
+    });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "MOVING_PLAN_UPGRADE_REQUIRED",
+      upgradeRequired: true,
+    });
+    expect(canGenerateMoveTasksMock).toHaveBeenCalledWith("user-1");
+    expect(movingPlanMock.findFirst).not.toHaveBeenCalled();
+    expect(serviceMock.findMany).not.toHaveBeenCalled();
+    expect(serviceProviderMock.findMany).not.toHaveBeenCalled();
   });
 
   it("uses address-level serviceability when ranking migration provider candidates", async () => {

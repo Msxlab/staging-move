@@ -48,7 +48,7 @@ export interface HomeDossierResponse {
   upgradeRequired?: boolean | string;
   /** Gate code (for diagnostics only; rendering is driven by entitlement/gate). */
   code?: string;
-  /** Pro-only PDF entitlement. Present for parity with the web dossier payload. */
+  /** Paid PDF entitlement. Present for parity with the web dossier payload. */
   dossierPdf?: boolean;
   address?: { id: string; city: string; state: string };
   /** Data sections may be omitted entirely on unentitled payloads. */

@@ -91,6 +91,7 @@ const MEMBER_SEATS: Record<BillingPlan, number> = {
 interface PlanCapabilities {
   vehicleCheck: boolean;
   weatherDigest: boolean;
+  homeDossierPreview: boolean;
   homeDossier: boolean;
   aiBriefing: boolean;
   realMap: boolean;
@@ -117,31 +118,32 @@ interface PlanCapabilities {
  * compare table uses for its address/service caps). The colocated
  * plan-comparison.test.ts pins every cell so any drift from the entitlement
  * ladder fails CI instead of shipping a contradictory bullet. Owner-ratified
- * ladder (2026-06-10): VIN/weather/dossier/address-validation at Individual+;
- * AI briefing + real map + shared workspace at Family+; movers + dossier PDF +
- * multi-plan + Partner Hub + tax export + priority support are Pro only.
+ * ladder (2026-06-17): Free gets dossier preview; VIN/weather/full dossier/
+ * address-validation at Individual+;
+ * AI briefing + real map + shared workspace at Family+; dossier PDF is paid;
+ * movers + multi-plan + Partner Hub + tax export + priority support are Pro only.
  */
 const PLAN_MATRIX: Record<BillingPlan, PlanCapabilities> = {
   FREE_TRIAL: {
-    vehicleCheck: false, weatherDigest: false, homeDossier: false, aiBriefing: false,
+    vehicleCheck: false, weatherDigest: false, homeDossierPreview: true, homeDossier: false, aiBriefing: false,
     realMap: false, moverSuggestions: false, sharedWorkspace: false, addressValidation: false,
     dossierPdf: false, advancedExport: false, partnerHub: false, multiPlan: false,
     prioritySupport: false,
   },
   INDIVIDUAL: {
-    vehicleCheck: true, weatherDigest: true, homeDossier: true, aiBriefing: false,
+    vehicleCheck: true, weatherDigest: true, homeDossierPreview: true, homeDossier: true, aiBriefing: false,
     realMap: false, moverSuggestions: false, sharedWorkspace: false, addressValidation: true,
-    dossierPdf: false, advancedExport: false, partnerHub: false, multiPlan: false,
+    dossierPdf: true, advancedExport: false, partnerHub: false, multiPlan: false,
     prioritySupport: false,
   },
   FAMILY: {
-    vehicleCheck: true, weatherDigest: true, homeDossier: true, aiBriefing: true,
+    vehicleCheck: true, weatherDigest: true, homeDossierPreview: true, homeDossier: true, aiBriefing: true,
     realMap: true, moverSuggestions: false, sharedWorkspace: true, addressValidation: true,
-    dossierPdf: false, advancedExport: false, partnerHub: false, multiPlan: false,
+    dossierPdf: true, advancedExport: false, partnerHub: false, multiPlan: false,
     prioritySupport: false,
   },
   PRO: {
-    vehicleCheck: true, weatherDigest: true, homeDossier: true, aiBriefing: true,
+    vehicleCheck: true, weatherDigest: true, homeDossierPreview: true, homeDossier: true, aiBriefing: true,
     realMap: true, moverSuggestions: true, sharedWorkspace: true, addressValidation: true,
     dossierPdf: true, advancedExport: true, partnerHub: true, multiPlan: true,
     prioritySupport: true,
@@ -214,13 +216,14 @@ export function comparisonPriceLabel(
  * overhauled FEATURES matrix in packages/shared/src/workspace-entitlements.ts
  * (via planFeatures), BILLING_PLAN_DEFINITIONS.isPaid, and the caps/seats
  * mirrored above - so this list and the web compare table describe the exact
- * same matrix. Owner-ratified ladder (2026-06-10):
+ * same matrix. Owner-ratified ladder (2026-06-17):
+ *   - Free previews the New Home Dossier; full dossier stays paid.
  *   - VIN check + weather/digest + New Home Dossier + address validation:
  *     Individual and up.
  *   - AI move briefing + real map + shared workspace/child accounts:
  *     Family and up.
- *   - FMCSA mover suggestions + dossier PDF export + multiple concurrent move
- *     plans + Partner Hub + tax/property export + priority support: Pro only.
+ *   - FMCSA mover suggestions + multiple concurrent move plans + Partner Hub
+ *     + tax/property export + priority support: Pro only.
  * Lines appear only when the plan includes the capability - the bullet list is
  * a positive "included" list, never feature-with-a-cross.
  */
@@ -244,6 +247,7 @@ export function planComparisonFeatures(planKey: BillingPlan): PlanComparisonFeat
   if (f.vehicleCheck) lines.push({ key: "subscription_featVehicleCheck" });
   if (f.weatherDigest) lines.push({ key: "subscription_featWeatherDigest" });
   if (f.homeDossier) lines.push({ key: "subscription_featHomeDossier" });
+  else if (f.homeDossierPreview) lines.push({ key: "subscription_featHomeDossierPreview" });
   if (f.aiBriefing) lines.push({ key: "subscription_featAiBriefing" });
   if (f.realMap) lines.push({ key: "subscription_featRealMap" });
   if (f.moverSuggestions) lines.push({ key: "subscription_featMovers" });

@@ -1003,6 +1003,7 @@
     "subscription_featMovePlanFull": "Full move plan, checklist & countdown",
     "subscription_featDossierPdf": "New Home Dossier PDF export",
     "subscription_featProvidersReminders": "Providers, bills & renewal reminders",
+    "subscription_featHomeDossierPreview": "Home Dossier preview (flood, school district & moving-day weather)",
     "subscription_featHomeDossier": "New Home Dossier (flood zone, school district & moving-day weather)",
     "subscription_featVehicleCheck": "Vehicle check: VIN decode & NHTSA recall lookup",
     "subscription_featAiBriefing": "AI move briefing — your move, explained",
@@ -1041,6 +1042,8 @@
     "freeIncluded": "Included free",
     "freeAddresses": "Up to 3 homes & addresses",
     "freeProviders": "Up to 10 providers & services",
+    "freeMovePreview": "Read-only personalized move preview",
+    "freeDossierPreview": "Home Dossier preview",
     "freeReminders": "Bill & renewal reminders"
   },
   "onboarding": {

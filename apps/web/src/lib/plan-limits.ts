@@ -350,10 +350,10 @@ export async function canCreateMovingDestinationAddress(userId: string, scope: P
  * same MOVING_PLAN_UPGRADE_REQUIRED signal as plan creation — they have no
  * plan to generate tasks for in the first place.
  *
- * Read stays open: this gate fires only on POST /api/move-tasks (generation)
- * and syncSuggestedMoveTasks. GET /api/move-tasks is ungated, so a former paid
- * user who lapsed (or a free user) keeps any existing move tasks readable, and
- * completing already-created tasks stays available.
+ * Read stays open: GET /api/move-tasks is ungated, so a former paid user who
+ * lapsed (or a free user) keeps any existing move tasks readable. Generation
+ * and mutation stay paid-only: this gate fires on POST/PATCH /api/move-tasks
+ * and syncSuggestedMoveTasks.
  */
 export async function canGenerateMoveTasks(userId: string, scope: PlanLimitScope = {}): Promise<PlanLimitCheck> {
   const userPlan = await getPlanForLimitScope(userId, scope);

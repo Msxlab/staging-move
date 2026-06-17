@@ -6,6 +6,7 @@ export {
   getPhaseContextForAI,
   type UserChecklistProfile,
   type RelocationChecklist,
+  type ChecklistItem,
   type ChecklistStateRuleContext,
   type ChecklistTaskTemplate,
 } from "../../../../packages/shared/src/relocation-checklist";

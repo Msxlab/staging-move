@@ -1003,6 +1003,7 @@
     "subscription_featMovePlanFull": "Plan de mudanza completo, lista y cuenta regresiva",
     "subscription_featDossierPdf": "Exportacion en PDF del Dossier del nuevo hogar",
     "subscription_featProvidersReminders": "Proveedores, facturas y recordatorios de renovacion",
+    "subscription_featHomeDossierPreview": "Vista previa del Dossier del hogar (inundacion, distrito escolar y clima del dia de mudanza)",
     "subscription_featHomeDossier": "Dossier del nuevo hogar (zona de inundacion, distrito escolar y clima del dia de mudanza)",
     "subscription_featVehicleCheck": "Verificacion de vehiculo: decodificacion de VIN y consulta de retiros NHTSA",
     "subscription_featAiBriefing": "Resumen de mudanza con IA: tu mudanza, explicada",
@@ -1041,6 +1042,8 @@
     "freeIncluded": "Incluido gratis",
     "freeAddresses": "Hasta 3 hogares y direcciones",
     "freeProviders": "Hasta 10 proveedores y servicios",
+    "freeMovePreview": "Vista previa personalizada de mudanza en solo lectura",
+    "freeDossierPreview": "Vista previa del Dossier del hogar",
     "freeReminders": "Recordatorios de facturas y renovaciones"
   },
   "onboarding": {

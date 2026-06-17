@@ -120,7 +120,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       // gate the move plan on paid tiers only - mirrored via BILLING_PLAN_DEFINITIONS[plan].isPaid.
       { labelKey: "rowMovePlan", cell: (plan) => onOff(BILLING_PLAN_DEFINITIONS[plan].isPaid) },
       // Row source: FEATURES[plan].homeDossier (packages/shared/src/workspace-entitlements.ts).
-      // Individual and up (the dossier *screen*; the PDF export is a separate Pro-only row below).
+      // Individual and up (the dossier screen; the PDF export is a separate paid row below).
       { labelKey: "rowHomeDossier", cell: (plan) => onOff(planFeatures(plan).homeDossier) },
       // Row source: FEATURES[plan].vehicleCheck (packages/shared/src/workspace-entitlements.ts).
       // VIN decode + NHTSA recall check on vehicle tasks, Individual and up.
@@ -138,7 +138,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       // FMCSA-registered household-goods mover suggestions on the moving plan, Pro only.
       { labelKey: "rowMoverSuggestions", cell: (plan) => onOff(planFeatures(plan).moverSuggestions) },
       // Row source: FEATURES[plan].dossierPdf (packages/shared/src/workspace-entitlements.ts).
-      // New Home Dossier PDF export, Pro only.
+      // New Home Dossier PDF export, Individual and up.
       { labelKey: "rowDossierPdf", cell: (plan) => onOff(planFeatures(plan).dossierPdf) },
       // Row source: FEATURES[plan].concurrentPlanLimit (packages/shared/src/workspace-entitlements.ts).
       // max concurrent (non-archived) move plans, 1/1/1/3. Pro runs several at once.

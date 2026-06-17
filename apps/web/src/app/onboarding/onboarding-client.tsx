@@ -67,6 +67,7 @@ import {
   type ServiceLimitDetails,
 } from "@/components/shared/service-limit-upsell";
 import { trackEvent } from "@/lib/analytics";
+import { writeFreeMovePreviewContext } from "@/lib/free-move-preview";
 
 // Edition VII note: the design prototype opens with a plan-picker step. That
 // step is DELIBERATELY absent here — billing stays post-onboarding (owner
@@ -845,8 +846,10 @@ export default function OnboardingClient({
 
   // Teaser: compute a personalized move preview from the entered
   // onboarding data using the SAME checklist engine the dashboard uses. No
-  // /api/moving POST, no MovingPlan persisted — purely ephemeral. Reasons and
-  // deadlines come from the real engine + the user's data (never invented).
+  // /api/moving POST, no MovingPlan persisted; free users only keep a coarse
+  // state/date preview context so the dashboard can re-render a read-only
+  // preview. Reasons and deadlines come from the real engine + the user's data
+  // (never invented).
   const buildMoveTeaser = async (mode: "free" | "paid") => {
     if (!validateMovingForm()) return false;
     setError("");
@@ -888,6 +891,9 @@ export default function OnboardingClient({
         stateRule,
       );
       setTeaser({ checklist, fromState, toState, moveDate: movingForm.moveDate, mode });
+      if (mode === "free") {
+        writeFreeMovePreviewContext({ fromState, toState, moveDate: movingForm.moveDate });
+      }
       trackEvent(
         PHASE1_ANALYTICS_EVENTS.ONBOARDING_TEASER_VIEWED,
         buildOnboardingTeaserViewedMetadata({
@@ -1377,7 +1383,7 @@ export default function OnboardingClient({
               </ObCta>
             </div>
             <p className="mt-3 text-[11px] text-tone-orange-fg/80">
-              You can keep tracking up to 3 addresses, unlimited providers, and bill reminders on the free plan.
+              You can keep tracking up to 3 addresses, 10 services, and bill reminders on the free plan.
             </p>
           </div>
         )}

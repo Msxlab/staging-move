@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Lock, ArrowRight, Sparkles, MapPin, Bell, Zap } from "lucide-react-native";
+import { Lock, ArrowRight, Sparkles, MapPin, Bell, Zap, ClipboardList, FileText } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "./Card";
 import { RaccoonMascot } from "./RaccoonMascot";
@@ -32,6 +32,8 @@ export function FreeMoveUpsellCard({ onUnlock }: Props) {
   const freeFeatures = [
     { icon: MapPin, label: t("teaser.freeAddresses", { defaultValue: "Up to 3 homes & addresses" }) },
     { icon: Zap, label: t("teaser.freeProviders", { defaultValue: "Up to 10 providers & services" }) },
+    { icon: ClipboardList, label: t("teaser.freeMovePreview", { defaultValue: "Read-only personalized move preview" }) },
+    { icon: FileText, label: t("teaser.freeDossierPreview", { defaultValue: "Home Dossier preview" }) },
     { icon: Bell, label: t("teaser.freeReminders", { defaultValue: "Bill & renewal reminders" }) },
   ];
 
