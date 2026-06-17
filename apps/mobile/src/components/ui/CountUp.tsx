@@ -70,7 +70,9 @@ export function CountUp({
   const text = format ? format(display) : String(Math.round(display));
   return (
     <Text
-      style={style}
+      // tabular-nums keeps the glyph advance fixed so the surrounding layout
+      // doesn't reflow frame-by-frame while the number tweens.
+      style={[{ fontVariant: ["tabular-nums"] as TextStyle["fontVariant"] }, style]}
       accessibilityLabel={format ? format(value) : String(Math.round(value))}
     >
       {text}

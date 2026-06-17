@@ -1397,7 +1397,11 @@ export function DossierAmbient({
 }) {
   const theme = useAppTheme();
   const reduceMotion = useReducedMotion();
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  // Seed a sensible default (≈ a dossier row's right-side layer) so the scene
+  // renders on first paint and corrects on the first onLayout — instead of
+  // staying blank until measurement lands, which silently never happens if the
+  // host row is collapsed / display:none-then-revealed / measured late.
+  const [size, setSize] = useState({ w: 240, h: 64 });
   const level = clampIntensity(intensity);
   const palette = useMemo<Palette>(
     () => ({

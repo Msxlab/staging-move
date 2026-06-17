@@ -23,6 +23,7 @@ import {
 } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { RaccoonMascot } from "@/components/ui/RaccoonMascot";
+import { CountUp } from "@/components/ui/CountUp";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 
 /**
@@ -149,7 +150,12 @@ function ReadinessRing({ percent, color, track, label }: { percent: number; colo
           animatedProps={animatedProps}
         />
       </Svg>
-      <Text style={{ fontSize: 19, fontWeight: "800", color }}>{percent}%</Text>
+      <CountUp
+        value={percent}
+        duration={650}
+        format={(n) => `${Math.round(n)}%`}
+        style={{ fontSize: 19, fontWeight: "800", color }}
+      />
     </View>
   );
 }
@@ -209,12 +215,17 @@ export function MoveCommandCenter({
 
   const cardStyle = useAnimatedStyle(() => {
     const enterScale = 0.97 + enter.value * 0.03;
-    const popScale = pop.value * 0.03;
+    const popScale = pop.value * 0.06;
     return {
       opacity: enter.value,
       transform: [{ scale: enterScale + popScale }],
     };
   });
+
+  // Milestone glow: a soft accent ring that pulses in and back out with the
+  // one-shot `pop` (so the 100%-ready / move-day moment actually reads as a
+  // celebration, not just a 3% scale tick). Reduce-motion never fires `pop`.
+  const glowStyle = useAnimatedStyle(() => ({ opacity: pop.value }));
 
   // ── NO-PLAN: warm "start your move" hero ──────────────────────────────────
   if (!activePlan) {
@@ -274,6 +285,7 @@ export function MoveCommandCenter({
         end={{ x: 1.1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      <Animated.View pointerEvents="none" style={[styles.glow, glowStyle]} />
       <View style={styles.activeRow}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <View style={styles.eyebrowRow}>
@@ -373,6 +385,12 @@ const makeStyles = (t: Theme) =>
       ...t.shadow.sm,
     },
     noPlanCard: {},
+    glow: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: t.colors.primary,
+    },
     noPlanTop: { flexDirection: "row", alignItems: "center", gap: 12 },
     noPlanTitle: { fontSize: 19, fontWeight: "800", color: t.colors.text, marginTop: 2 },
     noPlanBody: { fontSize: 12.5, color: t.colors.textSecondary, marginTop: 4, lineHeight: 18 },
