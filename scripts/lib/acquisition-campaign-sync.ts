@@ -36,10 +36,10 @@ export function getCampaignSyncTarget(
     if (!stripePriceId) return null;
     return {
       code,
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       stripePriceId,
       checkoutDisclosureCopy:
-        "Annual plan includes a 90-day free trial, then renews at $39.99/year unless canceled.",
+        "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
     };
   }
 
@@ -49,9 +49,9 @@ export function getCampaignSyncTarget(
   if (!stripePriceId) return null;
   return {
     code,
-    displayPriceLabel: "$3.99/month",
+    displayPriceLabel: "$4.99/month",
     stripePriceId,
-    checkoutDisclosureCopy: "Monthly plan renews at $3.99/month unless canceled.",
+    checkoutDisclosureCopy: "Monthly plan renews at $4.99/month unless canceled.",
   };
 }
 

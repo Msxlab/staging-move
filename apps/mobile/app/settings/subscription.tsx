@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -64,6 +64,7 @@ import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
   TRIAL_DURATION_DAYS,
+  billingPriceLabelForInterval,
 } from "@locateflow/shared";
 
 // Single source of truth — shared billing module. Prices, features, and
@@ -74,6 +75,7 @@ const PLANS = BILLING_PLAN_ORDER.map((key) => {
     key,
     name: def.displayName,
     price: def.priceLabel,
+    monthlyPrice: def.isPaid ? billingPriceLabelForInterval(key, "MONTH") : def.priceLabel,
     period:
       key === "FREE_TRIAL"
         ? `${TRIAL_DURATION_DAYS} days`
@@ -975,7 +977,7 @@ function LegacySubscriptionScreen() {
           const monthlyDisplayPrice =
             planLocalizedMonthlyPrice ||
             (plan.key === "INDIVIDUAL" ? monthlyOffer?.displayPriceLabel : null) ||
-            plan.price + plan.period;
+            plan.monthlyPrice;
           const yearlyDisplayPrice =
             planLocalizedYearlyPrice ||
             (plan.key === "INDIVIDUAL" ? annualOffer?.displayPriceLabel : null) ||

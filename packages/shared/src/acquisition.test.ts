@@ -19,7 +19,7 @@ describe("acquisition campaign helpers", () => {
     expect(copy).toContain("Today: $0.");
     expect(copy).toContain("Trial: 3 months.");
     expect(copy).toContain("Your annual plan starts on 2026-07-27.");
-    expect(copy).toContain("First charge: $39.99/year on 2026-07-27.");
+    expect(copy).toContain("First charge: $24/year on 2026-07-27.");
     expect(copy).toContain("You can cancel before 2026-07-27 in Settings.");
     expect(copy.toLowerCase()).not.toContain("refund");
   });
@@ -30,13 +30,13 @@ describe("acquisition campaign helpers", () => {
       accessType: "PAID",
       billingInterval: "MONTH",
       trialDays: null,
-      displayPriceLabel: "$3.99/month",
+      displayPriceLabel: "$4.99/month",
       requiresPaymentMethod: true,
     };
     const copy = buildCheckoutDisclosureText({ campaign, now });
 
     expect(isCampaignRedeemable(campaign, now)).toEqual({ redeemable: true });
-    expect(copy).toContain("Today: $3.99/month.");
+    expect(copy).toContain("Today: $4.99/month.");
     expect(copy).toContain("Your Individual subscription starts on 2026-04-28.");
     expect(copy).toContain("Renews monthly.");
     expect(copy).not.toContain("Trial:");
@@ -66,7 +66,7 @@ describe("acquisition campaign helpers", () => {
       name: "Spring Individual",
       code: "SPRING90",
       stripePriceId: "price_annual",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
     });
     const snapshot = buildCampaignSnapshot({
       campaign,
@@ -87,7 +87,7 @@ describe("acquisition campaign helpers", () => {
       interval: "YEAR",
       trialDaysAtSignup: 90,
       stripePriceIdAtSignup: "price_annual",
-      displayPriceAtSignup: "$39.99/year",
+      displayPriceAtSignup: "$24/year",
       autoRenewAtSignup: true,
       checkoutDisclosureTextHash: "hash_1",
     });
@@ -102,7 +102,7 @@ describe("acquisition campaign helpers", () => {
         name: "Monthly Individual",
         code: "MONTHLY",
         stripePriceId: "price_monthly",
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
       }),
       accessType: "PAID",
       billingInterval: "MONTH",
@@ -125,8 +125,8 @@ describe("acquisition campaign helpers", () => {
       interval: "MONTH",
       trialDaysAtSignup: null,
       stripePriceIdAtSignup: "price_monthly",
-      displayPriceAtSignup: "$3.99/month",
-      firstChargeAmount: "$3.99/month",
+      displayPriceAtSignup: "$4.99/month",
+      firstChargeAmount: "$4.99/month",
       checkoutDisclosureTextHash: "hash_monthly",
     });
     expect(snapshot.trialStartsAt).toBeNull();
@@ -199,7 +199,7 @@ describe("acquisition campaign helpers", () => {
     // Free Access users carry accessType=FREE_ACCESS even after they kick
     // off the annual trial. Without this ordering the settings page would
     // still show "Free Access" and re-render the trial CTA on top of the
-    // "Activating…" banner during the brief window before Stripe confirms.
+    // "Activating?" banner during the brief window before Stripe confirms.
     expect(deriveUserSubscriptionState({
       accessType: "FREE_ACCESS",
       status: "PENDING_CHECKOUT",

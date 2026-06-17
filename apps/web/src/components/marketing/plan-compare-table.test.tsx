@@ -27,6 +27,11 @@ vi.mock("next-intl", async () => {
 });
 
 import { COMPARE_GROUPS, PlanCompareTable, type CompareCell } from "./plan-compare-table";
+import {
+  BILLING_PLAN_DEFINITIONS,
+  billingPriceLabelForInterval,
+  planFeatures,
+} from "@locateflow/shared";
 
 type Plan = "FREE_TRIAL" | "INDIVIDUAL" | "FAMILY" | "PRO";
 const PLANS: Plan[] = ["FREE_TRIAL", "INDIVIDUAL", "FAMILY", "PRO"];
@@ -45,7 +50,7 @@ const included = { kind: "included" } as const;
 const excluded = { kind: "excluded" } as const;
 const value = (v: number) => ({ kind: "value", value: v }) as const;
 
-describe("COMPARE_GROUPS — every cell pinned to the enforced ground truth", () => {
+describe("COMPARE_GROUPS - every cell pinned to the enforced ground truth", () => {
   it("addresses mirror PLAN_LIMITS.maxAddresses (3/10/15/25)", () => {
     // Mirrored literals: PLAN_LIMITS in apps/web/src/lib/plan-limits.ts is
     // server-only (prisma import) and unexported, so this test is the drift
@@ -53,13 +58,13 @@ describe("COMPARE_GROUPS — every cell pinned to the enforced ground truth", ()
     expect(cells("rowAddresses")).toEqual([value(3), value(10), value(15), value(25)]);
   });
 
-  it("services mirror PLAN_LIMITS.maxServices (10 / 100 / 500 / 1000 — Free is a thin tier now)", () => {
+  it("services mirror PLAN_LIMITS.maxServices (10 / 100 / 500 / 1000 - Free is a thin tier now)", () => {
     expect(cells("rowServices")).toEqual([value(10), value(100), value(500), value(1000)]);
   });
 
   it("providers/reminders on every tier; data-checked smart suggestions are Individual and up (Free is catalog-only)", () => {
     expect(cells("rowProvidersReminders")).toEqual([included, included, included, included]);
-    // Derived from FEATURES[plan].addressValidation — Free has no data-checked
+    // Derived from FEATURES[plan].addressValidation - Free has no data-checked
     // (FCC/utility) suggestions, so the cell is honestly excluded for Free.
     expect(cells("rowSmartSuggestions")).toEqual([excluded, included, included, included]);
   });
@@ -76,7 +81,7 @@ describe("COMPARE_GROUPS — every cell pinned to the enforced ground truth", ()
 
   it("AI move briefing and real map are Family and Pro only (Individual does NOT get AI)", () => {
     const familyUp = [excluded, excluded, included, included];
-    expect(cells("rowAiBriefing")).toEqual(familyUp); // FEATURES.aiBriefing — cost-control cap, not a tier line
+    expect(cells("rowAiBriefing")).toEqual(familyUp); // FEATURES.aiBriefing - cost-control cap, not a tier line
     expect(cells("rowRealMap")).toEqual(familyUp); // FEATURES.realMap
   });
 
@@ -110,9 +115,9 @@ describe("PlanCompareTable markup", () => {
     for (const name of ["Free", "Individual", "Family", "Pro"]) expect(html).toContain(name);
     // Free column header price line and real paid prices from BILLING_PLAN_DEFINITIONS.
     expect(html).toContain("$0");
-    expect(html).toContain("$3.99");
-    expect(html).toContain("$9.99");
-    expect(html).toContain("$19.99");
+    expect(html).toContain("$24/year");
+    expect(html).toContain("$39/year");
+    expect(html).toContain("$59/year");
   });
 
   it("colors column headers with the canonical plan-accent classes (Individual = base Aurora, no class)", () => {
@@ -158,6 +163,64 @@ describe("i18n catalogs", () => {
     for (const key of referenced) {
       expect(typeof en.pricing.compare[key]).toBe("string");
       expect(typeof es.pricing.compare[key]).toBe("string");
+    }
+  });
+
+  it("keeps displayed plan price, limit, and seat copy aligned with canonical plan data", async () => {
+    type PricingCatalog = Record<string, string> & { compare: Record<string, string> };
+    const en = (await import("@/i18n/messages/en.json")).default as unknown as {
+      premiumReveal: Record<string, string>;
+      pricing: PricingCatalog;
+    };
+    const es = (await import("@/i18n/messages/es.json")).default as unknown as {
+      premiumReveal: Record<string, string>;
+      pricing: PricingCatalog;
+    };
+    const familyAddressCell = row("rowAddresses").cell("FAMILY");
+    const familyServiceCell = row("rowServices").cell("FAMILY");
+    const proAddressCell = row("rowAddresses").cell("PRO");
+    if (
+      familyAddressCell.kind !== "value" ||
+      familyServiceCell.kind !== "value" ||
+      proAddressCell.kind !== "value"
+    ) {
+      throw new Error("Expected value cells for Family/Pro limits.");
+    }
+
+    expect(en.pricing.plan_individual_price).toBe(BILLING_PLAN_DEFINITIONS.INDIVIDUAL.priceLabel);
+    expect(en.pricing.plan_individual_per).toBe(BILLING_PLAN_DEFINITIONS.INDIVIDUAL.periodLabel);
+    expect(en.pricing.plan_family_price).toBe(BILLING_PLAN_DEFINITIONS.FAMILY.priceLabel);
+    expect(en.pricing.plan_family_per).toBe(BILLING_PLAN_DEFINITIONS.FAMILY.periodLabel);
+    expect(en.pricing.familyFeature2).toContain(String(planFeatures("FAMILY").seatLimit));
+    expect(en.pricing.familyFeature3).toContain(String(familyAddressCell.value));
+    expect(en.pricing.familyFeature3).toContain(String(familyServiceCell.value));
+    expect(en.premiumReveal.sub_family).toContain(String(planFeatures("FAMILY").seatLimit - 1));
+    expect(en.premiumReveal.sub_pro).toContain(String(proAddressCell.value));
+    expect(billingPriceLabelForInterval("PRO", "MONTH")).toBe("$11.99/month");
+
+    expect(es.pricing.plan_individual_price).toBe(BILLING_PLAN_DEFINITIONS.INDIVIDUAL.priceLabel);
+    expect(es.pricing.plan_family_price).toBe(BILLING_PLAN_DEFINITIONS.FAMILY.priceLabel);
+    expect(es.pricing.familyFeature2).toContain(String(planFeatures("FAMILY").seatLimit));
+    expect(es.pricing.familyFeature3).toContain(String(familyAddressCell.value));
+    expect(es.pricing.familyFeature3).toContain(String(familyServiceCell.value));
+    expect(es.premiumReveal.sub_family).toContain(String(planFeatures("FAMILY").seatLimit - 1));
+    expect(es.premiumReveal.sub_pro).toContain(String(proAddressCell.value));
+
+    const publicCopy = JSON.stringify({
+      en: { premiumReveal: en.premiumReveal, pricing: en.pricing },
+      es: { premiumReveal: es.premiumReveal, pricing: es.pricing },
+    });
+    for (const stale of [
+      "$14.99",
+      "Save 17%",
+      "Unlimited addresses",
+      "up to 4 others",
+      "17 shared addresses",
+      "250 services",
+      "17 direcciones",
+      "250 servicios",
+    ]) {
+      expect(publicCopy).not.toContain(stale);
     }
   });
 });

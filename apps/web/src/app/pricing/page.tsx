@@ -9,6 +9,7 @@ import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { absoluteUrl, createPublicPageMetadata, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { JsonLd, breadcrumbSchema, softwareApplicationSchema } from "@/components/seo/json-ld";
+import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 
 export const metadata = createPublicPageMetadata({
   title: "Pricing",
@@ -39,6 +40,7 @@ export default async function PricingPage() {
     siteName: SITE_NAME,
     logoUrl: absoluteUrl("/logo.svg"),
   };
+  const individualAnnualPrice = BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 24;
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +48,7 @@ export default async function PricingPage() {
         id="ld-pricing-software"
         data={softwareApplicationSchema(schemaContext, {
           description: SITE_DESCRIPTION,
-          price: "39.99",
+          price: String(individualAnnualPrice),
           priceCurrency: "USD",
         })}
       />

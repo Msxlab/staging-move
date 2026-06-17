@@ -5,26 +5,26 @@ import {
 } from "../../../../scripts/lib/acquisition-campaign-sync";
 
 describe("acquisition campaign billing sync helpers", () => {
-  it("updates the active annual campaign offer from $79/year to $39.99/year", () => {
+  it("updates the active annual campaign offer from $79/year to $24/year", () => {
     expect(getCampaignSyncTarget("INDIVIDUAL90", {
       STRIPE_PRICE_INDIVIDUAL_YEARLY: "price_yearly_new",
     })).toEqual({
       code: "INDIVIDUAL90",
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       stripePriceId: "price_yearly_new",
       checkoutDisclosureCopy:
-        "Annual plan includes a 90-day free trial, then renews at $39.99/year unless canceled.",
+        "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
     });
   });
 
-  it("updates the active monthly campaign offer to $3.99/month", () => {
+  it("updates the active monthly campaign offer to $4.99/month", () => {
     expect(getCampaignSyncTarget("INDIVIDUALMONTHLY", {
       STRIPE_PRICE_INDIVIDUAL_MONTHLY: "price_monthly_new",
     })).toMatchObject({
       code: "INDIVIDUALMONTHLY",
-      displayPriceLabel: "$3.99/month",
+      displayPriceLabel: "$4.99/month",
       stripePriceId: "price_monthly_new",
-      checkoutDisclosureCopy: "Monthly plan renews at $3.99/month unless canceled.",
+      checkoutDisclosureCopy: "Monthly plan renews at $4.99/month unless canceled.",
     });
   });
 

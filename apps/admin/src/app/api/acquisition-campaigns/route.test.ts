@@ -172,7 +172,7 @@ describe("admin acquisition campaigns create route", () => {
   it("saves draft Stripe price mismatch with a warning", async () => {
     mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
       ok: true,
-      warning: "Stripe price is $99/year but displayed label is $79/year.",
+      warning: "Stripe price is $24/year but displayed label is $79/year.",
       displayPriceLabel: "$79/year",
     });
 
@@ -188,7 +188,7 @@ describe("admin acquisition campaigns create route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(201);
-    expect(body.priceValidation.warning).toContain("Stripe price is $99/year");
+    expect(body.priceValidation.warning).toContain("Stripe price is $24/year");
   });
 
   it("rejects create without password + MFA step-up (403, nothing written)", async () => {
@@ -260,7 +260,7 @@ describe("admin acquisition campaigns create route", () => {
     mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
       ok: false,
       code: "PRICE_VALIDATION_FAILED",
-      error: "Stripe price is $99/year but displayed label is $79/year.",
+      error: "Stripe price is $24/year but displayed label is $79/year.",
     });
 
     const response = await POST(request({
@@ -279,7 +279,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "PRICE_VALIDATION_FAILED",
       priceValidation: {
         ok: false,
-        error: "Stripe price is $99/year but displayed label is $79/year.",
+        error: "Stripe price is $24/year but displayed label is $79/year.",
       },
     });
     expect(mocks.campaignCreate).not.toHaveBeenCalled();

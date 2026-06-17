@@ -43,7 +43,7 @@ export async function isApiConnectorsEnabled(): Promise<boolean> {
  *  2. a plan whose matrix unlocks API connectors (PRO), and
  *  3. an ANNUAL commitment — owner pricing decision (2026-05-30): automatic
  *     connections are an annual-commitment feature, so a one-time mover can't
- *     buy a single $19.99 month of Pro, run the sync, and churn. Admin-granted
+ *     buy a single $11.99 month of Pro, run the sync, and churn. Admin-granted
  *     Pro (manual comp) is exempt from the annual requirement.
  */
 export async function userHasApiConnectorEntitlement(userId: string): Promise<boolean> {

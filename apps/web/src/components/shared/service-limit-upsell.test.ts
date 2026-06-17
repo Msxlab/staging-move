@@ -9,21 +9,21 @@ describe("buildServiceLimitCopy", () => {
       campaign: {
         code: "SPRING90",
         publicHeadline: "Start with 90 days free",
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         trialDays: 90,
       },
     });
     expect(copy.title).toBe("You've reached your service limit");
     expect(copy.body).toContain("Free Access includes up to 10 active services");
     expect(copy.body).toContain("Start with 90 days free");
-    expect(copy.body).toContain("$39.99/year after trial");
+    expect(copy.body).toContain("$24/year after trial");
     expect(copy.primary).toBe("Start with 90 days free");
     expect(copy.secondary).toBe("Maybe later");
   });
 
   it("falls back to Free Access labelling when access type is unspecified", () => {
     // The unauthenticated / unknown path should never claim the user is on
-    // a trial they have not started — Free Access is the safer default and
+    // a trial they have not started - Free Access is the safer default and
     // matches the API's eligibleForTrial=true assumption for new accounts.
     const copy = buildServiceLimitCopy(null);
     expect(copy.body).toContain("Free Access includes up to 10 active services");
@@ -47,7 +47,7 @@ describe("buildServiceLimitCopy", () => {
 
   it("treats trialing/active users (eligibleForTrial=false) as paid for upsell purposes", () => {
     // Stripe-backed paid users hit a different ceiling and there is no
-    // higher tier to sell — the upsell modal must not advertise the
+    // higher tier to sell - the upsell modal must not advertise the
     // 3-months-free trial back to them.
     const copy = buildServiceLimitCopy({
       accessType: "FREE_TRIAL",
@@ -65,7 +65,7 @@ describe("buildServiceLimitCopy", () => {
       campaign: {
         code: "SPRING90",
         publicHeadline: "Start with 90 days free",
-        displayPriceLabel: "$39.99/year",
+        displayPriceLabel: "$24/year",
         trialDays: 90,
       },
     });
@@ -87,7 +87,7 @@ describe("buildServiceLimitCopy", () => {
       monthlyOffer: {
         code: "MONTHLY",
         publicHeadline: "Subscribe monthly",
-        displayPriceLabel: "$3.99/month",
+        displayPriceLabel: "$4.99/month",
         trialDays: null,
         accessType: "PAID",
         billingInterval: "MONTH",
@@ -96,7 +96,7 @@ describe("buildServiceLimitCopy", () => {
 
     expect(copy.body).toContain("Free Access includes up to 10 active services");
     expect(copy.body).toContain("Subscribe monthly to keep adding services");
-    expect(copy.body).toContain("$3.99/month");
+    expect(copy.body).toContain("$4.99/month");
     expect(copy.body).not.toContain("after trial");
     expect(copy.primary).toBe("Subscribe monthly");
   });

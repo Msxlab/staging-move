@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Loader2, Users } from "lucide-react";
-import { BILLING_PLAN_DEFINITIONS } from "@/lib/shared-billing";
+import { BILLING_PLAN_DEFINITIONS, billingPriceLabelForInterval } from "@/lib/shared-billing";
 
 type Interval = "MONTH" | "YEAR";
 const TIERS = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
@@ -10,9 +10,7 @@ type Tier = (typeof TIERS)[number];
 const RANK: Record<Tier, number> = { INDIVIDUAL: 1, FAMILY: 2, PRO: 3 };
 
 function priceLabel(tier: Tier, interval: Interval): string {
-  const def = BILLING_PLAN_DEFINITIONS[tier];
-  if (interval === "YEAR") return def.yearlyPriceLabel ?? `$${def.yearlyPriceUsd ?? ""}/year`;
-  return `${def.priceLabel}${def.periodLabel}`;
+  return billingPriceLabelForInterval(tier, interval);
 }
 
 /**
@@ -26,10 +24,10 @@ function priceLabel(tier: Tier, interval: Interval): string {
 export function PlanChangeSection() {
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<string>("FREE_TRIAL");
-  const [currentInterval, setCurrentInterval] = useState<Interval>("MONTH");
+  const [currentInterval, setCurrentInterval] = useState<Interval>("YEAR");
   const [hasStripeSub, setHasStripeSub] = useState(false);
   const [inherited, setInherited] = useState(false);
-  const [interval, setInterval] = useState<Interval>("MONTH");
+  const [interval, setInterval] = useState<Interval>("YEAR");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -51,7 +49,7 @@ export function PlanChangeSection() {
         // FREE_TRIAL with upgrade/downgrade controls for a plan they can't manage.
         setInherited(isInherited);
         const plan = String((isInherited ? ent?.plan : null) || sub?.plan || "FREE_TRIAL");
-        const ivl: Interval = sub?.billingInterval === "YEAR" ? "YEAR" : "MONTH";
+        const ivl: Interval = sub?.billingInterval === "MONTH" ? "MONTH" : "YEAR";
         setCurrentPlan(plan);
         setCurrentInterval(ivl);
         setInterval(ivl);

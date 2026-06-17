@@ -19,10 +19,12 @@ const mocks = vi.hoisted(() => ({
   hashForSnapshot: vi.fn(),
   customersRetrieve: vi.fn(),
   customersCreate: vi.fn(),
+  pricesRetrieve: vi.fn(),
   sessionsCreate: vi.fn(),
   stripeConstructor: vi.fn(),
   acquisitionRedemptionFindFirst: vi.fn(),
   acquisitionRedemptionCreate: vi.fn(),
+  lastStripePriceRequest: { plan: "INDIVIDUAL", interval: "YEAR" },
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -113,9 +115,10 @@ describe("stripe checkout route", () => {
     subscriptionMock.update.mockResolvedValue({});
     mocks.acquisitionRedemptionFindFirst.mockResolvedValue(null);
     mocks.acquisitionRedemptionCreate.mockResolvedValue({ id: "redemption_1" });
-    mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (_plan: string, interval: string) =>
-      interval === "YEAR" ? "price_yearly" : "price_monthly",
-    );
+    mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (plan: string, interval: string) => {
+      mocks.lastStripePriceRequest = { plan, interval };
+      return interval === "YEAR" ? "price_yearly" : "price_monthly";
+    });
     mocks.getStripeAnnualTrialDays.mockResolvedValue(90);
     const activeCampaign = {
       id: "camp_1",
@@ -126,7 +129,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
@@ -140,7 +143,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "MONTH",
       trialDays: null,
-      displayPriceLabel: "$3.99/month",
+      displayPriceLabel: "$4.99/month",
       stripePriceId: "price_monthly",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -156,11 +159,27 @@ describe("stripe checkout route", () => {
     mocks.hashForSnapshot.mockReturnValue("hash_1");
     mocks.customersRetrieve.mockResolvedValue({ id: "cus_existing", deleted: false });
     mocks.customersCreate.mockResolvedValue({ id: "cus_123" });
+    mocks.pricesRetrieve.mockImplementation(async (priceId: string) => {
+      const { plan, interval } = mocks.lastStripePriceRequest as { plan: string; interval: string };
+      const amounts: Record<string, Record<string, number>> = {
+        INDIVIDUAL: { YEAR: 2400, MONTH: 499 },
+        FAMILY: { YEAR: 3900, MONTH: 799 },
+        PRO: { YEAR: 5900, MONTH: 1199 },
+      };
+      return {
+        id: priceId,
+        active: true,
+        currency: "usd",
+        unit_amount: amounts[plan]?.[interval] ?? 2400,
+        recurring: { interval: interval === "YEAR" ? "year" : "month" },
+      };
+    });
     mocks.sessionsCreate.mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     mocks.stripeConstructor.mockImplementation(function StripeMock() {
       return {
-      customers: { retrieve: mocks.customersRetrieve, create: mocks.customersCreate },
-      checkout: { sessions: { create: mocks.sessionsCreate } },
+        customers: { retrieve: mocks.customersRetrieve, create: mocks.customersCreate },
+        prices: { retrieve: mocks.pricesRetrieve },
+        checkout: { sessions: { create: mocks.sessionsCreate } },
       };
     });
   });
@@ -401,6 +420,31 @@ describe("stripe checkout route", () => {
     );
   });
 
+  it.each([
+    ["inactive", { active: false, currency: "usd", unit_amount: 2400, recurring: { interval: "year" } }],
+    ["wrong currency", { active: true, currency: "eur", unit_amount: 2400, recurring: { interval: "year" } }],
+    ["wrong interval", { active: true, currency: "usd", unit_amount: 2400, recurring: { interval: "month" } }],
+    ["wrong amount", { active: true, currency: "usd", unit_amount: 3999, recurring: { interval: "year" } }],
+  ])("fails closed when the resolved Stripe price has %s", async (_case, price) => {
+    mocks.pricesRetrieve.mockResolvedValueOnce({ id: "price_yearly", ...price });
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      code: "PRICE_UNAVAILABLE",
+      error: "This plan is temporarily unavailable. Please try again later.",
+    });
+    expect(mocks.pricesRetrieve).toHaveBeenCalledWith("price_yearly");
+    expect(subscriptionMock.create).not.toHaveBeenCalled();
+    expect(subscriptionMock.update).not.toHaveBeenCalled();
+    expect(mocks.customersCreate).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
   it("uses the active public campaign when no campaign code is provided", async () => {
     mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
@@ -492,7 +536,10 @@ describe("stripe checkout route", () => {
   });
 
   it("uses an explicit campaign code only when that campaign exists", async () => {
-    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockImplementationOnce(async (plan: string, interval: string) => {
+      mocks.lastStripePriceRequest = { plan, interval };
+      return "price_yearly";
+    });
     mocks.findAcquisitionCampaign.mockResolvedValueOnce({
       id: "camp_spring",
       name: "Spring Trial",
@@ -502,7 +549,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
@@ -542,7 +589,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       stripePriceId: "price_yearly",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -585,7 +632,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$39.99/year",
+      displayPriceLabel: "$24/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,

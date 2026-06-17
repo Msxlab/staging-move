@@ -27,7 +27,9 @@ import {
   hashForSnapshot,
 } from "@/lib/acquisition-campaigns";
 import {
+  billingAmountUsdForInterval,
   buildCheckoutDisclosureText,
+  type PaidBillingPlan,
   REFUND_POLICY_VERSION,
   SUBSCRIPTION_POLICY_VERSION,
   TERMS_VERSION,
@@ -44,6 +46,42 @@ function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): St
   if (input === "MONTH" || input === "monthly") return "MONTH";
   if (legacyCycle === "yearly") return "YEAR";
   return "MONTH";
+}
+
+const CHECKOUT_PRICE_UNAVAILABLE = {
+  code: "PRICE_UNAVAILABLE",
+  error: "This plan is temporarily unavailable. Please try again later.",
+};
+
+function expectedStripeUnitAmount(plan: PaidBillingPlan, billingInterval: StripeBillingInterval): number {
+  return Math.round(billingAmountUsdForInterval(plan, billingInterval) * 100);
+}
+
+async function verifyStripeCheckoutPrice(params: {
+  stripe: Stripe;
+  priceId: string;
+  plan: PaidBillingPlan;
+  billingInterval: StripeBillingInterval;
+}): Promise<NextResponse | null> {
+  const { stripe, priceId, plan, billingInterval } = params;
+  const price = await stripe.prices.retrieve(priceId);
+  const expectedInterval = billingInterval === "YEAR" ? "year" : "month";
+  const expectedAmount = expectedStripeUnitAmount(plan, billingInterval);
+  const actualCurrency = typeof price.currency === "string" ? price.currency.toLowerCase() : "";
+  const actualInterval = price.recurring?.interval ?? null;
+  const mismatch =
+    price.active !== true ||
+    actualCurrency !== "usd" ||
+    actualInterval !== expectedInterval ||
+    price.unit_amount !== expectedAmount;
+
+  if (!mismatch) return null;
+
+  captureMessage(
+    `[CHECKOUT] Stripe price mismatch for ${plan} ${billingInterval}: expected active usd ${expectedInterval} ${expectedAmount}, got active=${String(price.active)} currency=${actualCurrency || "unknown"} interval=${actualInterval || "none"} amount=${String(price.unit_amount)}`,
+    "error",
+  );
+  return NextResponse.json(CHECKOUT_PRICE_UNAVAILABLE, { status: 503 });
 }
 
 const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
@@ -183,6 +221,14 @@ async function createWorkspacePlanCheckout(params: {
   }
 
   const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+  const priceGuardResponse = await verifyStripeCheckoutPrice({
+    stripe,
+    priceId,
+    plan,
+    billingInterval,
+  });
+  if (priceGuardResponse) return priceGuardResponse;
+
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -484,6 +530,23 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    const priceId = await getStripePriceIdForPlanAndInterval(plan, billingInterval);
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: `Stripe price not configured for ${plan} ${cycle}` },
+        { status: billingInterval === "YEAR" ? 400 : 503 },
+      );
+    }
+
+    const priceGuardResponse = await verifyStripeCheckoutPrice({
+      stripe,
+      priceId,
+      plan,
+      billingInterval,
+    });
+    if (priceGuardResponse) return priceGuardResponse;
+
     // Get or create a non-entitling subscription shell. The paid trial access
     // starts only after Stripe confirms Checkout and a payment method.
     let subscription = await prisma.subscription.findUnique({ where: { userId } });
@@ -531,16 +594,6 @@ export async function POST(request: NextRequest) {
         },
       });
     }
-
-    const priceId = await getStripePriceIdForPlanAndInterval(plan, billingInterval);
-
-    if (!priceId) {
-      return NextResponse.json(
-        { error: `Stripe price not configured for ${plan} ${cycle}` },
-        { status: billingInterval === "YEAR" ? 400 : 503 },
-      );
-    }
-
     const appUrl = await getConfiguredAppUrl();
     const now = new Date();
     const isTrialOffer = billingInterval === "YEAR";

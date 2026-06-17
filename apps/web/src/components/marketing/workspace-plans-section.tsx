@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Baby, Building2, Crown, MapPin, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+import { BILLING_PLAN_DEFINITIONS, billingPriceLabelForInterval } from "@locateflow/shared";
 
 /**
  * Family & Pro tiers, rendered additively below the Individual PricingSection.
@@ -10,7 +10,7 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
  * today (seat/address/service limits, workspace membership + roles + invites,
  * child accounts). Aspirational/flag-gated features (Partner Hub & API-backed
  * partner updates, cross-member "shared services" visibility, address labels,
- * advanced export) are deliberately NOT advertised here — they are not
+ * advanced export) are deliberately NOT advertised here - they are not
  * enforced yet and/or intersect the connector legal posture, so they wait for
  * the feature to ship + legal sign-off. Prices come from BILLING_PLAN_DEFINITIONS.
  *
@@ -25,7 +25,7 @@ const FAMILY_BULLETS: PlanBullet[] = [
   { icon: Users, label: "Up to 6 members (1 owner + 5)" },
   { icon: Building2, label: "15 addresses" },
   { icon: Wrench, label: "500 services" },
-  { icon: Users, label: "Shared household workspace — invite members, assign roles" },
+  { icon: Users, label: "Shared household workspace - invite members, assign roles" },
   { icon: Baby, label: "Child accounts (no financial visibility)" },
 ];
 
@@ -46,9 +46,18 @@ interface WorkspacePlansSectionProps {
 
 function priceLine(planId: "FAMILY" | "PRO"): string {
   const def = BILLING_PLAN_DEFINITIONS[planId];
-  const monthly = `${def.priceLabel}${def.periodLabel}`;
-  const yearly = def.yearlyPriceLabel ? ` · ${def.yearlyPriceLabel}` : "";
-  return `${monthly}${yearly}`;
+  const yearly = def.yearlyPriceLabel || billingPriceLabelForInterval(planId, "YEAR");
+  const monthly = billingPriceLabelForInterval(planId, "MONTH");
+  return `${yearly} - ${monthly} optional`;
+}
+
+function planHref(href: string, planId: "FAMILY" | "PRO"): string {
+  if (!href.startsWith("/")) return href;
+  const [path, rawQuery = ""] = href.split("?");
+  const params = new URLSearchParams(rawQuery);
+  params.set("plan", planId);
+  params.set("billingInterval", "YEAR");
+  return `${path}?${params.toString()}`;
 }
 
 function PlanCard({
@@ -95,7 +104,7 @@ function PlanCard({
         ))}
       </ul>
       <div className="mt-6">
-        <Link href={ctaHref} className="block">
+        <Link href={planHref(ctaHref, planId)} className="block">
           <Button variant={highlight ? "default" : "outline"} className="w-full">
             {ctaLabel}
           </Button>

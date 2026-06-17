@@ -95,7 +95,7 @@ const annualTrialPreset: typeof emptyForm = {
   accessType: "FREE_TRIAL",
   billingInterval: "YEAR",
   trialDays: "90",
-  displayPriceLabel: "$39.99/year",
+  displayPriceLabel: "$24/year",
   publicHeadline: "Start with 3 months free",
   publicSubheadline: "Individual Annual starts after your trial.",
   checkoutDisclosureCopy: "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
@@ -108,10 +108,10 @@ const monthlyPaidPreset: typeof emptyForm = {
   accessType: "PAID",
   billingInterval: "MONTH",
   trialDays: "",
-  displayPriceLabel: "$3.99/month",
+  displayPriceLabel: "$4.99/month",
   publicHeadline: "Subscribe monthly",
   publicSubheadline: "Simple monthly billing. Cancel anytime.",
-  checkoutDisclosureCopy: "Today: $3.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
+  checkoutDisclosureCopy: "Today: $4.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
   newUsersOnly: false,
 };
 
@@ -495,7 +495,7 @@ export default function AcquisitionCampaignsClient() {
         ...current,
         accessType,
         billingInterval: "YEAR",
-        displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$39.99/year",
+        displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$24/year",
         publicHeadline: current.accessType === "FREE_TRIAL" ? current.publicHeadline : "Start with 3 months free",
         publicSubheadline: current.accessType === "FREE_TRIAL" ? current.publicSubheadline : "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: current.accessType === "FREE_TRIAL" ? current.checkoutDisclosureCopy : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
@@ -799,7 +799,7 @@ export default function AcquisitionCampaignsClient() {
               className={inputCls}
               value={form.displayPriceLabel}
               onChange={(event) => update("displayPriceLabel", event.target.value)}
-              placeholder={form.accessType === "PAID" && form.billingInterval === "MONTH" ? "$3.99/month" : "$39.99/year"}
+              placeholder={form.accessType === "PAID" && form.billingInterval === "MONTH" ? "$4.99/month" : "$24/year"}
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
               Leave blank to auto-fill from Stripe. Otherwise must match the Stripe price.
