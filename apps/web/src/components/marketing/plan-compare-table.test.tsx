@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -49,6 +51,21 @@ function cells(labelKey: string): CompareCell[] {
 const included = { kind: "included" } as const;
 const excluded = { kind: "excluded" } as const;
 const value = (v: number) => ({ kind: "value", value: v }) as const;
+
+function findRepoRoot(start = process.cwd()) {
+  let current = start;
+  while (current !== path.dirname(current)) {
+    if (existsSync(path.join(current, "pnpm-workspace.yaml"))) return current;
+    current = path.dirname(current);
+  }
+  throw new Error("Unable to locate repository root.");
+}
+
+const REPO_ROOT = findRepoRoot();
+
+function readRepoFile(...segments: string[]) {
+  return readFileSync(path.join(REPO_ROOT, ...segments), "utf8");
+}
 
 describe("COMPARE_GROUPS - every cell pinned to the enforced ground truth", () => {
   it("addresses mirror PLAN_LIMITS.maxAddresses (3/10/15/25)", () => {
@@ -221,6 +238,91 @@ describe("i18n catalogs", () => {
       "250 servicios",
     ]) {
       expect(publicCopy).not.toContain(stale);
+    }
+  });
+
+  it("keeps current web, admin, mobile, email, and operator plan copy aligned with canonical plan data", () => {
+    const canonical = {
+      individualYearly: billingPriceLabelForInterval("INDIVIDUAL", "YEAR"),
+      individualMonthly: billingPriceLabelForInterval("INDIVIDUAL", "MONTH"),
+      familyYearly: billingPriceLabelForInterval("FAMILY", "YEAR"),
+      familyMonthly: billingPriceLabelForInterval("FAMILY", "MONTH"),
+      proYearly: billingPriceLabelForInterval("PRO", "YEAR"),
+      proMonthly: billingPriceLabelForInterval("PRO", "MONTH"),
+      familySeats: String(planFeatures("FAMILY").seatLimit),
+      proSeats: String(planFeatures("PRO").seatLimit),
+    };
+    const currentSurfaces = {
+      adminAcquisitionCampaigns: readRepoFile(
+        "apps",
+        "admin",
+        "src",
+        "app",
+        "(admin)",
+        "acquisition-campaigns",
+        "acquisition-campaigns-client.tsx",
+      ),
+      mobilePlanComparison: readRepoFile("apps", "mobile", "src", "lib", "plan-comparison.ts"),
+      mobilePlanComparisonTest: readRepoFile("apps", "mobile", "src", "lib", "plan-comparison.test.ts"),
+      seededSubscriptionContent: readRepoFile("packages", "db", "prisma", "_migration-data.json"),
+      billingAndIapChecklist: readRepoFile("docs", "deploy", "billing-and-iap-setup-checklist.md"),
+      oauthAndIapSetup: readRepoFile("docs", "setup", "oauth-and-iap.md"),
+      mobileStoreSubmissionCopy: readRepoFile("docs", "deploy", "mobile-store-submission-copy.md"),
+      mobileReleaseRunbook: readRepoFile("docs", "deploy", "mobile-and-places-release-runbook.md"),
+    };
+
+    expect(currentSurfaces.adminAcquisitionCampaigns).toContain(canonical.individualYearly);
+    expect(currentSurfaces.adminAcquisitionCampaigns).toContain(canonical.individualMonthly);
+    expect(currentSurfaces.mobilePlanComparison).toContain("billingPriceLabelForInterval");
+    expect(currentSurfaces.mobilePlanComparisonTest).toContain(
+      `${canonical.individualYearly} - ${canonical.individualMonthly}`,
+    );
+    expect(currentSurfaces.mobilePlanComparisonTest).toContain(`${canonical.proYearly} - ${canonical.proMonthly}`);
+    expect(currentSurfaces.seededSubscriptionContent).toContain(
+      `Individual**: ${canonical.individualYearly} by default or ${canonical.individualMonthly}`,
+    );
+    expect(currentSurfaces.seededSubscriptionContent).toContain(
+      `Family**: ${canonical.familyYearly} by default or ${canonical.familyMonthly}, up to ${canonical.familySeats} members`,
+    );
+    expect(currentSurfaces.seededSubscriptionContent).toContain(
+      `Pro**: ${canonical.proYearly} by default or ${canonical.proMonthly}, up to ${canonical.proSeats} members`,
+    );
+
+    const currentCopy = JSON.stringify(currentSurfaces);
+    for (const expected of [
+      canonical.individualYearly,
+      canonical.individualMonthly,
+      canonical.familyYearly,
+      canonical.familyMonthly,
+      canonical.proYearly,
+      canonical.proMonthly,
+      "com.locateflow.individual.annual",
+      "com.locateflow.family.annual",
+      "com.locateflow.pro.annual",
+      "locateflow_individual_annual",
+      "locateflow_family_annual",
+      "locateflow_pro_annual",
+    ]) {
+      expect(currentCopy).toContain(expected);
+    }
+
+    for (const stale of [
+      "$3.99/month",
+      "$39.99/year",
+      "$9.99/month",
+      "$19.99/month",
+      "$199/year",
+      "$199.99",
+      "$14.99",
+      "Unlimited addresses",
+      "up to 4 others",
+      "17 addresses",
+      "250 services",
+      "Save 17%",
+      "save 20%",
+      "monthly or annually",
+    ]) {
+      expect(currentCopy).not.toContain(stale);
     }
   });
 });

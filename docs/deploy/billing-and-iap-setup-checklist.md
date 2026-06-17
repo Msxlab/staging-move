@@ -36,14 +36,14 @@ Stripe Dashboard (start in Test Mode, mirror to Live Mode for production):
 
 1. Switch the dashboard to Test Mode.
 2. Products -> New product -> "LocateFlow Individual" with metadata `locateflow_plan=INDIVIDUAL`.
-3. Create Individual monthly recurring Price: USD 3.99 / month -> save as `STRIPE_PRICE_INDIVIDUAL_MONTHLY`.
-4. Create Individual annual recurring Price: USD 39.99 / year -> save as `STRIPE_PRICE_INDIVIDUAL_YEARLY`. Do not add a Stripe-side trial on the Price; the 90-day trial is applied at Checkout via `subscription_data.trial_period_days = STRIPE_ANNUAL_TRIAL_DAYS`.
+3. Create Individual monthly recurring Price: USD 4.99 / month -> save as `STRIPE_PRICE_INDIVIDUAL_MONTHLY`.
+4. Create Individual annual recurring Price: USD 24 / year -> save as `STRIPE_PRICE_INDIVIDUAL_YEARLY`. Do not add a Stripe-side trial on the Price; the 90-day trial is applied at Checkout via `subscription_data.trial_period_days = STRIPE_ANNUAL_TRIAL_DAYS`.
 5. Products -> New product -> "LocateFlow Family" with metadata `locateflow_plan=FAMILY`.
-6. Create Family monthly recurring Price: USD 9.99 / month -> save as `STRIPE_PRICE_FAMILY_MONTHLY`.
-7. Create Family annual recurring Price: USD 99 / year -> save as `STRIPE_PRICE_FAMILY_YEARLY`.
+6. Create Family monthly recurring Price: USD 7.99 / month -> save as `STRIPE_PRICE_FAMILY_MONTHLY`.
+7. Create Family annual recurring Price: USD 39 / year -> save as `STRIPE_PRICE_FAMILY_YEARLY`.
 8. Products -> New product -> "LocateFlow Pro" with metadata `locateflow_plan=PRO`.
-9. Create Pro monthly recurring Price: USD 19.99 / month -> save as `STRIPE_PRICE_PRO_MONTHLY`.
-10. Create Pro annual recurring Price: USD 199 / year -> save as `STRIPE_PRICE_PRO_YEARLY`.
+9. Create Pro monthly recurring Price: USD 11.99 / month -> save as `STRIPE_PRICE_PRO_MONTHLY`.
+10. Create Pro annual recurring Price: USD 59 / year -> save as `STRIPE_PRICE_PRO_YEARLY`.
 11. Developers -> API keys: copy `pk_test_...` (Publishable) and `sk_test_...` (Secret). Production uses `pk_live_*` / `sk_live_*`.
 12. Developers -> Webhooks -> Add endpoint: `https://locateflow.com/api/webhooks/stripe`. Select these events:
    - `checkout.session.completed`
@@ -75,16 +75,16 @@ pnpm campaigns:sync-billing
 pnpm campaigns:sync-billing -- --apply
 ```
 
-The sync updates active `INDIVIDUAL90` copy to `$39.99/year` and active `INDIVIDUALMONTHLY` copy to `$3.99/month`. It counts active subscriptions first. Existing subscriptions keep their current Stripe Price IDs; clone a new campaign instead of mutating the old one when immutable reporting or grandfathered campaign copy is required.
+The sync updates active `INDIVIDUAL90` copy to `$24/year` and active `INDIVIDUALMONTHLY` copy to `$4.99/month`. It counts active subscriptions first. Existing subscriptions keep their current Stripe Price IDs; clone a new campaign instead of mutating the old one when immutable reporting or grandfathered campaign copy is required.
 
 ## Stripe QA
 
-- [ ] Checkout session creates for Individual monthly ($3.99/month).
-- [ ] Checkout session creates for Individual annual ($39.99/year) and starts in `trialing` status with a `trial_end` 90 days out.
-- [ ] Checkout session creates for Family monthly ($9.99/month) and activates `FAMILY` / `PAID`.
-- [ ] Checkout session creates for Family annual ($99/year) and activates `FAMILY` / `PAID`.
-- [ ] Checkout session creates for Pro monthly ($19.99/month) and activates `PRO` / `PAID`.
-- [ ] Checkout session creates for Pro annual ($199/year) and activates `PRO` / `PAID`.
+- [ ] Checkout session creates for Individual monthly ($4.99/month).
+- [ ] Checkout session creates for Individual annual ($24/year) and starts in `trialing` status with a `trial_end` 90 days out.
+- [ ] Checkout session creates for Family monthly ($7.99/month) and activates `FAMILY` / `PAID`.
+- [ ] Checkout session creates for Family annual ($39/year) and activates `FAMILY` / `PAID`.
+- [ ] Checkout session creates for Pro monthly ($11.99/month) and activates `PRO` / `PAID`.
+- [ ] Checkout session creates for Pro annual ($59/year) and activates `PRO` / `PAID`.
 - [ ] Annual checkout success page renders the trial badge and the trial-end / first-charge dates from the webhook-confirmed state, not from the success URL alone.
 - [ ] Successful payment marks subscription `ACTIVE` and `accessType=PAID`.
 - [ ] Pro annual unlocks connector/API sync entitlement; Pro monthly does not.
@@ -100,7 +100,7 @@ The sync updates active `INDIVIDUAL90` copy to `$39.99/year` and active `INDIVID
 - [ ] No admin refund/cancel/grace/retry/grant/revoke actions appear.
 - [ ] `STRIPE_SECRET_KEY` is never exposed in the client bundle (grep `_next/static` after a production build).
 - [ ] Frontend cannot pick an arbitrary Stripe Price ID; checkout only accepts `plan` + `billingInterval` and the backend resolves the Price.
-- [ ] Public acquisition campaign endpoint returns `$39.99/year` for `INDIVIDUAL90`; mobile paywall and homepage show the same label.
+- [ ] Public acquisition campaign endpoint returns `$24/year` for `INDIVIDUAL90`; mobile paywall and homepage show the same label.
 
 ## Mobile IAP Staging Setup
 
@@ -121,8 +121,8 @@ App Store Connect setup (mirror in sandbox first, then production):
 
 1. App Store Connect -> My Apps -> LocateFlow -> In-App Purchases.
 2. Create the subscription products that match `/api/mobile/iap/products`. At minimum this now includes Individual, Family, and Pro monthly/yearly SKUs when those tiers are shipped in mobile builds.
-3. For Individual, use `com.locateflow.individual.monthly` ($3.99) and `com.locateflow.individual.annual` ($39.99). Keep the introductory free trial on the annual Individual product only; do not fake the trial in app code.
-4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly products for those tiers as well (`com.locateflow.family.*`, `com.locateflow.pro.*`) so the product endpoint and StoreKit catalog stay aligned.
+3. For Individual, use `com.locateflow.individual.monthly` (target USD 4.99) and `com.locateflow.individual.annual` (target USD 24). Keep the introductory free trial on the annual Individual product only; do not fake the trial in app code.
+4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly products for those tiers as well: `com.locateflow.family.monthly` (target USD 7.99), `com.locateflow.family.annual` (target USD 39), `com.locateflow.pro.monthly` (target USD 11.99), and `com.locateflow.pro.annual` (target USD 59). App Store price tiers may not exactly equal web prices; the operator must choose whether to match the nearest tier, absorb the store fee, or steer price-sensitive upgrades to web.
 5. Set every shipped product to "Ready to Submit" with localized display name and description.
 6. App Store Connect -> Users and Access -> Sandbox Testers: create at least one tester account; sandbox subscriptions cycle in accelerated time (1 month = 5 minutes) so QA loops are short.
 7. App Store Server API: copy Issuer ID (Users & Access -> Integrations) and create a Key with the App Manager role. Download the `.p8` once and store in runtime config as `APPLE_APP_STORE_PRIVATE_KEY`.
@@ -146,9 +146,9 @@ Google Play:
 Play Console setup (use Internal Testing track first):
 
 1. Play Console -> LocateFlow -> Monetize -> Subscriptions -> create the subscriptions that match `/api/mobile/iap/products`.
-2. Individual should include `locateflow_individual_monthly` ($3.99) and `locateflow_individual_annual` ($39.99).
+2. Individual should include `locateflow_individual_monthly` (target USD 4.99) and `locateflow_individual_annual` (target USD 24).
 3. On the annual Individual product/base plan add the free-trial offer. The trial is surfaced by Play Billing only when the user is eligible; do not fake the trial in app code.
-4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly subscriptions for those tiers too (`locateflow_family_*`, `locateflow_pro_*`) so the Play catalog and runtime config stay aligned.
+4. If Family/Pro are being sold in the mobile build, add matching monthly/yearly subscriptions for those tiers too: `locateflow_family_monthly` (target USD 7.99), `locateflow_family_annual` (target USD 39), `locateflow_pro_monthly` (target USD 11.99), and `locateflow_pro_annual` (target USD 59). Play price tiers may not exactly equal web prices; the operator must choose whether to match the nearest tier, absorb the store fee, or steer price-sensitive upgrades to web.
 5. Play Console -> Setup -> API access: link the project that owns the service account whose email is configured in `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, or complete the OAuth fallback path if service-account key creation is blocked. Grant `View financial data, orders, cancellation survey responses` and `Manage orders and subscriptions`.
 6. Real-Time Developer Notifications: create a Pub/Sub topic, point it at `https://locateflow.com/api/webhooks/playstore`, configure the `aud` claim to match `GOOGLE_PLAY_RTDN_AUDIENCE`, and set `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` to the authenticated push service account. The webhook rejects payloads without that audience or expected identity in production.
 7. License testers: Play Console -> Settings -> License testing -> add at least one Google account; test purchases on that account skip the 3-month grace and surface as `testPurchase=true`. Production only persists those verified test purchases for the configured QA account allowlist (`QA_RESETTABLE_ACCOUNT_EMAIL` plus optional `GOOGLE_PLAY_TEST_PURCHASE_USER_EMAILS`); test/staging accepts them normally.

@@ -108,6 +108,10 @@ STRIPE_WEBHOOK_SECRET=<for Stripe webhook>
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<publishable key>
 STRIPE_PRICE_INDIVIDUAL_MONTHLY=<monthly price id>
 STRIPE_PRICE_INDIVIDUAL_YEARLY=<yearly price id>
+STRIPE_PRICE_FAMILY_MONTHLY=<monthly price id>
+STRIPE_PRICE_FAMILY_YEARLY=<yearly price id>
+STRIPE_PRICE_PRO_MONTHLY=<monthly price id>
+STRIPE_PRICE_PRO_YEARLY=<yearly price id>
 STRIPE_ANNUAL_TRIAL_DAYS=90
 RESEND_API_KEY=<email>
 EMAIL_FROM=<email sender>
@@ -117,6 +121,11 @@ APPLE_APP_STORE_PRIVATE_KEY=<IAP>
 APPLE_APP_STORE_ENVIRONMENT=Sandbox
 APPLE_BUNDLE_ID=com.locateflow.mobile
 MOBILE_IOS_PRODUCT_INDIVIDUAL=com.locateflow.individual.monthly
+MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY=com.locateflow.individual.annual
+MOBILE_IOS_PRODUCT_FAMILY=com.locateflow.family.monthly
+MOBILE_IOS_PRODUCT_FAMILY_YEARLY=com.locateflow.family.annual
+MOBILE_IOS_PRODUCT_PRO=com.locateflow.pro.monthly
+MOBILE_IOS_PRODUCT_PRO_YEARLY=com.locateflow.pro.annual
 GOOGLE_PLAY_PACKAGE_NAME=com.locateflow.mobile
 GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL=<Play API service account>
 GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY=<Play API private key>
@@ -126,6 +135,11 @@ GOOGLE_PLAY_OAUTH_CLIENT_SECRET=<optional OAuth client secret, if required>
 GOOGLE_PLAY_OAUTH_REFRESH_TOKEN=<OAuth refresh token with androidpublisher scope>
 GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore
 MOBILE_ANDROID_PRODUCT_INDIVIDUAL=locateflow_individual_monthly
+MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY=locateflow_individual_annual
+MOBILE_ANDROID_PRODUCT_FAMILY=locateflow_family_monthly
+MOBILE_ANDROID_PRODUCT_FAMILY_YEARLY=locateflow_family_annual
+MOBILE_ANDROID_PRODUCT_PRO=locateflow_pro_monthly
+MOBILE_ANDROID_PRODUCT_PRO_YEARLY=locateflow_pro_annual
 ```
 
 ## Local Mobile QA

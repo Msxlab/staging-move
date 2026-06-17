@@ -56,14 +56,18 @@ Resolved public URL blocker:
   Woodland Park mailing address. The support URL in App Store Connect was moved
   to public `https://locateflow.com/help`.
 
-Resolved App Review pricing question:
+Superseded App Review pricing question:
 
-- Operator confirmed on 2026-06-04 that App Store Connect `Pro Annual` at
-  `$199.99 USD` is intentional for `com.locateflow.mobile.pro.annual`.
-- Do not change the shared/web `$199/year` copy unless the business also wants
-  the web Stripe Pro annual price changed. iOS production/TestFlight purchase UI
-  reads StoreKit localized pricing, so the App Store billed amount is shown from
-  Apple's product catalog.
+- Operator previously confirmed on 2026-06-04 that App Store Connect
+  `Pro Annual` matched the then-current product catalog.
+- The current annual-first pricing target is Individual $24/year or
+  $4.99/month, Family $39/year or $7.99/month, and Pro $59/year or
+  $11.99/month.
+- iOS production/TestFlight purchase UI reads StoreKit localized pricing, so
+  the App Store billed amount is shown from Apple's product catalog. Update
+  App Store Connect products manually; code cannot change store prices.
+- Mobile price parity is a human business decision because store tiers and
+  Apple fees may differ from web pricing.
 
 Resolved App Review resubmission step:
 
@@ -127,8 +131,8 @@ After Sign in with Apple, the app no longer requires the user to create a passwo
 2. Subscription billed amount
 We updated the subscription screen so the annual billed amount is prominent in the primary action and disclosure text. Trial or savings text is now secondary to the actual annual billed price.
 
-3. Pro Annual price
-Yes, the Pro Annual price of $199.99 USD is intentional for the App Store product com.locateflow.mobile.pro.annual.
+3. Subscription prices
+The current pricing target is Individual $24/year or $4.99/month, Family $39/year or $7.99/month, and Pro $59/year or $11.99/month. StoreKit displays the localized App Store Connect price configured for each product.
 
 The subscription path for review is:
 Sign in -> More -> Subscription
