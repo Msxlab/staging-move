@@ -246,6 +246,8 @@ describe("PricingSection", () => {
     expect(html).toContain("Pro");
     expect(html).toContain("$24");
     expect(html).toContain("/year after trial");
-    expect(html).toContain('id="tab-monthly"');
+    // The billing toggle is a segmented group (role=group + aria-pressed),
+    // not an ARIA tablist, so assert the group rather than the old tab id.
+    expect(html).toContain('aria-label="Billing interval"');
   });
 });
