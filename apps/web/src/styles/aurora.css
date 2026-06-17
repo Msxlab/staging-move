@@ -31,7 +31,7 @@
      Kept so old class names keep compiling; never reintroduce violet here. */
   --au-violet:    #F2C46C;
   --au-violet-soft: rgba(242, 196, 108, 0.14);
-  /* Family plan teal (canonical #4FD1B5 / light #1F9E78). */
+  /* Family plan teal (canonical #4FD1B5 / light #0F6B50). */
   --au-family:    #4FD1B5;
   --au-family-soft: rgba(79, 209, 181, 0.14);
   --au-mint:      #87DDC0;
@@ -72,24 +72,24 @@
   --au-rule:      rgba(20, 32, 47, 0.08);
   --au-rule-2:    rgba(20, 32, 47, 0.14);
 
-  --au-cool:      #2D7BC4;
-  --au-cool-2:    #1F5FA0;
-  --au-cool-soft: rgba(45, 123, 196, 0.12);
-  --au-violet:    #B98318;
-  --au-violet-soft: rgba(185, 131, 24, 0.10);
-  --au-family:    #1F9E78;
-  --au-family-soft: rgba(31, 158, 120, 0.10);
-  --au-mint:      #2E9B79;
-  --au-mint-soft: rgba(46, 155, 121, 0.10);
-  --au-amber:     #B98318;
-  --au-amber-soft:rgba(185, 131, 24, 0.10);
-  --au-coral:     #C84E51;
-  --au-coral-soft:rgba(200, 78, 81, 0.10);
+  --au-cool:      #1F5FA0;
+  --au-cool-2:    #17518D;
+  --au-cool-soft: rgba(31, 95, 160, 0.10);
+  --au-violet:    #7A5418;
+  --au-violet-soft: rgba(122, 84, 24, 0.10);
+  --au-family:    #0F6B50;
+  --au-family-soft: rgba(15, 107, 80, 0.10);
+  --au-mint:      #0F6B50;
+  --au-mint-soft: rgba(15, 107, 80, 0.10);
+  --au-amber:     #7A5418;
+  --au-amber-soft:rgba(122, 84, 24, 0.10);
+  --au-coral:     #A23B3F;
+  --au-coral-soft:rgba(162, 59, 63, 0.10);
 
-  --au-aurora-1:  rgba(45, 123, 196, 0.18);
-  --au-aurora-2:  rgba(185, 131, 24, 0.10);
-  --au-aurora-3:  rgba(46, 155, 121, 0.10);
-  --au-aurora-4:  rgba(200, 78, 81, 0.06);
+  --au-aurora-1:  rgba(31, 95, 160, 0.18);
+  --au-aurora-2:  rgba(122, 84, 24, 0.10);
+  --au-aurora-3:  rgba(15, 107, 80, 0.10);
+  --au-aurora-4:  rgba(162, 59, 63, 0.06);
 }
 
 /* Density variants */
@@ -265,7 +265,7 @@
   font-variation-settings: "opsz" 96, "SOFT" 60;
 }
 .light .lf-aurora .au-display em {
-  background-image: linear-gradient(180deg, #2D7BC4 0%, #1F5FA0 100%);
+  background-image: linear-gradient(180deg, #1F5FA0 0%, #17518D 100%);
 }
 
 .lf-aurora .au-pill {
@@ -307,11 +307,11 @@
               0 6px 18px -8px rgba(127,182,232,0.50);
 }
 .light .lf-aurora .au-btn.primary {
-  background: linear-gradient(180deg, #4D8FCE, #2D7BC4);
+  background: linear-gradient(180deg, #1F5FA0, #17518D);
   color: white;
-  border-color: rgba(45,123,196,0.40);
+  border-color: rgba(31, 95, 160, 0.40);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
-              0 6px 18px -8px rgba(45,123,196,0.50);
+              0 6px 18px -8px rgba(31,95,160,0.50);
 }
 .lf-aurora .au-btn.icon   { width: 34px; padding: 0; justify-content: center; }
 .lf-aurora .au-btn.sm     { height: 28px; padding: 0 10px; font-size: 12px; }
@@ -511,7 +511,7 @@
   --card-foreground:      213 39% 13%;
   --popover:              218 21% 96%;
   --popover-foreground:   213 39% 13%;
-  --primary:              209 63% 47%;
+  --primary:              210 68% 37%;
   --primary-foreground:   0 0% 100%;
   --secondary:            214 22% 38%;
   --secondary-foreground: 0 0% 100%;
@@ -519,11 +519,11 @@
   --muted-foreground:     213 14% 35%;
   --accent:               218 21% 90%;
   --accent-foreground:    213 39% 13%;
-  --destructive:          359 51% 49%;
+  --destructive:          358 47% 43%;
   --destructive-foreground: 0 0% 100%;
   --border:               213 18% 82%;
   --input:                213 18% 82%;
-  --ring:                 209 63% 47%;
+  --ring:                 210 68% 37%;
 }
 
 /* --- Aurora-flavored chrome upgrades for legacy classes ------------- */

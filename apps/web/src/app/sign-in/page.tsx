@@ -262,7 +262,7 @@ function SignInForm() {
         {!requiresMfa && (
           <p className="text-center text-xs text-muted-foreground">
             {tAuth("noAccount")}{" "}
-            <Link href="/sign-up" className="text-primary hover:underline">{tCommon("signUp")}</Link>
+            <Link href="/sign-up" className="text-primary underline underline-offset-4">{tCommon("signUp")}</Link>
           </p>
         )}
 

@@ -5,6 +5,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   brandColors,
   semanticColors,
+  semanticColorsLight,
   surfaceDark,
   surfaceLight,
   textDark,
@@ -107,14 +108,23 @@ const lightColors = {
   ...darkColors,
 
   // Brand accents darkened on paper for AA contrast — mirrors web `.light`
-  // (--rose #2D7BC4 / --foil #B0781E) and the design bundle's light scope.
+  // (--rose #1F5FA0 / --foil #7A5418) and the design bundle's light scope.
   // Without these, light mode inherited the dark-mode bright blue/honey, which
   // fail contrast on the soft-sky paper surface.
-  primary: "#2D7BC4", // paper cool blue
+  primary: "#1F5FA0", // paper cool blue
   primaryLight: "#4D8FCE",
-  primaryDark: "#1F5FA0",
-  accent: "#B0781E", // paper honey/champagne foil
-  primaryFaded: "rgba(45, 123, 196, 0.10)",
+  primaryDark: "#17518D",
+  accent: "#7A5418", // paper honey/champagne foil
+  primaryFaded: "rgba(31, 95, 160, 0.10)",
+
+  success: semanticColorsLight.success,
+  successFaded: semanticColorsLight.successLight,
+  warning: semanticColorsLight.warning,
+  warningFaded: semanticColorsLight.warningLight,
+  error: semanticColorsLight.danger,
+  errorFaded: semanticColorsLight.dangerLight,
+  info: semanticColorsLight.info,
+  infoFaded: semanticColorsLight.infoLight,
 
   background: surfaceLight.background,
   surface: surfaceLight.surface,
@@ -204,8 +214,8 @@ type PlanAccentSet = {
 };
 
 // Canonical plan hexes from the Edition VII design handoff (additions.css):
-// Free #FF9DB2/#E0567E · Individual = base cool blue (no entry) ·
-// Family #4FD1B5/#1F9E78 · Pro #F2C46C/#B0781E. Per the handoff, plans
+// Free #FF9DB2/#A8324F · Individual = base cool blue (no entry) ·
+// Family #4FD1B5/#0F6B50 · Pro #F2C46C/#7A5418. Per the handoff, plans
 // retint ONLY the accent set — surfaces/cards/backgrounds stay on the base
 // Aurora navy/paper so every plan shares one canvas (and honey stays
 // reserved for premium moments rather than tinting whole screens).
@@ -222,12 +232,12 @@ const planAccents: Record<"FREE" | "FAMILY" | "PRO", Record<ResolvedScheme, Plan
       gradGlow: ["rgba(255, 157, 178, 0.34)", "rgba(244, 121, 154, 0.10)"],
     },
     light: {
-      primary: "#E0567E",
+      primary: "#A8324F",
       primaryLight: "#E97B99",
-      primaryDark: "#BC3E62",
-      primaryFaded: "rgba(224, 86, 126, 0.10)",
-      gradPrimary: ["#E97B99", "#E0567E"],
-      gradGlow: ["rgba(224, 86, 126, 0.28)", "rgba(188, 62, 98, 0.10)"],
+      primaryDark: "#963145",
+      primaryFaded: "rgba(168, 50, 79, 0.10)",
+      gradPrimary: ["#E97B99", "#A8324F"],
+      gradGlow: ["rgba(168, 50, 79, 0.28)", "rgba(150, 49, 69, 0.10)"],
     },
   },
   // Family — teal/mint, luxury crystal green.
@@ -241,12 +251,12 @@ const planAccents: Record<"FREE" | "FAMILY" | "PRO", Record<ResolvedScheme, Plan
       gradGlow: ["rgba(79, 209, 181, 0.40)", "rgba(47, 184, 156, 0.10)"],
     },
     light: {
-      primary: "#1F9E78",
+      primary: "#0F6B50",
       primaryLight: "#2FB89C",
-      primaryDark: "#16775A",
-      primaryFaded: "rgba(31, 158, 120, 0.10)",
-      gradPrimary: ["#2FB89C", "#1F9E78"],
-      gradGlow: ["rgba(31, 158, 120, 0.30)", "rgba(47, 184, 156, 0.10)"],
+      primaryDark: "#0A523C",
+      primaryFaded: "rgba(15, 107, 80, 0.10)",
+      gradPrimary: ["#2FB89C", "#0F6B50"],
+      gradGlow: ["rgba(15, 107, 80, 0.30)", "rgba(47, 184, 156, 0.10)"],
     },
   },
   // Pro — premium honey / champagne foil (the brand's signature gold). Mirrors
@@ -262,12 +272,12 @@ const planAccents: Record<"FREE" | "FAMILY" | "PRO", Record<ResolvedScheme, Plan
       gradGlow: ["rgba(242, 196, 108, 0.40)", "rgba(217, 154, 78, 0.12)"],
     },
     light: {
-      primary: "#B0781E",
+      primary: "#7A5418",
       primaryLight: "#D99A4E",
-      primaryDark: "#8A5E16",
-      primaryFaded: "rgba(176, 120, 30, 0.10)",
-      gradPrimary: ["#D99A4E", "#B0781E"],
-      gradGlow: ["rgba(176, 120, 30, 0.30)", "rgba(217, 154, 78, 0.10)"],
+      primaryDark: "#5A3D0E",
+      primaryFaded: "rgba(122, 84, 24, 0.10)",
+      gradPrimary: ["#D99A4E", "#7A5418"],
+      gradGlow: ["rgba(122, 84, 24, 0.30)", "rgba(217, 154, 78, 0.10)"],
     },
   },
 };

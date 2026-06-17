@@ -291,7 +291,7 @@ function SignUpForm() {
 
         <p className="text-center text-xs text-muted-foreground">
           {tAuth("haveAccount")}{" "}
-          <Link href={signInHref} className="text-primary hover:underline">{tCommon("signIn")}</Link>
+          <Link href={signInHref} className="text-primary underline underline-offset-4">{tCommon("signIn")}</Link>
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">

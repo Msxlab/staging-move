@@ -223,88 +223,88 @@
 
   --line:          rgba(20, 32, 47, 0.06);
   --line-2:        rgba(20, 32, 47, 0.14);
-  --line-foil:     rgba(176, 120, 30, 0.30);
-  --line-rose:     rgba(45, 123, 196, 0.30);
+  --line-foil:     rgba(122, 84, 24, 0.30);
+  --line-rose:     rgba(31, 95, 160, 0.30);
   --border-strong: rgba(20, 32, 47, 0.14);
-  --border-focus:  rgba(45, 123, 196, 0.55);
+  --border-focus:  rgba(31, 95, 160, 0.55);
 
   --glass-bg:      rgba(255, 255, 255, 0.55);
   --glass-border:  rgba(20, 32, 47, 0.06);
   --glass-hover:   rgba(255, 255, 255, 0.92);
 
   /* Accents — darker Aurora cool / honey on paper for AA contrast */
-  --rose:          #2D7BC4;
+  --rose:          #1F5FA0;
   --rose-light:    #4D8FCE;
-  --rose-deep:     #1F5FA0;
-  --foil:          #B0781E;
+  --rose-deep:     #17518D;
+  --foil:          #7A5418;
   --foil-ink:      #5A3D0E;
-  --sage:          #2E9B79;
+  --sage:          #0F6B50;
 
-  --tone-rose-fg:    #2D7BC4;
-  --tone-foil-fg:    #B0781E;
-  --tone-sage-fg:    #2E9B79;
-  --tone-honey-fg:   #B98318;
-  --tone-umber-fg:   #B0781E;
+  --tone-rose-fg:    #1F5FA0;
+  --tone-foil-fg:    #7A5418;
+  --tone-sage-fg:    #0F6B50;
+  --tone-honey-fg:   #7A5418;
+  --tone-umber-fg:   #7A5418;
   --tone-slate-fg:   #4A5C75;
-  --tone-orange-fg:  #2D7BC4;
-  --tone-emerald-fg: #2E9B79;
-  --tone-amber-fg:   #B98318;
-  --tone-sky-fg:     #2D7BC4;
-  --tone-cyan-fg:    #2D7BC4;
+  --tone-orange-fg:  #1F5FA0;
+  --tone-emerald-fg: #0F6B50;
+  --tone-amber-fg:   #7A5418;
+  --tone-sky-fg:     #1F5FA0;
+  --tone-cyan-fg:    #1F5FA0;
 
   /* Tonal alphas — Aurora light ramp (darker text-on-paper, lighter bg). */
-  --tone-rose-bg:    rgba(45, 123, 196, 0.10);
-  --tone-rose-br:    rgba(45, 123, 196, 0.22);
-  --tone-foil-bg:    rgba(176, 120, 30, 0.10);
-  --tone-foil-br:    rgba(176, 120, 30, 0.22);
-  --tone-sage-bg:    rgba(46, 155, 121, 0.10);
-  --tone-sage-br:    rgba(46, 155, 121, 0.22);
-  --tone-honey-bg:   rgba(185, 131, 24, 0.10);
-  --tone-honey-br:   rgba(185, 131, 24, 0.22);
-  --tone-umber-bg:   rgba(176, 120, 30, 0.10);
-  --tone-umber-br:   rgba(176, 120, 30, 0.22);
+  --tone-rose-bg:    rgba(31, 95, 160, 0.10);
+  --tone-rose-br:    rgba(31, 95, 160, 0.22);
+  --tone-foil-bg:    rgba(122, 84, 24, 0.10);
+  --tone-foil-br:    rgba(122, 84, 24, 0.22);
+  --tone-sage-bg:    rgba(15, 107, 80, 0.10);
+  --tone-sage-br:    rgba(15, 107, 80, 0.22);
+  --tone-honey-bg:   rgba(122, 84, 24, 0.10);
+  --tone-honey-br:   rgba(122, 84, 24, 0.22);
+  --tone-umber-bg:   rgba(122, 84, 24, 0.10);
+  --tone-umber-br:   rgba(122, 84, 24, 0.22);
   --tone-slate-bg:   rgba(74, 92, 117, 0.10);
   --tone-slate-br:   rgba(74, 92, 117, 0.22);
-  --tone-orange-bg:  rgba(45, 123, 196, 0.10);
-  --tone-orange-br:  rgba(45, 123, 196, 0.22);
-  --tone-emerald-bg: rgba(46, 155, 121, 0.10);
-  --tone-emerald-br: rgba(46, 155, 121, 0.22);
-  --tone-amber-bg:   rgba(185, 131, 24, 0.10);
-  --tone-amber-br:   rgba(185, 131, 24, 0.22);
-  --tone-sky-bg:     rgba(45, 123, 196, 0.10);
-  --tone-sky-br:     rgba(45, 123, 196, 0.22);
-  --tone-cyan-bg:    rgba(45, 123, 196, 0.10);
-  --tone-cyan-br:    rgba(45, 123, 196, 0.22);
+  --tone-orange-bg:  rgba(31, 95, 160, 0.10);
+  --tone-orange-br:  rgba(31, 95, 160, 0.22);
+  --tone-emerald-bg: rgba(15, 107, 80, 0.10);
+  --tone-emerald-br: rgba(15, 107, 80, 0.22);
+  --tone-amber-bg:   rgba(122, 84, 24, 0.10);
+  --tone-amber-br:   rgba(122, 84, 24, 0.22);
+  --tone-sky-bg:     rgba(31, 95, 160, 0.10);
+  --tone-sky-br:     rgba(31, 95, 160, 0.22);
+  --tone-cyan-bg:    rgba(31, 95, 160, 0.10);
+  --tone-cyan-br:    rgba(31, 95, 160, 0.22);
 
   --orange-50:  #EFF5FB;
   --orange-100: #DDE7F5;
   --orange-200: #BDD2EE;
   --orange-300: #9CBDDD;
-  --orange-400: #4D8FCE;
-  --orange-500: #2D7BC4;
-  --orange-600: #2670B6;
-  --orange-700: #1F5FA0;
+  --orange-400: #2D7BC4;
+  --orange-500: #1F5FA0;
+  --orange-600: #17518D;
+  --orange-700: #123F70;
   --orange-800: #184A7F;
   --orange-900: #0F345C;
 
-  --brand-orange:       #2D7BC4;
+  --brand-orange:       #1F5FA0;
   --brand-orange-light: #4D8FCE;
-  --brand-orange-dark:  #1F5FA0;
+  --brand-orange-dark:  #17518D;
 
   /* Semantic — Aurora light ramp. Darker ink-on-paper hues for AA contrast. */
-  --success:       #2E9B79;
-  --success-soft:  rgba(46, 155, 121, 0.10);
-  --warning:       #B98318;
-  --warning-soft:  rgba(185, 131, 24, 0.10);
-  --danger:        #C84E51;
-  --danger-soft:   rgba(200, 78, 81, 0.10);
-  --info:          #2D7BC4;
-  --info-soft:     rgba(45, 123, 196, 0.10);
+  --success:       #0F6B50;
+  --success-soft:  rgba(15, 107, 80, 0.10);
+  --warning:       #7A5418;
+  --warning-soft:  rgba(122, 84, 24, 0.10);
+  --danger:        #A23B3F;
+  --danger-soft:   rgba(162, 59, 63, 0.10);
+  --info:          #1F5FA0;
+  --info-soft:     rgba(31, 95, 160, 0.10);
 
   /* Glow shadows — flip from cool-on-dark to cool-on-paper. */
-  --shadow-rose: 0 0 20px rgba(45, 123, 196, 0.20);
-  --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.16);
-  --shadow-glow: 0 0 20px rgba(45, 123, 196, 0.20);
+  --shadow-rose: 0 0 20px rgba(31, 95, 160, 0.20);
+  --shadow-foil: 0 0 30px rgba(122, 84, 24, 0.16);
+  --shadow-glow: 0 0 20px rgba(31, 95, 160, 0.20);
 }
 
 /* =========================================================================
@@ -362,14 +362,14 @@
   /* Per-plan accent — additive; AppShell adds .plan-free / .plan-family /
      .plan-pro per member tier. Dark is the default; a .light ancestor switches
      to the light values. Absent class (Individual) = base Aurora theme.
-     Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#E0567E,
-     Family #4FD1B5/#1F9E78, Pro #F2C46C/#B0781E. */
+     Canonical plan hexes (design handoff, additions.css): Free #FF9DB2/#A8324F,
+     Family #4FD1B5/#0F6B50, Pro #F2C46C/#7A5418. */
   .plan-free { --primary: 347 100% 81%; --ring: 347 100% 81%; }
-  .light .plan-free { --primary: 343 69% 61%; --ring: 343 69% 61%; }
+  .light .plan-free { --primary: 345 54% 43%; --ring: 345 54% 43%; }
   .plan-family { --primary: 168 60% 56%; --ring: 168 60% 56%; }
-  .light .plan-family { --primary: 162 67% 37%; --ring: 162 67% 37%; }
+  .light .plan-family { --primary: 162 75% 24%; --ring: 162 75% 24%; }
   .plan-pro { --primary: 41 85% 68%; --ring: 41 85% 68%; }
-  .light .plan-pro { --primary: 38 71% 40%; --ring: 38 71% 40%; }
+  .light .plan-pro { --primary: 37 67% 29%; --ring: 37 67% 29%; }
 
   .light {
     --background: 220 23% 96%;
@@ -381,7 +381,7 @@
     --popover: 218 21% 96%;
     --popover-foreground: 213 39% 13%;
 
-    --primary: 209 63% 47%;
+    --primary: 210 68% 37%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 214 22% 38%;
@@ -393,16 +393,16 @@
     --accent: 218 21% 90%;
     --accent-foreground: 213 39% 13%;
 
-    --destructive: 359 51% 49%;
+    --destructive: 358 47% 43%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 36 77% 41%;
-    --success: 159 54% 39%;
-    --info: 209 63% 47%;
+    --warning: 37 67% 29%;
+    --success: 162 75% 24%;
+    --info: 210 68% 37%;
 
     --border: 213 18% 82%;
     --input: 213 18% 82%;
-    --ring: 209 63% 47%;
+    --ring: 210 68% 37%;
 
     --radius: 0.625rem;
 
@@ -2079,7 +2079,7 @@ html[data-embed="mobile"] .install-prompt {
 }
 
 /* Family plan tone — canonical plan hexes (design handoff, additions.css):
-   Family #4FD1B5 on dark, #1F9E78 on paper. Follows the tone-* ramp shape. */
+   Family #4FD1B5 on dark, #0F6B50 on paper. Follows the tone-* ramp shape. */
 :root,
 .dark {
   --tone-family-bg: rgba(79, 209, 181, 0.10);
@@ -2087,9 +2087,9 @@ html[data-embed="mobile"] .install-prompt {
   --tone-family-fg: #4FD1B5;
 }
 .light {
-  --tone-family-bg: rgba(31, 158, 120, 0.10);
-  --tone-family-br: rgba(31, 158, 120, 0.22);
-  --tone-family-fg: #1F9E78;
+  --tone-family-bg: rgba(15, 107, 80, 0.10);
+  --tone-family-br: rgba(15, 107, 80, 0.22);
+  --tone-family-fg: #0F6B50;
 }
 
 /* — Button · foil variant (lf-btn--foil): champagne fill, dark ink, warm
