@@ -130,11 +130,11 @@ export default function ContactPage() {
       <PublicSection title="Policy links">
         <div className="flex flex-wrap gap-3">
           {policyLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <Button variant="outline" size="sm">
+            <Button key={link.href} asChild variant="outline" size="sm">
+              <Link href={link.href}>
                 {link.label}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           ))}
         </div>
       </PublicSection>
@@ -145,15 +145,15 @@ export default function ContactPage() {
           Sign in when your request involves saved addresses, services, subscriptions, exports, deletion, or support tickets tied to your account.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/faq">
-            <Button variant="outline">FAQ</Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button>
+          <Button asChild variant="outline">
+            <Link href="/faq">FAQ</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/sign-in">
               Sign in
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </PublicPageShell>

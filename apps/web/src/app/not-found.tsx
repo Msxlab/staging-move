@@ -15,9 +15,9 @@ export default function RootNotFound() {
           This little raccoon went looking for the page too — and came back
           empty-pawed. It does not exist.
         </p>
-        <Link href="/">
-          <Button>Go Home</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/">Go Home</Link>
+        </Button>
       </main>
       <MarketingFooter />
     </div>

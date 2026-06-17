@@ -96,23 +96,23 @@ export default function ServiceDetailPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/services">
-            <Button variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/services">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <div>
             <h1 className="text-2xl font-bold">{service.providerName}</h1>
             {addressLabel && <p className="text-sm text-muted-foreground">{addressLabel}</p>}
           </div>
         </div>
-        <Link href={`/services/${service.id}/edit`}>
-          <Button variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/services/${service.id}/edit`}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2">

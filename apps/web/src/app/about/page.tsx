@@ -70,17 +70,17 @@ export default function AboutPage() {
 
         <PublicSection title="Where to learn more">
           <div className="flex flex-wrap gap-3">
-            <Link href="/how-it-works">
-              <Button size="lg">
+            <Button asChild size="lg">
+              <Link href="/how-it-works">
                 How it works <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/provider-coverage">
-              <Button variant="outline" size="lg">Provider coverage</Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="outline" size="lg">Pricing</Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/provider-coverage">Provider coverage</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/pricing">Pricing</Link>
+            </Button>
           </div>
         </PublicSection>
       </PublicPageShell>
