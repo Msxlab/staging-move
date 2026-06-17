@@ -1173,7 +1173,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
                 </p>
                 <Link
                   href="/pricing"
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
+                  className="mt-1 -mx-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-semibold text-tone-orange-fg hover:opacity-90 transition"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   {td("dossier_preview_unlock_cta")}

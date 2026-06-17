@@ -1351,7 +1351,9 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
+        // "padding" is correct on iOS but on Android it commonly over/under-pushes
+        // the form (windowSoftInputMode handles inset there) — so opt out on Android.
+        behavior={Platform.select({ ios: "padding", android: undefined })}
         keyboardVerticalOffset={0}
       >
         {/* Aurora onboarding chrome: compact brand stage + named step rail.
