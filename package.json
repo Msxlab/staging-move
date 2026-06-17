@@ -28,6 +28,7 @@
     "verify:typecheck": "pnpm --filter @locateflow/web exec tsc --noEmit && pnpm --filter @locateflow/admin exec tsc --noEmit && pnpm --filter @locateflow/mobile exec tsc --noEmit && pnpm --filter @locateflow/db exec tsc --noEmit && pnpm --filter @locateflow/connectors exec tsc --noEmit",
     "verify:tests": "pnpm --filter @locateflow/web test && pnpm --filter @locateflow/admin test && pnpm --filter @locateflow/mobile test && pnpm --filter @locateflow/connectors test",
     "verify:ci": "pnpm verify:typecheck && pnpm verify:provider-guards",
+    "check": "pnpm verify:typecheck && pnpm --filter @locateflow/web test && pnpm --filter @locateflow/admin test",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v",
