@@ -161,12 +161,12 @@ export function DossierShowcase() {
             FEMA · EPA · NCES · US Census Bureau
           </p>
           <div className="mt-7">
-            <Link href="/pricing">
-              <Button size="lg" className="text-base px-8">
+            <Button asChild size="lg" className="text-base px-8">
+              <Link href="/pricing">
                 See plans and pricing
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
 

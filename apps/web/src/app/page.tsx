@@ -201,17 +201,17 @@ export default async function LandingPage() {
               {t("productDefinition")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href={primaryHref}>
-                <Button size="lg" className="w-full sm:w-auto text-base px-8">
+              <Button asChild size="lg" className="w-full sm:w-auto text-base px-8">
+                <Link href={primaryHref}>
                   {userId ? tErrors("goToDashboard") : t("heroCta")}
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/how-it-works">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
+                <Link href="/how-it-works">
                   {t("heroSecondary")}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
@@ -560,12 +560,12 @@ export default async function LandingPage() {
           <p className="text-lg opacity-80 max-w-xl mx-auto">
             {t("trust_retention")} · {t("noCreditCard")}
           </p>
-          <Link href={primaryHref}>
-            <Button size="lg" variant="secondary" className="text-base px-8">
+          <Button asChild size="lg" variant="secondary" className="text-base px-8">
+            <Link href={primaryHref}>
               {userId ? tErrors("goToDashboard") : t("heroCta")}
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </section>
 

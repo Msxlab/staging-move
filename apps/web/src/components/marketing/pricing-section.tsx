@@ -331,16 +331,17 @@ function PlanCard({
       </ul>
 
       <div className="mt-6">
-        <Link href={planHref(ctaHref, planId, cycle)} className="block">
-          {/* Pro wears the champagne foil — the one premium moment on this
-              grid. Individual keeps the highlighted primary fill. */}
-          <Button
-            variant={planId === "PRO" ? "foil" : isHighlighted ? "default" : "outline"}
-            className="w-full"
-          >
+        {/* Pro wears the champagne foil — the one premium moment on this
+            grid. Individual keeps the highlighted primary fill. */}
+        <Button
+          asChild
+          variant={planId === "PRO" ? "foil" : isHighlighted ? "default" : "outline"}
+          className="w-full"
+        >
+          <Link href={planHref(ctaHref, planId, cycle)}>
             {ctaLabel}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     </article>
   );

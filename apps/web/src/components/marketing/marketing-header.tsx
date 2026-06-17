@@ -46,12 +46,12 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
             <MarketingUserMenu />
           ) : (
             <>
-              <Link href="/sign-in">
-                <Button variant="ghost" size="sm">{tCommon("signIn")}</Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button size="sm">{tLanding("heroCta")}</Button>
-              </Link>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/sign-in">{tCommon("signIn")}</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/sign-up">{tLanding("heroCta")}</Link>
+              </Button>
             </>
           )}
         </div>
