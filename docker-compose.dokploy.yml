@@ -349,7 +349,6 @@ services:
   cron:
     image: mcuadros/ofelia:latest
     container_name: locateflow-cron
-    profiles: ["cron"]
     restart: unless-stopped
     depends_on:
       - web
