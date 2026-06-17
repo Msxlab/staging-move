@@ -148,14 +148,14 @@ export default function HowItWorksPage() {
 
       <PublicSection title="Ready to see your list in one place?">
         <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/sign-up">
-            <Button size="lg">
+          <Button asChild size="lg">
+            <Link href="/sign-up">
               Get started <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="outline" size="lg">See pricing</Button>
-          </Link>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link href="/pricing">See pricing</Link>
+          </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           Trial length, renewal date, price, and payment method requirements are shown at checkout. See the{" "}

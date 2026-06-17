@@ -10,9 +10,9 @@ export default function NotFound() {
       <p className="text-muted-foreground mb-6 max-w-sm">
         The page you are looking for does not exist or has been moved.
       </p>
-      <Link href="/dashboard">
-        <Button>Go to Dashboard</Button>
-      </Link>
+      <Button asChild>
+        <Link href="/dashboard">Go to Dashboard</Link>
+      </Button>
     </div>
   );
 }

@@ -161,11 +161,11 @@ export default function NewAddressPage() {
 
       <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
         <div className="flex items-start gap-4">
-          <Link href="/addresses">
-            <Button variant="ghost" size="icon" className="rounded-2xl">
+          <Button asChild variant="ghost" size="icon" className="rounded-2xl">
+            <Link href="/addresses">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
             <MapPin className="h-5 w-5" />
           </span>
@@ -393,9 +393,9 @@ export default function NewAddressPage() {
 
         {/* Submit */}
         <div className="flex gap-3 justify-end">
-          <Link href="/addresses">
-            <Button variant="outline" type="button">{tCommon("cancel")}</Button>
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/addresses">{tCommon("cancel")}</Link>
+          </Button>
           <Button type="submit" disabled={loading}>
             {loading ? tCommon("saving") : t("saveAddress")}
           </Button>

@@ -273,12 +273,12 @@ export default async function BlogPostPage({
             Create an account in a minute. Trial length, renewal date, price, and any payment requirement are shown before checkout.
           </p>
           <div className="mt-6 flex justify-center">
-            <Link href="/sign-up">
-              <Button size="lg" className="px-8">
+            <Button asChild size="lg" className="px-8">
+              <Link href="/sign-up">
                 Start free access
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

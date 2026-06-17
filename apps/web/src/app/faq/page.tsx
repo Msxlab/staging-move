@@ -54,11 +54,11 @@ export default async function FaqPage() {
             If you cannot find what you need in the public FAQ, reach us through the contact page or sign in for account-specific support.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
-            <Link href="/contact">
-              <Button variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg">
+              <Link href="/contact">
                 <LifeBuoy className="mr-2 h-4 w-4" /> Contact us <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </PublicSection>
       </PublicPageShell>

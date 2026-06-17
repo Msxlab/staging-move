@@ -271,11 +271,11 @@ export default function NewMovingPlanPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <section className="rounded-[1.5rem] border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-xl">
         <div className="flex items-start gap-4">
-          <Link href="/moving">
-            <Button variant="ghost" size="icon" className="rounded-2xl">
+          <Button asChild variant="ghost" size="icon" className="rounded-2xl">
+            <Link href="/moving">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
             <Truck className="h-5 w-5" />
           </span>
@@ -324,7 +324,9 @@ export default function NewMovingPlanPage() {
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">{t("addCurrentAddressFirstHelp")}</p>
-            <Link href="/addresses/new"><Button>{t("addCurrentAddressButton")}</Button></Link>
+            <Button asChild>
+              <Link href="/addresses/new">{t("addCurrentAddressButton")}</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -460,7 +462,9 @@ export default function NewMovingPlanPage() {
           </Card>
 
           <div className="flex justify-end gap-3">
-            <Link href="/moving"><Button variant="outline">{tCommon("cancel")}</Button></Link>
+            <Button asChild variant="outline">
+              <Link href="/moving">{tCommon("cancel")}</Link>
+            </Button>
             <Button type="submit" disabled={loading}>
               {loading ? t("creating") : t("createPlan")}
             </Button>

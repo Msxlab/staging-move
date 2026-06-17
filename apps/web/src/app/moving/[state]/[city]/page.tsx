@@ -301,17 +301,17 @@ export default async function MovingCityPage({
                   order.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href="/sign-up">
-                    <Button size="lg">
+                  <Button asChild size="lg">
+                    <Link href="/sign-up">
                       Build my {metro.name} move plan
                       <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Link href={statePath(guide.slug)}>
-                    <Button variant="outline" size="lg">
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link href={statePath(guide.slug)}>
                       See the {guide.name} guide
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </div>
               <div className="shrink-0 self-center sm:self-start" aria-hidden="true">
@@ -408,12 +408,12 @@ export default async function MovingCityPage({
               ))}
             </ol>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/sign-up">
-                <Button>
+              <Button asChild>
+                <Link href="/sign-up">
                   Turn this into a tracked checklist
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </section>
 
@@ -511,17 +511,17 @@ export default async function MovingCityPage({
               checkout.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link href="/sign-up">
-                <Button size="lg" className="px-8">
+              <Button asChild size="lg" className="px-8">
+                <Link href="/sign-up">
                   Start free
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/pricing">
-                <Button variant="outline" size="lg">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/pricing">
                   See pricing
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <p className="mx-auto mt-5 flex max-w-xl items-start justify-center gap-2 text-xs text-muted-foreground">
               <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
