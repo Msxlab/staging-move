@@ -147,6 +147,11 @@ export default function OnboardingClient({
   const searchParams = useSearchParams();
   const t = useTranslations("onboarding");
   const [step, setStep] = useState(0);
+  // Gate the first paint until loadOnboardingState resolves, so a resuming user
+  // sees the correct step + prefilled fields together instead of an empty Step 0
+  // that then snaps to a later step. Set in loadOnboardingState's finally (every
+  // path), so it never stays stuck.
+  const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [serviceLimit, setServiceLimit] = useState<ServiceLimitDetails | null>(null);
@@ -292,6 +297,10 @@ export default function OnboardingClient({
 
       } catch {
         // Keep the current step visible; individual saves still surface errors.
+      } finally {
+        // Runs on every path (success, redirect, legal, error) — so the wizard
+        // never stays stuck on the skeleton.
+        if (!cancelled) setHydrated(true);
       }
     }
 
@@ -1162,6 +1171,27 @@ export default function OnboardingClient({
   const labelCls = "block text-xs font-medium text-muted-foreground mb-1.5";
   const checkboxCls = "w-4 h-4 rounded border-foreground/20 bg-foreground/5 accent-orange-500 cursor-pointer";
   const showLegalGate = legalStepRequested && !legalAcceptedOnServer;
+
+  // Until the profile/addresses load resolves, render a wizard-shaped skeleton
+  // rather than an empty Step 0 that then snaps to the resolved step.
+  if (!hydrated) {
+    return (
+      <div className="space-y-5" aria-busy="true">
+        <div className="flex items-center gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-1.5 flex-1 rounded-full bg-foreground/10 motion-safe:animate-pulse" />
+          ))}
+        </div>
+        <div className="space-y-4 rounded-2xl border border-border bg-foreground/[0.03] p-6 motion-safe:animate-pulse">
+          <div className="h-6 w-2/5 rounded bg-foreground/10" />
+          <div className="h-4 w-3/5 rounded bg-foreground/10" />
+          <div className="h-11 w-full rounded-xl bg-foreground/[0.06]" />
+          <div className="h-11 w-full rounded-xl bg-foreground/[0.06]" />
+          <div className="h-11 w-2/3 rounded-xl bg-foreground/[0.06]" />
+        </div>
+      </div>
+    );
+  }
 
   if (showLegalGate) {
     return (
