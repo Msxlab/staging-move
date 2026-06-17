@@ -144,9 +144,9 @@ export const borderDark = {
 export const borderLight = {
   default: "rgba(20, 32, 47, 0.06)",
   strong: "rgba(20, 32, 47, 0.14)",
-  foil: "rgba(176, 120, 30, 0.30)",
-  rose: "rgba(45, 123, 196, 0.30)",
-  focus: "rgba(45, 123, 196, 0.55)",
+  foil: "rgba(122, 84, 24, 0.30)",
+  rose: "rgba(31, 95, 160, 0.30)",
+  focus: "rgba(31, 95, 160, 0.55)",
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -164,6 +164,17 @@ export const semanticColors = {
   infoLight: "rgba(127, 182, 232, 0.14)",
 } as const;
 
+export const semanticColorsLight = {
+  success: "#0F6B50", // au-mint ink on paper
+  successLight: "rgba(15, 107, 80, 0.10)",
+  warning: "#7A5418", // au-amber ink on paper
+  warningLight: "rgba(122, 84, 24, 0.10)",
+  danger: "#A23B3F", // au-coral ink on paper
+  dangerLight: "rgba(162, 59, 63, 0.10)",
+  info: "#1F5FA0", // au-cool ink on paper
+  infoLight: "rgba(31, 95, 160, 0.10)",
+} as const;
+
 // ────────────────────────────────────────────────────────────────────
 // Plan accent colors — the canonical per-tier hexes from the Edition VII
 // design handoff (one source of truth for web `.plan-*` CSS, the mobile
@@ -172,10 +183,10 @@ export const semanticColors = {
 // ────────────────────────────────────────────────────────────────────
 
 export const planColors = {
-  free: { dark: "#FF9DB2", light: "#E0567E" }, // candy coral — "Start here"
-  individual: { dark: "#7FB6E8", light: "#2D7BC4" }, // base Aurora cool
-  family: { dark: "#4FD1B5", light: "#1F9E78" }, // teal/mint
-  pro: { dark: "#F2C46C", light: "#B0781E" }, // honey/champagne foil
+  free: { dark: "#FF9DB2", light: "#A8324F" }, // candy coral — "Start here"
+  individual: { dark: "#7FB6E8", light: "#1F5FA0" }, // base Aurora cool
+  family: { dark: "#4FD1B5", light: "#0F6B50" }, // teal/mint
+  pro: { dark: "#F2C46C", light: "#7A5418" }, // honey/champagne foil
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
@@ -222,29 +233,29 @@ const _tonesDarkCanonical = {
 
 const _tonesLightCanonical = {
   rose: {
-    bg: "rgba(45, 123, 196, 0.10)",
-    border: "rgba(45, 123, 196, 0.22)",
-    text: "#2D7BC4",
+    bg: "rgba(31, 95, 160, 0.10)",
+    border: "rgba(31, 95, 160, 0.22)",
+    text: "#1F5FA0",
   },
   foil: {
-    bg: "rgba(176, 120, 30, 0.10)",
-    border: "rgba(176, 120, 30, 0.22)",
-    text: "#B0781E",
+    bg: "rgba(122, 84, 24, 0.10)",
+    border: "rgba(122, 84, 24, 0.22)",
+    text: "#7A5418",
   },
   sage: {
-    bg: "rgba(46, 155, 121, 0.10)",
-    border: "rgba(46, 155, 121, 0.22)",
-    text: "#2E9B79",
+    bg: "rgba(15, 107, 80, 0.10)",
+    border: "rgba(15, 107, 80, 0.22)",
+    text: "#0F6B50",
   },
   honey: {
-    bg: "rgba(185, 131, 24, 0.10)",
-    border: "rgba(185, 131, 24, 0.22)",
-    text: "#B98318",
+    bg: "rgba(122, 84, 24, 0.10)",
+    border: "rgba(122, 84, 24, 0.22)",
+    text: "#7A5418",
   },
   umber: {
-    bg: "rgba(176, 120, 30, 0.10)",
-    border: "rgba(176, 120, 30, 0.22)",
-    text: "#B0781E",
+    bg: "rgba(122, 84, 24, 0.10)",
+    border: "rgba(122, 84, 24, 0.22)",
+    text: "#7A5418",
   },
   slate: {
     bg: "rgba(74, 92, 117, 0.10)",
