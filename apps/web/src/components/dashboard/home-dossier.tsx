@@ -1290,7 +1290,9 @@ export function HomeDossierTeaser({ place }: { place?: string }) {
       <div className="px-5 pb-5 space-y-2">
         <p className="text-[13.5px] leading-5 text-muted-foreground">{td("dossier_teaser_pitch")}</p>
 
-        {TEASER_ROWS.map(({ Icon, boxClass, iconClass, titleKey, subKey }) => (
+        {/* Show the 4 highest-signal rows as a curated tease rather than a wall
+            of 9 near-identical locks; the CTA conveys that the full report has more. */}
+        {TEASER_ROWS.slice(0, 4).map(({ Icon, boxClass, iconClass, titleKey, subKey }) => (
           <div
             key={titleKey}
             className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02]"
@@ -1311,7 +1313,7 @@ export function HomeDossierTeaser({ place }: { place?: string }) {
         <div className="pt-1">
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-4 py-3 min-h-11 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
           >
             <Sparkles className="h-4 w-4" /> {td("dossier_teaser_cta")}
           </Link>

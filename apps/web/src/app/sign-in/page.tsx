@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
 import { PasswordInput } from "@/components/ui/password-input";
+import { AuthFormSkeleton } from "@/components/shared/loading-state";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 interface OAuthProviderStatus {
@@ -279,7 +280,7 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AuthFormSkeleton />}>
       <SignInForm />
     </Suspense>
   );
