@@ -104,6 +104,9 @@ describe("/api/backup/sql-dump", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/gzip");
+    expect(response.headers.get("Content-Disposition")).toMatch(
+      /^attachment; filename="locateflow-locateflow-[0-9-]+\.sql\.gz"; filename\*=UTF-8''locateflow-locateflow-[0-9-]+\.sql\.gz$/,
+    );
     expect(response.headers.get("X-Accel-Buffering")).toBe("no");
 
     const zipped = Buffer.from(await response.arrayBuffer());
@@ -131,6 +134,36 @@ describe("/api/backup/sql-dump", () => {
     );
     expect(args).not.toContain("dump-secret");
     expect(options.env.MYSQL_PWD).toBe("dump-secret");
+  });
+
+  it("sanitizes the SQL dump filename and emits an RFC 5987 filename parameter", async () => {
+    vi.stubEnv(
+      "DATABASE_URL",
+      "mysql://dump_user:dump-secret@db.example.com:3307/prod%20db%22x%0D%0AInjected%3A%20yes",
+    );
+    const child = makeChild();
+    mocks.spawn.mockImplementation(() => {
+      setTimeout(() => {
+        child.emit("spawn");
+        child.stdout.write(Buffer.from("-- dump header\n"));
+        child.stdout.end(Buffer.from("CREATE TABLE users (id int);\n"));
+        child.emit("close", 0, null);
+      }, 0);
+      return child;
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    const contentDisposition = response.headers.get("Content-Disposition") || "";
+    expect(contentDisposition).toMatch(
+      /^attachment; filename="[A-Za-z0-9._-]+\.sql\.gz"; filename\*=UTF-8''[A-Za-z0-9._~-]+\.sql\.gz$/,
+    );
+    expect(contentDisposition).not.toContain("\r");
+    expect(contentDisposition).not.toContain("\n");
+    expect(contentDisposition).not.toContain("Injected:");
+    expect(contentDisposition).not.toContain('"x');
   });
 
   it("uses MYSQL_DATABASE_URL fallback and enables mysql SSL when the database URL requires it", async () => {
