@@ -201,16 +201,13 @@ function BillingTabs({
 }) {
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label="Billing interval"
       className="mx-auto mb-8 flex max-w-sm items-center gap-1 rounded-full border bg-muted/30 p-1"
     >
       <button
         type="button"
-        role="tab"
-        id="tab-yearly"
-        aria-selected={active === "yearly"}
-        aria-controls="pricing-plan-grid"
+        aria-pressed={active === "yearly"}
         onClick={() => onChange("yearly")}
         className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
           active === "yearly"
@@ -233,10 +230,7 @@ function BillingTabs({
       </button>
       <button
         type="button"
-        role="tab"
-        id="tab-monthly"
-        aria-selected={active === "monthly"}
-        aria-controls="pricing-plan-grid"
+        aria-pressed={active === "monthly"}
         onClick={() => onChange("monthly")}
         className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
           active === "monthly"
@@ -397,8 +391,7 @@ export function PricingSection({
 
       <div
         id="pricing-plan-grid"
-        role="tabpanel"
-        aria-labelledby={billingCycle === "yearly" ? "tab-yearly" : "tab-monthly"}
+        aria-label={`Plans — ${billingCycle === "yearly" ? "annual" : "monthly"} billing`}
         className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-3"
       >
         {(["INDIVIDUAL", "FAMILY", "PRO"] as PaidPlanId[]).map((planId) => (
