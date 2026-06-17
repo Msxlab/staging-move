@@ -150,10 +150,10 @@ describe("PricingSection", () => {
     expect(html).toContain("Move-week weather alerts");
     // Family+ real map (FEATURES.realMap).
     expect(html).toContain("Real map on route");
-    // Pro-only differentiators (FEATURES.moverSuggestions / neighborhoodIntel /
+    // Pro-only differentiators (FEATURES.moverSuggestions / dossierPdf /
     // concurrentPlanLimit / prioritySupport).
     expect(html).toContain("FMCSA-registered mover suggestions");
-    expect(html).toContain("Neighborhood Intelligence in the Home Dossier");
+    expect(html).toContain("New Home Dossier PDF export");
     expect(html).toContain("Up to 3 concurrent move plans");
     expect(html).toContain("Priority support");
   });
@@ -167,7 +167,7 @@ describe("PricingSection", () => {
     // Individual: data-checked suggestions + dossier + VIN + weather; NO AI.
     expect(indiv).toContain("Data-checked provider suggestions");
     expect(indiv).toContain("New Home Dossier");
-    expect(indiv).toContain("New Home Dossier PDF export");
+    expect(indiv).not.toContain("New Home Dossier PDF export");
     expect(indiv).toContain("VIN recall check");
     expect(indiv).toContain("weather alerts & weekly digest");
     expect(indiv).not.toContain("AI move briefing");
@@ -181,7 +181,7 @@ describe("PricingSection", () => {
     // Pro: inherits Family + the Pro-only differentiators.
     expect(pro).toContain("Everything in Family");
     expect(pro).toContain("Licensed mover suggestions");
-    expect(pro).toContain("Neighborhood Intelligence in the Home Dossier");
+    expect(pro).toContain("New Home Dossier PDF exports");
     expect(pro).toContain("Up to 3 move plans at once");
     expect(pro).toContain("Priority support");
 

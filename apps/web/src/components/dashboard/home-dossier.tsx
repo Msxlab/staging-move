@@ -100,7 +100,7 @@ export interface HomeDossierResponse {
   /** Gate code (e.g. an *_UPGRADE_REQUIRED constant) — informational only here. */
   code?: string;
   /**
-   * Paid PDF export entitlement (FEATURES.dossierPdf). When true the card
+   * Pro PDF export entitlement (FEATURES.dossierPdf). When true the card
    * shows the "Export PDF" affordance wired to the dossier PDF route. Absent
    * on older payloads and on Free → the button stays hidden, so a
    * non-entitled user never sees a button that would only return the teaser.
@@ -710,7 +710,7 @@ export function HomeDossierCard({ data }: { data: HomeDossierResponse | null }) 
               {place}
             </span>
           )}
-          {/* Paid PDF export — only rendered when the payload says the user
+          {/* Pro PDF export — only rendered when the payload says the user
               is entitled to dossierPdf, so the link never lands on the teaser.
               A plain GET link to the route triggers the attachment download. */}
           {data.dossierPdf === true && data.address?.id && (

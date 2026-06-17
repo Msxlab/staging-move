@@ -100,12 +100,12 @@ describe("buildPlanComparison", () => {
     expect(valueOf(entries, "PRO", "subscription_featConcurrentPlans")).toBe(3);
   });
 
-  it("puts dossier PDF export in every paid tier, not Free", () => {
+  it("puts dossier PDF export in Pro only", () => {
     const entries = buildPlanComparison(webInput);
     expect(hasFeature(entries, "FREE_TRIAL", "subscription_featDossierPdf")).toBe(false);
-    for (const paid of ["INDIVIDUAL", "FAMILY", "PRO"]) {
-      expect(hasFeature(entries, paid, "subscription_featDossierPdf")).toBe(true);
-    }
+    expect(hasFeature(entries, "INDIVIDUAL", "subscription_featDossierPdf")).toBe(false);
+    expect(hasFeature(entries, "FAMILY", "subscription_featDossierPdf")).toBe(false);
+    expect(hasFeature(entries, "PRO", "subscription_featDossierPdf")).toBe(true);
   });
 
   it("includes smart provider suggestions with FCC & utility data in every tier, including Free", () => {

@@ -102,11 +102,10 @@ describe("COMPARE_GROUPS - every cell pinned to the enforced ground truth", () =
     expect(cells("rowRealMap")).toEqual(familyUp); // FEATURES.realMap
   });
 
-  it("dossier-PDF is Individual and up; movers and priority support are Pro only", () => {
+  it("dossier-PDF, movers, and priority support are Pro only", () => {
     const proOnly = [excluded, excluded, excluded, included];
-    const paidOnly = [excluded, included, included, included];
     expect(cells("rowMoverSuggestions")).toEqual(proOnly); // FEATURES.moverSuggestions
-    expect(cells("rowDossierPdf")).toEqual(paidOnly); // FEATURES.dossierPdf
+    expect(cells("rowDossierPdf")).toEqual(proOnly); // FEATURES.dossierPdf
     expect(cells("rowPrioritySupport")).toEqual(proOnly); // FEATURES.prioritySupport
     expect(cells("rowConcurrentPlans")).toEqual([value(1), value(1), value(1), value(3)]); // FEATURES.concurrentPlanLimit
   });

@@ -120,8 +120,8 @@ interface PlanCapabilities {
  * ladder fails CI instead of shipping a contradictory bullet. Owner-ratified
  * ladder (2026-06-17): Free gets dossier preview; VIN/weather/full dossier/
  * address-validation at Individual+;
- * AI briefing + real map + shared workspace at Family+; dossier PDF is paid;
- * movers + multi-plan + Partner Hub + tax export + priority support are Pro only.
+ * AI briefing + real map + shared workspace at Family+; dossier PDF + movers
+ * + multi-plan + Partner Hub + tax export + priority support are Pro only.
  */
 const PLAN_MATRIX: Record<BillingPlan, PlanCapabilities> = {
   FREE_TRIAL: {
@@ -133,13 +133,13 @@ const PLAN_MATRIX: Record<BillingPlan, PlanCapabilities> = {
   INDIVIDUAL: {
     vehicleCheck: true, weatherDigest: true, homeDossierPreview: true, homeDossier: true, aiBriefing: false,
     realMap: false, moverSuggestions: false, sharedWorkspace: false, addressValidation: true,
-    dossierPdf: true, advancedExport: false, partnerHub: false, multiPlan: false,
+    dossierPdf: false, advancedExport: false, partnerHub: false, multiPlan: false,
     prioritySupport: false,
   },
   FAMILY: {
     vehicleCheck: true, weatherDigest: true, homeDossierPreview: true, homeDossier: true, aiBriefing: true,
     realMap: true, moverSuggestions: false, sharedWorkspace: true, addressValidation: true,
-    dossierPdf: true, advancedExport: false, partnerHub: false, multiPlan: false,
+    dossierPdf: false, advancedExport: false, partnerHub: false, multiPlan: false,
     prioritySupport: false,
   },
   PRO: {
@@ -222,8 +222,9 @@ export function comparisonPriceLabel(
  *     Individual and up.
  *   - AI move briefing + real map + shared workspace/child accounts:
  *     Family and up.
- *   - FMCSA mover suggestions + multiple concurrent move plans + Partner Hub
- *     + tax/property export + priority support: Pro only.
+ *   - New Home Dossier PDF export + FMCSA mover suggestions + multiple
+ *     concurrent move plans + Partner Hub + tax/property export + priority
+ *     support: Pro only.
  * Lines appear only when the plan includes the capability - the bullet list is
  * a positive "included" list, never feature-with-a-cross.
  */

@@ -488,7 +488,7 @@ describe("address dossier route", () => {
     // must NOT leak into the response.
     expect(body).toEqual({
       configured: true,
-      dossierPdf: true,
+      dossierPdf: false,
       address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "ok", zone: "AE", isHighRisk: true },
       school: { status: "ok", districtName: "Austin Independent School District", ncesId: "4808940" },
@@ -627,7 +627,7 @@ describe("address dossier route", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       configured: true,
-      dossierPdf: true,
+      dossierPdf: false,
       address: { id: "address-1", city: "Austin", state: "TX", zip: "78701" },
       flood: { status: "no_location", zone: null, isHighRisk: null },
       school: { status: "no_location", districtName: null, ncesId: null },

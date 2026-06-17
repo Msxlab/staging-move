@@ -574,7 +574,10 @@ describe("HomeDossierCard rendering", () => {
     expect(markup).toContain("Moving day:");
     expect(markup).toContain("Sunny");
     expect(markup).toContain("High 84");
-    expect(markup).toContain("Unlock the full Home Dossier + PDF");
+    expect(markup).toContain("Unlock the full Home Dossier");
+    expect(markup).toContain("Natural hazards, radon, water, air, housing, and EV charging unlock with Individual.");
+    expect(markup).toContain("Neighborhood Intelligence and PDF export unlock with Pro.");
+    expect(markup).not.toContain("Unlock the full Home Dossier + PDF");
     expect(markup).toContain('href="/pricing"');
     expect(markup).not.toContain("Natural hazard profile");
     expect(markup).not.toContain("Radon");
