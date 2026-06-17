@@ -525,7 +525,7 @@ export default async function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-tone-honey-fg animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-tone-honey-fg motion-safe:animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
             <h2 className="text-3xl font-bold tracking-tight">{t("mobile_title")}</h2>

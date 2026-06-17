@@ -1075,7 +1075,21 @@
   .reveal-sub,
   .reveal-actions {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
+  }
+  /* The reveal text + actions carry a 600–1000ms animation-delay with
+     animation-fill-mode: backwards, so without resetting the delay they hold
+     opacity:0 for up to ~1s — leaving the upgrade modal's headline, subhead,
+     and BOTH CTA buttons invisible AND unclickable for reduce-motion users.
+     Force them fully visible immediately (mirrors the .ob-* reduce-motion rule). */
+  .reveal-eyebrow,
+  .reveal-title,
+  .reveal-sub,
+  .reveal-actions {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

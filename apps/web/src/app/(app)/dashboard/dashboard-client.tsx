@@ -754,7 +754,7 @@ export default function DashboardClient({
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${addr.nickname || addr.street} spending percentage`}>
-                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-primary rounded-full transition-all motion-reduce:transition-none" style={{ width: `${pct}%` }} />
                           </div>
                           <span className="text-xs text-muted-foreground shrink-0">{Math.round(pct)}%</span>
                         </div>
@@ -798,7 +798,7 @@ export default function DashboardClient({
             {/* Progress bar */}
             <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
               <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
+                className="h-full rounded-full bg-primary transition-all duration-500 motion-reduce:transition-none"
                 style={{ width: `${checklist?.progressPercent ?? progress}%` }}
               />
             </div>
@@ -970,7 +970,7 @@ export default function DashboardClient({
                     <span className="font-medium text-foreground/80 text-xs">{formatCurrency(amount)}</span>
                   </div>
                   <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${categoryColors[cat] || "bg-tone-slate-fg"} transition-all`} style={{ width: `${(amount / maxCatAmount) * 100}%` }} />
+                    <div className={`h-full rounded-full ${categoryColors[cat] || "bg-tone-slate-fg"} transition-all motion-reduce:transition-none`} style={{ width: `${(amount / maxCatAmount) * 100}%` }} />
                   </div>
                 </div>
               ))}

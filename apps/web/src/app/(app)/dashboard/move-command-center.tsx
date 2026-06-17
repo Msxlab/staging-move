@@ -152,7 +152,7 @@ function ReadinessRing({ percent, label }: { percent: number; label: string }) {
           r={radius}
           fill="none"
           stroke="currentColor"
-          className="text-tone-orange-fg transition-all duration-700 ease-out"
+          className="text-tone-orange-fg transition-[stroke-dasharray] duration-700 ease-out motion-reduce:transition-none"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
