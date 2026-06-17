@@ -103,7 +103,7 @@ Place secrets in:
 | `STRIPE_WEBHOOK_SECRET` | Required for Stripe webhook test | No | No | Required | Yes | Server-only | Webhook events rejected. |
 | `STRIPE_PRICE_INDIVIDUAL_MONTHLY` | Required for checkout test | Optional display/context | No | Required | No | Server-only/public ID | Monthly checkout cannot create Individual subscription. |
 | `STRIPE_PRICE_INDIVIDUAL_YEARLY` | Required for annual checkout test | Optional | No | Required | No | Server-only/public ID | Yearly checkout unavailable. |
-| `STRIPE_ANNUAL_TRIAL_DAYS` | Optional, defaults to 90 | Optional | No | Recommended | No | Plain | Annual checkout falls back to 90 days. |
+| `STRIPE_ANNUAL_TRIAL_DAYS` | Optional, defaults to 14 | Optional | No | Recommended | No | Plain | Annual checkout falls back to 14 days. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Required for Stripe readiness | No | No | Required | No | Public | Client Stripe integrations unavailable. |
 | `APPLE_APP_STORE_ISSUER_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |
 | `APPLE_APP_STORE_KEY_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |

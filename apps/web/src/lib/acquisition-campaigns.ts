@@ -181,11 +181,6 @@ export async function findActivePublicIndividualMonthlyPaidOffer(
 export function getTrialLabel(days: number | null | undefined) {
   const normalizedDays = Number(days || 0);
   if (normalizedDays <= 0) return null;
-  if (normalizedDays === 90) return "3 months";
-  if (normalizedDays % 30 === 0) {
-    const months = normalizedDays / 30;
-    return `${months} month${months === 1 ? "" : "s"}`;
-  }
   return `${normalizedDays} day${normalizedDays === 1 ? "" : "s"}`;
 }
 

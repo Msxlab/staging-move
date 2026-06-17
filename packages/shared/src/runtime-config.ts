@@ -351,7 +351,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "STRIPE_ANNUAL_TRIAL_DAYS",
     label: "Stripe Annual Trial Days",
-    description: "Trial length applied by web Checkout for the Individual annual Stripe plan. Defaults to 90 when unset.",
+    description: "Trial length applied by web Checkout for the Individual annual Stripe plan. Defaults to 14 when unset.",
     scope: "WEB",
     category: "BILLING",
     isSecret: false,
@@ -1449,7 +1449,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY",
     label: "iOS Product ID — Individual (annual)",
-    description: "App Store product identifier for the Individual annual mobile subscription. The 3-month free trial is configured as an introductory offer in App Store Connect, not in this app.",
+    description: "App Store product identifier for the Individual annual mobile subscription. The 14-day free trial is configured as an introductory offer in App Store Connect, not in this app.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,
@@ -1628,7 +1628,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
     label: "Android Product ID — Individual (annual)",
-    description: "Google Play product/subscription identifier for the Individual annual mobile plan. The 3-month free trial is a Play Console base-plan offer, not a flag set by this app.",
+    description: "Google Play product/subscription identifier for the Individual annual mobile plan. The 14-day free trial is a Play Console base-plan offer, not a flag set by this app.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,

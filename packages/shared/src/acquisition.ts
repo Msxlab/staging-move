@@ -1,6 +1,6 @@
 import { LEGAL_CONSENT_VERSION } from "./legal";
 
-export const INDIVIDUAL_ANNUAL_TRIAL_DAYS = 90;
+export const INDIVIDUAL_ANNUAL_TRIAL_DAYS = 14;
 export const INDIVIDUAL_ANNUAL_PRICE_LABEL = "$24/year";
 export const INDIVIDUAL_MONTHLY_PRICE_LABEL = "$4.99/month";
 export const INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE = "INDIVIDUAL90";
@@ -130,7 +130,7 @@ export function getDefaultIndividualAnnualTrialCampaign(
 ): AcquisitionCampaignLike {
   return {
     id: null,
-    name: "Individual Annual - 3 months free",
+    name: "Individual Annual - 14-day trial",
     code: INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE,
     status: "ACTIVE",
     accessType: "FREE_TRIAL",
@@ -147,10 +147,10 @@ export function getDefaultIndividualAnnualTrialCampaign(
     endsAt: null,
     maxRedemptions: null,
     redemptionCount: 0,
-    publicHeadline: "Start with 3 months free",
+    publicHeadline: "Start with 14 days free",
     publicSubheadline: "Individual Annual starts after your trial.",
     checkoutDisclosureCopy:
-      "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
+      "Today: $0. Trial: 14 days. Your annual plan starts after the trial. You can cancel before then in Settings.",
     ...overrides,
   };
 }
@@ -217,7 +217,7 @@ export function buildCheckoutDisclosureText(input: {
   }
   return [
     "Today: $0.",
-    `Trial: ${trialDays >= 89 && trialDays <= 92 ? "3 months" : `${trialDays} days`}.`,
+    `Trial: ${trialDays} days.`,
     `Your annual plan starts on ${formatIsoDateOnly(firstChargeAt)}.`,
     `First charge: ${amount} on ${formatIsoDateOnly(firstChargeAt)}.`,
     "Renews yearly.",

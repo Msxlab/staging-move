@@ -9,7 +9,7 @@ describe("subscription app review helpers", () => {
     expect(shouldEmphasizeAnnualBilledPrice({
       showAnnualAction: true,
       yearlyDisplayPrice: "$24/year",
-      trialBadge: "First 3 months free",
+      trialBadge: "First 14 days free",
       savingsText: null,
     })).toBe(true);
   });
@@ -18,7 +18,7 @@ describe("subscription app review helpers", () => {
     expect(shouldEmphasizeAnnualBilledPrice({
       showAnnualAction: false,
       yearlyDisplayPrice: "$24/year",
-      trialBadge: "First 3 months free",
+      trialBadge: "First 14 days free",
       savingsText: "Save $7.89/year vs monthly - 16% off",
     })).toBe(false);
   });
@@ -27,11 +27,11 @@ describe("subscription app review helpers", () => {
     expect(getAnnualActionLabels({
       yearlyDisplayPrice: "$24/year",
       isSwitching: false,
-      trialBadge: "First 3 months free",
+      trialBadge: "First 14 days free",
       startLabel: "Start annual",
     })).toEqual({
       buttonLabel: "Start annual - $24/year",
-      metaText: "First 3 months free",
+      metaText: "First 14 days free",
     });
   });
 

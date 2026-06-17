@@ -17,7 +17,7 @@ describe("public trial campaign endpoint", () => {
         campaignCode: "INDIVIDUAL90",
         displayPriceLabel: "$24/year",
         checkoutDisclosureCopy:
-          "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
+          "Annual plan includes a 14-day free trial, then renews at $24/year unless canceled.",
       },
       monthlyPaid: {
         campaignCode: "INDIVIDUALMONTHLY",

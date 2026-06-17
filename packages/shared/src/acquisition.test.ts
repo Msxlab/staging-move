@@ -17,10 +17,10 @@ describe("acquisition campaign helpers", () => {
     const copy = buildCheckoutDisclosureText({ campaign, now });
 
     expect(copy).toContain("Today: $0.");
-    expect(copy).toContain("Trial: 3 months.");
-    expect(copy).toContain("Your annual plan starts on 2026-07-27.");
-    expect(copy).toContain("First charge: $24/year on 2026-07-27.");
-    expect(copy).toContain("You can cancel before 2026-07-27 in Settings.");
+    expect(copy).toContain("Trial: 14 days.");
+    expect(copy).toContain("Your annual plan starts on 2026-05-12.");
+    expect(copy).toContain("First charge: $24/year on 2026-05-12.");
+    expect(copy).toContain("You can cancel before 2026-05-12 in Settings.");
     expect(copy.toLowerCase()).not.toContain("refund");
   });
 
@@ -85,14 +85,14 @@ describe("acquisition campaign helpers", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       interval: "YEAR",
-      trialDaysAtSignup: 90,
+      trialDaysAtSignup: 14,
       stripePriceIdAtSignup: "price_annual",
       displayPriceAtSignup: "$24/year",
       autoRenewAtSignup: true,
       checkoutDisclosureTextHash: "hash_1",
     });
-    expect(snapshot.trialEndsAt).toBe("2026-07-27T12:00:00.000Z");
-    expect(snapshot.firstChargeAt).toBe("2026-07-27T12:00:00.000Z");
+    expect(snapshot.trialEndsAt).toBe("2026-05-12T12:00:00.000Z");
+    expect(snapshot.firstChargeAt).toBe("2026-05-12T12:00:00.000Z");
   });
 
   it("saves paid monthly snapshots with monthly interval and immediate first charge", () => {

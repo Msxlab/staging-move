@@ -77,7 +77,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "SPRING90",
       status: "ACTIVE",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
     }));
@@ -95,7 +95,7 @@ describe("admin acquisition campaigns create route", () => {
         code: `${status}90`,
         status,
         accessType: "FREE_TRIAL",
-        trialDays: 90,
+        trialDays: 14,
         stripePriceId: "price_annual",
         displayPriceLabel: "$79/year",
       }));
@@ -156,7 +156,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "SPRING90",
       status: "DRAFT",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "",
     }));
@@ -181,7 +181,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "DRAFT90",
       status: "DRAFT",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
     }));
@@ -203,7 +203,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "SPRING90",
       status: "ACTIVE",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
     }));
@@ -228,7 +228,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "SPRING90",
       status: "DRAFT",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
       confirmPassword: "correct horse battery staple",
@@ -268,7 +268,7 @@ describe("admin acquisition campaigns create route", () => {
       code: "ACTIVE90",
       status: "ACTIVE",
       accessType: "FREE_TRIAL",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
     }));

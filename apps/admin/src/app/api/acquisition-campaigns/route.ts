@@ -100,7 +100,7 @@ function campaignData(body: any, adminId?: string) {
     publicHeadline: String(
       body.publicHeadline ||
         (accessType === "FREE_TRIAL"
-          ? "Start with 3 months free"
+          ? "Start with 14 days free"
           : accessType === "PAID"
             ? "Subscribe monthly"
             : "Free Access"),

@@ -39,7 +39,7 @@ export function getCampaignSyncTarget(
       displayPriceLabel: "$24/year",
       stripePriceId,
       checkoutDisclosureCopy:
-        "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
+        "Annual plan includes a 14-day free trial, then renews at $24/year unless canceled.",
     };
   }
 

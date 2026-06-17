@@ -78,7 +78,7 @@ describe("admin acquisition campaigns update route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
       requiresPaymentMethod: true,
@@ -186,7 +186,7 @@ describe("admin acquisition campaigns update route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
       requiresPaymentMethod: true,
@@ -195,7 +195,7 @@ describe("admin acquisition campaigns update route", () => {
       endsAt: null,
     });
     const response = await PATCH(request({
-      publicHeadline: "Start with 3 months free",
+      publicHeadline: "Start with 14 days free",
       publicSubheadline: "Fresh public copy.",
       checkoutDisclosureCopy: "Updated checkout disclosure.",
     }), params());
@@ -205,7 +205,7 @@ describe("admin acquisition campaigns update route", () => {
     expect(mocks.campaignUpdate).toHaveBeenCalledWith({
       where: { id: "camp_1" },
       data: expect.objectContaining({
-        publicHeadline: "Start with 3 months free",
+        publicHeadline: "Start with 14 days free",
         publicSubheadline: "Fresh public copy.",
         checkoutDisclosureCopy: "Updated checkout disclosure.",
       }),
@@ -221,7 +221,7 @@ describe("admin acquisition campaigns update route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
       requiresPaymentMethod: true,
@@ -234,10 +234,10 @@ describe("admin acquisition campaigns update route", () => {
       code: "INDIVIDUAL90",
       accessType: "FREE_TRIAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: " price_annual ",
       displayPriceLabel: "$79/year",
-      publicHeadline: "Start with 3 months free",
+      publicHeadline: "Start with 14 days free",
       publicSubheadline: "Updated public copy.",
       checkoutDisclosureCopy: "Updated checkout disclosure.",
     }), params());
@@ -263,7 +263,7 @@ describe("admin acquisition campaigns update route", () => {
       accessType: "FREE_TRIAL",
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$79/year",
       requiresPaymentMethod: true,
@@ -280,7 +280,7 @@ describe("admin acquisition campaigns update route", () => {
     const response = await PATCH(request({
       accessType: "FREE_TRIAL",
       billingInterval: "YEAR",
-      trialDays: 90,
+      trialDays: 14,
       stripePriceId: "price_annual",
       displayPriceLabel: "$80/year",
     }), params());

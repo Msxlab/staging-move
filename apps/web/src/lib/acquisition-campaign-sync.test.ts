@@ -13,7 +13,7 @@ describe("acquisition campaign billing sync helpers", () => {
       displayPriceLabel: "$24/year",
       stripePriceId: "price_yearly_new",
       checkoutDisclosureCopy:
-        "Annual plan includes a 90-day free trial, then renews at $24/year unless canceled.",
+        "Annual plan includes a 14-day free trial, then renews at $24/year unless canceled.",
     });
   });
 

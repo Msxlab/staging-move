@@ -25,7 +25,7 @@ export function createTrialEndsAt() {
 export type BillingCycle = "monthly" | "yearly";
 export type StripeBillingInterval = "MONTH" | "YEAR";
 
-export const DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS = 90;
+export const DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS = 14;
 
 export function billingCycleToInterval(cycle: BillingCycle): StripeBillingInterval {
   return cycle === "yearly" ? "YEAR" : "MONTH";

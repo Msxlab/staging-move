@@ -32,7 +32,7 @@ function campaign(overrides: Record<string, unknown> = {}) {
     accessType: "FREE_TRIAL",
     plan: "INDIVIDUAL",
     billingInterval: "YEAR",
-    trialDays: 90,
+    trialDays: 14,
     freeAccessDays: null,
     stripePriceId: "price_secret",
     displayPriceLabel: "$24/year",
@@ -44,7 +44,7 @@ function campaign(overrides: Record<string, unknown> = {}) {
     maxRedemptions: 100,
     redemptionCount: 5,
     internalNotes: "admin only",
-    publicHeadline: "Start with 90 days free",
+    publicHeadline: "Start with 14 days free",
     publicSubheadline: "Individual Annual starts after your trial.",
     checkoutDisclosureCopy: "Today: $0.",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -160,13 +160,13 @@ describe("acquisition campaign DB helpers", () => {
 
     expect(viewModel).toMatchObject({
       campaignCode: "SPRING90",
-      publicHeadline: "Start with 90 days free",
+      publicHeadline: "Start with 14 days free",
       publicSubheadline: "Individual Annual starts after your trial.",
       checkoutDisclosureCopy: "Today: $0.",
       displayPriceLabel: "$24/year",
-      trialDays: 90,
+      trialDays: 14,
       billingInterval: "YEAR",
-      ctaText: "Start 3 months free",
+      ctaText: "Start 14 days free",
       priceCopy: "$24/year after trial",
     });
     expect(JSON.stringify(viewModel)).not.toContain("price_secret");
