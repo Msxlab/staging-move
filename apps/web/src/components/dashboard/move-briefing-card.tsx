@@ -447,9 +447,16 @@ export function MoveBriefingCard({
           headers: { "Content-Type": "application/json" },
           body: "{}",
         });
-        if (!res.ok) return;
-        const next = deriveBriefingState(await res.json());
-        if (cancelled || next.kind === "hidden") return;
+        if (!res.ok) {
+          setFallbackIfEnabled();
+          return;
+        }
+        const next = deriveBriefingState(await res.json(), uxAiBriefingExperienceVariant);
+        if (cancelled) return;
+        if (next.kind === "hidden" || next.kind === "teaser") {
+          emitAiBriefingViewed(next);
+        }
+        if (next.kind === "hidden") return;
         setState(next);
       } catch {
         setFallbackIfEnabled();
