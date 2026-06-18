@@ -28,6 +28,7 @@ describe("shouldPreferEnvRuntimeConfigValue", () => {
       "EMAIL_FROM",
       "ALERT_EMAIL_TO",
       "GOOGLE_MAPS_API_KEY",
+      "GEOAPIFY_API_KEY",
       "R2_BUCKET",
       "R2_ENDPOINT",
       "R2_ACCESS_KEY_ID",
@@ -145,6 +146,7 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       "R2_SECRET_ACCESS_KEY",
       "R2_PUBLIC_BASE_URL",
       "GOOGLE_MAPS_API_KEY",
+      "GEOAPIFY_API_KEY",
       "PLACES_AUTOCOMPLETE_ENABLED",
       "FEATURE_API_CONNECTORS",
       "HUD_HOUSING_DATA_ENABLED",
@@ -164,6 +166,18 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       expect(isManagedRuntimeConfigKey(key)).toBe(true);
       expect(getRuntimeConfigDefinition(key)).not.toBeNull();
     }
+  });
+
+  it("registers Geoapify as an optional DB-backed map fallback", () => {
+    expect(getRuntimeConfigDefinition("GEOAPIFY_API_KEY")).toMatchObject({
+      category: "MAPS",
+      isSecret: true,
+      requiredInProduction: false,
+      runtimeEditable: true,
+    });
+    expect(isManagedRuntimeConfigKey("GEOAPIFY_API_KEY")).toBe(true);
+    expect(isRuntimeConfigDbBackedKeyAllowed("GEOAPIFY_API_KEY")).toBe(true);
+    expect(shouldPreferEnvRuntimeConfigValue("GEOAPIFY_API_KEY", {})).toBe(true);
   });
 
   it("never marks a NEXT_PUBLIC_* or EXPO_PUBLIC_* key as a secret", () => {

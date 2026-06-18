@@ -30,6 +30,7 @@ export * from "./move-task-local-effect";
 export * from "./sentry-redaction";
 export * from "./audit-redaction";
 export * from "./blog";
+export * from "./build-info";
 export * from "./billing-metrics";
 export * from "./mover-portal";
 export {

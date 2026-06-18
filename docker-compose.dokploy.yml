@@ -22,6 +22,9 @@ name: locateflow
 x-app-env: &app-env
   NODE_ENV: production
   APP_ENV: ${APP_ENV:-production}
+  BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+  BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+  BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
   TRUSTED_PROXY_HEADERS: ${TRUSTED_PROXY_HEADERS:-standard}
 
   APP_URL: ${APP_URL:?APP_URL is required}
@@ -73,6 +76,7 @@ x-app-env: &app-env
   ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
 
   GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:?GOOGLE_MAPS_API_KEY is required}
+  GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
   PLACES_AUTOCOMPLETE_ENABLED: ${PLACES_AUTOCOMPLETE_ENABLED:-}
   PLACES_AUTOCOMPLETE_DAILY_LIMIT: ${PLACES_AUTOCOMPLETE_DAILY_LIMIT:-}
@@ -250,6 +254,9 @@ services:
         SITE_URL: ${SITE_URL:-}
         APP_ENV: ${APP_ENV:-production}
         NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:?NEXT_PUBLIC_IMGPROXY_URL is required}
+        BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+        BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+        BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
     container_name: locateflow-web
     restart: unless-stopped
     depends_on:
@@ -293,6 +300,9 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         SITE_URL: ${SITE_URL:-}
         APP_ENV: ${APP_ENV:-production}
+        BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+        BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+        BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
     container_name: locateflow-admin
     restart: unless-stopped
     depends_on:

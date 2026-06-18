@@ -279,6 +279,16 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     maskStrategy: "secret",
     note: "Only strictly required while PLACES_AUTOCOMPLETE_ENABLED is not 'false' (the default).",
   },
+  {
+    key: "GEOAPIFY_API_KEY",
+    classification: "optional",
+    label: "Geoapify API Key",
+    description: "Server-side Geoapify Static Maps key for the OSM route-map preview/fallback source.",
+    apps: ["web", "mobile"],
+    isSecret: true,
+    maskStrategy: "secret",
+    note: "Optional. If unset, route maps degrade gracefully to the existing stylized fallback unless Google Maps can serve the full map.",
+  },
 
   // Asset storage (R2/S3) — required for uploads, logos, OCR originals
   {

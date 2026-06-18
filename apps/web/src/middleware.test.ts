@@ -255,6 +255,14 @@ describe("web middleware auth boundaries", () => {
     expect(revalidateResponse.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("lets build-info reach route-level handling without a session", async () => {
+    const response = await middleware(request("https://locateflow.com/api/build-info"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+  });
+
   it("does not make unrelated /api/blog paths public by prefix accident", async () => {
     const response = await middleware(request("https://locateflow.com/api/blog/posts-admin"));
     const body = await response.json();

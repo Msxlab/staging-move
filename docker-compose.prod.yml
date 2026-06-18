@@ -75,6 +75,10 @@ services:
       context: .
       dockerfile: docker/web.prod.Dockerfile
       target: runner
+      args:
+        BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+        BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+        BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
     container_name: locateflow-web
     restart: unless-stopped
     depends_on:
@@ -89,6 +93,9 @@ services:
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
       SITE_URL: ${SITE_URL:-}
       APP_ENV: ${APP_ENV:-production}
+      BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+      BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+      BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
       SITE_LAST_MODIFIED: ${SITE_LAST_MODIFIED:-}
       GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
@@ -118,6 +125,7 @@ services:
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       # File storage — R2 (server-only) + imgproxy (client reads public URL)
@@ -146,6 +154,10 @@ services:
       context: .
       dockerfile: docker/admin.prod.Dockerfile
       target: runner
+      args:
+        BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+        BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+        BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
     container_name: locateflow-admin
     restart: unless-stopped
     depends_on:
@@ -162,6 +174,9 @@ services:
       CRON_SECRET: ${CRON_SECRET}
       APP_URL: ${APP_URL:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      BUILD_COMMIT_SHA: ${BUILD_COMMIT_SHA:-unknown}
+      BUILD_SOURCE_BRANCH: ${BUILD_SOURCE_BRANCH:-unknown}
+      BUILD_CREATED_AT: ${BUILD_CREATED_AT:-unknown}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}

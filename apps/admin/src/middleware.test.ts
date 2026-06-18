@@ -188,4 +188,9 @@ describe("admin middleware public auth paths", () => {
     expect(isPublicPath("/api/auth/login-history")).toBe(false);
     expect(isPublicPath("/api/auth/login/extra")).toBe(false);
   });
+
+  it("lets build-info stay public without opening build-info child routes", () => {
+    expect(isPublicPath("/api/build-info")).toBe(true);
+    expect(isPublicPath("/api/build-info/extra")).toBe(false);
+  });
 });
