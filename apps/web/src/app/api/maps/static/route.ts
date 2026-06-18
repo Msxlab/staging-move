@@ -143,10 +143,14 @@ type MapSourceStatuses = Partial<Record<"geoapify", MapSourceStatus>>;
 // coordinates exist. The key (GEOAPIFY_API_KEY) lives in runtime config and
 // never reaches the client.
 const PREVIEW_SIZE_MAX = 480;
-const GEOAPIFY_MARKER_SIZE = 42;
+// Geoapify's Marker Icon API v2 examples start at 48px; keep to that
+// documented size so the upstream static-map request stays conservative.
+const GEOAPIFY_MARKER_SIZE = 48;
 
 function geoapifyStyle(theme: MapTheme): string {
-  return theme === "light" ? "osm-bright" : "dark-matter";
+  // Stick to styles shown in Geoapify Static Maps examples. `dark-matter` is a
+  // tile style, but the production Static Maps endpoint rejected it with 400s.
+  return theme === "light" ? "osm-bright" : "osm-bright-grey";
 }
 
 /**
