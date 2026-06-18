@@ -163,18 +163,20 @@ export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string):
   const accent = params.accent ?? palette.accent;
   const from = `${params.from.lng},${params.from.lat}`;
   const to = `${params.to.lng},${params.to.lat}`;
+  const sage = `%23${palette.sage}`;
+  const markerAccent = `%23${accent}`;
   const marker =
-    `lonlat:${from};color:#${palette.sage};size:${GEOAPIFY_MARKER_SIZE}` +
-    `|lonlat:${to};color:#${accent};size:${GEOAPIFY_MARKER_SIZE}`;
-  const qs = new URLSearchParams({
-    style: geoapifyStyle(params.theme),
-    width: String(params.width),
-    height: String(params.height),
-    scaleFactor: "2",
-    marker,
-    apiKey,
-  });
-  return `https://maps.geoapify.com/v1/staticmap?${qs.toString()}`;
+    `lonlat:${from};color:${sage};size:${GEOAPIFY_MARKER_SIZE}` +
+    `|lonlat:${to};color:${markerAccent};size:${GEOAPIFY_MARKER_SIZE}`;
+  const qs = [
+    `style=${encodeURIComponent(geoapifyStyle(params.theme))}`,
+    `width=${params.width}`,
+    `height=${params.height}`,
+    "scaleFactor=2",
+    `marker=${marker}`,
+    `apiKey=${encodeURIComponent(apiKey)}`,
+  ].join("&");
+  return `https://maps.geoapify.com/v1/staticmap?${qs}`;
 }
 
 function normalizeGeoapifyApiKey(raw: string | null): string | null {
