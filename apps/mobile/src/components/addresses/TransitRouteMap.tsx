@@ -12,12 +12,12 @@ import {
 
 /**
  * Real route map for the move-in-transit banner (Addresses tab) — the chosen
- * mobile surface for the Google Static Maps upgrade. Replaces nothing
+ * mobile surface for the Geoapify static map upgrade. Replaces nothing
  * destructively: it renders ABOVE the banner's existing stylized
  * origin→destination dashed route, which remains as the graceful fallback.
  *
  * The PNG comes from the web app's authenticated proxy (/api/maps/static —
- * GOOGLE_MAPS_API_KEY never ships to the client) via the app's API base URL
+ * GEOAPIFY_API_KEY never ships to the client) via the app's API base URL
  * with the same Bearer token the ApiClient uses. Old home pin is sage, new
  * home pin + geodesic route use the plan accent (theme.colors.primary is
  * already per-plan via applyPlanPalette), and the basemap follows the
@@ -53,10 +53,10 @@ export function TransitRouteMap({
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  // Tier ladder: try the rich Google route map first; on ANY failure (incl. the
+  // Tier ladder: try the full Geoapify route map first; on ANY failure (incl. the
   // realMap 403 for Free/Individual) fall back to the free OSM "preview" map,
-  // and only then to the stylized banner. So Family+ sees Google, everyone else
-  // still sees a real OSM map — no client-side entitlement check needed.
+  // and only then to the stylized banner. Both tiers are served by Geoapify —
+  // no client-side entitlement check needed.
   const [tier, setTier] = useState<"full" | "preview">("full");
 
   const coords = useMemo(
@@ -64,7 +64,7 @@ export function TransitRouteMap({
     [activeMove, addresses],
   );
 
-  // A new route resets the ladder so it re-tries Google first.
+  // A new route resets the ladder so it re-tries the full map first.
   useEffect(() => {
     setTier("full");
     setFailed(false);
@@ -121,7 +121,7 @@ export function TransitRouteMap({
         accessibilityIgnoresInvertColors
         onLoad={() => setLoaded(true)}
         onError={() => {
-          // Full Google failed (realMap 403 for free, 502/503, etc.) → drop to
+          // Full map failed (realMap 403 for free, 502/503, etc.) → drop to
           // the free OSM preview; if that also fails, the stylized banner stays.
           setLoaded(false);
           if (tier === "full") setTier("preview");

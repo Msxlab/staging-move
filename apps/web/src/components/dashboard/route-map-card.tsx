@@ -12,9 +12,9 @@ import { useTheme } from "@/components/theme-provider";
  *
  * Now renders a REAL basemap: the card resolves the active plan's origin and
  * destination coordinates (from the already-warm /api/moving + /api/addresses
- * feeds) and loads a Google Static Maps image through the authenticated
- * server-side proxy at /api/maps/static — the GOOGLE_MAPS_API_KEY never
- * reaches the client. Markers: old home in sage, new home in the plan accent
+ * feeds) and loads a Geoapify static map through the authenticated server-side
+ * proxy at /api/maps/static — GEOAPIFY_API_KEY never reaches the client.
+ * Markers: old home in sage, new home in the plan accent
  * (read from the live `--primary` token so Free/Family/Pro tiers match), with
  * a geodesic accent route between them. The image is a static PNG — no
  * pan/zoom animation, so reduced-motion preferences are inherently respected
@@ -243,8 +243,7 @@ function StylizedCanvas() {
   );
 }
 
-// Image request size: matches the canvas geometry (max column width x h-56);
-// the proxy always requests scale=2 from Google, so this stays retina-sharp.
+// Image request size: matches the canvas geometry (max column width x h-56).
 const MAP_IMG_WIDTH = 640;
 const MAP_IMG_HEIGHT = 224;
 
@@ -257,8 +256,8 @@ export function RouteMapCard({
   toCity: string;
   /**
    * `realMap` plan entitlement (Family and up). When false, the card skips the
-   * rich Google map but still tries the free OSM preview source so the route
-   * slot is not permanently a fake/stylized canvas when coordinates exist.
+   * full Geoapify route map but still tries the free OSM preview source so the
+   * route slot is not permanently a fake/stylized canvas when coordinates exist.
    */
   realMap?: boolean;
 }) {

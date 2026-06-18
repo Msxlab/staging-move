@@ -272,8 +272,8 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
   {
     key: "GOOGLE_MAPS_API_KEY",
     classification: "required",
-    label: "Google Maps API Key",
-    description: "Server-side Places/Maps key for address autocomplete + details. Onboarding needs it.",
+    label: "Google Places API Key",
+    description: "Server-side Places key for address autocomplete + details. Onboarding needs it.",
     apps: ["web"],
     isSecret: true,
     maskStrategy: "secret",
@@ -283,11 +283,11 @@ export const EXPECTED_ENV_KEYS: readonly ExpectedEnvKey[] = [
     key: "GEOAPIFY_API_KEY",
     classification: "optional",
     label: "Geoapify API Key",
-    description: "Server-side Geoapify Static Maps key for the OSM route-map preview/fallback source.",
+    description: "Server-side Geoapify Static Maps key for route maps.",
     apps: ["web", "mobile"],
     isSecret: true,
     maskStrategy: "secret",
-    note: "Optional. If unset, route maps degrade gracefully to the existing stylized fallback unless Google Maps can serve the full map.",
+    note: "Optional. If unset, route maps degrade gracefully to the existing stylized fallback.",
   },
 
   // Asset storage (R2/S3) — required for uploads, logos, OCR originals
