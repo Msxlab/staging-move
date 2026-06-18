@@ -18,6 +18,7 @@ Current handoffs:
 - Current catch-up and QA triage: [[handoffs/2026-06-17-212646-product-brain-live-qa-billing-catchup]]
 - Cron live fix: [[handoffs/2026-06-17-224200-ofelia-cron-live-fix]]
 - Cron runbook/typecheck follow-up: [[handoffs/2026-06-17-225300-dokploy-cron-runbook-typecheck]]
+- Live QA and billing readiness pass: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
 
 Verified 2026-06-17 ET / recorded 2026-06-18:
 
@@ -39,6 +40,14 @@ Verified 2026-06-17 ET / recorded 2026-06-18:
   `3 months`/`90 days`/`$3.99` offer text.
 - Mobile OTA production update was published for runtime `sdk55-1.0.0`, update
   group `8303c581-4450-4ce0-9cc0-c78fdde17cf4`.
+- Live public Chromium QA passed for public pages and accessibility; see
+  [[handoffs/2026-06-18-094301-live-qa-billing-readiness]].
+- Logged-in dashboard structural QA found 4 remaining nested `<a><button>`
+  CTA instances around `Plan a Move` and `Add Address`.
+- Two local web test expectations appear stale after accepted UX changes:
+  pricing copy regression still expects `role="tablist"` instead of
+  `role="group"` + `aria-pressed`, and Home Dossier still expects the old
+  nine locked rows instead of the current limited free preview.
 
 Ops cleanup still pending:
 
@@ -69,30 +78,45 @@ Current strategy:
 
 These tasks may require source-code work in a separate session. Do not start them without explicit approval.
 
-1. Finish live QA and billing readiness.
-   - Scope: logged-in dashboard QA, free-tier enforcement network checks, on-device mobile OTA verification, Stripe Dashboard price object verification, App Store / Google Play price verification.
+1. Fix logged-in dashboard CTA nesting.
+   - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+   - Scope: convert the remaining dashboard `<Link><Button>` instances to
+     `<Button asChild><Link>`.
+   - Likely files: `apps/web/src/app/(app)/dashboard/move-command-center.tsx`
+     and `apps/web/src/app/(app)/dashboard/dashboard-client.tsx`.
+   - Approval needed: source changes and affected tests.
+
+2. Clean up stale test expectations from accepted pricing/free-preview UX.
+   - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+   - Scope: update `subscription-copy-regression.test.ts` for
+     `role="group"` + `aria-pressed`; update `home-dossier.test.tsx` for the
+     current limited free preview instead of the old nine locked rows.
+   - Approval needed: test-only changes.
+
+3. Finish remaining live QA and billing readiness.
+   - Scope: dedicated free QA-account dashboard checks, free-tier enforcement network checks, on-device mobile OTA verification, Stripe Dashboard price object verification, App Store / Google Play price verification.
    - Approval needed: use of QA accounts, Stripe/store dashboard read access, and any production config write.
 
-2. AI Briefing experience hardening implementation.
+4. AI Briefing experience hardening implementation.
    - Linked spec: [[product/AI_MOVE_BRIEFING_SPEC]]
    - Experience note: [[experience/AI_MOVE_BRIEFING_EXPERIENCE]]
    - Experiment: [[experiments/EXPERIMENT_BACKLOG]]
    - Scope: visibility, source/limitation explainer, gates, fallback, privacy tests, telemetry, upgrade teaser, reversible AI cohort gate.
    - Approval needed: source changes, AI runtime key/cohort handling, telemetry persistence, billing or upgrade copy.
 
-3. Provider Transition board v1.
+5. Provider Transition board v1.
    - Linked spec: [[product/PROVIDER_TRANSITION_WORKSPACE]]
    - Experience note: [[experience/PROVIDER_TRANSITION_EXPERIENCE]]
    - Scope: read-only board over existing MoveTask lanes/statuses/assignees/progress.
    - Approval needed: source changes, UI copy, any status mutation, any telemetry persistence.
 
-4. Post-move monitoring surface.
+6. Post-move monitoring surface.
    - Linked backlog: [[product/FEATURE_BACKLOG]]
    - Experience note: [[experience/POST_MOVE_MONITORING_EXPERIENCE]]
    - Scope: user-facing view over upcoming billing, contract-end, auto-renewal, and service obligations.
    - Approval needed: source changes, notification changes, telemetry persistence.
 
-5. Proof packet preview.
+7. Proof packet preview.
    - Experience note: [[experience/EXPORT_PROOF_PACKET_EXPERIENCE]]
    - Scope: preview existing export/dossier capabilities as a move proof packet before generating sensitive output.
    - Approval needed: source changes, export copy, Pro-gated billing copy, telemetry persistence.

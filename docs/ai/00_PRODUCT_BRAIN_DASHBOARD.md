@@ -200,6 +200,7 @@ Decision log: [[memory/DECISION_LOG]]
 
 Recent handoffs:
 
+- [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
 - [[handoffs/2026-06-17-225300-dokploy-cron-runbook-typecheck]]
 - [[handoffs/2026-06-17-224200-ofelia-cron-live-fix]]
 - [[handoffs/2026-06-17-212646-product-brain-live-qa-billing-catchup]]
