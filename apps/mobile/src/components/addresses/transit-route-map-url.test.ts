@@ -85,6 +85,13 @@ describe("buildTransitRouteMapPath", () => {
     });
     expect(path).not.toContain("accent=");
   });
+
+  it("appends preview=1 only for the free OSM preview tier", () => {
+    const full = buildTransitRouteMapPath(from, to, { width: 320, height: 112, theme: "dark" });
+    expect(full).not.toContain("preview=");
+    const preview = buildTransitRouteMapPath(from, to, { width: 320, height: 112, theme: "dark", preview: true });
+    expect(preview).toContain("preview=1");
+  });
 });
 
 describe("transit map catalog", () => {

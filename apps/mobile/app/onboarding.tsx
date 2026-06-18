@@ -1959,7 +1959,9 @@ export default function OnboardingScreen() {
                                   <View style={styles.providerMetaRow}>
                                     <View style={[styles.scopeBadge, provider.scope === "FEDERAL" ? styles.scopeFederal : styles.scopeState]}>
                                       <Text style={[styles.scopeText, provider.scope === "FEDERAL" ? styles.scopeFederalText : styles.scopeStateText]}>
-                                        {provider.scope === "FEDERAL" ? t("onboarding.scopeFederal") : (provider.states || []).join(", ")}
+                                        {provider.scope === "FEDERAL"
+                                          ? t((provider.category || "").toUpperCase().startsWith("GOVERNMENT") ? "onboarding.scopeFederal" : "providers.scopeNationwide")
+                                          : (provider.states || []).join(", ")}
                                       </Text>
                                     </View>
                                     {bd?.monthlyCost ? (

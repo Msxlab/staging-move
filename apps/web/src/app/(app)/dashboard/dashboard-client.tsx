@@ -869,10 +869,11 @@ export default function DashboardClient({
           <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-6 text-center">
             <Truck className="h-10 w-10 mx-auto text-foreground/40 mb-2" />
             <p className="text-sm text-foreground/40 mb-3">{td("moving_noPlan")}</p>
-            <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
-              <button className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">
-                {isPremium ? td("moving_planMove") : td("commandCenter_freeCta")}
-              </button>
+            <Link
+              href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+              className="inline-flex items-center px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {isPremium ? td("moving_planMove") : td("commandCenter_freeCta")}
             </Link>
           </div>
         ) : null;
@@ -1124,20 +1125,22 @@ export default function DashboardClient({
           >
             <SlidersHorizontal className="h-4 w-4" /> {td("customize")}
           </button>
-          <Link href="/addresses/new">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">
-              <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
-            </button>
+          <Link
+            href="/addresses/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
           </Link>
           {/* Free users can't create a MovingPlan — route the move CTA to the
               upgrade path instead of /moving/new (which 403s for them). */}
           {/* Primary CTA wears the PLAN ACCENT (bg-primary), not the always-cool
               tone-orange token — so Pro renders honey, Free renders pink, etc.,
               matching the sibling primary-button convention. */}
-          <Link href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition">
-              <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}
-            </button>
+          <Link
+            href={isPremium ? "/moving/new" : "/settings/subscription?returnTo=%2Fdashboard"}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Truck className="h-4 w-4" /> {isPremium ? td("planMoveBtn") : td("commandCenter_freeCta")}
           </Link>
         </div>
       </div>

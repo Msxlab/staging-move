@@ -160,6 +160,45 @@ export function buildStaticMapUrl(params: StaticMapParams, apiKey: string): stri
   return `${STATIC_MAPS_BASE_URL}?${search.toString()}`;
 }
 
+// ── Free OSM "preview" source (Geoapify) ────────────────────────────────────
+// The rich Google route map above stays a Family+ feature (realMap). Free users
+// get a lighter move-preview map from Geoapify's OSM static API; with caching
+// its per-request cost is ~0, so the preview is NOT plan-gated — every plan sees
+// a real map. The key (GEOAPIFY_API_KEY) lives in runtime config and never
+// reaches the client (the PNG is streamed, same as the Google path).
+const PREVIEW_SIZE_MAX = 480;
+
+function geoapifyStyle(theme: MapTheme): string {
+  return theme === "light" ? "osm-bright" : "dark-matter";
+}
+
+/**
+ * Builds the Geoapify static-map URL. No center/zoom → Geoapify auto-fits to the
+ * two markers + the route line. Geoapify expects literal | ; : , separators and
+ * %23-encoded hex colors, so the query is assembled by hand (URLSearchParams
+ * would over-encode the separators). Exported for tests.
+ */
+export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string): string {
+  const palette = MAP_THEMES[params.theme];
+  const accent = params.accent ?? palette.accent;
+  const from = `${params.from.lng},${params.from.lat}`;
+  const to = `${params.to.lng},${params.to.lat}`;
+  const marker =
+    `lonlat:${from};type:material;color:%23${palette.sage};size:medium` +
+    `|lonlat:${to};type:material;color:%23${accent};size:medium`;
+  const geometry = `polyline:${from},${to};linecolor:%23${accent};linewidth:4`;
+  const qs = [
+    `style=${geoapifyStyle(params.theme)}`,
+    `width=${params.width}`,
+    `height=${params.height}`,
+    `scaleFactor=2`,
+    `marker=${marker}`,
+    `geometry=${geometry}`,
+    `apiKey=${encodeURIComponent(apiKey)}`,
+  ].join("&");
+  return `https://maps.geoapify.com/v1/staticmap?${qs}`;
+}
+
 // ── In-process LRU (key NEVER part of the cache key) ────────────────────────
 const CACHE_MAX_ENTRIES = 64;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -249,14 +288,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!(await requestHasPlanFeature(request, userId, "realMap"))) {
-      return NextResponse.json(
-        { error: "Real route maps require Family or Pro.", code: "REAL_MAP_UPGRADE_REQUIRED" },
-        { status: 403 },
-      );
-    }
-
     const { searchParams } = new URL(request.url);
+    // preview=1 → free OSM (Geoapify) move-preview map (no realMap gate).
+    // default → rich Google route map (Family+ realMap feature).
+    const preview = searchParams.get("preview") === "1";
+
     const from = parseLatLng(searchParams.get("from"));
     const to = parseLatLng(searchParams.get("to"));
     if (!from || !to) {
@@ -266,31 +302,51 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // The rich Google route map stays a Family+ feature; the free preview map is
+    // a ~zero-cost OSM source, so only the non-preview path is realMap-gated.
+    if (!preview && !(await requestHasPlanFeature(request, userId, "realMap"))) {
+      return NextResponse.json(
+        { error: "Real route maps require Family or Pro.", code: "REAL_MAP_UPGRADE_REQUIRED" },
+        { status: 403 },
+      );
+    }
+
     const params: StaticMapParams = {
       from,
       to,
-      width: clampSize(searchParams.get("w"), DEFAULT_WIDTH),
-      height: clampSize(searchParams.get("h"), DEFAULT_HEIGHT),
+      width: clampSize(searchParams.get("w"), preview ? PREVIEW_SIZE_MAX : DEFAULT_WIDTH),
+      height: clampSize(searchParams.get("h"), preview ? 240 : DEFAULT_HEIGHT),
       theme: parseTheme(searchParams.get("theme")),
       accent: parseAccent(searchParams.get("accent")),
     };
+    if (preview) {
+      params.width = Math.min(PREVIEW_SIZE_MAX, params.width);
+      params.height = Math.min(PREVIEW_SIZE_MAX, params.height);
+    }
 
-    // Graceful degradation: no key → 503; clients keep their stylized canvas.
-    const apiKey = await getRuntimeConfigValue("GOOGLE_MAPS_API_KEY");
+    // Source key by tier: preview → GEOAPIFY_API_KEY, full → GOOGLE_MAPS_API_KEY.
+    // Graceful degradation: no key for the chosen source → 503; clients keep
+    // their stylized canvas.
+    const apiKey = await getRuntimeConfigValue(preview ? "GEOAPIFY_API_KEY" : "GOOGLE_MAPS_API_KEY");
     if (!apiKey) {
       return NextResponse.json(
         { error: "Maps are not configured", code: "MAPS_NOT_CONFIGURED" },
         { status: 503 },
       );
     }
+    const upstreamUrl = preview
+      ? buildGeoapifyStaticUrl(params, apiKey)
+      : buildStaticMapUrl(params, apiKey);
 
-    const cacheKey = cacheKeyFor(params);
+    // Cache is namespaced by source so a preview (OSM) and a full (Google) map
+    // for the same coords/size never collide.
+    const cacheKey = `${preview ? "geoapify" : "google"}|${cacheKeyFor(params)}`;
     const cached = cacheGet(cacheKey);
     if (cached) {
       return imageResponse(cached, "HIT");
     }
 
-    const upstream = await fetch(buildStaticMapUrl(params, apiKey), { cache: "no-store" });
+    const upstream = await fetch(upstreamUrl, { cache: "no-store" });
     if (!upstream.ok) {
       // Never forward the upstream body — error text is useless to clients
       // and this guarantees nothing key-adjacent can leak through the proxy.

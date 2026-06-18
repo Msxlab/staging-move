@@ -888,7 +888,9 @@ export default function NewServiceScreen() {
                               <View style={styles.providerMeta}>
                                 <View style={[styles.scopeBadge, provider.scope === "FEDERAL" ? styles.scopeFederal : styles.scopeState]}>
                                   <Text style={[styles.scopeText, provider.scope === "FEDERAL" ? styles.scopeFederalText : styles.scopeStateText]}>
-                                    {provider.scope === "FEDERAL" ? t("providers.scopeFederal") : (provider.states || []).join(", ")}
+                                    {provider.scope === "FEDERAL"
+                                      ? t((provider.category || "").toUpperCase().startsWith("GOVERNMENT") ? "providers.scopeFederal" : "providers.scopeNationwide")
+                                      : (provider.states || []).join(", ")}
                                   </Text>
                                 </View>
                                 {provider.website && (

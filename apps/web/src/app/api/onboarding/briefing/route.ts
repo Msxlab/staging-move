@@ -7,7 +7,7 @@ import { scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
 import { getRequestEntitlement } from "@/lib/request-entitlements";
-import { getMergedDisplayCategoryLabel, getEssentialSetupCategories, type UserProfile } from "@/lib/recommendation-engine";
+import { getMergedDisplayCategoryKey, getMergedDisplayCategoryLabel, getEssentialSetupCategories, type UserProfile } from "@/lib/recommendation-engine";
 import { recordIntegrationOutcome } from "@/lib/integration-telemetry";
 import {
   buildBriefingSignals,
@@ -278,9 +278,19 @@ export async function POST(request: NextRequest) {
   // { category, label } pairs, de-duped by merged display label, CRITICAL ahead
   // of IMPORTANT. The category KEY rides along so each generated action carries a
   // `{type:'category'}` deep-link. buildBriefingSignals slices to the top 6.
+  // A merged display group (e.g. "Financial") counts as handled once the user
+  // owns ANY fine-grained key in it — so adding a bank closes the whole "Set up
+  // financial" suggestion and the next briefing surfaces the next gap, instead of
+  // the same label reappearing because a sibling key (e.g. auto insurance) is
+  // still technically pending. (getEssentialSetupCategories only skips the EXACT
+  // owned key; this closes the whole display group the user already touched.)
+  const ownedMergedKeys = new Set<string>();
+  for (const c of ownedCategories) ownedMergedKeys.add(getMergedDisplayCategoryKey(c));
+
   const seenLabels = new Set<string>();
   const missingCritical: Array<{ category: string; label: string }> = [];
   for (const cat of [...critical, ...important]) {
+    if (ownedMergedKeys.has(getMergedDisplayCategoryKey(cat))) continue;
     const label = getMergedDisplayCategoryLabel(cat);
     if (seenLabels.has(label)) continue;
     seenLabels.add(label);

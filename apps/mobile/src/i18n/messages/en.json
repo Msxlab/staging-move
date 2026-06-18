@@ -427,6 +427,7 @@
     "manualTrackingCaveat": "Manual tracking only; confirm with the official provider.",
     "manualTrackingOnly": "Manual tracking only",
     "scopeFederal": "Federal",
+    "scopeNationwide": "Nationwide",
     "emptyCategory": "Nothing in this category",
     "searchA11y": "Search providers",
     "searchHint": "Filters providers by name, description, or tags",

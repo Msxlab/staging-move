@@ -776,7 +776,7 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
     code: "DOSSIER_UPGRADE_REQUIRED",
   } as HomeDossierResponse;
 
-  it("renders the nine locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
+  it("renders the four curated locked insight rows + lock glyphs + /pricing CTA (no sections in payload)", () => {
     const markup = renderToStaticMarkup(<HomeDossierCard data={gated} />);
 
     // Card chrome (serif dossier title) + pitch
@@ -785,17 +785,20 @@ describe("HomeDossierCard — plan-gate teaser rendering", () => {
       "Nine sourced insights about your next home — from FEMA, HUD, EPA, NCES, NLR, and National Weather Service data.",
     );
 
-    // The nine insight rows as locked line-items
+    // The teaser shows the 4 highest-signal rows as a curated preview — not a
+    // wall of 9 near-identical locks (the CTA conveys the full report has more).
     expect(markup).toContain("Flood zone");
     expect(markup).toContain("School district");
     expect(markup).toContain("Moving-day weather");
     expect(markup).toContain("Natural hazard profile");
-    expect(markup).toContain("Radon");
-    expect(markup).toContain("Drinking water");
-    expect(markup).toContain("Air quality");
-    expect(markup).toContain("Housing context");
-    expect(markup).toContain("EV charging nearby");
-    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(9);
+    expect(markup.match(/data-lucide="lock"/g)).toHaveLength(4);
+
+    // The remaining insights are summarized by the CTA, not listed as more locks.
+    expect(markup).not.toContain("Radon");
+    expect(markup).not.toContain("Drinking water");
+    expect(markup).not.toContain("Air quality");
+    expect(markup).not.toContain("Housing context");
+    expect(markup).not.toContain("EV charging nearby");
 
     // CTA → /pricing
     expect(markup).toContain('href="/pricing"');

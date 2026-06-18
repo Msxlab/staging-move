@@ -216,6 +216,47 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("preview=1 serves a free Geoapify map WITHOUT the realMap gate", async () => {
+    mocks.requestHasPlanFeature.mockResolvedValue(false); // free user
+
+    const response = await GET(request(`${VALID_QUERY}&preview=1`));
+
+    expect(response.status).toBe(200);
+    // The preview tier is not plan-gated, so realMap is never even checked.
+    expect(mocks.requestHasPlanFeature).not.toHaveBeenCalled();
+    const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
+    expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    // Geoapify uses lon,lat order: sage origin + accent destination + a route line.
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;type:material;color:#87DDC0");
+    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;type:material");
+    expect(upstreamUrl).toContain("geometry=polyline:-87.6298,41.8781,-97.7431,30.2672");
+    expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
+  });
+
+  it("caps preview size and caches it separately from the full Google map", async () => {
+    await GET(request("from=41.8781,-87.6298&to=30.2672,-97.7431&theme=dark&preview=1&w=640&h=640"));
+    const previewUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
+    expect(previewUrl).toContain("width=480");
+    expect(previewUrl).toContain("height=480");
+
+    // Same coords, full (Google) map → different source namespace → separate fetch.
+    await GET(request(VALID_QUERY));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("maps.googleapis.com");
+  });
+
+  it("preview degrades to 503 when GEOAPIFY_API_KEY is unset", async () => {
+    mocks.getRuntimeConfigValue.mockImplementation((key: string) =>
+      Promise.resolve(key === "GEOAPIFY_API_KEY" ? null : "test-maps-key-123"),
+    );
+
+    const response = await GET(request(`${VALID_QUERY}&preview=1`));
+
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("MAPS_NOT_CONFIGURED");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("502s when the upstream responds OK with a non-image body", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
