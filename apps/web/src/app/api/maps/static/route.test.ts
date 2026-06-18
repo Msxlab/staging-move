@@ -298,7 +298,7 @@ describe("/api/maps/static proxy", () => {
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
     expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
     // Geoapify uses lon,lat order: sage origin + accent destination + a route line.
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;type:material;color:#87DDC0");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;type:material;color:#87DDC0;size:42");
     expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;type:material");
     expect(upstreamUrl).toContain("geometry=polyline:-87.6298,41.8781,-97.7431,30.2672");
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
