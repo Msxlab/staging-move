@@ -240,6 +240,20 @@ docker compose --env-file .env -f docker-compose.dokploy.yml up -d --build
 11. Keep DigitalOcean app and managed DB untouched for 7-14 days as rollback
     evidence.
 
+### Cron config reload note
+
+Dokploy may leave the long-running `locateflow-cron` Ofelia container running
+when only compose configs change. After any change to `docker/ofelia.ini`,
+`docker/locateflow-cron-runner.sh`, or the cron `configs:` mounts, explicitly
+restart or recreate only `locateflow-cron` after the deploy.
+
+Verify the reload in Dokploy logs before considering cron healthy:
+
+- New jobs are registered as `/bin/sh /usr/local/bin/locateflow-cron-runner.sh ...`.
+- The next `blog-publish` minute tick finishes with `failed: false`.
+- At a 5/10-minute boundary, `checkout-cleanup` and `connector-dispatch` also
+  finish with `failed: false`.
+
 ## 5. Post-Cutover QA
 
 Run these checks without exposing secrets or PII:

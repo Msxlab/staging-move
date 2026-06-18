@@ -150,6 +150,10 @@ dc exec web sh
 git pull
 dc up -d --build
 
+# Reload Ofelia after cron config or runner changes
+# (`docker/ofelia.ini`, `docker/locateflow-cron-runner.sh`, or cron configs).
+dc up -d --force-recreate cron
+
 # Manually trigger a cron job
 dc exec web \
   wget -qO- --header="Authorization: Bearer $CRON_SECRET" \
