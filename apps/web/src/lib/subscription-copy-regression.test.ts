@@ -12,7 +12,9 @@ describe("subscription acquisition copy", () => {
 
     expect(source).toContain('type BillingCycle = "yearly" | "monthly"');
     expect(source).toContain('type PaidPlanId = "INDIVIDUAL" | "FAMILY" | "PRO"');
-    expect(source).toContain('role="tablist"');
+    // Billing interval is a segmented toggle (role=group + aria-pressed), not an
+    // ARIA tablist (which needs arrow-key/roving-tabindex it never implemented).
+    expect(source).toContain('role="group"');
     expect(source).toContain("PLAN_FEATURES");
     expect(source).toContain("annualOffer?.publicHeadline");
     expect(source).toContain("monthlyOffer?.publicHeadline");
