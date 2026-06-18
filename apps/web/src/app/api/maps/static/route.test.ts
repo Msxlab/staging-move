@@ -151,11 +151,17 @@ describe("/api/maps/static proxy", () => {
     await GET(request(`${VALID_QUERY}&accent=FF9DB2`));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
+    const rawUpstreamUrl = String(fetchMock.mock.calls[0][0]);
+    const upstreamUrl = decodeURIComponent(rawUpstreamUrl);
     expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
     expect(upstreamUrl).toContain("width=640");
     expect(upstreamUrl).toContain("height=296");
     expect(upstreamUrl).toContain("scaleFactor=2");
+    expect(rawUpstreamUrl).toContain(
+      "marker=lonlat:-87.6298,41.8781;color:%2387DDC0;size:48|lonlat:-97.7431,30.2672;color:%23FF9DB2;size:48",
+    );
+    expect(rawUpstreamUrl).not.toContain("lonlat%3A");
+    expect(rawUpstreamUrl).not.toContain("%3Bcolor");
     // old home pin in sage, new home pin in the plan accent
     expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
     expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#FF9DB2;size:48");
@@ -282,8 +288,11 @@ describe("/api/maps/static proxy", () => {
     expect(response.status).toBe(200);
     // The preview tier is not plan-gated, so realMap is never even checked.
     expect(mocks.requestHasPlanFeature).not.toHaveBeenCalled();
-    const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
+    const rawUpstreamUrl = String(fetchMock.mock.calls[0][0]);
+    const upstreamUrl = decodeURIComponent(rawUpstreamUrl);
     expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    expect(rawUpstreamUrl).toContain("marker=lonlat:-87.6298,41.8781;color:%2387DDC0;size:48");
+    expect(rawUpstreamUrl).not.toContain("lonlat%3A");
     // Geoapify uses lon,lat order: sage origin + accent destination.
     expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
     expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color");
