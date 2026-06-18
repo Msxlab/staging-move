@@ -32,4 +32,27 @@ describe("readBuildInfo", () => {
       environment: "unknown",
     });
   });
+
+  it("uses generated build metadata when env values are missing or unknown", () => {
+    expect(readBuildInfo(
+      "web",
+      {
+        BUILD_COMMIT_SHA: "unknown",
+        BUILD_SOURCE_BRANCH: "",
+        BUILD_CREATED_AT: "unknown",
+        APP_ENV: "production",
+      },
+      {
+        commitSha: "6aa98b415bde3ce21a665268e1e0b268aa3cb4b0",
+        sourceBranch: "main",
+        builtAt: "2026-06-18T18:45:00.000Z",
+      },
+    )).toEqual({
+      service: "web",
+      commitSha: "6aa98b415bde3ce21a665268e1e0b268aa3cb4b0",
+      sourceBranch: "main",
+      builtAt: "2026-06-18T18:45:00.000Z",
+      environment: "production",
+    });
+  });
 });

@@ -79,7 +79,8 @@ COPY --from=deps /workspace/packages/connectors/node_modules   ./packages/connec
 
 COPY . .
 
-RUN pnpm --filter @locateflow/db exec prisma generate \
+RUN node scripts/write-build-info.mjs \
+ && pnpm --filter @locateflow/db exec prisma generate \
  && pnpm --filter @locateflow/admin build
 
 FROM node:22-bookworm-slim AS runner
@@ -97,6 +98,7 @@ ENV SITE_URL=https://locateflow.com
 ENV BUILD_COMMIT_SHA=$BUILD_COMMIT_SHA
 ENV BUILD_SOURCE_BRANCH=$BUILD_SOURCE_BRANCH
 ENV BUILD_CREATED_AT=$BUILD_CREATED_AT
+ENV BUILD_INFO_FILE=/app/.build-info.json
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
@@ -115,6 +117,7 @@ RUN apt-get update \
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/admin/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/admin/.next/static     ./apps/admin/.next/static
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/admin/public           ./apps/admin/public
+COPY --from=builder --chown=nextjs:nodejs /workspace/.build-info.json            ./.build-info.json
 
 USER nextjs
 
