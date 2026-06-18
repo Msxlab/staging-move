@@ -91,7 +91,8 @@ COPY --from=deps /workspace/packages/connectors/node_modules   ./packages/connec
 
 COPY . .
 
-RUN pnpm --filter @locateflow/db exec prisma generate \
+RUN node scripts/write-build-info.mjs \
+ && pnpm --filter @locateflow/db exec prisma generate \
  && pnpm --filter @locateflow/web build
 
 # ── 3) runner: minimal image with standalone output ───────────────
@@ -109,6 +110,7 @@ ENV SITE_URL=https://locateflow.com
 ENV BUILD_COMMIT_SHA=$BUILD_COMMIT_SHA
 ENV BUILD_SOURCE_BRANCH=$BUILD_SOURCE_BRANCH
 ENV BUILD_CREATED_AT=$BUILD_CREATED_AT
+ENV BUILD_INFO_FILE=/app/.build-info.json
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
@@ -130,6 +132,7 @@ RUN apt-get update \
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/static     ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/public           ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /workspace/.build-info.json          ./.build-info.json
 COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/package.json  ./packages/db/package.json
 COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/prisma        ./packages/db/prisma
 COPY --from=builder --chown=nextjs:nodejs /workspace/packages/db/src           ./packages/db/src
