@@ -45,7 +45,7 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { OfflineChip } from "@/components/ui/OfflineChip";
-import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
+import { peekOfflineCache, readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
 import { SkeletonCard, SkeletonBlock } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
@@ -136,14 +136,23 @@ export default function ServicesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
   const planTier = useAuthStore((s) => s.planTier);
-  const [services, setServices] = useState<any[]>([]);
+  const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
+  const initialServicesCache = useMemo(() => peekOfflineCache(SERVICES_CACHE, readServicesCache), []);
+  const initialCachedAddresses = initialServicesCache?.data.addresses as any[] | undefined;
+  const initialSelectedAddressId = useMemo(() => {
+    if (!initialCachedAddresses || initialCachedAddresses.length === 0) return undefined;
+    const requested = requestedAddressId && initialCachedAddresses.find((a: any) => a.id === requestedAddressId);
+    const primary = initialCachedAddresses.find((a: any) => a.isPrimary);
+    return requested?.id || primary?.id || initialCachedAddresses[0]?.id;
+  }, [initialCachedAddresses, requestedAddressId]);
+  const [services, setServices] = useState<any[]>(() => (initialServicesCache?.data.services as any[] | undefined) ?? []);
   const [totalServiceCount, setTotalServiceCount] = useState(0);
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [addresses, setAddresses] = useState<any[]>(() => initialCachedAddresses ?? []);
+  const [loading, setLoading] = useState(() => !initialServicesCache);
   const [refreshing, setRefreshing] = useState(false);
   const [filterCat, setFilterCat] = useState<string | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
-  const [addressFilterInitialized, setAddressFilterInitialized] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(() => initialSelectedAddressId);
+  const [addressFilterInitialized, setAddressFilterInitialized] = useState(() => Boolean(initialServicesCache));
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
   const [editingCost, setEditingCost] = useState<string | null>(null);
   const [costValue, setCostValue] = useState("");
@@ -154,12 +163,10 @@ export default function ServicesScreen() {
   // Offline fallback: true when the live fetch failed but we still have data on
   // screen (from cache or a prior load). Mirrors the dashboard's offline chip.
   const [offline, setOffline] = useState(false);
-  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
-  const hasDataRef = useRef(false);
-  const loadedOnceRef = useRef(false);
+  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(() => initialServicesCache?.updatedAt ?? null);
+  const hasDataRef = useRef(Boolean(initialServicesCache));
+  const loadedOnceRef = useRef(Boolean(initialServicesCache));
   const fetchServicesRef = useRef<() => Promise<boolean>>(async () => false);
-
-  const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
 
   // Cold-start hydration: show the last-known list instantly (no skeleton/error
   // wall) on a no-signal launch, then reconcile against the live fetch below.
@@ -306,7 +313,7 @@ export default function ServicesScreen() {
   }, [addressFilterInitialized, requestedAddressId, selectedAddressId]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!hasDataRef.current) setLoading(true);
     try {
       await fetchServices();
     } finally {

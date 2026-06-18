@@ -25,7 +25,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { OfflineChip } from "@/components/ui/OfflineChip";
-import { readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
+import { peekOfflineCache, readOfflineCache, writeOfflineCache, asArray } from "@/lib/offline-cache";
 import {
   normalizeMovingPlanStatus,
   formatRelativeTime,
@@ -63,16 +63,17 @@ export default function MovingScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const [plans, setPlans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialMovingCache = useMemo(() => peekOfflineCache(MOVING_CACHE, asArray), []);
+  const [plans, setPlans] = useState<any[]>(() => (initialMovingCache?.data as any[] | undefined) ?? []);
+  const [loading, setLoading] = useState(() => !initialMovingCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Offline fallback: true when the live fetch failed but we still have plans on
   // screen (from cache or a prior load). Mirrors the dashboard's offline chip.
   const [offline, setOffline] = useState(false);
-  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(null);
-  const hasDataRef = useRef(false);
-  const loadedOnceRef = useRef(false);
+  const [cacheUpdatedAt, setCacheUpdatedAt] = useState<string | null>(() => initialMovingCache?.updatedAt ?? null);
+  const hasDataRef = useRef(Boolean(initialMovingCache));
+  const loadedOnceRef = useRef(Boolean(initialMovingCache));
   const fetchPlansRef = useRef<() => Promise<boolean>>(async () => false);
 
   // Cold-start hydration: show the last-known plan list instantly (no skeleton/
@@ -119,7 +120,7 @@ export default function MovingScreen() {
   }, []);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!hasDataRef.current) setLoading(true);
     try {
       await fetchPlans();
     } finally {

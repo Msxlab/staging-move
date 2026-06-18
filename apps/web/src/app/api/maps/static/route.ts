@@ -136,6 +136,8 @@ interface StaticMapParams {
   accent: string | null;
 }
 
+type MapSource = "google" | "geoapify";
+
 /** Builds the upstream Google Static Maps URL. Exported for tests. */
 export function buildStaticMapUrl(params: StaticMapParams, apiKey: string): string {
   const palette = MAP_THEMES[params.theme];
@@ -202,6 +204,7 @@ export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string):
 // ── In-process LRU (key NEVER part of the cache key) ────────────────────────
 const CACHE_MAX_ENTRIES = 64;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MAP_UPSTREAM_TIMEOUT_MS = 4_000;
 
 interface CacheEntry {
   body: Buffer;
@@ -220,6 +223,16 @@ function cacheKeyFor(params: StaticMapParams): string {
     params.theme,
     params.accent ?? "default",
   ].join("|");
+}
+
+function runtimeKeyForSource(source: MapSource): "GOOGLE_MAPS_API_KEY" | "GEOAPIFY_API_KEY" {
+  return source === "google" ? "GOOGLE_MAPS_API_KEY" : "GEOAPIFY_API_KEY";
+}
+
+function buildUpstreamUrlForSource(source: MapSource, params: StaticMapParams, apiKey: string): string {
+  return source === "google"
+    ? buildStaticMapUrl(params, apiKey)
+    : buildGeoapifyStaticUrl(params, apiKey);
 }
 
 function cacheGet(key: string): CacheEntry | null {
@@ -261,6 +274,16 @@ function imageResponse(entry: CacheEntry, cacheState: "HIT" | "MISS"): NextRespo
       "X-Maps-Cache": cacheState,
     },
   });
+}
+
+async function fetchMapUpstream(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MAP_UPSTREAM_TIMEOUT_MS);
+  try {
+    return await fetch(url, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -324,55 +347,63 @@ export async function GET(request: NextRequest) {
       params.height = Math.min(PREVIEW_SIZE_MAX, params.height);
     }
 
-    // Source key by tier: preview → GEOAPIFY_API_KEY, full → GOOGLE_MAPS_API_KEY.
-    // Graceful degradation: no key for the chosen source → 503; clients keep
-    // their stylized canvas.
-    const apiKey = await getRuntimeConfigValue(preview ? "GEOAPIFY_API_KEY" : "GOOGLE_MAPS_API_KEY");
-    if (!apiKey) {
+    // Source ladder:
+    // - preview=1 → Geoapify only.
+    // - full map → Google first, then Geoapify fallback when Google is missing,
+    //   blocked, slow, or misconfigured. This keeps Family/Pro from seeing an
+    //   empty map when only GEOAPIFY_API_KEY is configured in production.
+    const sourceAttempts: MapSource[] = preview ? ["geoapify"] : ["google", "geoapify"];
+    let sawConfiguredSource = false;
+
+    for (const source of sourceAttempts) {
+      const apiKey = await getRuntimeConfigValue(runtimeKeyForSource(source));
+      if (!apiKey) continue;
+      sawConfiguredSource = true;
+
+      const cacheKey = `${source}|${cacheKeyFor(params)}`;
+      const cached = cacheGet(cacheKey);
+      if (cached) {
+        return imageResponse(cached, "HIT");
+      }
+
+      try {
+        const upstream = await fetchMapUpstream(buildUpstreamUrlForSource(source, params, apiKey));
+        if (!upstream.ok) {
+          // Never forward the upstream body — error text is useless to clients
+          // and this guarantees nothing key-adjacent can leak through the proxy.
+          console.error(`[maps/static] ${source} upstream returned ${upstream.status}`);
+          continue;
+        }
+
+        const contentType = upstream.headers.get("content-type") ?? "";
+        if (!contentType.startsWith("image/")) {
+          console.error(`[maps/static] ${source} upstream returned non-image content-type: ${contentType}`);
+          continue;
+        }
+
+        const entry: CacheEntry = {
+          body: Buffer.from(await upstream.arrayBuffer()),
+          contentType,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        };
+        cacheSet(cacheKey, entry);
+        return imageResponse(entry, "MISS");
+      } catch (error) {
+        console.error(`[maps/static] ${source} upstream failed:`, error);
+      }
+    }
+
+    if (!sawConfiguredSource) {
       return NextResponse.json(
         { error: "Maps are not configured", code: "MAPS_NOT_CONFIGURED" },
         { status: 503 },
       );
     }
-    const upstreamUrl = preview
-      ? buildGeoapifyStaticUrl(params, apiKey)
-      : buildStaticMapUrl(params, apiKey);
 
-    // Cache is namespaced by source so a preview (OSM) and a full (Google) map
-    // for the same coords/size never collide.
-    const cacheKey = `${preview ? "geoapify" : "google"}|${cacheKeyFor(params)}`;
-    const cached = cacheGet(cacheKey);
-    if (cached) {
-      return imageResponse(cached, "HIT");
-    }
-
-    const upstream = await fetch(upstreamUrl, { cache: "no-store" });
-    if (!upstream.ok) {
-      // Never forward the upstream body — error text is useless to clients
-      // and this guarantees nothing key-adjacent can leak through the proxy.
-      console.error(`[maps/static] upstream returned ${upstream.status}`);
-      return NextResponse.json(
-        { error: "Map image unavailable", code: "MAPS_UPSTREAM_ERROR" },
-        { status: 502 },
-      );
-    }
-
-    const contentType = upstream.headers.get("content-type") ?? "";
-    if (!contentType.startsWith("image/")) {
-      console.error(`[maps/static] upstream returned non-image content-type: ${contentType}`);
-      return NextResponse.json(
-        { error: "Map image unavailable", code: "MAPS_UPSTREAM_ERROR" },
-        { status: 502 },
-      );
-    }
-
-    const entry: CacheEntry = {
-      body: Buffer.from(await upstream.arrayBuffer()),
-      contentType,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    };
-    cacheSet(cacheKey, entry);
-    return imageResponse(entry, "MISS");
+    return NextResponse.json(
+      { error: "Map image unavailable", code: "MAPS_UPSTREAM_ERROR" },
+      { status: 502 },
+    );
   } catch (error) {
     console.error("[maps/static] failed:", error);
     return NextResponse.json(
