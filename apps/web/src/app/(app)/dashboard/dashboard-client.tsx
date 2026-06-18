@@ -692,8 +692,8 @@ export default function DashboardClient({
                 <Sparkles className="h-4 w-4 text-destructive" />
                 <h3 className="text-sm font-bold text-foreground">{td("widget_nextCritical")}</h3>
               </div>
-              <Link href="/providers">
-                <button className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("browseAll")}</button>
+              <Link href="/providers" className="text-[10px] text-foreground/40 hover:text-foreground transition">
+                {td("browseAll")}
               </Link>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -733,7 +733,7 @@ export default function DashboardClient({
                 <Home className="h-4 w-4 text-tone-orange-fg" />
                 <h3 className="text-sm font-semibold text-foreground">{td("widget_spending")}</h3>
               </div>
-              <Link href="/addresses"><button className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</button></Link>
+              <Link href="/addresses" className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</Link>
             </div>
             <div className="px-5 pb-5 space-y-2">
               {addresses.map((addr) => {
@@ -848,20 +848,27 @@ export default function DashboardClient({
                     <span className="text-xs text-muted-foreground">~{checklist.nextAction.estimatedMinutes} {td("moving_minute")}</span>
                   )}
                 </div>
-                <Link href="/services">
-                  <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap">
-                    {t("doIt")} <ArrowRight className="h-3 w-3" />
-                  </button>
+                <Link
+                  href="/services"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:opacity-90 transition whitespace-nowrap"
+                >
+                  {t("doIt")} <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             )}
 
             <div className="flex gap-2">
-              <Link href={`/moving/plan/${stats.activePlan.id}`} className="flex-1">
-                <button className="w-full py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">{td("moving_viewPlan")}</button>
+              <Link
+                href={`/moving/plan/${stats.activePlan.id}`}
+                className="flex-1 w-full py-2 rounded-xl border border-border text-center text-sm text-muted-foreground hover:bg-foreground/5 transition"
+              >
+                {td("moving_viewPlan")}
               </Link>
-              <Link href="/services" className="flex-1">
-                <button className="w-full py-2 rounded-xl border border-tone-orange-br bg-tone-orange-bg text-sm text-tone-orange-fg hover:bg-tone-orange-bg transition">{td("moving_checklist")}</button>
+              <Link
+                href="/services"
+                className="flex-1 w-full py-2 rounded-xl border border-tone-orange-br bg-tone-orange-bg text-center text-sm text-tone-orange-fg hover:bg-tone-orange-bg transition"
+              >
+                {td("moving_checklist")}
               </Link>
             </div>
           </div>
@@ -911,7 +918,7 @@ export default function DashboardClient({
                 <Calendar className="h-4 w-4 text-tone-cyan-fg" />
                 <h3 className="text-sm font-semibold text-foreground">{td("section_recent")}</h3>
               </div>
-              <Link href="/services"><button className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</button></Link>
+              <Link href="/services" className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</Link>
             </div>
             <div className="px-5 pb-5 space-y-1.5">
               {recentServices.map((svc: any) => (
@@ -927,10 +934,12 @@ export default function DashboardClient({
                     {(svc.monthlyCost || 0) > 0 && (
                       <span className="text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}{cycleLabel(svc.billingCycle)}</span>
                     )}
-                    <Link href={`/services/${svc.id}`}>
-                      <button className="p-1 rounded-md text-muted-foreground hover:text-tone-orange-fg hover:bg-tone-orange-bg transition opacity-0 group-hover:opacity-100" aria-label={td("recent_editService")}>
-                        <Edit className="h-3 w-3" />
-                      </button>
+                    <Link
+                      href={`/services/${svc.id}`}
+                      className="p-1 rounded-md text-muted-foreground hover:text-tone-orange-fg hover:bg-tone-orange-bg transition opacity-0 group-hover:opacity-100"
+                      aria-label={td("recent_editService")}
+                    >
+                      <Edit className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>

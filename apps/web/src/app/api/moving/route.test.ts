@@ -48,18 +48,35 @@ vi.mock("@/lib/shared-encryption", () => ({
   encrypt: vi.fn((value: string) => `enc:${value}`),
 }));
 
+vi.mock("@/lib/census-geocoder", () => ({
+  geocodeFallbackForPersist: vi.fn(),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireAppMutationUser } from "@/lib/api-gates";
 import { canCreateMovingPlan, canCreateMovingDestinationAddress, getPlanForLimitScope } from "@/lib/plan-limits";
+import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { POST } from "./route";
 
 const requireAppMutationUserMock = requireAppMutationUser as unknown as Mock;
 const canCreateMovingPlanMock = canCreateMovingPlan as unknown as Mock;
 const canCreateMovingDestinationAddressMock = canCreateMovingDestinationAddress as unknown as Mock;
 const getPlanForLimitScopeMock = getPlanForLimitScope as unknown as Mock;
+const geocodeFallbackForPersistMock = geocodeFallbackForPersist as unknown as Mock;
 const movingPlanCountMock = prisma.movingPlan.count as unknown as Mock;
 const addressFindUniqueMock = prisma.address.findUnique as unknown as Mock;
 const transactionMock = prisma.$transaction as unknown as Mock;
+
+const originAddress = {
+  id: "addr-1",
+  userId: "user-1",
+  workspaceId: null,
+  deletedAt: null,
+  street: "100 W Madison St",
+  city: "Chicago",
+  state: "IL",
+  zip: "60602",
+};
 
 function movingRequest() {
   return POST(
@@ -75,6 +92,43 @@ function movingRequest() {
   );
 }
 
+function inlineDestinationRequest(destinationAddress: Record<string, unknown> = {}) {
+  return POST(
+    new Request("http://localhost/api/moving", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fromAddressId: "addr-1",
+        destinationAddress: {
+          type: "HOME",
+          street: "200 Congress Ave",
+          city: "Austin",
+          state: "tx",
+          zip: "78701",
+          country: "USA",
+          isPrimary: false,
+          ownership: "RENTER",
+          startDate: "2026-06-01",
+          ...destinationAddress,
+        },
+        moveDate: "2026-06-01",
+      }),
+    }) as any,
+  );
+}
+
+function mockSuccessfulTransaction() {
+  const addressCreate = vi.fn(async ({ data }) => ({ id: "addr-new", ...data }));
+  const movingPlanCreate = vi.fn(async ({ data }) => ({ id: "plan-1", ...data }));
+  transactionMock.mockImplementationOnce(async (callback) =>
+    callback({
+      address: { create: addressCreate },
+      movingPlan: { create: movingPlanCreate },
+    }),
+  );
+  return { addressCreate, movingPlanCreate };
+}
+
 describe("moving mutation gates", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -84,6 +138,7 @@ describe("moving mutation gates", () => {
     // Default: Individual plan with no active plans yet (under the limit of 1).
     getPlanForLimitScopeMock.mockResolvedValue({ plan: "INDIVIDUAL" });
     movingPlanCountMock.mockResolvedValue(0);
+    geocodeFallbackForPersistMock.mockResolvedValue(null);
   });
 
   it.each([
@@ -195,6 +250,61 @@ describe("moving mutation gates", () => {
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body.upgradeRequired).toBe("CONCURRENT_PLAN_LIMIT");
+    });
+  });
+
+  describe("inline destination geocoding", () => {
+    it("geocodes an inline destination address before persisting it for route maps and dossier signals", async () => {
+      addressFindUniqueMock.mockResolvedValueOnce(originAddress);
+      geocodeFallbackForPersistMock.mockResolvedValueOnce({ latitude: 30.2672, longitude: -97.7431 });
+      const { addressCreate, movingPlanCreate } = mockSuccessfulTransaction();
+
+      const response = await inlineDestinationRequest();
+      const body = await response.json();
+
+      expect(response.status).toBe(201);
+      expect(body.destinationAddressId).toBe("addr-new");
+      expect(geocodeFallbackForPersistMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          street: "200 Congress Ave",
+          city: "Austin",
+          state: "TX",
+          zip: "78701",
+        }),
+      );
+      expect(addressCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          street: "200 Congress Ave",
+          state: "TX",
+          latitude: 30.2672,
+          longitude: -97.7431,
+          userId: "user-1",
+        }),
+      });
+      expect(movingPlanCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          fromAddressId: "addr-1",
+          toAddressId: "addr-new",
+        }),
+      });
+    });
+
+    it("preserves Places-provided coordinates when the geocode fallback no-ops", async () => {
+      addressFindUniqueMock.mockResolvedValueOnce(originAddress);
+      const { addressCreate } = mockSuccessfulTransaction();
+
+      const response = await inlineDestinationRequest({
+        latitude: 40.7128,
+        longitude: -74.006,
+      });
+
+      expect(response.status).toBe(201);
+      expect(addressCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          latitude: 40.7128,
+          longitude: -74.006,
+        }),
+      });
     });
   });
 });

@@ -6,6 +6,7 @@ import { movingPlanSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateMovingDestinationAddress, canCreateMovingPlan, getPlanForLimitScope } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
+import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 import { MOVING_PLAN_STATUS, normalizeMovingPlanStatus, planFeatures } from "@locateflow/shared";
 import {
@@ -42,8 +43,8 @@ export async function GET(request: NextRequest) {
     const plans = await prisma.movingPlan.findMany({
       where: scopedRecordWhere(scope, { deletedAt: null }, { childSelfOnly: true }),
       include: {
-        fromAddress: { select: { street: true, city: true, state: true, zip: true } },
-        toAddress: { select: { street: true, city: true, state: true, zip: true } },
+        fromAddress: { select: { street: true, city: true, state: true, zip: true, latitude: true, longitude: true } },
+        toAddress: { select: { street: true, city: true, state: true, zip: true, latitude: true, longitude: true } },
       },
       orderBy: { moveDate: "desc" },
     });
@@ -176,6 +177,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const geocodedDestination = validated.destinationAddress
+      ? await geocodeFallbackForPersist({
+        ...validated.destinationAddress,
+        state: normalizeMovingState(validated.destinationAddress.state),
+      })
+      : null;
+
     const { plan, destinationAddressId } = await prisma.$transaction(async (tx: any) => {
       let destinationAddressId = validated.toAddressId;
 
@@ -183,6 +191,7 @@ export async function POST(request: NextRequest) {
         const destinationAddress = await tx.address.create({
           data: {
             ...validated.destinationAddress,
+            ...(geocodedDestination ?? {}),
             state: normalizeMovingState(validated.destinationAddress.state),
             formattedAddress: validated.destinationAddress.formattedAddress
               ? encrypt(validated.destinationAddress.formattedAddress)
