@@ -137,15 +137,24 @@ export function UpNext({
     setTasks(open);
   }, [planId]);
 
+  // Track the plan we last fetched for, so a background refetch (fetchOpen
+  // identity change) on the SAME plan does stale-while-revalidate — it keeps the
+  // current list on screen instead of blanking to null and popping back in.
+  const lastFetchedPlanIdRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!planId) {
         if (!cancelled) setTasks(null);
+        lastFetchedPlanIdRef.current = null;
         return;
       }
-      // Reset to loading on plan change so a stale list never flashes.
-      if (!cancelled) setTasks(null);
+      // Only clear when switching to a DIFFERENT plan (so another plan's tasks
+      // never flash); a same-plan refetch keeps the previous list visible.
+      if (!cancelled && lastFetchedPlanIdRef.current !== planId) {
+        setTasks(null);
+      }
+      lastFetchedPlanIdRef.current = planId;
       await fetchOpen();
     })();
     return () => {
