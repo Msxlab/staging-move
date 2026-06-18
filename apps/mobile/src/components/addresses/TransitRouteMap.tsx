@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import { API_URL } from "@/lib/api";
@@ -53,6 +53,7 @@ export function TransitRouteMap({
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const previousUriRef = useRef<string | null>(null);
   // Tier ladder: try the full Geoapify route map first; on ANY failure (incl. the
   // realMap 403 for Free/Individual) fall back to the free OSM "preview" map,
   // and only then to the stylized banner. Both tiers are served by Geoapify —
@@ -63,13 +64,17 @@ export function TransitRouteMap({
     () => resolveTransitRouteCoords(activeMove, addresses),
     [activeMove, addresses],
   );
+  const routeKey = coords
+    ? `${coords.from.lat},${coords.from.lng}->${coords.to.lat},${coords.to.lng}`
+    : null;
 
   // A new route resets the ladder so it re-tries the full map first.
   useEffect(() => {
     setTier("full");
     setFailed(false);
     setLoaded(false);
-  }, [coords]);
+    previousUriRef.current = null;
+  }, [routeKey]);
 
   useEffect(() => {
     let alive = true;
@@ -99,7 +104,15 @@ export function TransitRouteMap({
   }, [coords, windowWidth, resolvedScheme, theme.colors.primary, tier]);
 
   useEffect(() => {
-    setLoaded(false);
+    if (!uri) {
+      previousUriRef.current = null;
+      setLoaded(false);
+      return;
+    }
+    if (previousUriRef.current !== uri) {
+      previousUriRef.current = uri;
+      setLoaded(false);
+    }
   }, [uri]);
 
   // Graceful fallback: the banner's stylized dashed route stays as-is.
