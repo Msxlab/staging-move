@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Linking,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,6 +29,8 @@ import {
   UserPlus,
   AlertTriangle,
   ChevronRight,
+  Mailbox,
+  ExternalLink,
 } from "lucide-react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -44,10 +47,10 @@ import { TransitRouteMap } from "@/components/addresses/TransitRouteMap";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { hapticSuccess, hapticError, hapticWarning, hapticLight } from "@/lib/haptics";
 import { asObject } from "@/lib/offline-cache";
 import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
-import { formatDateOnlyUtc, getMoveCountdown, normalizeMovingPlanStatus } from "@locateflow/shared";
+import { formatDateOnlyUtc, getMoveCountdown, normalizeMovingPlanStatus, USPS_MOVERS_GUIDE_URL } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
   PLANNING: "neutral",
@@ -565,6 +568,64 @@ export default function MovingDetailScreen() {
           fromCity={plan.fromAddress?.city ?? ""}
           toCity={plan.toAddress?.city ?? ""}
         />
+
+        {/* USPS mail forwarding — prominent, hardcoded, official-only link.
+            Opens the IMMUTABLE USPS_MOVERS_GUIDE_URL in the OS browser (never an
+            in-app WebView, no redirect, no interpolation). The destination host
+            is shown in plain sight so the target is verifiable (anti-phishing). */}
+        {(plan.status === "PLANNING" || plan.status === "IN_PROGRESS") && (
+          <Card variant="default" style={{ marginTop: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  backgroundColor: theme.colors.primaryFaded,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Mailbox size={16} color={theme.colors.primary} />
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: "700", color: theme.colors.text }}>
+                {t("moving.uspsTitle", { defaultValue: "USPS mail forwarding" })}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12.5, lineHeight: 18, color: theme.colors.textSecondary }}>
+              {t("moving.uspsBody", {
+                defaultValue:
+                  "Forward your mail to your new address — best done about 2 weeks before you move. You'll finish on the official USPS site, which charges a small one-time identity-verification fee. LocateFlow never collects it.",
+              })}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                hapticLight();
+                void Linking.openURL(USPS_MOVERS_GUIDE_URL).catch(() => {});
+              }}
+              accessibilityRole="link"
+              accessibilityLabel={t("moving.uspsCta", { defaultValue: "Open the official USPS site" })}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: theme.colors.primary,
+                borderRadius: 12,
+                paddingVertical: 12,
+                marginTop: 12,
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#fff" }}>
+                {t("moving.uspsCta", { defaultValue: "Open the official USPS site" })}
+              </Text>
+              <ExternalLink size={15} color="#fff" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 11, color: theme.colors.textTertiary, textAlign: "center", marginTop: 6 }}>
+              moversguide.usps.com
+            </Text>
+          </Card>
+        )}
 
         {/* Move-focused: what's set up at the new place vs still tied to the old one */}
         {moveAccounts && (moveAccounts.atOld.length > 0 || moveAccounts.atNew.length > 0) && (

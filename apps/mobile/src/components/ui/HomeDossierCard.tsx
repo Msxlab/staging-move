@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import {
   Home,
   Waves,
@@ -20,7 +27,10 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticLight } from "@/lib/haptics";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { CountUp } from "@/components/ui/CountUp";
+import { ListEntrance } from "@/components/ui/ListEntrance";
 import { DossierAmbient } from "@/components/ui/DossierAmbient";
+import { resolveToneColors, type SemanticTone } from "@/lib/semantic-status";
 import { fetchHomeDossier, peekHomeDossierMemoryCache, readHomeDossierCache } from "@/lib/home-dossier-cache";
 import {
   ambientForSection,
@@ -53,6 +63,53 @@ function formatUsd(value: number | null): string {
   const rounded = Math.round(value);
   const grouped = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return `${rounded < 0 ? "-" : ""}$${grouped}`;
+}
+
+/**
+ * Header disc with a one-shot spring scale-in on mount (reduce-motion safe).
+ * Purely decorative — the icon is always mounted; only scale/opacity animate.
+ */
+function HeaderDisc({ style, children }: { style: ViewStyle; children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const scale = useSharedValue(reduceMotion ? 1 : 0.62);
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+  useEffect(() => {
+    if (reduceMotion) return;
+    scale.value = withSpring(1, { damping: 11, stiffness: 150, mass: 0.6 });
+    opacity.value = withTiming(1, { duration: 240 });
+  }, [reduceMotion, scale, opacity]);
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+  return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
+}
+
+/**
+ * Staggered reveal for the dossier's data rows: each truthy child cascades in
+ * (fade + lift) via ListEntrance. React.Children.toArray drops the falsy
+ * conditional rows and keeps indices sequential whatever sections the server
+ * returned. Plays once per mount; data updates don't replay (see ListEntrance).
+ */
+function StaggeredReveal({ children }: { children: React.ReactNode }) {
+  const items = React.Children.toArray(children);
+  return (
+    <>
+      {items.map((child, i) => (
+        <ListEntrance key={i} index={i}>
+          {child}
+        </ListEntrance>
+      ))}
+    </>
+  );
+}
+
+/** AQI number → semantic tone using the standard EPA bands. */
+function aqiTone(aqi: number | null): SemanticTone {
+  if (aqi === null || !Number.isFinite(aqi)) return "neutral";
+  if (aqi <= 50) return "success";
+  if (aqi <= 100) return "warning";
+  return "error";
 }
 
 /**
@@ -235,9 +292,9 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
   return (
     <Card variant="default" style={styles.card}>
       <View style={styles.headerRow}>
-        <View style={styles.headerIcon}>
+        <HeaderDisc style={styles.headerIcon}>
           <Home size={16} color={theme.colors.primary} />
-        </View>
+        </HeaderDisc>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{t("dossier.title")}</Text>
           {dossier.address?.city ? (
@@ -249,6 +306,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
         </View>
       </View>
 
+      <StaggeredReveal>
       {rows.flood && (
         <View style={styles.row}>
           <DossierAmbient
@@ -261,7 +319,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             <View style={styles.rowTop}>
               <Text style={styles.rowLabel}>{t("dossier.floodLabel")}</Text>
               {rows.flood.isHighRisk && (
-                <UiBadge label={t("dossier.floodHighRisk")} variant="warning" mono dot />
+                <UiBadge label={t("dossier.floodHighRisk")} variant="error" mono dot />
               )}
             </View>
             <Text style={styles.rowValue}>
@@ -387,7 +445,15 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             <Text style={styles.rowLabel}>{t("dossier.waterLabel")}</Text>
             <Text style={styles.rowValue}>{rows.water.systemName}</Text>
             {rows.water.violations5y !== null && (
-              <Text style={styles.rowMeta}>
+              <Text
+                style={[
+                  styles.rowMeta,
+                  {
+                    color: resolveToneColors(theme, rows.water.violations5y === 0 ? "success" : "warning").fg,
+                    fontWeight: "600",
+                  },
+                ]}
+              >
                 {rows.water.violations5y === 0
                   ? t("dossier.waterViolationsNone")
                   : t("dossier.waterViolationsSome", { n: rows.water.violations5y })}
@@ -406,7 +472,16 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
           </View>
           <View style={styles.rowBody}>
             <Text style={styles.rowLabel}>{t("dossier.airLabel")}</Text>
-            {!!airHeadline && <Text style={styles.rowValue}>{airHeadline}</Text>}
+            {!!airHeadline && (
+              <Text
+                style={[
+                  styles.rowValue,
+                  aqiTone(air.aqi) !== "neutral" && { color: resolveToneColors(theme, aqiTone(air.aqi)).fg },
+                ]}
+              >
+                {airHeadline}
+              </Text>
+            )}
             <Text style={styles.finePrint}>{t("dossier.airFinePrint")}</Text>
           </View>
         </View>
@@ -441,13 +516,13 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             {housing.medianIncome !== null && (
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>{t("dossier.housingMedianIncome")}</Text>
-                <Text style={styles.statValue}>{formatUsd(housing.medianIncome)}</Text>
+                <CountUp value={housing.medianIncome} format={formatUsd} style={styles.statValue} />
               </View>
             )}
             {housing.lowIncome4Person !== null && (
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>{t("dossier.housingLowIncome4")}</Text>
-                <Text style={styles.statValue}>{formatUsd(housing.lowIncome4Person)}</Text>
+                <CountUp value={housing.lowIncome4Person} format={formatUsd} style={styles.statValue} />
               </View>
             )}
             <Text style={styles.finePrint}>{t("dossier.housingFinePrint")}</Text>
@@ -529,7 +604,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             {neighborhood.medianHomeValue !== null && (
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>{t("dossier.neighborhoodHomeValue")}</Text>
-                <Text style={styles.statValue}>{formatUsd(neighborhood.medianHomeValue)}</Text>
+                <CountUp value={neighborhood.medianHomeValue} format={formatUsd} style={styles.statValue} />
               </View>
             )}
             {neighborhood.medianGrossRent !== null && (
@@ -545,7 +620,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
             {neighborhood.medianHouseholdIncome !== null && (
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>{t("dossier.neighborhoodIncome")}</Text>
-                <Text style={styles.statValue}>{formatUsd(neighborhood.medianHouseholdIncome)}</Text>
+                <CountUp value={neighborhood.medianHouseholdIncome} format={formatUsd} style={styles.statValue} />
               </View>
             )}
             {neighborhood.ownerOccupiedPct !== null && (
@@ -592,6 +667,7 @@ export function HomeDossierCard({ addressId }: HomeDossierCardProps) {
           </View>
         </View>
       )}
+      </StaggeredReveal>
     </Card>
   );
 }
