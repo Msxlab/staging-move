@@ -40,6 +40,7 @@ import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
 import { VehicleCheckCard } from "@/components/ui/VehicleCheckCard";
 import { isVehicleRegistrationTask } from "@/components/ui/VehicleCheckCard.helpers";
 import { StateRulesCard } from "@/components/provider/StateRulesCard";
+import { TransitRouteMap } from "@/components/addresses/TransitRouteMap";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -88,6 +89,9 @@ export default function MovingDetailScreen() {
   // Move-focused "what's still tied to the old address" — services on the from/to
   // addresses, fetched once the plan resolves (recreates the design's Direction C).
   const [moveAccounts, setMoveAccounts] = useState<{ atOld: any[]; atNew: any[] } | null>(null);
+  // Full address list (with lat/lng) for the route-map preview below the from/to
+  // cards. Populated from the same /api/addresses fetch used for moveAccounts.
+  const [addresses, setAddresses] = useState<any[]>([]);
   // Task assignment (Family/Pro). Members + flag come from the move-tasks GET;
   // the Assign picker only shows when assignmentEnabled (2+ active members).
   const [workspaceMembers, setWorkspaceMembers] = useState<
@@ -139,7 +143,9 @@ export default function MovingDetailScreen() {
     (async () => {
       const res = await api.get<any>("/api/addresses", { limit: "200" });
       if (cancelled || res.error || !res.data) return;
-      const byId = new Map<string, any>((res.data.addresses || []).map((a: any) => [a.id, a]));
+      const list = (res.data.addresses || []) as any[];
+      setAddresses(list);
+      const byId = new Map<string, any>(list.map((a: any) => [a.id, a]));
       setMoveAccounts({
         atOld: (byId.get(fromId)?.services as any[]) || [],
         atNew: (byId.get(toId)?.services as any[]) || [],
@@ -551,6 +557,15 @@ export default function MovingDetailScreen() {
           </Card>
         </View>
 
+        {/* Route preview — real OSM/Google map between the from/to addresses.
+            Self-hides if coordinates are missing or the proxy fails (graceful). */}
+        <TransitRouteMap
+          activeMove={plan}
+          addresses={addresses}
+          fromCity={plan.fromAddress?.city ?? ""}
+          toCity={plan.toAddress?.city ?? ""}
+        />
+
         {/* Move-focused: what's set up at the new place vs still tied to the old one */}
         {moveAccounts && (moveAccounts.atOld.length > 0 || moveAccounts.atNew.length > 0) && (
           <View style={{ marginBottom: 4 }}>
@@ -731,13 +746,23 @@ export default function MovingDetailScreen() {
                             <Text style={styles.taskDuePillText}>{dueShort}</Text>
                           </View>
                         ) : null}
-                        <Text style={styles.taskDetailHint}>
-                          {expanded
-                            ? t("moving.hideTaskDetails", { defaultValue: "Hide details" })
-                            : t("moving.showTaskDetails", { defaultValue: "Details" })}
-                        </Text>
+                        <TouchableOpacity
+                          onPress={() => toggleTaskDetails(task.id)}
+                          activeOpacity={0.75}
+                          accessibilityRole="button"
+                          accessibilityLabel={expanded
+                            ? t("moving.hideTaskDetails", { defaultValue: "Hide task details" })
+                            : t("moving.showTaskDetails", { defaultValue: "Show task details" })}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Text style={styles.taskDetailHint}>
+                            {expanded
+                              ? t("moving.hideTaskDetails", { defaultValue: "Hide details" })
+                              : t("moving.showTaskDetails", { defaultValue: "Details" })}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
-                      {expanded && !!task.description && <Text style={styles.taskDescription} numberOfLines={3}>{task.description}</Text>}
+                      {expanded && !!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
                       {expanded && dueLabel && (
                         <Text style={styles.taskDue}>{t("moving.dueDate", { date: dueLabel })}</Text>
                       )}

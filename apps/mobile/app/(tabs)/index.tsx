@@ -825,6 +825,7 @@ export default function DashboardScreen() {
     useCallback(() => {
       if (!loadedOnceRef.current) return undefined;
       void fetchDashboardRef.current();
+      void loadBriefingRef.current();
       return undefined;
     }, []),
   );
@@ -899,33 +900,42 @@ export default function DashboardScreen() {
   //     content when configured content is unavailable.
   //   - Any error (network, timeout, non-2xx) never blocks or disturbs the rest
   //     of the dashboard.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const dismissed = await AsyncStorage.getItem(BRIEFING_CARD_DISMISSED_KEY);
-        if (cancelled || shouldSkipMobileBriefingForInstallDismissal(uxAiBriefingExperienceVariant, dismissed)) return;
-        const res = await api.post<{
-          configured?: boolean;
-          entitled?: boolean;
-          upgradeRequired?: unknown;
-          briefing?: unknown;
-          aiGenerated?: boolean;
-        }>("/api/onboarding/briefing");
-        if (cancelled) return;
-        if (res.error) {
-          setBriefing(fallbackMobileBriefingState(uxAiBriefingExperienceVariant));
-          return;
-        }
-        setBriefing(deriveMobileBriefingState(res.data, uxAiBriefingExperienceVariant));
-      } catch {
+  const loadBriefing = useCallback(async () => {
+    try {
+      const dismissed = await AsyncStorage.getItem(BRIEFING_CARD_DISMISSED_KEY);
+      if (shouldSkipMobileBriefingForInstallDismissal(uxAiBriefingExperienceVariant, dismissed)) return;
+      const res = await api.post<{
+        configured?: boolean;
+        entitled?: boolean;
+        upgradeRequired?: unknown;
+        briefing?: unknown;
+        aiGenerated?: boolean;
+      }>("/api/onboarding/briefing");
+      if (res.error) {
         setBriefing(fallbackMobileBriefingState(uxAiBriefingExperienceVariant));
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+      setBriefing(deriveMobileBriefingState(res.data, uxAiBriefingExperienceVariant));
+    } catch {
+      setBriefing(fallbackMobileBriefingState(uxAiBriefingExperienceVariant));
+    }
   }, [uxAiBriefingExperienceVariant]);
+
+  // Keep a ref so the focus effect (defined earlier) can refetch without
+  // re-subscribing. Mirrors the fetchDashboardRef pattern above.
+  const loadBriefingRef = useRef(loadBriefing);
+  useEffect(() => {
+    loadBriefingRef.current = loadBriefing;
+  }, [loadBriefing]);
+
+  // Mount: first-run AI move briefing. Refetch-on-focus is wired into the
+  // shared useFocusEffect so completing an item elsewhere and returning home
+  // drops it and surfaces the next gap (the server gap-analysis already
+  // excludes owned/saved categories). Per-action "✓ Done" optimistic removal
+  // lives inside MoveBriefingCard (persisted, cap-proof).
+  useEffect(() => {
+    void loadBriefing();
+  }, [loadBriefing]);
 
   const handleDismissBriefing = useCallback(() => {
     setBriefing(null);

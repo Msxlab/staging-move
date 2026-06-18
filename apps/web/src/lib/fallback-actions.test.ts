@@ -80,6 +80,21 @@ describe("resolveFallbackAction", () => {
     expect(a?.label).not.toBe("Open unsafe override");
   });
 
+  it("PINS the USPS url to the official host even when an ENABLED, valid-https DB override points elsewhere", async () => {
+    // Anti-phishing: a valid https override would otherwise win (only the
+    // protocol is checked). The pin forces the immutable official USPS URL.
+    dbMock.prisma.connectorFallbackAction.findUnique.mockResolvedValue({
+      actionKey: "usps:MAIL_FORWARDING:DEEP_LINK",
+      label: "Open update",
+      helperText: "Continue on USPS to submit your request.",
+      urlTemplate: "https://evil.example.com/usps-lookalike",
+      type: "DEEP_LINK",
+      enabled: true,
+    });
+    const a = await resolveFallbackAction("usps:MAIL_FORWARDING:DEEP_LINK", change);
+    expect(a?.url).toBe("https://moversguide.usps.com/");
+  });
+
   it("allows ordinary operator-provided web links without a host allowlist", async () => {
     dbMock.prisma.connectorFallbackAction.findUnique.mockResolvedValue({
       actionKey: "acme:WEB",

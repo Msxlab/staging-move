@@ -186,6 +186,13 @@ export interface ServicePriorityItem {
   tips?: string;
 }
 
+/**
+ * Official USPS Mover's Guide (change-of-address) URL — IMMUTABLE, code-owned
+ * single source of truth. Anti-phishing: the mail-forwarding link MUST always
+ * point at the official USPS site; never build it from config/DB/query/template.
+ */
+export const USPS_MOVERS_GUIDE_URL = "https://moversguide.usps.com/";
+
 export const SERVICE_PRIORITY_MAP: ServicePriorityItem[] = [
   // ── PHASE 0: Before the Move (2+ weeks before) ──
   {
@@ -193,8 +200,8 @@ export const SERVICE_PRIORITY_MAP: ServicePriorityItem[] = [
     description: "Forward your mail to your new address. Do this 2 weeks before moving.",
     phase: 0, daysRelativeToMove: -14, deadlineDays: null, priority: "URGENT", isRequired: true,
     moveTypes: ["PERSONAL", "BUSINESS"], conditions: [],
-    estimatedMinutes: 10, icon: "📬", actionUrl: "https://moversguide.usps.com",
-    tips: "Costs $1.10 online. Forward for 6-12 months. Notify important contacts separately.",
+    estimatedMinutes: 10, icon: "📬", actionUrl: USPS_MOVERS_GUIDE_URL,
+    tips: "Finish on the official USPS site (usps.com), which charges a small one-time identity-verification fee — LocateFlow never collects it. Forward for 6–12 months, and notify important contacts separately.",
   },
   {
     id: "P0_SCHOOL_RECORDS", category: "KIDS_SCHOOL", title: "Request School Transfer Records",
