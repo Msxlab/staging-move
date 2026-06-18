@@ -103,6 +103,27 @@ export async function readOfflineCache<T>(
 }
 
 /**
+ * Prime the in-memory layer from AsyncStorage without returning user data.
+ * Authenticated app bootstrap calls this for hot tab screens so a later
+ * navigation can use `peekOfflineCache()` synchronously and avoid the full
+ * skeleton flash. The eventual screen read still sanitizes the payload.
+ */
+export async function hydrateOfflineCache(name: string): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(keyFor(name));
+    if (!raw) return false;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return false;
+    const envelope = parsed as Record<string, unknown>;
+    if (envelope.v !== ENVELOPE_VERSION || !("data" in envelope)) return false;
+    memoryCache.set(name, parsed as OfflineCacheEnvelope<unknown>);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Clear EVERY offline list cache (best-effort). Called on logout/delete so a
  * signed-out / switched user never sees the previous account's last-known data.
  */

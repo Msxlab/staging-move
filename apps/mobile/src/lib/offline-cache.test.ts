@@ -27,6 +27,7 @@ import {
   asArray,
   asObject,
   clearAllOfflineCaches,
+  hydrateOfflineCache,
   peekOfflineCache,
   readOfflineCache,
   writeOfflineCache,
@@ -100,6 +101,34 @@ describe("offline-cache", () => {
 
     expect(entry?.data).toEqual({ id: "svc_1", providerName: "Water" });
     expect(entry?.updatedAt).toBe("2026-06-18T10:00:00.000Z");
+  });
+
+  it("hydrates the in-memory cache from AsyncStorage without returning data", async () => {
+    const now = "2026-06-18T11:00:00.000Z";
+    storage.set(
+      `${OFFLINE_CACHE_PREFIX}services`,
+      JSON.stringify({ v: 1, updatedAt: now, data: { services: [{ id: "s1" }], addresses: [] } }),
+    );
+
+    await expect(hydrateOfflineCache("services")).resolves.toBe(true);
+    storage.clear();
+
+    const entry = peekOfflineCache("services", (raw) => {
+      if (typeof raw !== "object" || raw === null) return null;
+      const o = raw as Record<string, unknown>;
+      const services = asArray(o.services);
+      const addresses = asArray(o.addresses);
+      return services && addresses ? { services, addresses } : null;
+    });
+    expect(entry?.data).toEqual({ services: [{ id: "s1" }], addresses: [] });
+    expect(entry?.updatedAt).toBe(now);
+  });
+
+  it("returns false when there is nothing valid to hydrate", async () => {
+    storage.set(`${OFFLINE_CACHE_PREFIX}services`, JSON.stringify({ v: 99, data: [] }));
+
+    await expect(hydrateOfflineCache("missing")).resolves.toBe(false);
+    await expect(hydrateOfflineCache("services")).resolves.toBe(false);
   });
 
   it("accepts object payloads and rejects arrays for detail caches", async () => {
