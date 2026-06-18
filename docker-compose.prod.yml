@@ -137,6 +137,9 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    configs:
+      - source: cron_runner
+        target: /usr/local/bin/locateflow-cron-runner.sh
 
   admin:
     build:
@@ -181,6 +184,9 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    configs:
+      - source: cron_runner
+        target: /usr/local/bin/locateflow-cron-runner.sh
 
   caddy:
     image: caddy:2-alpine
@@ -354,6 +360,8 @@ services:
 configs:
   ofelia:
     file: ./docker/ofelia.ini
+  cron_runner:
+    file: ./docker/locateflow-cron-runner.sh
 
 volumes:
   mysql_data:
