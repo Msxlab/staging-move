@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { Sparkles, X, ChevronRight, Lock, ArrowRight } from "lucide-react-native";
+import { Sparkles, X, ChevronRight, Lock, ArrowRight, Check } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -92,6 +92,15 @@ const BRIEFING_NEVER_KEY = "locateflow.moveBriefing.never";
 // user who later upgrades still gets the real briefing despite having
 // dismissed the teaser). Long-press "never" suppresses both, as before.
 const BRIEFING_TEASER_SEEN_KEY = "locateflow.moveBriefing.teaserSeen";
+// Per-action "✓ Done" acknowledgements. Persisted so an action the user marked
+// done stays gone across a focus refetch — even when the server's daily AI cap
+// serves a same-day cached (stale) briefing that still lists it.
+const BRIEFING_ACKED_ACTIONS_KEY = "locateflow.moveBriefing.ackedActions";
+
+/** Stable identity for an action so a "done" mark survives re-parses/refetches. */
+function briefingActionKey(action: ParsedBriefingAction): string {
+  return action.target.kind === "category" ? `category:${action.target.category}` : action.target.kind;
+}
 
 /**
  * First-run "move briefing" card. Renders a plain-English situation summary +
@@ -124,6 +133,46 @@ export function MoveBriefingCard({
   const router = useRouter();
 
   const parsed = useMemo(() => parseBriefing(briefing), [briefing]);
+
+  // Per-action "✓ Done" acknowledgements (persisted). Lets the user explicitly
+  // clear an action that's set up; it then stays hidden across a focus refetch
+  // even if the daily-capped server serves a stale briefing still listing it.
+  const [ackedActions, setAckedActions] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(BRIEFING_ACKED_ACTIONS_KEY);
+        if (cancelled || !raw) return;
+        const arr: unknown = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          setAckedActions(new Set(arr.filter((k): k is string => typeof k === "string")));
+        }
+      } catch {
+        /* fail open — show all actions */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const acknowledgeAction = useCallback((action: ParsedBriefingAction) => {
+    hapticLight();
+    const key = briefingActionKey(action);
+    setAckedActions((current) => {
+      if (current.has(key)) return current;
+      const next = new Set(current);
+      next.add(key);
+      void AsyncStorage.setItem(BRIEFING_ACKED_ACTIONS_KEY, JSON.stringify([...next])).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  const visibleActions = useMemo(
+    () => parsed.actions.filter((a) => !ackedActions.has(briefingActionKey(a))),
+    [parsed.actions, ackedActions],
+  );
 
   // Visibility gating. `null` while we read AsyncStorage (render nothing yet to
   // avoid a flash, then hide-or-show based on the per-stage / never markers).
@@ -295,7 +344,7 @@ export function MoveBriefingCard({
 
   if (visible === null || visible === false) return null;
 
-  const hasActions = parsed.actions.length > 0;
+  const hasActions = visibleActions.length > 0;
 
   // ── Value-first teaser (entitled:false) ──────────────────────
   if (!entitled) {
@@ -409,33 +458,48 @@ export function MoveBriefingCard({
       {/* Tappable, deep-linked next actions. */}
       {hasActions && (
         <View style={styles.actions}>
-          {parsed.actions.map((action, i) => {
+          {visibleActions.map((action, i) => {
             const emoji =
               action.target.kind === "category"
                 ? getMergedDisplayCategoryIcon(action.target.category)
                 : null;
             return (
-              <TouchableOpacity
-                key={i}
+              <View
+                key={briefingActionKey(action)}
                 style={[styles.actionRow, i > 0 && styles.actionRowDivider]}
-                onPress={() => navigate(action)}
-                accessibilityRole="button"
-                accessibilityLabel={action.title}
-                accessibilityHint={action.why}
               >
-                <View style={styles.actionIcon}>
-                  {emoji ? (
-                    <CategoryIcon emoji={emoji} size={16} color={theme.colors.primary} />
-                  ) : (
-                    <Text style={styles.actionIndex}>{i + 1}</Text>
-                  )}
-                </View>
-                <View style={styles.actionText}>
-                  <Text style={styles.actionTitle}>{action.title}</Text>
-                  <Text style={styles.actionWhy}>{action.why}</Text>
-                </View>
-                <ChevronRight size={16} color={theme.colors.textTertiary} />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionMain}
+                  onPress={() => navigate(action)}
+                  accessibilityRole="button"
+                  accessibilityLabel={action.title}
+                  accessibilityHint={action.why}
+                >
+                  <View style={styles.actionIcon}>
+                    {emoji ? (
+                      <CategoryIcon emoji={emoji} size={16} color={theme.colors.primary} />
+                    ) : (
+                      <Text style={styles.actionIndex}>{i + 1}</Text>
+                    )}
+                  </View>
+                  <View style={styles.actionText}>
+                    <Text style={styles.actionTitle}>{action.title}</Text>
+                    <Text style={styles.actionWhy}>{action.why}</Text>
+                  </View>
+                  <ChevronRight size={16} color={theme.colors.textTertiary} />
+                </TouchableOpacity>
+                {/* Explicit "I've done this" — optimistically + persistently
+                    clears the action so it doesn't recur after a refetch. */}
+                <TouchableOpacity
+                  style={styles.actionDone}
+                  onPress={() => acknowledgeAction(action)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.briefingActionDone", "Mark done")}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Check size={16} color={theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -488,6 +552,20 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       gap: 10,
       paddingVertical: 10,
+    },
+    actionMain: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    actionDone: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.primaryFaded ?? "rgba(127,182,232,0.14)",
     },
     actionRowDivider: {
       borderTopWidth: StyleSheet.hairlineWidth,

@@ -13,6 +13,7 @@
  */
 
 import type { CanonicalAddressChange } from "@locateflow/connectors";
+import { USPS_MOVERS_GUIDE_URL } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getGuidedConnectorAction, type GuidedConnectorAction } from "@/lib/guided-connector-actions";
 
@@ -20,6 +21,26 @@ export type FallbackActionType = "DEEP_LINK" | "MAILTO" | "PDF" | "PHONE";
 
 export interface ResolvedFallbackAction extends GuidedConnectorAction {
   type: FallbackActionType;
+}
+
+/**
+ * Action keys whose outbound URL is security-sensitive and MUST be an immutable,
+ * code-owned official URL — never a DB override, never templated. Anti-phishing:
+ * an enabled DB row may still customize the label/helperText, but the URL the
+ * user is actually sent to is always pinned here, so the link can never be
+ * repointed to a spoofed host.
+ */
+const PINNED_ACTION_URLS: Record<string, string> = {
+  "usps:MAIL_FORWARDING:DEEP_LINK": USPS_MOVERS_GUIDE_URL,
+};
+
+function applyPinnedUrl(
+  actionKey: string,
+  action: ResolvedFallbackAction | null,
+): ResolvedFallbackAction | null {
+  const pinned = PINNED_ACTION_URLS[actionKey];
+  if (!action || !pinned) return action;
+  return { ...action, url: pinned };
 }
 
 /** Flatten the canonical change into the `{{path}}` values templates may use. */
@@ -116,11 +137,11 @@ export async function resolveFallbackAction(
         type: normalizeActionType(row.type),
       };
       resolved = finalizeAction(candidate, change) ?? finalizeAction(codeResolved, change);
-      return resolved;
+      return applyPinnedUrl(actionKey, resolved);
     }
   } catch {
     // Best-effort override: keep the in-code default on any DB error.
   }
 
-  return finalizeAction(resolved, change);
+  return applyPinnedUrl(actionKey, finalizeAction(resolved, change));
 }
