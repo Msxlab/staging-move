@@ -39,9 +39,11 @@ describe("resolvePreselectedCategoryKey", () => {
     expect(resolvePreselectedCategoryKey("utility_internet")).toBe("UTILITY_INTERNET");
   });
 
-  it("maps FINANCIAL_* subcategories to the merged FINANCIAL display key", () => {
-    expect(resolvePreselectedCategoryKey("FINANCIAL_BANK")).toBe("FINANCIAL");
-    expect(resolvePreselectedCategoryKey("FINANCIAL_INSURANCE_RENTERS")).toBe("FINANCIAL");
+  it("maps FINANCIAL_* subcategories to their mid-level display buckets", () => {
+    expect(resolvePreselectedCategoryKey("FINANCIAL_BANK")).toBe("FINANCIAL_BANKING");
+    expect(resolvePreselectedCategoryKey("FINANCIAL_INSURANCE_RENTERS")).toBe("FINANCIAL_INSURANCE");
+    expect(resolvePreselectedCategoryKey("FINANCIAL_CREDIT_CARD")).toBe("FINANCIAL_CARDS");
+    expect(resolvePreselectedCategoryKey("FINANCIAL_INSURANCE_HEALTH")).toBe("FINANCIAL_HEALTH");
   });
 
   it("passes unknown values through unchanged (page degrades to an empty filter, never crashes)", () => {
@@ -95,11 +97,15 @@ describe("getCategoryRecommendedProviders", () => {
     expect(out.map((p) => p.id)).toEqual(["isp-confirmed", "isp-recommended", "isp-unscored"]);
   });
 
-  it("matches by merged display category (FINANCIAL_* subcategories group together)", () => {
+  it("matches by merged display category (financial subcategories group into their bucket)", () => {
     const bank = provider({ id: "bank", category: "FINANCIAL_BANK", matchReasons: ["x"] });
+    const fintech = provider({ id: "fintech", category: "FINANCIAL_FINTECH" });
     const renters = provider({ id: "renters", category: "FINANCIAL_INSURANCE_RENTERS" });
-    const out = getCategoryRecommendedProviders([bank, renters, electric], "FINANCIAL");
-    expect(out.map((p) => p.id)).toEqual(["bank", "renters"]);
+    // Banking bucket holds bank + fintech; insurance is now its own bucket.
+    const banking = getCategoryRecommendedProviders([bank, fintech, renters, electric], "FINANCIAL_BANKING");
+    expect(banking.map((p) => p.id)).toEqual(["bank", "fintech"]);
+    const insurance = getCategoryRecommendedProviders([bank, renters, electric], "FINANCIAL_INSURANCE");
+    expect(insurance.map((p) => p.id)).toEqual(["renters"]);
   });
 
   it("caps the panel at the limit", () => {
