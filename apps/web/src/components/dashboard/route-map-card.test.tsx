@@ -4,6 +4,7 @@ import {
   RouteMapCard,
   buildRouteMapSrc,
   hslTripletToHex,
+  nextRouteMapSrcAfterError,
   resolveActiveRouteCoords,
 } from "./route-map-card";
 
@@ -77,6 +78,23 @@ describe("resolveActiveRouteCoords", () => {
     expect(resolveActiveRouteCoords([plan()], [CHI, { id: "addr-to", latitude: Number.NaN, longitude: -97 }])).toBeNull();
   });
 
+  it("falls back to nested moving-plan coordinates when the address feed is incomplete", () => {
+    expect(
+      resolveActiveRouteCoords(
+        [
+          plan({
+            fromAddress: { latitude: 41.8781, longitude: -87.6298 },
+            toAddress: { latitude: 30.2672, longitude: -97.7431 },
+          }),
+        ],
+        [],
+      ),
+    ).toEqual({
+      from: { lat: 41.8781, lng: -87.6298 },
+      to: { lat: 30.2672, lng: -97.7431 },
+    });
+  });
+
   it("tolerates malformed feeds", () => {
     expect(resolveActiveRouteCoords(undefined, [CHI, ATX])).toBeNull();
     expect(resolveActiveRouteCoords([plan()], "nope")).toBeNull();
@@ -119,6 +137,26 @@ describe("buildRouteMapSrc", () => {
     );
     expect(src).toContain("theme=light");
     expect(src).not.toContain("accent=");
+  });
+
+  it("can build the OSM preview fallback URL", () => {
+    const src = buildRouteMapSrc(
+      { lat: 41.8781, lng: -87.6298 },
+      { lat: 30.2672, lng: -97.7431 },
+      { width: 640, height: 224, theme: "dark", accent: "#FF9DB2", preview: true },
+    );
+    expect(src).toContain("preview=1");
+    expect(src).toContain("accent=FF9DB2");
+  });
+});
+
+describe("nextRouteMapSrcAfterError", () => {
+  it("falls back from the full map to the preview map once", () => {
+    const full = "/api/maps/static?from=1%2C2&to=3%2C4";
+    const preview = "/api/maps/static?from=1%2C2&to=3%2C4&preview=1";
+    expect(nextRouteMapSrcAfterError(full, preview)).toBe(preview);
+    expect(nextRouteMapSrcAfterError(preview, preview)).toBeNull();
+    expect(nextRouteMapSrcAfterError(full, null)).toBeNull();
   });
 });
 

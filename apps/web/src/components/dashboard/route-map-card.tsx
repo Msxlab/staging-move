@@ -44,22 +44,28 @@ export function resolveActiveRouteCoords(
   plans: unknown,
   addresses: unknown,
 ): { from: RouteCoord; to: RouteCoord } | null {
-  if (!Array.isArray(plans) || !Array.isArray(addresses)) return null;
+  if (!Array.isArray(plans)) return null;
   const plan =
     plans.find((p: any) => p?.status === "IN_PROGRESS") ??
     plans.find((p: any) => p?.status === "PLANNING") ??
     null;
   if (!plan) return null;
   const byId = new Map<string, any>(
-    addresses.filter((a: any) => a && typeof a.id === "string").map((a: any) => [a.id, a]),
+    Array.isArray(addresses)
+      ? addresses.filter((a: any) => a && typeof a.id === "string").map((a: any) => [a.id, a])
+      : [],
   );
-  const coordFor = (id: unknown): RouteCoord | null => {
-    const address = typeof id === "string" ? byId.get(id) : undefined;
-    if (!address || !isFiniteNumber(address.latitude) || !isFiniteNumber(address.longitude)) return null;
-    return { lat: address.latitude, lng: address.longitude };
+  const coordFromAddress = (address: unknown): RouteCoord | null => {
+    const value = address as { latitude?: unknown; longitude?: unknown } | null;
+    if (!value || !isFiniteNumber(value.latitude) || !isFiniteNumber(value.longitude)) return null;
+    return { lat: value.latitude, lng: value.longitude };
   };
-  const from = coordFor((plan as any).fromAddressId);
-  const to = coordFor((plan as any).toAddressId);
+  const coordFor = (id: unknown, nestedAddress: unknown): RouteCoord | null => {
+    const address = typeof id === "string" ? byId.get(id) : undefined;
+    return coordFromAddress(address) ?? coordFromAddress(nestedAddress);
+  };
+  const from = coordFor((plan as any).fromAddressId, (plan as any).fromAddress);
+  const to = coordFor((plan as any).toAddressId, (plan as any).toAddress);
   return from && to ? { from, to } : null;
 }
 
@@ -97,7 +103,7 @@ export function hslTripletToHex(triplet: string): string | null {
 export function buildRouteMapSrc(
   from: RouteCoord,
   to: RouteCoord,
-  opts: { width: number; height: number; theme: "dark" | "light"; accent?: string | null },
+  opts: { width: number; height: number; theme: "dark" | "light"; accent?: string | null; preview?: boolean },
 ): string {
   const round5 = (v: number) => Math.round(v * 1e5) / 1e5;
   const params = new URLSearchParams({
@@ -108,7 +114,13 @@ export function buildRouteMapSrc(
     theme: opts.theme,
   });
   if (opts.accent) params.set("accent", opts.accent.replace(/^#/, ""));
+  if (opts.preview) params.set("preview", "1");
   return `/api/maps/static?${params.toString()}`;
+}
+
+export function nextRouteMapSrcAfterError(currentSrc: string | null, previewSrc: string | null): string | null {
+  if (currentSrc && previewSrc && currentSrc !== previewSrc) return previewSrc;
+  return null;
 }
 
 /** Teardrop map pin (rotated rounded square), colored via a CSS var string. */
@@ -243,6 +255,7 @@ export function RouteMapCard({
   const { theme } = useTheme();
   const cardRef = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<string | null>(null);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [imgState, setImgState] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
@@ -266,15 +279,22 @@ export function RouteMapCard({
         const accent = cardRef.current
           ? hslTripletToHex(getComputedStyle(cardRef.current).getPropertyValue("--primary"))
           : null;
+        const fullMapSrc = buildRouteMapSrc(coords.from, coords.to, {
+          width: MAP_IMG_WIDTH,
+          height: MAP_IMG_HEIGHT,
+          theme,
+          accent,
+        });
+        const fallbackPreviewSrc = buildRouteMapSrc(coords.from, coords.to, {
+          width: MAP_IMG_WIDTH,
+          height: MAP_IMG_HEIGHT,
+          theme,
+          accent,
+          preview: true,
+        });
         setImgState("loading");
-        setSrc(
-          buildRouteMapSrc(coords.from, coords.to, {
-            width: MAP_IMG_WIDTH,
-            height: MAP_IMG_HEIGHT,
-            theme,
-            accent,
-          }),
-        );
+        setPreviewSrc(fallbackPreviewSrc);
+        setSrc(fullMapSrc);
       } catch {
         // graceful: stylized canvas remains
       }
@@ -320,7 +340,15 @@ export function RouteMapCard({
               imgState === "ready" ? "opacity-100" : "opacity-0"
             }`}
             onLoad={() => setImgState("ready")}
-            onError={() => setImgState("failed")}
+            onError={() => {
+              const fallback = nextRouteMapSrcAfterError(src, previewSrc);
+              if (fallback) {
+                setImgState("loading");
+                setSrc(fallback);
+                return;
+              }
+              setImgState("failed");
+            }}
             loading="lazy"
             decoding="async"
             draggable={false}

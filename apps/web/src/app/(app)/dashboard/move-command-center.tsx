@@ -254,10 +254,11 @@ export function MoveCommandCenter({
                 {countdownLine} · {t("commandCenter_freePreviewBody")}
               </p>
             </div>
-            <Link href="/settings/subscription?returnTo=%2Fdashboard" className="shrink-0">
-              <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
-                <Sparkles className="h-4 w-4" /> {t("commandCenter_freePreviewCta")}
-              </button>
+            <Link
+              href="/settings/subscription?returnTo=%2Fdashboard"
+              className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+            >
+              <Sparkles className="h-4 w-4" /> {t("commandCenter_freePreviewCta")}
             </Link>
           </div>
 
@@ -313,10 +314,11 @@ export function MoveCommandCenter({
               {t("commandCenter_freeBody")}
             </p>
           </div>
-          <Link href="/settings/subscription?returnTo=%2Fdashboard" className="shrink-0">
-            <button className="flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap">
-              <Sparkles className="h-4 w-4" /> {t("commandCenter_freeCta")}
-            </button>
+          <Link
+            href="/settings/subscription?returnTo=%2Fdashboard"
+            className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-tone-orange-fg text-white text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+          >
+            <Sparkles className="h-4 w-4" /> {t("commandCenter_freeCta")}
           </Link>
         </div>
       </div>

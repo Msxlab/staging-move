@@ -14,11 +14,20 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 
 Current handoffs:
 
+- Full-stack release QA: [[handoffs/2026-06-18-120744-full-stack-release-qa]]
 - Dokploy cutover baseline: [[handoffs/2026-06-16-2313-dokploy-cutover-complete]]
 - Current catch-up and QA triage: [[handoffs/2026-06-17-212646-product-brain-live-qa-billing-catchup]]
 - Cron live fix: [[handoffs/2026-06-17-224200-ofelia-cron-live-fix]]
 - Cron runbook/typecheck follow-up: [[handoffs/2026-06-17-225300-dokploy-cron-runbook-typecheck]]
 - Live QA and billing readiness pass: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+
+Latest full-stack QA findings recorded 2026-06-18:
+
+- Local gates are green: lint, full typecheck, web/admin/mobile/connectors tests, Chromium public Playwright, and Chromium accessibility Playwright.
+- Production health endpoints are green for web and admin.
+- Live public web and admin surfaces checked in Chrome render without checked stale pricing/trial copy.
+- Release is not fully clean: live Pro dashboard Route Map remains stylized/no real map image, and logged-in dashboard still has three nested `<a><button>` CTA instances.
+- Mobile source/tests and latest production OTA metadata look correct for runtime `sdk55-1.0.0`, but on-device mobile QA remains blocked until a real device/emulator pass is run.
 
 Verified 2026-06-17 ET / recorded 2026-06-18:
 
@@ -78,22 +87,24 @@ Current strategy:
 
 These tasks may require source-code work in a separate session. Do not start them without explicit approval.
 
-1. Fix logged-in dashboard CTA nesting.
-   - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
-   - Scope: convert the remaining dashboard `<Link><Button>` instances to
-     `<Button asChild><Link>`.
-   - Likely files: `apps/web/src/app/(app)/dashboard/move-command-center.tsx`
-     and `apps/web/src/app/(app)/dashboard/dashboard-client.tsx`.
-   - Approval needed: source changes and affected tests.
+1. Review and ship the Route Map + dashboard CTA fix branch.
+   - Evidence: [[handoffs/2026-06-18-120744-full-stack-release-qa]], [[handoffs/2026-06-18-122234-route-map-dashboard-fixes]]
+   - Branch: `codex/route-map-geocode-fix`.
+   - Fixes prepared: inline moving-plan destination geocode fallback, `/api/moving` nested coordinate payload, RouteMapCard full-map-to-OSM-preview fallback, and logged-in dashboard CTA nesting cleanup.
+   - Approval needed: PR/push/deploy approval; production address re-save/backfill only with separate explicit approval if the owner’s existing plan still lacks coordinates after deploy.
 
-2. Clean up stale test expectations from accepted pricing/free-preview UX.
+2. Run post-deploy Route Map verification.
+   - Scope: authenticated QA dashboard with a manually entered destination address; confirm real map or OSM preview image appears, `/api/maps/static` no longer yields a user-visible fallback-only card, and dashboard DOM has zero `a button` matches.
+   - Approval needed: deploy approval and QA-account/live-session use.
+
+3. Clean up stale test expectations from accepted pricing/free-preview UX.
    - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
    - Scope: update `subscription-copy-regression.test.ts` for
      `role="group"` + `aria-pressed`; update `home-dossier.test.tsx` for the
      current limited free preview instead of the old nine locked rows.
    - Approval needed: test-only changes.
 
-3. Finish remaining live QA and billing readiness.
+4. Finish remaining live QA and billing readiness.
    - Scope: dedicated free QA-account dashboard checks, free-tier enforcement network checks, on-device mobile OTA verification, Stripe Dashboard price object verification, App Store / Google Play price verification.
    - Approval needed: use of QA accounts, Stripe/store dashboard read access, and any production config write.
 
