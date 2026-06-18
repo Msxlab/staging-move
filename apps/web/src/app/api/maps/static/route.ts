@@ -155,8 +155,8 @@ function geoapifyStyle(theme: MapTheme): string {
 
 /**
  * Builds the Geoapify static-map URL. No center/zoom → Geoapify auto-fits to the
- * two markers + the route line. Use URLSearchParams so delimiter and color
- * encoding matches Geoapify's documented request format.
+ * two markers. Keep this GET request marker-only because production rejected
+ * the geometry variant with upstream 400s; markers still provide a real basemap.
  */
 export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string): string {
   const palette = MAP_THEMES[params.theme];
@@ -166,17 +166,20 @@ export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string):
   const marker =
     `lonlat:${from};color:#${palette.sage};size:${GEOAPIFY_MARKER_SIZE}` +
     `|lonlat:${to};color:#${accent};size:${GEOAPIFY_MARKER_SIZE}`;
-  const geometry = `polyline:${from},${to};linecolor:#${accent};linewidth:4`;
   const qs = new URLSearchParams({
     style: geoapifyStyle(params.theme),
     width: String(params.width),
     height: String(params.height),
     scaleFactor: "2",
     marker,
-    geometry,
     apiKey,
   });
   return `https://maps.geoapify.com/v1/staticmap?${qs.toString()}`;
+}
+
+function normalizeGeoapifyApiKey(raw: string | null): string | null {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : null;
 }
 
 // ── In-process LRU (key NEVER part of the cache key) ────────────────────────
@@ -343,7 +346,7 @@ export async function GET(request: NextRequest) {
 
     const sourceStatuses: MapSourceStatuses = {};
 
-    const apiKey = await getRuntimeConfigValue("GEOAPIFY_API_KEY");
+    const apiKey = normalizeGeoapifyApiKey(await getRuntimeConfigValue("GEOAPIFY_API_KEY"));
     if (!apiKey) {
       sourceStatuses.geoapify = "unconfigured";
     } else {
