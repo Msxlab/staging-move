@@ -34,6 +34,7 @@ import { requestHasPlanFeature } from "@/lib/request-entitlements";
  */
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const STATIC_MAPS_BASE_URL = "https://maps.googleapis.com/maps/api/staticmap";
 
@@ -137,6 +138,8 @@ interface StaticMapParams {
 }
 
 type MapSource = "google" | "geoapify";
+type MapSourceStatus = "unconfigured" | `upstream_${number}` | "non_image" | "network_error";
+type MapSourceStatuses = Partial<Record<MapSource, MapSourceStatus>>;
 
 /** Builds the upstream Google Static Maps URL. Exported for tests. */
 export function buildStaticMapUrl(params: StaticMapParams, apiKey: string): string {
@@ -233,6 +236,32 @@ function buildUpstreamUrlForSource(source: MapSource, params: StaticMapParams, a
   return source === "google"
     ? buildStaticMapUrl(params, apiKey)
     : buildGeoapifyStaticUrl(params, apiKey);
+}
+
+function formatSourceStatuses(sourceStatuses: MapSourceStatuses): string {
+  return Object.entries(sourceStatuses)
+    .map(([source, status]) => `${source}=${status}`)
+    .join(",");
+}
+
+function mapsJsonError(
+  status: number,
+  code: string,
+  error: string,
+  sourceStatuses?: MapSourceStatuses,
+): NextResponse {
+  const headers = new Headers({
+    "Cache-Control": "no-store",
+    "X-Maps-Error-Code": code,
+  });
+  if (sourceStatuses && Object.keys(sourceStatuses).length > 0) {
+    headers.set("X-Maps-Source-Statuses", formatSourceStatuses(sourceStatuses));
+  }
+
+  return NextResponse.json(
+    sourceStatuses ? { error, code, sourceStatuses } : { error, code },
+    { status, headers },
+  );
 }
 
 function cacheGet(key: string): CacheEntry | null {
@@ -354,10 +383,14 @@ export async function GET(request: NextRequest) {
     //   empty map when only GEOAPIFY_API_KEY is configured in production.
     const sourceAttempts: MapSource[] = preview ? ["geoapify"] : ["google", "geoapify"];
     let sawConfiguredSource = false;
+    const sourceStatuses: MapSourceStatuses = {};
 
     for (const source of sourceAttempts) {
       const apiKey = await getRuntimeConfigValue(runtimeKeyForSource(source));
-      if (!apiKey) continue;
+      if (!apiKey) {
+        sourceStatuses[source] = "unconfigured";
+        continue;
+      }
       sawConfiguredSource = true;
 
       const cacheKey = `${source}|${cacheKeyFor(params)}`;
@@ -372,12 +405,14 @@ export async function GET(request: NextRequest) {
           // Never forward the upstream body — error text is useless to clients
           // and this guarantees nothing key-adjacent can leak through the proxy.
           console.error(`[maps/static] ${source} upstream returned ${upstream.status}`);
+          sourceStatuses[source] = `upstream_${upstream.status}`;
           continue;
         }
 
         const contentType = upstream.headers.get("content-type") ?? "";
         if (!contentType.startsWith("image/")) {
           console.error(`[maps/static] ${source} upstream returned non-image content-type: ${contentType}`);
+          sourceStatuses[source] = "non_image";
           continue;
         }
 
@@ -390,25 +425,17 @@ export async function GET(request: NextRequest) {
         return imageResponse(entry, "MISS");
       } catch (error) {
         console.error(`[maps/static] ${source} upstream failed:`, error);
+        sourceStatuses[source] = "network_error";
       }
     }
 
     if (!sawConfiguredSource) {
-      return NextResponse.json(
-        { error: "Maps are not configured", code: "MAPS_NOT_CONFIGURED" },
-        { status: 503 },
-      );
+      return mapsJsonError(503, "MAPS_NOT_CONFIGURED", "Maps are not configured", sourceStatuses);
     }
 
-    return NextResponse.json(
-      { error: "Map image unavailable", code: "MAPS_UPSTREAM_ERROR" },
-      { status: 502 },
-    );
+    return mapsJsonError(424, "MAPS_UPSTREAM_ERROR", "Map image unavailable", sourceStatuses);
   } catch (error) {
     console.error("[maps/static] failed:", error);
-    return NextResponse.json(
-      { error: "Map image unavailable", code: "MAPS_PROXY_ERROR" },
-      { status: 502 },
-    );
+    return mapsJsonError(500, "MAPS_PROXY_ERROR", "Map image unavailable");
   }
 }

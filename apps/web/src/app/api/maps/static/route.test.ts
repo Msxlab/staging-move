@@ -25,7 +25,7 @@ vi.mock("@/lib/request-entitlements", () => ({
   requestHasPlanFeature: (...args: unknown[]) => mocks.requestHasPlanFeature(...args),
 }));
 
-import { GET, buildStaticMapUrl, __resetStaticMapCacheForTests } from "./route";
+import { GET, buildStaticMapUrl, __resetStaticMapCacheForTests, runtime } from "./route";
 
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
 
@@ -62,6 +62,10 @@ describe("/api/maps/static proxy", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("runs in the Node runtime so the image proxy does not fall back to Edge semantics", () => {
+    expect(runtime).toBe("nodejs");
   });
 
   it("rejects unauthenticated requests before touching Google", async () => {
@@ -251,18 +255,35 @@ describe("/api/maps/static proxy", () => {
     }
   });
 
-  it("returns a controlled 502 when every configured map source fails", async () => {
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 500,
-      headers: new Headers({ "content-type": "text/plain" }),
-      arrayBuffer: async () => new ArrayBuffer(0),
-    } as unknown as Response);
+  it("returns a controlled diagnostic response when every configured map source fails", async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        headers: new Headers({ "content-type": "text/plain" }),
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        headers: new Headers({ "content-type": "text/plain" }),
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } as unknown as Response);
 
     const response = await GET(request(VALID_QUERY));
+    const body = await response.json();
 
-    expect(response.status).toBe(502);
-    expect((await response.json()).code).toBe("MAPS_UPSTREAM_ERROR");
+    expect(response.status).toBe(424);
+    expect(response.headers.get("x-maps-error-code")).toBe("MAPS_UPSTREAM_ERROR");
+    expect(response.headers.get("x-maps-source-statuses")).toBe("google=upstream_403,geoapify=upstream_401");
+    expect(body).toMatchObject({
+      code: "MAPS_UPSTREAM_ERROR",
+      sourceStatuses: {
+        google: "upstream_403",
+        geoapify: "upstream_401",
+      },
+    });
+    expect(JSON.stringify(body)).not.toContain("test-maps-key-123");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
