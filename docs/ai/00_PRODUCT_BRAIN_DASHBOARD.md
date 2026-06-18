@@ -1,6 +1,6 @@
 # LocateFlow Product Brain Dashboard
 
-Updated: 2026-06-15
+Updated: 2026-06-18
 
 This is the Obsidian entry point for the LocateFlow Product Brain. The canonical current dashboard is this top section. The older snapshot below is retained only as historical context.
 
@@ -9,6 +9,24 @@ This is the Obsidian entry point for the LocateFlow Product Brain. The canonical
 - Canonical one-page roadmap: [[01_ACTIVE_STRATEGY]]
 - Phase 1 experiment slice: [[02_ACTIVE_EXPERIMENTS]]
 - Analytics taxonomy and retention: [[analytics/EVENT_TAXONOMY]], [[analytics/DATA_RETENTION_POLICY]]
+
+## Current Live Ops Snapshot
+
+Verified on 2026-06-17 ET:
+
+- Dokploy production compose app source is deployed from `main` at commit `df5307ef8bff1387bf775df76d690be4284a0f6a` (PR #293).
+- `main` also contains docs-only cron runbook merge `e6f3f9cdaeda568a186cfa7bf0795f3de22b74c6`; no deploy was required for that docs-only follow-up.
+- Dokploy containers shown running after deploy: `locateflow-web` healthy, `locateflow-admin` healthy, `locateflow-mysql` healthy, `locateflow-imgproxy` running, and `locateflow-cron` running.
+- Dokploy Ofelia cron command parsing was fixed with the mounted runner in `docker/locateflow-cron-runner.sh`; live 10:40 PM ET tick verified `blog-publish`, `checkout-cleanup`, and `connector-dispatch` all finished with `failed: false`.
+- Public web render now shows annual-first pricing: Individual `$24/year`, Family `$39/year`, Pro `$59/year`, and the 14-day annual Individual trial.
+- Public acquisition campaign endpoint returns `INDIVIDUAL90` as a compatibility code with `trialDays: 14`, `$24/year`, and `$4.99/month` monthly offer copy.
+- Mobile OTA was published to production for runtime `sdk55-1.0.0`, update group `8303c581-4450-4ce0-9cc0-c78fdde17cf4`.
+
+Not yet verified:
+
+- Logged-in dashboard QA, free-tier enforcement network checks, and on-device mobile OTA QA.
+- Stripe Dashboard price objects and App Store / Google Play Console subscription price settings.
+- Any experiment result, conversion lift, retention lift, revenue lift, or customer-demand signal.
 
 ## Canonical Current Dashboard
 
@@ -168,7 +186,7 @@ Deferred:
 
 Task queue: [[03_NEXT_AGENT_TASKS]]
 
-Current recommendation: prepare a docs-only AI Briefing experience hardening spec, including source/limitation copy, upgrade moment, privacy-safe events, and manual QA. Ask for explicit human approval before any source-code work, AI-key handling, telemetry persistence, or billing-copy change.
+Current recommendation: finish live QA and billing readiness first, especially logged-in dashboard/free-tier enforcement checks, on-device mobile OTA verification, Stripe Dashboard price object verification, and App Store / Google Play price verification. Ask for explicit human approval before any QA-account use, dashboard write, store write, source-code work, telemetry persistence, or billing-copy change.
 
 ### Weekly Review
 
@@ -182,6 +200,10 @@ Decision log: [[memory/DECISION_LOG]]
 
 Recent handoffs:
 
+- [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+- [[handoffs/2026-06-17-225300-dokploy-cron-runbook-typecheck]]
+- [[handoffs/2026-06-17-224200-ofelia-cron-live-fix]]
+- [[handoffs/2026-06-17-212646-product-brain-live-qa-billing-catchup]]
 - [[handoffs/20260615-163949-vision-ingested-into-product-brain]]
 - [[handoffs/2026-06-15-155106-claude-vision-api-partnership-growth]]
 - [[handoffs/20260615-144907-user-experience-intelligence-scan]]

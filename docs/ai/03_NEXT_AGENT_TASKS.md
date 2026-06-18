@@ -1,6 +1,6 @@
 # Next Agent Tasks
 
-Updated: 2026-06-15
+Updated: 2026-06-18
 
 Use this note as the Obsidian task queue for the next Codex, Claude Product Explorer, or Claude Product Judge pass.
 
@@ -12,28 +12,55 @@ Vision layer: [[vision/VISION_MASTER_PLAN]], [[vision/VISION_DECISION_SUMMARY]],
 
 ## Active Ops Task
 
-- Dokploy production cutover is complete. Current handoff:
-  [[handoffs/2026-06-16-2313-dokploy-cutover-complete]]
-- Cloudflare DNS now routes `locateflow.com`, `www.locateflow.com`,
-  `admin.locateflow.com`, and `img.locateflow.com` to Dokploy via proxied A
-  records for `89.117.149.77`.
-- Final DigitalOcean MySQL to Dokploy MySQL restore completed through
-  `docker-compose.dokploy-dbcopy.yml`, exited `0`, and source/target counts
-  matched for the checked core tables including users, subscriptions, addresses,
-  providers, runtime config rows, and Prisma migrations.
-- Dokploy latest deployed commit is `6dbe3fbb` (`chore: enable dokploy cron
-  service`). Containers are healthy/running: `locateflow-web`,
-  `locateflow-admin`, `locateflow-mysql`, `locateflow-imgproxy`, and
-  `locateflow-cron`; `locateflow-migrate` exited `0`.
-- Public smoke checks after DNS and final deploy returned `200` for root
-  health, root ready, admin healthz, www after redirect, and imgproxy root.
-- GitHub scheduled cron was disabled before cutover. Dokploy Ofelia cron is now
-  the intended single cron source; keep GitHub scheduled cron disabled.
-- DigitalOcean source DB firewall is now empty. Keep the old DigitalOcean app
-  and DB untouched for 7-14 days as rollback archive.
-- Cleanup reminder: remove temporary Dokploy env keys `SOURCE_MYSQL_HOST`,
-  `SOURCE_MYSQL_PORT`, `SOURCE_MYSQL_USER`, `SOURCE_MYSQL_PASSWORD`, and
-  `SOURCE_MYSQL_DATABASE`. Do not reveal or record their values.
+Current handoffs:
+
+- Dokploy cutover baseline: [[handoffs/2026-06-16-2313-dokploy-cutover-complete]]
+- Current catch-up and QA triage: [[handoffs/2026-06-17-212646-product-brain-live-qa-billing-catchup]]
+- Cron live fix: [[handoffs/2026-06-17-224200-ofelia-cron-live-fix]]
+- Cron runbook/typecheck follow-up: [[handoffs/2026-06-17-225300-dokploy-cron-runbook-typecheck]]
+- Live QA and billing readiness pass: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+
+Verified 2026-06-17 ET / recorded 2026-06-18:
+
+- Dokploy production compose app source deployment is `Done` at commit
+  `df5307ef8bff1387bf775df76d690be4284a0f6a`.
+- `main` also contains docs-only cron runbook merge
+  `e6f3f9cdaeda568a186cfa7bf0795f3de22b74c6`.
+- Containers shown running in Dokploy: `locateflow-web` healthy,
+  `locateflow-admin` healthy, `locateflow-mysql` healthy,
+  `locateflow-imgproxy` running, and `locateflow-cron` running.
+- Dokploy Ofelia cron command parsing was fixed with
+  `docker/locateflow-cron-runner.sh`; live 10:40 PM ET cron tick verified
+  `blog-publish`, `checkout-cleanup`, and `connector-dispatch` all finished
+  with `failed: false`.
+- `pnpm verify:typecheck` passed after clearing ignored stale cache
+  `apps/web/.next`.
+- Public acquisition campaign now returns `INDIVIDUAL90` as a compatibility
+  code with `trialDays: 14`, `$24/year`, `$4.99/month`, and no public
+  `3 months`/`90 days`/`$3.99` offer text.
+- Mobile OTA production update was published for runtime `sdk55-1.0.0`, update
+  group `8303c581-4450-4ce0-9cc0-c78fdde17cf4`.
+- Live public Chromium QA passed for public pages and accessibility; see
+  [[handoffs/2026-06-18-094301-live-qa-billing-readiness]].
+- Logged-in dashboard structural QA found 4 remaining nested `<a><button>`
+  CTA instances around `Plan a Move` and `Add Address`.
+- Two local web test expectations appear stale after accepted UX changes:
+  pricing copy regression still expects `role="tablist"` instead of
+  `role="group"` + `aria-pressed`, and Home Dossier still expects the old
+  nine locked rows instead of the current limited free preview.
+
+Ops cleanup still pending:
+
+- Remove temporary Dokploy env keys `SOURCE_MYSQL_HOST`, `SOURCE_MYSQL_PORT`,
+  `SOURCE_MYSQL_USER`, `SOURCE_MYSQL_PASSWORD`, and `SOURCE_MYSQL_DATABASE`.
+  Do not reveal or record their values.
+- Keep GitHub scheduled cron disabled while Dokploy cron is the intended single
+  cron source.
+- After any future cron config or runner change, explicitly restart/recreate
+  `locateflow-cron` and verify the next runner-form tick; Dokploy did not
+  automatically reload the long-running Ofelia daemon during the cron fix.
+- Keep old DigitalOcean app and DB untouched for the rollback archive window
+  unless the owner decides otherwise.
 
 Accepted direction: LocateFlow is moving toward Address Life OS / Move Command Center.
 
@@ -51,26 +78,45 @@ Current strategy:
 
 These tasks may require source-code work in a separate session. Do not start them without explicit approval.
 
-1. AI Briefing experience hardening implementation.
+1. Fix logged-in dashboard CTA nesting.
+   - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+   - Scope: convert the remaining dashboard `<Link><Button>` instances to
+     `<Button asChild><Link>`.
+   - Likely files: `apps/web/src/app/(app)/dashboard/move-command-center.tsx`
+     and `apps/web/src/app/(app)/dashboard/dashboard-client.tsx`.
+   - Approval needed: source changes and affected tests.
+
+2. Clean up stale test expectations from accepted pricing/free-preview UX.
+   - Evidence: [[handoffs/2026-06-18-094301-live-qa-billing-readiness]]
+   - Scope: update `subscription-copy-regression.test.ts` for
+     `role="group"` + `aria-pressed`; update `home-dossier.test.tsx` for the
+     current limited free preview instead of the old nine locked rows.
+   - Approval needed: test-only changes.
+
+3. Finish remaining live QA and billing readiness.
+   - Scope: dedicated free QA-account dashboard checks, free-tier enforcement network checks, on-device mobile OTA verification, Stripe Dashboard price object verification, App Store / Google Play price verification.
+   - Approval needed: use of QA accounts, Stripe/store dashboard read access, and any production config write.
+
+4. AI Briefing experience hardening implementation.
    - Linked spec: [[product/AI_MOVE_BRIEFING_SPEC]]
    - Experience note: [[experience/AI_MOVE_BRIEFING_EXPERIENCE]]
    - Experiment: [[experiments/EXPERIMENT_BACKLOG]]
    - Scope: visibility, source/limitation explainer, gates, fallback, privacy tests, telemetry, upgrade teaser, reversible AI cohort gate.
    - Approval needed: source changes, AI runtime key/cohort handling, telemetry persistence, billing or upgrade copy.
 
-2. Provider Transition board v1.
+5. Provider Transition board v1.
    - Linked spec: [[product/PROVIDER_TRANSITION_WORKSPACE]]
    - Experience note: [[experience/PROVIDER_TRANSITION_EXPERIENCE]]
    - Scope: read-only board over existing MoveTask lanes/statuses/assignees/progress.
    - Approval needed: source changes, UI copy, any status mutation, any telemetry persistence.
 
-3. Post-move monitoring surface.
+6. Post-move monitoring surface.
    - Linked backlog: [[product/FEATURE_BACKLOG]]
    - Experience note: [[experience/POST_MOVE_MONITORING_EXPERIENCE]]
    - Scope: user-facing view over upcoming billing, contract-end, auto-renewal, and service obligations.
    - Approval needed: source changes, notification changes, telemetry persistence.
 
-4. Proof packet preview.
+7. Proof packet preview.
    - Experience note: [[experience/EXPORT_PROOF_PACKET_EXPERIENCE]]
    - Scope: preview existing export/dossier capabilities as a move proof packet before generating sensitive output.
    - Approval needed: source changes, export copy, Pro-gated billing copy, telemetry persistence.
