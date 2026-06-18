@@ -172,6 +172,7 @@ export function buildStaticMapUrl(params: StaticMapParams, apiKey: string): stri
 // a real map. The key (GEOAPIFY_API_KEY) lives in runtime config and never
 // reaches the client (the PNG is streamed, same as the Google path).
 const PREVIEW_SIZE_MAX = 480;
+const GEOAPIFY_MARKER_SIZE = 42;
 
 function geoapifyStyle(theme: MapTheme): string {
   return theme === "light" ? "osm-bright" : "dark-matter";
@@ -189,8 +190,8 @@ export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string):
   const from = `${params.from.lng},${params.from.lat}`;
   const to = `${params.to.lng},${params.to.lat}`;
   const marker =
-    `lonlat:${from};type:material;color:%23${palette.sage};size:medium` +
-    `|lonlat:${to};type:material;color:%23${accent};size:medium`;
+    `lonlat:${from};type:material;color:%23${palette.sage};size:${GEOAPIFY_MARKER_SIZE}` +
+    `|lonlat:${to};type:material;color:%23${accent};size:${GEOAPIFY_MARKER_SIZE}`;
   const geometry = `polyline:${from},${to};linecolor:%23${accent};linewidth:4`;
   const qs = [
     `style=${geoapifyStyle(params.theme)}`,
