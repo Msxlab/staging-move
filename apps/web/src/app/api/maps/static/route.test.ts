@@ -100,7 +100,7 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("degrades to 503 when GOOGLE_MAPS_API_KEY is unconfigured", async () => {
+  it("degrades to 503 when no map source is configured", async () => {
     mocks.getRuntimeConfigValue.mockResolvedValue(null);
 
     const response = await GET(request(VALID_QUERY));
@@ -109,6 +109,20 @@ describe("/api/maps/static proxy", () => {
     expect(response.status).toBe(503);
     expect(body.code).toBe("MAPS_NOT_CONFIGURED");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Geoapify for full route maps when Google is unconfigured", async () => {
+    mocks.getRuntimeConfigValue.mockImplementation((key: string) =>
+      Promise.resolve(key === "GOOGLE_MAPS_API_KEY" ? null : "test-geoapify-key-123"),
+    );
+
+    const response = await GET(request(VALID_QUERY));
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
+    expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    expect(upstreamUrl).toContain("apiKey=test-geoapify-key-123");
   });
 
   it("429s when the per-user rate limit trips", async () => {
@@ -198,7 +212,7 @@ describe("/api/maps/static proxy", () => {
     expect(upstreamUrl).toContain("size=640x80");
   });
 
-  it("502s without caching when Google errors", async () => {
+  it("falls back to Geoapify without caching a Google failure", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 403,
@@ -206,13 +220,49 @@ describe("/api/maps/static proxy", () => {
       arrayBuffer: async () => new ArrayBuffer(0),
     } as unknown as Response);
 
-    const errorResponse = await GET(request(VALID_QUERY));
-    expect(errorResponse.status).toBe(502);
-    expect((await errorResponse.json()).code).toBe("MAPS_UPSTREAM_ERROR");
+    const fallbackResponse = await GET(request(VALID_QUERY));
+    expect(fallbackResponse.status).toBe(200);
+    const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
+    expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
 
     // The failure was not cached — the next request retries upstream.
     const retry = await GET(request(VALID_QUERY));
     expect(retry.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[2][0])).toContain("maps.googleapis.com");
+  });
+
+  it("times out a stalled upstream map fetch so clients can fall back quickly", async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementationOnce((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+    }));
+
+    try {
+      const pending = GET(request(VALID_QUERY));
+      await vi.advanceTimersByTimeAsync(4_000);
+      const response = await pending;
+
+      expect(response.status).toBe(200);
+      const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
+      expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("returns a controlled 502 when every configured map source fails", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: new Headers({ "content-type": "text/plain" }),
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as unknown as Response);
+
+    const response = await GET(request(VALID_QUERY));
+
+    expect(response.status).toBe(502);
+    expect((await response.json()).code).toBe("MAPS_UPSTREAM_ERROR");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -257,7 +307,7 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("502s when the upstream responds OK with a non-image body", async () => {
+  it("falls back to Geoapify when Google responds OK with a non-image body", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -266,7 +316,9 @@ describe("/api/maps/static proxy", () => {
     } as unknown as Response);
 
     const response = await GET(request(VALID_QUERY));
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(200);
+    const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
+    expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
   });
 
   it("buildStaticMapUrl rounds coordinates to 5 decimals", () => {

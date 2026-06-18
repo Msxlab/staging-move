@@ -13,6 +13,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { ThemeProvider, useThemePreference } from "@/lib/theme";
 import { createQueryClient } from "@/lib/query-client";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
+import { hydrateOfflineCache } from "@/lib/offline-cache";
 import { setSessionCleanupHook } from "@/lib/session-cleanup-hook";
 import * as SplashScreen from "expo-splash-screen";
 import {
@@ -200,6 +201,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       void refreshUser(API_URL.replace(/\/api\/?$/, ""));
     }
   }, [token, user, refreshUser]);
+
+  // 2b) Warm the private offline tab caches after auth so tab navigation can
+  // synchronously seed from memory instead of flashing a full skeleton while
+  // AsyncStorage resolves. Logout/delete still clears these by prefix.
+  useEffect(() => {
+    if (!token) return;
+    void Promise.all([
+      hydrateOfflineCache("services"),
+      hydrateOfflineCache("moving"),
+    ]);
+  }, [token]);
 
   // 3) Check onboarding completion after login.
   //

@@ -52,6 +52,7 @@ export function TransitRouteMap({
   const { width: windowWidth } = useWindowDimensions();
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   // Tier ladder: try the rich Google route map first; on ANY failure (incl. the
   // realMap 403 for Free/Individual) fall back to the free OSM "preview" map,
   // and only then to the stylized banner. So Family+ sees Google, everyone else
@@ -67,6 +68,7 @@ export function TransitRouteMap({
   useEffect(() => {
     setTier("full");
     setFailed(false);
+    setLoaded(false);
   }, [coords]);
 
   useEffect(() => {
@@ -96,14 +98,20 @@ export function TransitRouteMap({
     return `${API_URL}${path}`;
   }, [coords, windowWidth, resolvedScheme, theme.colors.primary, tier]);
 
+  useEffect(() => {
+    setLoaded(false);
+  }, [uri]);
+
   // Graceful fallback: the banner's stylized dashed route stays as-is.
   if (!coords || !uri || !token || failed) return null;
 
   return (
     <View
-      style={[styles.frame, { borderColor: theme.colors.border }]}
+      style={[styles.frame, !loaded && styles.preloadFrame, { borderColor: theme.colors.border }]}
       accessibilityRole="image"
       accessibilityLabel={t("addresses.transit.mapAlt", { from: fromCity, to: toCity })}
+      accessibilityElementsHidden={!loaded}
+      importantForAccessibility={loaded ? "auto" : "no-hide-descendants"}
     >
       <Image
         source={{ uri, headers: buildMobileAuthHeaders(token) }}
@@ -111,9 +119,11 @@ export function TransitRouteMap({
         style={StyleSheet.absoluteFill}
         fadeDuration={0}
         accessibilityIgnoresInvertColors
+        onLoad={() => setLoaded(true)}
         onError={() => {
           // Full Google failed (realMap 403 for free, 502/503, etc.) → drop to
           // the free OSM preview; if that also fails, the stylized banner stays.
+          setLoaded(false);
           if (tier === "full") setTier("preview");
           else setFailed(true);
         }}
@@ -133,5 +143,11 @@ const styles = StyleSheet.create({
     // the AddressesMap canvas decision (map tiles read dark in both themes;
     // the real tile then follows the resolved theme once painted).
     backgroundColor: "#0A0F18",
+  },
+  preloadFrame: {
+    height: 1,
+    marginBottom: 0,
+    borderWidth: 0,
+    opacity: 0,
   },
 });
