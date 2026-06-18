@@ -36,11 +36,4 @@ describe("mobile tab cache and transit map contracts", () => {
     expect(source).toContain("!loaded && styles.preloadFrame");
     expect(source).toContain("onLoad={() => setLoaded(true)}");
   });
-
-  it("prewarms hot tab caches after auth so tab entry can use memory", () => {
-    const source = readMobile("app/_layout.tsx");
-
-    expect(source).toContain('hydrateOfflineCache("services")');
-    expect(source).toContain('hydrateOfflineCache("moving")');
-  });
 });

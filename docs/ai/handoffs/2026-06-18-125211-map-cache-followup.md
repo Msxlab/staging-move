@@ -25,23 +25,17 @@
 - `apps/mobile/app/(tabs)/moving.tsx`
   - Applies the same in-memory cache seed and foreground-load guard to the Moving tab.
 
-- `apps/mobile/src/lib/offline-cache.ts`
-  - Added `hydrateOfflineCache()` to prime memory from private AsyncStorage without returning user data.
-
-- `apps/mobile/app/_layout.tsx`
-  - After auth, prewarms the Services and Moving offline caches so first tab entry after app launch can use memory instead of waiting on AsyncStorage.
-
 - `apps/mobile/src/__tests__/tab-cache-and-map-contract.test.ts`
   - Added contract coverage for tab cache seeding and hidden map preload frame.
 
 ## Tests Run
 
 - `pnpm --filter @locateflow/web test -- src/app/api/maps/static/route.test.ts` - passed, 22 tests.
-- `pnpm --filter @locateflow/mobile test -- src/components/addresses/transit-route-map-url.test.ts src/lib/offline-cache.test.ts src/__tests__/tab-cache-and-map-contract.test.ts` - passed, 28 tests after cache prewarm coverage.
+- `pnpm --filter @locateflow/mobile test -- src/components/addresses/transit-route-map-url.test.ts src/lib/offline-cache.test.ts src/__tests__/tab-cache-and-map-contract.test.ts` - passed, 25 tests.
 - `pnpm verify:typecheck` - passed.
 - `pnpm lint` - passed.
 - `pnpm --filter @locateflow/web test` - passed, 289 files / 2580 tests.
-- `pnpm --filter @locateflow/mobile test` - passed, 31 files / 302 tests.
+- `pnpm --filter @locateflow/mobile test` - passed, 31 files / 299 tests.
 - `pnpm --filter @locateflow/admin test` - passed, 120 files / 753 tests.
 - `pnpm --filter @locateflow/connectors test` - passed, 15 files / 105 tests.
 - `git diff --check` - passed.
