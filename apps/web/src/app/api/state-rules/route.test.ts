@@ -18,6 +18,7 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: (...args: unknown[]) => mocks.requireDbUserId(...args),
 }));
 
+import { GOVERNMENT_INFO_SOURCE_LINKS } from "@locateflow/shared";
 import { GET } from "./route";
 
 function makeRequest(state: string | null) {
@@ -44,7 +45,7 @@ describe("/api/state-rules", () => {
     expect(response.status).toBe(400);
   });
 
-  it("returns the documented contract: { stateRule: { stateCode, stateName, dmvRules, voterRegistration, taxInfo } }", async () => {
+  it("returns the documented contract with visible official government source links", async () => {
     mocks.stateRuleFindUnique.mockResolvedValue({
       stateCode: "CA",
       stateName: "California",
@@ -67,8 +68,16 @@ describe("/api/state-rules", () => {
         dmvRules: "Update license within 10 days.",
         voterRegistration: "Register at sos.ca.gov.",
         taxInfo: "State income tax applies.",
+        officialSources: GOVERNMENT_INFO_SOURCE_LINKS,
       },
     });
+    expect(body.stateRule.officialSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "dmv", url: "https://www.usa.gov/state-motor-vehicle-services" }),
+        expect.objectContaining({ id: "voter", url: "https://vote.gov/register" }),
+        expect.objectContaining({ id: "tax", url: "https://www.usa.gov/state-taxes" }),
+      ]),
+    );
     // Guard against accidental shape drift to a `rules` array.
     expect("rules" in body).toBe(false);
   });

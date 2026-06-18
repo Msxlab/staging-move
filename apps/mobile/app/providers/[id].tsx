@@ -46,6 +46,7 @@ import {
 } from "@/lib/provider-localization";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
 import { ProviderReason, type ProviderReasonInput } from "@/components/provider/ProviderReason";
+import { GovernmentSourceLinks } from "@/components/provider/GovernmentSourceLinks";
 import {
   getProviderTrustSummary,
   LOCATION_SENSITIVE_PROVIDER_CATEGORIES,
@@ -455,6 +456,7 @@ export default function ProviderDetailScreen() {
                     ? t("providers.source", { source: recMeta.meta.stateRule.source })
                     : t("providers.stateRuleFallback")}
                 </Text>
+                <GovernmentSourceLinks style={styles.governmentSources} />
               </View>
             </View>
           </Card>
@@ -726,4 +728,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
   emptyTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
   emptyText: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", marginTop: 8, lineHeight: 20 },
+  governmentSources: { marginTop: 12 },
 });

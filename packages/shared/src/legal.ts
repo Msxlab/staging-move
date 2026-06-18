@@ -7,6 +7,35 @@ export const PROVIDER_ACCOUNT_UNCHANGED_COPY =
 export const MOVE_BRIEFING_NOT_ADVICE_COPY =
   "A read on your own data — not legal/tax advice; verify timing with your provider/state.";
 
+export const GOVERNMENT_INFO_DISCLAIMER_COPY =
+  "LocateFlow is not a government agency and is not affiliated with or endorsed by any government entity. Verify government deadlines and requirements on official .gov sources before acting.";
+
+export type GovernmentInfoSourceId = "dmv" | "voter" | "tax";
+
+export interface GovernmentInfoSourceLink {
+  id: GovernmentInfoSourceId;
+  label: string;
+  url: string;
+}
+
+export const GOVERNMENT_INFO_SOURCE_LINKS = [
+  {
+    id: "dmv",
+    label: "State motor vehicle services (USA.gov)",
+    url: "https://www.usa.gov/state-motor-vehicle-services",
+  },
+  {
+    id: "voter",
+    label: "Voter registration (Vote.gov)",
+    url: "https://vote.gov/register",
+  },
+  {
+    id: "tax",
+    label: "State and local taxes (USA.gov)",
+    url: "https://www.usa.gov/state-taxes",
+  },
+] as const satisfies readonly GovernmentInfoSourceLink[];
+
 export type LegalConsentDocumentKey = "terms" | "disclaimer";
 
 export interface LegalConsentDocumentSection {

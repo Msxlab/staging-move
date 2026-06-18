@@ -2,10 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { BookOpen } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import type { GovernmentInfoSourceLink } from "@locateflow/shared";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { GovernmentSourceLinks } from "@/components/provider/GovernmentSourceLinks";
 
 /**
  * The real, statewide rule contract returned by GET /api/state-rules?state=XX.
@@ -19,6 +21,7 @@ export type StateRule = {
   dmvRules: string | null;
   voterRegistration: string | null;
   taxInfo: string | null;
+  officialSources?: readonly GovernmentInfoSourceLink[] | null;
 };
 
 interface StateRulesCardProps {
@@ -105,6 +108,7 @@ export function StateRulesCard({ state, defaultOpen = false }: StateRulesCardPro
           <Text style={styles.sectionText}>{section.text}</Text>
         </View>
       ))}
+      <GovernmentSourceLinks sources={rule.officialSources} />
       <Text style={styles.disclaimer}>{t("providers.stateGuideDisclaimer")}</Text>
     </CollapsibleCard>
   );

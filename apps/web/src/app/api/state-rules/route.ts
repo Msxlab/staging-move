@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GOVERNMENT_INFO_SOURCE_LINKS } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
             dmvRules: stateRule.dmvRules,
             voterRegistration: stateRule.voterRegistration,
             taxInfo: stateRule.taxInfo,
+            officialSources: GOVERNMENT_INFO_SOURCE_LINKS,
           }
         : null,
     });

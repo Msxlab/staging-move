@@ -503,7 +503,13 @@
     "stateGuideTitle": "{{state}} state guide",
     "stateGuideSubtitle": "Statewide rules to handle after you move",
     "stateGuideBadge": "Statewide",
-    "stateGuideDisclaimer": "Statewide guidance only — your city or county may add steps. Confirm with the official state agency."
+    "stateGuideDisclaimer": "Statewide guidance only — your city or county may add steps. Confirm with the official state agency.",
+    "stateGuideSourcesTitle": "Official government sources",
+    "stateGuideSource_dmv": "State motor vehicle services (USA.gov)",
+    "stateGuideSource_voter": "Voter registration (Vote.gov)",
+    "stateGuideSource_tax": "State and local taxes (USA.gov)",
+    "stateGuideOpenSourceA11y": "Open official source: {{source}}",
+    "stateGuideGovernmentDisclaimer": "LocateFlow is not a government agency and is not affiliated with or endorsed by any government entity. Verify government deadlines and requirements on official .gov sources before acting."
   },
   "coverage": {
     "EXACT_ZIP": {
