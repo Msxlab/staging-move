@@ -427,6 +427,7 @@
     "manualTrackingCaveat": "Solo seguimiento manual; confirma con el proveedor oficial.",
     "manualTrackingOnly": "Solo seguimiento manual",
     "scopeFederal": "Federal",
+    "scopeNationwide": "A nivel nacional",
     "emptyCategory": "Nada en esta categoría",
     "searchA11y": "Buscar proveedores",
     "searchHint": "Filtra proveedores por nombre, descripción o etiquetas",
