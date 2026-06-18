@@ -44,6 +44,8 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 import { formatDateOnlyUtc, getMoveCountdown, normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
@@ -53,6 +55,10 @@ const statusVariant: Record<string, "primary" | "success" | "warning" | "error" 
   CANCELED: "error",
   CANCELLED: "error",
 };
+
+function readMovingDetailCache(raw: unknown): any | null {
+  return asObject(raw) as any | null;
+}
 
 export default function MovingDetailScreen() {
 
@@ -64,8 +70,13 @@ export default function MovingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const [plan, setPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: plan,
+    setCachedData: setPlan,
+    loading,
+    setLoading,
+    startForegroundLoad,
+  } = useDetailOfflineCache<any>(detailCacheKey("moving", id), readMovingDetailCache);
   const [refreshing, setRefreshing] = useState(false);
   const [migration, setMigration] = useState<any>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -329,13 +340,13 @@ export default function MovingDetailScreen() {
   };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    startForegroundLoad();
     try {
       await fetch_();
     } finally {
       setLoading(false);
     }
-  }, [fetch_]);
+  }, [fetch_, setLoading, startForegroundLoad]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

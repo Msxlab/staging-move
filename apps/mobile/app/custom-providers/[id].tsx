@@ -30,6 +30,8 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 import { getCategoryIcon } from "@/lib/recommendation-engine";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 
 interface CustomProvider {
   id: string;
@@ -51,6 +53,10 @@ interface CustomProvider {
   services?: Array<{ id: string; providerName: string; category: string; isActive: boolean }>;
 }
 
+function readCustomProviderDetailCache(raw: unknown): CustomProvider | null {
+  return asObject(raw) as CustomProvider | null;
+}
+
 export default function CustomProviderDetailScreen() {
 
   // theme: hook-injected styles
@@ -61,8 +67,16 @@ export default function CustomProviderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const [provider, setProvider] = useState<CustomProvider | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: provider,
+    setCachedData: setProvider,
+    loading,
+    setLoading,
+    startForegroundLoad,
+  } = useDetailOfflineCache<CustomProvider>(
+    detailCacheKey("custom-provider", id),
+    readCustomProviderDetailCache,
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,11 +95,11 @@ export default function CustomProviderDetailScreen() {
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
+      startForegroundLoad();
       await loadProvider();
       setLoading(false);
     })();
-  }, [loadProvider]);
+  }, [loadProvider, setLoading, startForegroundLoad]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

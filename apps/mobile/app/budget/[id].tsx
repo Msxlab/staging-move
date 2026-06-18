@@ -22,6 +22,12 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
+
+function readBudgetDetailCache(raw: unknown): any | null {
+  return asObject(raw) as any | null;
+}
 
 export default function BudgetDetailScreen() {
 
@@ -33,8 +39,13 @@ export default function BudgetDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const [budget, setBudget] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: budget,
+    setCachedData: setBudget,
+    loading,
+    setLoading,
+    startForegroundLoad,
+  } = useDetailOfflineCache<any>(detailCacheKey("budget", id), readBudgetDetailCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,13 +73,13 @@ export default function BudgetDetailScreen() {
   }, [id, t]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    startForegroundLoad();
     try {
       await fetchBudget();
     } finally {
       setLoading(false);
     }
-  }, [fetchBudget]);
+  }, [fetchBudget, setLoading, startForegroundLoad]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

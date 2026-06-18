@@ -21,6 +21,8 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -36,6 +38,10 @@ function getServiceCategoryLabel(category: string): string {
   return getMergedDisplayCategoryLabel(category) || getCategoryLabel(category) || category.replace(/_/g, " ");
 }
 
+function readAddressDetailCache(raw: unknown): any | null {
+  return asObject(raw) as any | null;
+}
+
 export default function AddressDetailScreen() {
 
   // theme: hook-injected styles
@@ -46,8 +52,13 @@ export default function AddressDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const [address, setAddress] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: address,
+    setCachedData: setAddress,
+    loading,
+    setLoading,
+    startForegroundLoad,
+  } = useDetailOfflineCache<any>(detailCacheKey("address", id), readAddressDetailCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,10 +72,10 @@ export default function AddressDetailScreen() {
   }, [id]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    startForegroundLoad();
     await fetch_();
     setLoading(false);
-  }, [fetch_]);
+  }, [fetch_, setLoading, startForegroundLoad]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

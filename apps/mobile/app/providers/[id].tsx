@@ -36,6 +36,8 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { openWebUrl } from "@/lib/in-app-browser";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 import {
   getLocalizedCategoryLabel,
   getLocalizedCoverageLabel,
@@ -60,6 +62,10 @@ type DetailResponse = {
   provider: Provider;
   alternatives?: Provider[];
 };
+
+function readProviderDetailCache(raw: unknown): Provider | null {
+  return asObject(raw) as Provider | null;
+}
 
 type AddressOption = {
   id: string;
@@ -109,11 +115,17 @@ export default function ProviderDetailScreen() {
   const { t, i18n } = useTranslation();
   const providerId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const [provider, setProvider] = useState<Provider | null>(null);
+  const {
+    data: provider,
+    setCachedData: setProvider,
+    loading,
+    setLoading,
+    hasDataRef,
+    startForegroundLoad,
+  } = useDetailOfflineCache<Provider>(detailCacheKey("provider", providerId), readProviderDetailCache);
   const [alternatives, setAlternatives] = useState<Provider[]>([]);
   const [recMeta, setRecMeta] = useState<RecMeta | null>(null);
   const [primaryAddress, setPrimaryAddress] = useState<AddressOption | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const tier = useMemo<string | null>(() => {
@@ -148,11 +160,11 @@ export default function ProviderDetailScreen() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    startForegroundLoad();
 
     const addrRes = await api.get<{ addresses: AddressOption[] }>("/api/addresses");
     if (addrRes.error) {
-      setError(addrRes.error);
+      if (!hasDataRef.current) setError(addrRes.error);
       setLoading(false);
       return;
     }
@@ -178,9 +190,11 @@ export default function ProviderDetailScreen() {
     ]);
     if (detailRes.error) {
       setError(detailRes.error);
-      setProvider(null);
-      setAlternatives([]);
-      setRecMeta(null);
+      if (!hasDataRef.current) {
+        setProvider(null);
+        setAlternatives([]);
+        setRecMeta(null);
+      }
       setLoading(false);
       return;
     }
@@ -190,7 +204,7 @@ export default function ProviderDetailScreen() {
     setRecMeta(recRes.data || null);
     setError(null);
     setLoading(false);
-  }, [providerId]);
+  }, [hasDataRef, providerId, setLoading, startForegroundLoad]);
 
   useEffect(() => {
     loadAll();
