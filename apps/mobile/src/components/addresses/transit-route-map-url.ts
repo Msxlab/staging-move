@@ -4,7 +4,7 @@
  * node environment.
  *
  * The image itself is served by the web app's authenticated proxy at
- * GET /api/maps/static (Google Static Maps; the API key stays server-side).
+ * GET /api/maps/static (Geoapify static maps; the API key stays server-side).
  */
 
 export interface RouteLatLng {
@@ -59,7 +59,7 @@ export interface TransitRouteMapOptions {
   theme: "dark" | "light";
   /** Plan-accent hex (leading # tolerated); omitted when unavailable. */
   accent?: string | null;
-  /** Free OSM "preview" tier (no realMap gate) instead of the Google route map. */
+  /** Free OSM "preview" tier (no realMap gate) instead of the full route map. */
   preview?: boolean;
 }
 

@@ -893,7 +893,7 @@ export default function DashboardClient({
             key={key}
             fromCity={stats.activePlan.fromCity}
             toCity={stats.activePlan.toCity}
-            // Real (Google Static) basemap is Family/Pro; Free/Individual
+            // Full Geoapify basemap is Family/Pro; Free/Individual
             // get the stylized canvas fallback. premiumPlan already flows
             // from the entitlement resolved at load — no extra fetch.
             realMap={planFeatures(premiumPlan).realMap}

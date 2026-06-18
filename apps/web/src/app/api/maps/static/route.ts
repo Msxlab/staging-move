@@ -5,26 +5,25 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { requestHasPlanFeature } from "@/lib/request-entitlements";
 
 /**
- * GET /api/maps/static — authenticated Google Static Maps proxy.
+ * GET /api/maps/static — authenticated Geoapify static map proxy.
  *
  * Replaces the CSS-stylized "fake map" canvases with a real basemap while
- * keeping the server-side GOOGLE_MAPS_API_KEY server-side: the key is read
- * from runtime config, appended to the upstream URL here, and NEVER appears
- * in the response (the PNG bytes are streamed back instead of redirecting).
+ * keeping GEOAPIFY_API_KEY server-side: the key is read from runtime config,
+ * appended to the upstream URL here, and NEVER appears in the response (the
+ * PNG bytes are streamed back instead of redirecting).
  *
  * Query contract (shared by web RouteMapCard and the mobile transit banner):
  *   from=lat,lng   origin pin (sage marker)
  *   to=lat,lng     destination pin (plan-accent marker)
- *   w, h           image size in CSS px (clamped to the Static Maps free
- *                  limits; scale=2 is always requested for retina density)
+ *   w, h           image size in CSS px (clamped; scaleFactor=2 is requested
+ *                  for retina density)
  *   theme          dark | light — Aurora-styled muted navy/ink palettes
  *   accent         optional RRGGBB plan-accent override (validated hex);
  *                  defaults to the Aurora cool-blue accent per theme
  *
  * Cost / cache posture: responses are immutable per (coords, size, theme,
  * accent) so they get long private cache headers, plus a small in-process
- * LRU so repeat dashboard loads don't re-hit Google at all. At ~10k free
- * loads/month this stays at zero cost for our scale; per-user and per-IP
+ * LRU so repeat dashboard loads don't re-hit Geoapify. Per-user and per-IP
  * rate limits keep an abusive client from burning quota.
  *
  * Failure posture (graceful degradation): any error — unauthenticated, bad
@@ -36,10 +35,8 @@ import { requestHasPlanFeature } from "@/lib/request-entitlements";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const STATIC_MAPS_BASE_URL = "https://maps.googleapis.com/maps/api/staticmap";
-
 const SIZE_MIN = 80;
-// Static Maps free-tier max is 640x640 per dimension (scale multiplies after).
+// Conservative dashboard/mobile maximum; scaleFactor multiplies after.
 const SIZE_MAX = 640;
 const DEFAULT_WIDTH = 640;
 const DEFAULT_HEIGHT = 320;
@@ -137,40 +134,14 @@ interface StaticMapParams {
   accent: string | null;
 }
 
-type MapSource = "google" | "geoapify";
 type MapSourceStatus = "unconfigured" | `upstream_${number}` | "non_image" | "network_error";
-type MapSourceStatuses = Partial<Record<MapSource, MapSourceStatus>>;
-
-/** Builds the upstream Google Static Maps URL. Exported for tests. */
-export function buildStaticMapUrl(params: StaticMapParams, apiKey: string): string {
-  const palette = MAP_THEMES[params.theme];
-  const accent = params.accent ?? palette.accent;
-  const search = new URLSearchParams();
-  search.append("size", `${params.width}x${params.height}`);
-  search.append("scale", "2");
-  search.append("format", "png");
-  search.append("maptype", "roadmap");
-  // Old home — sage; new home — plan accent (matches the card pin language).
-  search.append("markers", `size:mid|color:0x${palette.sage}|${formatLatLng(params.from)}`);
-  search.append("markers", `size:mid|color:0x${accent}|${formatLatLng(params.to)}`);
-  // Geodesic route line in the plan accent (CC alpha keeps the basemap readable).
-  search.append(
-    "path",
-    `color:0x${accent}CC|weight:3|geodesic:true|${formatLatLng(params.from)}|${formatLatLng(params.to)}`,
-  );
-  for (const style of palette.styles) {
-    search.append("style", style);
-  }
-  search.append("key", apiKey);
-  return `${STATIC_MAPS_BASE_URL}?${search.toString()}`;
-}
+type MapSourceStatuses = Partial<Record<"geoapify", MapSourceStatus>>;
 
 // ── Free OSM "preview" source (Geoapify) ────────────────────────────────────
-// The rich Google route map above stays a Family+ feature (realMap). Free users
-// get a lighter move-preview map from Geoapify's OSM static API; with caching
-// its per-request cost is ~0, so the preview is NOT plan-gated — every plan sees
-// a real map. The key (GEOAPIFY_API_KEY) lives in runtime config and never
-// reaches the client (the PNG is streamed, same as the Google path).
+// Full route maps and lighter move-preview maps both use Geoapify's OSM static
+// API. The preview is NOT plan-gated — every plan can see a real map when
+// coordinates exist. The key (GEOAPIFY_API_KEY) lives in runtime config and
+// never reaches the client.
 const PREVIEW_SIZE_MAX = 480;
 const GEOAPIFY_MARKER_SIZE = 42;
 
@@ -227,16 +198,6 @@ function cacheKeyFor(params: StaticMapParams): string {
     params.theme,
     params.accent ?? "default",
   ].join("|");
-}
-
-function runtimeKeyForSource(source: MapSource): "GOOGLE_MAPS_API_KEY" | "GEOAPIFY_API_KEY" {
-  return source === "google" ? "GOOGLE_MAPS_API_KEY" : "GEOAPIFY_API_KEY";
-}
-
-function buildUpstreamUrlForSource(source: MapSource, params: StaticMapParams, apiKey: string): string {
-  return source === "google"
-    ? buildStaticMapUrl(params, apiKey)
-    : buildGeoapifyStaticUrl(params, apiKey);
 }
 
 function formatSourceStatuses(sourceStatuses: MapSourceStatuses): string {
@@ -343,7 +304,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     // preview=1 → free OSM (Geoapify) move-preview map (no realMap gate).
-    // default → rich Google route map (Family+ realMap feature).
+    // default → full OSM (Geoapify) route map (Family+ realMap feature).
     const preview = searchParams.get("preview") === "1";
 
     const from = parseLatLng(searchParams.get("from"));
@@ -355,7 +316,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // The rich Google route map stays a Family+ feature; the free preview map is
+    // The full Geoapify route map stays a Family+ feature; the free preview map is
     // a ~zero-cost OSM source, so only the non-preview path is realMap-gated.
     if (!preview && !(await requestHasPlanFeature(request, userId, "realMap"))) {
       return NextResponse.json(
@@ -377,60 +338,47 @@ export async function GET(request: NextRequest) {
       params.height = Math.min(PREVIEW_SIZE_MAX, params.height);
     }
 
-    // Source ladder:
-    // - preview=1 → Geoapify only.
-    // - full map → Google first, then Geoapify fallback when Google is missing,
-    //   blocked, slow, or misconfigured. This keeps Family/Pro from seeing an
-    //   empty map when only GEOAPIFY_API_KEY is configured in production.
-    const sourceAttempts: MapSource[] = preview ? ["geoapify"] : ["google", "geoapify"];
-    let sawConfiguredSource = false;
     const sourceStatuses: MapSourceStatuses = {};
 
-    for (const source of sourceAttempts) {
-      const apiKey = await getRuntimeConfigValue(runtimeKeyForSource(source));
-      if (!apiKey) {
-        sourceStatuses[source] = "unconfigured";
-        continue;
-      }
-      sawConfiguredSource = true;
-
-      const cacheKey = `${source}|${cacheKeyFor(params)}`;
+    const apiKey = await getRuntimeConfigValue("GEOAPIFY_API_KEY");
+    if (!apiKey) {
+      sourceStatuses.geoapify = "unconfigured";
+    } else {
+      const cacheKey = `geoapify|${cacheKeyFor(params)}`;
       const cached = cacheGet(cacheKey);
       if (cached) {
         return imageResponse(cached, "HIT");
       }
 
       try {
-        const upstream = await fetchMapUpstream(buildUpstreamUrlForSource(source, params, apiKey));
+        const upstream = await fetchMapUpstream(buildGeoapifyStaticUrl(params, apiKey));
         if (!upstream.ok) {
           // Never forward the upstream body — error text is useless to clients
           // and this guarantees nothing key-adjacent can leak through the proxy.
-          console.error(`[maps/static] ${source} upstream returned ${upstream.status}`);
-          sourceStatuses[source] = `upstream_${upstream.status}`;
-          continue;
+          console.error(`[maps/static] geoapify upstream returned ${upstream.status}`);
+          sourceStatuses.geoapify = `upstream_${upstream.status}`;
+        } else {
+          const contentType = upstream.headers.get("content-type") ?? "";
+          if (!contentType.startsWith("image/")) {
+            console.error(`[maps/static] geoapify upstream returned non-image content-type: ${contentType}`);
+            sourceStatuses.geoapify = "non_image";
+          } else {
+            const entry: CacheEntry = {
+              body: Buffer.from(await upstream.arrayBuffer()),
+              contentType,
+              expiresAt: Date.now() + CACHE_TTL_MS,
+            };
+            cacheSet(cacheKey, entry);
+            return imageResponse(entry, "MISS");
+          }
         }
-
-        const contentType = upstream.headers.get("content-type") ?? "";
-        if (!contentType.startsWith("image/")) {
-          console.error(`[maps/static] ${source} upstream returned non-image content-type: ${contentType}`);
-          sourceStatuses[source] = "non_image";
-          continue;
-        }
-
-        const entry: CacheEntry = {
-          body: Buffer.from(await upstream.arrayBuffer()),
-          contentType,
-          expiresAt: Date.now() + CACHE_TTL_MS,
-        };
-        cacheSet(cacheKey, entry);
-        return imageResponse(entry, "MISS");
       } catch (error) {
-        console.error(`[maps/static] ${source} upstream failed:`, error);
-        sourceStatuses[source] = "network_error";
+        console.error("[maps/static] geoapify upstream failed:", error);
+        sourceStatuses.geoapify = "network_error";
       }
     }
 
-    if (!sawConfiguredSource) {
+    if (sourceStatuses.geoapify === "unconfigured") {
       return mapsJsonError(503, "MAPS_NOT_CONFIGURED", "Maps are not configured", sourceStatuses);
     }
 

@@ -132,7 +132,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       // Family and Pro only (same AI experience; the cap is cost control, not a tier line).
       { labelKey: "rowAiBriefing", cell: (plan) => onOff(planFeatures(plan).aiBriefing) },
       // Row source: FEATURES[plan].realMap (packages/shared/src/workspace-entitlements.ts).
-      // real Google Static map on route/address cards, Family and Pro (lower tiers see the canvas).
+      // Full Geoapify map on route/address cards, Family and Pro (lower tiers see preview/fallback).
       { labelKey: "rowRealMap", cell: (plan) => onOff(planFeatures(plan).realMap) },
       // Row source: FEATURES[plan].moverSuggestions (packages/shared/src/workspace-entitlements.ts).
       // FMCSA-registered household-goods mover suggestions on the moving plan, Pro only.

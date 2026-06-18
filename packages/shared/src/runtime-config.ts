@@ -450,8 +450,8 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   },
   {
     key: "GOOGLE_MAPS_API_KEY",
-    label: "Google Maps API Key",
-    description: "Server-side Maps and Places Web Service API key for address autocomplete and details lookups. Use IP-address/application API restrictions, not HTTP referrers.",
+    label: "Google Places API Key",
+    description: "Server-side Places Web Service API key for address autocomplete and details lookups. Use IP-address/application API restrictions, not HTTP referrers.",
     scope: "GLOBAL",
     category: "MAPS",
     isSecret: true,
@@ -461,7 +461,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "GEOAPIFY_API_KEY",
     label: "Geoapify API Key",
-    description: "Server-side Geoapify Static Maps key used as the OSM preview/fallback source for route maps.",
+    description: "Server-side Geoapify Static Maps key used for route maps.",
     scope: "WEB",
     category: "MAPS",
     isSecret: true,
@@ -469,7 +469,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
     runtimeEditable: true,
     usedBy: ["web app static map proxy", "mobile route map image proxy"],
-    note: "Optional fallback. When unset, maps degrade gracefully to the existing stylized placeholder unless GOOGLE_MAPS_API_KEY can serve the requested map.",
+    note: "When unset, route maps degrade gracefully to the existing stylized placeholder.",
   },
   {
     key: "PLACES_AUTOCOMPLETE_ENABLED",

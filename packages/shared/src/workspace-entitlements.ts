@@ -34,7 +34,7 @@ export interface WorkspacePlanFeatures {
   vehicleCheck: boolean;
   /** Move-week weather/flood push + weekly digest email. Individual and up. */
   weatherDigest: boolean;
-  /** Real (Google Static) map on route/address cards; lower tiers see the stylized canvas. Family and up. */
+  /** Full Geoapify route/address map; lower tiers see the OSM preview/stylized fallback. Family and up. */
   realMap: boolean;
   /** New Home Dossier PDF export. Pro only. */
   dossierPdf: boolean;

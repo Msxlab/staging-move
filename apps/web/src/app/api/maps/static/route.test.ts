@@ -25,7 +25,7 @@ vi.mock("@/lib/request-entitlements", () => ({
   requestHasPlanFeature: (...args: unknown[]) => mocks.requestHasPlanFeature(...args),
 }));
 
-import { GET, buildStaticMapUrl, __resetStaticMapCacheForTests, runtime } from "./route";
+import { GET, buildGeoapifyStaticUrl, __resetStaticMapCacheForTests, runtime } from "./route";
 
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
 
@@ -68,7 +68,7 @@ describe("/api/maps/static proxy", () => {
     expect(runtime).toBe("nodejs");
   });
 
-  it("rejects unauthenticated requests before touching Google", async () => {
+  it("rejects unauthenticated requests before touching Geoapify", async () => {
     mocks.requireDbUserId.mockRejectedValue(new Error("UNAUTHORIZED"));
 
     const response = await GET(request(VALID_QUERY));
@@ -77,7 +77,7 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("403s before touching Google when the plan lacks realMap", async () => {
+  it("403s before touching Geoapify when the plan lacks realMap", async () => {
     mocks.requestHasPlanFeature.mockResolvedValue(false);
 
     const response = await GET(request(VALID_QUERY));
@@ -115,10 +115,8 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to Geoapify for full route maps when Google is unconfigured", async () => {
-    mocks.getRuntimeConfigValue.mockImplementation((key: string) =>
-      Promise.resolve(key === "GOOGLE_MAPS_API_KEY" ? null : "test-geoapify-key-123"),
-    );
+  it("uses Geoapify for full route maps", async () => {
+    mocks.getRuntimeConfigValue.mockResolvedValue("test-geoapify-key-123");
 
     const response = await GET(request(VALID_QUERY));
 
@@ -149,22 +147,21 @@ describe("/api/maps/static proxy", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG_BYTES);
   });
 
-  it("builds the upstream URL with sage/accent markers, geodesic path, Aurora styles, and the key", async () => {
+  it("builds the Geoapify upstream URL with sage/accent markers, route geometry, style, and the key", async () => {
     await GET(request(`${VALID_QUERY}&accent=FF9DB2`));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("https://maps.googleapis.com/maps/api/staticmap");
-    expect(upstreamUrl).toContain("size=640x296");
-    expect(upstreamUrl).toContain("scale=2");
+    expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    expect(upstreamUrl).toContain("width=640");
+    expect(upstreamUrl).toContain("height=296");
+    expect(upstreamUrl).toContain("scaleFactor=2");
     // old home pin in sage, new home pin in the plan accent
-    expect(upstreamUrl).toContain("markers=size:mid|color:0x87DDC0|41.8781,-87.6298");
-    expect(upstreamUrl).toContain("markers=size:mid|color:0xFF9DB2|30.2672,-97.7431");
-    expect(upstreamUrl).toContain("path=color:0xFF9DB2CC|weight:3|geodesic:true|41.8781,-87.6298|30.2672,-97.7431");
-    // Aurora dark styling + label icons off
-    expect(upstreamUrl).toContain("style=element:geometry|color:0x0F1726");
-    expect(upstreamUrl).toContain("style=feature:poi|visibility:off");
-    expect(upstreamUrl).toContain("key=test-maps-key-123");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;type:material;color:#87DDC0;size:42");
+    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;type:material;color:#FF9DB2;size:42");
+    expect(upstreamUrl).toContain("geometry=polyline:-87.6298,41.8781,-97.7431,30.2672;linecolor:#FF9DB2;linewidth:4");
+    expect(upstreamUrl).toContain("style=dark-matter");
+    expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
   });
 
   it("never leaks the API key into the response", async () => {
@@ -176,7 +173,7 @@ describe("/api/maps/static proxy", () => {
     expect(bodyText).not.toContain("test-maps-key-123");
   });
 
-  it("serves repeat requests from the in-process LRU without re-hitting Google", async () => {
+  it("serves repeat requests from the in-process LRU without re-hitting Geoapify", async () => {
     const first = await GET(request(VALID_QUERY));
     const second = await GET(request(VALID_QUERY));
 
@@ -198,25 +195,26 @@ describe("/api/maps/static proxy", () => {
     await GET(request(`${VALID_QUERY}&accent=not-a-color`));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("markers=size:mid|color:0x7FB6E8|30.2672,-97.7431");
+    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;type:material;color:#7FB6E8;size:42");
   });
 
   it("uses the light Aurora palette for theme=light", async () => {
     await GET(request(VALID_QUERY.replace("theme=dark", "theme=light")));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("markers=size:mid|color:0x2E9B79|41.8781,-87.6298");
-    expect(upstreamUrl).toContain("style=element:geometry|color:0xEDF1F7");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;type:material;color:#2E9B79;size:42");
+    expect(upstreamUrl).toContain("style=osm-bright");
   });
 
-  it("clamps oversized dimensions to the Static Maps free-tier maximum", async () => {
+  it("clamps oversized dimensions to the static map maximum", async () => {
     await GET(request("from=41.8781,-87.6298&to=30.2672,-97.7431&w=5000&h=4"));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("size=640x80");
+    expect(upstreamUrl).toContain("width=640");
+    expect(upstreamUrl).toContain("height=80");
   });
 
-  it("falls back to Geoapify without caching a Google failure", async () => {
+  it("does not cache a failed Geoapify upstream response", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 403,
@@ -224,16 +222,14 @@ describe("/api/maps/static proxy", () => {
       arrayBuffer: async () => new ArrayBuffer(0),
     } as unknown as Response);
 
-    const fallbackResponse = await GET(request(VALID_QUERY));
-    expect(fallbackResponse.status).toBe(200);
-    const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
-    expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    const failed = await GET(request(VALID_QUERY));
+    expect(failed.status).toBe(424);
 
     // The failure was not cached — the next request retries upstream.
     const retry = await GET(request(VALID_QUERY));
     expect(retry.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(String(fetchMock.mock.calls[2][0])).toContain("maps.googleapis.com");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("maps.geoapify.com");
   });
 
   it("times out a stalled upstream map fetch so clients can fall back quickly", async () => {
@@ -247,44 +243,35 @@ describe("/api/maps/static proxy", () => {
       await vi.advanceTimersByTimeAsync(4_000);
       const response = await pending;
 
-      expect(response.status).toBe(200);
-      const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
-      expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+      expect(response.status).toBe(424);
+      expect(response.headers.get("x-maps-source-statuses")).toBe("geoapify=network_error");
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("returns a controlled diagnostic response when every configured map source fails", async () => {
-    fetchMock
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        headers: new Headers({ "content-type": "text/plain" }),
-        arrayBuffer: async () => new ArrayBuffer(0),
-      } as unknown as Response)
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        headers: new Headers({ "content-type": "text/plain" }),
-        arrayBuffer: async () => new ArrayBuffer(0),
-      } as unknown as Response);
+  it("returns a controlled diagnostic response when Geoapify fails", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      headers: new Headers({ "content-type": "text/plain" }),
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as unknown as Response);
 
     const response = await GET(request(VALID_QUERY));
     const body = await response.json();
 
     expect(response.status).toBe(424);
     expect(response.headers.get("x-maps-error-code")).toBe("MAPS_UPSTREAM_ERROR");
-    expect(response.headers.get("x-maps-source-statuses")).toBe("google=upstream_403,geoapify=upstream_401");
+    expect(response.headers.get("x-maps-source-statuses")).toBe("geoapify=upstream_401");
     expect(body).toMatchObject({
       code: "MAPS_UPSTREAM_ERROR",
       sourceStatuses: {
-        google: "upstream_403",
         geoapify: "upstream_401",
       },
     });
     expect(JSON.stringify(body)).not.toContain("test-maps-key-123");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("preview=1 serves a free Geoapify map WITHOUT the realMap gate", async () => {
@@ -304,16 +291,16 @@ describe("/api/maps/static proxy", () => {
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
   });
 
-  it("caps preview size and caches it separately from the full Google map", async () => {
+  it("caps preview size and caches it separately from the full route map", async () => {
     await GET(request("from=41.8781,-87.6298&to=30.2672,-97.7431&theme=dark&preview=1&w=640&h=640"));
     const previewUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
     expect(previewUrl).toContain("width=480");
     expect(previewUrl).toContain("height=480");
 
-    // Same coords, full (Google) map → different source namespace → separate fetch.
+    // Same coords, full map → different dimensions/cache key → separate fetch.
     await GET(request(VALID_QUERY));
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[1][0])).toContain("maps.googleapis.com");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("maps.geoapify.com");
   });
 
   it("preview degrades to 503 when GEOAPIFY_API_KEY is unset", async () => {
@@ -328,7 +315,7 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to Geoapify when Google responds OK with a non-image body", async () => {
+  it("returns a controlled diagnostic response when Geoapify responds OK with a non-image body", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -337,13 +324,14 @@ describe("/api/maps/static proxy", () => {
     } as unknown as Response);
 
     const response = await GET(request(VALID_QUERY));
-    expect(response.status).toBe(200);
-    const fallbackUrl = decodeURIComponent(String(fetchMock.mock.calls[1][0]));
-    expect(fallbackUrl).toContain("https://maps.geoapify.com/v1/staticmap");
+    const body = await response.json();
+    expect(response.status).toBe(424);
+    expect(response.headers.get("x-maps-source-statuses")).toBe("geoapify=non_image");
+    expect(body.sourceStatuses.geoapify).toBe("non_image");
   });
 
-  it("buildStaticMapUrl rounds coordinates to 5 decimals", () => {
-    const url = buildStaticMapUrl(
+  it("buildGeoapifyStaticUrl formats lon/lat coordinates into markers and geometry", () => {
+    const url = buildGeoapifyStaticUrl(
       {
         from: { lat: 41.123456789, lng: -87.987654321 },
         to: { lat: 30.5, lng: -97.25 },
@@ -355,8 +343,8 @@ describe("/api/maps/static proxy", () => {
       "k",
     );
     // NOTE: parseLatLng rounds before this point in the route; the builder
-    // simply formats — assert the formatted pair appears once per marker.
-    expect(decodeURIComponent(url)).toContain("41.123456789,-87.987654321");
-    expect(decodeURIComponent(url)).toContain("30.5,-97.25");
+    // simply formats in Geoapify's lon,lat order.
+    expect(decodeURIComponent(url)).toContain("lonlat:-87.987654321,41.123456789");
+    expect(decodeURIComponent(url)).toContain("lonlat:-97.25,30.5");
   });
 });
