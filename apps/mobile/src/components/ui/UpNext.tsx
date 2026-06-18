@@ -8,6 +8,7 @@ import { hapticSuccess, hapticError, hapticLight } from "@/lib/haptics";
 import { ListEntrance } from "@/components/ui/ListEntrance";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { Avatar } from "@/components/ui/Avatar";
+import { daysUntilDue, dueUrgencyTone, resolveToneColors } from "@/lib/semantic-status";
 
 /**
  * UP NEXT — the dashboard's one-tap task-clearing strip.
@@ -278,6 +279,8 @@ export function UpNext({
 
       {visible.map((task, index) => {
         const due = formatDue(task.dueDate);
+        const dueTone = dueUrgencyTone(daysUntilDue(task.dueDate));
+        const dueColors = resolveToneColors(theme, dueTone);
         const busy = busyId === task.id;
         const failed = errorId === task.id;
         return (
@@ -306,8 +309,8 @@ export function UpNext({
                     {t("dashboard.upNext_completeFailed")}
                   </Text>
                 ) : (
-                  <View style={styles.dueChip}>
-                    <Text style={styles.dueText}>
+                  <View style={[styles.dueChip, { backgroundColor: dueColors.bg }]}>
+                    <Text style={[styles.dueText, { color: dueColors.fg }]}>
                       {due ? t("dashboard.upNext_due", { date: due }) : t("dashboard.upNext_noDate")}
                     </Text>
                   </View>
@@ -406,7 +409,7 @@ const makeStyles = (t: Theme) =>
     },
     title: { fontSize: 14, fontWeight: "600", color: t.colors.text },
     assigneeAvatar: { marginLeft: 8 },
-    dueChip: { marginTop: 4, alignSelf: "flex-start" },
+    dueChip: { marginTop: 4, alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
     dueText: { fontSize: 11, color: t.colors.textTertiary, fontWeight: "600" },
     errorText: { fontSize: 11, color: t.colors.error, fontWeight: "600", marginTop: 4 },
     undoBar: {

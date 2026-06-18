@@ -6,6 +6,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import { confidenceTone, toneBadgeVariant } from "@/lib/semantic-status";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import {
   getLocalizedCoverageLabel,
@@ -215,7 +216,7 @@ export function ProviderCard({
 
       <View style={fullStyles.metaRow}>
         <UiBadge label={t("providers.listedProvider")} variant="warning" />
-        <UiBadge label={coverageLabel} variant="info" />
+        <UiBadge label={coverageLabel} variant={toneBadgeVariant(confidenceTone(trust.coverageConfidence?.confidence))} />
         {internetSignal ? (
           <UiBadge label={internetSignal.full} variant={internetSignal.variant} />
         ) : null}
