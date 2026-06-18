@@ -151,9 +151,8 @@ function geoapifyStyle(theme: MapTheme): string {
 
 /**
  * Builds the Geoapify static-map URL. No center/zoom → Geoapify auto-fits to the
- * two markers + the route line. Geoapify expects literal | ; : , separators and
- * %23-encoded hex colors, so the query is assembled by hand (URLSearchParams
- * would over-encode the separators). Exported for tests.
+ * two markers + the route line. Use URLSearchParams so delimiter and color
+ * encoding matches Geoapify's documented request format.
  */
 export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string): string {
   const palette = MAP_THEMES[params.theme];
@@ -161,19 +160,19 @@ export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string):
   const from = `${params.from.lng},${params.from.lat}`;
   const to = `${params.to.lng},${params.to.lat}`;
   const marker =
-    `lonlat:${from};type:material;color:%23${palette.sage};size:${GEOAPIFY_MARKER_SIZE}` +
-    `|lonlat:${to};type:material;color:%23${accent};size:${GEOAPIFY_MARKER_SIZE}`;
-  const geometry = `polyline:${from},${to};linecolor:%23${accent};linewidth:4`;
-  const qs = [
-    `style=${geoapifyStyle(params.theme)}`,
-    `width=${params.width}`,
-    `height=${params.height}`,
-    `scaleFactor=2`,
-    `marker=${marker}`,
-    `geometry=${geometry}`,
-    `apiKey=${encodeURIComponent(apiKey)}`,
-  ].join("&");
-  return `https://maps.geoapify.com/v1/staticmap?${qs}`;
+    `lonlat:${from};color:#${palette.sage};size:${GEOAPIFY_MARKER_SIZE}` +
+    `|lonlat:${to};color:#${accent};size:${GEOAPIFY_MARKER_SIZE}`;
+  const geometry = `polyline:${from},${to};linecolor:#${accent};linewidth:4`;
+  const qs = new URLSearchParams({
+    style: geoapifyStyle(params.theme),
+    width: String(params.width),
+    height: String(params.height),
+    scaleFactor: "2",
+    marker,
+    geometry,
+    apiKey,
+  });
+  return `https://maps.geoapify.com/v1/staticmap?${qs.toString()}`;
 }
 
 // ── In-process LRU (key NEVER part of the cache key) ────────────────────────
