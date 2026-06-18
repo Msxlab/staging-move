@@ -123,6 +123,18 @@ export function nextRouteMapSrcAfterError(currentSrc: string | null, previewSrc:
   return null;
 }
 
+export function buildRouteMapImageSources(
+  coords: { from: RouteCoord; to: RouteCoord },
+  opts: { width: number; height: number; theme: "dark" | "light"; accent?: string | null },
+  realMap: boolean,
+): { initialSrc: string; previewSrc: string } {
+  const previewSrc = buildRouteMapSrc(coords.from, coords.to, { ...opts, preview: true });
+  return {
+    initialSrc: realMap ? buildRouteMapSrc(coords.from, coords.to, opts) : previewSrc,
+    previewSrc,
+  };
+}
+
 /** Teardrop map pin (rotated rounded square), colored via a CSS var string. */
 function MapPin({ left, top, color }: { left: string; top: string; color: string }) {
   return (
@@ -244,10 +256,9 @@ export function RouteMapCard({
   fromCity: string;
   toCity: string;
   /**
-   * `realMap` plan entitlement (Family and up). When false — Free/Individual —
-   * the card never requests the Google Static proxy and renders the EXISTING
-   * stylized canvas only. Defaults to true so callers that don't thread the
-   * flag keep the prior behavior byte-identically.
+   * `realMap` plan entitlement (Family and up). When false, the card skips the
+   * rich Google map but still tries the free OSM preview source so the route
+   * slot is not permanently a fake/stylized canvas when coordinates exist.
    */
   realMap?: boolean;
 }) {
@@ -259,9 +270,6 @@ export function RouteMapCard({
   const [imgState, setImgState] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
-    // Plan gate: lower tiers see the stylized canvas only — skip the feeds and
-    // the /api/maps/static proxy entirely (no wasted fetch, no real basemap).
-    if (!realMap) return;
     let cancelled = false;
     (async () => {
       try {
@@ -279,22 +287,19 @@ export function RouteMapCard({
         const accent = cardRef.current
           ? hslTripletToHex(getComputedStyle(cardRef.current).getPropertyValue("--primary"))
           : null;
-        const fullMapSrc = buildRouteMapSrc(coords.from, coords.to, {
-          width: MAP_IMG_WIDTH,
-          height: MAP_IMG_HEIGHT,
-          theme,
-          accent,
-        });
-        const fallbackPreviewSrc = buildRouteMapSrc(coords.from, coords.to, {
-          width: MAP_IMG_WIDTH,
-          height: MAP_IMG_HEIGHT,
-          theme,
-          accent,
-          preview: true,
-        });
+        const { initialSrc, previewSrc: fallbackPreviewSrc } = buildRouteMapImageSources(
+          coords,
+          {
+            width: MAP_IMG_WIDTH,
+            height: MAP_IMG_HEIGHT,
+            theme,
+            accent,
+          },
+          realMap,
+        );
         setImgState("loading");
         setPreviewSrc(fallbackPreviewSrc);
-        setSrc(fullMapSrc);
+        setSrc(initialSrc);
       } catch {
         // graceful: stylized canvas remains
       }

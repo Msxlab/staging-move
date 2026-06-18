@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
   RouteMapCard,
+  buildRouteMapImageSources,
   buildRouteMapSrc,
   hslTripletToHex,
   nextRouteMapSrcAfterError,
@@ -160,6 +161,30 @@ describe("nextRouteMapSrcAfterError", () => {
   });
 });
 
+describe("buildRouteMapImageSources", () => {
+  it("uses the full map first for entitled plans and keeps the preview fallback", () => {
+    const sources = buildRouteMapImageSources(
+      { from: { lat: 1, lng: 2 }, to: { lat: 3, lng: 4 } },
+      { width: 640, height: 224, theme: "dark", accent: "FF9DB2" },
+      true,
+    );
+
+    expect(sources.initialSrc).not.toContain("preview=1");
+    expect(sources.previewSrc).toContain("preview=1");
+  });
+
+  it("uses the preview source first when the rich realMap entitlement is absent", () => {
+    const sources = buildRouteMapImageSources(
+      { from: { lat: 1, lng: 2 }, to: { lat: 3, lng: 4 } },
+      { width: 640, height: 224, theme: "dark", accent: "FF9DB2" },
+      false,
+    );
+
+    expect(sources.initialSrc).toBe(sources.previewSrc);
+    expect(sources.initialSrc).toContain("preview=1");
+  });
+});
+
 describe("route map catalog", () => {
   it("keeps en/es routeMap keys in parity (including the new imageAlt)", async () => {
     const en = (await import("@/i18n/messages/en.json")).default as unknown as Record<string, Record<string, string>>;
@@ -189,9 +214,7 @@ describe("RouteMapCard markup", () => {
     expect(html).not.toContain("<img");
   });
 
-  it("renders the stylized fallback when realMap is gated off (Free/Individual)", () => {
-    // realMap=false short-circuits the map-fetch effect entirely, so lower tiers
-    // see ONLY the stylized canvas and the /api/maps/static proxy is never hit.
+  it("renders the stylized fallback before the preview source resolves when realMap is gated off", () => {
     const html = renderToStaticMarkup(
       <RouteMapCard fromCity="Chicago" toCity="Austin" realMap={false} />,
     );
