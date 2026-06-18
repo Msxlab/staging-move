@@ -147,7 +147,7 @@ describe("/api/maps/static proxy", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG_BYTES);
   });
 
-  it("builds the Geoapify upstream URL with sage/accent markers, style, and the key", async () => {
+  it("builds the Geoapify upstream URL with an area rectangle, style, and the key", async () => {
     await GET(request(`${VALID_QUERY}&accent=FF9DB2`));
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -157,14 +157,9 @@ describe("/api/maps/static proxy", () => {
     expect(upstreamUrl).toContain("width=640");
     expect(upstreamUrl).toContain("height=296");
     expect(upstreamUrl).toContain("scaleFactor=2");
-    expect(rawUpstreamUrl).toContain(
-      "marker=lonlat:-87.6298,41.8781;color:%2387DDC0;size:48|lonlat:-97.7431,30.2672;color:%23FF9DB2;size:48",
-    );
-    expect(rawUpstreamUrl).not.toContain("lonlat%3A");
-    expect(rawUpstreamUrl).not.toContain("%3Bcolor");
-    // old home pin in sage, new home pin in the plan accent
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
-    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#FF9DB2;size:48");
+    expect(rawUpstreamUrl).toContain("area=rect:");
+    expect(rawUpstreamUrl).toContain("-99.76576,27.94502,-85.60714,44.20028");
+    expect(rawUpstreamUrl).not.toContain("marker=");
     expect(upstreamUrl).not.toContain("geometry=");
     expect(upstreamUrl).toContain("style=osm-bright-grey");
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
@@ -197,18 +192,20 @@ describe("/api/maps/static proxy", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("falls back to the per-theme default accent when the override is not valid hex", async () => {
+  it("ignores invalid accent overrides for area-only map requests", async () => {
     await GET(request(`${VALID_QUERY}&accent=not-a-color`));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#7FB6E8;size:48");
+    expect(upstreamUrl).toContain("area=rect:");
+    expect(upstreamUrl).not.toContain("marker=");
+    expect(upstreamUrl).not.toContain("not-a-color");
   });
 
-  it("uses the light Aurora palette for theme=light", async () => {
+  it("uses the light Geoapify style for theme=light", async () => {
     await GET(request(VALID_QUERY.replace("theme=dark", "theme=light")));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#2E9B79;size:48");
+    expect(upstreamUrl).toContain("area=rect:");
     expect(upstreamUrl).toContain("style=osm-bright");
   });
 
@@ -291,11 +288,8 @@ describe("/api/maps/static proxy", () => {
     const rawUpstreamUrl = String(fetchMock.mock.calls[0][0]);
     const upstreamUrl = decodeURIComponent(rawUpstreamUrl);
     expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
-    expect(rawUpstreamUrl).toContain("marker=lonlat:-87.6298,41.8781;color:%2387DDC0;size:48");
-    expect(rawUpstreamUrl).not.toContain("lonlat%3A");
-    // Geoapify uses lon,lat order: sage origin + accent destination.
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
-    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color");
+    expect(rawUpstreamUrl).toContain("area=rect:");
+    expect(rawUpstreamUrl).not.toContain("marker=");
     expect(upstreamUrl).not.toContain("geometry=");
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
   });
@@ -350,7 +344,7 @@ describe("/api/maps/static proxy", () => {
     expect(body.sourceStatuses.geoapify).toBe("non_image");
   });
 
-  it("buildGeoapifyStaticUrl formats lon/lat coordinates into markers", () => {
+  it("buildGeoapifyStaticUrl formats endpoint coordinates into a padded area rectangle", () => {
     const url = buildGeoapifyStaticUrl(
       {
         from: { lat: 41.123456789, lng: -87.987654321 },
@@ -362,9 +356,7 @@ describe("/api/maps/static proxy", () => {
       },
       "k",
     );
-    // NOTE: parseLatLng rounds before this point in the route; the builder
-    // simply formats in Geoapify's lon,lat order.
-    expect(decodeURIComponent(url)).toContain("lonlat:-87.987654321,41.123456789");
-    expect(decodeURIComponent(url)).toContain("lonlat:-97.25,30.5");
+    expect(decodeURIComponent(url)).toContain("area=rect:-99.10247,28.37531,-86.13519,43.24815");
+    expect(url).not.toContain("marker=");
   });
 });
