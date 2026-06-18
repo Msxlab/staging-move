@@ -143,10 +143,6 @@ type MapSourceStatuses = Partial<Record<"geoapify", MapSourceStatus>>;
 // coordinates exist. The key (GEOAPIFY_API_KEY) lives in runtime config and
 // never reaches the client.
 const PREVIEW_SIZE_MAX = 480;
-// Geoapify's Marker Icon API v2 examples start at 48px; keep to that
-// documented size so the upstream static-map request stays conservative.
-const GEOAPIFY_MARKER_SIZE = 48;
-
 function geoapifyStyle(theme: MapTheme): string {
   // Stick to styles shown in Geoapify Static Maps examples. `dark-matter` is a
   // tile style, but the production Static Maps endpoint rejected it with 400s.
@@ -155,25 +151,27 @@ function geoapifyStyle(theme: MapTheme): string {
 
 /**
  * Builds the Geoapify static-map URL. No center/zoom → Geoapify auto-fits to the
- * two markers. Keep this GET request marker-only because production rejected
- * the geometry variant with upstream 400s; markers still provide a real basemap.
+ * both endpoints. Keep this request area-only because production rejected
+ * marker/geometry variants with upstream 400s.
  */
 export function buildGeoapifyStaticUrl(params: StaticMapParams, apiKey: string): string {
-  const palette = MAP_THEMES[params.theme];
-  const accent = params.accent ?? palette.accent;
-  const from = `${params.from.lng},${params.from.lat}`;
-  const to = `${params.to.lng},${params.to.lat}`;
-  const sage = `%23${palette.sage}`;
-  const markerAccent = `%23${accent}`;
-  const marker =
-    `lonlat:${from};color:${sage};size:${GEOAPIFY_MARKER_SIZE}` +
-    `|lonlat:${to};color:${markerAccent};size:${GEOAPIFY_MARKER_SIZE}`;
+  const minLng = Math.min(params.from.lng, params.to.lng);
+  const maxLng = Math.max(params.from.lng, params.to.lng);
+  const minLat = Math.min(params.from.lat, params.to.lat);
+  const maxLat = Math.max(params.from.lat, params.to.lat);
+  const latPad = Math.max((maxLat - minLat) * 0.2, 0.02);
+  const lngPad = Math.max((maxLng - minLng) * 0.2, 0.02);
+  const south = Math.max(-90, round5(minLat - latPad));
+  const north = Math.min(90, round5(maxLat + latPad));
+  const west = Math.max(-180, round5(minLng - lngPad));
+  const east = Math.min(180, round5(maxLng + lngPad));
+  const area = `rect:${west},${south},${east},${north}`;
   const qs = [
     `style=${encodeURIComponent(geoapifyStyle(params.theme))}`,
     `width=${params.width}`,
     `height=${params.height}`,
     "scaleFactor=2",
-    `marker=${marker}`,
+    `area=${area}`,
     `apiKey=${encodeURIComponent(apiKey)}`,
   ].join("&");
   return `https://maps.geoapify.com/v1/staticmap?${qs}`;
