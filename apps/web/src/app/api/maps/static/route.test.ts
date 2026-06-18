@@ -157,10 +157,10 @@ describe("/api/maps/static proxy", () => {
     expect(upstreamUrl).toContain("height=296");
     expect(upstreamUrl).toContain("scaleFactor=2");
     // old home pin in sage, new home pin in the plan accent
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:42");
-    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#FF9DB2;size:42");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
+    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#FF9DB2;size:48");
     expect(upstreamUrl).toContain("geometry=polyline:-87.6298,41.8781,-97.7431,30.2672;linecolor:#FF9DB2;linewidth:4");
-    expect(upstreamUrl).toContain("style=dark-matter");
+    expect(upstreamUrl).toContain("style=osm-bright-grey");
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
   });
 
@@ -195,14 +195,14 @@ describe("/api/maps/static proxy", () => {
     await GET(request(`${VALID_QUERY}&accent=not-a-color`));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#7FB6E8;size:42");
+    expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color:#7FB6E8;size:48");
   });
 
   it("uses the light Aurora palette for theme=light", async () => {
     await GET(request(VALID_QUERY.replace("theme=dark", "theme=light")));
 
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#2E9B79;size:42");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#2E9B79;size:48");
     expect(upstreamUrl).toContain("style=osm-bright");
   });
 
@@ -285,7 +285,7 @@ describe("/api/maps/static proxy", () => {
     const upstreamUrl = decodeURIComponent(String(fetchMock.mock.calls[0][0]));
     expect(upstreamUrl).toContain("https://maps.geoapify.com/v1/staticmap");
     // Geoapify uses lon,lat order: sage origin + accent destination + a route line.
-    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:42");
+    expect(upstreamUrl).toContain("lonlat:-87.6298,41.8781;color:#87DDC0;size:48");
     expect(upstreamUrl).toContain("lonlat:-97.7431,30.2672;color");
     expect(upstreamUrl).toContain("geometry=polyline:-87.6298,41.8781,-97.7431,30.2672");
     expect(upstreamUrl).toContain("apiKey=test-maps-key-123");
