@@ -25,13 +25,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   OFFLINE_CACHE_PREFIX,
   asArray,
+  asObject,
   clearAllOfflineCaches,
+  peekOfflineCache,
   readOfflineCache,
   writeOfflineCache,
 } from "./offline-cache";
 
 describe("offline-cache", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    storage.clear();
+    vi.clearAllMocks();
+    await clearAllOfflineCaches();
     storage.clear();
     vi.clearAllMocks();
   });
@@ -86,6 +91,25 @@ describe("offline-cache", () => {
     expect(entry?.data).toEqual({ services: [{ id: "a" }], addresses: [] });
   });
 
+  it("peeks the in-memory cache synchronously after a successful write", async () => {
+    const now = new Date("2026-06-18T10:00:00.000Z");
+    await writeOfflineCache("detail.service.svc_1", { id: "svc_1", providerName: "Water" }, now);
+    storage.clear();
+
+    const entry = peekOfflineCache("detail.service.svc_1", asObject);
+
+    expect(entry?.data).toEqual({ id: "svc_1", providerName: "Water" });
+    expect(entry?.updatedAt).toBe("2026-06-18T10:00:00.000Z");
+  });
+
+  it("accepts object payloads and rejects arrays for detail caches", async () => {
+    await writeOfflineCache("detail.address.addr_1", { id: "addr_1" });
+    await writeOfflineCache("detail.address.bad", [{ id: "addr_1" }]);
+
+    expect((await readOfflineCache("detail.address.addr_1", asObject))?.data).toEqual({ id: "addr_1" });
+    expect(await readOfflineCache("detail.address.bad", asObject)).toBeNull();
+  });
+
   it("clears every offline cache by prefix but leaves other keys", async () => {
     await writeOfflineCache("services", [1]);
     await writeOfflineCache("moving", [2]);
@@ -95,6 +119,8 @@ describe("offline-cache", () => {
 
     expect(await readOfflineCache("services", asArray)).toBeNull();
     expect(await readOfflineCache("moving", asArray)).toBeNull();
+    expect(peekOfflineCache("services", asArray)).toBeNull();
+    expect(peekOfflineCache("moving", asArray)).toBeNull();
     expect(storage.get("locateflow.unrelated")).toBe("keep-me");
   });
 

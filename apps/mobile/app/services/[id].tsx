@@ -37,6 +37,8 @@ import { PressableScale } from "@/components/ui/PressableScale";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { formatCurrency } from "@/lib/format";
+import { asObject } from "@/lib/offline-cache";
+import { detailCacheKey, useDetailOfflineCache } from "@/lib/use-detail-offline-cache";
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -66,6 +68,10 @@ function getServiceFallbackIcon(category: string): string {
   return getMergedDisplayCategoryIcon(category) || getCategoryIcon(category) || "";
 }
 
+function readServiceDetailCache(raw: unknown): any | null {
+  return asObject(raw) as any | null;
+}
+
 export default function ServiceDetailScreen() {
 
   // theme: hook-injected styles
@@ -76,8 +82,13 @@ export default function ServiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const [service, setService] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: service,
+    setCachedData: setService,
+    loading,
+    setLoading,
+    startForegroundLoad,
+  } = useDetailOfflineCache<any>(detailCacheKey("service", id), readServiceDetailCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,13 +106,13 @@ export default function ServiceDetailScreen() {
   }, [id]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    startForegroundLoad();
     try {
       await fetch_();
     } finally {
       setLoading(false);
     }
-  }, [fetch_]);
+  }, [fetch_, setLoading, startForegroundLoad]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
