@@ -59,6 +59,8 @@ export interface TransitRouteMapOptions {
   theme: "dark" | "light";
   /** Plan-accent hex (leading # tolerated); omitted when unavailable. */
   accent?: string | null;
+  /** Free OSM "preview" tier (no realMap gate) instead of the Google route map. */
+  preview?: boolean;
 }
 
 /**
@@ -83,5 +85,6 @@ export function buildTransitRouteMapPath(
   if (accent && /^[0-9a-fA-F]{6}$/.test(accent)) {
     params.set("accent", accent.toUpperCase());
   }
+  if (options.preview) params.set("preview", "1");
   return `/maps/static?${params.toString()}`;
 }
