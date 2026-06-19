@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import { API_URL } from "@/lib/api";
@@ -35,6 +35,7 @@ const MAP_HEIGHT = 112;
 // requesting slightly wide and letting resizeMode="cover" crop keeps a
 // single cache entry per route instead of one per device width.
 const MAP_MAX_WIDTH = 640;
+const routeKeyCoord = (value: number) => Math.round(value * 1e5) / 1e5;
 
 export function TransitRouteMap({
   activeMove,
@@ -53,6 +54,8 @@ export function TransitRouteMap({
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [loadedUri, setLoadedUri] = useState<string | null>(null);
+  const previousUriRef = useRef<string | null>(null);
   // Tier ladder: try the full Geoapify route map first; on ANY failure (incl. the
   // realMap 403 for Free/Individual) fall back to the free OSM "preview" map,
   // and only then to the stylized banner. Both tiers are served by Geoapify —
@@ -63,13 +66,18 @@ export function TransitRouteMap({
     () => resolveTransitRouteCoords(activeMove, addresses),
     [activeMove, addresses],
   );
+  const routeKey = coords
+    ? `${routeKeyCoord(coords.from.lat)},${routeKeyCoord(coords.from.lng)}->${routeKeyCoord(coords.to.lat)},${routeKeyCoord(coords.to.lng)}`
+    : null;
 
   // A new route resets the ladder so it re-tries the full map first.
   useEffect(() => {
     setTier("full");
     setFailed(false);
     setLoaded(false);
-  }, [coords]);
+    setLoadedUri(null);
+    previousUriRef.current = null;
+  }, [routeKey]);
 
   useEffect(() => {
     let alive = true;
@@ -99,35 +107,70 @@ export function TransitRouteMap({
   }, [coords, windowWidth, resolvedScheme, theme.colors.primary, tier]);
 
   useEffect(() => {
-    setLoaded(false);
-  }, [uri]);
+    if (!uri) {
+      previousUriRef.current = null;
+      setLoaded(false);
+      setLoadedUri(null);
+      return;
+    }
+    if (previousUriRef.current !== uri) {
+      previousUriRef.current = uri;
+      if (!loadedUri) setLoaded(false);
+    }
+  }, [loadedUri, uri]);
 
   // Graceful fallback: the banner's stylized dashed route stays as-is.
-  if (!coords || !uri || !token || failed) return null;
+  if (!coords || !uri || !token || (failed && !loadedUri)) return null;
+
+  const visibleUri = loadedUri ?? uri;
+  const showPreloadFrame = !loadedUri && !loaded;
+  const isLoadingReplacement = Boolean(loadedUri && uri !== loadedUri && !failed);
 
   return (
     <View
-      style={[styles.frame, !loaded && styles.preloadFrame, { borderColor: theme.colors.border }]}
+      style={[styles.frame, showPreloadFrame && styles.preloadFrame, { borderColor: theme.colors.border }]}
       accessibilityRole="image"
       accessibilityLabel={t("addresses.transit.mapAlt", { from: fromCity, to: toCity })}
-      accessibilityElementsHidden={!loaded}
-      importantForAccessibility={loaded ? "auto" : "no-hide-descendants"}
+      accessibilityElementsHidden={!loadedUri}
+      importantForAccessibility={loadedUri ? "auto" : "no-hide-descendants"}
     >
       <Image
-        source={{ uri, headers: buildMobileAuthHeaders(token) }}
+        source={{ uri: visibleUri, headers: buildMobileAuthHeaders(token) }}
         resizeMode="cover"
         style={StyleSheet.absoluteFill}
         fadeDuration={0}
         accessibilityIgnoresInvertColors
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          setLoaded(true);
+          setLoadedUri(visibleUri);
+          setFailed(false);
+        }}
         onError={() => {
           // Full map failed (realMap 403 for free, 502/503, etc.) → drop to
           // the free OSM preview; if that also fails, the stylized banner stays.
-          setLoaded(false);
+          if (!loadedUri) setLoaded(false);
           if (tier === "full") setTier("preview");
           else setFailed(true);
         }}
       />
+      {isLoadingReplacement && (
+        <Image
+          source={{ uri, headers: buildMobileAuthHeaders(token) }}
+          resizeMode="cover"
+          style={styles.preloadImage}
+          fadeDuration={0}
+          accessibilityIgnoresInvertColors
+          onLoad={() => {
+            setLoaded(true);
+            setLoadedUri(uri);
+            setFailed(false);
+          }}
+          onError={() => {
+            if (tier === "full") setTier("preview");
+            else setFailed(true);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -148,6 +191,10 @@ const styles = StyleSheet.create({
     height: 1,
     marginBottom: 0,
     borderWidth: 0,
+    opacity: 0,
+  },
+  preloadImage: {
+    ...StyleSheet.absoluteFillObject,
     opacity: 0,
   },
 });

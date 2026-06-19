@@ -33,7 +33,29 @@ describe("mobile tab cache and transit map contracts", () => {
     const source = readMobile("src/components/addresses/TransitRouteMap.tsx");
 
     expect(source).toContain("const [loaded, setLoaded] = useState(false)");
-    expect(source).toContain("!loaded && styles.preloadFrame");
-    expect(source).toContain("onLoad={() => setLoaded(true)}");
+    expect(source).toContain("const showPreloadFrame = !loadedUri && !loaded");
+    expect(source).toContain("showPreloadFrame && styles.preloadFrame");
+    expect(source).toContain("setLoaded(true)");
+  });
+
+  it("keeps a loaded transit map visible across same-route background refreshes", () => {
+    const source = readMobile("src/components/addresses/TransitRouteMap.tsx");
+
+    expect(source).toContain("const previousUriRef = useRef<string | null>(null)");
+    expect(source).toContain("const [loadedUri, setLoadedUri] = useState<string | null>(null)");
+    expect(source).toContain("}, [routeKey])");
+    expect(source).toContain("if (previousUriRef.current !== uri)");
+    expect(source).toContain("if (!coords || !uri || !token || (failed && !loadedUri)) return null");
+    expect(source).not.toContain("}, [coords])");
+  });
+
+  it("preloads replacement transit maps without dropping the last good image", () => {
+    const source = readMobile("src/components/addresses/TransitRouteMap.tsx");
+
+    expect(source).toContain("const visibleUri = loadedUri ?? uri");
+    expect(source).toContain("const isLoadingReplacement = Boolean(loadedUri && uri !== loadedUri && !failed)");
+    expect(source).toContain("style={styles.preloadImage}");
+    expect(source).toContain("setLoadedUri(uri)");
+    expect(source).toContain("const routeKeyCoord = (value: number) => Math.round(value * 1e5) / 1e5");
   });
 });
