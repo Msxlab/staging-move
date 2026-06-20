@@ -2373,6 +2373,91 @@ model SponsoredPlacement {
   @@index([stateScope])
 }
 
+// Lead-gen marketplace (R3, docs/ai/free-pivot/19 §3 Layer 3). A consumer submits
+// ONE structured quote request at the high-intent moving moment; we match N
+// licensed movers serving the route and fan the lead out to each via LeadDispatch
+// (the ConnectorDispatch outbox pattern). PII (name/contact/notes) is stored only
+// in `payloadEncrypted` (FIELD_ENCRYPTION_KEY); coarse routing fields (ZIP/state/
+// date/size) stay queryable. `userId`/`movingCompanyId` are LOOSE refs (no FK) to
+// keep this additive — matching the schema's existing loose-ref style. CPL pricing
+// is null until R5 billing. Gated by `offers_moving_quotes_v1` (fail-closed).
+model Lead {
+  id       String @id @default(cuid()) @db.VarChar(30)
+  category String @db.VarChar(40) // "moving" for v1
+
+  // Loose ref (no FK): leads are auth-only in v1, but kept self-contained so a
+  // user deletion sweep handles PII via payloadEncrypted rather than a cascade.
+  userId String @db.VarChar(30)
+
+  status String @default("NEW") @db.VarChar(24) // NEW|MATCHED|SENT|PARTIALLY_ACCEPTED|ACCEPTED|REJECTED|EXPIRED
+
+  // Coarse, non-identifying routing fields (queryable for matching/reporting).
+  fromZip   String?   @db.VarChar(10)
+  toZip     String?   @db.VarChar(10)
+  fromState String?   @db.VarChar(2)
+  toState   String?   @db.VarChar(2)
+  moveDate  DateTime?
+  homeSize  String?   @db.VarChar(24) // STUDIO|ONE_BR|TWO_BR|THREE_BR|FOUR_PLUS|OTHER
+
+  // Name + contact + free-form notes, encrypted with FIELD_ENCRYPTION_KEY.
+  payloadEncrypted String @db.Text
+
+  // Attribution + abuse/dedupe context.
+  source         String? @db.VarChar(60)
+  clickToken     String? @db.VarChar(60)
+  matchedCount   Int     @default(0)
+  idempotencyKey String  @unique @db.VarChar(120)
+  ipHash         String? @db.VarChar(64)
+  userAgent      String? @db.VarChar(500)
+  locale         String? @db.VarChar(10)
+
+  // Immutable lead-sharing consent snapshot (mirrors AcquisitionRedemption).
+  consentAcceptedAt    DateTime?
+  consentIpHash        String?   @db.VarChar(64)
+  consentUserAgentHash String?   @db.VarChar(64)
+  termsVersion         String?   @db.VarChar(30)
+
+  dispatches LeadDispatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// One delivery of a Lead to one matched partner. v1 partners = APPROVED
+// MoverApplications (they carry contactEmail + serviceStates + opted into leads;
+// the FMCSA MovingCompany catalog has no email, so it is the public directory,
+// not a lead recipient). Mirrors ConnectorDispatch: a retrying, idempotent
+// transactional-outbox row a worker drains to email the partner. The loose
+// `moverApplicationId` ref generalizes to a `partnerId` FK in R4. cplCents is
+// null until R5 billing.
+model LeadDispatch {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  leadId String @db.VarChar(30)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  moverApplicationId String @db.VarChar(30)
+
+  status         String  @default("QUEUED") @db.VarChar(20) // QUEUED|DISPATCHING|SENT|ACCEPTED|REJECTED|FAILED
+  idempotencyKey String  @unique @db.VarChar(120)
+  attemptCount   Int     @default(0)
+  lastErrorCode  String? @db.VarChar(30)
+  nextRetryAt    DateTime?
+  sentAt         DateTime?
+
+  cplCents Int? // charged-per-lead amount; set at R5 billing, null until then
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, nextRetryAt])
+  @@index([leadId])
+  @@index([moverApplicationId])
+}
+
 // Mover self-service portal v1 — a moving company applies to be listed, uploads
 // proof documents, and lands in an admin verification queue. On approval the
 // application is linked to (or creates) a MovingCompany row (the existing FMCSA
