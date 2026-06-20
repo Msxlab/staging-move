@@ -8,6 +8,7 @@ import { Badge as UiBadge } from "@/components/ui/Badge";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
 import { confidenceTone, toneBadgeVariant } from "@/lib/semantic-status";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
+import { AffiliateCtaButton } from "@/components/provider/AffiliateCtaButton";
 import {
   getLocalizedCoverageLabel,
   getLocalizedCoverageMessage,
@@ -242,6 +243,15 @@ export function ProviderCard({
           ))}
         </View>
       ) : null}
+
+      {/* R2: affiliate CTA parity with web list cards (rendered when the provider
+          has a deal). The inner TouchableOpacity owns the press, so it opens the
+          offer instead of navigating the card. */}
+      {provider.affiliateActive ? (
+        <View style={fullStyles.affiliateRow}>
+          <AffiliateCtaButton providerId={provider.id} providerName={provider.name} source="providers" compact />
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -463,5 +473,8 @@ const makeFullStyles = (theme: Theme) => StyleSheet.create({
   tagText: {
     fontSize: 11,
     color: theme.colors.textTertiary,
+  },
+  affiliateRow: {
+    marginTop: 10,
   },
 });
