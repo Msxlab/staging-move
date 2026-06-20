@@ -74,7 +74,7 @@ vi.mock("@/lib/workspace-data-scope", () => ({
   planLimitScopeForDataScope: mocks.planLimitScopeForDataScope,
 }));
 
-import { PATCH, POST } from "./route";
+import { GET, PATCH, POST } from "./route";
 
 function request(body: unknown) {
   return new Request("https://locateflow.com/api/move-tasks", {
@@ -106,6 +106,25 @@ describe("move task entitlement gates", () => {
       workspaceMode: false,
       memberRole: null,
       memberStatus: null,
+    });
+  });
+
+  it("GET includes destinationProvider id/name/affiliateActive (R2 move-task offer data contract)", async () => {
+    mocks.moveTaskFindMany.mockResolvedValue([]);
+    mocks.workspaceMemberFindMany.mockResolvedValue([]);
+
+    const res = await GET(
+      new Request("https://locateflow.com/api/move-tasks?movingPlanId=plan-1") as any,
+    );
+    expect(res.status).toBe(200);
+
+    const include = mocks.moveTaskFindMany.mock.calls[0][0].include;
+    // The offer surface needs id (to attribute the click) + affiliateActive (to
+    // decide whether to render) + name (the CTA label).
+    expect(include.destinationProvider.select).toMatchObject({
+      id: true,
+      name: true,
+      affiliateActive: true,
     });
   });
 

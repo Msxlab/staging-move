@@ -10,6 +10,7 @@ export * from "./billing";
 export * from "./acquisition";
 export * from "./entitlement";
 export * from "./consumer-free";
+export * from "./monetization-flags";
 export * from "./permissions";
 export * from "./workspace-entitlements";
 export * from "./legal";

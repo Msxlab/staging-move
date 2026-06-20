@@ -9,6 +9,8 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Trash2, MapPin, Clock, Loader2, PlusCircle, BookOpen, ChevronDown, ChevronUp, ListChecks, UserPlus, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
+import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -99,7 +101,7 @@ interface MoveTaskItem {
   reason?: string | null;
   caveats?: string[] | null;
   localEffect?: MoveTaskLocalEffect | null;
-  destinationProvider?: { name: string } | null;
+  destinationProvider?: { id: string; name: string; affiliateActive?: boolean } | null;
   customProvider?: { name: string } | null;
   assignee?: { id: string; name: string | null; initials: string } | null;
 }
@@ -112,8 +114,10 @@ interface WorkspaceMemberOption {
 
 export default function MovingPlanDetailClient({
   uxTrustCopyVariant = "control",
+  offersAffiliate = false,
 }: {
   uxTrustCopyVariant?: UxTrustCopyVariant;
+  offersAffiliate?: boolean;
 }) {
   const params = useParams();
   const router = useRouter();
@@ -580,6 +584,23 @@ export default function MovingPlanDetailClient({
                     {task.destinationProvider?.name && !isDone && !isDismissed && (
                       <p className="text-[11px] text-tone-emerald-fg mt-2">Candidate: {task.destinationProvider.name}</p>
                     )}
+                    {/* R2: the #1 monetizable moment — set up service with the
+                        destination provider at the new home. Only when the
+                        rollout flag is on AND the provider has an affiliate deal. */}
+                    {offersAffiliate &&
+                      task.destinationProvider?.affiliateActive &&
+                      task.destinationProvider.id &&
+                      !isDone &&
+                      !isDismissed && (
+                        <div className="mt-2">
+                          <AffiliateCtaButton
+                            providerId={task.destinationProvider.id}
+                            source="moving"
+                            label={`Set up with ${task.destinationProvider.name}`}
+                          />
+                          <AffiliateDisclosure className="mt-1.5" />
+                        </div>
+                      )}
                     {task.caveats?.[0] && !isDone && !isDismissed && (
                       <p className="text-[10px] text-foreground/40 mt-2">{task.caveats[0]}</p>
                     )}
