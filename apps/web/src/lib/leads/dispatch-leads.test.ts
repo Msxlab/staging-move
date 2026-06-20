@@ -1,0 +1,112 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  dispatchFindMany: vi.fn(),
+  dispatchUpdate: vi.fn(),
+  moverFindUnique: vi.fn(),
+  sendLoggedEmail: vi.fn(),
+  decrypt: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    leadDispatch: { findMany: mocks.dispatchFindMany, update: mocks.dispatchUpdate },
+    moverApplication: { findUnique: mocks.moverFindUnique },
+  },
+}));
+vi.mock("@/lib/shared-encryption", () => ({ decrypt: mocks.decrypt }));
+vi.mock("@/lib/email-service", () => ({ sendLoggedEmail: mocks.sendLoggedEmail }));
+
+import { drainLeadDispatches } from "./dispatch-leads";
+
+const NOW = new Date("2026-07-01T00:00:00.000Z");
+
+const dispatch = (over: Record<string, unknown> = {}) => ({
+  id: "d1",
+  leadId: "lead1",
+  moverApplicationId: "app1",
+  idempotencyKey: "lead1:app1",
+  attemptCount: 0,
+  lead: {
+    fromZip: "90001",
+    toZip: "78701",
+    fromState: "CA",
+    toState: "TX",
+    moveDate: new Date("2026-08-01T00:00:00.000Z"),
+    homeSize: "TWO_BR",
+    payloadEncrypted: "enc",
+  },
+  ...over,
+});
+
+describe("drainLeadDispatches", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.decrypt.mockReturnValue(JSON.stringify({ contactName: "Pat", contactEmail: "pat@x.com" }));
+    mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com" });
+    mocks.dispatchUpdate.mockResolvedValue({});
+  });
+
+  it("emails the partner and marks the dispatch SENT (idempotent via dedupeKey)", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    mocks.sendLoggedEmail.mockResolvedValue({ success: true, skipped: false });
+
+    const res = await drainLeadDispatches({ now: NOW });
+
+    expect(res).toMatchObject({ processed: 1, sent: 1, failed: 0, retried: 0 });
+    expect(mocks.sendLoggedEmail.mock.calls[0][0]).toMatchObject({
+      to: "mover@co.com",
+      dedupeKey: "lead1:app1",
+    });
+    // PII appears only in the email body, decrypted at send time.
+    expect(mocks.sendLoggedEmail.mock.calls[0][0].html).toContain("Pat");
+    expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "SENT" });
+  });
+
+  it("a deduped send still counts as delivered (SENT)", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: true });
+    const res = await drainLeadDispatches({ now: NOW });
+    expect(res.sent).toBe(1);
+    expect(mocks.dispatchUpdate.mock.calls[0][0].data.status).toBe("SENT");
+  });
+
+  it("marks NO_CONTACT FAILED (terminal) when the partner has no email", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([dispatch()]);
+    mocks.moverFindUnique.mockResolvedValue({ contactEmail: null });
+    const res = await drainLeadDispatches({ now: NOW });
+    expect(res.failed).toBe(1);
+    expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "FAILED", lastErrorCode: "NO_CONTACT" });
+    expect(mocks.sendLoggedEmail).not.toHaveBeenCalled();
+  });
+
+  it("retries with backoff on a send failure, then FAILS at max attempts", async () => {
+    // attempt 0 -> retry (stays QUEUED with nextRetryAt)
+    mocks.dispatchFindMany.mockResolvedValue([dispatch({ attemptCount: 0 })]);
+    mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: false });
+    let res = await drainLeadDispatches({ now: NOW });
+    expect(res.retried).toBe(1);
+    const retryData = mocks.dispatchUpdate.mock.calls[0][0].data;
+    expect(retryData.attemptCount).toBe(1);
+    expect(retryData.nextRetryAt).toBeInstanceOf(Date);
+
+    // attempt 4 (5th) -> terminal FAILED
+    vi.clearAllMocks();
+    mocks.decrypt.mockReturnValue("{}");
+    mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com" });
+    mocks.dispatchUpdate.mockResolvedValue({});
+    mocks.dispatchFindMany.mockResolvedValue([dispatch({ attemptCount: 4 })]);
+    mocks.sendLoggedEmail.mockResolvedValue({ success: false, skipped: false });
+    res = await drainLeadDispatches({ now: NOW });
+    expect(res.failed).toBe(1);
+    expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "FAILED" });
+  });
+
+  it("only claims QUEUED, due dispatches", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([]);
+    await drainLeadDispatches({ now: NOW });
+    const where = mocks.dispatchFindMany.mock.calls[0][0].where;
+    expect(where.status).toBe("QUEUED");
+    expect(where.OR).toEqual([{ nextRetryAt: null }, { nextRetryAt: { lte: NOW } }]);
+  });
+});
