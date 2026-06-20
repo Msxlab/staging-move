@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/shared-encryption";
 import { sendLoggedEmail } from "@/lib/email-service";
+import { accruePartnerLeadCharge } from "@/lib/leads/billing";
 
 /**
  * Lead delivery worker (R3d). Drains QUEUED LeadDispatch rows and emails each
@@ -98,6 +99,7 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
     include: {
       lead: {
         select: {
+          category: true,
           fromZip: true,
           toZip: true,
           fromState: true,
@@ -147,6 +149,16 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
           where: { id: d.id },
           data: { status: "SENT", sentAt: now, attemptCount: { increment: 1 } },
         });
+        // R5: accrue a CPL charge for a delivered generic-Partner lead. Fail-safe
+        // (no rate → no charge; never blocks delivery). Movers aren't billed here.
+        if (d.partnerKind === "partner") {
+          await accruePartnerLeadCharge({
+            leadDispatchId: d.id,
+            partnerId: d.partnerId,
+            category: d.lead.category,
+            now,
+          }).catch(() => {});
+        }
         sent++;
       } else {
         throw new Error("send_failed");

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   partnerFindUnique: vi.fn(),
   sendLoggedEmail: vi.fn(),
   decrypt: vi.fn(),
+  accruePartnerLeadCharge: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -18,6 +19,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/shared-encryption", () => ({ decrypt: mocks.decrypt }));
 vi.mock("@/lib/email-service", () => ({ sendLoggedEmail: mocks.sendLoggedEmail }));
+vi.mock("@/lib/leads/billing", () => ({ accruePartnerLeadCharge: mocks.accruePartnerLeadCharge }));
 
 import { drainLeadDispatches } from "./dispatch-leads";
 
@@ -49,6 +51,7 @@ describe("drainLeadDispatches", () => {
     mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com" });
     mocks.partnerFindUnique.mockResolvedValue({ contactEmail: "cleaner@co.com" });
     mocks.dispatchUpdate.mockResolvedValue({});
+    mocks.accruePartnerLeadCharge.mockResolvedValue({ accrued: false, amountCents: 0 });
   });
 
   it("emails the partner and marks the dispatch SENT (idempotent via dedupeKey)", async () => {
@@ -65,6 +68,8 @@ describe("drainLeadDispatches", () => {
     // PII appears only in the email body, decrypted at send time.
     expect(mocks.sendLoggedEmail.mock.calls[0][0].html).toContain("Pat");
     expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "SENT" });
+    // Movers are not billed via the partner CPL ledger.
+    expect(mocks.accruePartnerLeadCharge).not.toHaveBeenCalled();
   });
 
   it("routes a generic Partner dispatch (R4) to the Partner's contactEmail", async () => {
@@ -79,6 +84,10 @@ describe("drainLeadDispatches", () => {
     expect(mocks.partnerFindUnique).toHaveBeenCalledWith({ where: { id: "ptr1" }, select: { contactEmail: true } });
     expect(mocks.moverFindUnique).not.toHaveBeenCalled();
     expect(mocks.sendLoggedEmail.mock.calls[0][0].to).toBe("cleaner@co.com");
+    // R5: a delivered Partner lead accrues a CPL charge.
+    expect(mocks.accruePartnerLeadCharge).toHaveBeenCalledWith(
+      expect.objectContaining({ leadDispatchId: "d1", partnerId: "ptr1" }),
+    );
   });
 
   it("a deduped send still counts as delivered (SENT)", async () => {

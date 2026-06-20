@@ -2533,6 +2533,53 @@ model PartnerPortalToken {
   @@index([expiresAt])
 }
 
+// Partner billing ledger (R5). Each billable event (a delivered lead = CPL, a
+// placement, or a manual adjustment/credit) accrues one line; a monthly rollup
+// turns PENDING lines into a PartnerInvoice (+ Stripe invoice). v1 bills generic
+// Partners (cleaning/junk); movers are a separate FMCSA track. partnerId/invoiceId
+// are loose refs (no FK) to keep the migration additive. No PII / encrypted cols.
+model PartnerLedgerEntry {
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  partnerId   String  @db.VarChar(30)
+  kind        String  @db.VarChar(20) // CPL | PLACEMENT | ADJUSTMENT | CREDIT
+  amountCents Int
+  currency    String  @default("usd") @db.VarChar(10)
+  // The delivery this charge is for (CPL only). @unique → a delivery is billed
+  // at most once; nullable (MySQL allows many NULLs) for non-CPL lines.
+  leadDispatchId String? @unique @db.VarChar(30)
+  periodKey   String  @db.VarChar(7) // YYYY-MM
+  status      String  @default("PENDING") @db.VarChar(20) // PENDING | INVOICED | PAID | VOID
+  invoiceId   String? @db.VarChar(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId, status])
+  @@index([periodKey, status])
+  @@index([invoiceId])
+}
+
+// Period rollup of a partner's ledger lines into a single invoice (mirrors the
+// Stripe invoice via stripeInvoiceId; reconciled by the webhook). One per
+// (partner, period).
+model PartnerInvoice {
+  id              String    @id @default(cuid()) @db.VarChar(30)
+  partnerId       String    @db.VarChar(30)
+  periodKey       String    @db.VarChar(7) // YYYY-MM
+  totalCents      Int       @default(0)
+  currency        String    @default("usd") @db.VarChar(10)
+  status          String    @default("DRAFT") @db.VarChar(20) // DRAFT|OPEN|PAID|VOID|UNCOLLECTIBLE
+  stripeInvoiceId String?   @db.VarChar(60)
+  issuedAt        DateTime?
+  paidAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([partnerId, periodKey])
+  @@index([status])
+}
+
 // Mover self-service portal v1 — a moving company applies to be listed, uploads
 // proof documents, and lands in an admin verification queue. On approval the
 // application is linked to (or creates) a MovingCompany row (the existing FMCSA

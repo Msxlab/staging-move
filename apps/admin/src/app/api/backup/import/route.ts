@@ -332,6 +332,16 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) => prisma.partnerDocument.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.partnerDocument.create({ data }),
   },
+  partnerInvoices: {
+    count: () => prisma.partnerInvoice.count(),
+    findUniqueById: (id: string) => prisma.partnerInvoice.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partnerInvoice.create({ data }),
+  },
+  partnerLedgerEntries: {
+    count: () => prisma.partnerLedgerEntry.count(),
+    findUniqueById: (id: string) => prisma.partnerLedgerEntry.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partnerLedgerEntry.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {
