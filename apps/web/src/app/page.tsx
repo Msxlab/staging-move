@@ -35,7 +35,9 @@ import {
 import {
   BILLING_PLAN_DEFINITIONS,
   TRIAL_DURATION_DAYS,
+  CONSUMER_FREE_FLAG,
 } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
@@ -91,11 +93,12 @@ export default async function LandingPage() {
   // CTA below resolves a state-aware destination so eligible Free Access
   // users are not silently funnelled past the trial offer.
   const primaryHref = userId ? "/dashboard" : "/sign-up";
-  const [ctaTarget, publicCampaign, workspaceModelEnabled, apiConnectorsEnabled] = await Promise.all([
+  const [ctaTarget, publicCampaign, workspaceModelEnabled, apiConnectorsEnabled, consumerFree] = await Promise.all([
     resolveMarketingCtaTarget(userId),
     getPublicSubscriptionOffersViewModel(),
     isWorkspaceModelEnabled(),
     isApiConnectorsEnabled(),
+    isFeatureEnabled(CONSUMER_FREE_FLAG),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   // Server-side translation — getTranslations resolves the locale from
@@ -462,6 +465,7 @@ export default async function LandingPage() {
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
         offers={publicCampaign}
+        consumerFree={consumerFree}
       />
 
       {/* Latest blog posts — server component, ISR-cached. Renders

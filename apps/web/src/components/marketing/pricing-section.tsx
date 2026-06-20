@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 import {
   Baby,
   Bell,
@@ -55,6 +56,14 @@ interface PricingSectionProps {
   campaign?: PublicCampaignForPricing | null;
   offers?: PublicOffersForPricing | null;
   headingLevel?: "h1" | "h2";
+  /**
+   * CONSUMER_FREE pivot: when true, the whole paid 3-tier/billing-cycle layout is
+   * replaced by one active "Free — everything included" card plus coming-soon
+   * Concierge/Business placeholders (no price, no checkout). The server page reads
+   * isFeatureEnabled(CONSUMER_FREE) and passes the resolved boolean. Off (default)
+   * → the original paid layout renders unchanged (fully reversible).
+   */
+  consumerFree?: boolean;
 }
 
 const PLAN_FEATURES: Record<PaidPlanId, Feature[]> = {
@@ -341,6 +350,185 @@ function PlanCard({
   );
 }
 
+// CONSUMER_FREE: every feature is included for everyone now, so the Free card
+// lists the breadth of the product (drawn from the former paid tiers) rather
+// than a metered subset.
+const FREE_INCLUDED: Feature[] = [
+  { icon: Home, label: "All your homes & addresses" },
+  { icon: Map, label: "New Home Dossier: flood, schools, weather, hazards, radon, air & more" },
+  { icon: Sparkles, label: "AI move briefing — your move, explained" },
+  { icon: Wifi, label: "Smart, data-checked provider suggestions (FCC broadband & utility data where available)" },
+  { icon: Truck, label: "FMCSA-registered mover suggestions & smart moving planner" },
+  { icon: Map, label: "Real route maps, per-home budgets, reminders & checklists" },
+  { icon: Users, label: "Shared household workspace, member roles & child accounts" },
+  { icon: Download, label: "New Home Dossier PDF + CSV/PDF export" },
+];
+
+type ComingSoonOffer = {
+  key: "concierge" | "business";
+  name: string;
+  kicker: string;
+  description: string;
+  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+};
+
+const COMING_SOON_OFFERS: ComingSoonOffer[] = [
+  {
+    key: "concierge",
+    name: "Concierge",
+    kicker: "Coming soon",
+    description:
+      "Done-for-you moving help: a real concierge handles setup, transfers, and scheduling so you don't have to.",
+    icon: Headset,
+  },
+  {
+    key: "business",
+    name: "Business",
+    kicker: "Coming soon",
+    description:
+      "Tools for movers, agents & partners — qualified leads, a partner dashboard, and sponsored placements.",
+    icon: Building2,
+  },
+];
+
+function ComingSoonCard({ offer }: { offer: ComingSoonOffer }) {
+  const [interested, setInterested] = useState(false);
+  const Icon = offer.icon;
+
+  const handleInterest = () => {
+    if (interested) return;
+    // The interest event IS the capture mechanism for now (a full waitlist is a
+    // later monetization step). concierge gets its own dedicated signal too.
+    trackEvent("offer_clicked", { offer_key: offer.key, surface: "pricing" });
+    if (offer.key === "concierge") {
+      trackEvent("concierge_interest_clicked", { surface: "pricing" });
+    }
+    setInterested(true);
+  };
+
+  return (
+    <article className="flex h-full flex-col rounded-2xl border border-dashed border-border bg-muted/20 p-6">
+      <div className="mb-5">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{offer.kicker}</p>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+            Not yet available
+          </span>
+        </div>
+        <h3 className="flex items-center gap-2 text-2xl font-semibold text-muted-foreground">
+          <Icon className="h-5 w-5" aria-hidden />
+          {offer.name}
+        </h3>
+        <p className="mt-2 min-h-[3rem] text-sm leading-6 text-muted-foreground">{offer.description}</p>
+      </div>
+      <div className="mt-auto">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleInterest}
+          disabled={interested}
+          aria-pressed={interested}
+        >
+          {interested ? "Thanks — we'll be in touch" : "I'm interested"}
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+function ConsumerFreePricing({
+  ctaHref,
+  headingLevel,
+}: {
+  ctaHref: string;
+  headingLevel: "h1" | "h2";
+}) {
+  const Heading = headingLevel;
+
+  useEffect(() => {
+    // One impression per coming-soon offer when the section mounts.
+    COMING_SOON_OFFERS.forEach((offer) =>
+      trackEvent("offer_viewed", { offer_key: offer.key, surface: "pricing" }),
+    );
+  }, []);
+
+  return (
+    <section id="pricing" className="container py-20">
+      <div className="mx-auto mb-10 max-w-3xl text-center">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          Free — every feature included
+        </div>
+        <Heading className="mb-4 text-3xl font-bold">LocateFlow is free for your whole move</Heading>
+        <p className="text-lg text-muted-foreground">
+          No subscription, no credit card. Every feature, for every move — Concierge and Business are on the way.
+        </p>
+      </div>
+
+      <div
+        id="pricing-plan-grid"
+        aria-label="Plans"
+        className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-3"
+      >
+        {/* Active Free card */}
+        <article className="flex h-full flex-col rounded-2xl border border-primary bg-card p-6 shadow-md">
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">For everyone</p>
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                Everything included
+              </span>
+            </div>
+            <h3 className="text-2xl font-semibold">Free</h3>
+            <p className="mt-2 min-h-[3rem] text-sm leading-6 text-muted-foreground">
+              The complete LocateFlow — every home, every feature, no limits to unlock.
+            </p>
+          </div>
+
+          <div className="mb-5">
+            <span className="text-4xl font-bold tracking-tight">$0</span>
+            <span className="text-sm text-muted-foreground">/forever</span>
+            <p className="mt-2 text-xs text-muted-foreground">No credit card. No trial to expire.</p>
+          </div>
+
+          <ul className="grid flex-1 gap-2.5 text-sm">
+            {FREE_INCLUDED.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-start gap-2.5">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                </span>
+                <span className="leading-snug">{label}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-6">
+            <Button asChild variant="default" className="w-full">
+              <Link href={ctaHref}>Get started free</Link>
+            </Button>
+          </div>
+        </article>
+
+        {COMING_SOON_OFFERS.map((offer) => (
+          <ComingSoonCard key={offer.key} offer={offer} />
+        ))}
+      </div>
+
+      <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-muted-foreground">
+        LocateFlow tracks your services and move workflow. It does not log into or change your accounts with any
+        provider on your behalf — it gives you guided checklists, reminders, and links so you update each provider
+        yourself through their official channel.
+      </p>
+
+      <div className="mx-auto mt-6 flex max-w-4xl flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+        <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
+        <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
+      </div>
+    </section>
+  );
+}
+
 export function PricingSection({
   ctaHref,
   ctaLabelLoggedIn,
@@ -348,7 +536,11 @@ export function PricingSection({
   campaign,
   offers,
   headingLevel = "h2",
+  consumerFree = false,
 }: PricingSectionProps) {
+  if (consumerFree) {
+    return <ConsumerFreePricing ctaHref={ctaHref} headingLevel={headingLevel} />;
+  }
   const annualOffer = offers?.annualTrial ?? campaign ?? null;
   const monthlyOffer = offers?.monthlyPaid ?? null;
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("yearly");
