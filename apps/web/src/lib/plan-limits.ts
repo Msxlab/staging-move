@@ -30,24 +30,32 @@ export const UNLIMITED = Number.MAX_SAFE_INTEGER;
 const PLAN_LIMITS: Record<string, {
   maxAddresses: number;
   maxServices: number;
+  maxCustomProviders: number;
 }> = {
   // FREE = thin teaser tier (owner 2026-06-10): 3 addresses, 10 services.
   // The move plan itself is gated separately (see canCreateMovingPlan).
+  // `maxCustomProviders` is an ABUSE ceiling, not a paywall: generous enough that
+  // no real user hits it, finite so a single account can't create unbounded
+  // userCustomProvider rows (the active path previously had no count check).
   FREE_TRIAL: {
     maxAddresses: 3,
     maxServices: 10,
+    maxCustomProviders: 25,
   },
   INDIVIDUAL: {
     maxAddresses: 10,
     maxServices: 100,
+    maxCustomProviders: 100,
   },
   FAMILY: {
     maxAddresses: 15,
     maxServices: 500,
+    maxCustomProviders: 300,
   },
   PRO: {
     maxAddresses: 25,
     maxServices: 1000,
+    maxCustomProviders: 1000,
   },
 };
 
@@ -396,6 +404,23 @@ export async function canCreateCustomProvider(userId: string): Promise<PlanLimit
       };
     }
     return inactivePlanBlock(userPlan, "customProvider");
+  }
+
+  // Active path: enforce a per-owner ABUSE ceiling (finite, not a paywall).
+  // Previously this path returned { allowed: true } with no count check, so a
+  // single account could create unbounded custom providers — the only guards
+  // were the route's rate limit (velocity) and the pending-review cap (review
+  // queue only). This caps cumulative rows. Finite value → safe to interpolate;
+  // intentionally NOT `upgradeRequired` (everything is free — no tier to buy).
+  const count = await prisma.userCustomProvider.count({ where: { userId, deletedAt: null } });
+  if (count >= userPlan.limits.maxCustomProviders) {
+    return {
+      allowed: false,
+      code: "CUSTOM_PROVIDER_LIMIT_REACHED",
+      reason: `You've reached the maximum of ${userPlan.limits.maxCustomProviders} custom providers.`,
+      current: count,
+      limit: userPlan.limits.maxCustomProviders,
+    };
   }
 
   return { allowed: true };

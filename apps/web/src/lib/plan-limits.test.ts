@@ -173,6 +173,28 @@ describe("plan limits setup grace", () => {
     });
   });
 
+  it("enforces the active-path custom-provider abuse ceiling (FREE_TRIAL = 25)", async () => {
+    // subscription null → active default Free Access (isActive:true, FREE_TRIAL limits),
+    // so canCreateCustomProvider takes the ACTIVE path (not setup grace). Previously
+    // this path had no count check at all.
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.userCustomProviderCount.mockResolvedValue(25);
+
+    await expect(canCreateCustomProvider("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "CUSTOM_PROVIDER_LIMIT_REACHED",
+      current: 25,
+      limit: 25,
+    });
+  });
+
+  it("allows custom providers below the active-path ceiling", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.userCustomProviderCount.mockResolvedValue(24);
+
+    await expect(canCreateCustomProvider("user_1")).resolves.toMatchObject({ allowed: true });
+  });
+
   it("allows setup addresses up to the new 3-address allowance", async () => {
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
