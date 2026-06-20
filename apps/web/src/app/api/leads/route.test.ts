@@ -89,4 +89,12 @@ describe("POST /api/leads", () => {
     // PII contact fields are passed for encryption inside createLead.
     expect(arg.contactName).toBe("Pat Mover");
   });
+
+  it("gates a cleaning lead on offers_cleaning_junk_v1 and routes the category through", async () => {
+    const res = await POST(req({ ...validBody, category: "cleaning" }));
+    expect(res.status).toBe(200);
+    // The cleaning/junk rollout flag (not the moving one) is what's checked.
+    expect(mocks.isFeatureEnabled).toHaveBeenCalledWith("offers_cleaning_junk_v1", { userId: "user-1" });
+    expect(mocks.createLead.mock.calls[0][0].category).toBe("cleaning");
+  });
 });

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireDbUserId } from "@/lib/auth";
 import { apiGateErrorResponse } from "@/lib/api-gates";
 import { isFeatureEnabled } from "@/lib/feature-flags";
-import { OFFERS_MOVING_QUOTES_FLAG, TERMS_VERSION } from "@locateflow/shared";
+import { OFFERS_MOVING_QUOTES_FLAG, OFFERS_CLEANING_JUNK_FLAG, TERMS_VERSION } from "@locateflow/shared";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { resolveClientIpFromHeaders } from "@/lib/client-ip";
 import { getRequestHashSnapshot, hashForSnapshot } from "@/lib/acquisition-campaigns";
@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
 
 const HOME_SIZES = ["STUDIO", "ONE_BR", "TWO_BR", "THREE_BR", "FOUR_PLUS", "OTHER"] as const;
 
+const LEAD_CATEGORIES = ["moving", "cleaning", "junk"] as const;
+
 const leadSchema = z.object({
+  category: z.enum(LEAD_CATEGORIES).default("moving"),
   fromZip: z.string().trim().max(10).optional().nullable(),
   toZip: z.string().trim().max(10).optional().nullable(),
   fromState: z.string().trim().length(2).optional().nullable(),
@@ -35,10 +38,6 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
 
-    if (!(await isFeatureEnabled(OFFERS_MOVING_QUOTES_FLAG, { userId }))) {
-      return NextResponse.json({ error: "Not available" }, { status: 404 });
-    }
-
     const rl = await rateLimit(getRateLimitKey(request, "leads", { userId }), {
       limit: 10,
       windowSeconds: 60 * 60,
@@ -54,6 +53,13 @@ export async function POST(request: NextRequest) {
     }
     const d = parsed.data;
 
+    // Category-aware rollout gate (fail-closed): moving rides offers_moving_quotes_v1;
+    // cleaning/junk ride offers_cleaning_junk_v1.
+    const gateFlag = d.category === "moving" ? OFFERS_MOVING_QUOTES_FLAG : OFFERS_CLEANING_JUNK_FLAG;
+    if (!(await isFeatureEnabled(gateFlag, { userId }))) {
+      return NextResponse.json({ error: "Not available" }, { status: 404 });
+    }
+
     const moveDate = d.moveDate ? new Date(d.moveDate) : null;
     const ip = resolveClientIpFromHeaders(request.headers);
     const consentHashes = getRequestHashSnapshot(request);
@@ -62,7 +68,7 @@ export async function POST(request: NextRequest) {
     // resubmitted (double-tap / retry) maps to the same lead.
     const idempotencyKey = (
       hashForSnapshot(
-        [userId, d.fromZip, d.toZip, d.fromState, d.toState, d.moveDate, d.contactEmail]
+        [userId, d.category, d.fromZip, d.toZip, d.fromState, d.toState, d.moveDate, d.contactEmail]
           .map((v) => (v || "").toString().trim().toUpperCase())
           .join("|"),
       ) || `${userId}:${Date.now()}`
@@ -70,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const result = await createLead({
       userId,
-      category: "moving",
+      category: d.category,
       fromZip: d.fromZip ?? null,
       toZip: d.toZip ?? null,
       fromState: d.fromState ?? null,

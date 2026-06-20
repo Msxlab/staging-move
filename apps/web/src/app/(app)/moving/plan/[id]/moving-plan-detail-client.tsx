@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MovingPlanRecommendations } from "@/components/moving/plan-recommendations";
 import { MoversSection } from "@/components/moving/movers-list";
+import { ServiceQuoteForm } from "@/components/moving/service-quote-form";
 import { VehicleCheck, isVehicleRegistrationTask } from "@/components/moving/vehicle-check";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -116,10 +117,12 @@ export default function MovingPlanDetailClient({
   uxTrustCopyVariant = "control",
   offersAffiliate = false,
   offersMovingQuotes = false,
+  offersCleaningJunk = false,
 }: {
   uxTrustCopyVariant?: UxTrustCopyVariant;
   offersAffiliate?: boolean;
   offersMovingQuotes?: boolean;
+  offersCleaningJunk?: boolean;
 }) {
   const params = useParams();
   const router = useRouter();
@@ -802,6 +805,12 @@ export default function MovingPlanDetailClient({
         city={plan.toAddress.city}
         offersMovingQuotes={offersMovingQuotes}
       />
+
+      {/* R4e: settle-in services (cleaning / junk) for the new home, prefilled
+          from the destination. Flag-gated; routes to approved Partners. */}
+      {offersCleaningJunk && (
+        <ServiceQuoteForm toState={plan.toAddress.state} toZip={plan.toAddress.zip} />
+      )}
 
       {/* State Guide */}
       {stateRules && (
