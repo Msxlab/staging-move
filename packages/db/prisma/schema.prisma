@@ -823,6 +823,26 @@ model AffiliateClick {
   @@index([providerId, createdAt]) // windowed click-rate aggregation in the admin dashboard
 }
 
+// Durable, AREA-scoped cache of external Home-Dossier lookups (FEMA flood/NRI,
+// NCES schools, EPA radon/water/walkability, NWS weather, AirNow AQI, HUD FMR,
+// Census ACS, EV stations). Primary cost control now that the dossier is free
+// for everyone: each data point is fetched ONCE per geo cell, persisted, and
+// served from cache; a section is re-fetched only when expired OR the last
+// fetch returned no real data (status != REAL). Keyed by rounded coordinates so
+// two users at the same place — and nearby addresses — share one upstream call.
+// Holds non-PII AREA facts only (zone, district, AQI, FMR…), never user data.
+model AddressDataCacheEntry {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  geoKey    String   @unique @db.VarChar(120) // "<SECTION>:<lat>,<lng>" (+":<YYYY-MM-DD>" for WEATHER)
+  section   String   @db.VarChar(24) // FLOOD|SCHOOL|WEATHER|HAZARDS|RADON|WATER|AIR|HOUSING|EV|NEIGHBORHOOD
+  status    String   @db.VarChar(12) // REAL | DEGRADED | EMPTY
+  dataJson  String   @db.Text // serialized upstream lookup result
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([section, expiresAt])
+}
+
 // Server-side "saved for later" provider shortlist (replaces the client-only
 // localStorage list, so saves survive device switches and can feed the product).
 // One row per (user, provider).
