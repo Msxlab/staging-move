@@ -2520,12 +2520,14 @@ model PartnerDocument {
 // would re-grant revoked access, so this is a session/token table (excluded from
 // backups). No FIELD_ENCRYPTION_KEY use (hashed, not encrypted).
 model PartnerPortalToken {
-  id         String   @id @default(cuid()) @db.VarChar(30)
-  partnerId  String   @db.VarChar(30)
-  tokenHash  String   @unique @db.VarChar(64)
+  id         String    @id @default(cuid()) @db.VarChar(30)
+  partnerId  String    @db.VarChar(30)
+  email      String    @db.VarChar(191)
+  tokenHash  String    @unique @db.VarChar(64)
   expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  revokedAt  DateTime? // set on logout — the token IS the session
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([partnerId])
   @@index([expiresAt])
