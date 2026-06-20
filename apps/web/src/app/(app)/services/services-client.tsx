@@ -11,6 +11,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { useTranslations } from "next-intl";
 import {
   generateChecklist,
@@ -893,6 +894,7 @@ export function ServicesClient({
               </div>
             );
           })}
+          <AffiliateDisclosure className="mt-3 px-1" />
         </div>
       )}
     </div>

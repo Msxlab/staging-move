@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { AFFILIATE_DISCLOSURE_SHORT } from "./affiliate-disclosure";
 
 type AffiliateSource = "provider_detail" | "services" | "recommendation" | "providers" | "moving";
 
@@ -68,6 +69,9 @@ export function AffiliateCtaButton({
       }}
       className={className ?? DEFAULT_CLASS}
       aria-label={`${label} (opens in a new tab)`}
+      // FTC material-connection disclosure adjacent to every affiliate CTA; the
+      // visible <AffiliateDisclosure /> carries the conspicuous on-surface copy.
+      title={AFFILIATE_DISCLOSURE_SHORT}
     >
       <Sparkles className={iconClassName} aria-hidden />
       {label}

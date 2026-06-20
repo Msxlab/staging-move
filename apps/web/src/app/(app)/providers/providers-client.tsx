@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { CompareView } from "./compare-view";
 import {
   getMergedDisplayCategoryKey,
@@ -727,6 +728,7 @@ export function ProvidersClient({
               </Link>
             ))}
           </div>
+          <AffiliateDisclosure className="mt-3" />
         </div>
       )}
 
@@ -827,6 +829,7 @@ export function ProvidersClient({
           }
         />
       ) : (
+        <>
         <div className="grid min-w-0 grid-cols-1 gap-2.5 lg:grid-cols-2">
           {visibleProviders.map((p) => {
             const isComparing = compareIds.includes(p.id);
@@ -946,6 +949,8 @@ export function ProvidersClient({
             );
           })}
         </div>
+          <AffiliateDisclosure className="mt-3" />
+        </>
       )}
 
       {/* State rule info (bottom, reference) */}

@@ -466,6 +466,7 @@
     "getStarted": "Get started",
     "getStartedA11y": "Get started with {{provider}}",
     "getStartedHint": "Opens the provider's site in a browser",
+    "affiliateDisclosure": "Affiliate link — we may earn a commission if you sign up, at no extra cost to you. It never affects rankings.",
     "openWebsiteA11y": "Open website for {{provider}}",
     "callProviderA11y": "Call {{provider}}",
     "alternativesIn": "Alternatives in {{category}}",

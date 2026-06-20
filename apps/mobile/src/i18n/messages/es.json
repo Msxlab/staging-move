@@ -466,6 +466,7 @@
     "getStarted": "Comenzar",
     "getStartedA11y": "Comenzar con {{provider}}",
     "getStartedHint": "Abre el sitio del proveedor en un navegador",
+    "affiliateDisclosure": "Enlace de afiliado — podemos ganar una comisión si te registras, sin costo adicional para ti. Nunca afecta las clasificaciones.",
     "openWebsiteA11y": "Abrir sitio web de {{provider}}",
     "callProviderA11y": "Llamar a {{provider}}",
     "alternativesIn": "Alternativas en {{category}}",
