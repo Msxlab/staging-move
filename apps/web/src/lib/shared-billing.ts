@@ -61,3 +61,9 @@ export {
   type AccessSource,
   type EntitlementSubscriptionLike,
 } from "../../../../packages/shared/src/entitlement";
+
+export {
+  CONSUMER_FREE_FLAG,
+  consumerFreeApplies,
+  applyConsumerFreeOverride,
+} from "../../../../packages/shared/src/consumer-free";

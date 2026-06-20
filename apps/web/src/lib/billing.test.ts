@@ -326,6 +326,92 @@ describe("billing helpers", () => {
     });
   });
 
+  // --- CONSUMER_FREE override (free-for-all pivot, flag passed as a resolved
+  // boolean — see docs/ai/free-pivot/16 H1/H3/M1). Default off = no change.
+  it("CONSUMER_FREE off (default) leaves a pure free consumer inactive", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot({
+      plan: "FREE_TRIAL",
+      status: "TRIALING",
+      provider: "TRIAL",
+      platform: "web",
+      trialEndsAt: null,
+    });
+
+    expect(entitlement.isActive).toBe(false);
+    expect(entitlement.plan).not.toBe("PRO");
+  });
+
+  it("CONSUMER_FREE on upgrades a pure free consumer to active PRO", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot(
+      {
+        plan: "FREE_TRIAL",
+        status: "TRIALING",
+        provider: "TRIAL",
+        platform: "web",
+        trialEndsAt: null,
+      },
+      { consumerFree: true },
+    );
+
+    expect(entitlement).toMatchObject({
+      plan: "PRO",
+      accessType: "PAID",
+      isActive: true,
+      // consumer UI must not offer to "manage" a subscription that doesn't exist
+      managementKind: "none",
+    });
+  });
+
+  it("CONSUMER_FREE on upgrades a missing subscription row to active PRO", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot(null, { consumerFree: true });
+
+    expect(entitlement).toMatchObject({
+      plan: "PRO",
+      accessType: "PAID",
+      isActive: true,
+      managementKind: "none",
+    });
+  });
+
+  it("CONSUMER_FREE on never touches a real Stripe payer (H3 — stays on their tier)", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot(
+      {
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        provider: "STRIPE",
+        platform: "web",
+        accessType: "PAID",
+        currentPeriodEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+      { consumerFree: true },
+    );
+
+    expect(entitlement).toMatchObject({
+      plan: "INDIVIDUAL",
+      isActive: true,
+      managementKind: "stripe",
+    });
+    expect(entitlement.plan).not.toBe("PRO");
+  });
+
+  it("CONSUMER_FREE on never reactivates a lapsed store payer (H3)", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot(
+      {
+        plan: "INDIVIDUAL",
+        status: "EXPIRED",
+        provider: "PLAY_STORE",
+        platform: "android",
+        accessType: "PAID",
+      },
+      { consumerFree: true },
+    );
+
+    // A lapsed store row resolves to managementKind "store" → override skipped,
+    // so seat reconciliation + admin truth still see the real lapsed state.
+    expect(entitlement.managementKind).toBe("store");
+    expect(entitlement.plan).not.toBe("PRO");
+  });
+
   it("uses the normal Prisma upsert when ensuring subscription defaults against a current schema", async () => {
     mocks.subscriptionUpsert.mockResolvedValue({ id: "sub-1", userId: "user-1" });
 
