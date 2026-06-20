@@ -43,6 +43,13 @@ export const EXCLUDED_AI_SURFACES = [
 export const PRODUCT_SUMMARY =
   "LocateFlow is a web and mobile app for organizing address-tied services, renewal reminders, moving tasks, budgets, and exportable relocation records.";
 
+/**
+ * CONSUMER_FREE pricing note for AI-discovery surfaces (docs/ai/free-pivot/05).
+ * Used in place of the paid-plan pricing note when the flag is on.
+ */
+export const FREE_PRICING_NOTE =
+  "LocateFlow is free — every feature included, no subscription and no credit card; Concierge and Business are coming soon.";
+
 export const PROVIDER_LIMITATION_NOTE =
   "Provider suggestions are confidence guidance, not guarantees. Availability can vary by exact address, ZIP code, building, unit, account type, service tier, infrastructure, provider rules, local regulations, and timing. Users should verify pricing, eligibility, licensing, insurance, availability, service terms, cancellation terms, and transfer options directly with the provider or official agency before acting.";
 
@@ -87,9 +94,12 @@ export async function listLlmsBlogPosts(take = 100): Promise<LlmsBlogPost[]> {
   }
 }
 
-export function buildLlmsTxt(input: { appUrl?: string; posts?: LlmsBlogPost[] } = {}) {
+export function buildLlmsTxt(
+  input: { appUrl?: string; posts?: LlmsBlogPost[]; consumerFree?: boolean } = {},
+) {
   const appUrl = normalizeOrigin(input.appUrl || SITE_URL);
   const posts = input.posts || [];
+  const consumerFree = input.consumerFree ?? false;
   const lines: string[] = [];
 
   lines.push("# LocateFlow");
@@ -98,6 +108,10 @@ export function buildLlmsTxt(input: { appUrl?: string; posts?: LlmsBlogPost[] } 
   lines.push(`Canonical site: ${appUrl}`);
   lines.push("");
   lines.push(`> ${PRODUCT_SUMMARY}`);
+  if (consumerFree) {
+    lines.push("");
+    lines.push(`> ${FREE_PRICING_NOTE}`);
+  }
   lines.push("");
   lines.push("Provider coverage note: LocateFlow provider suggestions are informational confidence guidance only. Exact address-level availability is not guaranteed and should be confirmed directly with the provider or official agency.");
   lines.push("");
@@ -105,7 +119,9 @@ export function buildLlmsTxt(input: { appUrl?: string; posts?: LlmsBlogPost[] } 
   lines.push("");
   lines.push("## Canonical Public Pages");
   for (const doc of PUBLIC_AI_DOCS) {
-    lines.push(`- [${doc.title}](${publicUrl(doc.path, appUrl)}): ${doc.note}`);
+    // CONSUMER_FREE: the Pricing page note becomes the free positioning.
+    const note = consumerFree && doc.path === "/pricing" ? FREE_PRICING_NOTE : doc.note;
+    lines.push(`- [${doc.title}](${publicUrl(doc.path, appUrl)}): ${note}`);
   }
   lines.push("");
   lines.push("## Blog");
@@ -130,8 +146,9 @@ export function buildLlmsTxt(input: { appUrl?: string; posts?: LlmsBlogPost[] } 
   return lines.join("\n");
 }
 
-export function buildLlmsFullTxt(input: { appUrl?: string } = {}) {
+export function buildLlmsFullTxt(input: { appUrl?: string; consumerFree?: boolean } = {}) {
   const appUrl = normalizeOrigin(input.appUrl || SITE_URL);
+  const consumerFree = input.consumerFree ?? false;
   const lines: string[] = [];
 
   lines.push("# LocateFlow");
@@ -141,6 +158,12 @@ export function buildLlmsFullTxt(input: { appUrl?: string } = {}) {
   lines.push("");
   lines.push(PRODUCT_SUMMARY);
   lines.push("");
+  if (consumerFree) {
+    lines.push("## Pricing");
+    lines.push("");
+    lines.push(FREE_PRICING_NOTE);
+    lines.push("");
+  }
   lines.push("## Audience");
   lines.push("");
   lines.push("LocateFlow is for people and households managing a move, multiple addresses, subscriptions, utilities, insurance, government records, provider follow-up, and address-change tasks.");

@@ -107,10 +107,17 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tErrors = await getTranslations("errors");
   const tPricing = await getTranslations("pricing");
+  // CONSUMER_FREE: the trial/cancel/refund Q&As (also emitted as FAQ structured
+  // data) are meaningless when everything is free — drop them under the flag.
+  const billingFaqs = consumerFree
+    ? []
+    : [
+        { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
+        { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
+        { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+      ];
   const faqs = [
-    { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
-    { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
-    { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+    ...billingFaqs,
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
     // Product / privacy entries — expanded for SEO and to answer the
     // questions the marketing review flagged. The provider-account answer
@@ -144,30 +151,41 @@ export default async function LandingPage() {
     operatingSystem: "Web, iOS, Android",
     description: SITE_DESCRIPTION,
     publisher: { "@id": `${SITE_URL}#organization` },
-    offers: [
-      {
-        "@type": "Offer",
-        name: BILLING_PLAN_DEFINITIONS.FREE_TRIAL.displayName,
-        price: "0",
-        priceCurrency: "USD",
-      },
-      {
-        "@type": "Offer",
-        name: `${individualPlan.displayName} Annual`,
-        price: String(individualPlan.yearlyPriceUsd ?? 24),
-        priceCurrency: "USD",
-      },
-      ...(individualPlan.monthlyPriceUsd
-        ? [
-            {
-              "@type": "Offer",
-              name: `${individualPlan.displayName} Monthly`,
-              price: String(individualPlan.monthlyPriceUsd),
-              priceCurrency: "USD",
-            },
-          ]
-        : []),
-    ],
+    // CONSUMER_FREE: advertise a single $0 offer (everything included) instead of
+    // the paid Individual/Family/Pro tiers. Flag off (default) → unchanged.
+    offers: consumerFree
+      ? [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "USD",
+          },
+        ]
+      : [
+          {
+            "@type": "Offer",
+            name: BILLING_PLAN_DEFINITIONS.FREE_TRIAL.displayName,
+            price: "0",
+            priceCurrency: "USD",
+          },
+          {
+            "@type": "Offer",
+            name: `${individualPlan.displayName} Annual`,
+            price: String(individualPlan.yearlyPriceUsd ?? 24),
+            priceCurrency: "USD",
+          },
+          ...(individualPlan.monthlyPriceUsd
+            ? [
+                {
+                  "@type": "Offer",
+                  name: `${individualPlan.displayName} Monthly`,
+                  price: String(individualPlan.monthlyPriceUsd),
+                  priceCurrency: "USD",
+                },
+              ]
+            : []),
+        ],
   };
 
   return (

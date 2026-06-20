@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { SITE_URL, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 import { buildLlmsFullTxt } from "@/lib/public-ai-discovery";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
@@ -30,7 +32,8 @@ export async function GET() {
     });
   }
 
-  return new NextResponse(buildLlmsFullTxt({ appUrl: APP_URL }), {
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
+  return new NextResponse(buildLlmsFullTxt({ appUrl: APP_URL, consumerFree }), {
     headers: {
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
