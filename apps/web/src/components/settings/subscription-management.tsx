@@ -24,6 +24,7 @@ import {
 } from "@/components/settings/cancel-survey-modal";
 import { EmbeddedCheckoutCard } from "@/components/marketing/embedded-checkout-card";
 import { PlanChangeSection } from "@/components/settings/plan-change-section";
+import { shouldShowConsumerFreePanel } from "@/components/settings/subscription-management.helpers";
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -165,8 +166,16 @@ function isStripeCheckoutActivated(subscription: SubscriptionRecord | null | und
 
 export default function SubscriptionManagementPage({
   initialNowIso,
+  consumerFree = false,
 }: {
   initialNowIso: string;
+  /**
+   * CONSUMER_FREE pivot: when on, a non-paying consumer sees a simple
+   * "You're on Free — everything included" panel instead of the plans/checkout
+   * UI. A real (or lapsed) Stripe/store payer keeps the full management screen so
+   * they can still see and manage their actual subscription. Off → unchanged.
+   */
+  consumerFree?: boolean;
 }) {
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [entitlement, setEntitlement] = useState<UnifiedEntitlementSnapshot | null>(null);
@@ -609,6 +618,49 @@ export default function SubscriptionManagementPage({
   const monthlyCtaLabel = processing === "MONTHLY_CHECKOUT"
     ? "Opening checkout..."
     : monthlyOffer?.ctaText || "Subscribe monthly";
+
+  // CONSUMER_FREE: once loaded, a non-paying consumer (no real stripe/store
+  // billing to manage) sees the free panel instead of plans/checkout. Real or
+  // lapsed payers (managementKind stripe/store) fall through to the full screen so
+  // they keep visibility/control of their actual subscription. While loading we
+  // fall through to the normal screen's own loading state to avoid a flash.
+  if (shouldShowConsumerFreePanel({ consumerFree, loading, managementKind: entitlement?.managementKind })) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 pb-8">
+        <div className="flex items-center gap-4">
+          <Link href="/settings" className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Your plan</h1>
+            <p className="text-sm text-muted-foreground">Everything LocateFlow does, included</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-primary bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Current plan</p>
+              <h2 className="mt-1 text-2xl font-semibold text-foreground">Free</h2>
+            </div>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Everything included</span>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            You have full access to every LocateFlow feature — no subscription, no credit card, nothing to renew or cancel.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6">
+          <h3 className="text-sm font-semibold text-foreground">Coming soon</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Concierge (done-for-you moving help) and Business (tools for movers &amp; partners) are on the way. See
+            what&apos;s coming on the{" "}
+            <Link href="/pricing" className="underline hover:text-foreground">pricing page</Link>.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-8">
