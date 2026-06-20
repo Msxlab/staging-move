@@ -27,6 +27,7 @@ import {
 import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { getOrFetchSection, type DossierSection, type SectionDataStatus } from "@/lib/address-data-cache";
 import { planFeatures } from "@locateflow/shared";
 
 // GET /api/addresses/:id/dossier — the New Home Dossier data endpoint.
@@ -101,6 +102,18 @@ function addressVersion(address: { updatedAt?: Date | string | null }): string {
   const value = address.updatedAt;
   if (!value) return "unknown";
   return value instanceof Date ? value.toISOString() : String(value);
+}
+
+/**
+ * Classify an upstream lookup result for the durable area cache. Every lookup
+ * result carries a `status` ("ok" | "no_location" | "error" | …), so "ok" is
+ * the only REAL outcome; anything else is DEGRADED (retry next time) and a
+ * null/absent result is EMPTY. getOrFetchSection serves REAL from cache and
+ * re-fetches the rest ("fetch once; serve cache; retry only if not real").
+ */
+function libCacheStatus(r: { status?: string } | null | undefined): SectionDataStatus {
+  if (r == null) return "EMPTY";
+  return r.status === "ok" ? "REAL" : "DEGRADED";
 }
 
 interface FloodSection {
@@ -740,6 +753,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // The libs never throw by contract, but allSettled keeps one misbehaving
     // lookup from ever taking down the other sections (belt and braces).
+    // Coordinate-keyed sections go through the durable, area-scoped cache
+    // (getOrFetchSection): fetched once per geo cell, shared across users and
+    // nearby addresses, re-fetched only when expired or not REAL. WATER (city/
+    // state) and HOUSING (zip/state) are not coordinate-keyed and stay on the
+    // request-level cache for now (low volume). The mappers are unchanged —
+    // each cached promise resolves to the raw lib result via `.then(r => r.data)`.
+    const dlat = address.latitude as number;
+    const dlng = address.longitude as number;
+    const cachedLookup = <T,>(section: DossierSection, run: () => Promise<T>, date?: string | null) =>
+      getOrFetchSection<T>({
+        section,
+        lat: dlat,
+        lng: dlng,
+        date,
+        fetcher: async () => {
+          const r = await run();
+          return { data: r, status: libCacheStatus(r as { status?: string } | null) };
+        },
+      }).then((res) => res.data);
+
     const [
       floodSettled,
       schoolSettled,
@@ -751,21 +784,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       housingSettled,
       evChargingSettled,
     ] = await Promise.allSettled([
-      lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
-      lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("FLOOD", () => lookupFloodZone({ latitude: dlat, longitude: dlng })),
+      cachedLookup("SCHOOL", () => lookupSchoolDistrict({ latitude: dlat, longitude: dlng })),
       weatherTargetDate
-        ? lookupMoveDayForecast({
-            latitude: address.latitude,
-            longitude: address.longitude,
-            targetDate: weatherTargetDate,
-          })
+        ? cachedLookup(
+            "WEATHER",
+            () => lookupMoveDayForecast({ latitude: dlat, longitude: dlng, targetDate: weatherTargetDate }),
+            weatherTargetDate,
+          )
         : Promise.resolve(null),
-      lookupHazardRisks({ latitude: address.latitude, longitude: address.longitude }),
-      lookupRadonZone({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("HAZARDS", () => lookupHazardRisks({ latitude: dlat, longitude: dlng })),
+      cachedLookup("RADON", () => lookupRadonZone({ latitude: dlat, longitude: dlng })),
       lookupWaterSystem({ city: address.city, state: address.state }),
-      lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("AIR", () => lookupAirQuality({ latitude: dlat, longitude: dlng })),
       lookupHudHousing({ zip: address.zip, state: address.state }),
-      lookupEvCharging({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("EV", () => lookupEvCharging({ latitude: dlat, longitude: dlng })),
     ]);
 
     // Neighborhood Intelligence is Pro-only: only Pro spends these three
@@ -777,11 +810,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let walkabilityStatus = "gated";
     let schoolsStatus = "gated";
     if (features.neighborhoodIntel) {
-      const coords = { latitude: address.latitude, longitude: address.longitude };
       const [censusSettled, walkSettled, schoolsSettled] = await Promise.allSettled([
-        lookupNeighborhoodAcs(coords),
-        lookupWalkability(coords),
-        lookupNearbySchools(coords),
+        cachedLookup("NB_CENSUS", () => lookupNeighborhoodAcs({ latitude: dlat, longitude: dlng })),
+        cachedLookup("NB_WALK", () => lookupWalkability({ latitude: dlat, longitude: dlng })),
+        cachedLookup("NB_SCHOOLS", () => lookupNearbySchools({ latitude: dlat, longitude: dlng })),
       ]);
       neighborhood = neighborhoodSection(censusSettled, walkSettled, schoolsSettled);
       censusStatus = sourceTelemetryStatus(censusSettled);

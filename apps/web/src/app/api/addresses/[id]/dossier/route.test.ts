@@ -66,6 +66,15 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
 }));
 
+// Durable area cache → pass-through in route tests: always run the fetcher (the
+// lib mocks above supply the data), so section assembly stays identical.
+vi.mock("@/lib/address-data-cache", () => ({
+  getOrFetchSection: vi.fn(async ({ fetcher }: { fetcher: () => Promise<{ data: unknown }> }) => ({
+    data: (await fetcher()).data,
+    cache: "MISS",
+  })),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getPlanForLimitScope } from "@/lib/plan-limits";

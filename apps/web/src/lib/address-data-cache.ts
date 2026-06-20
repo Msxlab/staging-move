@@ -35,7 +35,12 @@ export type DossierSection =
   | "AIR"
   | "HOUSING"
   | "EV"
-  | "NEIGHBORHOOD";
+  | "NEIGHBORHOOD"
+  // Neighborhood Intelligence is three independent upstream lookups; each gets
+  // its own section so their geo keys don't collide in the cache.
+  | "NB_CENSUS"
+  | "NB_WALK"
+  | "NB_SCHOOLS";
 
 export type SectionDataStatus = "REAL" | "DEGRADED" | "EMPTY";
 export type SectionCacheState = "HIT" | "MISS" | "RETRY" | "STALE";
@@ -58,6 +63,9 @@ const SECTION_TTL_MS: Record<DossierSection, number> = {
   WATER: 30 * DAY,
   WEATHER: 6 * HOUR,
   AIR: 3 * HOUR,
+  NB_CENSUS: 30 * DAY,
+  NB_WALK: 30 * DAY,
+  NB_SCHOOLS: 30 * DAY,
 };
 
 /** 4 decimals ≈ 11 m: two units in one building (and two users) share a cell. */
