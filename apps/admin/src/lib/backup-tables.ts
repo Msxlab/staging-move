@@ -180,6 +180,12 @@ export const BACKUP_TABLES = {
   // children of the application.
   moverApplications: { model: "moverApplication", label: "Mover Applications" },
   moverDocuments: { model: "moverDocument", label: "Mover Documents" },
+  // Lead-gen (R3): captured moving-quote requests + their per-partner delivery
+  // rows. Externally irreplaceable (the consumer's request + immutable consent
+  // snapshot + delivery/billing trail). PII is encrypted in Lead.payloadEncrypted.
+  // LeadDispatch.leadId Cascade-FKs Lead, so the lead imports first.
+  leads: { model: "lead", label: "Leads" },
+  leadDispatches: { model: "leadDispatch", label: "Lead Dispatches" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
@@ -242,6 +248,10 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   // (Cascade), so the application must be imported first.
   "moverApplications",
   "moverDocuments",
+  // Lead before its dispatch children (Cascade FK). Lead.userId is a loose ref
+  // (no FK), so there is no ordering constraint against users.
+  "leads",
+  "leadDispatches",
 ];
 
 // Exported so the colocated test can assert that BACKUP_TABLE_ORDER lists
@@ -315,6 +325,9 @@ export const BACKUP_TABLE_DEPENDENCIES: Partial<
   // MoverDocument.applicationId → MoverApplication (Cascade). MoverApplication
   // carries only loose refs (linkedMovingCompanyId / reviewedByAdminId, no FK).
   moverDocuments: ["moverApplications"],
+  // LeadDispatch.leadId → Lead (Cascade); the lead must import first. Lead itself
+  // has only loose refs (userId / moverApplicationId), so no entry for it.
+  leadDispatches: ["leads"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
@@ -375,6 +388,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   blogCategories: ["blogPosts"],
   // Deleting an application cascades into its uploaded documents.
   moverApplications: ["moverDocuments"],
+  // Deleting a lead cascades into its dispatch rows.
+  leads: ["leadDispatches"],
 };
 
 export function isSupportedBackupTable(

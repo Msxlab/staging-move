@@ -82,6 +82,7 @@ describe("key-rotation encrypted-field coverage (audit P0-1)", () => {
       { model: "runtimeConfigEntry", idField: "id", fields: ["valueEncrypted"] },
       { model: "partnerConsent", idField: "id", fields: ["tokenEncrypted", "refreshTokenEncrypted"] },
       { model: "connectorDispatch", idField: "id", fields: ["confirmationEncrypted", "payloadEncrypted"] },
+      { model: "lead", idField: "id", fields: ["payloadEncrypted"] },
     ]);
   });
 });

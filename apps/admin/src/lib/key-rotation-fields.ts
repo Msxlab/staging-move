@@ -37,4 +37,6 @@ export const ENCRYPTED_MODELS: EncryptedModel[] = [
   { model: "partnerConsent", idField: "id", fields: ["tokenEncrypted", "refreshTokenEncrypted"] },
   // Connector outbox: partner confirmation numbers + the canonical payload snapshot.
   { model: "connectorDispatch", idField: "id", fields: ["confirmationEncrypted", "payloadEncrypted"] },
+  // Lead-gen (R3): the consumer's name/contact/notes for a moving-quote request.
+  { model: "lead", idField: "id", fields: ["payloadEncrypted"] },
 ];

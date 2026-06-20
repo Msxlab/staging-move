@@ -103,6 +103,7 @@ export const navGroups: NavGroup[] = [
       { name: "Mover Applications", nameKey: "moverApplications", href: "/movers/applications", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Leads", nameKey: "leads", href: "/leads", icon: FileText, show: ({ permissions }) => permissions.providers.canRead },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },
     ],
