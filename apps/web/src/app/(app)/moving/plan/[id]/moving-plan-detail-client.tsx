@@ -115,9 +115,11 @@ interface WorkspaceMemberOption {
 export default function MovingPlanDetailClient({
   uxTrustCopyVariant = "control",
   offersAffiliate = false,
+  offersMovingQuotes = false,
 }: {
   uxTrustCopyVariant?: UxTrustCopyVariant;
   offersAffiliate?: boolean;
+  offersMovingQuotes?: boolean;
 }) {
   const params = useParams();
   const router = useRouter();
@@ -795,7 +797,11 @@ export default function MovingPlanDetailClient({
       {/* Find licensed movers — OPT-IN collapsed section (Family/Pro feature;
           the API answers an upgrade teaser for other plans). Nothing fetches
           or renders until the user explicitly expands it. */}
-      <MoversSection state={plan.toAddress.state} city={plan.toAddress.city} />
+      <MoversSection
+        state={plan.toAddress.state}
+        city={plan.toAddress.city}
+        offersMovingQuotes={offersMovingQuotes}
+      />
 
       {/* State Guide */}
       {stateRules && (

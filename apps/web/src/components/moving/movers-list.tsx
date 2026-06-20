@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Sparkles, Truck } from "lucide-react";
+import { MovingQuoteForm } from "@/components/moving/moving-quote-form";
 
 /**
  * FIND LICENSED MOVERS — opt-in section on the moving-plan detail page.
@@ -211,7 +212,16 @@ type FetchState =
   | { status: "error" }
   | { status: "done"; data: MoversResponse | null };
 
-export function MoversSection({ state, city }: { state: string; city?: string | null }) {
+export function MoversSection({
+  state,
+  city,
+  offersMovingQuotes = false,
+}: {
+  state: string;
+  city?: string | null;
+  /** R3: when true, show the "Get up to N moving quotes" lead form (flag-gated). */
+  offersMovingQuotes?: boolean;
+}) {
   const t = useTranslations("moving");
   const [open, setOpen] = useState(false);
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
@@ -284,6 +294,9 @@ export function MoversSection({ state, city }: { state: string; city?: string | 
             </div>
           )}
           {fetchState.status === "done" && <MoversListCard data={fetchState.data} />}
+          {offersMovingQuotes && (
+            <MovingQuoteForm toState={state} toZip={null} fromState={null} />
+          )}
         </div>
       )}
     </div>
