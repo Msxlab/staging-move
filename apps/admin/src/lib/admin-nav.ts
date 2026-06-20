@@ -101,6 +101,7 @@ export const navGroups: NavGroup[] = [
       { name: "Provider Quality", nameKey: "providerQuality", href: "/provider-quality", icon: Activity, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Movers", nameKey: "movers", href: "/movers", icon: Boxes, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Mover Applications", nameKey: "moverApplications", href: "/movers/applications", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Partner Applications", nameKey: "partnerApplications", href: "/partners", icon: ClipboardCheck, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Sponsored", nameKey: "sponsored", href: "/sponsored", icon: Megaphone, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Affiliate", nameKey: "affiliate", href: "/affiliate", icon: Link2, show: ({ permissions }) => permissions.providers.canRead },
       { name: "Leads", nameKey: "leads", href: "/leads", icon: FileText, show: ({ permissions }) => permissions.providers.canRead },
