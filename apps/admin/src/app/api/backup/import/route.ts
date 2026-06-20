@@ -312,6 +312,16 @@ const IMPORT_MODEL_OPS = {
       prisma.moverDocument.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.moverDocument.create({ data }),
   },
+  leads: {
+    count: () => prisma.lead.count(),
+    findUniqueById: (id: string) => prisma.lead.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.lead.create({ data }),
+  },
+  leadDispatches: {
+    count: () => prisma.leadDispatch.count(),
+    findUniqueById: (id: string) => prisma.leadDispatch.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.leadDispatch.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {
