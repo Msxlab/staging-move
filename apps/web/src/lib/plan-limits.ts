@@ -4,6 +4,8 @@ import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG, consumerFreeApplies } from "@locateflow/shared";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -110,8 +112,22 @@ export interface PlanLimitScope {
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
   const subscription = await findSubscriptionForEntitlement(userId);
+  // CONSUMER_FREE: every consumer resolves to PRO (everything free), reversibly.
+  // Read once. Admin never calls getUserPlan (it reads getEffectiveEntitlement
+  // directly), so admin truth stays on the raw entitlement.
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
 
   if (!subscription) {
+    if (consumerFree) {
+      return {
+        plan: "PRO",
+        status: "FREE_ACCESS",
+        isActive: true,
+        hasPremium: true,
+        isTrialExpired: false,
+        limits: PLAN_LIMITS.PRO,
+      };
+    }
     return {
       plan: "FREE_TRIAL",
       status: "FREE_ACCESS",
@@ -124,6 +140,20 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
   const effective = getEffectiveEntitlement(subscription);
   const status = subscription.status || "FREE_ACCESS";
+
+  // CONSUMER_FREE short-circuit: a free / no-management consumer resolves to PRO
+  // (full features + PRO abuse caps). Real or lapsed payers and admin grants are
+  // excluded by consumerFreeApplies (H3) and fall through to the normal ladder.
+  if (consumerFreeApplies(effective, consumerFree)) {
+    return {
+      plan: "PRO",
+      status,
+      isActive: true,
+      hasPremium: true,
+      isTrialExpired: false,
+      limits: PLAN_LIMITS.PRO,
+    };
+  }
   const accessType = (subscription as { accessType?: string | null }).accessType;
 
   // Free Access and Free Trial keep users on FREE_TRIAL feature limits

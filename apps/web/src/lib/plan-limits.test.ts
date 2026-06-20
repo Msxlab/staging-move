@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   addressCount: vi.fn(),
   movingPlanCount: vi.fn(),
   userCustomProviderCount: vi.fn(),
+  isFeatureEnabled: vi.fn(),
+}));
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: (...args: unknown[]) => mocks.isFeatureEnabled(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -41,6 +46,7 @@ describe("plan limits setup grace", () => {
     mocks.addressCount.mockResolvedValue(0);
     mocks.movingPlanCount.mockResolvedValue(0);
     mocks.userCustomProviderCount.mockResolvedValue(0);
+    mocks.isFeatureEnabled.mockResolvedValue(false); // CONSUMER_FREE off by default
   });
 
   it("treats a missing subscription row as active default Free Access", async () => {
@@ -50,6 +56,18 @@ describe("plan limits setup grace", () => {
       isActive: true,
       isTrialExpired: false,
     });
+  });
+
+  it("CONSUMER_FREE on: a free consumer resolves to PRO with PRO limits", async () => {
+    mocks.isFeatureEnabled.mockResolvedValue(true);
+    await expect(getUserPlan("user_1")).resolves.toMatchObject({
+      plan: "PRO",
+      isActive: true,
+      hasPremium: true,
+      limits: { maxAddresses: 25, maxServices: 1000, maxCustomProviders: 1000 },
+    });
+    // The paid-only move-plan gate now passes for the (formerly free) user.
+    await expect(canCreateMovingPlan("user_1")).resolves.toMatchObject({ allowed: true });
   });
 
   it("allows completed free users to add services under the thin-Free 10 cap", async () => {
@@ -315,6 +333,7 @@ describe("plan limits — Family/Pro tiers (doc 62 cascade)", () => {
     mocks.addressCount.mockResolvedValue(0);
     mocks.movingPlanCount.mockResolvedValue(0);
     mocks.userCustomProviderCount.mockResolvedValue(0);
+    mocks.isFeatureEnabled.mockResolvedValue(false); // CONSUMER_FREE off by default
   });
 
   const paidActive = (plan: string) => ({

@@ -37,13 +37,23 @@ export const CONSUMER_FREE_FLAG = "CONSUMER_FREE";
  * `managementKind` / `billingProvider` / `isManualOverride` are left as-is so the
  * consumer UI never offers to "manage" a subscription that does not exist.
  */
+/**
+ * The H3-safe predicate: would the consumer-free override upgrade this
+ * entitlement? Upgrades ONLY a pure free / campaign / no-row consumer
+ * (`managementKind === "none"` and not already premium); never a real or lapsed
+ * Stripe/store payer ("stripe"/"store") or an admin grant ("admin"). Shared by
+ * `applyConsumerFreeOverride` and the web `getUserPlan` short-circuit so they
+ * can't drift.
+ */
+export function consumerFreeApplies(result: EffectiveEntitlement, enabled: boolean): boolean {
+  return enabled && !result.hasPremium && result.managementKind === "none";
+}
+
 export function applyConsumerFreeOverride(
   result: EffectiveEntitlement,
   enabled: boolean,
 ): EffectiveEntitlement {
-  if (!enabled) return result;
-  if (result.hasPremium) return result; // active payer / active manual grant
-  if (result.managementKind !== "none") return result; // real provider/admin row (H3)
+  if (!consumerFreeApplies(result, enabled)) return result;
 
   return {
     ...result,
