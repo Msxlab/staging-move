@@ -15,7 +15,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getLocale } from "next-intl/server";
-import { isBlogLocale } from "@locateflow/shared";
+import { isBlogLocale, CONSUMER_FREE_FLAG } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
   getPublicPostBySlug,
   listPublishedLocalesForSlug,
@@ -121,6 +122,10 @@ export default async function BlogPostPage({
     post = await getPublicPostBySlug(slug, "en").catch(() => null);
   }
   if (!post) notFound();
+
+  // CONSUMER_FREE: the article CTA drops the trial/price/payment framing for the
+  // free positioning. Flag off (default) → the original paid-aware copy.
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
 
   const url = blogPostUrl(SITE_URL, post.slug, post.locale);
   const ctx = {
@@ -270,7 +275,9 @@ export default async function BlogPostPage({
             Keep provider records, addresses, and renewal reminders in one place.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Create an account in a minute. Trial length, renewal date, price, and any payment requirement are shown before checkout.
+            {consumerFree
+              ? "Create a free account in a minute — every feature is included, no payment required."
+              : "Create an account in a minute. Trial length, renewal date, price, and any payment requirement are shown before checkout."}
           </p>
           <div className="mt-6 flex justify-center">
             <Button asChild size="lg" className="px-8">
