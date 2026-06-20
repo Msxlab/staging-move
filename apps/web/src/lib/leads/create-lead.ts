@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/shared-encryption";
-import { matchMoversForLead } from "@/lib/leads/match-movers";
+import { matchPartnersForLead } from "@/lib/leads/match-partners";
 
 /**
  * Create a moving lead and fan it out to matched partners (R3b).
@@ -63,7 +63,8 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const toState = normState(input.toState);
   const fromState = normState(input.fromState);
-  const matches = await matchMoversForLead({ toState, fromState });
+  const category = input.category || "moving";
+  const matches = await matchPartnersForLead({ category, toState, fromState });
 
   const payloadEncrypted = encrypt(
     JSON.stringify({
@@ -76,7 +77,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const created = await prisma.lead.create({
     data: {
-      category: input.category || "moving",
+      category,
       userId: input.userId,
       status: matches.length > 0 ? "MATCHED" : "NEW",
       fromZip: input.fromZip || null,
@@ -99,9 +100,10 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       termsVersion: input.termsVersion || null,
       dispatches: {
         create: matches.map((m) => ({
-          moverApplicationId: m.moverApplicationId,
+          partnerKind: m.partnerKind,
+          partnerId: m.partnerId,
           status: "QUEUED",
-          idempotencyKey: `${input.idempotencyKey}:${m.moverApplicationId}`,
+          idempotencyKey: `${input.idempotencyKey}:${m.partnerKind}:${m.partnerId}`,
         })),
       },
     },

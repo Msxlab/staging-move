@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   dispatchFindMany: vi.fn(),
   dispatchUpdate: vi.fn(),
   moverFindUnique: vi.fn(),
+  partnerFindUnique: vi.fn(),
   sendLoggedEmail: vi.fn(),
   decrypt: vi.fn(),
 }));
@@ -12,6 +13,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     leadDispatch: { findMany: mocks.dispatchFindMany, update: mocks.dispatchUpdate },
     moverApplication: { findUnique: mocks.moverFindUnique },
+    partner: { findUnique: mocks.partnerFindUnique },
   },
 }));
 vi.mock("@/lib/shared-encryption", () => ({ decrypt: mocks.decrypt }));
@@ -24,8 +26,9 @@ const NOW = new Date("2026-07-01T00:00:00.000Z");
 const dispatch = (over: Record<string, unknown> = {}) => ({
   id: "d1",
   leadId: "lead1",
-  moverApplicationId: "app1",
-  idempotencyKey: "lead1:app1",
+  partnerKind: "mover_application",
+  partnerId: "app1",
+  idempotencyKey: "lead1:mover_application:app1",
   attemptCount: 0,
   lead: {
     fromZip: "90001",
@@ -44,6 +47,7 @@ describe("drainLeadDispatches", () => {
     vi.clearAllMocks();
     mocks.decrypt.mockReturnValue(JSON.stringify({ contactName: "Pat", contactEmail: "pat@x.com" }));
     mocks.moverFindUnique.mockResolvedValue({ contactEmail: "mover@co.com" });
+    mocks.partnerFindUnique.mockResolvedValue({ contactEmail: "cleaner@co.com" });
     mocks.dispatchUpdate.mockResolvedValue({});
   });
 
@@ -56,11 +60,25 @@ describe("drainLeadDispatches", () => {
     expect(res).toMatchObject({ processed: 1, sent: 1, failed: 0, retried: 0 });
     expect(mocks.sendLoggedEmail.mock.calls[0][0]).toMatchObject({
       to: "mover@co.com",
-      dedupeKey: "lead1:app1",
+      dedupeKey: "lead1:mover_application:app1",
     });
     // PII appears only in the email body, decrypted at send time.
     expect(mocks.sendLoggedEmail.mock.calls[0][0].html).toContain("Pat");
     expect(mocks.dispatchUpdate.mock.calls[0][0].data).toMatchObject({ status: "SENT" });
+  });
+
+  it("routes a generic Partner dispatch (R4) to the Partner's contactEmail", async () => {
+    mocks.dispatchFindMany.mockResolvedValue([
+      dispatch({ partnerKind: "partner", partnerId: "ptr1", idempotencyKey: "lead1:partner:ptr1" }),
+    ]);
+    mocks.sendLoggedEmail.mockResolvedValue({ success: true, skipped: false });
+
+    const res = await drainLeadDispatches({ now: NOW });
+
+    expect(res.sent).toBe(1);
+    expect(mocks.partnerFindUnique).toHaveBeenCalledWith({ where: { id: "ptr1" }, select: { contactEmail: true } });
+    expect(mocks.moverFindUnique).not.toHaveBeenCalled();
+    expect(mocks.sendLoggedEmail.mock.calls[0][0].to).toBe("cleaner@co.com");
   });
 
   it("a deduped send still counts as delivered (SENT)", async () => {

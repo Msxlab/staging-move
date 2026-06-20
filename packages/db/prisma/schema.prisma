@@ -2427,19 +2427,20 @@ model Lead {
   @@index([createdAt])
 }
 
-// One delivery of a Lead to one matched partner. v1 partners = APPROVED
-// MoverApplications (they carry contactEmail + serviceStates + opted into leads;
-// the FMCSA MovingCompany catalog has no email, so it is the public directory,
-// not a lead recipient). Mirrors ConnectorDispatch: a retrying, idempotent
-// transactional-outbox row a worker drains to email the partner. The loose
-// `moverApplicationId` ref generalizes to a `partnerId` FK in R4. cplCents is
-// null until R5 billing.
+// One delivery of a Lead to one matched partner. The recipient is identified by
+// (partnerKind, partnerId): "mover_application" → an APPROVED MoverApplication
+// (moving leads), "partner" → an APPROVED Partner (cleaning/junk, R4). Both carry
+// a contactEmail + serviceStates and opt into leads; the FMCSA MovingCompany
+// catalog has no email, so it is the public directory, not a lead recipient.
+// Mirrors ConnectorDispatch: a retrying, idempotent transactional-outbox row a
+// worker drains to email the partner. cplCents is null until R5 billing.
 model LeadDispatch {
   id     String @id @default(cuid()) @db.VarChar(30)
   leadId String @db.VarChar(30)
   lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
-  moverApplicationId String @db.VarChar(30)
+  partnerKind String @default("mover_application") @db.VarChar(24) // mover_application | partner
+  partnerId   String @db.VarChar(30) // MoverApplication.id or Partner.id per partnerKind (loose ref)
 
   status         String  @default("QUEUED") @db.VarChar(20) // QUEUED|DISPATCHING|SENT|ACCEPTED|REJECTED|FAILED
   idempotencyKey String  @unique @db.VarChar(120)
@@ -2455,7 +2456,79 @@ model LeadDispatch {
 
   @@index([status, nextRetryAt])
   @@index([leadId])
-  @@index([moverApplicationId])
+  @@index([partnerKind, partnerId])
+}
+
+// Generic, category-agnostic partner (R4) — generalizes the FMCSA-specific mover
+// portal (MoverApplication) for non-mover local services (cleaning, junk removal).
+// An APPROVED Partner is a deliverable lead recipient (contactEmail + serviceStates).
+// Category-specific verification (license/COI) lives in PartnerDocument. Movers keep
+// their specialized MoverApplication portal; this is the path for everyone else.
+// stripeCustomerId is dormant until R5 partner billing.
+model Partner {
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  category    String  @db.VarChar(40) // cleaning | junk | ...
+  companyName String  @db.VarChar(255)
+  contactName String  @db.VarChar(120)
+  contactEmail String @db.VarChar(191)
+  contactPhone String? @db.VarChar(30)
+  website     String? @db.VarChar(255)
+
+  // 2-letter state codes, comma-separated (e.g. "TX,OK"). Empty = nationwide.
+  serviceStates String @db.VarChar(255)
+
+  attestation Boolean @default(false)
+  status      String  @default("PENDING") @db.VarChar(20) // PENDING|IN_REVIEW|APPROVED|REJECTED|NEEDS_INFO
+
+  reviewNotes       String?   @db.Text
+  decisionMessage   String?   @db.Text
+  reviewedByAdminId String?   @db.VarChar(30) // loose AdminUser ref; audit-style, no FK
+  reviewedAt        DateTime?
+
+  // Dormant until R5 partner billing (Stripe Connect / CPL invoicing).
+  stripeCustomerId String? @db.VarChar(40)
+
+  documents PartnerDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([status])
+}
+
+// Proof documents a partner uploads for verification (business license, COI).
+// Generalizes MoverDocument. Files live in object storage; this is the index.
+model PartnerDocument {
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  partnerId String  @db.VarChar(30)
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  docType    String  @db.VarChar(24) // LICENSE | COI | OTHER
+  storageKey String  @db.VarChar(255)
+  fileName   String? @db.VarChar(255)
+  status     String  @default("PENDING") @db.VarChar(20) // PENDING | ACCEPTED | REJECTED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+}
+
+// Magic-link portal session for a partner. Generalizes MoverPortalToken: the
+// token is stored as a sha256 hash with a short TTL — restoring stale tokens
+// would re-grant revoked access, so this is a session/token table (excluded from
+// backups). No FIELD_ENCRYPTION_KEY use (hashed, not encrypted).
+model PartnerPortalToken {
+  id         String   @id @default(cuid()) @db.VarChar(30)
+  partnerId  String   @db.VarChar(30)
+  tokenHash  String   @unique @db.VarChar(64)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([partnerId])
+  @@index([expiresAt])
 }
 
 // Mover self-service portal v1 — a moving company applies to be listed, uploads

@@ -116,11 +116,13 @@ export async function drainLeadDispatches(opts: { now?: Date; batchSize?: number
 
   for (const d of due) {
     try {
-      const partner = await prisma.moverApplication.findUnique({
-        where: { id: d.moverApplicationId },
-        select: { contactEmail: true },
-      });
-      const to = partner?.contactEmail?.trim();
+      // Resolve the recipient email by partner kind: a mover application or a
+      // generic Partner (R4). Both expose contactEmail.
+      const contactEmail =
+        d.partnerKind === "partner"
+          ? (await prisma.partner.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true } }))?.contactEmail
+          : (await prisma.moverApplication.findUnique({ where: { id: d.partnerId }, select: { contactEmail: true } }))?.contactEmail;
+      const to = contactEmail?.trim();
       if (!to) {
         // No deliverable contact — terminal, don't retry forever.
         await prisma.leadDispatch.update({

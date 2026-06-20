@@ -186,6 +186,11 @@ export const BACKUP_TABLES = {
   // LeadDispatch.leadId Cascade-FKs Lead, so the lead imports first.
   leads: { model: "lead", label: "Leads" },
   leadDispatches: { model: "leadDispatch", label: "Lead Dispatches" },
+  // Generic partners (R4: cleaning/junk) + their verification documents.
+  // Externally irreplaceable (registration + attestation + review trail);
+  // PartnerDocument.partnerId Cascade-FKs Partner, so the partner imports first.
+  partners: { model: "partner", label: "Partners" },
+  partnerDocuments: { model: "partnerDocument", label: "Partner Documents" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
@@ -252,6 +257,9 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   // (no FK), so there is no ordering constraint against users.
   "leads",
   "leadDispatches",
+  // Partner before its documents (Cascade FK); Partner has only loose refs.
+  "partners",
+  "partnerDocuments",
 ];
 
 // Exported so the colocated test can assert that BACKUP_TABLE_ORDER lists
@@ -326,8 +334,10 @@ export const BACKUP_TABLE_DEPENDENCIES: Partial<
   // carries only loose refs (linkedMovingCompanyId / reviewedByAdminId, no FK).
   moverDocuments: ["moverApplications"],
   // LeadDispatch.leadId → Lead (Cascade); the lead must import first. Lead itself
-  // has only loose refs (userId / moverApplicationId), so no entry for it.
+  // has only loose refs (userId / partner refs), so no entry for it.
   leadDispatches: ["leads"],
+  // PartnerDocument.partnerId → Partner (Cascade); the partner imports first.
+  partnerDocuments: ["partners"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
@@ -390,6 +400,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   moverApplications: ["moverDocuments"],
   // Deleting a lead cascades into its dispatch rows.
   leads: ["leadDispatches"],
+  // Deleting a partner cascades into its documents.
+  partners: ["partnerDocuments"],
 };
 
 export function isSupportedBackupTable(
