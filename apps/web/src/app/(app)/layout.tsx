@@ -7,8 +7,8 @@ import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-r
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import { loadShowBudgetPreference } from "@/lib/user-preferences";
 import { prisma } from "@/lib/db";
-import { getEffectiveEntitlement } from "@locateflow/shared";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 
 /**
  * Show the Household/Workspace nav entry only when the workspace model is on AND
@@ -25,7 +25,7 @@ async function resolveShowWorkspace(userId: string): Promise<boolean> {
       select: { id: true },
     }),
   ]);
-  const plan = String(getEffectiveEntitlement(sub).effectivePlan);
+  const plan = String((await resolveConsumerEntitlement(sub)).entitlement.effectivePlan);
   return plan === "FAMILY" || plan === "PRO" || Boolean(invitedMember);
 }
 
@@ -38,7 +38,7 @@ async function resolveShowWorkspace(userId: string): Promise<boolean> {
 async function resolvePlanTier(userId: string): Promise<string | null> {
   try {
     const sub = await prisma.subscription.findUnique({ where: { userId } });
-    return String(getEffectiveEntitlement(sub).effectivePlan);
+    return String((await resolveConsumerEntitlement(sub)).entitlement.effectivePlan);
   } catch {
     return null;
   }

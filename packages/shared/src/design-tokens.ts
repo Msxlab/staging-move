@@ -188,7 +188,7 @@ export const planColors = {
 
 // ────────────────────────────────────────────────────────────────────
 // Tonal pairs — stat cards, category chips, service-type indicators.
-// Six tones in the Edition VI vocabulary: rose, foil, sage, honey,
+// Compatibility tone vocabulary: rose, foil, sage, honey,
 // umber, slate. The `orange/emerald/amber/sky/cyan` legacy tone names
 // alias onto the closest new tones so existing UI keeps rendering.
 // ────────────────────────────────────────────────────────────────────
@@ -329,7 +329,7 @@ export const gradients = {
 } as const;
 
 // ────────────────────────────────────────────────────────────────────
-// Radii — Edition VI scale (6 / 10 / 14 / 20 / 28).
+// Radii — Move UI scale (6 / 10 / 14 / 20 / 28).
 // Mobile/web naming kept (`sm/md/lg/xl/2xl`) so call sites don't need
 // updating; the actual pixel values shifted to the new scale.
 // ────────────────────────────────────────────────────────────────────

@@ -66,7 +66,7 @@ const config: Config = {
           DEFAULT: "var(--info)",
           light: "var(--info-soft)",
         },
-        // Brand namespace — Edition VI · Champagne & Rose.
+        // Brand namespace — Edition VIII · Move Gold.
         // Legacy `brand-orange` / `brand-amber` aliases remain so existing
         // call sites keep rendering; values now resolve to rose / foil.
         brand: {
@@ -169,7 +169,7 @@ const config: Config = {
         mono: ["var(--font-mono)", '"DM Mono"', "Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
-        // Canonical type scale — Edition VI (px values match colors_and_type.css).
+        // Canonical type scale — Move handoff scale.
         "brand-xs": ["11px", { lineHeight: "16px" }],
         "brand-sm": ["12px", { lineHeight: "18px" }],
         "brand-base": ["14px", { lineHeight: "20px" }],

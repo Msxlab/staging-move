@@ -4,9 +4,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { getEffectiveEntitlement, seatLimitForPlan } from "@locateflow/shared";
+import { seatLimitForPlan } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 
 /**
  * 404 when the workspace model is off — routes are invisible until enabled.
@@ -31,13 +32,14 @@ export function workspacePlanLabel(plan: string | null | undefined): string {
 /** Resolve the plan label for a workspace from its owner's subscription. */
 export async function planLabelForOwner(ownerUserId: string): Promise<string> {
   const sub = await prisma.subscription.findUnique({ where: { userId: ownerUserId } });
-  return workspacePlanLabel(getEffectiveEntitlement(sub).effectivePlan as string);
+  const plan = (await resolveConsumerEntitlement(sub)).entitlement.effectivePlan as string;
+  return workspacePlanLabel(plan);
 }
 
 /** Plan label + seat ceiling for a workspace, from its owner's subscription. */
 export async function planSummaryForOwner(ownerUserId: string): Promise<{ planLabel: string; seatLimit: number }> {
   const sub = await prisma.subscription.findUnique({ where: { userId: ownerUserId } });
-  const plan = getEffectiveEntitlement(sub).effectivePlan as string;
+  const plan = (await resolveConsumerEntitlement(sub)).entitlement.effectivePlan as string;
   return { planLabel: workspacePlanLabel(plan), seatLimit: seatLimitForPlan(plan) };
 }
 

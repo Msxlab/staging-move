@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* =========================================================================
-   LocateFlow — Edition VII · Aurora
+   Move — Edition VIII · Move Gold
    Source of truth: packages/shared/src/design-tokens.ts. Mirrors the
    numeric values exported by that module so web/admin (which don't import
    tokens at runtime) and mobile (which does) render the same palette.
@@ -1094,7 +1094,7 @@
 }
 
 /* ----------------------------------------------------------------------
- * Blog article prose — Edition VI palette overrides on top of
+ * Blog article prose — Move Gold palette overrides on top of
  * @tailwindcss/typography. The `prose` base gives us spacing and
  * sensible defaults; this layer retunes colors to the site theme
  * (cool links, foil quotes, display headings) so a published
@@ -2087,7 +2087,7 @@ html[data-embed="mobile"] .install-prompt {
    ========================================================================= */
 
 :root {
-  /* Champagne foil fill — tokens/effects.css `--gradient-foil`. The
+  /* Move Gold foil fill — tokens/effects.css `--gradient-foil`. The
      --foil-a/b/c stops already flip per mode above. */
   --gradient-foil: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
 }
