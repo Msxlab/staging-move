@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   tokenFindUnique: vi.fn(),
   tokenUpdate: vi.fn(),
   tokenUpdateMany: vi.fn(),
+  tokenDeleteMany: vi.fn(),
   cookieGet: vi.fn(),
   cookieSet: vi.fn(),
 }));
@@ -19,6 +20,7 @@ vi.mock("@/lib/db", () => ({
       findUnique: mocks.tokenFindUnique,
       update: mocks.tokenUpdate,
       updateMany: mocks.tokenUpdateMany,
+      deleteMany: mocks.tokenDeleteMany,
     },
   },
 }));
@@ -37,13 +39,16 @@ describe("partner-portal-auth", () => {
     vi.clearAllMocks();
     mocks.tokenCreate.mockResolvedValue({});
     mocks.tokenUpdate.mockResolvedValue({});
+    mocks.tokenDeleteMany.mockResolvedValue({ count: 0 });
   });
 
-  it("issues a token for an APPROVED partner by contact email", async () => {
+  it("issues a token for an APPROVED partner by contact email; supersedes prior links", async () => {
     mocks.partnerFindFirst.mockResolvedValue({ id: "ptr_1", companyName: "Sparkle" });
     const result = await requestPartnerPortalLink("Ops@Sparkle.com ");
     expect(result).toEqual({ token: "raw-token", partnerId: "ptr_1", companyName: "Sparkle" });
     expect(mocks.partnerFindFirst.mock.calls[0][0].where).toMatchObject({ contactEmail: "ops@sparkle.com", status: "APPROVED" });
+    // Prior tokens for this partner are pruned before a new one is issued (audit P2).
+    expect(mocks.tokenDeleteMany).toHaveBeenCalledWith({ where: { partnerId: "ptr_1" } });
     expect(mocks.tokenCreate).toHaveBeenCalled();
   });
 

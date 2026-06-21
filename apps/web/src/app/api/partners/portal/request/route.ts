@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const rl = await rateLimit(getRateLimitKey(request, "partner-portal-request"), {
       limit: 6,
       windowSeconds: 60 * 60,
+      failClosed: "if-redis-configured",
     });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
@@ -23,9 +24,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => null);
     const email = typeof body?.email === "string" ? body.email : "";
-    if (!email.trim()) return NextResponse.json(GENERIC);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return NextResponse.json(GENERIC);
 
-    const issued = await requestPartnerPortalLink(email).catch(() => null);
+    // Per-email cap so a single address can't be flooded with links across
+    // rotating IPs (audit P2). Answer generically on throttle (no enumeration).
+    const emailRl = await rateLimit(`partner-portal-request:email:${normalizedEmail}`, {
+      limit: 4,
+      windowSeconds: 60 * 60,
+      failClosed: "if-redis-configured",
+    });
+    if (!emailRl.success) return NextResponse.json(GENERIC);
+
+    const issued = await requestPartnerPortalLink(normalizedEmail).catch(() => null);
     if (issued) {
       const link = absoluteUrl(`/partners/portal/enter?token=${encodeURIComponent(issued.token)}`);
       const html = renderLocateFlowEmail({
@@ -38,7 +49,7 @@ export async function POST(request: NextRequest) {
         securityNote: true,
       });
       await sendEmail({
-        to: email.trim(),
+        to: normalizedEmail,
         subject: "Your LocateFlow partner portal link",
         html,
         text: `Sign in to your LocateFlow partner portal: ${link}`,

@@ -43,6 +43,11 @@ export async function requestPartnerPortalLink(
     .catch(() => null);
   if (!partner) return null;
 
+  // Cap to a single active link per partner and prune the table (audit P2):
+  // supersede any prior tokens for this partner before issuing a new one, so the
+  // row count stays bounded and an old link can't linger after a re-request.
+  await prisma.partnerPortalToken.deleteMany({ where: { partnerId: partner.id } }).catch(() => {});
+
   const { token, hash } = generateOpaqueToken();
   await prisma.partnerPortalToken.create({
     data: {

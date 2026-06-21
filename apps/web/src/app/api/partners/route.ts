@@ -17,7 +17,9 @@ const partnerSchema = z.object({
   category: z.enum(PARTNER_CATEGORIES),
   companyName: z.string().trim().min(1).max(255),
   contactName: z.string().trim().min(1).max(120),
-  contactEmail: z.string().trim().email().max(191),
+  // Lowercased at write so the case-insensitive portal lookup always matches
+  // (audit P2; mirrors the mover portal).
+  contactEmail: z.string().trim().email().max(191).transform((v) => v.toLowerCase()),
   contactPhone: z.string().trim().max(30).optional().nullable(),
   website: z.string().trim().url().max(255).optional().nullable(),
   // Comma-separated 2-letter states; empty allowed (nationwide).
