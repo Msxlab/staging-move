@@ -1,5 +1,26 @@
 type PlanKey = string | null | undefined;
 
+function isPaidPlan(planKey: PlanKey) {
+  return planKey === "INDIVIDUAL" || planKey === "FAMILY" || planKey === "PRO";
+}
+
+export function shouldShowMobileConsumerFreePanel({
+  loading,
+  managementKind,
+  effectivePlanKey,
+  effectiveActive,
+}: {
+  loading: boolean;
+  managementKind: string | null | undefined;
+  effectivePlanKey: PlanKey;
+  effectiveActive: boolean;
+}) {
+  if (loading) return false;
+  if (!effectiveActive || !isPaidPlan(effectivePlanKey)) return false;
+  if (managementKind == null) return false;
+  return managementKind !== "stripe" && managementKind !== "store";
+}
+
 export function shouldShowMobileSubscriptionPlan({
   planKey,
   currentPlanKey,

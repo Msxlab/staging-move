@@ -87,7 +87,7 @@ export function MoveWidget({ snapshot }: { snapshot: WidgetSnapshot }) {
     >
       {/* Eyebrow */}
       <TextWidget
-        text="LOCATEFLOW · YOUR MOVE"
+        text="MOVE · YOUR MOVE"
         style={{ fontSize: 9, fontWeight: "700", letterSpacing: 0.5, color: COLORS.accent }}
       />
 
@@ -128,7 +128,7 @@ export function MoveWidget({ snapshot }: { snapshot: WidgetSnapshot }) {
         </FlexWidget>
       ) : (
         <TextWidget
-          text="Tap to open LocateFlow"
+          text="Tap to open Move"
           style={{ fontSize: 11, fontWeight: "600", color: COLORS.accent }}
         />
       )}

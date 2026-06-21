@@ -68,10 +68,11 @@ export default async function MovingPage() {
           </h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
-        <Link href={newPlanHref}>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition">
-            {canStartPlan ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {newPlanLabel}
-          </button>
+        <Link
+          href={newPlanHref}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition"
+        >
+          {canStartPlan ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {newPlanLabel}
         </Link>
       </div>
 
