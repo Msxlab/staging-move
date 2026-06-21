@@ -108,6 +108,20 @@ function pill(map: Record<string, string>, key: string, label?: string) {
   );
 }
 
+// Status pill with a leading dot — mirrors the Move admin status indicator.
+function statusPill(key: string) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        STATUS_COLORS[key] || "bg-tone-slate-bg text-muted-foreground"
+      }`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+      {key}
+    </span>
+  );
+}
+
 // A pending step-up action: which API to hit, the dialog copy, and a callback to
 // patch local state on success. Drives the single shared PasswordConfirmModal so
 // every mutation reuses the exact same 403/requiresMfa re-prompt flow.
@@ -381,7 +395,7 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
   if (notFound || !ws) {
     return (
       <div className="space-y-4">
-        <Link href="/workspaces" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/workspaces" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Back to workspaces
         </Link>
         <p className="text-sm text-muted-foreground">Workspace not found.</p>
@@ -393,7 +407,7 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
-      <Link href="/workspaces" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/workspaces" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
         <ArrowLeft className="h-4 w-4" /> Back to workspaces
       </Link>
 
@@ -478,36 +492,36 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
 
       {/* Summary */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-border p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Crown className="h-4 w-4" /> Plan</div>
-          <div className="mt-1 text-lg font-semibold text-foreground">{ws.plan}</div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground"><Crown className="h-4 w-4 text-primary" /> Plan</div>
+          <div className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground">{ws.plan}</div>
         </div>
-        <div className="rounded-xl border border-border p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Users className="h-4 w-4" /> Seats used</div>
-          <div className="mt-1 text-lg font-semibold text-foreground">{ws.activeSeats} / {ws.seatLimit}</div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground"><Users className="h-4 w-4 text-primary" /> Seats used</div>
+          <div className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground"><span className="font-mono">{ws.activeSeats}</span> <span className="text-muted-foreground">/</span> <span className="font-mono">{ws.seatLimit}</span></div>
         </div>
-        <div className="rounded-xl border border-border p-4">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Clock className="h-4 w-4" /> Created</div>
-          <div className="mt-1 text-lg font-semibold text-foreground">{new Date(ws.createdAt).toLocaleDateString()}</div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground"><Clock className="h-4 w-4 text-primary" /> Created</div>
+          <div className="mt-1.5 font-mono text-xl font-bold leading-none text-foreground">{new Date(ws.createdAt).toLocaleDateString()}</div>
         </div>
       </div>
 
       {/* Members + per-member authorship (who entered what) + actions */}
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-foreground">Members &amp; who entered what</h2>
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <h2 className="mb-2 font-display text-base font-bold text-foreground">Members &amp; who entered what</h2>
+        <div className="overflow-x-auto rounded-2xl border border-border">
           <table className="w-full text-sm">
-            <thead className="bg-foreground/[0.03] text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-muted/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Member</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Addr</span></th>
-                <th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1"><Zap className="h-3.5 w-3.5" /> Svc</span></th>
-                <th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Budget</span></th>
-                <th className="px-4 py-3 font-medium">Joined</th>
-                <th className="px-4 py-3 font-medium">Last active</th>
-                <th className="px-4 py-3 font-medium text-right">Manage</th>
+                <th className="px-4 py-3">Member</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3"><span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Addr</span></th>
+                <th className="px-4 py-3"><span className="inline-flex items-center gap-1"><Zap className="h-3.5 w-3.5" /> Svc</span></th>
+                <th className="px-4 py-3"><span className="inline-flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Budget</span></th>
+                <th className="px-4 py-3">Joined</th>
+                <th className="px-4 py-3">Last active</th>
+                <th className="px-4 py-3 text-right">Manage</th>
               </tr>
             </thead>
             <tbody>
@@ -515,9 +529,9 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
                 const isOwner = m.role === "OWNER";
                 const rowBusy = busyMemberId === m.id;
                 return (
-                  <tr key={m.id} className="border-t border-border">
+                  <tr key={m.id} className="border-t border-border bg-card hover:bg-accent/30 transition-colors">
                     <td className="px-4 py-3">
-                      <Link href={`/users/${m.userId}`} className="font-medium text-foreground hover:underline">
+                      <Link href={`/users/${m.userId}`} className="font-medium text-foreground hover:text-primary hover:underline">
                         {m.deleted ? "(deleted)" : m.name || m.email || m.userId}
                       </Link>
                       {!m.deleted && m.name && m.email ? (
@@ -546,12 +560,12 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
                         </select>
                       )}
                     </td>
-                    <td className="px-4 py-3">{pill(STATUS_COLORS, m.status)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{m.entered.addresses}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{m.entered.services}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{m.role === "CHILD" ? "—" : m.entered.budgets}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(m.joinedAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleDateString() : "—"}</td>
+                    <td className="px-4 py-3">{statusPill(m.status)}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{m.entered.addresses}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{m.entered.services}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{m.role === "CHILD" ? "—" : m.entered.budgets}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{new Date(m.joinedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleDateString() : "—"}</td>
                     <td className="px-4 py-3 text-right">
                       {isOwner ? (
                         <span className="text-xs text-muted-foreground">Owner</span>
@@ -578,27 +592,27 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
       {/* Pending invitations + actions */}
       {ws.invitations.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-foreground">Pending invitations</h2>
-          <div className="overflow-x-auto rounded-xl border border-border">
+          <h2 className="mb-2 font-display text-base font-bold text-foreground">Pending invitations</h2>
+          <div className="overflow-x-auto rounded-2xl border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-foreground/[0.03] text-left text-xs uppercase text-muted-foreground">
+              <thead className="bg-muted/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Sent</th>
-                  <th className="px-4 py-3 font-medium">Expires</th>
-                  <th className="px-4 py-3 font-medium text-right">Manage</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Sent</th>
+                  <th className="px-4 py-3">Expires</th>
+                  <th className="px-4 py-3 text-right">Manage</th>
                 </tr>
               </thead>
               <tbody>
                 {ws.invitations.map((inv) => {
                   const rowBusy = busyInviteId === inv.id;
                   return (
-                    <tr key={inv.id} className="border-t border-border">
-                      <td className="px-4 py-3 text-muted-foreground">{inv.email}</td>
+                    <tr key={inv.id} className="border-t border-border bg-card hover:bg-accent/30 transition-colors">
+                      <td className="px-4 py-3 font-mono text-muted-foreground">{inv.email}</td>
                       <td className="px-4 py-3">{pill(ROLE_COLORS, inv.role, ROLE_LABEL[inv.role] || inv.role)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(inv.expiresAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground">{new Date(inv.expiresAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -643,11 +657,11 @@ export default function WorkspaceDetailClient({ id }: { id: string }) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="transfer-owner-title"
-            className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="transfer-owner-title" className="text-base font-semibold text-foreground">
+                <h2 id="transfer-owner-title" className="font-display text-base font-bold text-foreground">
                   Transfer ownership
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">

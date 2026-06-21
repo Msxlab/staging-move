@@ -159,9 +159,9 @@ function statusBadgeClass(status: string): string {
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
         {action}
       </div>
       {children}
@@ -401,7 +401,7 @@ export default function ConnectorDetailClient() {
         <Link href="/connectors" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Connectors
         </Link>
-        <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
+        <div className="py-12 text-center font-mono text-sm text-muted-foreground">Loading…</div>
       </div>
     );
   }
@@ -412,7 +412,7 @@ export default function ConnectorDetailClient() {
         <Link href="/connectors" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Connectors
         </Link>
-        <div className="rounded-xl border border-border bg-card">
+        <div className="rounded-2xl border border-border bg-card shadow-sm">
           <EmptyState
             icon={Plug}
             title="Connector not found"
@@ -456,7 +456,7 @@ export default function ConnectorDetailClient() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => load()}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
@@ -464,7 +464,7 @@ export default function ConnectorDetailClient() {
               <button
                 onClick={toggleEnabled}
                 aria-pressed={cfg?.enabled ?? false}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
               >
                 {cfg?.enabled ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
                 {cfg?.enabled ? "Disable" : "Enable"}
@@ -475,19 +475,20 @@ export default function ConnectorDetailClient() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-muted-foreground">{detail.connectorKey}</span>
-        {detail.manifest && <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">v{detail.manifest.version}</span>}
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${mode.cls}`}>{mode.label}</span>
+        <span className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-[11px] text-muted-foreground">{detail.connectorKey}</span>
+        {detail.manifest && <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">v{detail.manifest.version}</span>}
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${mode.cls}`}>{mode.label}</span>
         {cfg ? (
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${cfg.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${cfg.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${cfg.enabled ? "bg-tone-sage-fg" : "bg-destructive"}`} />
             {cfg.enabled ? "ON" : "OFF"}
           </span>
         ) : (
           <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">not registered</span>
         )}
-        {cfg && <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{cfg.stage}</span>}
+        {cfg && <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">{cfg.stage}</span>}
         {cfg && cfg.circuitState !== "CLOSED" && (
-          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">{cfg.circuitState}</span>
+          <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-mono text-[10px] font-medium text-destructive">{cfg.circuitState}</span>
         )}
       </div>
 
@@ -500,7 +501,7 @@ export default function ConnectorDetailClient() {
               <button
                 onClick={runHealthCheck}
                 disabled={health?.running}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
               >
                 <Activity className={`h-3.5 w-3.5 ${health?.running ? "animate-pulse" : ""}`} /> Health check
               </button>
@@ -509,7 +510,7 @@ export default function ConnectorDetailClient() {
               <button
                 onClick={runTestConnection}
                 disabled={testResult?.running}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
               >
                 <KeyRound className={`h-3.5 w-3.5 ${testResult?.running ? "animate-pulse" : ""}`} /> Test credentials
               </button>
@@ -522,8 +523,8 @@ export default function ConnectorDetailClient() {
             <Row label="Operating mode">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${mode.cls}`}>{mode.label}</span>
             </Row>
-            <Row label="Circuit state">{cfg?.circuitState ?? "—"}</Row>
-            <Row label="Agreement">{detail.gate.agreementStatus}</Row>
+            <Row label="Circuit state"><span className="font-mono">{cfg?.circuitState ?? "—"}</span></Row>
+            <Row label="Agreement"><span className="font-mono">{detail.gate.agreementStatus}</span></Row>
             <Row label="Credentials">
               {detail.gate.credentialsPresent ? (
                 <span className="inline-flex items-center gap-1 text-tone-sage-fg"><CheckCircle2 className="h-3.5 w-3.5" /> configured</span>
@@ -605,7 +606,7 @@ export default function ConnectorDetailClient() {
                 )}
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Capabilities</p>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Capabilities</p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(detail.manifest.capabilities).map(([cap, on]) => (
                     <span
@@ -631,7 +632,7 @@ export default function ConnectorDetailClient() {
           </p>
           <div className="space-y-2">
             {detail.credentials.map((c) => (
-              <div key={c.key} className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
+              <div key={c.key} className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm text-foreground">{c.label}</p>
                   <p className="truncate font-mono text-[10px] text-muted-foreground">{c.key}</p>
@@ -645,7 +646,7 @@ export default function ConnectorDetailClient() {
                 </div>
               </div>
             ))}
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2">
               <p className="text-sm text-foreground">Agreement status</p>
               <span className="font-mono text-xs text-foreground">{detail.gate.agreementStatus}</span>
             </div>
@@ -660,19 +661,19 @@ export default function ConnectorDetailClient() {
           detail.registered ? (
             editing ? (
               <div className="flex gap-2">
-                <button onClick={saveConfig} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">Save</button>
+                <button onClick={saveConfig} className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">Save</button>
                 <button
                   onClick={() => {
                     setEditing(false);
                     if (cfg) setForm({ stage: cfg.stage, rolloutPercent: cfg.rolloutPercent, circuitState: cfg.circuitState, notes: cfg.notes ?? "" });
                   }}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+                  className="rounded-xl border border-border px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   Cancel
                 </button>
               </div>
             ) : (
-              <button onClick={() => setEditing(true)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent">Edit</button>
+              <button onClick={() => setEditing(true)} className="rounded-xl border border-border px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent">Edit</button>
             )
           ) : undefined
         }
@@ -690,13 +691,13 @@ export default function ConnectorDetailClient() {
               <Row label="Enabled">
                 <span className={cfg!.enabled ? "text-tone-sage-fg" : "text-destructive"}>{cfg!.enabled ? "ON" : "OFF"}</span>
               </Row>
-              <Row label="Stage">{cfg!.stage}</Row>
-              <Row label="Rollout">{cfg!.rolloutPercent}%</Row>
+              <Row label="Stage"><span className="font-mono">{cfg!.stage}</span></Row>
+              <Row label="Rollout"><span className="font-mono">{cfg!.rolloutPercent}%</span></Row>
             </div>
             <div className="divide-y divide-border">
-              <Row label="Circuit">{cfg!.circuitState}</Row>
-              <Row label="Version">v{cfg!.version}</Row>
-              <Row label="Updated">{new Date(cfg!.updatedAt).toLocaleString()}</Row>
+              <Row label="Circuit"><span className="font-mono">{cfg!.circuitState}</span></Row>
+              <Row label="Version"><span className="font-mono">v{cfg!.version}</span></Row>
+              <Row label="Updated"><span className="font-mono text-xs">{new Date(cfg!.updatedAt).toLocaleString()}</span></Row>
             </div>
             {cfg!.notes && (
               <p className="col-span-full mt-3 border-t border-border pt-3 text-xs text-muted-foreground">{cfg!.notes}</p>
@@ -705,24 +706,24 @@ export default function ConnectorDetailClient() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Stage</label>
-              <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Stage</label>
+              <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">
                 {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Rollout %</label>
-              <input type="number" min={0} max={100} value={form.rolloutPercent} onChange={(e) => setForm({ ...form, rolloutPercent: parseInt(e.target.value || "0", 10) })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Rollout %</label>
+              <input type="number" min={0} max={100} value={form.rolloutPercent} onChange={(e) => setForm({ ...form, rolloutPercent: parseInt(e.target.value || "0", 10) })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Circuit state</label>
-              <select value={form.circuitState} onChange={(e) => setForm({ ...form, circuitState: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Circuit state</label>
+              <select value={form.circuitState} onChange={(e) => setForm({ ...form, circuitState: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground">
                 {CIRCUIT_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
-              <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Internal notes…" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Notes</label>
+              <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Internal notes…" />
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">Saving requires admin password + MFA and is audit-logged.</p>
           </div>
@@ -734,7 +735,7 @@ export default function ConnectorDetailClient() {
         <div className="mb-4 flex flex-wrap gap-2">
           {DISPATCH_STATUSES.map((s) => (
             <span key={s} className={`rounded-lg px-3 py-1.5 text-xs font-medium ${statusBadgeClass(s)}`}>
-              {s.replace("_", " ").toLowerCase()}: {detail.dispatchCounts[s] ?? 0}
+              {s.replace("_", " ").toLowerCase()}: <span className="font-mono">{detail.dispatchCounts[s] ?? 0}</span>
             </span>
           ))}
         </div>
@@ -746,28 +747,28 @@ export default function ConnectorDetailClient() {
             description="Per-call rows appear here once this connector is enabled and users trigger address changes. Aggregate health also lives on Connector Metrics."
           />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th className="px-3 py-2 text-left font-medium">Status</th>
-                  <th className="px-3 py-2 text-left font-medium">Event</th>
-                  <th className="px-3 py-2 text-right font-medium">Attempts</th>
-                  <th className="px-3 py-2 text-left font-medium">Last error</th>
-                  <th className="px-3 py-2 text-right font-medium">Updated</th>
+              <thead className="bg-muted/40">
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Event</th>
+                  <th className="px-3 py-2.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Attempts</th>
+                  <th className="px-3 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Last error</th>
+                  <th className="px-3 py-2.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Updated</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {detail.recentDispatches.map((d) => (
-                  <tr key={d.id} className="border-b border-border last:border-b-0">
-                    <td className="px-3 py-2">
+                  <tr key={d.id} className="transition-colors hover:bg-accent/30">
+                    <td className="px-3 py-2.5">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadgeClass(d.status)}`}>{d.status.replace("_", " ").toLowerCase()}</span>
                       {d.isShadow && <span className="ml-1.5 rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-muted-foreground">shadow</span>}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{d.eventId ? d.eventId.slice(0, 12) : "—"}</td>
-                    <td className="px-3 py-2 text-right text-foreground">{d.attemptCount}</td>
-                    <td className="px-3 py-2 text-xs">{d.lastErrorCode ? <span className="text-destructive">{d.lastErrorCode}</span> : <span className="text-muted-foreground">—</span>}</td>
-                    <td className="px-3 py-2 text-right text-xs text-muted-foreground" title={new Date(d.updatedAt).toLocaleString()}>{relativeTime(d.updatedAt)}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.eventId ? d.eventId.slice(0, 12) : "—"}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-foreground">{d.attemptCount}</td>
+                    <td className="px-3 py-2.5 text-xs">{d.lastErrorCode ? <span className="font-mono text-destructive">{d.lastErrorCode}</span> : <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground" title={new Date(d.updatedAt).toLocaleString()}>{relativeTime(d.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -799,7 +800,7 @@ export default function ConnectorDetailClient() {
             description="This connector uses its in-code default guided action. Add an admin-managed override in Connector Fallbacks."
           />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border">
+          <div className="overflow-hidden rounded-xl border border-border">
             {detail.fallbacks.map((f) => (
               <div key={f.id} className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0">
                 <div className="min-w-0 flex-1">
@@ -833,7 +834,7 @@ export default function ConnectorDetailClient() {
             </div>
             <button
               onClick={bulkRevoke}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/40 px-3.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
               <ShieldAlert className="h-4 w-4" /> Revoke all consents
             </button>

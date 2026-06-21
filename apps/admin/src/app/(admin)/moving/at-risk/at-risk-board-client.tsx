@@ -165,13 +165,13 @@ export default function AtRiskBoardClient() {
             <button
               key={card.label}
               onClick={() => setRiskFilter(card.code)}
-              className={`rounded-xl border ${card.bg} p-4 text-left transition-shadow hover:shadow-md ${active ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
+              className={`rounded-2xl border ${card.bg} p-4 text-left transition-shadow hover:shadow-md ${active ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{card.label}</p>
                 <card.icon className={`h-4 w-4 ${card.color}`} />
               </div>
-              <p className={`mt-1 text-2xl font-bold ${card.color}`}>{card.value}</p>
+              <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${card.color}`}>{card.value}</p>
             </button>
           );
         })}
@@ -179,7 +179,7 @@ export default function AtRiskBoardClient() {
 
       {riskFilter && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Filtered by</span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Filtered by</span>
           <button
             onClick={() => setRiskFilter("")}
             className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
@@ -190,7 +190,7 @@ export default function AtRiskBoardClient() {
       )}
 
       {loading ? (
-        <div className="py-20 text-center text-muted-foreground">Loading at-risk moves…</div>
+        <div className="py-20 text-center text-sm text-muted-foreground">Loading at-risk moves…</div>
       ) : rows.length === 0 ? (
         <EmptyState
           icon={ShieldAlert}
@@ -209,7 +209,7 @@ export default function AtRiskBoardClient() {
               <Link
                 key={row.id}
                 href={`/moving/${row.id}`}
-                className="block rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/30"
+                className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent/30"
               >
                 <div className="flex flex-wrap items-start gap-4">
                   {/* Severity rail */}
@@ -262,8 +262,8 @@ export default function AtRiskBoardClient() {
                   {/* Checklist progress */}
                   <div className="w-32 shrink-0">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>Checklist</span>
-                      <span>{row.completionPercent}%</span>
+                      <span className="uppercase tracking-[0.06em]">Checklist</span>
+                      <span className="font-mono font-semibold text-foreground">{row.completionPercent}%</span>
                     </div>
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
@@ -272,8 +272,8 @@ export default function AtRiskBoardClient() {
                       />
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {row.completedTasks}/{checklistTotal} done
-                      {row.overdueTasks > 0 ? ` · ${row.overdueTasks} overdue` : ""}
+                      <span className="font-mono">{row.completedTasks}/{checklistTotal}</span> done
+                      {row.overdueTasks > 0 ? <> · <span className="font-mono">{row.overdueTasks}</span> overdue</> : ""}
                     </p>
                   </div>
 
@@ -281,12 +281,12 @@ export default function AtRiskBoardClient() {
                   <div className="w-24 shrink-0 text-right">
                     <p className="flex items-center justify-end gap-1 text-sm font-medium text-foreground">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      {new Date(row.moveDate).toLocaleDateString()}
+                      <span className="font-mono">{new Date(row.moveDate).toLocaleDateString()}</span>
                     </p>
                     <p
                       className={`text-[11px] ${row.daysUntilMove <= 0 ? "font-bold text-destructive" : row.daysUntilMove <= 7 ? "text-tone-honey-fg" : "text-muted-foreground"}`}
                     >
-                      {row.daysUntilMove <= 0 ? "Today!" : `${row.daysUntilMove} days left`}
+                      {row.daysUntilMove <= 0 ? "Today!" : <><span className="font-mono">{row.daysUntilMove}</span> days left</>}
                     </p>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export default function AtRiskBoardClient() {
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-muted/20 p-3">
+      <div className="rounded-2xl border border-border bg-muted/20 p-4">
         <p className="text-[11px] text-muted-foreground">
           Read-only risk board. Signals are derived from move dates, checklist task status and tracked
           services — no records are modified. LocateFlow does not update provider accounts.
