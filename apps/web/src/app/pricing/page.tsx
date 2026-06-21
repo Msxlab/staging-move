@@ -69,8 +69,8 @@ export default async function PricingPage() {
       />
 
       <section className="container pb-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mx-auto max-w-3xl rounded-[22px] border border-border bg-card/60 p-6 text-center">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             LocateFlow tracks moving workflows and local services. It does not
             log into or change your accounts with any provider on your behalf —
             you complete each change yourself with guided checklists, reminders,
@@ -82,22 +82,22 @@ export default async function PricingPage() {
       <section className="bg-muted/40 py-16">
         <div className="container max-w-3xl">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold sm:text-3xl">{tPricing("faq_title")}</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">{tPricing("faq_title")}</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq) => (
-              <details key={faq.q} className="group rounded-xl border bg-card">
-                <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-sm font-medium">
+              <details key={faq.q} className="group rounded-[18px] border border-border bg-card transition hover:border-primary/40">
+                <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-4 text-sm font-semibold text-foreground">
                   {faq.q}
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                  <ChevronDown className="h-4 w-4 shrink-0 text-primary transition-transform group-open:rotate-180" />
                 </summary>
-                <div className="px-6 pb-4 text-sm text-muted-foreground">{faq.a}</div>
+                <div className="px-6 pb-4 text-sm leading-relaxed text-muted-foreground">{faq.a}</div>
               </details>
             ))}
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground">
             Still unsure?{" "}
-            <Link href="/contact" className="underline hover:text-foreground">
+            <Link href="/contact" className="font-semibold text-primary underline-offset-4 hover:underline">
               Contact us
             </Link>{" "}
             — we&apos;ll help you pick the right plan.

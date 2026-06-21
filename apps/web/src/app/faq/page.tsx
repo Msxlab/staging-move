@@ -26,7 +26,7 @@ export default async function FaqPage() {
         title="Questions, answered."
         description="Answers to common product, billing, privacy, provider, mobile, and security questions. Policy pages control if any summary here differs."
       >
-        <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
         {faqGroups.map((group) => (
           <PublicSection key={group.title} title={group.title}>
@@ -34,11 +34,11 @@ export default async function FaqPage() {
               {group.items.map((faq) => (
                 <details
                   key={faq.q}
-                  className="group rounded-xl border bg-background/60"
+                  className="group rounded-[18px] border border-border bg-background/60 transition hover:border-primary/40"
                 >
-                  <summary className="flex cursor-pointer items-center justify-between px-5 py-3.5 text-sm font-medium text-foreground">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[15px] font-semibold tracking-tight text-foreground">
                     <span>{faq.q}</span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-primary transition-transform group-open:rotate-180" />
                   </summary>
                   <div className="px-5 pb-4 text-sm leading-relaxed text-muted-foreground">
                     {faq.a}
@@ -49,18 +49,24 @@ export default async function FaqPage() {
           </PublicSection>
         ))}
 
-        <PublicSection title="Still have a question?">
-          <p>
+        <section className="overflow-hidden rounded-[26px] border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-8 text-center shadow-sm sm:p-12">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <LifeBuoy className="h-6 w-6" />
+          </span>
+          <h2 className="mt-5 font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+            Still have a question?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             If you cannot find what you need in the public FAQ, reach us through the contact page or sign in for account-specific support.
           </p>
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild variant="outline" size="lg">
               <Link href="/contact">
                 <LifeBuoy className="mr-2 h-4 w-4" /> Contact us <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
-        </PublicSection>
+        </section>
       </PublicPageShell>
     </>
   );

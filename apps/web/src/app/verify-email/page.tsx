@@ -39,14 +39,17 @@ export default async function VerifyEmailPendingPage({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 text-center shadow-lg backdrop-blur-xl space-y-5">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-card to-background p-4">
+      <div aria-hidden className="pointer-events-none absolute -left-24 -top-40 h-[560px] w-[560px] rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative w-full max-w-md space-y-5 rounded-2xl border border-border bg-card/85 p-8 text-center shadow-lg backdrop-blur-xl">
         <div className="flex justify-center">
           <Wordmark href="/" animated={false} />
         </div>
-        <MailCheck className="mx-auto h-11 w-11 text-sage" />
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10">
+          <MailCheck className="h-7 w-7 text-primary" />
+        </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">{tAuth("verifyEmailTitle")}</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">{tAuth("verifyEmailTitle")}</h1>
           {email ? (
             <p className="text-sm text-muted-foreground">
               {tAuth("verifyEmailSentPrefix")} <span className="font-medium text-foreground">{email}</span>. {tAuth("verifyEmailSentSuffix")}
@@ -67,7 +70,7 @@ export default async function VerifyEmailPendingPage({
           >
             {tCommon("signIn")}
           </Link>
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
+          <Link href="/" className="text-xs text-muted-foreground transition hover:text-primary">
             {tCommon("goHome")}
           </Link>
         </div>

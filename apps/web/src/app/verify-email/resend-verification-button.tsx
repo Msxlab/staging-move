@@ -50,7 +50,7 @@ export function ResendVerificationButton() {
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         {tAuth("resendVerification")}
       </button>
-      {message && <p className="text-xs text-sage">{message}</p>}
+      {message && <p className="text-xs text-primary">{message}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
