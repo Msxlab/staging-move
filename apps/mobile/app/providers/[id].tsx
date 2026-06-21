@@ -26,10 +26,9 @@ import {
   Clock,
   Sparkles,
 } from "lucide-react-native";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, type Theme, fonts } from "@/lib/theme";
+import { MoveCard, Pill } from "@/components/move";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -332,7 +331,7 @@ export default function ProviderDetailScreen() {
           </View>
         ) : null}
 
-        <Card variant="glow">
+        <MoveCard accent>
           <View style={styles.topRow}>
             <ServiceLogoMark
               service={logoService}
@@ -340,8 +339,8 @@ export default function ProviderDetailScreen() {
               size={56}
               logoSize={48}
               borderRadius={14}
-              backgroundColor={theme.colors.primaryFaded}
-              borderColor={theme.colors.rose.border}
+              backgroundColor={theme.colors.accentSoft}
+              borderColor={theme.colors.accentBorder}
               fallbackFontSize={26}
             />
             <View style={{ flex: 1 }}>
@@ -363,10 +362,10 @@ export default function ProviderDetailScreen() {
           {reasonInput ? <ProviderReason provider={reasonInput} variant="banner" /> : null}
 
           <View style={styles.badgesRow}>
-            <UiBadge label={t("providers.listedProvider")} variant="warning" />
-            <UiBadge label={coverageLabel} variant="info" />
-            {tier === "CRITICAL" ? <UiBadge label={t("providers.critical")} variant="error" /> : null}
-            {tier === "IMPORTANT" ? <UiBadge label={t("providers.important")} variant="warning" /> : null}
+            <Pill label={t("providers.listedProvider")} tone="warning" />
+            <Pill label={coverageLabel} tone="info" />
+            {tier === "CRITICAL" ? <Pill label={t("providers.critical")} tone="error" /> : null}
+            {tier === "IMPORTANT" ? <Pill label={t("providers.important")} tone="warning" /> : null}
           </View>
 
           <View style={styles.truthBox}>
@@ -415,14 +414,14 @@ export default function ProviderDetailScreen() {
             variant="gradient"
             size="lg"
             fullWidth
-            icon={<Plus size={18} color="#fff" />}
+            icon={<Plus size={18} color={theme.colors.onAccent} />}
             style={{ marginTop: 18 }}
             accessibilityHint={t("providers.trackManuallyHint")}
           />
-        </Card>
+        </MoveCard>
 
         {provider.userCount && provider.userCount > 0 ? (
-          <Card variant="bordered" style={{ marginTop: 14 }}>
+          <MoveCard style={{ marginTop: 14 }}>
             <View style={styles.usersRow}>
               <Users size={18} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
@@ -437,11 +436,11 @@ export default function ProviderDetailScreen() {
                 </Text>
               </View>
             </View>
-          </Card>
+          </MoveCard>
         ) : null}
 
         {showStateRule ? (
-          <Card variant="bordered" style={{ marginTop: 14 }}>
+          <MoveCard style={{ marginTop: 14 }}>
             <View style={styles.usersRow}>
               <Clock size={18} color={theme.colors.warning} />
               <View style={{ flex: 1 }}>
@@ -459,10 +458,10 @@ export default function ProviderDetailScreen() {
                 <GovernmentSourceLinks style={styles.governmentSources} />
               </View>
             </View>
-          </Card>
+          </MoveCard>
         ) : null}
 
-        <Card variant="default" style={{ marginTop: 14 }}>
+        <MoveCard style={{ marginTop: 14 }}>
           <View style={styles.detailRow}>
             <MapPin size={16} color={theme.colors.primary} />
             <View style={{ flex: 1 }}>
@@ -497,7 +496,7 @@ export default function ProviderDetailScreen() {
               </View>
             </View>
           ) : null}
-        </Card>
+        </MoveCard>
 
         {provider.affiliateActive ? (
           <>
@@ -622,13 +621,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   criticalBanner: {
     flexDirection: "row",
@@ -638,26 +637,26 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: theme.colors.error + "44",
+    borderColor: theme.colors.redLine,
     marginBottom: 14,
   },
-  criticalTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.rose.text },
-  criticalText: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 18 },
+  criticalTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.error },
+  criticalText: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 2, lineHeight: 18 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   logo: { width: 56, height: 56, borderRadius: 14, backgroundColor: theme.colors.surface },
   logoFallback: {
     width: 56,
     height: 56,
     borderRadius: 14,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  providerName: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
-  providerCategory: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 4 },
-  providerDescription: { fontSize: 14, color: theme.colors.textTertiary, marginTop: 14, lineHeight: 20 },
+  providerName: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text },
+  providerCategory: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4 },
+  providerDescription: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 14, lineHeight: 20 },
   badgesRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 },
   truthBox: {
     flexDirection: "row",
@@ -666,77 +665,77 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 14,
     padding: 12,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.warningFaded,
+    backgroundColor: theme.colors.amberSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.amberLine,
   },
-  truthTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
-  truthText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  truthTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  truthText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 3, lineHeight: 17 },
   addressCheckBox: {
     marginTop: 14,
     padding: 14,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.accentBorder,
   },
   addressCheckHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  addressCheckTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text, flex: 1 },
-  addressCheckBody: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 6, lineHeight: 17 },
+  addressCheckTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text, flex: 1 },
+  addressCheckBody: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 6, lineHeight: 17 },
   addressCheckBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.accentBorder,
     paddingVertical: 13,
     paddingHorizontal: 12,
     marginTop: 12,
   },
-  addressCheckBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary, flexShrink: 1, textAlign: "center" },
+  addressCheckBtnText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.primary, flexShrink: 1, textAlign: "center" },
   usersRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  usersTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  usersText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  usersTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  usersText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 3, lineHeight: 17 },
   detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 12 },
-  detailLabel: { fontSize: 12, color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
-  detailValue: { fontSize: 14, color: theme.colors.text, marginTop: 2, lineHeight: 20 },
-  detailHint: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  detailLabel: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.faint, textTransform: "uppercase", letterSpacing: 0.4 },
+  detailValue: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.text, marginTop: 2, lineHeight: 20 },
+  detailHint: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 3, lineHeight: 17 },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingVertical: 15,
     marginTop: 14,
   },
-  actionText: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
+  actionText: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   affiliateBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
+    borderColor: theme.colors.accentBorder,
     paddingVertical: 15,
     marginTop: 14,
   },
-  affiliateBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.primary },
-  affiliateDisclosure: { fontSize: 11, lineHeight: 15, color: theme.colors.textMuted, marginTop: 6, textAlign: "center" },
+  affiliateBtnText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  affiliateDisclosure: { fontSize: 11, fontFamily: fonts.sans, lineHeight: 15, color: theme.colors.faint, marginTop: 6, textAlign: "center" },
   section: { marginTop: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.serifBold, color: theme.colors.text },
   altScroll: { gap: 12, paddingVertical: 4 },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
-  emptyText: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", marginTop: 8, lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  emptyText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.faint, textAlign: "center", marginTop: 8, lineHeight: 20 },
   governmentSources: { marginTop: 12 },
 });
