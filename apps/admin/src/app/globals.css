@@ -4,14 +4,15 @@
 
 /* =========================================================================
    LocateFlow Admin — Edition VII · Aurora
-   Mirrors apps/web/src/styles/globals.css (Aurora cool/violet/mint).
+   Mirrors apps/web/src/styles/globals.css (Aurora cool / honey / mint).
    Source of truth for numeric values: packages/shared/src/design-tokens.ts.
    ========================================================================= */
 :root,
 .dark {
-  --rose:        #F2C46C;
-  --rose-light:  #FBE7BD;
-  --rose-deep:   #D99A4E;
+  --rose:        #7FB6E8;
+  --rose-light:  #A5C9F0;
+  --rose-deep:   #5C9DDC;
+  --rose-dark:   #3D7AB8;
   --foil-a:      #FBE7BD;
   --foil-b:      #F2C46C;
   --foil-c:      #D99A4E;
@@ -19,9 +20,9 @@
   --foil-ink:    #B0781E;
   --sage:        #87DDC0;
 
-  --brand-orange:       #F2C46C;
-  --brand-orange-light: #FBE7BD;
-  --brand-orange-dark:  #D99A4E;
+  --brand-orange:       #7FB6E8;
+  --brand-orange-light: #A5C9F0;
+  --brand-orange-dark:  #5C9DDC;
   --brand-amber:        #F2C46C;
 
   --orange-50:  #EFF5FB;
@@ -43,7 +44,7 @@
   --line:        rgba(255, 255, 255, 0.10);
   --line-2:      rgba(255, 255, 255, 0.16);
   --line-foil:   rgba(242, 196, 108, 0.22);
-  --border-focus: rgba(242, 196, 108, 0.55);
+  --border-focus: rgba(127, 182, 232, 0.55);
 
   --tone-rose-bg: rgba(127, 182, 232, 0.16); --tone-rose-br: rgba(127, 182, 232, 0.32); --tone-rose-fg: #9CC6F0;
   --tone-foil-bg: rgba(242, 196, 108, 0.16); --tone-foil-br: rgba(242, 196, 108, 0.32); --tone-foil-fg: #F5CE82;
@@ -57,8 +58,8 @@
   --tone-sky-bg: rgba(127, 182, 232, 0.16); --tone-sky-br: rgba(127, 182, 232, 0.32); --tone-sky-fg: #9CC6F0;
   --tone-cyan-bg: rgba(127, 182, 232, 0.16); --tone-cyan-br: rgba(127, 182, 232, 0.32); --tone-cyan-fg: #9CC6F0;
 
-  --shadow-glow: 0 0 10px rgba(242, 196, 108, 0.12);
-  --shadow-rose: 0 0 10px rgba(242, 196, 108, 0.12);
+  --shadow-glow: 0 0 10px rgba(127, 182, 232, 0.16);
+  --shadow-rose: 0 0 10px rgba(127, 182, 232, 0.16);
   --shadow-foil: 0 0 14px rgba(242, 196, 108, 0.07);
 
   /* Semantic — Aurora ramp. Consumed by Tailwind `bg-success` etc. */
@@ -74,9 +75,10 @@
 
 /* ─────────────── Light mode — Aurora soft sky paper ─────────────── */
 .light {
-  --rose:        #B0781E;
-  --rose-light:  #D99A4E;
-  --rose-deep:   #8A5E14;
+  --rose:        #2D7BC4;
+  --rose-light:  #4D8FCE;
+  --rose-deep:   #1F5FA0;
+  --rose-dark:   #0F345C;
   --foil-a:      #FBE7BD;
   --foil-b:      #B0781E;
   --foil-c:      #D99A4E;
@@ -84,9 +86,10 @@
   --foil-ink:    #B0781E;
   --sage:        #2E9B79;
 
-  --brand-orange:       #B0781E;
-  --brand-orange-light: #D99A4E;
-  --brand-orange-dark:  #8A5E14;
+  --brand-orange:       #2D7BC4;
+  --brand-orange-light: #4D8FCE;
+  --brand-orange-dark:  #1F5FA0;
+  --brand-amber:        #B0781E;
 
   --orange-50:  #EFF5FB;
   --orange-100: #DDE7F5;
@@ -107,7 +110,7 @@
   --line:        rgba(20, 32, 47, 0.06);
   --line-2:      rgba(20, 32, 47, 0.14);
   --line-foil:   rgba(176, 120, 30, 0.30);
-  --border-focus: rgba(176, 120, 30, 0.55);
+  --border-focus: rgba(45, 123, 196, 0.55);
 
   --tone-rose-bg: rgba(45, 123, 196, 0.10); --tone-rose-br: rgba(45, 123, 196, 0.22); --tone-rose-fg: #2D7BC4;
   --tone-foil-bg: rgba(176, 120, 30, 0.10); --tone-foil-br: rgba(176, 120, 30, 0.22); --tone-foil-fg: #B0781E;
@@ -121,8 +124,8 @@
   --tone-sky-bg: rgba(45, 123, 196, 0.10); --tone-sky-br: rgba(45, 123, 196, 0.22); --tone-sky-fg: #2D7BC4;
   --tone-cyan-bg: rgba(45, 123, 196, 0.10); --tone-cyan-br: rgba(45, 123, 196, 0.22); --tone-cyan-fg: #2D7BC4;
 
-  --shadow-glow: 0 0 20px rgba(176, 120, 30, 0.20);
-  --shadow-rose: 0 0 20px rgba(176, 120, 30, 0.20);
+  --shadow-glow: 0 0 20px rgba(45, 123, 196, 0.18);
+  --shadow-rose: 0 0 20px rgba(45, 123, 196, 0.18);
   --shadow-foil: 0 0 30px rgba(176, 120, 30, 0.14);
 
   --success:       #2E9B79;

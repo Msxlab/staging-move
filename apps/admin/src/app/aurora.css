@@ -536,21 +536,20 @@ html:not(.dark) .adm-aurora .admin-panel {
   --ring:                 210 66% 65%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect — anything still calling --rose / --foil-* gets
-     the Aurora cool / violet palette. The SVG sidebar logo sets its own
-     gradients via inline `<defs>`, so it's not affected. */
-  --rose:        var(--au-violet);
-  --rose-light:  #FBE7BD;
-  --rose-deep:   #D99A4E;
+  /* Brand-token redirect — anything still calling --rose gets the Aurora
+     cool primary; --foil-* stays honey/champagne for premium moments. */
+  --rose:        var(--au-cool);
+  --rose-light:  var(--au-cool);
+  --rose-deep:   var(--au-cool-2);
   --foil-a:      #FBE7BD;
   --foil-b:      var(--au-violet);
   --foil-c:      #D99A4E;
   --foil:        var(--au-violet);
   --foil-ink:    #B0781E;
   --sage:        var(--au-mint);
-  --brand-orange:       var(--au-violet);
-  --brand-orange-light: #FBE7BD;
-  --brand-orange-dark:  #D99A4E;
+  --brand-orange:       var(--au-cool);
+  --brand-orange-light: var(--au-cool);
+  --brand-orange-dark:  var(--au-cool-2);
   --brand-amber:        var(--au-violet);
 
   /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
@@ -560,7 +559,7 @@ html:not(.dark) .adm-aurora .admin-panel {
   --tone-foil-bg:    rgba(242, 196, 108, 0.20); --tone-foil-br:    rgba(242, 196, 108, 0.36); --tone-foil-fg:    var(--au-violet);
   --tone-sage-bg:    rgba(135, 221, 192, 0.20); --tone-sage-br:    rgba(135, 221, 192, 0.36); --tone-sage-fg:    var(--au-mint);
   --tone-honey-bg:   rgba(242, 196, 108, 0.20); --tone-honey-br:   rgba(242, 196, 108, 0.36); --tone-honey-fg:   var(--au-amber);
-  --tone-umber-bg:   rgba(216, 154, 78, 0.20); --tone-umber-br:   rgba(216, 154, 78, 0.36); --tone-umber-fg:   var(--au-violet);
+  --tone-umber-bg:   rgba(216, 154, 78, 0.20); --tone-umber-br:   rgba(216, 154, 78, 0.36); --tone-umber-fg:   #D99A4E;
   --tone-slate-bg:   rgba(168, 181, 201, 0.20); --tone-slate-br:   rgba(168, 181, 201, 0.36); --tone-slate-fg:   var(--au-ink-2);
   --tone-orange-bg:  rgba(127, 182, 232, 0.20); --tone-orange-br:  rgba(127, 182, 232, 0.36); --tone-orange-fg:  var(--au-cool);
   --tone-emerald-bg: rgba(135, 221, 192, 0.20); --tone-emerald-br: rgba(135, 221, 192, 0.36); --tone-emerald-fg: var(--au-mint);
@@ -600,22 +599,20 @@ html:not(.dark) .adm-aurora {
   --input:                217 25% 90%;
   --ring:                 210 68% 37%;
 
-  /* Brand-token redirect (light) — mirror the dark scope so the foil /
-     premium accent reads honey/champagne in light admin too. Without this
-     the --foil-* vars would otherwise inherit a non-honey base value when a
-     `.light` ancestor class is present. */
-  --rose:        var(--au-violet);
-  --rose-light:  #D99A4E;
-  --rose-deep:   #8A5E14;
+  /* Brand-token redirect (light) — mirror the dark scope: cool primary,
+     honey/champagne foil. */
+  --rose:        var(--au-cool);
+  --rose-light:  var(--au-cool);
+  --rose-deep:   var(--au-cool-2);
   --foil-a:      #FBE7BD;
   --foil-b:      var(--au-violet);
   --foil-c:      #D99A4E;
   --foil:        var(--au-violet);
   --foil-ink:    #B0781E;
   --sage:        var(--au-mint);
-  --brand-orange:       var(--au-violet);
-  --brand-orange-light: #D99A4E;
-  --brand-orange-dark:  #8A5E14;
+  --brand-orange:       var(--au-cool);
+  --brand-orange-light: var(--au-cool);
+  --brand-orange-dark:  var(--au-cool-2);
   --brand-amber:        var(--au-violet);
 
   --line:      var(--au-rule);
