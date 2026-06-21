@@ -120,7 +120,7 @@ function SectionList({ items }: { items: readonly SettingsSection[] }) {
               <section.icon className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
+              <h3 className="font-display text-sm font-semibold text-foreground">{section.title}</h3>
               <p className="truncate text-xs text-muted-foreground">{section.description}</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:text-primary" />
@@ -225,8 +225,8 @@ export default function SettingsPage() {
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.command}</p>
-              <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">{copy.title}</h1>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.command}</p>
+              <h1 className="mt-1 font-display text-2xl font-semibold text-foreground md:text-3xl">{copy.title}</h1>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                 {copy.subtitle}
               </p>
@@ -235,16 +235,16 @@ export default function SettingsPage() {
         </div>
         <div className="grid gap-3 p-4 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-background/55 p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">{copy.cards.planLabel}</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{copy.cards.planValue}</p>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{copy.cards.planLabel}</p>
+            <p className="mt-1 font-display text-sm font-semibold text-foreground">{copy.cards.planValue}</p>
           </div>
           <div className="rounded-xl border border-border bg-background/55 p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">{copy.cards.securityLabel}</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{copy.cards.securityValue}</p>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{copy.cards.securityLabel}</p>
+            <p className="mt-1 font-display text-sm font-semibold text-foreground">{copy.cards.securityValue}</p>
           </div>
           <div className="rounded-xl border border-border bg-background/55 p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">{copy.cards.workspaceLabel}</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{copy.cards.workspaceValue}</p>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{copy.cards.workspaceLabel}</p>
+            <p className="mt-1 font-display text-sm font-semibold text-foreground">{copy.cards.workspaceValue}</p>
           </div>
         </div>
       </section>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
       {showBudget === true && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
           <div className="px-5 pt-5 pb-2">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.features}</h2>
+            <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.features}</h2>
           </div>
           <div className="px-4 pb-4">
             <SectionList items={[budgetFeature]} />
@@ -266,7 +266,7 @@ export default function SettingsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm">
         <div className="px-5 pt-5 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.account}</h2>
+          <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.account}</h2>
         </div>
         <div className="px-4 pb-4">
           <SectionList items={copy.sections} />
@@ -275,7 +275,7 @@ export default function SettingsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-destructive/50 bg-destructive/5 shadow-sm">
         <div className="px-5 pt-5 pb-3">
-          <h3 className="text-sm font-semibold text-destructive">{copy.danger.title}</h3>
+          <h3 className="font-display text-sm font-semibold text-destructive">{copy.danger.title}</h3>
         </div>
         <div className="px-5 pb-5 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

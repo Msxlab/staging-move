@@ -559,8 +559,8 @@ export default function BudgetPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{copy.command}</p>
-                <h1 className="mt-1 text-2xl font-semibold text-foreground md:text-3xl">{copy.title}</h1>
+                <p className="text-[10px] font-mono font-semibold uppercase tracking-[0.12em] text-primary">{copy.command}</p>
+                <h1 className="mt-1 font-display text-2xl font-bold text-foreground md:text-3xl">{copy.title}</h1>
                 <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                   {copy.subtitle}
                 </p>
@@ -583,7 +583,7 @@ export default function BudgetPage() {
                 </select>
               </label>
               <button
-                className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary/80 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
                 onClick={showForm ? closeBudgetForm : openBudgetForm}
               >
                 {showForm ? <><X className="h-4 w-4" />{copy.cancel}</> : <><Plus className="h-4 w-4" /><span className="hidden sm:inline">{copy.manageLimits}</span><span className="sm:hidden">{copy.limits}</span></>}
@@ -596,8 +596,8 @@ export default function BudgetPage() {
           <div className="rounded-2xl border border-border bg-background/55 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">{copy.projectedThisMonth}</p>
-                <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
+                <p className="text-[11px] font-mono uppercase tracking-wider font-medium text-muted-foreground">{copy.projectedThisMonth}</p>
+                <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-foreground">
                   {formatCurrency(budgetSummary.projectedThisMonth)}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -608,7 +608,7 @@ export default function BudgetPage() {
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-2 text-right">
                 <p className="text-[10px] text-muted-foreground">{copy.limit}</p>
-                <p className="text-sm font-semibold text-foreground">
+                <p className="font-mono text-sm font-semibold text-foreground">
                   {budgetLimit > 0 ? formatCurrency(budgetLimit) : copy.notSet}
                 </p>
               </div>
@@ -650,7 +650,7 @@ export default function BudgetPage() {
                     </div>
                     <span className="min-w-0 truncate text-[11px] text-muted-foreground">{stat.label}</span>
                   </div>
-                  <p className="truncate text-lg font-semibold tabular-nums text-foreground">{stat.value}</p>
+                  <p className="truncate font-mono text-lg font-semibold tabular-nums text-foreground">{stat.value}</p>
                   <p className="mt-0.5 truncate text-[10px] text-foreground/45">{stat.sub}</p>
                 </div>
               );
@@ -676,7 +676,7 @@ export default function BudgetPage() {
       {showForm && (
         <div className="rounded-2xl border border-tone-orange-br bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Set Monthly Budget</h2>
+            <h2 className="font-display text-base font-bold text-foreground">Set Monthly Budget</h2>
             <p className="text-xs text-muted-foreground mt-1">Budget limits compare against active service costs for the selected month and address.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -769,7 +769,7 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="h-4 w-4 text-tone-orange-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Spending by Friendly Category</h2>
+            <h2 className="font-display text-base font-bold text-foreground">Spending by Friendly Category</h2>
           </div>
           {budgetSummary.byBudgetCategory.length === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">No service cost data for this filter.</p>
@@ -801,7 +801,7 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <Target className="h-4 w-4 text-tone-cyan-fg" />
-            <h2 className="text-sm font-semibold text-foreground">Budget vs Committed</h2>
+            <h2 className="font-display text-base font-bold text-foreground">Budget vs Committed</h2>
           </div>
           {budgetLimit <= 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">Set a monthly budget limit to compare your committed and projected costs.</p>
@@ -839,7 +839,7 @@ export default function BudgetPage() {
       <section className="rounded-2xl border border-tone-emerald-br bg-tone-emerald-bg/40 backdrop-blur-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="h-4 w-4 text-tone-emerald-fg" />
-          <h2 className="text-sm font-semibold text-foreground">{copy.realSavings}</h2>
+          <h2 className="font-display text-base font-bold text-foreground">{copy.realSavings}</h2>
         </div>
         {budgetActuals.loggedServiceCount === 0 ? (
           <p className="text-xs text-foreground/50 text-center py-4">
@@ -889,7 +889,7 @@ export default function BudgetPage() {
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-tone-orange-fg" />
-              <h2 className="text-sm font-semibold text-foreground">{copy.logActualCosts}</h2>
+              <h2 className="font-display text-base font-bold text-foreground">{copy.logActualCosts}</h2>
             </div>
             <span className="text-[10px] text-muted-foreground">
               {loggedActualCount}/{trackableServices.length} {copy.confirmed}
@@ -991,7 +991,7 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="h-4 w-4 text-tone-cyan-fg" />
-            <h2 className="text-sm font-semibold text-foreground">{copy.estimateVsActual}</h2>
+            <h2 className="font-display text-base font-bold text-foreground">{copy.estimateVsActual}</h2>
           </div>
           {budgetActuals.loggedServiceCount === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">
@@ -1030,7 +1030,7 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <WalletCards className="h-4 w-4 text-tone-honey-fg" />
-            <h2 className="text-sm font-semibold text-foreground">{copy.oneTimeCosts}</h2>
+            <h2 className="font-display text-base font-bold text-foreground">{copy.oneTimeCosts}</h2>
           </div>
           {budgetSummary.oneTimeServicesThisMonth.length === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">{copy.noOneTimeCosts(monthLabel(selectedMonth))}</p>
@@ -1052,7 +1052,7 @@ export default function BudgetPage() {
         <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-4 w-4 text-tone-honey-fg" />
-            <h2 className="text-sm font-semibold text-foreground">{copy.servicesMissingCost}</h2>
+            <h2 className="font-display text-base font-bold text-foreground">{copy.servicesMissingCost}</h2>
           </div>
           {budgetSummary.missingCostServices.length === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-6">{copy.allCosted}</p>
@@ -1080,7 +1080,7 @@ export default function BudgetPage() {
       <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="h-4 w-4 text-tone-orange-fg" />
-          <h2 className="text-sm font-semibold text-foreground">{copy.budgetHistory}</h2>
+          <h2 className="font-display text-base font-bold text-foreground">{copy.budgetHistory}</h2>
         </div>
         {budgets.length === 0 ? (
           <EmptyState
@@ -1109,7 +1109,7 @@ export default function BudgetPage() {
                 <div key={budget.id} className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground">{monthLabel(key)}</h3>
+                      <h3 className="font-display text-sm font-bold text-foreground">{monthLabel(key)}</h3>
                       <p className="text-xs text-muted-foreground">{addressLabel(addresses, budget.addressId)}</p>
                     </div>
                     {delta !== null && (

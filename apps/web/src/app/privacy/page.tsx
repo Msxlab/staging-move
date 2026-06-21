@@ -48,26 +48,29 @@ export default function PrivacyPage() {
       title="Privacy Policy"
       description="This policy explains how Move uses data required to run account, address, service, moving, billing, support, analytics, mobile, and security features."
     >
-      <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
-        <p>{policyLastUpdatedLabel()}</p>
+      <div className="space-y-1 rounded-[22px] border border-border bg-background/60 p-7 text-sm leading-6 text-muted-foreground">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
         <p>Legal entity: {displayLegalEntityName()}</p>
         <p>
           Privacy contact:{" "}
-          <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="text-primary underline">
             {LEGAL_CONTACTS.privacy}
           </a>
         </p>
         {publicCompanyAddress ? <p>Mailing address: {publicCompanyAddress}</p> : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-[22px] border border-border bg-background/60 p-7 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>
@@ -137,7 +140,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Cookies, analytics, and mobile data">
         <p>
-          Web analytics is consent-gated. If Google Analytics or Google Tag Manager is configured, it should not load until analytics consent is accepted. Internal signed-in usage tracking also respects analytics consent. See the <Link href="/cookie-policy" className="underline">Cookie Policy</Link>.
+          Web analytics is consent-gated. If Google Analytics or Google Tag Manager is configured, it should not load until analytics consent is accepted. Internal signed-in usage tracking also respects analytics consent. See the <Link href="/cookie-policy" className="text-primary underline">Cookie Policy</Link>.
         </p>
         <p>
           Mobile apps may collect device, app version, push token, consent, crash/error, and analytics event data when enabled. Push notifications can be controlled through app settings, device settings, and notification preferences.
@@ -155,7 +158,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Privacy rights">
         <p>
-          Depending on where you live, you may have rights to access, correct, delete, export, or object to certain processing of personal information. California residents should also review the <Link href="/ccpa-privacy-notice" className="underline">California Privacy Notice</Link>.
+          Depending on where you live, you may have rights to access, correct, delete, export, or object to certain processing of personal information. California residents should also review the <Link href="/ccpa-privacy-notice" className="text-primary underline">California Privacy Notice</Link>.
         </p>
         <p>
           EEA/UK rights may apply if Move offers the service to users in those regions or otherwise processes personal data subject to applicable law. Move does not claim a privacy certification or legal compliance approval on this page.
@@ -170,7 +173,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Contact">
         <p>
-          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "Move privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
+          For privacy requests, email <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="text-primary underline">{LEGAL_CONTACTS.privacy}</a> or use the account settings tools when available.
         </p>
       </PublicSection>
     </PublicPageShell>

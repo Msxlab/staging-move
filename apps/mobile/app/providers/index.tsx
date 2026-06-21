@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ArrowLeft, X, AlertTriangle, Scale, MapPin, Sparkles, PlusCircle } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, type Theme, fonts } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useCompareStore, MAX_COMPARE } from "@/lib/compare-store";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
@@ -865,7 +865,7 @@ export default function ProvidersScreen() {
             accessibilityRole="button"
             accessibilityLabel={t("providers.compareOpen", { defaultValue: "Open side-by-side comparison" })}
           >
-            <Scale size={15} color="#fff" />
+            <Scale size={15} color={theme.colors.onAccent} />
             <Text style={styles.compareGoText}>
               {compareEntries.length < 2
                 ? t("providers.comparePickMore", { defaultValue: "Pick 2+" })
@@ -897,15 +897,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text },
   commandHero: {
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 24,
     padding: 16,
-    backgroundColor: theme.colors.glass.bg,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
+    borderColor: theme.colors.border,
   },
   commandTop: {
     flexDirection: "row",
@@ -916,23 +916,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   commandCopy: { flex: 1, minWidth: 0 },
   commandKicker: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 1.3,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   commandTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
     letterSpacing: 0,
@@ -946,6 +946,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   commandSub: {
     flex: 1,
     fontSize: 12,
+    fontFamily: fonts.sans,
     color: theme.colors.textTertiary,
   },
   commandStats: {
@@ -958,14 +959,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     minHeight: 56,
     borderRadius: 15,
     padding: 9,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
   commandStatValue: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: fonts.monoMedium,
     color: theme.colors.text,
   },
   commandStatWarn: {
@@ -973,27 +974,27 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   commandStatLabel: {
     fontSize: 8,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 0.8,
     color: theme.colors.textTertiary,
     textTransform: "uppercase",
     marginTop: 3,
   },
   searchRow: { paddingHorizontal: 20, marginBottom: 8 },
-  // Aurora glass chrome — matches the Edition VII hero panes.
+  // Move surface chrome — navy card panes.
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: theme.colors.glass.bg,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
+    borderColor: theme.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
-  // Directory section kicker (Aurora section idiom).
+  searchInput: { flex: 1, fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text },
+  // Directory section kicker (Move section idiom).
   secRow: {
     flexDirection: "row",
     alignItems: "baseline",
@@ -1002,8 +1003,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 4,
     marginBottom: 10,
   },
-  secKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
-  secCount: { fontSize: 10, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent, fontVariant: ["tabular-nums"] },
+  secKicker: { fontSize: 10, letterSpacing: 1.4, fontFamily: fonts.sansBold, color: theme.colors.textTertiary },
+  secCount: { fontSize: 10, letterSpacing: 1, fontFamily: fonts.monoMedium, color: theme.colors.primary, fontVariant: ["tabular-nums"] },
   truthBanner: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1012,13 +1013,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 10,
     padding: 12,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.warningFaded,
+    backgroundColor: theme.colors.amberSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.amberLine,
   },
   truthText: {
     flex: 1,
     fontSize: 12,
+    fontFamily: fonts.sans,
     color: theme.colors.textSecondary,
     lineHeight: 17,
   },
@@ -1027,7 +1029,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 12,
     padding: 14,
     borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -1038,11 +1040,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   smartTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   smartSummary: {
     fontSize: 12,
+    fontFamily: fonts.sans,
     color: theme.colors.textSecondary,
     lineHeight: 18,
     marginTop: 7,
@@ -1058,13 +1061,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   signalText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
     color: theme.colors.textSecondary,
   },
   setupPlanWrap: {
@@ -1074,7 +1077,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   setupSection: {
     padding: 10,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -1088,20 +1091,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   setupSectionMeta: {
     minWidth: 22,
     textAlign: "center",
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.monoMedium,
     color: theme.colors.primary,
     fontVariant: ["tabular-nums"],
   },
   setupSectionDesc: {
     marginTop: 5,
     fontSize: 11,
+    fontFamily: fonts.sans,
     lineHeight: 16,
     color: theme.colors.textTertiary,
   },
@@ -1120,14 +1124,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 6,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
   setupCategoryText: {
     flexShrink: 1,
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.primary,
   },
   actionWrap: {
@@ -1144,13 +1148,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
   actionText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.primary,
   },
   laneActionWrap: {
@@ -1165,22 +1169,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
     gap: 7,
     borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
   laneActionText: {
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.primary,
   },
   categoryRowWrap: {
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.glass.bg,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.glass.border,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   addressSwitchWrap: {
@@ -1198,15 +1202,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: theme.radius.full,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: "rgba(255,255,255,0.035)",
+    backgroundColor: theme.colors.surface2,
   },
   addressSwitchChipActive: {
-    borderColor: theme.colors.borderFocus,
-    backgroundColor: theme.colors.primaryFaded,
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
   },
   addressSwitchText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.textSecondary,
   },
   addressSwitchTextActive: {
@@ -1227,11 +1231,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   gapTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   gapHint: {
     fontSize: 12,
+    fontFamily: fonts.sans,
     color: theme.colors.textTertiary,
     marginTop: 3,
   },
@@ -1248,13 +1253,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.warningFaded,
+    backgroundColor: theme.colors.amberSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.amberLine,
   },
   gapChipText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: fonts.sansSemibold,
     color: theme.colors.text,
     maxWidth: 160,
   },
@@ -1277,15 +1282,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  compareTrayTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
-  compareTrayHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
+  compareTrayTitle: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  compareTrayHint: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 2 },
   compareClearBtn: {
     width: 36,
     height: 36,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surface2,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -1299,5 +1304,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   compareGoBtnDisabled: { opacity: 0.5 },
-  compareGoText: { fontSize: 13, fontWeight: "700", color: "#fff" },
+  compareGoText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

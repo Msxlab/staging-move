@@ -311,10 +311,10 @@ export function HelpCenterContent({
     <div className="mx-auto w-full max-w-4xl space-y-7">
       {showHeading ? (
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-tone-orange-bg">
-            <HelpCircle className="h-7 w-7 text-tone-orange-fg" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <HelpCircle className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">{copy.title}</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">{copy.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
         </div>
       ) : null}
@@ -333,7 +333,7 @@ export function HelpCenterContent({
       {!hasResults ? (
         <div className="rounded-2xl border border-border bg-card p-8 text-center">
           <BookOpen className="mx-auto h-8 w-8 text-muted-foreground" />
-          <h2 className="mt-3 text-base font-semibold text-foreground">{copy.noResultsTitle}</h2>
+          <h2 className="mt-3 font-display text-base font-semibold text-foreground">{copy.noResultsTitle}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{copy.noResultsBody}</p>
         </div>
       ) : null}
@@ -341,8 +341,8 @@ export function HelpCenterContent({
       {filteredArticles.length > 0 ? (
         <section className="space-y-4" aria-labelledby="help-articles-heading">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-tone-orange-fg" />
-            <h2 id="help-articles-heading" className="text-lg font-semibold text-foreground">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h2 id="help-articles-heading" className="font-display text-lg font-semibold text-foreground">
               {copy.articles}
             </h2>
           </div>
@@ -351,7 +351,7 @@ export function HelpCenterContent({
               const categoryArticles = filteredArticles.filter((article) => article.category === category);
               return (
                 <div key={category} className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground">{category}</h3>
+                  <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{category}</h3>
                   <div className="columns-1 gap-3 sm:columns-2">
                     {categoryArticles.map((article) => {
                       const feedback = getFeedback(article);
@@ -359,7 +359,7 @@ export function HelpCenterContent({
                       return (
                         <div
                           key={article.id}
-                          className="group mb-3 break-inside-avoid rounded-xl border border-foreground/[0.08] bg-card/80 p-4 shadow-sm transition hover:border-tone-orange-br"
+                          className="group mb-3 break-inside-avoid rounded-xl border border-border bg-card/80 p-4 shadow-sm transition hover:border-primary/40"
                         >
                           <button
                             type="button"
@@ -395,10 +395,10 @@ export function HelpCenterContent({
                                   disabled={feedback.pending || Boolean(feedback.vote)}
                                   aria-pressed={feedback.vote === "yes"}
                                   className={cn(
-                                    "inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1 transition",
+                                    "inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1 font-mono transition",
                                     feedback.vote === "yes"
-                                      ? "border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg"
-                                      : "hover:border-tone-emerald-br hover:bg-tone-emerald-bg hover:text-tone-emerald-fg",
+                                      ? "border-success/30 bg-success/10 text-success"
+                                      : "hover:border-success/30 hover:bg-success/10 hover:text-success",
                                     (feedback.pending || feedback.vote) && "cursor-default",
                                   )}
                                 >
@@ -411,7 +411,7 @@ export function HelpCenterContent({
                                   disabled={feedback.pending || Boolean(feedback.vote)}
                                   aria-pressed={feedback.vote === "no"}
                                   className={cn(
-                                    "inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1 transition",
+                                    "inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1 font-mono transition",
                                     feedback.vote === "no"
                                       ? "border-destructive/25 bg-destructive/10 text-destructive"
                                       : "hover:border-destructive/25 hover:bg-destructive/10 hover:text-destructive",
@@ -425,7 +425,7 @@ export function HelpCenterContent({
                                   <span className="text-foreground/45">{copy.thanks}</span>
                                 ) : null}
                                 {feedback.error ? <span className="text-destructive">{copy.feedbackError}</span> : null}
-                                <span className={cn("ml-auto", article.viewCount === 0 && "sr-only")}>
+                                <span className={cn("ml-auto font-mono", article.viewCount === 0 && "sr-only")}>
                                   {article.viewCount} {copy.views}
                                 </span>
                               </div>
@@ -445,8 +445,8 @@ export function HelpCenterContent({
       {filteredFaqs.length > 0 ? (
         <section className="space-y-4" aria-labelledby="help-faq-heading">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-tone-orange-fg" />
-            <h2 id="help-faq-heading" className="text-lg font-semibold text-foreground">
+            <MessageCircle className="h-4 w-4 text-primary" />
+            <h2 id="help-faq-heading" className="font-display text-lg font-semibold text-foreground">
               {copy.faq}
             </h2>
           </div>
@@ -455,13 +455,13 @@ export function HelpCenterContent({
               const categoryFaqs = filteredFaqs.filter((faq) => faq.category === category);
               return (
                 <div key={category} className="space-y-2">
-                  <h3 className="text-sm font-semibold text-muted-foreground">{category}</h3>
+                  <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{category}</h3>
                   {categoryFaqs.map((faq) => {
                     const isOpen = openFaqIds.has(faq.id);
                     return (
                       <div
                         key={faq.id}
-                        className="rounded-xl border border-foreground/[0.08] bg-card/80 shadow-sm"
+                        className="rounded-xl border border-border bg-card/80 shadow-sm transition hover:border-primary/40"
                       >
                         <button
                           type="button"

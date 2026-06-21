@@ -56,27 +56,30 @@ export default function TermsPage() {
         Rules choice) with licensed counsel, along with the legal entity name, mailing address,
         and registered DMCA Designated Copyright Agent, before relying on these clauses.
       */}
-      <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
-        <p>{policyLastUpdatedLabel()}</p>
-        <p>Terms effective date: June 10, 2026</p>
-        <p>Legal entity: {displayLegalEntityName()}</p>
+      <div className="rounded-2xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
+        <p className="mt-2 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Terms effective date: June 10, 2026</p>
+        <p className="mt-2">Legal entity: {displayLegalEntityName()}</p>
         <p>
           Legal notices:{" "}
-          <a href={mailto(LEGAL_CONTACTS.legal, "Move legal notice")} className="underline">
+          <a href={mailto(LEGAL_CONTACTS.legal, "LocateFlow legal notice")} className="text-primary underline">
             {LEGAL_CONTACTS.legal}
           </a>
         </p>
         {publicCompanyAddress ? <p>Mailing address: {publicCompanyAddress}</p> : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-2xl border border-border bg-card p-7 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>
@@ -94,12 +97,12 @@ export default function TermsPage() {
           The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside Move.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link href="/disclaimer" className="inline-flex text-sm font-medium text-primary hover:underline">Disclaimer</Link>
-          <Link href="/privacy" className="inline-flex text-sm font-medium text-primary hover:underline">Privacy Policy</Link>
-          <Link href="/billing-policy" className="inline-flex text-sm font-medium text-primary hover:underline">Billing Policy</Link>
-          <Link href="/refund" className="inline-flex text-sm font-medium text-primary hover:underline">Refund Policy</Link>
-          <Link href="/acceptable-use" className="inline-flex text-sm font-medium text-primary hover:underline">Acceptable Use</Link>
-          <Link href="/dpa" className="inline-flex text-sm font-medium text-primary hover:underline">DPA</Link>
+          <Link href="/disclaimer" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Disclaimer</Link>
+          <Link href="/privacy" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Privacy Policy</Link>
+          <Link href="/billing-policy" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Billing Policy</Link>
+          <Link href="/refund" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Refund Policy</Link>
+          <Link href="/acceptable-use" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">Acceptable Use</Link>
+          <Link href="/dpa" className="inline-flex rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-primary transition hover:border-primary/40">DPA</Link>
         </div>
       </PublicSection>
     </PublicPageShell>

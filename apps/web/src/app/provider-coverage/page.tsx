@@ -79,13 +79,13 @@ export default function ProviderCoveragePage() {
         description="Move can help organize provider records and moving tasks, but it does not guarantee that a provider is available, endorsed, licensed, insured, or appropriate for a specific address."
       >
         <PublicSection title="How provider information is used">
-          <p>
-            Move helps users keep a personal record of the providers connected
+          <p className="text-foreground/90">
+            LocateFlow helps users keep a personal record of the providers connected
             to their addresses. When provider suggestions or public-source details are
             shown, they are meant to help users remember what to check next.
           </p>
-          <p>
-            Move does not act as a broker, reseller, mover, utility company, or
+          <p className="text-foreground/90">
+            LocateFlow does not act as a broker, reseller, mover, utility company, or
             provider marketplace. It does not complete provider account updates on a
             user&apos;s behalf.
           </p>
@@ -94,22 +94,27 @@ export default function ProviderCoveragePage() {
         <PublicSection title="Coverage limits">
           <div className="space-y-3">
             {limits.map((item) => (
-              <div key={item} className="flex items-start gap-3">
-                <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                <p>{item}</p>
+              <div
+                key={item}
+                className="flex items-start gap-3 rounded-[22px] border border-border bg-background/60 p-5 transition hover:border-primary/40"
+              >
+                <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
+                <p className="text-[15px] leading-relaxed text-foreground/90">{item}</p>
               </div>
             ))}
           </div>
         </PublicSection>
 
         <PublicSection title="What users should verify">
-          <p>
+          <p className="text-foreground/90">
             Before relying on a provider record, confirm the current service area,
             pricing, contract terms, cancellation rules, installation timing,
             identity requirements, fees, license status, insurance, and address
             eligibility directly with the provider or applicable agency.
           </p>
-          <p>
+          <p className="text-foreground/90">
             For government or regulated tasks, use official government websites or
             qualified professionals. Move does not claim official government
             partnership or authority.
@@ -119,8 +124,11 @@ export default function ProviderCoveragePage() {
         <PublicSection title="Provider coverage FAQ">
           <div className="space-y-3">
             {coverageFaqs.map((faq) => (
-              <details key={faq.question} className="rounded-xl border bg-background/60">
-                <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium text-foreground">
+              <details
+                key={faq.question}
+                className="rounded-[22px] border border-border bg-background/60 transition hover:border-primary/40"
+              >
+                <summary className="cursor-pointer px-5 py-3.5 font-display text-base font-bold tracking-tight text-foreground">
                   {faq.question}
                 </summary>
                 <p className="px-5 pb-4 text-sm leading-relaxed text-muted-foreground">
@@ -132,10 +140,10 @@ export default function ProviderCoveragePage() {
         </PublicSection>
 
         <PublicSection title="Related policies">
-          <p>
-            The <Link href="/disclaimer" className="underline">Disclaimer</Link>{" "}
+          <p className="text-foreground/90">
+            The <Link href="/disclaimer" className="font-medium text-primary underline underline-offset-4">Disclaimer</Link>{" "}
             controls provider, task, government, legal, financial, insurance, and
-            moving guidance limitations. The <Link href="/faq" className="underline">FAQ</Link>{" "}
+            moving guidance limitations. The <Link href="/faq" className="font-medium text-primary underline underline-offset-4">FAQ</Link>{" "}
             answers common product-scope questions.
           </p>
         </PublicSection>

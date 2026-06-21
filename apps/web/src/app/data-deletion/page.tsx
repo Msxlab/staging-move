@@ -26,7 +26,9 @@ export default function DataDeletionPage() {
         title="Data export and deletion"
         description="Move provides account export and deletion workflows, with practical limits for backups, billing, audit, legal, security, and processor records."
       >
-        <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+        <div className="rounded-2xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
+        </div>
 
         <PublicSection title="Exporting account data">
           <p>
@@ -46,7 +48,7 @@ export default function DataDeletionPage() {
           </p>
           <p>
             If you cannot sign in, contact{" "}
-            <a href={mailto(LEGAL_CONTACTS.privacy, "Move data deletion request")} className="underline">
+            <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow data deletion request")} className="text-primary underline">
               {LEGAL_CONTACTS.privacy}
             </a>{" "}
             with enough information for Move to review the request without
@@ -63,8 +65,8 @@ export default function DataDeletionPage() {
             processor records, dispute handling, or service integrity.
           </p>
           <p>
-            See the <Link href="/privacy" className="underline">Privacy Policy</Link>{" "}
-            and <Link href="/ccpa-privacy-notice" className="underline">California Privacy Notice</Link>{" "}
+            See the <Link href="/privacy" className="text-primary underline">Privacy Policy</Link>{" "}
+            and <Link href="/ccpa-privacy-notice" className="text-primary underline">California Privacy Notice</Link>{" "}
             for more detail on rights, retention, and request handling.
           </p>
         </PublicSection>

@@ -63,16 +63,15 @@ export default async function MovingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="h1 text-2xl md:text-3xl text-foreground">
+          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             {t.rich("titleRich", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
-        <Link
-          href={newPlanHref}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:opacity-90 transition"
-        >
-          {canStartPlan ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {newPlanLabel}
+        <Link href={newPlanHref}>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition">
+            {canStartPlan ? <Plus className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} {newPlanLabel}
+          </button>
         </Link>
       </div>
 
@@ -96,25 +95,27 @@ export default async function MovingPage() {
 
             return (
               <Link key={plan.id} href={`/moving/plan/${plan.id}`}>
-                <div className="glass-card p-5 hover:bg-foreground/[0.07] transition-all cursor-pointer mb-4 space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-all cursor-pointer mb-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(plan.moveDate).toLocaleDateString(locale, { month: "long", day: "numeric", year: "numeric" })}
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="font-mono">
+                          {new Date(plan.moveDate).toLocaleDateString(locale, { month: "long", day: "numeric", year: "numeric" })}
+                        </span>
                       </div>
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 flex-wrap">
+                      <h3 className="font-display text-lg font-semibold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
                         <span className="truncate max-w-[200px]">{fromLabel}</span>
                         <ArrowRight className="h-4 w-4 text-foreground/40 shrink-0" />
                         <span className="truncate max-w-[200px]">{toLabel}</span>
                       </h3>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${status.cls}`}>
+                    <span className={`font-mono text-[10px] px-2 py-0.5 rounded-full border font-medium ${status.cls}`}>
                       {status.label}
                     </span>
                   </div>
                   {normalizedStatus === "IN_PROGRESS" && daysUntil > 0 && (
-                    <p className="text-xs text-tone-orange-fg font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
+                    <p className="font-mono text-xs text-primary font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
                   )}
                 </div>
               </Link>

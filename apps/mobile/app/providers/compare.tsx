@@ -21,10 +21,11 @@ import {
   Users,
   Trophy,
 } from "lucide-react-native";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAppTheme, type Theme, fonts } from "@/lib/theme";
+import { HeroCard, Pill } from "@/components/move";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -216,7 +217,7 @@ export default function ProviderCompareScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {header}
 
-      <View style={styles.hero}>
+      <HeroCard style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={styles.heroIcon}>
             <Scale size={20} color={theme.colors.primary} />
@@ -250,7 +251,7 @@ export default function ProviderCompareScreen() {
             <Text style={styles.heroStatLabel}>columns</Text>
           </View>
         </View>
-      </View>
+      </HeroCard>
 
       <View style={styles.truthBanner}>
         <AlertTriangle size={15} color={theme.colors.warning} />
@@ -307,9 +308,9 @@ export default function ProviderCompareScreen() {
               t("providers.coverage", { defaultValue: "Coverage" }),
               (p) => (
                 <>
-                  <UiBadge
+                  <Pill
                     label={getLocalizedCoverageLabel(t, i18n.language, p.coverageConfidence) || p.coverageConfidence.label}
-                    variant="info"
+                    tone="info"
                   />
                   <Text style={styles.cellSub} numberOfLines={4}>
                     {p.coverageConfidence.message}
@@ -416,6 +417,7 @@ export default function ProviderCompareScreen() {
                 <View style={styles.cell} key={p.id}>
                   <TouchableOpacity
                     style={styles.trackBtn}
+                    activeOpacity={0.85}
                     onPress={() =>
                       router.push(
                         `/services/new?providerId=${encodeURIComponent(p.id)}&category=${encodeURIComponent(
@@ -426,7 +428,14 @@ export default function ProviderCompareScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={t("providers.trackManually")}
                   >
-                    <Text style={styles.trackBtnText}>{t("providers.compareTrack", { defaultValue: "Track this" })}</Text>
+                    <LinearGradient
+                      colors={theme.colors.gradient.primary}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.trackBtnGrad}
+                    >
+                      <Text style={styles.trackBtnText}>{t("providers.compareTrack", { defaultValue: "Track this" })}</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -447,8 +456,8 @@ export default function ProviderCompareScreen() {
 function YesNo({ value, theme }: { value: boolean; theme: Theme }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      {value ? <Check size={14} color={theme.colors.success} /> : <Minus size={14} color={theme.colors.textMuted} />}
-      <Text style={{ fontSize: 12, color: value ? theme.colors.text : theme.colors.textMuted }}>
+      {value ? <Check size={14} color={theme.colors.success} /> : <Minus size={14} color={theme.colors.faint} />}
+      <Text style={{ fontSize: 12, fontFamily: fonts.sans, color: value ? theme.colors.text : theme.colors.faint }}>
         {value ? "Yes" : "No"}
       </Text>
     </View>
@@ -469,22 +478,16 @@ const makeStyles = (theme: Theme) =>
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    title: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text },
     hero: {
       marginHorizontal: 20,
       marginBottom: 12,
-      borderRadius: 24,
-      padding: 16,
-      backgroundColor: theme.colors.glass.bg,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      ...theme.shadow.sm,
     },
     heroTop: {
       flexDirection: "row",
@@ -495,30 +498,31 @@ const makeStyles = (theme: Theme) =>
       width: 46,
       height: 46,
       borderRadius: 16,
-      backgroundColor: theme.colors.primaryFaded,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.accentBorder,
       alignItems: "center",
       justifyContent: "center",
     },
     heroCopy: { flex: 1, minWidth: 0 },
     heroKicker: {
       fontSize: 10,
-      fontWeight: "800",
-      letterSpacing: 1.3,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.4,
       textTransform: "uppercase",
-      color: theme.colors.accent,
+      color: theme.colors.primary,
     },
     heroTitle: {
       fontSize: 22,
-      fontWeight: "800",
+      fontFamily: fonts.serifBold,
       color: theme.colors.text,
       marginTop: 3,
       letterSpacing: 0,
     },
     heroSub: {
       fontSize: 12,
-      color: theme.colors.textTertiary,
+      fontFamily: fonts.sans,
+      color: theme.colors.dim,
       marginTop: 3,
     },
     heroStats: {
@@ -531,25 +535,25 @@ const makeStyles = (theme: Theme) =>
       minHeight: 56,
       borderRadius: 15,
       padding: 9,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.surface2,
       borderWidth: 1,
       borderColor: theme.colors.border,
       justifyContent: "center",
     },
     heroStatValue: {
-      fontSize: 14,
-      fontWeight: "800",
+      fontSize: 15,
+      fontFamily: fonts.monoMedium,
       color: theme.colors.text,
     },
     heroStatLabel: {
       fontSize: 8,
-      fontWeight: "800",
+      fontFamily: fonts.sansBold,
       letterSpacing: 0.8,
-      color: theme.colors.textTertiary,
+      color: theme.colors.faint,
       textTransform: "uppercase",
       marginTop: 3,
     },
-    addressNote: { fontSize: 12, color: theme.colors.textTertiary, paddingHorizontal: 20, marginBottom: 8 },
+    addressNote: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, paddingHorizontal: 20, marginBottom: 8 },
     truthBanner: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -558,15 +562,15 @@ const makeStyles = (theme: Theme) =>
       marginBottom: 12,
       padding: 12,
       borderRadius: theme.radius.lg,
-      backgroundColor: theme.colors.warningFaded,
+      backgroundColor: theme.colors.amberSoft,
       borderWidth: 1,
-      borderColor: theme.colors.amber.border,
+      borderColor: theme.colors.amberLine,
     },
-    truthText: { flex: 1, fontSize: 12, color: theme.colors.textSecondary, lineHeight: 17 },
+    truthText: { flex: 1, fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 17 },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
     row: { flexDirection: "row", alignItems: "stretch", borderBottomWidth: 1, borderBottomColor: theme.colors.border },
     rowLabelCell: { width: 96, paddingVertical: 12, paddingRight: 8, justifyContent: "center" },
-    rowLabel: { fontSize: 11, color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.3 },
+    rowLabel: { fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.faint, textTransform: "uppercase", letterSpacing: 0.8 },
     headerCell: { width: COL_WIDTH, alignItems: "center", paddingVertical: 12, paddingHorizontal: 6, gap: 8 },
     cell: { width: COL_WIDTH, paddingVertical: 12, paddingHorizontal: 8, gap: 4, justifyContent: "flex-start" },
     logoWrap: { position: "relative" },
@@ -577,28 +581,30 @@ const makeStyles = (theme: Theme) =>
       width: 22,
       height: 22,
       borderRadius: 11,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    headerName: { fontSize: 13, fontWeight: "700", color: theme.colors.text, textAlign: "center" },
-    cellValue: { fontSize: 13, color: theme.colors.text, lineHeight: 18 },
-    cellValueStrong: { fontWeight: "700" },
-    cellSub: { fontSize: 11, color: theme.colors.textTertiary, lineHeight: 15, marginTop: 4 },
-    cellMuted: { fontSize: 13, color: theme.colors.textMuted },
+    headerName: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text, textAlign: "center" },
+    cellValue: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.text, lineHeight: 18 },
+    cellValueStrong: { fontFamily: fonts.sansBold },
+    cellSub: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 15, marginTop: 4 },
+    cellMuted: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.faint },
     inlineRow: { flexDirection: "row", alignItems: "center", gap: 5 },
     tagsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-    tag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: theme.colors.surface },
-    tagText: { fontSize: 10, color: theme.colors.textTertiary },
+    tag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: theme.colors.surface2 },
+    tagText: { fontSize: 10, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
     trackBtn: {
-      backgroundColor: theme.colors.primary,
       borderRadius: 12,
+      overflow: "hidden",
+    },
+    trackBtnGrad: {
       paddingVertical: 9,
       paddingHorizontal: 10,
       alignItems: "center",
     },
-    trackBtnText: { fontSize: 12, fontWeight: "700", color: "#fff" },
-    footerNote: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
+    trackBtnText: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+    footerNote: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 17 },
   });

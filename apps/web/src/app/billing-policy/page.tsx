@@ -40,16 +40,19 @@ export default function BillingPolicyPage() {
       title="Billing Policy"
       description="How Move billing, trials, subscriptions, auto-renewal, cancellation, failed payments, taxes, and store purchases work."
     >
-      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+      <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{policyLastUpdatedLabel()}</p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {highlights.map((item) => (
-          <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={item.title}
+            className="space-y-3 rounded-2xl border border-border bg-card p-7 transition hover:border-primary/40"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <item.icon className="h-5 w-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </span>
+            <h2 className="font-display text-base font-bold tracking-tight text-foreground">{item.title}</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
           </div>
         ))}
       </div>
@@ -99,7 +102,7 @@ export default function BillingPolicyPage() {
 
       <PublicSection title="Billing questions">
         <p>
-          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "Move billing request")} className="underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="underline">Refund Policy</Link> for refund request windows and exclusions.
+          For billing support, email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow billing request")} className="text-primary underline">{LEGAL_CONTACTS.billing}</a>. See the <Link href="/refund" className="text-primary underline">Refund Policy</Link> for refund request windows and exclusions.
         </p>
       </PublicSection>
     </PublicPageShell>

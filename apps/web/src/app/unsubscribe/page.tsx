@@ -45,15 +45,17 @@ export default async function UnsubscribePage({
   if (!userId) {
     return (
       <Shell>
-        <MailX className="mx-auto h-11 w-11 text-destructive" aria-hidden />
-        <h1 className="text-2xl font-bold text-foreground">Link no longer valid</h1>
-        <p className="text-sm text-muted-foreground">
+        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <MailX className="h-6 w-6" aria-hidden />
+        </span>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Link no longer valid</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">
           This unsubscribe link has expired or is invalid. Sign in and adjust your preferences from the
           notification settings page instead.
         </p>
         <Link
           href="/settings/notifications"
-          className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+          className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
         >
           Open settings
         </Link>
@@ -68,9 +70,11 @@ export default async function UnsubscribePage({
   if (!user) {
     return (
       <Shell>
-        <MailX className="mx-auto h-11 w-11 text-destructive" aria-hidden />
-        <h1 className="text-2xl font-bold text-foreground">Account not found</h1>
-        <p className="text-sm text-muted-foreground">
+        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <MailX className="h-6 w-6" aria-hidden />
+        </span>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Account not found</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">
           We couldn&apos;t find an active account for this unsubscribe link.
         </p>
       </Shell>
@@ -83,12 +87,14 @@ export default async function UnsubscribePage({
     // Confirm step — intentionally NO mutation on GET (see doc comment).
     return (
       <Shell>
-        <MailQuestion className="mx-auto h-11 w-11 text-muted-foreground" aria-hidden />
-        <h1 className="text-2xl font-bold text-foreground">Unsubscribe from these emails?</h1>
-        <p className="text-sm text-muted-foreground">{describeIntent(kind)}</p>
-        <div className="rounded-lg border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
-          <span className="block font-medium text-foreground">Email on file</span>
-          <span className="break-all">{user.email}</span>
+        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <MailQuestion className="h-6 w-6" aria-hidden />
+        </span>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Unsubscribe from these emails?</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">{describeIntent(kind)}</p>
+        <div className="rounded-2xl border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+          <span className="block font-mono text-[0.7rem] uppercase tracking-[0.18em] text-foreground">Email on file</span>
+          <span className="mt-1 block break-all">{user.email}</span>
         </div>
         <form method="POST" action="/api/unsubscribe" className="space-y-2">
           <input type="hidden" name="t" value={token!} />
@@ -96,18 +102,18 @@ export default async function UnsubscribePage({
           <input type="hidden" name="redirect" value="1" />
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
             Confirm unsubscribe
           </button>
         </form>
         <Link
           href="/settings/notifications"
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground transition hover:text-primary"
         >
           Manage individual preferences instead
         </Link>
-        <Link href="/" className="block text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/" className="block text-xs text-muted-foreground transition hover:text-primary">
           Keep my emails — back to home
         </Link>
       </Shell>
@@ -121,23 +127,25 @@ export default async function UnsubscribePage({
 
   return (
     <Shell>
-      <MailCheck className="mx-auto h-11 w-11 text-sage" aria-hidden />
-      <h1 className="text-2xl font-bold text-foreground">You&apos;re unsubscribed</h1>
-      <p className="text-sm text-muted-foreground">
+      <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <MailCheck className="h-6 w-6" aria-hidden />
+      </span>
+      <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">You&apos;re unsubscribed</h1>
+      <p className="text-sm leading-relaxed text-muted-foreground">
         {summary} You&apos;ll still receive critical security and account messages so you can recover
         your account if something goes wrong.
       </p>
-      <div className="rounded-lg border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
-        <span className="block font-medium text-foreground">Email on file</span>
-        <span className="break-all">{user.email}</span>
+      <div className="rounded-2xl border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+        <span className="block font-mono text-[0.7rem] uppercase tracking-[0.18em] text-foreground">Email on file</span>
+        <span className="mt-1 block break-all">{user.email}</span>
       </div>
       <Link
         href="/settings/notifications"
-        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+        className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
       >
         Manage preferences
       </Link>
-      <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
+      <Link href="/" className="text-xs text-muted-foreground transition hover:text-primary">
         Back to home
       </Link>
     </Shell>
@@ -172,11 +180,8 @@ function describeState(
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "var(--surface)" }}
-    >
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 text-center shadow-lg backdrop-blur-xl space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card/85 p-8 text-center shadow-sm backdrop-blur-xl">
         <div className="flex justify-center">
           <Wordmark href="/" animated={false} />
         </div>
