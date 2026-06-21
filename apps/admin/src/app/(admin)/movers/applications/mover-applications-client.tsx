@@ -84,6 +84,23 @@ function tone(status: string): string {
   }
 }
 
+// Status dot tint to pair with the dot-indicator pills, keyed off the same
+// status string the pill uses so the dot and pill stay in sync.
+function toneDot(status: string): string {
+  switch (status) {
+    case "APPROVED":
+      return "bg-emerald-500";
+    case "REJECTED":
+      return "bg-destructive";
+    case "NEEDS_INFO":
+      return "bg-amber-500";
+    case "IN_REVIEW":
+      return "bg-sky-500";
+    default:
+      return "bg-muted-foreground";
+  }
+}
+
 function yesNo(v: boolean | null): string {
   return v === true ? "Yes" : v === false ? "No" : "Unknown";
 }
@@ -215,9 +232,25 @@ export default function MoverApplicationsClient() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <ClipboardCheck className="h-5 w-5 text-primary" />
-        <h1 className="text-xl font-semibold text-foreground">Mover Applications</h1>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="mb-2 flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            <ClipboardCheck className="h-3.5 w-3.5" /> Verification queue
+          </p>
+          <h1 className="font-display text-2xl font-extrabold leading-none tracking-tight text-foreground md:text-[28px]">
+            Mover Applications
+          </h1>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Review carrier submissions and decide on directory listing.
+          </p>
+        </div>
+        <button
+          onClick={loadList}
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Refresh"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+        </button>
       </div>
 
       {/* Status tabs */}
@@ -229,26 +262,29 @@ export default function MoverApplicationsClient() {
             <button
               key={t}
               onClick={() => setFilter(t)}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${active ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+              className={`flex items-center gap-2 rounded-xl border px-3.5 py-1.5 text-sm font-medium transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}
             >
-              {tabLabel(t)} <span className="ml-1 text-xs opacity-70">{count}</span>
+              {tabLabel(t)}
+              <span className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
 
       {listError && (
-        <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+        <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {listError}
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.3fr]">
         {/* List */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Queue</span>
-            <button onClick={loadList} className="text-muted-foreground hover:text-foreground" aria-label="Refresh">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Queue</span>
+            <button onClick={loadList} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Refresh">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
@@ -257,22 +293,23 @@ export default function MoverApplicationsClient() {
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
           ) : rows.length === 0 ? (
-            <p className="px-4 py-10 text-center text-sm text-muted-foreground">No applications in this view.</p>
+            <p className="px-5 py-10 text-center text-sm text-muted-foreground">No applications in this view.</p>
           ) : (
             <ul className="divide-y divide-border">
               {rows.map((row) => (
                 <li key={row.id}>
                   <button
                     onClick={() => openDetail(row.id)}
-                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-accent/50 ${selected?.id === row.id ? "bg-accent/40" : ""}`}
+                    className={`flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition-colors hover:bg-accent/50 ${selected?.id === row.id ? "bg-accent/40" : ""}`}
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-foreground">{row.companyLegalName}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        USDOT {row.usdotNumber} · {row.serviceStates} · {row.documentCount} docs
+                        USDOT <span className="font-mono text-foreground">{row.usdotNumber}</span> · {row.serviceStates} · <span className="font-mono">{row.documentCount}</span> docs
                       </p>
                     </div>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone(row.status)}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone(row.status)}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${toneDot(row.status)}`} />
                       {moverStatusLabel(row.status)}
                     </span>
                   </button>
@@ -283,7 +320,7 @@ export default function MoverApplicationsClient() {
         </div>
 
         {/* Detail */}
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-6">
           {detailLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -294,10 +331,11 @@ export default function MoverApplicationsClient() {
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">{selected.companyLegalName}</h2>
+                  <h2 className="font-display text-xl font-extrabold tracking-tight text-foreground">{selected.companyLegalName}</h2>
                   {selected.dbaName && <p className="text-sm text-muted-foreground">DBA: {selected.dbaName}</p>}
                 </div>
-                <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tone(selected.status)}`}>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tone(selected.status)}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${toneDot(selected.status)}`} />
                   {moverStatusLabel(selected.status)}
                 </span>
               </div>
@@ -317,13 +355,13 @@ export default function MoverApplicationsClient() {
 
               {/* Documents */}
               <div>
-                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</p>
+                <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Documents</p>
                 {selected.documents.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No documents uploaded.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {selected.documents.map((doc) => (
-                      <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                      <li key={doc.id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
                         <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
                           <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                           <span className="truncate">{doc.fileName}</span>
@@ -343,13 +381,13 @@ export default function MoverApplicationsClient() {
               </div>
 
               {/* FMCSA cross-check */}
-              <div className="rounded-lg border border-border bg-background p-3">
+              <div className="rounded-xl border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">FMCSA cross-check</p>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">FMCSA cross-check</p>
                   <button
                     onClick={runFmcsa}
                     disabled={fmcsaBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
                   >
                     {fmcsaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                     Run check
@@ -385,7 +423,7 @@ export default function MoverApplicationsClient() {
                       rows={2}
                       value={decisionMessage}
                       onChange={(e) => setDecisionMessage(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                   <div>
@@ -397,24 +435,24 @@ export default function MoverApplicationsClient() {
                       rows={2}
                       value={reviewNotes}
                       onChange={(e) => setReviewNotes(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => startDecision("APPROVED")} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+                    <button onClick={() => startDecision("APPROVED")} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
                       <ShieldCheck className="h-4 w-4" /> Approve & list
                     </button>
-                    <button onClick={() => startDecision("NEEDS_INFO")} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 px-3 py-2 text-sm font-medium text-amber-600 hover:bg-amber-500/10">
+                    <button onClick={() => startDecision("NEEDS_INFO")} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 px-3.5 py-2 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/10">
                       <ShieldQuestion className="h-4 w-4" /> Request info
                     </button>
-                    <button onClick={() => startDecision("REJECTED")} className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
+                    <button onClick={() => startDecision("REJECTED")} className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/40 px-3.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10">
                       <ShieldAlert className="h-4 w-4" /> Reject
                     </button>
                   </div>
                 </div>
               )}
               {selected.decisionMessage && (
-                <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
                   Last decision message: {selected.decisionMessage}
                 </p>
               )}
@@ -457,9 +495,9 @@ function Field({ label, value }: { label: string; value: string }) {
 
 function FmcsaStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border bg-card px-2 py-1.5">
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium text-foreground">{value}</p>
+    <div className="rounded-xl border border-border bg-card px-2.5 py-2">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

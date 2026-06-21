@@ -153,7 +153,7 @@ export default function UserDetailClient() {
   // A section is shown only when its tab is active. Keeps every section in
   // place (no JSX reordering) while collapsing the page to one tab at a time.
   const sectionCls = (tab: UserDetailTab) =>
-    `rounded-xl border border-border bg-card p-6${activeTab === tab ? "" : " hidden"}`;
+    `rounded-2xl border border-border bg-card p-6${activeTab === tab ? "" : " hidden"}`;
   // Per-modal flag: server returned `requiresMfa: true` last attempt, so
   // the PasswordConfirmModal should mark the MFA field as required and
   // refuse to submit until the operator fills one of MFA / backup code.
@@ -903,7 +903,8 @@ export default function UserDetailClient() {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold text-foreground break-words">{user.firstName} {user.lastName}</h1>
+              <p className="w-full text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-primary">User Detail</p>
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground break-words">{user.firstName} {user.lastName}</h1>
               {isDeleted && (
                 <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
                   Blocked / Deleted
@@ -918,7 +919,7 @@ export default function UserDetailClient() {
           )}
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {user.email}</span>
-            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined <span className="font-mono">{new Date(user.createdAt).toLocaleDateString()}</span></span>
             {isDeleted && (
               <span className="flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Blocked / deleted {new Date(user.deletedAt).toLocaleString()}</span>
             )}
@@ -1044,26 +1045,26 @@ export default function UserDetailClient() {
 
       <div className={sectionCls("overview")}>
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="font-display text-lg font-bold text-foreground">
             <Shield className="mr-2 inline h-5 w-5" /> Onboarding & Auth Health
           </h2>
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${authHealth.badge}`}>{authHealth.label}</span>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-          <div className="rounded-lg bg-muted/30 p-4">
-            <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Onboarding</p>
-            <p className="text-lg font-semibold text-foreground">{onboardingStatus}</p>
-            <p className="text-xs text-muted-foreground">{onboardingCompletedCount}/{onboardingChecks.length} milestones</p>
+          <div className="rounded-xl bg-muted/30 p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Onboarding</p>
+            <p className="font-display text-lg font-bold text-foreground">{onboardingStatus}</p>
+            <p className="text-xs text-muted-foreground"><span className="font-mono">{onboardingCompletedCount}/{onboardingChecks.length}</span> milestones</p>
           </div>
-          <div className="rounded-lg bg-muted/30 p-4">
-            <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Last Seen</p>
-            <p className="text-lg font-semibold text-foreground">{lastSeenAt ? new Date(lastSeenAt).toLocaleDateString() : "Never"}</p>
+          <div className="rounded-xl bg-muted/30 p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Last Seen</p>
+            <p className="font-display text-lg font-bold text-foreground">{lastSeenAt ? new Date(lastSeenAt).toLocaleDateString() : "Never"}</p>
             <p className="text-xs text-muted-foreground">{daysSinceLastSeen === null ? "No session data" : `${daysSinceLastSeen} day(s) ago`}</p>
           </div>
-          <div className="rounded-lg bg-muted/30 p-4">
-            <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">Tracked Activity</p>
-            <p className="text-lg font-semibold text-foreground">{recentEvents.length}</p>
-            <p className="text-xs text-muted-foreground">{sessions.filter((session: any) => session.isActive).length} active session(s)</p>
+          <div className="rounded-xl bg-muted/30 p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Tracked Activity</p>
+            <p className="font-mono text-lg font-bold text-foreground">{recentEvents.length}</p>
+            <p className="text-xs text-muted-foreground"><span className="font-mono">{sessions.filter((session: any) => session.isActive).length}</span> active session(s)</p>
           </div>
         </div>
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -1081,7 +1082,7 @@ export default function UserDetailClient() {
             ))}
           </div>
           <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Support Flags</p>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">Support Flags</p>
             {supportFlags.length > 0 ? (
               <div className="space-y-2">
                 {supportFlags.map((flag) => (
@@ -1097,7 +1098,7 @@ export default function UserDetailClient() {
 
       <div className={sectionCls("security")}>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="font-display text-lg font-bold text-foreground">
             <KeyRound className="mr-2 inline h-5 w-5" /> Account Security & Access
           </h2>
           <button
@@ -1122,7 +1123,7 @@ export default function UserDetailClient() {
         <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Linked Sign-In Methods</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">Linked Sign-In Methods</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${hasPasswordLogin ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"}`}>
                   Password
@@ -1154,7 +1155,7 @@ export default function UserDetailClient() {
             </div>
 
             <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Verification & Recovery</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">Verification & Recovery</p>
               <div className="space-y-2 text-sm">
                 <div className="rounded-lg bg-background/70 px-3 py-2">
                   <p className="font-medium text-foreground">
@@ -1193,7 +1194,7 @@ export default function UserDetailClient() {
           </div>
 
           <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <p className="text-xs font-medium uppercase text-muted-foreground mb-3">User Login Sessions</p>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">User Login Sessions</p>
             {loginSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">No authenticated login sessions found for this user.</p>
             ) : (
@@ -1241,13 +1242,13 @@ export default function UserDetailClient() {
       </div>
 
       <div className={sectionCls("privacy")}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
+        <h2 className="mb-4 font-display text-lg font-bold text-foreground">
           <Shield className="mr-2 inline h-5 w-5" /> Privacy, GDPR & Admin Notes
         </h2>
         <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Current Consent State</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">Current Consent State</p>
               {latestConsentByCategory.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No consent history recorded yet.</p>
               ) : (
@@ -1274,7 +1275,7 @@ export default function UserDetailClient() {
             </div>
 
             <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">GDPR Requests</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">GDPR Requests</p>
               {gdprRequests.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No GDPR export/delete/rectify requests on record.</p>
               ) : (
@@ -1313,7 +1314,7 @@ export default function UserDetailClient() {
           </div>
 
           <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Admin Notes</p>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-3">Admin Notes</p>
             <div className="space-y-3">
               <textarea
                 value={newAdminNote}
@@ -1359,7 +1360,7 @@ export default function UserDetailClient() {
 
       {supportTimeline.length > 0 && (
         <div className={sectionCls("overview")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">
             <Bell className="mr-2 inline h-5 w-5" /> Support Timeline
           </h2>
           <div className="space-y-2">
@@ -1381,7 +1382,7 @@ export default function UserDetailClient() {
 
       {/* Premium Management */}
       <div className={sectionCls("billing")}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
+        <h2 className="mb-4 font-display text-lg font-bold text-foreground">
           <CreditCard className="mr-2 inline h-5 w-5" /> Subscription & Premium
         </h2>
         {(() => {
@@ -1390,10 +1391,10 @@ export default function UserDetailClient() {
             ? new Date(eff.expiresAt).toLocaleDateString()
             : "—";
           return (
-            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-border bg-muted/30 p-4">
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">Effective Access</p>
-                <p className={`mt-1 text-sm font-semibold ${eff.hasPremium ? "text-tone-sage-fg" : eff.hasAccess ? "text-foreground" : "text-destructive"}`}>
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Effective Access</p>
+                <p className={`mt-1 font-display text-sm font-bold ${eff.hasPremium ? "text-tone-sage-fg" : eff.hasAccess ? "text-foreground" : "text-destructive"}`}>
                   {effectiveStatusLabel(eff.effectiveStatus)}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
@@ -1401,22 +1402,22 @@ export default function UserDetailClient() {
                 </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">Source</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{accessSourceLabel(eff.accessSource)}</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Source</p>
+                <p className="mt-1 font-display text-sm font-bold text-foreground">{accessSourceLabel(eff.accessSource)}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Manual override: {eff.isManualOverride ? "Yes" : "No"}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">Expires</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{expires}</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Expires</p>
+                <p className="mt-1 font-display text-sm font-bold text-foreground">{expires}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Auto-renewal: {eff.autoRenew ? "On" : "Off"}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground">Raw fields</p>
-                <p className="mt-1 text-xs text-foreground">
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Raw fields</p>
+                <p className="mt-1 font-mono text-xs text-foreground">
                   {(user.subscription?.status || "—")} / {(user.subscription?.provider || "—")} / {(user.subscription?.accessType || "—")}
                 </p>
                 {eff.warnings.length > 0 && (
@@ -1746,7 +1747,7 @@ export default function UserDetailClient() {
       {/* Profile */}
       {user.profile && (
         <div className={sectionCls("data")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">Profile</h2>
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">Profile</h2>
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:grid-cols-6">
             <InfoItem label="Family Status" value={user.profile.familyStatus || "—"} />
             <InfoItem label="Move Type" value={user.profile.moveType || "—"} />
@@ -1769,7 +1770,7 @@ export default function UserDetailClient() {
       {/* Device & Sessions */}
       {sessions.length > 0 && (
         <div className={sectionCls("security")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">
             <Monitor className="mr-2 inline h-5 w-5" /> Device & Sessions ({sessions.length})
           </h2>
 
@@ -1797,34 +1798,34 @@ export default function UserDetailClient() {
             return (
               <div className="mb-4 space-y-3">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Top Browser</p>
-                    <p className="text-sm font-semibold text-foreground">{topBrowser?.[0] || "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{topBrowser?.[1] || 0} sessions</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Top Browser</p>
+                    <p className="font-display text-sm font-bold text-foreground">{topBrowser?.[0] || "—"}</p>
+                    <p className="text-[10px] text-muted-foreground"><span className="font-mono">{topBrowser?.[1] || 0}</span> sessions</p>
                   </div>
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Top OS</p>
-                    <p className="text-sm font-semibold text-foreground">{topOS?.[0] || "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{topOS?.[1] || 0} sessions</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Top OS</p>
+                    <p className="font-display text-sm font-bold text-foreground">{topOS?.[0] || "—"}</p>
+                    <p className="text-[10px] text-muted-foreground"><span className="font-mono">{topOS?.[1] || 0}</span> sessions</p>
                   </div>
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Device Type</p>
-                    <p className="text-sm font-semibold text-foreground">{topDevice?.[0] || "—"}</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Device Type</p>
+                    <p className="font-display text-sm font-bold text-foreground">{topDevice?.[0] || "—"}</p>
                     <p className="text-[10px] text-muted-foreground">{hasWeb && hasMobile ? "Web + Mobile" : hasWeb ? "Web only" : hasMobile ? "Mobile only" : "—"}</p>
                   </div>
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Total Sessions</p>
-                    <p className="text-sm font-semibold text-foreground">{sessions.length}</p>
-                    <p className="text-[10px] text-muted-foreground">{totalPageViews} page views</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Total Sessions</p>
+                    <p className="font-mono text-sm font-bold text-foreground">{sessions.length}</p>
+                    <p className="text-[10px] text-muted-foreground"><span className="font-mono">{totalPageViews}</span> page views</p>
                   </div>
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Last Seen</p>
-                    <p className="text-sm font-semibold text-foreground">{lastSession ? new Date(lastSession.sessionStart).toLocaleDateString() : "—"}</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Last Seen</p>
+                    <p className="font-display text-sm font-bold text-foreground">{lastSession ? new Date(lastSession.sessionStart).toLocaleDateString() : "—"}</p>
                     <p className="text-[10px] text-muted-foreground">{lastSession?.ipAddress || "—"}</p>
                   </div>
-                  <div className="rounded-lg bg-muted/30 p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Last Device</p>
-                    <p className="text-sm font-semibold text-foreground">{lastSession?.browser || "—"} {lastSession?.os ? `/ ${lastSession.os}` : ""}</p>
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground mb-1">Last Device</p>
+                    <p className="font-display text-sm font-bold text-foreground">{lastSession?.browser || "—"} {lastSession?.os ? `/ ${lastSession.os}` : ""}</p>
                     <p className="text-[10px] text-muted-foreground">{lastSession?.device || lastSession?.deviceType || "—"}</p>
                   </div>
                 </div>
@@ -1869,14 +1870,14 @@ export default function UserDetailClient() {
       {/* Behavior Tracking */}
       {(eventCounts.length > 0 || recentEvents.length > 0) && (
         <div className={sectionCls("overview")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">
             <MousePointer className="mr-2 inline h-5 w-5" /> User Behavior
           </h2>
 
           {/* Event Summary */}
           {eventCounts.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-2">Event Summary</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-2">Event Summary</p>
               <div className="flex flex-wrap gap-2">
                 {eventCounts.map((ec: any) => (
                   <span key={ec.event} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -1890,7 +1891,7 @@ export default function UserDetailClient() {
           {/* Recent Events Timeline */}
           {recentEvents.length > 0 && (
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-2">Recent Activity (Last 30)</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground mb-2">Recent Activity (Last 30)</p>
               <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {recentEvents.map((ev: any) => (
                   <div key={ev.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2.5 text-sm">
@@ -1921,7 +1922,7 @@ export default function UserDetailClient() {
             <div className="flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
+                  <h2 className="flex items-center gap-1.5 font-display text-lg font-bold text-foreground">
                     Move Transition Support Context
                     <InfoHint
                       text="Background on this user's in-progress move so a support agent can give informed manual guidance. It is read-only context — nothing here changes the user's utility or service accounts."
@@ -1966,7 +1967,7 @@ export default function UserDetailClient() {
               )}
               {moveTasks.length > 0 && (
                 <div className="mt-4">
-                  <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Recent move tasks</p>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Recent move tasks</p>
                   <div className="grid gap-2 lg:grid-cols-2">
                     {moveTasks.slice(0, 6).map((task: any) => (
                       <div key={task.id} className="rounded-lg border border-border bg-background/70 p-3">
@@ -1999,7 +2000,7 @@ export default function UserDetailClient() {
         <div className={sectionCls("data")}>
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">User-Created Providers ({customProviders.length})</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">User-Created Providers ({customProviders.length})</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Private provider records for local/manual tracking. They are not global catalog entries and are not source verified.
               </p>
@@ -2039,7 +2040,7 @@ export default function UserDetailClient() {
       {/* Addresses */}
       {user.addresses?.length > 0 && (
         <div className={sectionCls("data")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">
             <MapPin className="mr-2 inline h-5 w-5" /> Addresses ({user.addresses.length})
           </h2>
           <div className="space-y-3">
@@ -2063,7 +2064,7 @@ export default function UserDetailClient() {
       {/* Push Devices */}
       {pushDevices.length > 0 && (
         <div className={sectionCls("data")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">
             <Bell className="mr-2 inline h-5 w-5" /> Push Devices ({pushDevices.length})
           </h2>
           <div className="space-y-2">
@@ -2091,7 +2092,7 @@ export default function UserDetailClient() {
       {/* Moving Plans */}
       {user.movingPlans?.length > 0 && (
         <div className={sectionCls("data")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">Moving Plans ({user.movingPlans.length})</h2>
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">Moving Plans ({user.movingPlans.length})</h2>
           <div className="space-y-3">
             {user.movingPlans.map((plan: any) => (
               <div key={plan.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
@@ -2116,7 +2117,7 @@ export default function UserDetailClient() {
       {supportTickets.length > 0 && (
         <div className={sectionCls("overview")}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="font-display text-lg font-bold text-foreground">
               <LifeBuoy className="mr-2 inline h-5 w-5" /> Recent Support Tickets ({supportTickets.length})
             </h2>
             <Link href="/support" className="text-xs text-primary hover:underline">View all tickets</Link>
@@ -2156,7 +2157,7 @@ export default function UserDetailClient() {
       {/* Audit Log */}
       {auditLogs.length > 0 && (
         <div className={sectionCls("overview")}>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">Activity Log (Recent 20)</h2>
+          <h2 className="mb-4 font-display text-lg font-bold text-foreground">Activity Log (Recent 20)</h2>
           <div className="space-y-2">
             {auditLogs.map((log: any) => (
               <div key={log.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-sm">
@@ -2569,9 +2570,9 @@ function StatCard({
   const accentClass =
     accent === "sage" ? "text-tone-sage-fg" : accent === "honey" ? "text-tone-honey-fg" : "text-foreground";
   return (
-    <div className="rounded-xl border border-border bg-card p-4 text-center">
-      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${accentClass}`}>{value}</p>
+    <div className="rounded-2xl border border-border bg-card p-4 text-center">
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className={`mt-1.5 font-display text-xl font-extrabold ${accentClass}`}>{value}</p>
       {detail && <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>}
     </div>
   );
@@ -2579,12 +2580,12 @@ function StatCard({
 
 function InfoCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg bg-muted/30 p-4">
-      <p className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase text-muted-foreground">
+    <div className="rounded-xl bg-muted/30 p-4">
+      <p className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         {label}
         {hint ? <InfoHint text={hint} label={label} /> : null}
       </p>
-      <p className="text-sm font-semibold text-foreground">{value}</p>
+      <p className="font-display text-sm font-bold text-foreground">{value}</p>
     </div>
   );
 }
@@ -2650,7 +2651,7 @@ function extractAdminNote(note: any) {
 function InfoItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <p className="mt-0.5 font-medium text-foreground">{value}</p>
     </div>
   );
