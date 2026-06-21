@@ -41,7 +41,7 @@ export default function WhyFreePage() {
     <PublicPageShell
       eyebrow="Why it is free"
       title="Free because the move should start before the checkout page."
-      description="The design bundle includes a dedicated why-free page. This route makes the business model explicit: consumers can organize a move at no cost, while optional partner, concierge, and business surfaces can support the platform."
+      description="Consumers can organize a move at no cost, while optional partner, concierge, and business surfaces can support the platform without locking the core workflow behind a paywall."
     >
       <div className="grid gap-5 md:grid-cols-3">
         {principles.map(({ icon: Icon, title, body }) => (

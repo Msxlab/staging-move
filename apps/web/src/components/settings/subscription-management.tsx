@@ -624,7 +624,13 @@ export default function SubscriptionManagementPage({
   // lapsed payers (managementKind stripe/store) fall through to the full screen so
   // they keep visibility/control of their actual subscription. While loading we
   // fall through to the normal screen's own loading state to avoid a flash.
-  if (shouldShowConsumerFreePanel({ consumerFree, loading, managementKind: entitlement?.managementKind })) {
+  if (shouldShowConsumerFreePanel({
+    consumerFree,
+    loading,
+    managementKind: entitlement?.managementKind,
+    effectivePlanKey: entitlement?.plan,
+    effectiveActive: entitlement?.isActive,
+  })) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 pb-8">
         <div className="flex items-center gap-4">
