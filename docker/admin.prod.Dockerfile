@@ -3,7 +3,7 @@
 # LocateFlow Admin — Production image (Next.js standalone)
 # -----------------------------------------------------------------
 
-FROM node:22-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -28,7 +28,7 @@ COPY patches                               patches
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-FROM node:22-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -83,7 +83,7 @@ RUN node scripts/write-build-info.mjs \
  && pnpm --filter @locateflow/db exec prisma generate \
  && pnpm --filter @locateflow/admin build
 
-FROM node:22-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 
 ARG BUILD_COMMIT_SHA=unknown
 ARG BUILD_SOURCE_BRANCH=unknown

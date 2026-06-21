@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------
 
 # ── 1) deps: install pnpm + deps only (cached) ────────────────────
-FROM node:22-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -31,7 +31,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ── 2) builder: generate prisma client + next build ───────────────
-FROM node:22-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -96,7 +96,7 @@ RUN node scripts/write-build-info.mjs \
  && pnpm --filter @locateflow/web build
 
 # ── 3) runner: minimal image with standalone output ───────────────
-FROM node:22-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 
 ARG BUILD_COMMIT_SHA=unknown
 ARG BUILD_SOURCE_BRANCH=unknown
