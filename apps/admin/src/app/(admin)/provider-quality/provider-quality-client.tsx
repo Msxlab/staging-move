@@ -128,9 +128,9 @@ function MetricCard({
             : "text-foreground bg-card border-border";
 
   return (
-    <div className={`rounded-[1.1rem] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-xs font-medium opacity-75">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div className={`rounded-2xl border p-4 shadow-sm ${toneClass}`}>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-75">{label}</p>
+      <p className="mt-1.5 font-display text-3xl font-extrabold leading-none">{value}</p>
     </div>
   );
 }
@@ -151,7 +151,7 @@ function DistributionBars({
           <div key={labelFor(row)} className="space-y-1">
             <div className="flex items-center justify-between gap-3 text-xs">
               <span className="font-medium text-foreground">{labelFor(row)}</span>
-              <span className="text-muted-foreground">{formatNumber(row.count)} ({pct}%)</span>
+              <span className="font-mono text-muted-foreground">{formatNumber(row.count)} ({pct}%)</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -228,7 +228,7 @@ export default function ProviderQualityClient() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Refresh
@@ -245,7 +245,7 @@ export default function ProviderQualityClient() {
           icon={Database}
           title="No provider quality data"
           description="The quality report could not be loaded."
-          className="rounded-xl border border-dashed border-border"
+          className="rounded-2xl border border-dashed border-border"
         />
       ) : (
         <>
@@ -281,14 +281,14 @@ export default function ProviderQualityClient() {
               flagship
             >
               <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-                <div className="rounded-xl border border-border bg-card p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-medium uppercase text-muted-foreground">New Home Dossier</p>
-                      <p className="mt-1 text-3xl font-semibold text-foreground">
-                        {dossierReadyCount}/{dossierReadiness.length}
+                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">New Home Dossier</p>
+                      <p className="mt-1.5 font-display text-3xl font-extrabold leading-none text-foreground">
+                        <span className="font-mono">{dossierReadyCount}</span>/<span className="font-mono">{dossierReadiness.length}</span>
                       </p>
-                      <p className="mt-1 text-sm text-muted-foreground">source gates ready</p>
+                      <p className="mt-1.5 text-sm text-muted-foreground">source gates ready</p>
                     </div>
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg">
                       <Database className="h-5 w-5" />
@@ -302,11 +302,11 @@ export default function ProviderQualityClient() {
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded-xl border border-tone-sage-br bg-tone-sage-bg p-3 text-tone-sage-fg">
-                      <p className="font-semibold">{dossierReadyCount}</p>
+                      <p className="font-mono text-base font-semibold">{dossierReadyCount}</p>
                       <p className="mt-0.5 opacity-80">ready or keyless</p>
                     </div>
                     <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
-                      <p className="font-semibold">{dossierReadiness.length - dossierReadyCount}</p>
+                      <p className="font-mono text-base font-semibold">{dossierReadiness.length - dossierReadyCount}</p>
                       <p className="mt-0.5 opacity-80">needs config</p>
                     </div>
                   </div>
@@ -326,11 +326,12 @@ export default function ProviderQualityClient() {
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-semibold">{item.label}</p>
                               {isNewDossierSource ? (
-                                <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                                <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
                                   New dossier section
                                 </span>
                               ) : null}
-                              <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
+                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                 {item.status}
                               </span>
                             </div>
@@ -355,13 +356,14 @@ export default function ProviderQualityClient() {
                 {otherReadiness.map((item) => {
                   const Icon = statusIcon(item.status);
                   return (
-                    <div key={item.id} className={`rounded-lg border p-4 ${STATUS_STYLES[item.status]}`}>
+                    <div key={item.id} className={`rounded-2xl border p-4 ${STATUS_STYLES[item.status]}`}>
                       <div className="flex items-start gap-3">
                         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-semibold">{item.label}</p>
-                            <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
                               {item.status}
                             </span>
                           </div>
@@ -390,31 +392,31 @@ export default function ProviderQualityClient() {
                   onChange={(event) => setState(event.target.value.toUpperCase().slice(0, 2))}
                   placeholder="State"
                   maxLength={2}
-                  className="h-9 w-20 rounded-lg border border-input bg-background px-3 text-sm"
+                  className="h-9 w-20 rounded-xl border border-input bg-background px-3 font-mono text-sm text-foreground"
                 />
                 <input
                   value={zip}
                   onChange={(event) => setZip(event.target.value.replace(/\D/g, "").slice(0, 5))}
                   placeholder="ZIP"
                   maxLength={5}
-                  className="h-9 w-24 rounded-lg border border-input bg-background px-3 text-sm"
+                  className="h-9 w-24 rounded-xl border border-input bg-background px-3 font-mono text-sm text-foreground"
                 />
                 <input
                   value={lat}
                   onChange={(event) => setLat(event.target.value.slice(0, 12))}
                   placeholder="Lat"
-                  className="h-9 w-24 rounded-lg border border-input bg-background px-3 text-sm"
+                  className="h-9 w-24 rounded-xl border border-input bg-background px-3 font-mono text-sm text-foreground"
                 />
                 <input
                   value={lng}
                   onChange={(event) => setLng(event.target.value.slice(0, 12))}
                   placeholder="Lng"
-                  className="h-9 w-24 rounded-lg border border-input bg-background px-3 text-sm"
+                  className="h-9 w-24 rounded-xl border border-input bg-background px-3 font-mono text-sm text-foreground"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   Run
@@ -423,21 +425,21 @@ export default function ProviderQualityClient() {
             }
           >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-xs font-medium text-muted-foreground">Effective state</p>
-                <p className="mt-1 text-2xl font-semibold">{data.queryDiagnostics.input.effectiveState || "Any"}</p>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Effective state</p>
+                <p className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground"><span className="font-mono">{data.queryDiagnostics.input.effectiveState || "Any"}</span></p>
               </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-xs font-medium text-muted-foreground">Candidate providers</p>
-                <p className="mt-1 text-2xl font-semibold">{formatNumber(data.queryDiagnostics.candidateCount)}</p>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Candidate providers</p>
+                <p className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground"><span className="font-mono">{formatNumber(data.queryDiagnostics.candidateCount)}</span></p>
               </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-xs font-medium text-muted-foreground">Address-check candidates</p>
-                <p className="mt-1 text-2xl font-semibold">{formatNumber(data.queryDiagnostics.addressCheckCandidateCount)}</p>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Address-check candidates</p>
+                <p className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground"><span className="font-mono">{formatNumber(data.queryDiagnostics.addressCheckCandidateCount)}</span></p>
               </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-xs font-medium text-muted-foreground">Coordinates</p>
-                <p className="mt-1 text-2xl font-semibold">{data.queryDiagnostics.input.hasCoordinates ? "Yes" : "No"}</p>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Coordinates</p>
+                <p className="mt-1.5 font-display text-2xl font-extrabold leading-none text-foreground">{data.queryDiagnostics.input.hasCoordinates ? "Yes" : "No"}</p>
               </div>
             </div>
 
@@ -462,15 +464,15 @@ export default function ProviderQualityClient() {
               </div>
             </div>
 
-            <div className="mt-5 overflow-x-auto overscroll-x-contain rounded-lg border border-border">
+            <div className="mt-5 overflow-x-auto overscroll-x-contain rounded-2xl border border-border">
               <table className="w-full min-w-[640px]">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Provider</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Category</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Model</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Match</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Warnings</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Provider</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Category</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Model</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Match</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warnings</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -484,12 +486,12 @@ export default function ProviderQualityClient() {
                         {provider.warningCodes.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {provider.warningCodes.slice(0, 3).map((warning) => (
-                              <span key={warning} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                              <span key={warning} className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                                 {warning}
                               </span>
                             ))}
                             {provider.warningCodes.length > 3 ? (
-                              <span className="text-[11px] text-muted-foreground">+{provider.warningCodes.length - 3}</span>
+                              <span className="font-mono text-[11px] text-muted-foreground">+{provider.warningCodes.length - 3}</span>
                             ) : null}
                           </div>
                         ) : (
@@ -507,15 +509,16 @@ export default function ProviderQualityClient() {
             <AdminPanel title="Growth Priorities" caption="Ordered backlog for provider data expansion." className="xl:col-span-2">
               <div className="space-y-3">
                 {data.snapshot.priorityItems.map((item) => (
-                  <div key={`${item.priority}-${item.title}`} className={`rounded-lg border p-4 ${PRIORITY_STYLES[item.priority]}`}>
+                  <div key={`${item.priority}-${item.title}`} className={`rounded-2xl border p-4 ${PRIORITY_STYLES[item.priority]}`}>
                     <div className="flex items-start gap-3">
                       <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-current/25 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-current/25 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
                             {item.priority}
                           </span>
-                          <h4 className="text-sm font-semibold">{item.title}</h4>
+                          <h4 className="font-display text-sm font-bold">{item.title}</h4>
                           <span className="text-xs opacity-75">{item.affectedArea}</span>
                         </div>
                         <p className="mt-2 text-xs opacity-85">{item.recommendation}</p>
@@ -530,12 +533,12 @@ export default function ProviderQualityClient() {
             <AdminPanel title="Warnings" caption="Most frequent catalog quality signals.">
               <div className="space-y-2">
                 {data.snapshot.warningSummary.slice(0, 10).map((warning) => (
-                  <div key={`${warning.code}-${warning.severity}`} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2">
+                  <div key={`${warning.code}-${warning.severity}`} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{warning.code}</p>
-                      <p className="text-xs text-muted-foreground">{warning.severity}</p>
+                      <p className="truncate font-mono text-sm font-medium text-foreground">{warning.code}</p>
+                      <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">{warning.severity}</p>
                     </div>
-                    <span className="text-sm font-semibold">{formatNumber(warning.count)}</span>
+                    <span className="font-mono text-sm font-semibold text-foreground">{formatNumber(warning.count)}</span>
                   </div>
                 ))}
               </div>
@@ -547,7 +550,7 @@ export default function ProviderQualityClient() {
               <div className="flex flex-wrap gap-2">
                 {data.snapshot.sparseCategories.slice(0, 24).map((category) => (
                   <span key={category.category} className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2.5 py-1 text-xs text-tone-honey-fg">
-                    {getCategoryLabel(category.category)}: {category.count}
+                    {getCategoryLabel(category.category)}: <span className="font-mono">{category.count}</span>
                   </span>
                 ))}
               </div>
@@ -556,7 +559,7 @@ export default function ProviderQualityClient() {
               <div className="flex flex-wrap gap-2">
                 {data.snapshot.thinStates.slice(0, 24).map((stateRow) => (
                   <span key={stateRow.state} className="rounded-full border border-tone-sky-br bg-tone-sky-bg px-2.5 py-1 text-xs text-tone-sky-fg">
-                    {stateRow.state}: {stateRow.stateProviderCount}
+                    <span className="font-mono">{stateRow.state}</span>: <span className="font-mono">{stateRow.stateProviderCount}</span>
                   </span>
                 ))}
               </div>
@@ -564,7 +567,7 @@ export default function ProviderQualityClient() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Generated {new Date(data.snapshot.generatedAt).toLocaleString()}. Catalog quality is separate from live API availability.
+            Generated <span className="font-mono">{new Date(data.snapshot.generatedAt).toLocaleString()}</span>. Catalog quality is separate from live API availability.
           </p>
         </>
       )}

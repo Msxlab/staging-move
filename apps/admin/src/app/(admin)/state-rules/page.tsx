@@ -185,7 +185,7 @@ export default function StateRulesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PasswordConfirmModal
         open={Boolean(stepUp)}
         title={stepUp?.title || "Confirm action"}
@@ -202,23 +202,23 @@ export default function StateRulesPage() {
         title="State <em>Rules</em>"
         subtitle={`${rules.length} states configured`}
         actions={
-          <button onClick={openCreate} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Add State
+          <button onClick={openCreate} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Add state
           </button>
         }
       />
 
-      {/* Form Modal */}
+      {/* Form Panel */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">{editingId ? "Edit" : "New"} State Rule</h3>
-            <button type="button" aria-label="Close form" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+            <h3 className="font-display text-base font-bold text-foreground">{editingId ? "Edit" : "New"} state rule</h3>
+            <button type="button" aria-label="Close form" onClick={() => setShowForm(false)} className="p-1 text-muted-foreground transition-colors hover:text-foreground"><X className="h-5 w-5" /></button>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">State Code *</label>
-              <select value={form.stateCode} onChange={(e) => setForm({ ...form, stateCode: e.target.value, stateName: US_STATES[e.target.value] || "" })} required disabled={!!editingId} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none disabled:opacity-50">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">State Code *</label>
+              <select value={form.stateCode} onChange={(e) => setForm({ ...form, stateCode: e.target.value, stateName: US_STATES[e.target.value] || "" })} required disabled={!!editingId} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50">
                 <option value="">Select state...</option>
                 {Object.entries(US_STATES).map(([code, name]) => (
                   <option key={code} value={code}>{code} - {name}</option>
@@ -226,8 +226,8 @@ export default function StateRulesPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">State Name</label>
-              <input value={form.stateName} onChange={(e) => setForm({ ...form, stateName: e.target.value })} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">State Name</label>
+              <input value={form.stateName} onChange={(e) => setForm({ ...form, stateName: e.target.value })} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           </div>
           {[
@@ -239,51 +239,51 @@ export default function StateRulesPage() {
             { key: "commonProviders", label: "Common Providers" },
           ].map(({ key, label }) => (
             <div key={key}>
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">{label}</label>
-              <textarea value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} rows={3} className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground text-sm focus:border-primary focus:outline-none" />
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</label>
+              <textarea value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} rows={3} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-foreground text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
           ))}
           <div className="flex gap-3">
-            <button type="submit" disabled={saving} className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button type="submit" disabled={saving} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
               {saving ? "Saving..." : editingId ? "Update" : "Create"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground hover:bg-accent">Cancel</button>
+            <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cancel</button>
           </div>
         </form>
       )}
 
       {/* Grid */}
       {loading ? (
-        <div className="py-12 text-center text-muted-foreground">Loading...</div>
+        <div className="py-20 text-center text-sm text-muted-foreground">Loading...</div>
       ) : rules.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
           <Plus className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">No state rules found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rules.map((rule) => (
-            <div key={rule.id} className="rounded-xl border border-border bg-card p-5">
+            <div key={rule.id} className="rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">{rule.stateCode}</h3>
+                  <h3 className="font-display text-lg font-bold text-foreground">{rule.stateCode}</h3>
                   <p className="text-sm text-muted-foreground">{rule.stateName}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => openEdit(rule)} aria-label="Edit state rule" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit">
+                  <button onClick={() => openEdit(rule)} aria-label="Edit state rule" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" title="Edit">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleDelete(rule.id, rule.stateCode)} aria-label="Delete state rule" className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+                  <button onClick={() => handleDelete(rule.id, rule.stateCode)} aria-label="Delete state rule" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive" title="Delete">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-1">
-                {rule.dmvRules && <span className="rounded bg-tone-sky-bg px-2 py-0.5 text-xs text-tone-sky-fg">DMV</span>}
-                {rule.voterRegistration && <span className="rounded bg-tone-sage-bg px-2 py-0.5 text-xs text-tone-sage-fg">Voter</span>}
-                {rule.utilityInfo && <span className="rounded bg-tone-orange-bg px-2 py-0.5 text-xs text-tone-orange-fg">Utility</span>}
-                {rule.taxInfo && <span className="rounded bg-tone-foil-bg px-2 py-0.5 text-xs text-tone-foil-fg">Tax</span>}
-                {rule.insuranceRules && <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">Insurance</span>}
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                {rule.dmvRules && <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sky-bg px-2.5 py-0.5 text-xs font-medium text-tone-sky-fg"><span className="h-1.5 w-1.5 rounded-full bg-tone-sky-fg" />DMV</span>}
+                {rule.voterRegistration && <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-sage-bg px-2.5 py-0.5 text-xs font-medium text-tone-sage-fg"><span className="h-1.5 w-1.5 rounded-full bg-tone-sage-fg" />Voter</span>}
+                {rule.utilityInfo && <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-orange-bg px-2.5 py-0.5 text-xs font-medium text-tone-orange-fg"><span className="h-1.5 w-1.5 rounded-full bg-tone-orange-fg" />Utility</span>}
+                {rule.taxInfo && <span className="inline-flex items-center gap-1.5 rounded-full bg-tone-foil-bg px-2.5 py-0.5 text-xs font-medium text-tone-foil-fg"><span className="h-1.5 w-1.5 rounded-full bg-tone-foil-fg" />Tax</span>}
+                {rule.insuranceRules && <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive"><span className="h-1.5 w-1.5 rounded-full bg-destructive" />Insurance</span>}
               </div>
             </div>
           ))}
@@ -292,12 +292,12 @@ export default function StateRulesPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4">
-          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl">
+          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Delete state rule</h2>
+                <h2 className="font-display text-base font-bold text-foreground">Delete state rule</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Type {deleteTarget.code} to delete this state rule.
+                  Type <span className="font-mono font-semibold text-foreground">{deleteTarget.code}</span> to delete this state rule.
                 </p>
               </div>
               <button
@@ -305,7 +305,7 @@ export default function StateRulesPage() {
                 aria-label="Close"
                 disabled={deleting}
                 onClick={() => setDeleteTarget(null)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -314,7 +314,7 @@ export default function StateRulesPage() {
               <input
                 value={deleteConfirmation}
                 onChange={(event) => setDeleteConfirmation(event.target.value.toUpperCase().slice(0, 2))}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 autoFocus
               />
               <div className="flex justify-end gap-2">
@@ -322,7 +322,7 @@ export default function StateRulesPage() {
                   type="button"
                   disabled={deleting}
                   onClick={() => setDeleteTarget(null)}
-                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -330,7 +330,7 @@ export default function StateRulesPage() {
                   type="button"
                   disabled={deleting || deleteConfirmation !== deleteTarget.code}
                   onClick={() => void confirmDelete()}
-                  className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                  className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
                 >
                   {deleting ? "Deleting..." : "Delete"}
                 </button>

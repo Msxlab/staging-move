@@ -120,7 +120,7 @@ export default function CoverageOverviewPage() {
           icon={MapPin}
           title="No coverage data"
           description="Coverage overview could not be loaded."
-          className="rounded-xl border border-dashed border-border"
+          className="rounded-2xl border border-dashed border-border"
         />
       ) : (
         <>
@@ -133,9 +133,9 @@ export default function CoverageOverviewPage() {
               { label: "Fully covered categories", value: data.summary.fullyCoveredCategoryCount, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
               { label: `Thin states (<${data.summary.thinStateThreshold})`, value: data.summary.thinStateCount, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg" },
             ].map((s) => (
-              <div key={s.label} className={`rounded-xl border border-border ${s.bg} p-4`}>
-                <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
-                <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
+              <div key={s.label} className={`rounded-2xl border border-border ${s.bg} p-4`}>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
+                <p className={`mt-1.5 font-display text-3xl font-extrabold leading-none ${s.color}`}>{s.value}</p>
               </div>
             ))}
           </div>
@@ -143,9 +143,11 @@ export default function CoverageOverviewPage() {
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Operator cockpit</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Operator cockpit</p>
                 <div className="mt-3 flex items-end gap-3">
-                  <p className="text-4xl font-semibold text-foreground">{coverageScore}%</p>
+                  <p className="font-display text-4xl font-extrabold leading-none text-foreground">
+                    <span className="font-mono">{coverageScore}</span>%
+                  </p>
                   <p className="pb-1 text-sm text-muted-foreground">category coverage completeness</p>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
@@ -153,19 +155,19 @@ export default function CoverageOverviewPage() {
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-tone-honey-fg">
-                    <p className="font-semibold">{data.priorityGaps.length}</p>
+                    <p className="font-mono text-base font-semibold">{data.priorityGaps.length}</p>
                     <p className="mt-0.5 opacity-80">priority gaps queued</p>
                   </div>
                   <div className="rounded-xl border border-tone-sky-br bg-tone-sky-bg p-3 text-tone-sky-fg">
-                    <p className="font-semibold">{data.summary.thinStateCount}</p>
+                    <p className="font-mono text-base font-semibold">{data.summary.thinStateCount}</p>
                     <p className="mt-0.5 opacity-80">thin states</p>
                   </div>
                 </div>
                 {topGap ? (
                   <div className="mt-4 rounded-xl border border-border bg-background p-3">
-                    <p className="text-xs font-medium text-muted-foreground">Next best fill</p>
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Next best fill</p>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      {topGap.state} · {getCategoryLabel(topGap.category)}
+                      <span className="font-mono text-primary">{topGap.state}</span> · {getCategoryLabel(topGap.category)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">{topGap.reason}</p>
                   </div>
@@ -178,13 +180,13 @@ export default function CoverageOverviewPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground">
-                          {gap.state} · {getCategoryLabel(gap.category)}
+                          <span className="font-mono text-primary">{gap.state}</span> · {getCategoryLabel(gap.category)}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {gap.stateProviderCount} state providers · category in {gap.statesCovered}/{data.summary.totalStates} states
+                          <span className="font-mono">{gap.stateProviderCount}</span> state providers · category in <span className="font-mono">{gap.statesCovered}/{data.summary.totalStates}</span> states
                         </p>
                       </div>
-                      <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold text-tone-honey-fg">
+                      <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-0.5 font-mono text-[10px] font-semibold text-tone-honey-fg">
                         {gap.priorityScore}
                       </span>
                     </div>
@@ -196,11 +198,11 @@ export default function CoverageOverviewPage() {
 
           {/* Gap callouts */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
+            <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground">
+                  <h2 className="font-display text-base font-bold text-foreground">
                     Thin states
                     <InfoHint
                       label="Thin states"
@@ -209,10 +211,10 @@ export default function CoverageOverviewPage() {
                     />
                   </h2>
                   {data.thinStates.length > 0 ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {data.thinStates.map((s) => (
-                        <span key={s.state} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs text-tone-honey-fg">
-                          {s.state}: {s.stateProviderCount}
+                        <span key={s.state} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
+                          <span className="font-mono">{s.state}</span>: <span className="font-mono">{s.stateProviderCount}</span>
                         </span>
                       ))}
                     </div>
@@ -223,11 +225,11 @@ export default function CoverageOverviewPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
+            <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground">
+                  <h2 className="font-display text-base font-bold text-foreground">
                     Thin categories
                     <InfoHint
                       label="Thin categories"
@@ -236,10 +238,10 @@ export default function CoverageOverviewPage() {
                     />
                   </h2>
                   {data.thinCategories.length > 0 ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {data.thinCategories.slice(0, 12).map((c) => (
-                        <span key={c.category} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs text-tone-honey-fg">
-                          {getCategoryLabel(c.category)}: {c.statesCovered}/{data.summary.totalStates}
+                        <span key={c.category} className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
+                          {getCategoryLabel(c.category)}: <span className="font-mono">{c.statesCovered}/{data.summary.totalStates}</span>
                         </span>
                       ))}
                     </div>
@@ -261,25 +263,25 @@ export default function CoverageOverviewPage() {
                 onChange={(e) => setSearch(e.target.value.toUpperCase().slice(0, 2))}
                 placeholder="Filter by state (e.g. TX)"
                 maxLength={2}
-                className="w-full rounded-lg border border-input bg-background py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <p className="text-xs text-muted-foreground">Sorted by fewest state-specific providers first.</p>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-border">
+          <div className="overflow-hidden rounded-2xl border border-border">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">State</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">State</th>
+                  <th className="px-4 py-3 text-center text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     State providers
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">
+                  <th className="px-4 py-3 text-center text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     + Federal
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Categories</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Missing categories</th>
+                  <th className="px-4 py-3 text-center text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Categories</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Missing categories</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -287,25 +289,25 @@ export default function CoverageOverviewPage() {
                   <tr key={row.state} className={`bg-card transition-colors hover:bg-accent/40 ${row.isThin ? "bg-tone-honey-bg/30" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{row.state}</span>
+                        <span className="font-mono font-semibold text-foreground">{row.state}</span>
                         {row.isThin && (
-                          <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold uppercase text-tone-honey-fg">
+                          <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-tone-honey-fg">
                             thin
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`text-sm font-bold ${row.stateProviderCount === 0 ? "text-destructive" : "text-foreground"}`}>
+                      <span className={`font-mono text-sm font-bold ${row.stateProviderCount === 0 ? "text-destructive" : "text-foreground"}`}>
                         {row.stateProviderCount}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
-                        <Globe className="h-3 w-3" /> {row.federalProviderCount}
+                        <Globe className="h-3 w-3" /> <span className="font-mono">{row.federalProviderCount}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-sm text-foreground">
+                    <td className="px-4 py-3 text-center font-mono text-sm text-foreground">
                       {row.effectiveCategoryCount}
                     </td>
                     <td className="px-4 py-3">
@@ -323,7 +325,7 @@ export default function CoverageOverviewPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-tone-sage-fg">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-tone-sage-fg">
                           <Building2 className="h-3 w-3" /> All tracked categories covered
                         </span>
                       )}
