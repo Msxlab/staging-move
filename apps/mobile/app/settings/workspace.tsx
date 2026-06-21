@@ -12,14 +12,16 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Users, Trash2, ExternalLink, Ticket, Pencil } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { openWebUrl } from "@/lib/in-app-browser";
 import { useAuthStore } from "@/lib/auth-store";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, SectionHeader, Pill } from "@/components/move";
 
 interface Workspace {
   id: string;
@@ -323,10 +325,10 @@ export default function WorkspaceScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={theme.colors.text} />
+          <ArrowLeft size={20} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("settings.workspace", "Workspace")}</Text>
-        <View style={{ width: 44 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -337,59 +339,71 @@ export default function WorkspaceScreen() {
         automaticallyAdjustKeyboardInsets
       >
         {loadError ? (
-          <View style={{ alignItems: "center" }}>
+          <View style={styles.stateWrap}>
+            <View style={styles.stateIcon}>
+              <Users size={22} color={theme.colors.primary} />
+            </View>
             <Text style={styles.empty}>
               {t("workspace.loadError", "Couldn't load your workspace. Check your connection and try again.")}
             </Text>
             <TouchableOpacity
               onPress={() => { setPageLoading(true); void load(); }}
-              style={{
-                marginTop: 16,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-                borderRadius: 12,
-                backgroundColor: theme.colors.primary,
-              }}
+              style={styles.gradientBtnWrap}
+              activeOpacity={0.85}
               accessibilityRole="button"
             >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>{t("common.retry", "Retry")}</Text>
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientBtn}
+              >
+                <Text style={styles.gradientBtnText}>{t("common.retry", "Retry")}</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : featureOff ? (
-          <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out for Family & Pro — coming soon. Your plan's higher limits are already active.")}</Text>
+          <View style={styles.stateWrap}>
+            <View style={styles.stateIcon}>
+              <Users size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.empty}>{t("workspace.unavailable", "Shared household workspaces (members, shared services, child accounts) are rolling out for Family & Pro — coming soon. Your plan's higher limits are already active.")}</Text>
+          </View>
         ) : workspaces.length === 0 ? (
-          <View style={{ alignItems: "center" }}>
+          <View style={styles.stateWrap}>
+            <View style={styles.stateIcon}>
+              <Users size={22} color={theme.colors.primary} />
+            </View>
             <Text style={styles.empty}>
               {t("workspace.none", "You're not part of any shared workspace yet. A Family or Pro plan lets you create one.")}
             </Text>
             <TouchableOpacity
               onPress={() => openWebUrl(`${APP_WEB_URL}/pricing#family-pro`)}
-              style={{
-                marginTop: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                backgroundColor: theme.colors.primary,
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                borderRadius: 12,
-              }}
+              style={styles.gradientBtnWrap}
+              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={t("workspace.upgradeWebA11y", "See Family and Pro plans on the web")}
             >
-              <ExternalLink size={16} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>
-                {t("workspace.upgradeWeb", "See Family & Pro on the web")}
-              </Text>
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.gradientBtn, { flexDirection: "row", gap: 8 }]}
+              >
+                <ExternalLink size={16} color={theme.colors.onAccent} />
+                <Text style={styles.gradientBtnText}>
+                  {t("workspace.upgradeWeb", "See Family & Pro on the web")}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/workspace/accept-invite" as Href)}
-              style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 8 }}
+              style={styles.joinInviteRow}
               accessibilityRole="button"
               accessibilityLabel={t("workspace.haveInviteA11y", "Have an invite? Join a workspace")}
             >
               <Ticket size={16} color={theme.colors.primary} />
-              <Text style={{ color: theme.colors.primary, fontWeight: "600", fontSize: 14 }}>
+              <Text style={styles.joinInviteText}>
                 {t("workspace.haveInvite", "Have an invite? Join a workspace")}
               </Text>
             </TouchableOpacity>
@@ -412,7 +426,7 @@ export default function WorkspaceScreen() {
 
             {selected && (
               <>
-                <View style={styles.card}>
+                <HeroCard style={styles.heroCard} padding={18} radius={20}>
                   {selected.role === "OWNER" && renaming ? (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <TextInput
@@ -420,32 +434,34 @@ export default function WorkspaceScreen() {
                         onChangeText={setNameInput}
                         maxLength={60}
                         autoFocus
-                        style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.colors.text }}
-                        placeholderTextColor={theme.colors.textMuted}
+                        style={styles.renameInput}
+                        placeholderTextColor={theme.colors.faint}
                       />
                       <TouchableOpacity onPress={renameWorkspace} disabled={busy}>
-                        <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{t("common.save", "Save")}</Text>
+                        <Text style={styles.renameSave}>{t("common.save", "Save")}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => setRenaming(false)} disabled={busy}>
-                        <Text style={{ color: theme.colors.textTertiary }}>{t("common.cancel", "Cancel")}</Text>
+                        <Text style={styles.renameCancel}>{t("common.cancel", "Cancel")}</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View style={styles.wsAvatar}>
+                        <Users size={18} color={theme.colors.primary} />
+                      </View>
                       <TouchableOpacity
+                        style={{ flex: 1 }}
                         onPress={selected.role === "OWNER" ? () => { setNameInput(selected.name); setRenaming(true); } : undefined}
                         disabled={selected.role !== "OWNER"}
                         activeOpacity={selected.role === "OWNER" ? 0.6 : 1}
                       >
                         <View style={styles.wsNameRow}>
                           <Text style={styles.wsName}>{selected.name}</Text>
-                          {selected.role === "OWNER" && <Pencil size={14} color={theme.colors.textTertiary} />}
+                          {selected.role === "OWNER" && <Pencil size={14} color={theme.colors.faint} />}
                         </View>
                       </TouchableOpacity>
                       {selected.isPersonalSolo && (
-                        <View style={styles.personalBadge}>
-                          <Text style={styles.personalBadgeText}>{t("workspace.personal", "Personal")}</Text>
-                        </View>
+                        <Pill label={t("workspace.personal", "Personal")} tone="muted" />
                       )}
                     </View>
                   )}
@@ -459,7 +475,7 @@ export default function WorkspaceScreen() {
                       <Text style={styles.leaveBtnText}>{t("workspace.leave", "Leave")}</Text>
                     </TouchableOpacity>
                   )}
-                </View>
+                </HeroCard>
 
                 <View style={styles.card}>
                   <View style={styles.rowBetween}>
@@ -488,8 +504,8 @@ export default function WorkspaceScreen() {
                   </View>
                 </View>
 
-                <Text style={styles.section}>{t("workspace.members", "MEMBERS")}</Text>
-                <View style={styles.card}>
+                <SectionHeader label={t("workspace.members", "MEMBERS")} style={styles.sectionHeader} />
+                <View style={styles.listCard}>
                   {members.map((m, i) => {
                     const isSelf = myUserId != null && m.userId === myUserId;
                     const tappable = iAmManager && !isSelf && m.role !== "OWNER";
@@ -513,7 +529,11 @@ export default function WorkspaceScreen() {
                               : ""}
                           </Text>
                         </View>
-                        {tappable && <Text style={styles.manage}>{t("workspace.manage", "Manage")}</Text>}
+                        {tappable && (
+                          <View style={styles.managePill}>
+                            <Text style={styles.manage}>{t("workspace.manage", "Manage")}</Text>
+                          </View>
+                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -532,13 +552,13 @@ export default function WorkspaceScreen() {
 
                 {iAmManager && !selected.isPersonalSolo && (
                   <>
-                    <Text style={styles.section}>{t("workspace.invite", "INVITE A MEMBER")}</Text>
+                    <SectionHeader label={t("workspace.invite", "INVITE A MEMBER")} style={styles.sectionHeader} />
                     <View style={styles.card}>
                       <TextInput
                         value={inviteEmail}
                         onChangeText={setInviteEmail}
                         placeholder="name@email.com"
-                        placeholderTextColor={theme.colors.textTertiary}
+                        placeholderTextColor={theme.colors.faint}
                         autoCapitalize="none"
                         keyboardType="email-address"
                         style={styles.input}
@@ -559,13 +579,21 @@ export default function WorkspaceScreen() {
                       <TouchableOpacity
                         onPress={sendInvite}
                         disabled={busy || !inviteEmail.trim()}
-                        style={[styles.primaryBtn, (busy || !inviteEmail.trim()) && { opacity: 0.5 }]}
+                        style={styles.primaryBtnWrap}
+                        activeOpacity={0.85}
                       >
-                        {busy ? (
-                          <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                          <Text style={styles.primaryBtnText}>{t("workspace.sendInvite", "Send invite")}</Text>
-                        )}
+                        <LinearGradient
+                          colors={theme.colors.gradient.primary}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={[styles.primaryBtn, (busy || !inviteEmail.trim()) && { opacity: 0.5 }]}
+                        >
+                          {busy ? (
+                            <ActivityIndicator size="small" color={theme.colors.onAccent} />
+                          ) : (
+                            <Text style={styles.primaryBtnText}>{t("workspace.sendInvite", "Send invite")}</Text>
+                          )}
+                        </LinearGradient>
                       </TouchableOpacity>
 
                       {invitations.map((inv) => (
@@ -616,121 +644,182 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 14,
     },
     backBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      backgroundColor: theme.colors.card,
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
     scroll: { paddingHorizontal: 20, paddingBottom: 40 },
-    empty: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginTop: 16 },
+
+    // ── State (error / coming-soon / empty) ──────────────────────────────
+    stateWrap: { alignItems: "center", marginTop: 24 },
+    stateIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      backgroundColor: theme.colors.accentSoft,
+      borderWidth: 1,
+      borderColor: theme.colors.accentBorder,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    empty: {
+      fontSize: 14,
+      fontFamily: fonts.sans,
+      color: theme.colors.dim,
+      lineHeight: 20,
+      marginTop: 14,
+      textAlign: "center",
+    },
+    gradientBtnWrap: { marginTop: 18, borderRadius: theme.radius.md, overflow: "hidden" },
+    gradientBtn: {
+      paddingVertical: 13,
+      paddingHorizontal: 24,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    gradientBtnText: { color: theme.colors.onAccent, fontFamily: fonts.sansSemibold, fontSize: 14 },
+
+    // ── Workspace switcher chips ─────────────────────────────────────────
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 },
     chip: {
-      borderRadius: 12,
+      borderRadius: theme.radius.full,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
+      backgroundColor: theme.colors.surface,
+      paddingVertical: 7,
+      paddingHorizontal: 14,
     },
-    chipActive: { borderColor: theme.colors.primary },
-    chipText: { fontSize: 13, color: theme.colors.textTertiary },
-    chipTextActive: { color: theme.colors.text, fontWeight: "600" },
+    chipActive: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft },
+    chipText: { fontSize: 13, fontFamily: fonts.sansMedium, color: theme.colors.dim },
+    chipTextActive: { color: theme.colors.primary, fontFamily: fonts.sansSemibold },
+
+    // ── Cards ────────────────────────────────────────────────────────────
+    heroCard: { marginTop: 12 },
     card: {
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderRadius: theme.radius.xl,
       borderWidth: 1,
       borderColor: theme.colors.border,
       padding: 16,
       marginTop: 12,
     },
-    rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    wsName: { fontSize: 17, fontWeight: "700", color: theme.colors.text },
-    wsNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-    wsMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 4 },
-    personalBadge: {
-      borderRadius: 999,
+    listCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.radius.xl,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.background,
-      paddingVertical: 2,
-      paddingHorizontal: 8,
+      paddingHorizontal: 16,
+      marginTop: 10,
+      overflow: "hidden",
     },
-    personalBadgeText: {
-      fontSize: 10,
-      fontWeight: "700",
-      color: theme.colors.textTertiary,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
+    rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+
+    // ── Selected workspace hero ──────────────────────────────────────────
+    wsAvatar: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: theme.colors.accentSoft,
+      borderWidth: 1,
+      borderColor: theme.colors.accentBorder,
+      alignItems: "center",
+      justifyContent: "center",
     },
+    wsName: { fontSize: 17, fontFamily: fonts.serifBold, color: theme.colors.text },
+    wsNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    wsMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 8 },
+    renameInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface2,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      fontFamily: fonts.sansMedium,
+      color: theme.colors.text,
+    },
+    renameSave: { color: theme.colors.primary, fontFamily: fonts.sansBold },
+    renameCancel: { color: theme.colors.faint, fontFamily: fonts.sansMedium },
     leaveBtn: {
       alignSelf: "flex-start",
-      marginTop: 12,
-      borderRadius: 12,
+      marginTop: 14,
+      borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.colors.error,
+      borderColor: theme.colors.redLine,
+      backgroundColor: theme.colors.redSoft,
       paddingVertical: 8,
       paddingHorizontal: 14,
     },
-    leaveBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.error },
-    cardTitle: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
-    cardDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
-    section: {
-      fontSize: 12,
-      fontWeight: "600",
-      color: theme.colors.textTertiary,
-      letterSpacing: 0.5,
-      marginTop: 22,
-      marginLeft: 4,
-    },
-    memberRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, gap: 12 },
+    leaveBtnText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.red },
+
+    cardTitle: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    cardDesc: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 6, lineHeight: 18 },
+    sectionHeader: { marginTop: 22, marginBottom: 2, marginLeft: 2 },
+
+    // ── Member / invitation rows ─────────────────────────────────────────
+    memberRow: { flexDirection: "row", alignItems: "center", paddingVertical: 14, gap: 12 },
     rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
     rowBorderTop: { borderTopWidth: 1, borderTopColor: theme.colors.border, marginTop: 4 },
-    memberName: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
-    memberSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-    manage: { fontSize: 13, color: theme.colors.primary, fontWeight: "600" },
+    memberName: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    memberSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+    managePill: {
+      borderRadius: 8,
+      backgroundColor: theme.colors.accentSoft,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+    },
+    manage: { fontSize: 12, color: theme.colors.primary, fontFamily: fonts.sansSemibold },
+
+    // ── Invite form ──────────────────────────────────────────────────────
     input: {
-      borderRadius: 12,
+      borderRadius: theme.radius.md,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.surface2,
       paddingHorizontal: 12,
-      paddingVertical: 10,
+      paddingVertical: 11,
       fontSize: 14,
+      fontFamily: fonts.sansMedium,
       color: theme.colors.text,
     },
     roleChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
     roleChip: {
-      borderRadius: 10,
+      borderRadius: theme.radius.full,
       borderWidth: 1,
       borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
       paddingVertical: 6,
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
     },
-    roleChipActive: { borderColor: theme.colors.primary },
-    roleChipText: { fontSize: 12, color: theme.colors.textTertiary },
-    roleChipTextActive: { color: theme.colors.text, fontWeight: "600" },
+    roleChipActive: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft },
+    roleChipText: { fontSize: 12, fontFamily: fonts.sansMedium, color: theme.colors.dim },
+    roleChipTextActive: { color: theme.colors.primary, fontFamily: fonts.sansSemibold },
+    primaryBtnWrap: { marginTop: 14, borderRadius: theme.radius.md, overflow: "hidden" },
     primaryBtn: {
-      marginTop: 12,
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.radius.md,
-      paddingVertical: 12,
+      paddingVertical: 13,
       alignItems: "center",
+      justifyContent: "center",
     },
-    primaryBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+    primaryBtnText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+
     joinInviteRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
       marginTop: 24,
-      paddingVertical: 8,
+      paddingVertical: 10,
     },
-    joinInviteText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
+    joinInviteText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
   });

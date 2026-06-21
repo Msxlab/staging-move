@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 const FAMILY_STATUS_VALUES = ["SINGLE", "COUPLE", "FAMILY", "OTHER"] as const;
@@ -230,17 +232,19 @@ export default function ProfileSettingsScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <View style={styles.profileHero}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>{profileInitials}</Text>
+        <HeroCard style={styles.profileHero} padding={16} radius={theme.radius.xl}>
+          <View style={styles.profileHeroRow}>
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileAvatarText}>{profileInitials}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.profileHeroTitle} numberOfLines={1}>{displayName}</Text>
+              <Text style={styles.profileHeroMeta} numberOfLines={1}>
+                {selectedFamilyLabel} · {selectedMoveLabel}
+              </Text>
+            </View>
           </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.profileHeroTitle} numberOfLines={1}>{displayName}</Text>
-            <Text style={styles.profileHeroMeta} numberOfLines={1}>
-              {selectedFamilyLabel} · {selectedMoveLabel}
-            </Text>
-          </View>
-        </View>
+        </HeroCard>
 
         <View style={styles.profileStatsRow}>
           {profileStats.map((item) => (
@@ -251,7 +255,7 @@ export default function ProfileSettingsScreen() {
           ))}
         </View>
 
-        <View style={styles.formCard}>
+        <MoveCard style={styles.formCard} padding={14} radius={theme.radius.xl}>
           <Text style={styles.label}>{t("auth.firstName")} *</Text>
           <TextInput
             style={styles.input}
@@ -269,9 +273,9 @@ export default function ProfileSettingsScreen() {
             value={form.lastName}
             onChangeText={(v) => update("lastName", v)}
           />
-        </View>
+        </MoveCard>
 
-        <Text style={styles.sectionLabel}>{t("common.details")}</Text>
+        <SectionHeader label={t("common.details")} style={styles.sectionHeader} />
         <View style={styles.chipRow}>
           {AGE_RANGES.map((r) => (
             <TouchableOpacity
@@ -284,7 +288,7 @@ export default function ProfileSettingsScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>{t("settings.profile")}</Text>
+        <SectionHeader label={t("settings.profile")} style={styles.sectionHeader} />
         <View style={styles.chipRow}>
           {FAMILY_STATUSES.map((f) => (
             <TouchableOpacity
@@ -304,8 +308,8 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasChildren}
             onValueChange={(v) => update("hasChildren", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
 
@@ -328,8 +332,8 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasPets}
             onValueChange={(v) => update("hasPets", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
 
@@ -357,7 +361,7 @@ export default function ProfileSettingsScreen() {
           keyboardType="number-pad"
         />
 
-        <Text style={styles.sectionLabel}>{t("onboarding.moveType")}</Text>
+        <SectionHeader label={t("onboarding.moveType")} style={styles.sectionHeader} />
         <View style={styles.chipRow}>
           {MOVE_TYPES.map((moveType) => (
             <TouchableOpacity
@@ -377,19 +381,19 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.isBusinessOwner}
             onValueChange={(v) => update("isBusinessOwner", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
 
-        <Text style={styles.sectionLabel}>{t("settings.movingNeeds")}</Text>
+        <SectionHeader label={t("settings.movingNeeds")} style={styles.sectionHeader} />
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>{t("settings.motorcycle")}</Text>
           <Switch
             value={form.hasMotorcycle}
             onValueChange={(v) => update("hasMotorcycle", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
         <View style={styles.switchRow}>
@@ -397,8 +401,8 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasBoatRV}
             onValueChange={(v) => update("hasBoatRV", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
         <View style={styles.switchRow}>
@@ -406,8 +410,8 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.needsStorage}
             onValueChange={(v) => update("needsStorage", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
         <View style={styles.switchRow}>
@@ -415,12 +419,12 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasSenior}
             onValueChange={(v) => update("hasSenior", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
 
-        <Text style={styles.sectionLabel}>{t("settings.sensitiveProfile")}</Text>
+        <SectionHeader label={t("settings.sensitiveProfile")} style={styles.sectionHeader} />
         <Text style={styles.helpText}>
           {t("settings.sensitiveProfileHelp")}
         </Text>
@@ -429,8 +433,8 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={form.hasDisability}
             onValueChange={(v) => update("hasDisability", v)}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
         <View style={styles.switchRow}>
@@ -441,8 +445,8 @@ export default function ProfileSettingsScreen() {
               update("isImmigrant", v);
               if (!v) update("immigrationStatus", "");
             }}
-            trackColor={{ false: theme.colors.border, true: theme.colors.success }}
-            thumbColor="#fff"
+            trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
           />
         </View>
 
@@ -469,16 +473,23 @@ export default function ProfileSettingsScreen() {
           style={[styles.saveBtn, saving && { opacity: 0.6 }]}
           onPress={handleSave}
           disabled={saving}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>{t("settings.profile_save", { defaultValue: "Save" })}</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGrad}
+          >
+            {saving ? (
+              <ActivityIndicator color={theme.colors.onAccent} />
+            ) : (
+              <>
+                <Check size={18} color={theme.colors.onAccent} />
+                <Text style={styles.saveBtnText}>{t("settings.profile_save", { defaultValue: "Save" })}</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -493,31 +504,28 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
   headerSaveBtn: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 52 },
   profileHero: {
+    marginBottom: 14,
+  },
+  profileHeroRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
-    padding: 16,
-    marginBottom: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
   },
   profileAvatar: {
     width: 48,
@@ -525,13 +533,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.infoFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.info + "45",
+    borderColor: theme.colors.accentBorder,
   },
-  profileAvatarText: { fontSize: 16, fontWeight: "900", color: theme.colors.info },
-  profileHeroTitle: { fontSize: 18, fontWeight: "900", color: theme.colors.text },
-  profileHeroMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  profileAvatarText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  profileHeroTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
+  profileHeroMeta: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
   profileStatsRow: {
     flexDirection: "row",
     gap: 8,
@@ -548,26 +556,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  profileStatValue: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
-  profileStatLabel: { marginTop: 3, fontSize: 9, fontWeight: "800", color: theme.colors.textTertiary, textTransform: "uppercase" },
+  profileStatValue: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+  profileStatLabel: { marginTop: 3, fontSize: 9, fontFamily: fonts.sansBold, letterSpacing: 0.6, color: theme.colors.faint, textTransform: "uppercase" },
   formCard: {
-    padding: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
+    marginBottom: 4,
   },
-  sectionLabel: {
-    fontSize: 10, fontWeight: "800", color: theme.colors.textTertiary,
-    textTransform: "uppercase", letterSpacing: 1.2, marginTop: 20, marginBottom: 10,
-  },
+  sectionHeader: { marginTop: 20, marginBottom: 10, marginLeft: 2 },
   label: {
-    fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
+    fontSize: 14, fontFamily: fonts.sansMedium, color: theme.colors.dim, marginTop: 16, marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.bg2, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: theme.colors.text,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
@@ -577,22 +578,26 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: theme.colors.infoFaded, borderColor: theme.colors.info + "55",
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  chipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textTertiary },
-  chipTextActive: { color: theme.colors.info },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
+  chipTextActive: { color: theme.colors.primary },
   switchRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     marginTop: 12, paddingVertical: 13, paddingHorizontal: 15,
-    backgroundColor: theme.colors.glass.bg, borderRadius: 16,
-    borderWidth: 1, borderColor: theme.colors.glass.highlight,
+    backgroundColor: theme.colors.surface, borderRadius: 16,
+    borderWidth: 1, borderColor: theme.colors.border,
   },
-  switchLabel: { flex: 1, paddingRight: 12, fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  helpText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginBottom: 4 },
+  switchLabel: { flex: 1, paddingRight: 12, fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  helpText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 18, marginBottom: 4 },
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 });

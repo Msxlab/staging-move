@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   DollarSign,
   ArrowLeft,
@@ -40,7 +41,7 @@ import {
   type BudgetCategoryLabel,
   type ServiceCostInput,
 } from "@locateflow/shared";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -54,6 +55,7 @@ import { PressableScale } from "@/components/ui/PressableScale";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { hapticSuccess, hapticError, hapticLight } from "@/lib/haptics";
+import { HeroCard } from "@/components/move";
 
 interface BudgetRow {
   id: string;
@@ -406,7 +408,7 @@ export default function BudgetScreen() {
           style={styles.backBtn}
           accessibilityLabel={t("common.back", { defaultValue: "Back" })}
         >
-          <ArrowLeft size={22} color={theme.colors.text} />
+          <ArrowLeft size={20} color={theme.colors.text} />
         </PressableScale>
         <Text style={styles.title}>{t("budget.title")}</Text>
         <PressableScale
@@ -414,7 +416,14 @@ export default function BudgetScreen() {
           onPress={() => router.push("/budget/new")}
           accessibilityLabel={t("budget.newBudget")}
         >
-          <Plus size={20} color="#fff" />
+          <LinearGradient
+            colors={theme.colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addBtnGrad}
+          >
+            <Plus size={20} color={theme.colors.onAccent} />
+          </LinearGradient>
         </PressableScale>
       </View>
 
@@ -575,12 +584,12 @@ export default function BudgetScreen() {
           </View>
         ) : null}
 
-        {/* ── Aurora glass hero — the month's projected spend at a glance ── */}
-        <View style={styles.heroCard}>
+        {/* ── Move hero — the month's projected spend at a glance ── */}
+        <HeroCard style={styles.heroCard} padding={18} radius={24}>
           <View style={styles.heroTop}>
             <Text style={styles.heroKicker}>{monthLabel(selectedMonth, locale).toUpperCase()}</Text>
             <View style={styles.heroBadge}>
-              <Wallet size={12} color={theme.colors.accent} />
+              <Wallet size={11} color={theme.colors.primary} />
               <Text style={styles.heroBadgeText} numberOfLines={1}>
                 {addressLabel(addresses, selectedAddressId).toUpperCase()}
               </Text>
@@ -605,7 +614,7 @@ export default function BudgetScreen() {
               }
             />
           ) : null}
-        </View>
+        </HeroCard>
 
         {/* ── Overview stat grid (parity with web's 4 stat cards) ── */}
         <View style={styles.statGrid}>
@@ -980,7 +989,7 @@ export default function BudgetScreen() {
                           accessibilityLabel={t("common.save")}
                         >
                           {isSaving ? (
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color={theme.colors.onAccent} />
                           ) : (
                             <Text style={styles.saveActualText}>{t("common.save", { defaultValue: "Save" })}</Text>
                           )}
@@ -1269,27 +1278,34 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 14,
     },
     backBtn: {
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+    title: {
+      fontSize: 22,
+      fontFamily: fonts.serifBold,
+      color: theme.colors.text,
+      letterSpacing: 0,
+    },
     addBtn: {
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: theme.colors.primary,
+      overflow: "hidden",
+    },
+    addBtnGrad: {
+      flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      ...theme.shadow.glow,
     },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
@@ -1301,13 +1317,13 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.colors.rose.border,
       backgroundColor: theme.colors.rose.bg,
     },
-    errorBannerText: { color: theme.colors.rose.text, fontSize: 12, textAlign: "center" },
+    errorBannerText: { color: theme.colors.rose.text, fontSize: 12, fontFamily: fonts.sansMedium, textAlign: "center" },
 
     filterRow: { marginBottom: 10 },
     monthStepper: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       borderRadius: theme.radius.lg,
@@ -1322,21 +1338,21 @@ const makeStyles = (theme: Theme) =>
     },
     flip: { transform: [{ rotate: "180deg" }] },
     monthLabelWrap: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-    monthLabelText: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+    monthLabelText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
 
     addressPickerWrap: { marginBottom: 14, zIndex: 10 },
     addressPicker: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       borderRadius: theme.radius.lg,
       paddingHorizontal: 14,
       paddingVertical: 12,
     },
-    addressPickerText: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text },
+    addressPickerText: { flex: 1, fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
     addressMenu: {
       marginTop: 6,
       backgroundColor: theme.colors.elevated,
@@ -1355,8 +1371,8 @@ const makeStyles = (theme: Theme) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.colors.border,
     },
-    addressMenuText: { fontSize: 14, color: theme.colors.textSecondary, flex: 1, paddingRight: 8 },
-    addressMenuActive: { color: theme.colors.text, fontWeight: "700" },
+    addressMenuText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.textSecondary, flex: 1, paddingRight: 8 },
+    addressMenuActive: { color: theme.colors.text, fontFamily: fonts.sansBold },
 
     nudge: {
       flexDirection: "row",
@@ -1369,20 +1385,14 @@ const makeStyles = (theme: Theme) =>
     },
     nudgeWarn: { backgroundColor: theme.colors.amber.bg, borderColor: theme.colors.amber.border },
     nudgeInfo: { backgroundColor: theme.colors.cyan.bg, borderColor: theme.colors.cyan.border },
-    nudgeText: { flex: 1, fontSize: 12.5, lineHeight: 18 },
+    nudgeText: { flex: 1, fontSize: 12.5, fontFamily: fonts.sansMedium, lineHeight: 18 },
 
-    // ── Aurora glass hero ──
+    // ── Move hero ──
     heroCard: {
       marginBottom: 14,
-      padding: 16,
-      borderRadius: theme.radius["2xl"],
-      backgroundColor: theme.colors.glass.bg,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.border,
-      ...theme.shadow.glow,
     },
     heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 },
-    heroKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary },
+    heroKicker: { fontSize: 10, letterSpacing: 1.4, fontFamily: fonts.sansBold, color: theme.colors.dim },
     heroBadge: {
       flexDirection: "row",
       alignItems: "center",
@@ -1391,13 +1401,13 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 999,
-      backgroundColor: theme.colors.warningFaded,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.amber.border,
+      borderColor: theme.colors.accentBorder,
     },
-    heroBadgeText: { flexShrink: 1, fontSize: 9, letterSpacing: 1, fontWeight: "700", color: theme.colors.accent },
-    heroBig: { fontSize: 32, fontWeight: "800", letterSpacing: 0, color: theme.colors.text, fontVariant: ["tabular-nums"] },
-    heroSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 16 },
+    heroBadgeText: { flexShrink: 1, fontSize: 9, letterSpacing: 1, fontFamily: fonts.sansBold, color: theme.colors.primary },
+    heroBig: { fontSize: 34, fontFamily: fonts.serifBold, letterSpacing: 0, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+    heroSub: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, lineHeight: 16 },
     heroBar: { marginTop: 12 },
 
     statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
@@ -1409,19 +1419,19 @@ const makeStyles = (theme: Theme) =>
       padding: 12,
       gap: 3,
     },
-    statValue: { fontSize: 18, fontWeight: "800", marginTop: 4, letterSpacing: 0 },
-    statLabel: { fontSize: 11.5, color: theme.colors.textSecondary, fontWeight: "600" },
-    statSub: { fontSize: 10.5, color: theme.colors.textTertiary },
+    statValue: { fontSize: 19, fontFamily: fonts.serifBold, marginTop: 4, letterSpacing: 0 },
+    statLabel: { fontSize: 11.5, color: theme.colors.textSecondary, fontFamily: fonts.sansSemibold },
+    statSub: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.textTertiary },
 
     section: { marginBottom: 14 },
     sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-    sectionTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-    sectionSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: -6, marginBottom: 12, lineHeight: 17 },
-    emptyHint: { fontSize: 12.5, color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 18 },
+    sectionTitle: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.text },
+    sectionSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: -6, marginBottom: 12, lineHeight: 17 },
+    emptyHint: { fontSize: 12.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 18 },
 
     rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    mutedSm: { fontSize: 13, color: theme.colors.textSecondary },
-    valueSm: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+    mutedSm: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.textSecondary },
+    valueSm: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
     progressSpacing: { marginTop: 10, marginBottom: 14 },
 
     splitRow: { flexDirection: "row", gap: 10 },
@@ -1435,13 +1445,13 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 8,
       alignItems: "center",
     },
-    splitLabel: { fontSize: 10.5, color: theme.colors.textTertiary, marginBottom: 3 },
-    splitValue: { fontSize: 13.5, fontWeight: "700", color: theme.colors.text },
+    splitLabel: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginBottom: 3 },
+    splitValue: { fontSize: 13.5, fontFamily: fonts.sansBold, color: theme.colors.text },
 
     catList: { gap: 14 },
     catRow: {},
-    catName: { fontSize: 13, color: theme.colors.textSecondary, flex: 1, paddingRight: 8 },
-    catAmount: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+    catName: { fontSize: 13, fontFamily: fonts.sansMedium, color: theme.colors.textSecondary, flex: 1, paddingRight: 8 },
+    catAmount: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
     catBarSpacing: { marginTop: 7 },
 
     savingsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -1455,10 +1465,10 @@ const makeStyles = (theme: Theme) =>
       padding: 12,
     },
     savingsLabelRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
-    savingsLabel: { fontSize: 11, color: theme.colors.textTertiary, marginBottom: 4 },
-    savingsValue: { fontSize: 19, fontWeight: "800", letterSpacing: 0 },
-    savingsHeadline: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
-    savingsConfirmed: { fontSize: 10.5, color: theme.colors.textTertiary, marginTop: 3 },
+    savingsLabel: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginBottom: 4 },
+    savingsValue: { fontSize: 20, fontFamily: fonts.serifBold, letterSpacing: 0 },
+    savingsHeadline: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.text },
+    savingsConfirmed: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 3 },
 
     logList: { gap: 10 },
     logRow: {
@@ -1469,8 +1479,8 @@ const makeStyles = (theme: Theme) =>
       padding: 12,
       gap: 10,
     },
-    logName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-    logMeta: { fontSize: 11.5, color: theme.colors.textTertiary, marginTop: 2 },
+    logName: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    logMeta: { fontSize: 11.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 2 },
     logInputRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     logInputWrap: {
       flex: 1,
@@ -1484,7 +1494,7 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 10,
       paddingVertical: 8,
     },
-    logInput: { flex: 1, fontSize: 13, color: theme.colors.text, padding: 0 },
+    logInput: { flex: 1, fontSize: 13, fontFamily: fonts.monoMedium, color: theme.colors.text, padding: 0 },
     saveActualBtn: {
       backgroundColor: theme.colors.primary,
       borderRadius: theme.radius.md,
@@ -1494,7 +1504,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       minWidth: 56,
     },
-    saveActualText: { fontSize: 12.5, fontWeight: "700", color: "#fff" },
+    saveActualText: { fontSize: 12.5, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
     looksRightBtn: {
       width: 38,
       height: 36,
@@ -1515,7 +1525,7 @@ const makeStyles = (theme: Theme) =>
 
     varRow: {},
     varMetaRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    varMeta: { fontSize: 10.5, color: theme.colors.textTertiary },
+    varMeta: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.textTertiary },
 
     simpleList: { gap: 8 },
     simpleRow: {
@@ -1528,11 +1538,11 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.md,
       padding: 12,
     },
-    simpleName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-    simpleMeta: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
-    simpleAmount: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-    addCostLink: { fontSize: 12.5, fontWeight: "700", color: theme.colors.primary },
-    moreHint: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
+    simpleName: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+    simpleMeta: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 2 },
+    simpleAmount: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+    addCostLink: { fontSize: 12.5, fontFamily: fonts.sansBold, color: theme.colors.primary },
+    moreHint: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 2 },
 
     historyList: { gap: 12 },
     historyRow: {
@@ -1543,15 +1553,16 @@ const makeStyles = (theme: Theme) =>
       padding: 14,
       gap: 12,
     },
-    historyMonth: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-    historyAddr: { fontSize: 11.5, color: theme.colors.textTertiary, marginTop: 2 },
+    historyMonth: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+    historyAddr: { fontSize: 11.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, marginTop: 2 },
     historyStats: { flexDirection: "row", gap: 10 },
     historyStat: { flex: 1 },
-    historyStatLabel: { fontSize: 10.5, color: theme.colors.textTertiary },
-    historyStatValue: { fontSize: 13.5, fontWeight: "700", color: theme.colors.text, marginTop: 3 },
+    historyStatLabel: { fontSize: 10.5, fontFamily: fonts.sans, color: theme.colors.textTertiary },
+    historyStatValue: { fontSize: 13.5, fontFamily: fonts.sansBold, color: theme.colors.text, marginTop: 3 },
     limitChips: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border },
     limitChip: {
       fontSize: 10,
+      fontFamily: fonts.sansMedium,
       color: theme.colors.textTertiary,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -1560,5 +1571,5 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 3,
       overflow: "hidden",
     },
-    historyNotes: { fontSize: 11.5, color: theme.colors.textTertiary, fontStyle: "italic", lineHeight: 16 },
+    historyNotes: { fontSize: 11.5, fontFamily: fonts.sans, color: theme.colors.textTertiary, fontStyle: "italic", lineHeight: 16 },
   });

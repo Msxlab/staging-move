@@ -21,12 +21,13 @@ import {
   Smartphone,
   ExternalLink,
   ChevronRight,
+  Fingerprint,
+  BarChart3,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
-import { Card } from "@/components/ui/Card";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { HeroCard, SectionHeader, Pill } from "@/components/move";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 import { api, APP_WEB_URL } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
@@ -293,15 +294,16 @@ export default function PrivacySettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={theme.colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button">
+          <ArrowLeft size={20} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("settings.privacy")}</Text>
-        <View style={{ width: 44 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.hero}>
+        {/* Hero — Move gradient surface with privacy posture stats. */}
+        <HeroCard style={styles.hero} padding={18} radius={24}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <Shield size={20} color={theme.colors.primary} />
@@ -326,11 +328,15 @@ export default function PrivacySettingsScreen() {
               <Text style={styles.heroStatLabel}>sessions</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
-        <Card variant="default" style={{ marginBottom: 12 }}>
+        {/* App lock toggle */}
+        <View style={styles.card}>
           <View style={styles.consentRow}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.consentIcon}>
+              <Fingerprint size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.infoTitle}>{t("settings.appLock_title")}</Text>
               <Text style={styles.infoDesc}>{t("settings.appLock_description")}</Text>
             </View>
@@ -343,8 +349,8 @@ export default function PrivacySettingsScreen() {
                 appLockAuthenticating ||
                 (!appLockAvailable && !appLockEnabled)
               }
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-              thumbColor="#fff"
+              trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+              thumbColor={theme.colors.onAccent}
             />
           </View>
           <Text style={[styles.mutedText, { marginTop: 10 }]}>
@@ -352,17 +358,20 @@ export default function PrivacySettingsScreen() {
               ? t("settings.appLock_available", { method: appLockMethodLabel })
               : t("settings.appLock_unavailable")}
           </Text>
-        </Card>
+        </View>
 
-        <Card variant="default" style={{ marginBottom: 12 }}>
-          <View style={styles.sectionHeader}>
-            <View>
+        {/* Account security */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.infoTitle}>{t("settings.accountSecurityTitle")}</Text>
               <Text style={styles.infoDesc}>
                 {t("settings.accountSecurityDescription")}
               </Text>
             </View>
-            <Shield size={18} color={theme.colors.primary} />
+            <View style={styles.cardHeaderIcon}>
+              <Shield size={16} color={theme.colors.primary} />
+            </View>
           </View>
 
           {loadingSecurity ? (
@@ -372,17 +381,17 @@ export default function PrivacySettingsScreen() {
           ) : (
             <View style={{ gap: 14 }}>
               <View style={styles.badgeRow}>
-                <Badge
+                <Pill
                   label={security.account.emailVerified ? t("settings.emailVerified") : t("settings.emailPending")}
-                  variant={security.account.emailVerified ? "success" : "warning"}
+                  tone={security.account.emailVerified ? "success" : "warning"}
                 />
-                <Badge
+                <Pill
                   label={security.account.hasPasswordLogin ? t("settings.passwordEnabled") : t("settings.oauthOnly")}
-                  variant={security.account.hasPasswordLogin ? "success" : "warning"}
+                  tone={security.account.hasPasswordLogin ? "success" : "warning"}
                 />
-                <Badge
+                <Pill
                   label={security.account.mfaEnabled ? t("settings.mfaEnabled") : t("settings.mfaOff")}
-                  variant={security.account.mfaEnabled ? "success" : "neutral"}
+                  tone={security.account.mfaEnabled ? "success" : "muted"}
                 />
               </View>
 
@@ -464,7 +473,9 @@ export default function PrivacySettingsScreen() {
                 <View style={styles.methodList}>
                   {security.sessions.slice(0, 5).map((session) => (
                     <View key={session.id} style={styles.sessionRow}>
-                      <Smartphone size={16} color={theme.colors.textMuted} />
+                      <View style={styles.sessionIcon}>
+                        <Smartphone size={15} color={theme.colors.dim} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.methodLabel}>
                           {session.browser || t("settings.unknownBrowser")}{session.os ? ` / ${session.os}` : ""}
@@ -482,11 +493,15 @@ export default function PrivacySettingsScreen() {
               </View>
             </View>
           )}
-        </Card>
+        </View>
 
-        <Card variant="default" style={{ marginBottom: 12 }}>
+        {/* Analytics consent */}
+        <View style={styles.card}>
           <View style={styles.consentRow}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.consentIcon}>
+              <BarChart3 size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.infoTitle}>{t("settings.analytics")}</Text>
               <Text style={styles.infoDesc}>
                 {t("settings.analyticsDescription")}
@@ -496,12 +511,12 @@ export default function PrivacySettingsScreen() {
               value={analyticsConsent}
               onValueChange={updateAnalyticsConsent}
               disabled={consentBusy || loadingConsents || Boolean(consentError)}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-              thumbColor="#fff"
+              trackColor={{ false: theme.colors.track, true: theme.colors.primary }}
+              thumbColor={theme.colors.onAccent}
             />
           </View>
           {loadingConsents ? (
-            <Text style={styles.mutedText}>{t("settings.privacyPreferencesLoading")}</Text>
+            <Text style={[styles.mutedText, { marginTop: 10 }]}>{t("settings.privacyPreferencesLoading")}</Text>
           ) : consentError ? (
             <View style={styles.inlineErrorRow}>
               <Text style={styles.errorText}>{consentError}</Text>
@@ -517,71 +532,92 @@ export default function PrivacySettingsScreen() {
               />
             </View>
           ) : null}
-        </Card>
+        </View>
 
         {/* Info Cards - tappable (Privacy/Do-not-sell -> policy, Security -> 2FA) */}
-        {infoItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <TouchableOpacity key={item.title} onPress={item.onPress} activeOpacity={0.6} accessibilityRole="button">
-              <Card variant="default" style={{ marginBottom: 12 }}>
-                <View style={styles.infoRow}>
+        <View style={styles.section}>
+          <SectionHeader label={t("settings.privacy")} style={styles.sectionHeader} />
+          <View style={styles.sectionCard}>
+            {infoItems.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <TouchableOpacity
+                  key={item.title}
+                  onPress={item.onPress}
+                  activeOpacity={0.6}
+                  accessibilityRole="button"
+                  style={[styles.infoRow, i < infoItems.length - 1 && styles.rowBorder]}
+                >
                   <View style={styles.infoIcon}>
-                    <Icon size={18} color={theme.colors.primary} />
+                    <Icon size={17} color={theme.colors.primary} />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.infoTitle}>{item.title}</Text>
                     <Text style={styles.infoDesc}>{item.description}</Text>
                   </View>
-                  <ChevronRight size={18} color={theme.colors.textMuted} />
-                </View>
-              </Card>
-            </TouchableOpacity>
-          );
-        })}
+                  <ChevronRight size={16} color={theme.colors.faint} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Actions */}
-        <Text style={styles.sectionTitle}>{t("common.more")}</Text>
+        <View style={styles.section}>
+          <SectionHeader label={t("common.more")} style={styles.sectionHeader} />
+          <View style={styles.sectionCard}>
+            <TouchableOpacity style={[styles.actionBtn, styles.rowBorder]} onPress={handleOpenTermsOfUse} activeOpacity={0.6}>
+              <View style={styles.infoIcon}>
+                <FileText size={17} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.actionLabel}>
+                  {t("settings.termsOfUse", { defaultValue: "Terms of Use" })}
+                </Text>
+                <Text style={styles.actionDesc}>
+                  {t("settings.termsOfUse_description", {
+                    defaultValue: "Open LocateFlow's terms of use.",
+                  })}
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.colors.faint} />
+            </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={handleOpenTermsOfUse} activeOpacity={0.6}>
-          <FileText size={18} color={theme.colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.actionLabel}>
-              {t("settings.termsOfUse", { defaultValue: "Terms of Use" })}
-            </Text>
-            <Text style={styles.actionDesc}>
-              {t("settings.termsOfUse_description", {
-                defaultValue: "Open LocateFlow's terms of use.",
-              })}
-            </Text>
-          </View>
-        </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, styles.rowBorder]} onPress={handleOpenPrivacyPolicy} activeOpacity={0.6}>
+              <View style={styles.infoIcon}>
+                <ExternalLink size={17} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.actionLabel}>
+                  {t("settings.privacyPolicy", { defaultValue: "Privacy Policy" })}
+                </Text>
+                <Text style={styles.actionDesc}>
+                  {t("settings.privacyPolicy_description", {
+                    defaultValue: "Open LocateFlow's privacy policy.",
+                  })}
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.colors.faint} />
+            </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={handleOpenPrivacyPolicy} activeOpacity={0.6}>
-          <ExternalLink size={18} color={theme.colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.actionLabel}>
-              {t("settings.privacyPolicy", { defaultValue: "Privacy Policy" })}
-            </Text>
-            <Text style={styles.actionDesc}>
-              {t("settings.privacyPolicy_description", {
-                defaultValue: "Open LocateFlow's privacy policy.",
-              })}
-            </Text>
+            <TouchableOpacity style={styles.actionBtn} onPress={handleExportData} activeOpacity={0.6}>
+              <View style={styles.infoIcon}>
+                <Download size={17} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.actionLabel}>{t("settings.export")}</Text>
+                <Text style={styles.actionDesc}>{t("settings.export_description")}</Text>
+              </View>
+              <ChevronRight size={16} color={theme.colors.faint} />
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn} onPress={handleExportData} activeOpacity={0.6}>
-          <Download size={18} color={theme.colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.actionLabel}>{t("settings.export")}</Text>
-            <Text style={styles.actionDesc}>{t("settings.export_description")}</Text>
-          </View>
-        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.dangerBtn} onPress={handleDeleteAccount} activeOpacity={0.6}>
-          <Trash2 size={18} color={theme.colors.error} />
-          <View style={{ flex: 1 }}>
+          <View style={styles.dangerIcon}>
+            <Trash2 size={17} color={theme.colors.error} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.dangerLabel}>{t("settings.deleteAccount")}</Text>
             <Text style={styles.dangerDesc}>{t("settings.delete_description")}</Text>
           </View>
@@ -598,21 +634,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text, letterSpacing: 0 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
-  },
+  hero: { marginBottom: 16 },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   heroIcon: {
     width: 46,
@@ -620,14 +648,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 16,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
-  heroKicker: { fontSize: 10, fontWeight: "800", letterSpacing: 0, textTransform: "uppercase", color: theme.colors.accent },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
+  heroKicker: { fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.4, textTransform: "uppercase", color: theme.colors.primary },
+  heroTitle: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 3, letterSpacing: 0 },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3, lineHeight: 17 },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
   heroStat: {
     flex: 1,
@@ -639,53 +667,88 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 13, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: { fontSize: 14, fontFamily: fonts.serifBold, color: theme.colors.text },
   heroStatLabel: {
     fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 0.8,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
-  infoRow: { flexDirection: "row", gap: 14 },
-  infoIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center",
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    marginBottom: 12,
   },
-  infoTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  infoDesc: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginBottom: 14 },
+  cardHeaderIcon: {
+    width: 34, height: 34, borderRadius: 11,
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
+  },
+  infoTitle: { fontSize: 15, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  infoDesc: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, lineHeight: 18 },
   consentRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  mutedText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
-  errorText: { fontSize: 12, color: theme.colors.error, lineHeight: 17 },
+  consentIcon: {
+    width: 38, height: 38, borderRadius: 12,
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
+  },
+  mutedText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 17 },
+  errorText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.error, lineHeight: 17 },
   inlineErrorRow: { gap: 10, marginTop: 12 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginBottom: 14 },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  subheading: { fontSize: 12, fontWeight: "700", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0, marginBottom: 8 },
+  subheading: { fontSize: 11, fontFamily: fonts.sansBold, color: theme.colors.dim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 },
   methodList: { gap: 8 },
-  methodRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
-  methodLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  methodEnabled: { fontSize: 12, color: theme.colors.success },
-  methodDisabled: { fontSize: 12, color: theme.colors.warning },
-  passwordBox: { gap: 10, padding: 12, borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)", borderRadius: theme.radius.lg, backgroundColor: theme.colors.warningFaded },
+  methodRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface2 },
+  methodLabel: { fontSize: 13, fontFamily: fonts.sansMedium, color: theme.colors.text },
+  methodEnabled: { fontSize: 12, fontFamily: fonts.sansMedium, color: theme.colors.success },
+  methodDisabled: { fontSize: 12, fontFamily: fonts.sansMedium, color: theme.colors.warning },
+  passwordBox: { gap: 10, padding: 14, borderWidth: 1, borderColor: theme.colors.accentBorder, borderRadius: theme.radius.lg, backgroundColor: theme.colors.accentSoft },
   sessionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 },
-  sessionRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
-  sectionTitle: {
-    fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
-    textTransform: "uppercase", letterSpacing: 0, marginTop: 24, marginBottom: 12, marginLeft: 4,
+  sessionRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface2 },
+  sessionIcon: {
+    width: 30, height: 30, borderRadius: 9,
+    backgroundColor: theme.colors.track, alignItems: "center", justifyContent: "center",
+  },
+  section: { marginTop: 10, marginBottom: 12 },
+  sectionHeader: { marginBottom: 9, marginLeft: 2 },
+  sectionCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+  },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  infoRow: {
+    flexDirection: "row", alignItems: "center", gap: 13,
+    paddingVertical: 13, paddingHorizontal: 14,
+  },
+  infoIcon: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
   },
   actionBtn: {
-    flexDirection: "row", alignItems: "center", gap: 14, padding: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: theme.colors.border, marginBottom: 10,
+    flexDirection: "row", alignItems: "center", gap: 13,
+    paddingVertical: 13, paddingHorizontal: 14,
   },
-  actionLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
-  actionDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  actionLabel: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  actionDesc: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
   dangerBtn: {
-    flexDirection: "row", alignItems: "center", gap: 14, padding: 16,
+    flexDirection: "row", alignItems: "center", gap: 13, padding: 14,
     backgroundColor: theme.colors.errorFaded, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)", marginTop: 8,
+    borderWidth: 1, borderColor: theme.colors.redLine, marginTop: 8,
   },
-  dangerLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.error },
-  dangerDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  dangerIcon: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: theme.colors.redSoft, alignItems: "center", justifyContent: "center",
+  },
+  dangerLabel: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.error },
+  dangerDesc: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
 });
