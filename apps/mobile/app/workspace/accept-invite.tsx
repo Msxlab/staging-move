@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Users, Check, ClipboardPaste } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import * as Clipboard from "expo-clipboard";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
+import { MoveRaccoon, HeroCard, MoveCard, SectionHeader } from "@/components/move";
 import {
   acceptInvite,
   extractInviteToken,
@@ -135,21 +137,31 @@ export default function AcceptInviteScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <View style={styles.center}>
-          <View style={styles.card}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.success + "22" }]}>
-              <Check size={28} color={theme.colors.success} />
+          <HeroCard style={styles.successHero} padding={24}>
+            <View style={styles.successInner}>
+              <View style={styles.successIconWrap}>
+                <Check size={30} color={theme.colors.success} />
+              </View>
+              <MoveRaccoon size={56} mood="happy" />
+              <Text style={styles.heroKicker}>{t("invite.successKicker", "WORKSPACE ACCESS")}</Text>
+              <Text style={styles.successTitle}>
+                {t("invite.successTitle", "You're in!")}
+              </Text>
+              <Text style={styles.successBody}>
+                {t("invite.successBody", "You've joined the workspace. Your shared plan is now active.")}
+              </Text>
+              <TouchableOpacity onPress={goToDashboard} activeOpacity={0.85} style={styles.primaryBtnWrap}>
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryBtn}
+                >
+                  <Text style={styles.primaryBtnText}>{t("invite.goToDashboard", "Go to dashboard")}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.heroKicker}>WORKSPACE ACCESS</Text>
-            <Text style={styles.title}>
-              {t("invite.successTitle", "You're in!")}
-            </Text>
-            <Text style={styles.body}>
-              {t("invite.successBody", "You've joined the workspace. Your shared plan is now active.")}
-            </Text>
-            <TouchableOpacity style={styles.primaryBtn} onPress={goToDashboard} activeOpacity={0.85}>
-              <Text style={styles.primaryBtnText}>{t("invite.goToDashboard", "Go to dashboard")}</Text>
-            </TouchableOpacity>
-          </View>
+          </HeroCard>
         </View>
       </SafeAreaView>
     );
@@ -173,22 +185,25 @@ export default function AcceptInviteScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <View style={styles.iconWrapLarge}>
-            <Users size={28} color={theme.colors.primary} />
+        <HeroCard style={styles.hero} padding={22}>
+          <View style={styles.heroInner}>
+            <View style={styles.iconWrapLarge}>
+              <Users size={26} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.heroKicker}>{t("invite.heroKicker", "WORKSPACE INVITE")}</Text>
+            <Text style={styles.heroTitle}>{t("invite.joinWorkspaceTitle", "Join a workspace")}</Text>
+            <Text style={styles.lede}>
+              {t(
+                "invite.pasteLede",
+                "Got an invite email? Paste the invite link (or code) below to join your household or team workspace.",
+              )}
+            </Text>
           </View>
-          <Text style={styles.heroKicker}>WORKSPACE INVITE</Text>
-          <Text style={styles.heroTitle}>{t("invite.joinWorkspaceTitle", "Join a workspace")}</Text>
-          <Text style={styles.lede}>
-            {t(
-              "invite.pasteLede",
-              "Got an invite email? Paste the invite link (or code) below to join your household or team workspace.",
-            )}
-          </Text>
-        </View>
+        </HeroCard>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>{t("invite.pasteLabel", "Invite link or code")}</Text>
+        <SectionHeader label={t("invite.pasteLabel", "Invite link or code")} style={styles.sectionHeader} />
+
+        <MoveCard style={styles.card} padding={18}>
           <TextInput
             value={input}
             onChangeText={(v) => {
@@ -196,7 +211,7 @@ export default function AcceptInviteScreen() {
               if (errorCode) setErrorCode(null);
             }}
             placeholder="https://locateflow.com/invitations/wsi_..."
-            placeholderTextColor={theme.colors.textTertiary}
+            placeholderTextColor={theme.colors.faint}
             autoCapitalize="none"
             autoCorrect={false}
             multiline
@@ -215,21 +230,28 @@ export default function AcceptInviteScreen() {
           )}
 
           <TouchableOpacity
-            style={[styles.primaryBtn, !canSubmit && { opacity: 0.5 }]}
+            style={[styles.primaryBtnWrap, !canSubmit && { opacity: 0.5 }]}
             onPress={() => submit(input)}
             disabled={!canSubmit}
             activeOpacity={0.85}
           >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Check size={16} color="#fff" />
-                <Text style={styles.primaryBtnText}>{t("invite.joinCta", "Join workspace")}</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={theme.colors.gradient.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryBtn}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color={theme.colors.onAccent} />
+              ) : (
+                <>
+                  <Check size={16} color={theme.colors.onAccent} />
+                  <Text style={styles.primaryBtnText}>{t("invite.joinCta", "Join workspace")}</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
-        </View>
+        </MoveCard>
 
         <Text style={styles.hint}>
           {t(
@@ -256,114 +278,134 @@ const makeStyles = (theme: Theme) =>
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: theme.colors.card,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    headerTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
+    headerTitle: { fontSize: 18, fontFamily: fonts.serifBold, color: theme.colors.text },
     scroll: { paddingHorizontal: 20, paddingBottom: 40, alignItems: "stretch" },
     center: { flex: 1, justifyContent: "center", paddingHorizontal: 20 },
-    iconWrap: {
+
+    // Success state
+    successHero: { marginBottom: 0 },
+    successInner: { alignItems: "center" },
+    successIconWrap: {
       width: 56,
       height: 56,
       borderRadius: 18,
-      backgroundColor: theme.colors.primaryFaded,
+      backgroundColor: theme.colors.successFaded,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.success + "33",
       alignItems: "center",
       justifyContent: "center",
-    },
-    hero: {
-      borderRadius: 28,
-      padding: 20,
-      alignItems: "center",
       marginBottom: 14,
-      backgroundColor: theme.colors.glass.bg,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      ...theme.shadow.sm,
     },
+    successTitle: {
+      marginTop: 10,
+      fontSize: 24,
+      fontFamily: fonts.serifBlack,
+      color: theme.colors.text,
+      textAlign: "center",
+    },
+    successBody: {
+      fontSize: 14,
+      fontFamily: fonts.sans,
+      color: theme.colors.dim,
+      textAlign: "center",
+      lineHeight: 20,
+      marginTop: 8,
+    },
+
+    // Hero (form)
+    hero: { marginBottom: 18 },
+    heroInner: { alignItems: "center" },
     iconWrapLarge: {
       width: 56,
       height: 56,
       borderRadius: 18,
-      backgroundColor: theme.colors.primaryFaded,
+      backgroundColor: theme.colors.accentSoft,
       borderWidth: 1,
-      borderColor: theme.colors.primary + "33",
+      borderColor: theme.colors.accentBorder,
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
-      marginBottom: 12,
+      marginBottom: 14,
     },
     heroKicker: {
       fontSize: 10,
-      fontWeight: "800",
-      letterSpacing: 0,
-      color: theme.colors.accent,
+      fontFamily: fonts.sansBold,
+      letterSpacing: 1.4,
+      color: theme.colors.primary,
       textTransform: "uppercase",
       textAlign: "center",
     },
-    heroTitle: { marginTop: 6, fontSize: 22, fontWeight: "800", color: theme.colors.text, textAlign: "center" },
+    heroTitle: {
+      marginTop: 8,
+      fontSize: 22,
+      fontFamily: fonts.serifBold,
+      color: theme.colors.text,
+      textAlign: "center",
+    },
     lede: {
       fontSize: 14,
-      color: theme.colors.textSecondary,
+      fontFamily: fonts.sans,
+      color: theme.colors.dim,
       lineHeight: 20,
       textAlign: "center",
       marginTop: 8,
     },
-    card: {
-      backgroundColor: theme.colors.glass.bg,
-      borderRadius: 24,
-      borderWidth: 1,
-      borderColor: theme.colors.glass.highlight,
-      padding: 20,
-      gap: 12,
-      alignItems: "stretch",
-      ...theme.shadow.sm,
-    },
-    label: { fontSize: 12, fontWeight: "600", color: theme.colors.textTertiary, letterSpacing: 0 },
+
+    sectionHeader: { marginBottom: 10, paddingHorizontal: 2 },
+
+    // Card / form
+    card: { gap: 14, alignItems: "stretch" },
     input: {
       borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.surface2,
       paddingHorizontal: 12,
       paddingVertical: 10,
       fontSize: 14,
+      fontFamily: fonts.sans,
       color: theme.colors.text,
       minHeight: 64,
       textAlignVertical: "top",
     },
     pasteBtn: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
-    pasteBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.primary },
+    pasteBtnText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
     errorBox: {
-      backgroundColor: theme.colors.error + "14",
+      backgroundColor: theme.colors.errorFaded,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.error + "44",
       padding: 12,
     },
-    errorText: { fontSize: 13, color: theme.colors.error, lineHeight: 19 },
+    errorText: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.error, lineHeight: 19 },
+
+    // Gradient primary button (Move)
+    primaryBtnWrap: {
+      borderRadius: 16,
+      overflow: "hidden",
+      width: "100%",
+      marginTop: 4,
+    },
     primaryBtn: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      backgroundColor: theme.colors.primary,
       borderRadius: 16,
-      paddingVertical: 13,
-      width: "100%",
-      marginTop: 4,
-      ...theme.shadow.glow,
+      paddingVertical: 14,
     },
-    primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
-    title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, textAlign: "center" },
-    body: { fontSize: 14, color: theme.colors.textSecondary, textAlign: "center", lineHeight: 20 },
+    primaryBtnText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+
     hint: {
       fontSize: 12,
-      color: theme.colors.textTertiary,
+      fontFamily: fonts.sans,
+      color: theme.colors.faint,
       lineHeight: 18,
       textAlign: "center",
       marginTop: 16,

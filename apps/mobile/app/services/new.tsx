@@ -30,7 +30,7 @@ import {
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, fonts, type Theme } from "@/lib/theme";
-import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
+import { HeroCard, SectionHeader } from "@/components/move";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
@@ -509,7 +509,7 @@ export default function NewServiceScreen() {
         size={36}
         logoSize={32}
         borderRadius={10}
-        backgroundColor={isSelected ? theme.colors.primary : "rgba(255,255,255,0.05)"}
+        backgroundColor={isSelected ? theme.colors.primary : theme.colors.bg2}
         borderColor={isSelected ? theme.colors.primary : theme.colors.border}
         fallbackFontSize={14}
       />
@@ -563,7 +563,7 @@ export default function NewServiceScreen() {
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{mode === "browse" ? t("services.addServicesTitle") : t("services.manualAddTitle")}</Text>
+        <Text style={styles.title} numberOfLines={1}>{mode === "browse" ? t("services.addServicesTitle") : t("services.manualAddTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -573,30 +573,39 @@ export default function NewServiceScreen() {
 
       {serviceLimitReached ? (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.limitCard}>
-            <View style={styles.limitIcon}>
-              <Sparkles size={18} color={theme.colors.primary} />
+          <HeroCard style={{ marginTop: 8 }} padding={18} radius={theme.radius.xl}>
+            <View style={styles.limitCard}>
+              <View style={styles.limitIcon}>
+                <Sparkles size={18} color={theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.limitTitle}>
+                  {t("services.limitReachedTitle", { defaultValue: "Service limit reached" })}
+                </Text>
+                <Text style={styles.limitBody}>
+                  {t("services.limitReachedWithCount", {
+                    current: serviceGate?.current ?? 0,
+                    limit: serviceGate?.limit ?? 0,
+                    defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
+                  })}
+                </Text>
+                <TouchableOpacity
+                  style={styles.limitCta}
+                  onPress={() => router.push("/settings/subscription")}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={theme.colors.gradient.primary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.limitCtaGrad}
+                  >
+                    <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.limitTitle}>
-                {t("services.limitReachedTitle", { defaultValue: "Service limit reached" })}
-              </Text>
-              <Text style={styles.limitBody}>
-                {t("services.limitReachedWithCount", {
-                  current: serviceGate?.current ?? 0,
-                  limit: serviceGate?.limit ?? 0,
-                  defaultValue: `Your plan includes ${serviceGate?.limit ?? 0} services. Upgrade to add more.`,
-                })}
-              </Text>
-              <TouchableOpacity
-                style={styles.limitCta}
-                onPress={() => router.push("/settings/subscription")}
-                activeOpacity={0.72}
-              >
-                <Text style={styles.limitCtaText}>{t("subscription.upgrade", { defaultValue: "Upgrade" })}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          </HeroCard>
         </ScrollView>
       ) : (
         <>
@@ -611,7 +620,7 @@ export default function NewServiceScreen() {
           accessibilityHint={t("services.browseProvidersHint")}
           accessibilityState={{ selected: mode === "browse" }}
         >
-          <Search size={14} color={mode === "browse" ? "#fff" : theme.colors.textTertiary} />
+          <Search size={14} color={mode === "browse" ? theme.colors.onAccent : theme.colors.dim} />
           <Text style={[styles.modeBtnText, mode === "browse" && styles.modeBtnTextActive]}>{t("services.browseProviders")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -622,7 +631,7 @@ export default function NewServiceScreen() {
           accessibilityHint={t("services.manualAddHint")}
           accessibilityState={{ selected: mode === "manual" }}
         >
-          <Plus size={14} color={mode === "manual" ? "#fff" : theme.colors.textTertiary} />
+          <Plus size={14} color={mode === "manual" ? theme.colors.onAccent : theme.colors.dim} />
           <Text style={[styles.modeBtnText, mode === "manual" && styles.modeBtnTextActive]}>{t("services.manualAddTitle")}</Text>
         </TouchableOpacity>
       </View>
@@ -638,24 +647,26 @@ export default function NewServiceScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Address Selector (shared) ── */}
-        <Text style={styles.sectionLabel}>{t("services.selectAddress")}</Text>
+        <SectionHeader label={t("services.selectAddress")} style={styles.sectionHeader} />
         {addresses.length === 0 ? (
           <View>
             <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
             <TouchableOpacity
               onPress={() => router.push("/addresses/new")}
               accessibilityRole="button"
-              style={{
-                marginTop: 10,
-                backgroundColor: theme.colors.primary,
-                paddingVertical: 12,
-                borderRadius: 12,
-                alignItems: "center",
-              }}
+              activeOpacity={0.85}
+              style={styles.addAddressBtn}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
-                {t("addresses.addAddress", { defaultValue: "Add an address" })}
-              </Text>
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addAddressGrad}
+              >
+                <Text style={styles.addAddressText}>
+                  {t("addresses.addAddress", { defaultValue: "Add an address" })}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : (
@@ -669,11 +680,11 @@ export default function NewServiceScreen() {
                     style={[styles.addrChip, isActive && styles.addrChipActive]}
                     onPress={() => setSelectedAddress(a.id)}
                   >
-                    {a.isPrimary && <Star size={12} color={isActive ? "#fff" : theme.colors.amber.text} />}
+                    {a.isPrimary && <Star size={12} color={isActive ? theme.colors.primary : theme.colors.warning} />}
                     <Text style={[styles.addrChipText, isActive && styles.addrChipTextActive]}>
                       {a.nickname || `${a.city}, ${a.state}`}
                     </Text>
-                    {isActive && <Check size={14} color="#fff" />}
+                    {isActive && <Check size={14} color={theme.colors.primary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -686,11 +697,11 @@ export default function NewServiceScreen() {
           <View style={{ marginTop: 8 }}>
             {/* State label */}
             <Text style={styles.stateLabel}>
-              {t("services.showingProvidersFor")} <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{addr?.state || t("services.allStates")}</Text>
+              {t("services.showingProvidersFor")} <Text style={{ color: theme.colors.primary, fontFamily: fonts.sansBold }}>{addr?.state || t("services.allStates")}</Text>
             </Text>
 
             {smartSetupLanding && (
-              <View style={styles.smartSetupCard}>
+              <HeroCard style={styles.smartSetupCard} padding={14} radius={theme.radius.xl}>
                 <View style={styles.smartSetupTop}>
                   <View style={styles.smartSetupIcon}>
                     <Sparkles size={17} color={theme.colors.primary} />
@@ -714,24 +725,31 @@ export default function NewServiceScreen() {
                   ]}
                   onPress={handleSaveAll}
                   disabled={selectedCount === 0 || saving}
-                  activeOpacity={0.72}
+                  activeOpacity={0.85}
                   accessibilityRole="button"
                   accessibilityLabel={t("services.registerSelectedProviders", { count: selectedCount })}
                   accessibilityHint={t("services.registerSelectedProvidersHint")}
                   accessibilityState={{ disabled: selectedCount === 0 || saving }}
                 >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <>
-                      <Check size={15} color="#fff" />
-                      <Text style={styles.smartSetupCtaText}>
-                        {selectedCount > 1 ? t("services.registerAll") : t("services.register")}
-                      </Text>
-                    </>
-                  )}
+                  <LinearGradient
+                    colors={theme.colors.gradient.primary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.smartSetupCtaGrad}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color={theme.colors.onAccent} size="small" />
+                    ) : (
+                      <>
+                        <Check size={15} color={theme.colors.onAccent} />
+                        <Text style={styles.smartSetupCtaText}>
+                          {selectedCount > 1 ? t("services.registerAll") : t("services.register")}
+                        </Text>
+                      </>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
+              </HeroCard>
             )}
 
             {/* Selected chips */}
@@ -747,7 +765,7 @@ export default function NewServiceScreen() {
                     accessibilityHint={t("services.removeProviderHint")}
                   >
                     <Text style={styles.selectedChipText}>{p.name}</Text>
-                    <X size={12} color="#fff" />
+                    <X size={12} color={theme.colors.onAccent} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -783,7 +801,7 @@ export default function NewServiceScreen() {
             {!loadingProviders && !providerSearch && !!focusCategoryKey && (
               <View style={styles.recoSection}>
                 <View style={styles.recoHeader}>
-                  <Sparkles size={16} color={theme.colors.amber.text} />
+                  <Sparkles size={16} color={theme.colors.warning} />
                   <Text style={styles.recoTitle}>
                     {t("services.recommendedForCategory", {
                       category: categoryLabel(focusCategoryKey),
@@ -822,7 +840,7 @@ export default function NewServiceScreen() {
             {!loadingProviders && !providerSearch && !focusCategoryKey && recommended.length > 0 && (
               <View style={styles.recoSection}>
                 <View style={styles.recoHeader}>
-                  <Sparkles size={16} color={theme.colors.amber.text} />
+                  <Sparkles size={16} color={theme.colors.warning} />
                   <Text style={styles.recoTitle}>{t("providers.recommendedForYou")}</Text>
                 </View>
                 <View style={styles.recoGrid}>
@@ -929,11 +947,11 @@ export default function NewServiceScreen() {
         {mode === "manual" && (
           <View style={{ marginTop: 8 }}>
             {suggestMode && (
-              <View style={[styles.manualTrustBox, { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryFaded }]}>
+              <View style={[styles.manualTrustBox, { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft }]}>
                 <Text style={[styles.manualTrustTitle, { color: theme.colors.text }]}>
                   {t("services.suggestBannerTitle", { defaultValue: "Suggest a provider for our directory" })}
                 </Text>
-                <Text style={[styles.manualTrustText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.manualTrustText, { color: theme.colors.dim }]}>
                   {t("services.suggestBannerBody", {
                     defaultValue: "Fill in the provider name, website, and phone. Our team will review and add it to the listed directory if valid. This still creates a tracked service for you now.",
                   })}
@@ -1101,20 +1119,27 @@ export default function NewServiceScreen() {
               style={[styles.saveBtn, saving && { opacity: 0.6 }]}
               onPress={handleSaveManual}
               disabled={saving}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={t("services.save")}
               accessibilityHint={t("services.saveServiceHint")}
               accessibilityState={{ disabled: saving }}
             >
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Check size={18} color="#fff" />
-                  <Text style={styles.saveBtnText}>{t("services.save")}</Text>
-                </>
-              )}
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.saveBtnGrad}
+              >
+                {saving ? (
+                  <ActivityIndicator color={theme.colors.onAccent} />
+                ) : (
+                  <>
+                    <Check size={18} color={theme.colors.onAccent} />
+                    <Text style={styles.saveBtnText}>{t("services.save")}</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1140,20 +1165,27 @@ export default function NewServiceScreen() {
             style={[styles.floatingBtn, saving && { opacity: 0.6 }]}
             onPress={handleSaveAll}
             disabled={saving}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={t("services.registerSelectedProviders", { count: selectedCount })}
             accessibilityHint={t("services.registerSelectedProvidersHint")}
             accessibilityState={{ disabled: saving }}
           >
-            {saving ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Check size={16} color="#fff" />
-                <Text style={styles.floatingBtnText}>{selectedCount > 1 ? t("services.registerAll") : t("services.register")}</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={theme.colors.gradient.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.floatingBtnGrad}
+            >
+              {saving ? (
+                <ActivityIndicator color={theme.colors.onAccent} size="small" />
+              ) : (
+                <>
+                  <Check size={16} color={theme.colors.onAccent} />
+                  <Text style={styles.floatingBtnText}>{selectedCount > 1 ? t("services.registerAll") : t("services.register")}</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       )}
@@ -1180,33 +1212,28 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  title: { flex: 1, textAlign: "center", fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   modeRow: {
     flexDirection: "row", gap: 8, paddingHorizontal: 20, marginBottom: 8,
   },
   modeBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 10, borderRadius: 12,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingVertical: 11, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
   modeBtnActive: {
     backgroundColor: theme.colors.primary, borderColor: theme.colors.primary,
   },
-  modeBtnText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
-  modeBtnTextActive: { color: "#fff" },
+  modeBtnText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
+  modeBtnTextActive: { color: theme.colors.onAccent },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   limitCard: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    borderRadius: 20,
-    padding: 16,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   limitIcon: {
     width: 42,
@@ -1214,150 +1241,165 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
   },
-  limitTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
-  limitBody: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 19, marginTop: 4 },
+  limitTitle: { fontSize: 17, fontFamily: fonts.serifBold, color: theme.colors.text },
+  limitBody: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 19, marginTop: 4 },
   limitCta: {
     alignSelf: "flex-start",
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
+    marginTop: 14,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
   },
-  limitCtaText: { fontSize: 13, fontWeight: "800", color: "#fff" },
+  limitCtaGrad: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  limitCtaText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+  sectionHeader: { marginTop: 18, marginBottom: 10, marginLeft: 2 },
   sectionLabel: {
-    fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 16, marginBottom: 10,
+    fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.faint,
+    textTransform: "uppercase", letterSpacing: 1.4, marginTop: 18, marginBottom: 10, marginLeft: 2,
   },
   label: {
-    fontSize: 14, fontWeight: "500", color: theme.colors.textSecondary, marginTop: 16, marginBottom: 6,
+    fontSize: 11, fontFamily: fonts.sansSemibold, color: theme.colors.faint,
+    textTransform: "uppercase", letterSpacing: 0.6, marginTop: 16, marginBottom: 7,
   },
-  hint: { fontSize: 13, color: theme.colors.textMuted, fontStyle: "italic" },
-  stateLabel: { fontSize: 13, color: theme.colors.textTertiary, marginBottom: 8 },
+  hint: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, fontStyle: "italic" },
+  stateLabel: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginBottom: 8 },
+  addAddressBtn: {
+    marginTop: 12,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+  },
+  addAddressGrad: {
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addAddressText: { color: theme.colors.onAccent, fontFamily: fonts.sansBold, fontSize: 14 },
   smartSetupCard: {
-    gap: 12,
-    borderRadius: theme.radius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
-    backgroundColor: theme.colors.primaryFaded,
-    padding: 14,
     marginTop: 8,
     marginBottom: 12,
   },
   smartSetupTop: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: 12,
   },
   smartSetupIcon: {
     width: 38,
     height: 38,
-    borderRadius: 13,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
   smartSetupTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
   },
   smartSetupBody: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     lineHeight: 17,
     marginTop: 3,
   },
   smartSetupCta: {
-    minHeight: 42,
+    marginTop: 12,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+  },
+  smartSetupCtaGrad: {
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primary,
   },
   smartSetupCtaDisabled: {
     opacity: 0.55,
   },
   smartSetupCtaText: {
     fontSize: 13,
-    fontWeight: "800",
-    color: "#fff",
+    fontFamily: fonts.sansBold,
+    color: theme.colors.onAccent,
   },
 
   // Address chips
   addrChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, marginRight: 8,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, marginRight: 8,
   },
   addrChipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  addrChipText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
+  addrChipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   addrChipTextActive: { color: theme.colors.primary },
 
   // Selected chips
-  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border },
-  selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: theme.colors.primary },
-  selectedChipText: { fontSize: 12, fontWeight: "600", color: "#fff" },
+  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: theme.radius.lg, backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder },
+  selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: theme.radius.full, backgroundColor: theme.colors.primary },
+  selectedChipText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.onAccent },
 
   // Search
   searchBox: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface, borderRadius: theme.radius.lg,
     borderWidth: 1, borderColor: theme.colors.border,
-    paddingHorizontal: 14, paddingVertical: 10, marginBottom: 4,
+    paddingHorizontal: 14, paddingVertical: 11, marginBottom: 4,
   },
-  searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text },
 
   // Recommended
   recoSection: {
-    marginTop: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card, padding: 14,
+    marginTop: 12, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, padding: 14,
   },
   recoHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-  recoTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  recoTitle: { flex: 1, fontSize: 14, fontFamily: fonts.serifBold, color: theme.colors.text },
   recoGrid: { gap: 8 },
   recoCard: {
-    flexDirection: "row", alignItems: "center", padding: 10, borderRadius: 12,
-    borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",
+    flexDirection: "row", alignItems: "center", padding: 10, borderRadius: theme.radius.lg,
+    borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.bg2,
   },
-  recoCardActive: { borderColor: theme.colors.borderFocus, backgroundColor: theme.colors.primaryFaded },
+  recoCardActive: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft },
   recoCardTop: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  recoName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
+  recoName: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  recoReason: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 1 },
 
   // Category accordion
-  catSection: { marginBottom: 2, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden" },
+  catSection: { marginBottom: 6, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden", backgroundColor: theme.colors.surface },
   catHeader: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 14, paddingVertical: 12, backgroundColor: "rgba(255,255,255,0.02)",
+    paddingHorizontal: 14, paddingVertical: 12,
   },
   catIcon: {
-    width: 22,
-    height: 22,
+    width: 24,
+    height: 24,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.borderFocus,
+    borderColor: theme.colors.accentBorder,
   },
-  catTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary },
-  catCount: { fontSize: 11, color: theme.colors.textMuted },
+  catTitle: { flex: 1, fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  catCount: { fontSize: 11, fontFamily: fonts.mono, color: theme.colors.faint },
   catBadge: {
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: theme.colors.rose.border,
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9,
+    backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
   },
-  catBadgeText: { fontSize: 10, fontWeight: "700", color: theme.colors.primary },
+  catBadgeText: { fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.primary },
 
   // Provider item
   providerItem: {
@@ -1365,85 +1407,93 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  providerItemActive: { backgroundColor: theme.colors.primaryFaded },
-  providerName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
+  providerItemActive: { backgroundColor: theme.colors.accentSoft },
+  providerName: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  providerDesc: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 1 },
   providerMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
   scopeBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
   scopeFederal: { backgroundColor: theme.colors.infoFaded },
   scopeState: { backgroundColor: theme.colors.successFaded },
-  scopeText: { fontSize: 9, fontWeight: "600" },
+  scopeText: { fontSize: 9, fontFamily: fonts.sansBold },
   scopeFederalText: { color: theme.colors.info },
   scopeStateText: { color: theme.colors.success },
-  providerWebsite: { fontSize: 9, color: theme.colors.textMuted, maxWidth: 100 },
+  providerWebsite: { fontSize: 9, fontFamily: fonts.mono, color: theme.colors.faint, maxWidth: 100 },
 
   // Manual link
   manualLink: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     marginTop: 20, paddingVertical: 12,
   },
-  manualLinkText: { fontSize: 14, fontWeight: "500", color: theme.colors.primary },
+  manualLinkText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
 
   // Manual form
   manualTrustBox: {
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.rose.border,
-    backgroundColor: theme.colors.infoFaded,
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentSoft,
     padding: 12,
     marginBottom: 14,
   },
   manualTrustTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     color: theme.colors.text,
   },
   manualTrustText: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    fontFamily: fonts.sans,
+    color: theme.colors.dim,
     lineHeight: 18,
     marginTop: 4,
   },
   input: {
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: theme.colors.text,
+    fontSize: 15, fontFamily: fonts.sans, color: theme.colors.text,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: theme.colors.borderFocus,
+    backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accentBorder,
   },
-  chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
+  chipText: { fontSize: 13, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   chipTextActive: { color: theme.colors.primary },
 
   saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,
-    paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+    marginTop: 28,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  saveBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 16,
+  },
+  saveBtnText: { fontSize: 16, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 
   // Floating bar
   floatingBar: {
     position: "absolute", bottom: 0, left: 0, right: 0,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 14,
-    backgroundColor: theme.colors.background + "F2", borderTopWidth: 1, borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.glassPane, borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  floatingText: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
+  floatingText: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
   floatingBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12,
-    backgroundColor: theme.colors.primary, ...theme.shadow.glow,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
   },
-  floatingBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  floatingBtnGrad: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 18, paddingVertical: 11,
+  },
+  floatingBtnText: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
 
   // Loading / empty
   loadingBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 40 },
-  loadingText: { fontSize: 14, color: theme.colors.textMuted },
-  emptyText: { textAlign: "center", color: theme.colors.textMuted, fontSize: 14, paddingVertical: 40 },
+  loadingText: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim },
+  emptyText: { textAlign: "center", color: theme.colors.dim, fontSize: 14, fontFamily: fonts.sans, paddingVertical: 40 },
 });

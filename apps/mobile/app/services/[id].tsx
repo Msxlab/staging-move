@@ -29,12 +29,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { ServiceLogoMark } from "@/components/services/ServiceLogoMark";
-import { HeroCard, MoveCard, SectionHeader } from "@/components/move";
+import { HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { formatCurrency } from "@/lib/format";
 import { asObject } from "@/lib/offline-cache";
@@ -154,7 +153,10 @@ export default function ServiceDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{t("common.notFound")}</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.eyebrow}>{t("services.title")}</Text>
+            <Text style={styles.title} numberOfLines={1}>{t("common.notFound")}</Text>
+          </View>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
@@ -176,7 +178,7 @@ export default function ServiceDetailScreen() {
       icon: DollarSign,
       label: t("services.monthlyCost"),
       value: formatCurrency(service.monthlyCost, i18n.language),
-      color: theme.colors.emerald.text,
+      color: theme.colors.success,
     },
     service.billingCycle && {
       icon: Calendar,
@@ -231,7 +233,7 @@ export default function ServiceDetailScreen() {
   const renewalTone = renewalOverdue
     ? theme.colors.error
     : renewalSoon
-      ? theme.colors.amber.text
+      ? theme.colors.warning
       : theme.colors.primary;
 
   // Honest, action-oriented nudge — only inside the soon/overdue window, and
@@ -256,9 +258,12 @@ export default function ServiceDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {service.providerName}
-        </Text>
+        <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>{t("services.title")}</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {service.providerName}
+          </Text>
+        </View>
         <View style={{ width: 44 }} />
       </View>
 
@@ -270,7 +275,7 @@ export default function ServiceDetailScreen() {
         }
       >
         {/* ── Move hero — category glyph + provider identity + ministats ── */}
-        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
+        <HeroCard style={styles.hero} radius={24} padding={18}>
           <View style={styles.heroRow}>
             <ServiceLogoMark
               service={service}
@@ -293,20 +298,21 @@ export default function ServiceDetailScreen() {
             </View>
           </View>
           <View style={styles.heroBadges}>
-            <UiBadge
+            <Pill
               label={service.isActive ? t("services.statusActive") : t("services.statusInactive")}
-              variant={service.isActive ? "success" : "neutral"}
-              dot
-              mono
+              tone={service.isActive ? "success" : "muted"}
             />
             {service.billingCycle && (
-              <UiBadge label={t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") })} variant="info" mono />
+              <Pill
+                label={t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") })}
+                tone="info"
+              />
             )}
           </View>
           {/* Ministats — cost / renewal / address, derived from existing fields only */}
           <View style={styles.miniStats}>
             <View style={styles.miniStat}>
-              <Text style={[styles.miniStatValue, service.monthlyCost > 0 && { color: theme.colors.emerald.text }]} numberOfLines={1}>
+              <Text style={[styles.miniStatValue, service.monthlyCost > 0 && { color: theme.colors.success }]} numberOfLines={1}>
                 {service.monthlyCost > 0 ? formatCurrency(service.monthlyCost, i18n.language) : "—"}
               </Text>
               <Text style={styles.miniStatLabel}>{t("services.detailStatMonthly", { defaultValue: "Per month" }).toUpperCase()}</Text>
@@ -361,13 +367,13 @@ export default function ServiceDetailScreen() {
               ) : null}
             </View>
             {(renewalSoon || renewalOverdue) && (
-              <UiBadge
+              <Pill
                 label={
                   renewalOverdue
                     ? t("services.renewalOverdueBadge", { defaultValue: "Overdue" })
                     : t("services.renewalSoonBadge", { defaultValue: "Soon" })
                 }
-                variant={renewalOverdue ? "error" : "warning"}
+                tone={renewalOverdue ? "error" : "warning"}
               />
             )}
           </View>
@@ -403,15 +409,15 @@ export default function ServiceDetailScreen() {
         {/* Notes */}
         {service.notes ? (
           <>
-            <Text style={styles.sectionTitle}>{t("services.notes")}</Text>
+            <SectionHeader label={t("services.notes")} style={styles.sectionHeader} />
             <MoveCard>
               <Text style={styles.notes}>{service.notes}</Text>
             </MoveCard>
           </>
         ) : null}
 
-        {/* Actions — Aurora list-rows */}
-        <Text style={styles.sectionKicker}>{t("services.actionsKicker", { defaultValue: "Manage" }).toUpperCase()}</Text>
+        {/* Actions — Move list-rows */}
+        <SectionHeader label={t("services.actionsKicker", { defaultValue: "Manage" })} style={styles.sectionHeader} />
         <PressableScale
           style={styles.actionRow}
           onPress={() => router.push({ pathname: "/services/[id]/edit", params: { id: String(id) } })}
@@ -459,30 +465,28 @@ export default function ServiceDetailScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 20, paddingVertical: 12,
   },
+  headerText: { flex: 1, minWidth: 0 },
   backBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     alignItems: "center", justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  // ── Aurora glass hero ──
-  hero: {
-    padding: 16,
-    borderRadius: theme.radius["2xl"],
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
-    ...theme.shadow.glow,
+  eyebrow: {
+    fontSize: 10, fontFamily: fonts.sansBold, letterSpacing: 1.8,
+    textTransform: "uppercase", color: theme.colors.primary,
   },
+  title: { fontSize: 22, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 2, lineHeight: 26 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  // ── Move gradient hero ──
+  hero: { marginBottom: 4 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
-  heroCatRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
+  heroName: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text, letterSpacing: 0, lineHeight: 25 },
+  heroCatRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   heroCatDot: { width: 7, height: 7, borderRadius: 4 },
-  heroCat: { flexShrink: 1, fontSize: 13, color: theme.colors.textTertiary },
+  heroCat: { flexShrink: 1, fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim },
   heroBadges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
   // Ministat chips — cost / renewal / address
   miniStats: { flexDirection: "row", gap: 8, marginTop: 14 },
@@ -496,8 +500,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  miniStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text, fontVariant: ["tabular-nums"] },
-  miniStatLabel: { fontSize: 8, letterSpacing: 0.8, fontWeight: "700", color: theme.colors.textTertiary, marginTop: 3 },
+  miniStatValue: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text, fontVariant: ["tabular-nums"] },
+  miniStatLabel: { fontSize: 8, letterSpacing: 0.8, fontFamily: fonts.sansBold, color: theme.colors.faint, marginTop: 3 },
   renewalCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -514,25 +518,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  renewalHeadline: { fontSize: 15, fontWeight: "700" },
-  renewalDate: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  renewalGuidance: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 5, lineHeight: 16 },
+  renewalHeadline: { fontSize: 15, fontFamily: fonts.sansBold },
+  renewalDate: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+  renewalGuidance: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 5, lineHeight: 16 },
   infoRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 4,
   },
   infoRowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
   infoIcon: {
     width: 30, height: 30, borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center",
+    backgroundColor: theme.colors.accentSoft, alignItems: "center", justifyContent: "center",
   },
-  infoLabel: { fontSize: 13, color: theme.colors.textTertiary, width: 80 },
-  infoValue: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text, textAlign: "right" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 10 },
-  notes: { fontSize: 14, color: theme.colors.textSecondary, lineHeight: 20 },
-  // ── Aurora action list-rows + danger zone ──
+  infoLabel: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.faint, width: 80 },
+  infoValue: { flex: 1, fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text, textAlign: "right" },
+  notes: { fontSize: 14, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 20 },
+  // ── Move section headers + action list-rows + danger zone ──
+  sectionHeader: { marginTop: 24, marginBottom: 10 },
   sectionKicker: {
-    fontSize: 10, letterSpacing: 1.4, fontWeight: "700", color: theme.colors.textTertiary,
-    marginTop: 24, marginBottom: 9, marginLeft: 2,
+    fontSize: 10, letterSpacing: 1.4, fontFamily: fonts.sansBold, color: theme.colors.faint,
+    marginTop: 24, marginBottom: 9, marginLeft: 2, textTransform: "uppercase",
   },
   actionRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
@@ -547,6 +551,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 36, height: 36, borderRadius: 12,
     alignItems: "center", justifyContent: "center",
   },
-  actionTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
-  actionDesc: { fontSize: 11.5, color: theme.colors.textTertiary, marginTop: 2, lineHeight: 16 },
+  actionTitle: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
+  actionDesc: { fontSize: 11.5, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2, lineHeight: 16 },
 });
