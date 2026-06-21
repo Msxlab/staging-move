@@ -36,13 +36,13 @@ export default function ConnectorMetricsClient() {
       />
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="py-20 text-center text-sm text-muted-foreground">Loading dispatch metrics…</div>
       ) : error ? (
-        <div className="rounded-lg border border-foreground/10 p-6 text-center">
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
           <p className="text-sm text-foreground">Couldn&apos;t load connector metrics.</p>
           <button
             onClick={load}
-            className="mt-3 rounded-md border border-foreground/10 px-3 py-1.5 text-sm text-foreground hover:bg-muted/30"
+            className="mt-4 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             Retry
           </button>
@@ -52,22 +52,23 @@ export default function ConnectorMetricsClient() {
           icon={Activity}
           title="No dispatches yet"
           description="Per-connector health appears here once a connector is enabled and users trigger address changes."
+          className="rounded-2xl border border-dashed border-border"
         />
       ) : (
-        <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-foreground/10">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr className="border-b border-foreground/10 text-xs text-muted-foreground">
-                <th className="px-4 py-2 text-left font-medium">Connector</th>
-                <th className="px-3 py-2 text-right font-medium">Confirm rate</th>
-                <th className="px-3 py-2 text-right font-medium">Confirmed</th>
-                <th className="px-3 py-2 text-right font-medium">Needs user</th>
-                <th className="px-3 py-2 text-right font-medium">Failed</th>
-                <th className="px-3 py-2 text-right font-medium">In flight</th>
-                <th className="px-3 py-2 text-right font-medium">Total</th>
+        <div className="overflow-x-auto overscroll-x-contain rounded-2xl border border-border">
+          <table className="w-full min-w-[640px]">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Connector</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Confirm rate</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Confirmed</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Needs user</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Failed</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">In flight</th>
+                <th className="px-3 py-3 text-right text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Total</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {summaries.map((s) => {
                 const inFlight = s.queued + s.dispatching + s.submitted;
                 const rate = s.confirmRate === null ? "—" : `${Math.round(s.confirmRate * 100)}%`;
@@ -79,15 +80,28 @@ export default function ConnectorMetricsClient() {
                       : s.confirmRate >= 0.6
                         ? "text-tone-honey-fg"
                         : "text-tone-rose-fg";
+                const dotCls =
+                  s.confirmRate === null
+                    ? "bg-muted-foreground"
+                    : s.confirmRate >= 0.9
+                      ? "bg-tone-sage-fg"
+                      : s.confirmRate >= 0.6
+                        ? "bg-tone-honey-fg"
+                        : "bg-tone-rose-fg";
                 return (
-                  <tr key={s.connectorKey} className="border-b border-foreground/10 last:border-b-0">
-                    <td className="px-4 py-2.5 text-left font-mono text-xs text-foreground">{s.connectorKey}</td>
-                    <td className={`px-3 py-2.5 text-right font-semibold ${rateCls}`}>{rate}</td>
-                    <td className="px-3 py-2.5 text-right text-foreground">{s.confirmed}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">{s.needsUser}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">{s.failed}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">{inFlight}</td>
-                    <td className="px-3 py-2.5 text-right text-foreground">{s.total}</td>
+                  <tr key={s.connectorKey} className="bg-card transition-colors hover:bg-accent/50">
+                    <td className="px-4 py-3 text-left font-mono text-xs text-foreground">{s.connectorKey}</td>
+                    <td className="px-3 py-3 text-right">
+                      <span className={`inline-flex items-center gap-1.5 font-mono text-sm font-semibold ${rateCls}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />
+                        {rate}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-right font-mono text-sm text-foreground">{s.confirmed}</td>
+                    <td className="px-3 py-3 text-right font-mono text-sm text-muted-foreground">{s.needsUser}</td>
+                    <td className="px-3 py-3 text-right font-mono text-sm text-muted-foreground">{s.failed}</td>
+                    <td className="px-3 py-3 text-right font-mono text-sm text-muted-foreground">{inFlight}</td>
+                    <td className="px-3 py-3 text-right font-mono text-sm font-semibold text-foreground">{s.total}</td>
                   </tr>
                 );
               })}
