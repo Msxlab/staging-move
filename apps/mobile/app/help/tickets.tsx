@@ -8,17 +8,18 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Plus, ChevronRight, MessageCircle, X } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { ArrowLeft, Plus, ChevronRight, MessageCircle, X, Send } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { MoveRaccoon, HeroCard, MoveCard, SectionHeader, Pill } from "@/components/move";
 
 /** Route-level boundary — a render throw shows a graceful retry, not the
  * app-wide "Something went wrong". */
@@ -34,14 +35,14 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   );
 }
 
-// Built per-render against the active theme so the dot color flips
+// Built per-render against the active theme so the pill tone flips
 // when the user changes Appearance.
-function makeStatusColor(theme: Theme): Record<string, string> {
+function makeStatusTone(): Record<string, "accent" | "warning" | "info" | "muted"> {
   return {
-    OPEN: theme.colors.primary,
-    IN_PROGRESS: theme.colors.warning,
-    WAITING_USER: theme.colors.info,
-    CLOSED: theme.colors.textMuted,
+    OPEN: "accent",
+    IN_PROGRESS: "warning",
+    WAITING_USER: "info",
+    CLOSED: "muted",
   };
 }
 
@@ -64,7 +65,7 @@ export default function TicketsScreen() {
   const theme = useAppTheme();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const STATUS_COLOR = useMemo(() => makeStatusColor(theme), [theme]);
+  const STATUS_TONE = useMemo(() => makeStatusTone(), []);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -145,8 +146,13 @@ export default function TicketsScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("tickets.title")}</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)}>
-          <Plus size={20} color="#fff" />
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => setShowCreate(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t("tickets.newTitle")}
+        >
+          <Plus size={20} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -158,10 +164,10 @@ export default function TicketsScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <View style={styles.hero}>
+        <HeroCard style={styles.hero} padding={16} radius={theme.radius.xl}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
-              <MessageCircle size={20} color={theme.colors.primary} />
+              <MoveRaccoon size={30} mood="calm" />
             </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroKicker}>SUPPORT DESK</Text>
@@ -187,14 +193,19 @@ export default function TicketsScreen() {
               <Text style={styles.heroStatLabel}>waiting</Text>
             </View>
           </View>
-        </View>
+        </HeroCard>
 
         {showCreate && (
-          <Card variant="glass" style={{ marginBottom: 16 }}>
+          <MoveCard style={{ marginBottom: 16 }} padding={14} radius={theme.radius.xl} accent>
             <View style={styles.createHeader}>
               <Text style={styles.createTitle}>{t("tickets.newTitle")}</Text>
-              <TouchableOpacity onPress={() => setShowCreate(false)}>
-                <X size={18} color={theme.colors.textMuted} />
+              <TouchableOpacity
+                onPress={() => setShowCreate(false)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.close", { defaultValue: "Close" })}
+              >
+                <X size={16} color={theme.colors.dim} />
               </TouchableOpacity>
             </View>
             <Text style={styles.fieldLabel}>{t("tickets.subject")}</Text>
@@ -231,55 +242,83 @@ export default function TicketsScreen() {
               numberOfLines={4}
               maxLength={5000}
             />
-            <Button title={creating ? t("tickets.submitting") : t("tickets.submit")} onPress={handleCreate} disabled={creating} />
-          </Card>
+            <TouchableOpacity
+              style={[styles.submitBtn, creating && { opacity: 0.6 }]}
+              onPress={handleCreate}
+              disabled={creating}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={theme.colors.gradient.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitBtnGrad}
+              >
+                {creating ? (
+                  <ActivityIndicator color={theme.colors.onAccent} />
+                ) : (
+                  <>
+                    <Send size={16} color={theme.colors.onAccent} />
+                    <Text style={styles.submitBtnText}>{t("tickets.submit")}</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </MoveCard>
         )}
 
         {error && tickets.length === 0 && !showCreate ? (
           <ErrorState message={error} onRetry={load} />
         ) : tickets.length === 0 && !showCreate ? (
-          <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
-            <MessageCircle size={32} color={theme.colors.textMuted} />
+          <MoveCard style={styles.emptyCard} padding={28} radius={theme.radius.xl}>
+            <MoveRaccoon size={56} mood="thinking" />
             <Text style={styles.emptyTitle}>{t("tickets.emptyTitle")}</Text>
             <Text style={styles.emptySubtitle}>{t("tickets.emptySubtitle")}</Text>
-          </Card>
+          </MoveCard>
         ) : (
-          <View style={styles.list}>
-            {tickets.map((ticket) => {
-              const color = STATUS_COLOR[ticket.status] || theme.colors.textMuted;
-              const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
-              const lastMsg = messages[0];
-              return (
-                <TouchableOpacity
-                  key={ticket.id}
-                  style={styles.ticketRow}
-                  onPress={() => router.push({ pathname: "/help/tickets/[id]", params: { id: ticket.id } })}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.ticketTop}>
-                      <View style={[styles.statusBadge, { borderColor: `${color}40`, backgroundColor: `${color}15` }]}>
-                        <Text style={[styles.statusText, { color }]}>{t(`tickets.status_${ticket.status}`, { defaultValue: ticket.status })}</Text>
+          <>
+            <SectionHeader label={t("tickets.title")} style={styles.sectionHeader} />
+            <View style={styles.list}>
+              {tickets.map((ticket) => {
+                const tone = STATUS_TONE[ticket.status] || "muted";
+                const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+                const lastMsg = messages[0];
+                return (
+                  <MoveCard
+                    key={ticket.id}
+                    style={styles.ticketCard}
+                    padding={14}
+                    radius={theme.radius.xl}
+                    onPress={() => router.push({ pathname: "/help/tickets/[id]", params: { id: ticket.id } })}
+                  >
+                    <View style={styles.ticketRow}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={styles.ticketTop}>
+                          <Pill
+                            tone={tone}
+                            label={t(`tickets.status_${ticket.status}`, { defaultValue: ticket.status })}
+                          />
+                          <Text style={styles.ticketDate}>{new Date(ticket.updatedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</Text>
+                        </View>
+                        <Text style={styles.ticketSubject} numberOfLines={1}>{ticket.subject}</Text>
+                        {lastMsg && (
+                          <Text style={styles.ticketPreview} numberOfLines={1}>
+                            {lastMsg.senderType === "ADMIN"
+                              ? t("tickets.supportPrefix")
+                              : lastMsg.senderType === "USER"
+                              ? t("tickets.youPrefix")
+                              : t("tickets.systemPrefix")}
+                            {lastMsg.content || ""}
+                          </Text>
+                        )}
                       </View>
-                      <Text style={styles.ticketDate}>{new Date(ticket.updatedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</Text>
+                      <ChevronRight size={16} color={theme.colors.faint} />
                     </View>
-                    <Text style={styles.ticketSubject} numberOfLines={1}>{ticket.subject}</Text>
-                    {lastMsg && (
-                      <Text style={styles.ticketPreview} numberOfLines={1}>
-                        {lastMsg.senderType === "ADMIN"
-                          ? t("tickets.supportPrefix")
-                          : lastMsg.senderType === "USER"
-                          ? t("tickets.youPrefix")
-                          : t("tickets.systemPrefix")}
-                        {lastMsg.content || ""}
-                      </Text>
-                    )}
-                  </View>
-                  <ChevronRight size={16} color={theme.colors.textMuted} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  </MoveCard>
+                );
+              })}
+            </View>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -289,46 +328,45 @@ export default function TicketsScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  addBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
-  hero: {
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.highlight,
-    ...theme.shadow.sm,
+  backBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    alignItems: "center", justifyContent: "center",
   },
+  addBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder,
+    alignItems: "center", justifyContent: "center",
+  },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
+  hero: { marginBottom: 14 },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   heroIcon: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: theme.colors.primaryFaded,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary + "33",
+    borderColor: theme.colors.accentBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   heroCopy: { flex: 1, minWidth: 0 },
   heroKicker: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 1.3,
     textTransform: "uppercase",
-    color: theme.colors.accent,
+    color: theme.colors.primary,
   },
   heroTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: fonts.serifBold,
     color: theme.colors.text,
     marginTop: 3,
-    letterSpacing: 0,
   },
-  heroSub: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3 },
+  heroSub: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 3 },
   heroStats: { flexDirection: "row", gap: 8, marginTop: 14 },
   heroStat: {
     flex: 1,
@@ -340,34 +378,52 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: "center",
   },
-  heroStatValue: { fontSize: 14, fontWeight: "800", color: theme.colors.text },
+  heroStatValue: { fontSize: 14, fontFamily: fonts.sansBold, color: theme.colors.text },
   heroStatWarn: { color: theme.colors.warning },
   heroStatLabel: {
     fontSize: 8,
-    fontWeight: "800",
+    fontFamily: fonts.sansBold,
     letterSpacing: 0.8,
-    color: theme.colors.textTertiary,
+    color: theme.colors.faint,
     textTransform: "uppercase",
     marginTop: 3,
   },
   createHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  createTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  fieldLabel: { fontSize: 11, color: theme.colors.textTertiary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text, fontSize: 14 },
+  createTitle: { fontSize: 16, fontFamily: fonts.serifBold, color: theme.colors.text },
+  closeBtn: {
+    width: 30, height: 30, borderRadius: 10,
+    backgroundColor: theme.colors.surface2, alignItems: "center", justifyContent: "center",
+  },
+  fieldLabel: { fontSize: 11, fontFamily: fonts.sansBold, color: theme.colors.faint, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6, marginTop: 12 },
+  input: {
+    backgroundColor: theme.colors.surface2, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: theme.radius.lg, paddingHorizontal: 12, paddingVertical: 11,
+    color: theme.colors.text, fontSize: 14, fontFamily: fonts.sans,
+  },
   inputMulti: { height: 90, textAlignVertical: "top" },
   categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  categoryChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.card },
-  categoryChipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryFaded },
-  categoryChipText: { fontSize: 11, fontWeight: "600", color: theme.colors.textMuted },
+  categoryChip: {
+    paddingHorizontal: 11, paddingVertical: 6, borderRadius: theme.radius.full,
+    borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
+  },
+  categoryChipActive: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentSoft },
+  categoryChipText: { fontSize: 11, fontFamily: fonts.sansSemibold, color: theme.colors.dim },
   categoryChipTextActive: { color: theme.colors.primary },
+  submitBtn: { borderRadius: theme.radius.lg, overflow: "hidden", marginTop: 16 },
+  submitBtnGrad: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 14,
+  },
+  submitBtnText: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+  sectionHeader: { marginBottom: 10, marginLeft: 2 },
   list: { gap: 10 },
-  ticketRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 14, ...theme.shadow.sm },
-  ticketTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, borderWidth: 1 },
-  statusText: { fontSize: 10, fontWeight: "700" },
-  ticketDate: { fontSize: 11, color: theme.colors.textMuted },
-  ticketSubject: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  ticketPreview: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  emptyTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4 },
+  emptyCard: { alignItems: "center" },
+  ticketCard: {},
+  ticketRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  ticketTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+  ticketDate: { fontSize: 11, fontFamily: fonts.sans, color: theme.colors.dim },
+  ticketSubject: { fontSize: 14, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  ticketPreview: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, marginTop: 2 },
+  emptyTitle: { fontSize: 15, fontFamily: fonts.serifBold, color: theme.colors.text, marginTop: 14 },
+  emptySubtitle: { fontSize: 13, fontFamily: fonts.sans, color: theme.colors.dim, marginTop: 4, textAlign: "center" },
 });
