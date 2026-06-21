@@ -15,34 +15,35 @@ import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-  cancelAnimation,
-} from "react-native-reanimated";
+import { useReducedMotion } from "react-native-reanimated";
 import {
   MapPin,
   Zap,
   DollarSign,
-  Truck,
   ArrowRight,
   Bell,
   BellRing,
-  Check,
   Rocket,
   Sparkles,
   Users,
   Mail,
   X,
+  Sun,
+  Moon,
+  Check,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, useThemePreference, fonts, type Theme } from "@/lib/theme";
+import {
+  MoveRaccoon,
+  HeroCard,
+  MoveCard,
+  SectionHeader,
+  MoveProgressBar,
+  Pill,
+} from "@/components/move";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -74,7 +75,6 @@ import {
   type MobileMoveBriefingState,
 } from "@/lib/ai-briefing-experience";
 import { Card } from "@/components/ui/Card";
-import { LogoBrand } from "@/components/ui/LogoBrand";
 import { OfflineChip } from "@/components/ui/OfflineChip";
 import { MoveBriefingCard } from "@/components/ui/MoveBriefingCard";
 import { HomeDossierCard } from "@/components/ui/HomeDossierCard";
@@ -85,7 +85,6 @@ import { UpNext } from "@/components/ui/UpNext";
 import { SavingsInsightsCard } from "@/components/ui/SavingsInsightsCard";
 import { computeSavingsInsights, type ServiceLike } from "@/lib/service-insights";
 import { getCategoryIcon, getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
-import { Badge as UiBadge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonBlock, SkeletonCard, SkeletonStatGrid } from "@/components/ui/Skeleton";
 import { CountUp } from "@/components/ui/CountUp";
@@ -96,7 +95,6 @@ import {
   generateChecklist,
   getMoveCountdown,
   formatDateOnlyUtc,
-  RELOCATION_PHASES,
   type UserChecklistProfile,
   type RelocationChecklist,
   type ChecklistStateRuleContext,
@@ -148,90 +146,6 @@ function computeReadiness(
       : Math.round((signals.reduce((a, b) => a + b, 0) / signals.length) * 100);
   const floored = hasOriginDestination ? Math.max(computed, COLD_START_FLOOR) : computed;
   return Math.max(0, Math.min(100, floored));
-}
-
-const AnimatedRingCircle = Animated.createAnimatedComponent(Circle);
-
-/**
- * Big Aurora hero ring — same animated-dasharray pattern as the command
- * center's ReadinessRing (sweeps when percent changes; snaps under
- * reduce-motion), sized up for the hero module per the Edition VII design.
- */
-function AuroraHeroRing({
-  percent,
-  color,
-  track,
-  label,
-  size = 96,
-  gradientFrom,
-}: {
-  percent: number;
-  color: string;
-  track: string;
-  label: string;
-  size?: number;
-  /** When set, the progress arc sweeps gradientFrom→color (Aurora glow look). */
-  gradientFrom?: string;
-}) {
-  const stroke = 9;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const reduceMotion = useReducedMotion();
-
-  const clamped = Math.max(0, Math.min(100, percent));
-  const progress = useSharedValue(clamped / 100);
-
-  useEffect(() => {
-    const target = clamped / 100;
-    if (reduceMotion) {
-      progress.value = target;
-      return;
-    }
-    progress.value = withTiming(target, {
-      duration: 650,
-      easing: Easing.out(Easing.cubic),
-    });
-    return () => cancelAnimation(progress);
-  }, [clamped, reduceMotion, progress]);
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDasharray: `${progress.value * c}, ${c}`,
-  }));
-
-  // Aurora "glow look" arc — a sage→accent sweep when gradientFrom is set
-  // (mirrors the design bundle's Ring grad variant); solid accent otherwise.
-  const useGradient = !!gradientFrom;
-  const gradientId = "auroraHeroRingGrad";
-
-  return (
-    <View
-      style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}
-      accessibilityLabel={label}
-    >
-      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-        {useGradient && (
-          <Defs>
-            <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={gradientFrom} />
-              <Stop offset="1" stopColor={color} />
-            </SvgLinearGradient>
-          </Defs>
-        )}
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
-        <AnimatedRingCircle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={useGradient ? `url(#${gradientId})` : color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-          animatedProps={animatedProps}
-        />
-      </Svg>
-      <Text style={{ fontSize: 21, fontWeight: "800", color }}>{percent}%</Text>
-    </View>
-  );
 }
 
 /**
@@ -311,11 +225,17 @@ export default function DashboardScreen() {
   // theme: hook-injected styles
 
   const theme = useAppTheme();
+  // Theme toggle for the header (Move design header control). resolvedScheme
+  // tells us which glyph to show; setPreference flips between light/dark.
+  const { resolvedScheme, setPreference } = useThemePreference();
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  // The signed-in user's first name — drives the Playfair header greeting in
+  // the Move design. Best-effort: null falls back to a generic welcome label.
+  const [firstName, setFirstName] = useState<string | null>(null);
   // Full tracked-services list — powers the client-side savings/insights card.
   // Fetched alongside the dashboard payload (no new endpoint).
   const [services, setServices] = useState<ServiceLike[]>([]);
@@ -471,6 +391,15 @@ export default function DashboardScreen() {
       setError(null);
       setOffline(false);
       const profileData = res.data.profile || res.data;
+      // Header greeting name (Move design). Best-effort; trims to first token so
+      // a full "name" field still renders a tidy first-name greeting.
+      {
+        const nm = (profileData?.firstName || profileData?.name || "")
+          .toString()
+          .trim()
+          .split(/\s+/)[0];
+        setFirstName(nm || null);
+      }
       // Premium = the EFFECTIVE entitlement (an inherited Family/Pro member has
       // no own paid row but inherits access). Fall back to the own-subscription
       // heuristic only when the resolved entitlement is absent.
@@ -737,6 +666,10 @@ export default function DashboardScreen() {
       // immediately (the state→ref mirror effect hasn't flushed yet at this point).
       snapshotRef.current = snap;
       setSnapshot(snap);
+      if (snap.firstName) {
+        const nm = snap.firstName.toString().trim().split(/\s+/)[0];
+        if (nm) setFirstName(nm);
+      }
       // Reconstruct the `stats` shape the UI reads. We carry only what the
       // snapshot has; the live fetch will replace this wholesale momentarily.
       const hasRoute = !!(snap.route && (snap.route.from || snap.route.to));
@@ -1017,12 +950,12 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
-            <Text style={styles.title}>{t("tabs.dashboard")}</Text>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={styles.greetingEyebrow}>{t("dashboard.welcome").toUpperCase()}</Text>
+            <Text style={styles.headerName}>{t("tabs.dashboard")}</Text>
           </View>
-          <View style={styles.notifButton}>
-            <Bell size={22} color={theme.colors.textSecondary} />
+          <View style={styles.iconBtn}>
+            <Bell size={17} color={theme.colors.dim} />
           </View>
         </View>
         <View style={styles.scrollContent}>
@@ -1091,10 +1024,43 @@ export default function DashboardScreen() {
     ? computeReadiness(checklist, criticalReadiness.completed, criticalReadiness.missing, hasOriginDestination)
     : 0;
   const heroDateLabel = heroPlan ? formatDateOnlyUtc(heroPlan.moveDate) : "";
-  const heroBadgeLabel =
-    heroPlan?.status === "IN_PROGRESS"
-      ? t("dashboard.heroBadge_inProgress")
-      : t("dashboard.heroBadge_planning");
+
+  // ── Move header derivations ─────────────────────────────────────────
+  // Gold eyebrow greeting + Playfair name + today's date. The name falls back
+  // to the generic welcome label when the profile name hasn't resolved yet.
+  const headerLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
+  const headerName = firstName || t("dashboard.welcome");
+  const headerDate = new Date().toLocaleDateString(headerLocale, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  // Real "needs attention" count for the bell badge — pending workspace
+  // invites the user can act on right now (no fabricated unread number).
+  const headerUnread = pendingInvites.length;
+  const toggleTheme = () => {
+    hapticLight();
+    void setPreference(resolvedScheme === "dark" ? "light" : "dark");
+  };
+
+  // ── AI briefing (design HeroCard) derivations ───────────────────────
+  // The real first-run briefing text when available, else an active-plan-safe
+  // readiness summary built from this screen's live data (never the "plan a
+  // move" copy — the user already has an active plan here). The chips read the
+  // live countdown + critical-readiness.
+  const briefText =
+    briefing?.briefing && briefing.briefing.trim().length > 0
+      ? briefing.briefing
+      : checklist
+        ? t("dashboard.commandCenter_readinessDetail", {
+            done: checklist.completedItems,
+            total: checklist.totalItems,
+          })
+        : criticalReadiness.missing > 0
+          ? t("dashboard.commandCenter_readinessProviders", { count: criticalReadiness.missing })
+          : t("dashboard.commandCenter_readiness");
+  const briefDaysOut = heroCountdown?.absDays ?? 0;
+  const briefCritical = criticalReadiness.missing;
 
   // DUO derivations — both modules render the services list this screen
   // already fetches (no new API calls). Active services first, biggest spend
@@ -1122,46 +1088,67 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/more")}
-            accessibilityRole="button"
-            accessibilityLabel={t("dashboard.openProfile", { defaultValue: "Profile" })}
-            activeOpacity={0.8}
-          >
-            <LogoBrand size="sm" />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>{t("tabs.dashboard")}</Text>
-              {isPremium && (
-                <View style={[styles.planBadge, { backgroundColor: planBadge.bg, borderColor: planBadge.border }]}>
-                  <PlanBadgeIcon size={11} color={planBadge.fg} />
-                  <Text style={[styles.planBadgeText, { color: planBadge.fg }]}>{planBadge.label}</Text>
-                </View>
-              )}
-            </View>
-            {workspace && (
-              <TouchableOpacity
-                style={styles.workspaceMini}
-                onPress={() => router.push("/settings/workspace")}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel={t("workspace.title", { defaultValue: "Workspace" })}
-              >
-                <Users size={11} color={theme.colors.textTertiary} />
-                <Text style={styles.workspaceMiniText} numberOfLines={1}>
-                  {workspace.name} · {workspace.memberCount}/{workspace.seatLimit} {t("workspace.membersShort", "members")}
-                </Text>
-                <Text style={styles.workspaceMiniRole}>{workspaceRoleLabel}</Text>
-              </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerLeft}
+          onPress={() => router.push("/(tabs)/more")}
+          accessibilityRole="button"
+          accessibilityLabel={t("dashboard.openProfile", { defaultValue: "Profile" })}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.greetingEyebrow}>{t("dashboard.welcome").toUpperCase()}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.headerName} numberOfLines={1}>{headerName}</Text>
+            {isPremium && (
+              <View style={[styles.planBadge, { backgroundColor: planBadge.bg, borderColor: planBadge.border }]}>
+                <PlanBadgeIcon size={11} color={planBadge.fg} />
+                <Text style={[styles.planBadgeText, { color: planBadge.fg }]}>{planBadge.label}</Text>
+              </View>
             )}
           </View>
-        </View>
-        <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications")}>
-          <Bell size={22} color={theme.colors.textSecondary} />
+          <Text style={styles.headerDate}>{headerDate}</Text>
+          {workspace && (
+            <TouchableOpacity
+              style={styles.workspaceMini}
+              onPress={() => router.push("/settings/workspace")}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t("workspace.title", { defaultValue: "Workspace" })}
+            >
+              <Users size={11} color={theme.colors.textTertiary} />
+              <Text style={styles.workspaceMiniText} numberOfLines={1}>
+                {workspace.name} · {workspace.memberCount}/{workspace.seatLimit} {t("workspace.membersShort", "members")}
+              </Text>
+              <Text style={styles.workspaceMiniRole}>{workspaceRoleLabel}</Text>
+            </TouchableOpacity>
+          )}
         </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={toggleTheme}
+            accessibilityRole="button"
+            accessibilityLabel={t("settings.theme", { defaultValue: "Theme" })}
+          >
+            {resolvedScheme === "dark" ? (
+              <Sun size={17} color={theme.colors.dim} />
+            ) : (
+              <Moon size={17} color={theme.colors.dim} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => router.push("/notifications")}
+            accessibilityRole="button"
+            accessibilityLabel={t("notifications.title", { defaultValue: "Notifications" })}
+          >
+            <Bell size={17} color={theme.colors.dim} />
+            {headerUnread > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>{headerUnread > 9 ? "9+" : headerUnread}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -1348,392 +1335,457 @@ export default function DashboardScreen() {
             />
           </View>
         ) : (
-          <View style={styles.heroCard} accessibilityRole="summary">
-            <LinearGradient
-              colors={[`${theme.colors.primary}26`, `${theme.colors.primary}00`]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1.1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.heroTop}>
-              <Text style={styles.heroKicker}>{t("dashboard.heroKicker").toUpperCase()}</Text>
-              <LinearGradient
-                colors={[theme.colors.success, theme.colors.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroBadge}
-              >
-                <Text style={styles.heroBadgeText}>{heroBadgeLabel}</Text>
-              </LinearGradient>
-            </View>
-            <View style={styles.heroMid}>
-              <AuroraHeroRing
-                percent={heroReadiness}
-                color={theme.colors.primary}
-                gradientFrom={theme.colors.success}
-                track={`${theme.colors.text}1A`}
-                label={t("dashboard.commandCenter_readinessLabel", { percent: heroReadiness })}
-              />
-              {heroCountdown?.phase === "today" ? (
-                <Text style={styles.heroMovingDay}>{t("dashboard.commandCenter_movingDay")}</Text>
-              ) : (
-                <View>
-                  <Text style={styles.heroDaysNum}>{heroCountdown?.absDays ?? 0}</Text>
-                  <Text style={styles.heroDaysLbl}>
-                    {(heroCountdown?.phase === "past"
-                      ? t("dashboard.heroDaysAgo")
-                      : t("dashboard.heroDaysLeft")
-                    ).toUpperCase()}
+          /* HAPPY PATH (premium WITH active plan) — simplified to the Move
+             design HOME sections: AI briefing → countdown hero. The remaining
+             design sections (reminders, dossier, guides) render below the hero
+             gate, also keyed on heroPlan. */
+          <>
+            {/* (b) AI BRIEFING — HeroCard with the thinking raccoon, the real
+                first-run briefing text, live countdown/critical chips, and an
+                "Open full briefing" gradient button. */}
+            <HeroCard style={{ marginBottom: 16 }} radius={22}>
+              <View style={styles.briefHead}>
+                <View style={styles.briefRaccoon}>
+                  <MoveRaccoon size={40} mood="thinking" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.briefLabelRow}>
+                    <Text style={styles.briefLabel}>
+                      {t("dashboard.aiBriefingLabel", { defaultValue: "AI Briefing" }).toUpperCase()}
+                    </Text>
+                    <View style={styles.briefDot} />
+                    <View style={styles.briefDot} />
+                    <View style={styles.briefDot} />
+                    {briefing?.aiGenerated ? (
+                      <Text style={styles.briefUpdated}>{t("dashboard.briefingAiLabel")}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.briefText} numberOfLines={4}>
+                    {briefText}
                   </Text>
                 </View>
-              )}
+              </View>
+              <View style={styles.briefChips}>
+                <Pill label={t("dashboard.commandCenter_daysToGo", { count: briefDaysOut })} tone="accent" />
+                {briefCritical > 0 ? (
+                  <Pill
+                    label={t("dashboard.commandCenter_readinessProviders", { count: briefCritical })}
+                    tone="error"
+                  />
+                ) : null}
+                <Pill
+                  label={t("dashboard.commandCenter_readinessDetail", {
+                    done: checklist?.completedItems ?? 0,
+                    total: checklist?.totalItems ?? 0,
+                  })}
+                  tone="success"
+                />
+              </View>
               <TouchableOpacity
-                style={styles.heroGhostBtn}
                 onPress={() => {
                   hapticLight();
                   router.push("/(tabs)/moving");
                 }}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={t("dashboard.openFullBriefing", { defaultValue: "Open full briefing" })}
+              >
+                <LinearGradient
+                  colors={theme.colors.gradient.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.briefBtn}
+                >
+                  <Text style={styles.briefBtnText}>
+                    {t("dashboard.openFullBriefing", { defaultValue: "Open full briefing" })} →
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </HeroCard>
+
+            {/* (c) COUNTDOWN HERO — big Playfair days numeral, from→to city +
+                move date, tasks-done + percent, accent progress bar, view-plan
+                button. Reads the same countdown + readiness blend as before. */}
+            <HeroCard style={{ marginBottom: 8 }} radius={26} padding={22}>
+              <View style={styles.cdTop} accessibilityRole="summary">
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cdKicker}>{t("dashboard.heroKicker").toUpperCase()}</Text>
+                  {heroCountdown?.phase === "today" ? (
+                    <Text style={styles.cdMovingDay}>{t("dashboard.commandCenter_movingDay")}</Text>
+                  ) : (
+                    <View style={styles.cdDaysRow}>
+                      <Text style={styles.cdDaysNum}>{heroCountdown?.absDays ?? 0}</Text>
+                      <Text style={styles.cdDaysUnit}>
+                        {heroCountdown?.phase === "past"
+                          ? t("dashboard.heroDaysAgo")
+                          : t("dashboard.heroDaysLeft")}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.cdRoute}>
+                  <Text style={styles.cdRouteCity} numberOfLines={1}>{heroPlan.fromCity}</Text>
+                  <Text style={styles.cdRouteArrow}>↓</Text>
+                  <Text style={styles.cdRouteCityTo} numberOfLines={1}>{heroPlan.toCity}</Text>
+                  {heroDateLabel ? <Text style={styles.cdRouteDate}>{heroDateLabel}</Text> : null}
+                </View>
+              </View>
+
+              <View style={styles.cdProgressRow}>
+                <Text style={styles.cdProgressLabel}>
+                  {checklist
+                    ? t("dashboard.commandCenter_readinessDetail", {
+                        done: checklist.completedItems,
+                        total: checklist.totalItems,
+                      })
+                    : t("dashboard.commandCenter_readiness")}
+                </Text>
+                <Text style={styles.cdProgressPct}>{heroReadiness}%</Text>
+              </View>
+              <MoveProgressBar value={heroReadiness / 100} />
+
+              {/* Single Next Critical Action CTA (or "all set") — same behavior
+                  the command center carried. */}
+              {topAction ? (
+                <TouchableOpacity
+                  style={styles.heroActionRow}
+                  onPress={() => {
+                    hapticLight();
+                    router.push(`/providers/${topAction.id}` as Href);
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={topAction.name}
+                >
+                  <View style={styles.heroActionIcon}>
+                    <Sparkles size={16} color={theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.heroActionEyebrow}>
+                      {t("dashboard.commandCenter_nextAction").toUpperCase()}
+                    </Text>
+                    <Text style={styles.heroActionName} numberOfLines={1}>
+                      {topAction.name}
+                    </Text>
+                    {(topAction.deadline || topAction.reason) && (
+                      <Text style={styles.heroActionSub} numberOfLines={1}>
+                        {topAction.deadline ? `${topAction.deadline} · ` : ""}
+                        {topAction.reason || (topAction.category || "").replace(/_/g, " ")}
+                      </Text>
+                    )}
+                  </View>
+                  <ArrowRight size={16} color={theme.colors.primary} />
+                </TouchableOpacity>
+              ) : heroReadiness >= 100 ? (
+                <View style={[styles.heroActionRow, styles.heroAllSet]}>
+                  <Rocket size={16} color={theme.colors.success} />
+                  <Text style={styles.heroAllSetText}>{t("dashboard.commandCenter_allSet")}</Text>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                style={styles.cdBtn}
+                onPress={() => {
+                  hapticLight();
+                  router.push("/(tabs)/moving");
+                }}
+                activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel={t("dashboard.commandCenter_viewPlan")}
               >
-                <Text style={styles.heroGhostText}>{t("dashboard.commandCenter_viewPlan")}</Text>
+                <Text style={styles.cdBtnText}>{t("dashboard.commandCenter_viewPlan")} →</Text>
               </TouchableOpacity>
-            </View>
-            <Text style={styles.heroRoute} numberOfLines={1}>
-              {heroPlan.fromCity} → {heroPlan.toCity}
-              {heroDateLabel ? ` · ${heroDateLabel}` : ""}
-            </Text>
-
-            {/* Single Next Critical Action CTA (or "all set") — same behavior
-                the command center carried. */}
-            {topAction ? (
-              <TouchableOpacity
-                style={styles.heroActionRow}
-                onPress={() => {
-                  hapticLight();
-                  router.push(`/providers/${topAction.id}` as Href);
-                }}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={topAction.name}
-              >
-                <View style={styles.heroActionIcon}>
-                  <Sparkles size={16} color={theme.colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.heroActionEyebrow}>
-                    {t("dashboard.commandCenter_nextAction").toUpperCase()}
-                  </Text>
-                  <Text style={styles.heroActionName} numberOfLines={1}>
-                    {topAction.name}
-                  </Text>
-                  {(topAction.deadline || topAction.reason) && (
-                    <Text style={styles.heroActionSub} numberOfLines={1}>
-                      {topAction.deadline ? `${topAction.deadline} · ` : ""}
-                      {topAction.reason || (topAction.category || "").replace(/_/g, " ")}
-                    </Text>
-                  )}
-                </View>
-                <ArrowRight size={16} color={theme.colors.primary} />
-              </TouchableOpacity>
-            ) : heroReadiness >= 100 ? (
-              <View style={[styles.heroActionRow, styles.heroAllSet]}>
-                <Rocket size={16} color={theme.colors.success} />
-                <Text style={styles.heroAllSetText}>{t("dashboard.commandCenter_allSet")}</Text>
-              </View>
-            ) : null}
-
-            <Text style={styles.heroFoot}>
-              {checklist
-                ? t("dashboard.commandCenter_readinessDetail", {
-                    done: checklist.completedItems,
-                    total: checklist.totalItems,
-                  })
-                : criticalReadiness.missing > 0
-                  ? t("dashboard.commandCenter_readinessProviders", {
-                      count: criticalReadiness.missing,
-                    })
-                  : t("dashboard.commandCenter_readiness")}
-            </Text>
-          </View>
+            </HeroCard>
+          </>
         )}
 
-        {/* MOVING CHECKLIST MODULE — the relocation checklist reframed as one
-            bordered Aurora card module with colored status dots (overdue /
-            up-next / done). Same data + the same next-action navigation as
-            before; moved up under the hero per the Edition VII grouping. */}
-        {checklist && (() => {
-          const phaseInfo = RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase);
-          return (
-            <View style={styles.groupCard}>
-              <Text style={styles.groupKicker}>{t("dashboard.checklistKicker").toUpperCase()}</Text>
-              <View style={styles.groupHeadRow}>
-                <CategoryIcon emoji={phaseInfo?.icon || ""} size={18} color={theme.colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.groupTitle}>{t("moving.checklist")}</Text>
-                  <Text style={styles.groupSub}>
-                    {checklist.currentPhase + 1}: {phaseInfo?.label || ""}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.groupPct}>{checklist.progressPercent}%</Text>
-                  <Text style={styles.groupCount}>
-                    {checklist.completedItems}/{checklist.totalItems}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.groupBarTrack}>
-                <View style={[styles.groupBarFill, { width: `${checklist.progressPercent}%` }]} />
-              </View>
-
-              {checklist.overdueItems.length > 0 && (
-                <View style={styles.ckRow}>
-                  <View style={[styles.ckDot, { borderColor: theme.colors.error }]} />
-                  <Text style={[styles.ckRowText, { color: theme.colors.error }]} numberOfLines={2}>
-                    {t("moving.overdueSummary", {
-                      count: checklist.overdueItems.length,
-                      title: `${checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}${
-                        checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""
-                      }`,
-                    })}
-                  </Text>
-                </View>
-              )}
-
-              {checklist.nextAction && !checklist.nextAction.isCompleted && (
-                <TouchableOpacity
-                  style={styles.ckRow}
-                  onPress={() => router.push("/(tabs)/services" as any)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={checklist.nextAction.title}
+        {heroPlan ? (
+          /* ── HAPPY-PATH design sections below the hero ───────────────── */
+          <>
+            {/* (d) REMINDERS · THIS WEEK — the nearest-due open tasks as
+                checkable rows. UpNext keeps the real one-tap PATCH-complete
+                logic; it self-hides when there are no open tasks. */}
+            <SectionHeader
+              label={t("dashboard.remindersThisWeek", { defaultValue: "Reminders · this week" })}
+              actionLabel={`${t("dashboard.upNext_viewAll")} →`}
+              onAction={() => router.push("/notifications")}
+              style={{ marginTop: 18, marginBottom: 10 }}
+            />
+            {/* Actionable next checklist task (deep-links to Services) + overdue
+                count — restored into the design's reminders section so the one-
+                tap "next task" + overdue alerts aren't lost in the simplify. */}
+            {checklist?.nextAction ? (
+              <TouchableOpacity
+                onPress={() => {
+                  hapticLight();
+                  router.push("/(tabs)/services");
+                }}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={checklist.nextAction.title}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 14,
+                  borderRadius: 16,
+                  marginBottom: 9,
+                  backgroundColor: theme.colors.surface,
+                  borderWidth: 1,
+                  borderColor:
+                    checklist.overdueItems.length > 0 ? theme.colors.amberLine : theme.colors.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: theme.colors.accentSoft,
+                  }}
                 >
-                  <View style={[styles.ckDot, { borderColor: theme.colors.warning }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.ckRowTitle} numberOfLines={1}>{checklist.nextAction.title}</Text>
-                    {checklist.nextAction.stateNote ? (
-                      <Text style={styles.ckRowNote} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
-                    ) : null}
-                    {checklist.nextAction.estimatedMinutes ? (
-                      <Text style={styles.ckRowMeta}>~{checklist.nextAction.estimatedMinutes} min</Text>
-                    ) : null}
-                  </View>
-                  <ArrowRight size={14} color={theme.colors.primary} />
-                </TouchableOpacity>
-              )}
-
-              {checklist.completedItems > 0 && (
-                <View style={styles.ckRow}>
-                  <View style={[styles.ckDot, styles.ckDotDone]}>
-                    <Check size={11} color={theme.colors.background} />
-                  </View>
-                  <Text style={[styles.ckRowText, { color: theme.colors.success }]}>
-                    {t("dashboard.commandCenter_readinessDetail", {
-                      done: checklist.completedItems,
-                      total: checklist.totalItems,
-                    })}
-                  </Text>
+                  <Check size={16} color={theme.colors.primary} />
                 </View>
-              )}
-            </View>
-          );
-        })()}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.faint,
+                      fontSize: 9,
+                      fontFamily: fonts.sansBold,
+                      letterSpacing: 1.2,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {t("dashboard.checklistKicker", { defaultValue: "Next task" })}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{ color: theme.colors.text, fontSize: 13, fontFamily: fonts.sansSemibold, marginTop: 2 }}
+                  >
+                    {checklist.nextAction.title}
+                  </Text>
+                  {checklist.nextAction.stateNote ? (
+                    <Text numberOfLines={1} style={{ color: theme.colors.dim, fontSize: 10.5, marginTop: 1 }}>
+                      {checklist.nextAction.stateNote}
+                    </Text>
+                  ) : null}
+                </View>
+                {checklist.overdueItems.length > 0 ? (
+                  <Pill
+                    tone="warning"
+                    label={t("dashboard.overdueAlert", {
+                      count: checklist.overdueItems.length,
+                      defaultValue: "{{count}} overdue",
+                    })}
+                  />
+                ) : (
+                  <ArrowRight size={16} color={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+            ) : null}
+            <UpNext
+              planId={stats?.activePlan?.id ?? null}
+              locale={(i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US"}
+              onViewAll={() => {
+                const pid = stats?.activePlan?.id;
+                if (pid) router.push(`/moving/${pid}` as Href);
+                else router.push("/(tabs)/moving");
+              }}
+              onCompleted={async () => {
+                await fetchDashboard();
+              }}
+            />
 
-        {/* UP NEXT — the 2-3 nearest-due open tasks for the active plan, each
-            with a one-tap inline checkbox that completes via the same
-            PATCH /api/move-tasks { event: "COMPLETE" } the plan screen uses.
-            Self-hides with no active plan / no open tasks. onCompleted refreshes
-            the dashboard so the readiness ring bumps. */}
-        <UpNext
-          planId={stats?.activePlan?.id ?? null}
-          locale={(i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US"}
-          onViewAll={() => {
-            const pid = stats?.activePlan?.id;
-            if (pid) router.push(`/moving/${pid}` as Href);
-            else router.push("/(tabs)/moving");
-          }}
-          onCompleted={async () => {
-            await fetchDashboard();
-          }}
-        />
+            {/* (e) HOME DOSSIER — the priority-ordered destination dossier. */}
+            <SectionHeader
+              label={t("dashboard.homeDossierKicker", { defaultValue: "Home Dossier" })}
+              style={{ marginTop: 20, marginBottom: 4 }}
+            />
+            <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
 
-        <HomeInsightCard
-          addressId={primaryHomeInsight?.id ?? null}
-          label={primaryHomeInsight?.label ?? null}
-        />
-
-        <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
-
-        {/* CONNECTED UTILITIES + BUDGET TRACKER — the Edition VII paired duo of
-            compact card modules, rendered entirely from the services list this
-            screen already fetched. Utilities rows open the quick-look sheet;
-            both modules deep-link into the Services tab. */}
-        {services.length > 0 && (
-          <View style={styles.duoRow}>
-            <TouchableOpacity
-              style={[styles.groupCard, styles.duoCard]}
-              onPress={() => router.push("/(tabs)/services")}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={t("dashboard.utilitiesKicker")}
+            {/* (f) MOVING GUIDES — featured guide card. */}
+            <SectionHeader
+              label={t("dashboard.movingGuidesKicker", { defaultValue: "Moving guides" })}
+              actionLabel={`${t("dashboard.seeAll", { defaultValue: "See all" })} →`}
+              onAction={() => router.push("/(tabs)/more")}
+              style={{ marginTop: 24, marginBottom: 12 }}
+            />
+            <MoveCard
+              onPress={() => router.push("/(tabs)/more")}
+              style={styles.guideCard}
             >
-              <Text style={styles.groupKicker}>{t("dashboard.utilitiesKicker").toUpperCase()}</Text>
-              {duoServices.map((svc) => {
-                const tone = serviceTone(svc.category, theme);
-                const active = svc.isActive !== false;
+              <View style={{ flex: 1 }}>
+                <Pill label={t("dashboard.guidesFeaturedTag", { defaultValue: "Featured" })} tone="accent" />
+                <Text style={styles.guideTitle}>
+                  {t("dashboard.guidesFeaturedTitle", { defaultValue: "Your week-by-week moving playbook" })}
+                </Text>
+                <Text style={styles.guideMeta}>
+                  {t("dashboard.guidesFeaturedMeta", { defaultValue: "Guides · 5 min read" })}
+                </Text>
+              </View>
+              <View style={styles.guideThumb}>
+                <Text style={styles.guideThumbEmoji}>📦</Text>
+              </View>
+            </MoveCard>
+          </>
+        ) : (
+          /* ── NO ACTIVE PLAN (free-upsell / paid-no-plan) — keep the
+             supplementary modules so those branches retain their content. ── */
+          <>
+            <UpNext
+              planId={stats?.activePlan?.id ?? null}
+              locale={(i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US"}
+              onViewAll={() => {
+                const pid = stats?.activePlan?.id;
+                if (pid) router.push(`/moving/${pid}` as Href);
+                else router.push("/(tabs)/moving");
+              }}
+              onCompleted={async () => {
+                await fetchDashboard();
+              }}
+            />
+
+            <HomeInsightCard
+              addressId={primaryHomeInsight?.id ?? null}
+              label={primaryHomeInsight?.label ?? null}
+            />
+
+            <HomeDossierCard addressId={stats?.activePlan?.toAddressId ?? null} />
+
+            {/* CONNECTED UTILITIES + BUDGET TRACKER — rendered entirely from the
+                services list this screen already fetched. */}
+            {services.length > 0 && (
+              <View style={styles.duoRow}>
+                <TouchableOpacity
+                  style={[styles.groupCard, styles.duoCard]}
+                  onPress={() => router.push("/(tabs)/services")}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.utilitiesKicker")}
+                >
+                  <Text style={styles.groupKicker}>{t("dashboard.utilitiesKicker").toUpperCase()}</Text>
+                  {duoServices.map((svc) => {
+                    const tone = serviceTone(svc.category, theme);
+                    const active = svc.isActive !== false;
+                    return (
+                      <TouchableOpacity
+                        key={svc.id}
+                        style={styles.utilRow}
+                        onPress={() => {
+                          hapticLight();
+                          setUtilSheet(svc);
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={svc.providerName || categoryLabel(svc.category)}
+                      >
+                        <View style={[styles.utilIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                          <CategoryIcon emoji={serviceCategoryEmoji(svc.category)} size={14} color={tone.text} />
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={styles.utilName} numberOfLines={1}>
+                            {svc.providerName || categoryLabel(svc.category)}
+                          </Text>
+                          <Text style={styles.utilSub} numberOfLines={1}>
+                            {active ? t("services.statusActive") : t("services.statusInactive")}
+                          </Text>
+                        </View>
+                        <View style={[styles.utilDot, active && styles.utilDotOn]} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {services.length > duoServices.length && (
+                    <Text style={styles.utilMore}>
+                      {t("dashboard.utilitiesMore", { count: services.length - duoServices.length })}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.groupCard, styles.duoCard]}
+                  onPress={() => router.push("/(tabs)/services")}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("dashboard.budgetKicker")}
+                >
+                  <Text style={styles.groupKicker}>{t("dashboard.budgetKicker").toUpperCase()}</Text>
+                  <Text style={styles.budgetNum}>
+                    {currencyFmt(insights.totalMonthly)}
+                    <Text style={styles.budgetNumUnit}> {t("dashboard.budgetPerMonth")}</Text>
+                  </Text>
+                  {insights.totalMonthly > 0 ? (
+                    <>
+                      <View style={styles.budgetBar}>
+                        {budgetSegs.map((c, i) => (
+                          <View
+                            key={c.category}
+                            style={[styles.budgetSeg, { flex: c.total, backgroundColor: budgetSegTones[i].text }]}
+                          />
+                        ))}
+                        {budgetRest > 0 && (
+                          <View style={[styles.budgetSeg, { flex: budgetRest, backgroundColor: theme.colors.border }]} />
+                        )}
+                      </View>
+                      <View style={styles.budgetTiles}>
+                        {budgetSegs.map((c, i) => (
+                          <View
+                            key={c.category}
+                            style={[
+                              styles.budgetTile,
+                              { backgroundColor: budgetSegTones[i].bg, borderColor: budgetSegTones[i].border },
+                            ]}
+                          >
+                            <View style={[styles.budgetSwatch, { backgroundColor: budgetSegTones[i].text }]} />
+                            <Text style={styles.budgetTileLbl} numberOfLines={1}>
+                              {categoryLabel(c.category)}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  ) : insights.missingCostCount > 0 ? (
+                    <Text style={styles.budgetMeta} numberOfLines={2}>
+                      {t("services.missingCostHint", { count: insights.missingCostCount })}
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Stats Grid */}
+            <View style={styles.statsGrid}>
+              {statCards.map((card) => {
+                const Icon = card.icon;
                 return (
                   <TouchableOpacity
-                    key={svc.id}
-                    style={styles.utilRow}
-                    onPress={() => {
-                      hapticLight();
-                      setUtilSheet(svc);
-                    }}
+                    key={card.label}
+                    style={[
+                      styles.statCard,
+                      {
+                        backgroundColor: card.color.bg,
+                        borderColor: card.color.border,
+                      },
+                    ]}
+                    onPress={() => router.push(card.route)}
                     activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel={svc.providerName || categoryLabel(svc.category)}
                   >
-                    <View style={[styles.utilIcon, { backgroundColor: tone.bg, borderColor: tone.border }]}>
-                      <CategoryIcon emoji={serviceCategoryEmoji(svc.category)} size={14} color={tone.text} />
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.utilName} numberOfLines={1}>
-                        {svc.providerName || categoryLabel(svc.category)}
-                      </Text>
-                      <Text style={styles.utilSub} numberOfLines={1}>
-                        {active ? t("services.statusActive") : t("services.statusInactive")}
-                      </Text>
-                    </View>
-                    <View style={[styles.utilDot, active && styles.utilDotOn]} />
+                    <Icon size={20} color={card.color.text} />
+                    <CountUp
+                      value={card.value}
+                      format={card.format}
+                      style={[styles.statValue, { color: card.color.text }]}
+                    />
+                    <Text style={styles.statLabel}>{card.label}</Text>
                   </TouchableOpacity>
                 );
               })}
-              {services.length > duoServices.length && (
-                <Text style={styles.utilMore}>
-                  {t("dashboard.utilitiesMore", { count: services.length - duoServices.length })}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.groupCard, styles.duoCard]}
-              onPress={() => router.push("/(tabs)/services")}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={t("dashboard.budgetKicker")}
-            >
-              <Text style={styles.groupKicker}>{t("dashboard.budgetKicker").toUpperCase()}</Text>
-              <Text style={styles.budgetNum}>
-                {currencyFmt(insights.totalMonthly)}
-                <Text style={styles.budgetNumUnit}> {t("dashboard.budgetPerMonth")}</Text>
-              </Text>
-              {insights.totalMonthly > 0 ? (
-                <>
-                  <View style={styles.budgetBar}>
-                    {budgetSegs.map((c, i) => (
-                      <View
-                        key={c.category}
-                        style={[styles.budgetSeg, { flex: c.total, backgroundColor: budgetSegTones[i].text }]}
-                      />
-                    ))}
-                    {budgetRest > 0 && (
-                      <View style={[styles.budgetSeg, { flex: budgetRest, backgroundColor: theme.colors.border }]} />
-                    )}
-                  </View>
-                  <View style={styles.budgetTiles}>
-                    {budgetSegs.map((c, i) => (
-                      <View
-                        key={c.category}
-                        style={[
-                          styles.budgetTile,
-                          { backgroundColor: budgetSegTones[i].bg, borderColor: budgetSegTones[i].border },
-                        ]}
-                      >
-                        <View style={[styles.budgetSwatch, { backgroundColor: budgetSegTones[i].text }]} />
-                        <Text style={styles.budgetTileLbl} numberOfLines={1}>
-                          {categoryLabel(c.category)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </>
-              ) : insights.missingCostCount > 0 ? (
-                <Text style={styles.budgetMeta} numberOfLines={2}>
-                  {t("services.missingCostHint", { count: insights.missingCostCount })}
-                </Text>
-              ) : null}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <TouchableOpacity
-                key={card.label}
-                style={[
-                  styles.statCard,
-                  {
-                    backgroundColor: card.color.bg,
-                    borderColor: card.color.border,
-                  },
-                ]}
-                onPress={() => router.push(card.route)}
-                activeOpacity={0.7}
-              >
-                <Icon size={20} color={card.color.text} />
-                <CountUp
-                  value={card.value}
-                  format={card.format}
-                  style={[styles.statValue, { color: card.color.text }]}
-                />
-                <Text style={styles.statLabel}>{card.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Savings / insights — computed client-side from tracked services.
-            Self-hides when there are no active services to summarize. */}
-        <SavingsInsightsCard services={services} />
-
-        {/* Active Moving Plan */}
-        {stats?.activePlan && (
-          <Card
-            variant="glow"
-            onPress={() => router.push("/(tabs)/moving")}
-            style={{ marginTop: 20 }}
-          >
-            <View style={styles.planHeader}>
-              <View style={styles.planIcon}>
-                <Truck size={18} color={theme.colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.planTitle}>
-                  {stats.activePlan.fromCity} → {stats.activePlan.toCity}
-                </Text>
-                <Text style={styles.planDate}>
-                  {formatDateOnlyUtc(
-                    stats.activePlan.moveDate,
-                    { month: "short", day: "numeric", year: "numeric" },
-                    i18n.language || "en-US",
-                  )}
-                </Text>
-              </View>
-              <UiBadge
-                label={stats.activePlan.status}
-                variant={
-                  stats.activePlan.status === "IN_PROGRESS"
-                    ? "primary"
-                    : "neutral"
-                }
-              />
             </View>
-          </Card>
+
+            {/* Savings / insights — computed client-side from tracked services. */}
+            <SavingsInsightsCard services={services} />
+          </>
         )}
 
           </>
@@ -1838,14 +1890,50 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, paddingRight: 12 },
-  greeting: { fontSize: 14, color: theme.colors.textTertiary },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 },
-  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: 0 },
+  headerLeft: { flex: 1, paddingRight: 12 },
+  greetingEyebrow: {
+    fontSize: 10,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
+  },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, marginTop: 2 },
+  headerName: {
+    fontSize: 27,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+    lineHeight: 30,
+  },
+  headerDate: { fontSize: 11, color: theme.colors.faint, marginTop: 2 },
+  headerActions: { flexDirection: "row", gap: 8 },
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notifBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: theme.colors.red,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notifBadgeText: { fontSize: 9, fontFamily: fonts.sansBold, color: "#fff" },
   planBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -1876,16 +1964,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.primary,
     textTransform: "uppercase",
   },
-  notifButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   statCard: {
@@ -1901,24 +1979,102 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   statValue: { fontSize: 24, fontWeight: "800", letterSpacing: 0 },
   statLabel: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
-  planHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
-  planIcon: {
-    width: 40,
-    height: 40,
+
+  // ── AI briefing (Move HeroCard) ──
+  briefHead: { flexDirection: "row", alignItems: "flex-start", gap: 13 },
+  briefRaccoon: { flexShrink: 0 },
+  briefLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 5 },
+  briefLabel: {
+    fontSize: 10,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
+  },
+  briefDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: theme.colors.primary },
+  briefUpdated: { marginLeft: "auto", fontSize: 9, color: theme.colors.faint },
+  briefText: { fontSize: 12, lineHeight: 18, color: theme.colors.text },
+  briefChips: { flexDirection: "row", gap: 7, marginTop: 13, flexWrap: "wrap" },
+  briefBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: theme.colors.primaryFaded,
     alignItems: "center",
     justifyContent: "center",
   },
-  planTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
-  planDate: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginTop: 28,
-    marginBottom: 12,
+  briefBtnText: { fontSize: 12, fontFamily: fonts.sansBold, color: theme.colors.onAccent },
+
+  // ── Countdown hero (Move HeroCard) ──
+  cdTop: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  cdKicker: {
+    fontSize: 10,
+    fontFamily: fonts.sansBold,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
   },
+  cdDaysRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 2 },
+  cdDaysNum: {
+    fontSize: 60,
+    fontFamily: fonts.serifBlack,
+    color: theme.colors.text,
+    lineHeight: 60,
+  },
+  cdDaysUnit: { fontSize: 15, color: theme.colors.dim },
+  cdMovingDay: {
+    fontSize: 26,
+    fontFamily: fonts.serifBold,
+    color: theme.colors.text,
+    marginTop: 6,
+  },
+  cdRoute: { alignItems: "flex-end", paddingTop: 6, maxWidth: 130 },
+  cdRouteCity: { fontSize: 11, color: theme.colors.faint },
+  cdRouteArrow: { fontSize: 13, lineHeight: 15, color: theme.colors.primary },
+  cdRouteCityTo: { fontSize: 11, fontFamily: fonts.sansSemibold, color: theme.colors.text },
+  cdRouteDate: { fontSize: 10, color: theme.colors.faint, marginTop: 2 },
+  cdProgressRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 7,
+  },
+  cdProgressLabel: { fontSize: 11, color: theme.colors.dim },
+  cdProgressPct: { fontSize: 11, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  cdBtn: {
+    marginTop: 14,
+    paddingVertical: 11,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.accentBorder,
+  },
+  cdBtnText: { fontSize: 12, fontFamily: fonts.sansSemibold, color: theme.colors.primary },
+
+  // ── Moving guides featured card ──
+  guideCard: { flexDirection: "row", gap: 14, alignItems: "center" },
+  guideTitle: {
+    fontSize: 15,
+    fontFamily: fonts.serif,
+    color: theme.colors.text,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  guideMeta: { fontSize: 11, color: theme.colors.faint },
+  guideThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 15,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface2,
+  },
+  guideThumbEmoji: { fontSize: 28 },
+
   inviteRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   inviteIcon: {
     width: 40,
@@ -1980,77 +2136,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   pushPromptBtnDisabled: { opacity: 0.6 },
   pushPromptBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.background },
 
-  // ── Aurora hero module (Edition VII) ──
-  heroCard: {
-    marginBottom: 16,
-    padding: 18,
-    borderRadius: theme.radius["2xl"],
-    overflow: "hidden",
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: `${theme.colors.primary}3D`,
-    ...theme.shadow.glow,
-  },
-  heroTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  heroKicker: {
-    fontSize: 10,
-    letterSpacing: 1.2,
-    fontWeight: "700",
-    color: theme.colors.textTertiary,
-  },
-  heroBadge: {
-    borderRadius: 999,
-    height: 26,
-    paddingHorizontal: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    ...theme.shadow.glow,
-  },
-  heroBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    color: theme.colors.background,
-  },
-  heroMid: { flexDirection: "row", alignItems: "center", gap: 16 },
-  heroDaysNum: {
-    fontSize: 38,
-    fontWeight: "800",
-    letterSpacing: 0,
-    lineHeight: 42,
-    color: theme.colors.text,
-  },
-  heroDaysLbl: {
-    fontSize: 9,
-    letterSpacing: 1.2,
-    fontWeight: "700",
-    color: theme.colors.textTertiary,
-    marginTop: 4,
-  },
-  heroMovingDay: {
-    flex: 1,
-    fontSize: 21,
-    fontWeight: "800",
-    letterSpacing: 0,
-    color: theme.colors.text,
-  },
-  heroGhostBtn: {
-    marginLeft: "auto",
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroGhostText: { fontSize: 12.5, fontWeight: "700", color: theme.colors.text },
-  heroRoute: { fontSize: 12.5, color: theme.colors.textSecondary, marginTop: 12 },
+  // ── Next-critical-action row (shared by the countdown hero) ──
   heroActionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2083,9 +2169,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: `${theme.colors.success}3D`,
   },
   heroAllSetText: { fontSize: 14, fontWeight: "700", color: theme.colors.success },
-  heroFoot: { fontSize: 11, color: theme.colors.textMuted, marginTop: 10, textAlign: "right" },
 
-  // ── Aurora group card module (checklist / utilities / budget) ──
+  // ── Connected Utilities + Budget Tracker duo (no-active-plan branch) ──
   groupCard: {
     padding: 15,
     borderRadius: theme.radius.xl,
@@ -2100,44 +2185,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: "700",
     color: theme.colors.textTertiary,
   },
-  groupHeadRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-  groupTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
-  groupSub: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
-  groupPct: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
-  groupCount: { fontSize: 10, color: theme.colors.textMuted },
-  groupBarTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.glass.highlight,
-    marginTop: 12,
-    marginBottom: 4,
-    overflow: "hidden",
-  },
-  groupBarFill: { height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary },
-  ckRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 11,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    marginTop: 2,
-  },
-  ckDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ckDotDone: { backgroundColor: theme.colors.success, borderColor: theme.colors.success },
-  ckRowText: { flex: 1, fontSize: 12, fontWeight: "600" },
-  ckRowTitle: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
-  ckRowNote: { fontSize: 10, color: theme.colors.info, marginTop: 1 },
-  ckRowMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
-
-  // ── Connected Utilities + Budget Tracker duo ──
   duoRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 16 },
   duoCard: { flex: 1, padding: 13, marginBottom: 0 },
   utilRow: {
