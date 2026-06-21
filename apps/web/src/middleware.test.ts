@@ -164,6 +164,8 @@ describe("web middleware auth boundaries", () => {
     const publicPaths = [
       "/about",
       "/provider-coverage",
+      "/features",
+      "/why-free",
       "/account/delete",
       "/data-deletion",
       "/opengraph-image",

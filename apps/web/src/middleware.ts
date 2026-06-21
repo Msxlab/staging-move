@@ -33,6 +33,8 @@ const PUBLIC_PATHS = [
   "/account/delete",
   "/about",
   "/provider-coverage",
+  "/features",
+  "/why-free",
   "/data-deletion",
   "/pricing",
   "/how-it-works",
