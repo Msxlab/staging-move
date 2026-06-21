@@ -100,65 +100,69 @@ export default async function BlogAnalyticsPage({
   const totalAll = totals.human + totals.bot || 1;
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="space-y-6">
       <AdminPageHeader
         eyebrow="Content"
         title="Blog <em>Analytics</em>"
         subtitle={`Last ${WINDOW_DAYS} days. View counts exclude duplicate visits within the same UTC day from the same hashed IP.`}
       />
 
-      <section className="grid grid-cols-2 gap-4 mb-8">
-        <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-muted-foreground">Human views</div>
-          <div className="text-3xl font-semibold mt-1">{totals.human.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {Math.round((totals.human / totalAll) * 100)}% of all hits
-          </div>
+      <section className="grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">Human views</p>
+          <p className="mt-2 font-display text-3xl font-extrabold leading-none text-foreground">{totals.human.toLocaleString()}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            <span className="font-mono text-tone-sage-fg">{Math.round((totals.human / totalAll) * 100)}%</span> of all hits
+          </p>
         </div>
-        <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-muted-foreground">Bot / AI views</div>
-          <div className="text-3xl font-semibold mt-1">{totals.bot.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {Math.round((totals.bot / totalAll) * 100)}% of all hits
-          </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bot / AI views</p>
+          <p className="mt-2 font-display text-3xl font-extrabold leading-none text-foreground">{totals.bot.toLocaleString()}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            <span className="font-mono">{Math.round((totals.bot / totalAll) * 100)}%</span> of all hits
+          </p>
         </div>
       </section>
 
-      <h2 className="text-lg font-medium mb-3">Top posts (humans)</h2>
-      {topPosts.length === 0 ? (
-        <div className="border rounded-md p-6 text-sm text-muted-foreground text-center">
-          No views recorded yet in this window.
-        </div>
-      ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="py-2">Title</th>
-              <th>Locale</th>
-              <th>Human</th>
-              <th>Bot</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topPosts.map((p) => (
-              <tr key={`${p.locale}-${p.slug}`} className="border-t">
-                <td className="py-2">
-                  <Link
-                    href={`/blog/analytics?postId=${encodeURIComponent(p.id)}`}
-                    className="hover:text-primary hover:underline"
-                  >
-                    {p.title}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">/{p.slug}</div>
-                </td>
-                <td>{p.locale}</td>
-                <td>{p.human.toLocaleString()}</td>
-                <td className="text-muted-foreground">{p.bot.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">Top posts <span className="text-xs font-normal text-muted-foreground">(humans)</span></h2>
+        {topPosts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No views recorded yet in this window.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full min-w-[480px]">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Title</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Locale</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Human</th>
+                  <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bot</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {topPosts.map((p) => (
+                  <tr key={`${p.locale}-${p.slug}`} className="bg-card transition-colors hover:bg-accent/30">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/blog/analytics?postId=${encodeURIComponent(p.id)}`}
+                        className="text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
+                      >
+                        {p.title}
+                      </Link>
+                      <div className="font-mono text-xs text-muted-foreground">/{p.slug}</div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs uppercase text-muted-foreground">{p.locale}</td>
+                    <td className="px-4 py-3 font-mono text-sm font-bold text-foreground">{p.human.toLocaleString()}</td>
+                    <td className="px-4 py-3 font-mono text-sm text-muted-foreground">{p.bot.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -181,12 +185,12 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
 
   if (!post) {
     return (
-      <div className="p-6 max-w-3xl space-y-4">
-        <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <div className="space-y-4">
+        <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to overview
         </Link>
-        <div className="rounded-md border p-6 text-sm text-muted-foreground">Post not found.</div>
+        <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">Post not found.</div>
       </div>
     );
   }
@@ -238,115 +242,124 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
     .slice(0, 10);
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="space-y-6">
       <AdminPageHeader
         eyebrow="Content"
         title={post.title}
         actions={
           <>
-            <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/blog/analytics" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Back to overview
             </Link>
           </>
         }
       />
-      <p className="mt-1 text-sm text-muted-foreground">
-        /{post.slug} · {post.locale.toUpperCase()} · {post.status}
-        {post.publishedAt ? ` · published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Last {WINDOW_DAYS} days. Lifetime human views: {(post.viewCount ?? 0).toLocaleString()}
-      </p>
 
-      <section className="mt-6 grid grid-cols-2 gap-4">
-        <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-muted-foreground">Human views (30d)</div>
-          <div className="text-3xl font-semibold mt-1">{totals.human.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-1">{Math.round((totals.human / totalAll) * 100)}% of all hits</div>
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-mono">/{post.slug}</span> · <span className="font-mono uppercase">{post.locale.toUpperCase()}</span> · {post.status}
+          {post.publishedAt ? <> · published <span className="font-mono">{post.publishedAt.toISOString().slice(0, 10)}</span></> : ""}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Last {WINDOW_DAYS} days. Lifetime human views: <span className="font-mono text-foreground">{(post.viewCount ?? 0).toLocaleString()}</span>
+        </p>
+      </div>
+
+      <section className="grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">Human views (30d)</p>
+          <p className="mt-2 font-display text-3xl font-extrabold leading-none text-foreground">{totals.human.toLocaleString()}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground"><span className="font-mono text-tone-sage-fg">{Math.round((totals.human / totalAll) * 100)}%</span> of all hits</p>
         </div>
-        <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-muted-foreground">Bot / AI views (30d)</div>
-          <div className="text-3xl font-semibold mt-1">{totals.bot.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-1">{Math.round((totals.bot / totalAll) * 100)}% of all hits</div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bot / AI views (30d)</p>
+          <p className="mt-2 font-display text-3xl font-extrabold leading-none text-foreground">{totals.bot.toLocaleString()}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground"><span className="font-mono">{Math.round((totals.bot / totalAll) * 100)}%</span> of all hits</p>
         </div>
       </section>
 
-      <h2 className="mt-8 text-lg font-medium">Daily timeline</h2>
-      {daily.length === 0 ? (
-        <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">
-          No views recorded in this window.
-        </div>
-      ) : (
-        <div className="mt-3 border rounded-md p-4">
-          <div className="flex items-end gap-1 h-32">
-            {daily.map((day) => {
-              const heightPct = Math.max(2, Math.round((day.human / peak) * 100));
-              return (
-                <div
-                  key={day.day}
-                  title={`${day.day}: ${day.human} human, ${day.bot} bot`}
-                  className="relative flex-1 bg-tone-sage-fg/40 rounded-sm"
-                  style={{ height: `${heightPct}%` }}
-                />
-              );
-            })}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="mb-4 font-display text-base font-bold text-foreground">Daily timeline</h2>
+        {daily.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No views recorded in this window.
           </div>
-          <div className="mt-2 flex justify-between text-[10px] text-muted-foreground font-mono">
-            <span>{daily[0]?.day}</span>
-            <span>{daily[daily.length - 1]?.day}</span>
+        ) : (
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-end gap-1 h-32">
+              {daily.map((day) => {
+                const heightPct = Math.max(2, Math.round((day.human / peak) * 100));
+                return (
+                  <div
+                    key={day.day}
+                    title={`${day.day}: ${day.human} human, ${day.bot} bot`}
+                    className="relative flex-1 rounded-sm bg-tone-sage-fg/50"
+                    style={{ height: `${heightPct}%` }}
+                  />
+                );
+              })}
+            </div>
+            <div className="mt-2 flex justify-between font-mono text-[10px] text-muted-foreground">
+              <span>{daily[0]?.day}</span>
+              <span>{daily[daily.length - 1]?.day}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <section>
-          <h2 className="text-lg font-medium">Top referrers (humans)</h2>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="mb-4 font-display text-base font-bold text-foreground">Top referrers <span className="text-xs font-normal text-muted-foreground">(humans)</span></h2>
           {referrerRows.length === 0 ? (
-            <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">No referrers.</div>
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No referrers.</div>
           ) : (
-            <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2">Source</th>
-                  <th>Visits</th>
-                </tr>
-              </thead>
-              <tbody>
-                {referrerRows.map((row) => (
-                  <tr key={row.referrer} className="border-t">
-                    <td className="py-2 truncate max-w-xs">{row.referrer}</td>
-                    <td>{row.count.toLocaleString()}</td>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Source</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Visits</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {referrerRows.map((row) => (
+                    <tr key={row.referrer} className="bg-card transition-colors hover:bg-accent/30">
+                      <td className="max-w-xs truncate px-4 py-3 text-sm text-foreground">{row.referrer}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-muted-foreground">{row.count.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </section>
+        </div>
 
-        <section>
-          <h2 className="text-lg font-medium">Locale split (humans)</h2>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="mb-4 font-display text-base font-bold text-foreground">Locale split <span className="text-xs font-normal text-muted-foreground">(humans)</span></h2>
           {localeRows.length === 0 ? (
-            <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">No data.</div>
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No data.</div>
           ) : (
-            <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2">Locale</th>
-                  <th>Visits</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localeRows.map((row) => (
-                  <tr key={row.locale} className="border-t">
-                    <td className="py-2 uppercase">{row.locale}</td>
-                    <td>{row.count.toLocaleString()}</td>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Locale</th>
+                    <th className="px-4 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Visits</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {localeRows.map((row) => (
+                    <tr key={row.locale} className="bg-card transition-colors hover:bg-accent/30">
+                      <td className="px-4 py-3 font-mono text-sm uppercase text-foreground">{row.locale}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-muted-foreground">{row.count.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </section>
+        </div>
       </div>
     </div>
   );

@@ -43,6 +43,13 @@ const STATUS_PILL_CLASS: Record<SourceStatus, string> = {
   off: "bg-muted text-muted-foreground",
 };
 
+/** Status → dot color for the leading status-pill dot. */
+const STATUS_DOT_CLASS: Record<SourceStatus, string> = {
+  healthy: "bg-tone-sage-fg",
+  degraded: "bg-tone-orange-fg",
+  off: "bg-muted-foreground",
+};
+
 /**
  * Translate a dynamic key, falling back to the raw value when the catalog has
  * no entry (same contract as the sidebar's navLabel — next-intl either throws
@@ -66,8 +73,12 @@ function StatusPill({ status }: { status: SourceStatus }) {
   const t = useTranslations("insights");
   return (
     <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_PILL_CLASS[status]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] ${STATUS_PILL_CLASS[status]}`}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_CLASS[status]}`}
+        aria-hidden="true"
+      />
       {t(`health.status.${status}`)}
     </span>
   );
@@ -233,12 +244,15 @@ export function InsightsClient({
         ) : (
           <div className="grid gap-4 sm:grid-cols-3">
             {(["generated", "cached", "gated"] as const).map((series) => (
-              <div key={series} className="rounded-lg bg-muted/30 p-4">
+              <div
+                key={series}
+                className="rounded-2xl border border-border bg-muted/30 p-4"
+              >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     {t(`ai.${series}`)}
                   </span>
-                  <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
+                  <span className="font-display text-2xl font-extrabold tabular-nums text-foreground">
                     {briefing.totals[series].toLocaleString()}
                   </span>
                 </div>
@@ -250,7 +264,7 @@ export function InsightsClient({
                     height={36}
                   />
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground">
                   <span>{briefing.days[0]?.slice(5)}</span>
                   <span>{briefing.days[briefing.days.length - 1]?.slice(5)}</span>
                 </div>
@@ -273,7 +287,7 @@ export function InsightsClient({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">{t("reco.category")}</th>
                   <th scope="col" className="py-2 pr-4 text-right">{t("reco.dismissed")}</th>
                   <th scope="col" className="py-2 pr-4 text-right">{t("reco.notRelevant")}</th>
@@ -340,7 +354,7 @@ export function InsightsClient({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                   <th scope="col" className="py-2 pr-4">{t("area.state")}</th>
                   <th scope="col" className="py-2 pr-4">{t("area.category")}</th>
                   <th scope="col" className="py-2 pr-4">{t("area.provider")}</th>

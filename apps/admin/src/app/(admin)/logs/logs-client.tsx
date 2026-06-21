@@ -24,17 +24,22 @@ function relativeTime(date: string) {
   return new Date(date).toLocaleDateString();
 }
 
-const ACTION_COLORS: Record<string, string> = {
-  CREATE: "bg-tone-sage-bg text-tone-sage-fg", UPDATE: "bg-tone-sky-bg text-tone-sky-fg",
-  DELETE: "bg-destructive/10 text-destructive", LOGIN: "bg-tone-cyan-bg text-tone-cyan-fg",
-  APPROVE: "bg-tone-sage-bg text-tone-sage-fg", REJECT: "bg-destructive/10 text-destructive",
+// Dot-pill palette — each action maps to a pill background/text plus a
+// matching status-dot color. Mirrors the Move admin reskin status pills.
+const ACTION_COLORS: Record<string, { pill: string; dot: string }> = {
+  CREATE: { pill: "bg-tone-sage-bg text-tone-sage-fg", dot: "bg-tone-sage-fg" },
+  UPDATE: { pill: "bg-tone-sky-bg text-tone-sky-fg", dot: "bg-tone-sky-fg" },
+  DELETE: { pill: "bg-destructive/10 text-destructive", dot: "bg-destructive" },
+  LOGIN: { pill: "bg-tone-cyan-bg text-tone-cyan-fg", dot: "bg-tone-cyan-fg" },
+  APPROVE: { pill: "bg-tone-sage-bg text-tone-sage-fg", dot: "bg-tone-sage-fg" },
+  REJECT: { pill: "bg-destructive/10 text-destructive", dot: "bg-destructive" },
 };
 
 function actionColor(action: string) {
   for (const [key, val] of Object.entries(ACTION_COLORS)) {
     if (action.toUpperCase().includes(key)) return val;
   }
-  return "bg-primary/10 text-primary";
+  return { pill: "bg-primary/10 text-primary", dot: "bg-primary" };
 }
 
 function tryParseJSON(str: string | null) {
@@ -126,11 +131,11 @@ export default function LogsClient() {
         const who = tab === "admin" ? log.adminUser : log.user;
         return who ? (
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{who.firstName} {who.lastName}</p>
-            <p className="text-xs text-muted-foreground truncate">{who.email}</p>
+            <p className="truncate text-sm font-medium text-foreground">{who.firstName} {who.lastName}</p>
+            <p className="truncate font-mono text-xs text-muted-foreground">{who.email}</p>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="font-mono text-xs text-muted-foreground">
             {(log.userId || log.adminUserId || "").slice(0, 12)}...
           </p>
         );
@@ -139,9 +144,15 @@ export default function LogsClient() {
     {
       key: "action",
       label: "Action",
-      cell: (log) => (
-        <span className={`rounded px-2 py-0.5 text-xs font-medium ${actionColor(log.action)}`}>{log.action}</span>
-      ),
+      cell: (log) => {
+        const c = actionColor(log.action);
+        return (
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-medium ${c.pill}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+            {log.action}
+          </span>
+        );
+      },
     },
     {
       key: "entity",
@@ -149,14 +160,14 @@ export default function LogsClient() {
       cell: (log) => (
         <>
           <span className="text-sm text-foreground">{log.entityType}</span>
-          <p className="text-xs text-muted-foreground font-mono">{log.entityId.slice(0, 10)}...</p>
+          <p className="font-mono text-xs text-muted-foreground">{log.entityId.slice(0, 10)}...</p>
         </>
       ),
     },
     {
       key: "ip",
       label: "IP",
-      cell: (log) => <span className="text-xs text-muted-foreground">{log.ipAddress || "—"}</span>,
+      cell: (log) => <span className="font-mono text-xs text-muted-foreground">{log.ipAddress || "—"}</span>,
     },
     {
       key: "time",
@@ -164,7 +175,7 @@ export default function LogsClient() {
       cell: (log) => (
         <>
           <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
-          <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
+          <p className="font-mono text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
         </>
       ),
     },
@@ -330,16 +341,16 @@ export default function LogsClient() {
           </>
         )}
         beforeTable={() => (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setTab("admin")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "admin" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}
+              className={`flex items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-medium transition-colors ${tab === "admin" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}
             >
               <Shield className="h-4 w-4" /> Admin Actions
             </button>
             <button
               onClick={() => setTab("user")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === "user" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-accent"}`}
+              className={`flex items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-medium transition-colors ${tab === "user" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"}`}
             >
               <Users className="h-4 w-4" /> User Activity
             </button>
@@ -350,19 +361,24 @@ export default function LogsClient() {
             ? (() => {
                 const changes = tryParseJSON(expandedLog.changes);
                 return (
-                  <div className="rounded-xl border border-border bg-muted/30 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-medium text-foreground">
-                        Changes — {expandedLog.action} on {expandedLog.entityType}
-                      </p>
+                  <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Change diff
+                        </p>
+                        <p className="mt-1 font-display text-base font-bold text-foreground">
+                          <span className="font-mono">{expandedLog.action}</span> on {expandedLog.entityType}
+                        </p>
+                      </div>
                       <button
                         onClick={() => setExpandedLog(null)}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       >
                         Close
                       </button>
                     </div>
-                    <pre className="text-xs text-muted-foreground bg-card rounded-lg p-3 overflow-x-auto max-h-64 border border-border">
+                    <pre className="max-h-64 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 font-mono text-xs text-muted-foreground">
                       {typeof changes === "string" ? changes : JSON.stringify(changes, null, 2)}
                     </pre>
                   </div>

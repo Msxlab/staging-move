@@ -44,8 +44,8 @@ export default function ActivityIntelligenceClient() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Onboarding Funnel */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" /> Onboarding Funnel
           </h2>
           <div className="space-y-3">
@@ -58,12 +58,12 @@ export default function ActivityIntelligenceClient() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-foreground">{step.step}</span>
                       {i > 0 && dropoff > 0 && (
-                        <span className="text-[10px] text-destructive">-{dropoff}%</span>
+                        <span className="font-mono text-[10px] text-destructive">-{dropoff}%</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{step.count.toLocaleString()}</span>
-                      <span className="text-xs font-medium text-foreground">{step.pct}%</span>
+                      <span className="font-mono text-xs text-muted-foreground">{step.count.toLocaleString()}</span>
+                      <span className="font-mono text-xs font-medium text-foreground">{step.pct}%</span>
                     </div>
                   </div>
                   <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden">
@@ -76,8 +76,8 @@ export default function ActivityIntelligenceClient() {
         </div>
 
         {/* Engagement Scoring */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5 text-tone-honey-fg" /> Engagement Distribution
           </h2>
           <p className="text-xs text-muted-foreground mb-4">Based on sessions + events in the last 30 days</p>
@@ -88,14 +88,14 @@ export default function ActivityIntelligenceClient() {
               { label: "Low", value: engagement?.low || 0, color: "bg-tone-honey-fg", desc: "1-9 activity score" },
               { label: "None", value: engagement?.none || 0, color: "bg-destructive", desc: "No activity" },
             ].map((seg) => (
-              <div key={seg.label} className="rounded-lg bg-muted/30 p-4">
+              <div key={seg.label} className="rounded-xl bg-muted/30 p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`h-2.5 w-2.5 rounded-full ${seg.color}`} />
-                  <span className="text-sm font-medium text-foreground">{seg.label}</span>
+                  <span className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-muted-foreground">{seg.label}</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{seg.value.toLocaleString()}</p>
+                <p className="font-display text-2xl font-extrabold text-foreground">{seg.value.toLocaleString()}</p>
                 <p className="text-[10px] text-muted-foreground">{seg.desc}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="font-mono text-xs text-muted-foreground mt-1">
                   {engagement?.total > 0 ? Math.round((seg.value / engagement.total) * 100) : 0}% of users
                 </p>
               </div>
@@ -104,37 +104,37 @@ export default function ActivityIntelligenceClient() {
         </div>
 
         {/* Churn Risk */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" /> Churn Risk
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-4">
-              <p className="text-xs font-medium text-destructive uppercase">At Risk</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{churn?.atRisk || 0}</p>
+            <div className="rounded-xl bg-destructive/5 border border-destructive/20 p-4">
+              <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-destructive">At Risk</p>
+              <p className="font-display text-3xl font-extrabold text-foreground mt-1">{churn?.atRisk || 0}</p>
               <p className="text-xs text-muted-foreground">No activity in 14+ days</p>
             </div>
-            <div className="rounded-lg bg-tone-honey-bg border border-tone-honey-br p-4">
-              <p className="text-xs font-medium text-tone-honey-fg uppercase">Trial Expiring</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{churn?.trialExpiringSoon || 0}</p>
+            <div className="rounded-xl bg-tone-honey-bg border border-tone-honey-br p-4">
+              <p className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-tone-honey-fg">Trial Expiring</p>
+              <p className="font-display text-3xl font-extrabold text-foreground mt-1">{churn?.trialExpiringSoon || 0}</p>
               <p className="text-xs text-muted-foreground">Within 3 days</p>
             </div>
           </div>
-          <div className="rounded-lg bg-muted/30 p-4">
+          <div className="rounded-xl bg-muted/30 p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Retention Rate (7d+ users)</span>
-              <span className="text-sm font-bold text-foreground">{churn?.activeRate || 0}%</span>
+              <span className="font-mono text-sm font-bold text-foreground">{churn?.activeRate || 0}%</span>
             </div>
             <div className="h-3 rounded-full bg-muted/50 overflow-hidden">
               <div className="h-full rounded-full bg-tone-sage-fg transition-all" style={{ width: `${churn?.activeRate || 0}%` }} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">{churn?.oldUsers || 0} users signed up 7+ days ago</p>
+            <p className="font-mono text-xs text-muted-foreground mt-2">{churn?.oldUsers || 0} users signed up 7+ days ago</p>
           </div>
         </div>
 
         {/* Platform Distribution */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <Smartphone className="h-5 w-5 text-tone-sky-fg" /> Platform Usage (30d)
           </h2>
           <div className="space-y-3">
@@ -149,7 +149,7 @@ export default function ActivityIntelligenceClient() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-foreground">{p.platform}</span>
-                      <span className="text-xs text-muted-foreground">{p.count.toLocaleString()} ({pct}%)</span>
+                      <span className="font-mono text-xs text-muted-foreground">{p.count.toLocaleString()} ({pct}%)</span>
                     </div>
                     <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
                       <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
@@ -165,8 +165,8 @@ export default function ActivityIntelligenceClient() {
         </div>
 
         {/* Top Events */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" /> Top Events (30d)
           </h2>
           {(!topEvents || topEvents.length === 0) ? (
@@ -182,11 +182,11 @@ export default function ActivityIntelligenceClient() {
                 const pct = Math.round((e.count / maxCount) * 100);
                 return (
                   <div key={e.event} className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
+                    <span className="font-mono text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="text-sm font-medium text-foreground font-mono">{e.event}</span>
-                        <span className="text-xs text-muted-foreground">{e.count.toLocaleString()}</span>
+                        <span className="font-mono text-xs text-muted-foreground">{e.count.toLocaleString()}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
                         <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${pct}%` }} />
@@ -200,8 +200,8 @@ export default function ActivityIntelligenceClient() {
         </div>
 
         {/* Daily Active Users */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-lg font-extrabold text-foreground mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-tone-emerald-fg" /> Daily Active Users (30d)
           </h2>
           {(!dau || dau.length === 0) ? (
@@ -212,7 +212,7 @@ export default function ActivityIntelligenceClient() {
                 <div key={d.date} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                   <div className="w-full rounded-t bg-primary/60 hover:bg-primary transition-all min-h-[2px]"
                     style={{ height: `${Math.max((d.count / maxDau) * 100, 2)}%` }} />
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-card border border-border rounded px-2 py-1 text-[10px] text-foreground whitespace-nowrap shadow-lg z-10">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-card border border-border rounded px-2 py-1 font-mono text-[10px] text-foreground whitespace-nowrap shadow-lg z-10">
                     {d.date}: {d.count} users
                   </div>
                 </div>
