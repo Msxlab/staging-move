@@ -56,6 +56,7 @@ interface AppDetail extends AppRow {
   fmcsaCheckedAt: string | null;
   reviewNotes: string | null;
   decisionMessage: string | null;
+  leadsOptIn: boolean;
   documents: AppDoc[];
 }
 
@@ -118,6 +119,9 @@ export default function MoverApplicationsClient() {
   const [fmcsaBusy, setFmcsaBusy] = useState(false);
   const [decisionMessage, setDecisionMessage] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
+  // Lead-program enrollment (audit P2): explicit, separate from the accuracy
+  // attestation. Only opted-in movers receive consumer lead PII.
+  const [leadsOptIn, setLeadsOptIn] = useState(false);
 
   const [pending, setPending] = useState<MoverDecisionStatus | null>(null);
   const [modalBusy, setModalBusy] = useState(false);
@@ -150,12 +154,14 @@ export default function MoverApplicationsClient() {
     setFmcsa(null);
     setDecisionMessage("");
     setReviewNotes("");
+    setLeadsOptIn(false);
     try {
       const res = await fetch(`/api/movers/applications/${id}`);
       if (!res.ok) throw new Error("Failed to load application.");
       const data = await res.json();
       setSelected(data.application as AppDetail);
       setReviewNotes((data.application?.reviewNotes as string) ?? "");
+      setLeadsOptIn(Boolean((data.application as AppDetail)?.leadsOptIn));
     } catch {
       setSelected(null);
     } finally {
@@ -203,6 +209,7 @@ export default function MoverApplicationsClient() {
             decision: pending,
             decisionMessage: decisionMessage.trim() || undefined,
             reviewNotes: reviewNotes.trim() || undefined,
+            leadsOptIn,
             confirmPassword: values.confirmPassword,
             mfaCode: values.mfaCode,
             backupCode: values.backupCode,
@@ -438,6 +445,18 @@ export default function MoverApplicationsClient() {
                       className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
+                  <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={leadsOptIn}
+                      onChange={(e) => setLeadsOptIn(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Enroll in the lead program — receives consumer move leads (name/contact) by email.
+                      Check ONLY if the mover has agreed to receive leads (separate from the accuracy attestation).
+                    </span>
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => startDecision("APPROVED")} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
                       <ShieldCheck className="h-4 w-4" /> Approve & list

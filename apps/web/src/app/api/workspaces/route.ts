@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEffectiveEntitlement } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 import { getUserSession } from "@/lib/user-auth";
 import { planSummaryForOwner, workspaceFeatureGate, workspacePlanLabel } from "@/lib/workspace-routes";
 
@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sub = await prisma.subscription.findUnique({ where: { userId: session.userId } });
-  const plan = String(getEffectiveEntitlement(sub).effectivePlan);
+  // Consumer create-workspace gate → consumer-free override (audit P1-2).
+  const plan = String((await resolveConsumerEntitlement(sub)).entitlement.effectivePlan);
   if (plan !== "FAMILY" && plan !== "PRO") {
     return NextResponse.json({ error: "A Family or Pro plan is required to create a workspace." }, { status: 403 });
   }

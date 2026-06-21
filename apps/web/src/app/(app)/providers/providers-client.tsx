@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import { CompareView } from "./compare-view";
 import {
   getMergedDisplayCategoryKey,
@@ -83,6 +84,20 @@ export interface ProviderItem {
   trust?: ProviderTrustSummary;
 }
 
+/** Fire-and-forget sponsored-placement click beacon — never blocks the link. */
+function sendSponsoredClick(placementId: string): void {
+  try {
+    void fetch("/api/sponsored/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ placementId }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Beacons are best-effort by contract.
+  }
+}
+
 interface RecommendationsResponse {
   clusters: Array<{
     tier: UrgencyTier;
@@ -99,6 +114,21 @@ interface RecommendationsResponse {
   region?: { city: string | null; state: string | null; label: string | null };
   /** Top-N region-relevant providers per pending CRITICAL/IMPORTANT category. */
   regionGroups?: Array<{ category: string; label: string; tier: UrgencyTier; providers: ScoredProvider[] }>;
+  /** One FTC-labeled sponsored provider slot (R2). Rendered in a separate labeled
+   *  box, never mixed into the organic clusters (ranking-integrity, docs §7). */
+  sponsored?: {
+    placementId: string;
+    label: string;
+    provider: {
+      id: string;
+      name: string;
+      slug: string;
+      category: string;
+      website: string | null;
+      logoUrl: string | null;
+      affiliateActive: boolean;
+    };
+  } | null;
   recommendationGuide?: {
     summary?: string | null;
     completion?: {
@@ -646,6 +676,54 @@ export function ProvidersClient({
       )}
 
       {/* Recommended for you */}
+      {/* R2: FTC-labeled sponsored slot — a SEPARATE labeled box above the
+          organic picks; the recommendation engine never reorders for sponsorship. */}
+      {recs?.sponsored && (
+        <div className="rounded-xl border border-dashed border-tone-honey-br bg-tone-honey-bg/30 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-tone-honey-fg">
+              {recs.sponsored.label || "Sponsored"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              href={`/providers/${recs.sponsored.provider.id}`}
+              className="flex min-w-0 items-center gap-3"
+            >
+              <ProviderLogoMark
+                provider={recs.sponsored.provider}
+                className="h-9 w-9 rounded-lg"
+                fallbackClassName="text-lg"
+              />
+              <span className="truncate text-sm font-semibold text-foreground">
+                {recs.sponsored.provider.name}
+              </span>
+            </Link>
+            {recs.sponsored.provider.affiliateActive ? (
+              // onClickCapture fires the sponsored beacon before the affiliate
+              // CTA handles its own click-out + attribution.
+              <span onClickCapture={() => sendSponsoredClick(recs.sponsored!.placementId)}>
+                <AffiliateCtaButton
+                  providerId={recs.sponsored.provider.id}
+                  source="recommendation"
+                />
+              </span>
+            ) : recs.sponsored.provider.website ? (
+              <a
+                href={recs.sponsored.provider.website}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                onClick={() => sendSponsoredClick(recs.sponsored!.placementId)}
+                className="shrink-0 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+              >
+                Visit site
+              </a>
+            ) : null}
+          </div>
+          {recs.sponsored.provider.affiliateActive && <AffiliateDisclosure className="mt-2" />}
+        </div>
+      )}
+
       {highlightProviders.length > 0 && (
         <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary/5 to-transparent p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -727,6 +805,7 @@ export function ProvidersClient({
               </Link>
             ))}
           </div>
+          <AffiliateDisclosure className="mt-3" />
         </div>
       )}
 
@@ -827,6 +906,7 @@ export function ProvidersClient({
           }
         />
       ) : (
+        <>
         <div className="grid min-w-0 grid-cols-1 gap-2.5 lg:grid-cols-2">
           {visibleProviders.map((p) => {
             const isComparing = compareIds.includes(p.id);
@@ -946,6 +1026,8 @@ export function ProvidersClient({
             );
           })}
         </div>
+          <AffiliateDisclosure className="mt-3" />
+        </>
       )}
 
       {/* State rule info (bottom, reference) */}

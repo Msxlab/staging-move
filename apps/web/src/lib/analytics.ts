@@ -9,6 +9,7 @@
  */
 
 import { hasAnalyticsConsent } from "@/lib/consent";
+import { isPhase1AnalyticsEvent, sanitizePhase1EventMetadata } from "@locateflow/shared";
 
 declare global {
   interface Window {
@@ -182,7 +183,12 @@ export function trackEvent(name: string, params: AnalyticsParams = {}) {
     .slice(0, 50);
   if (!eventName) return;
 
-  const payload = sanitizeAnalyticsParams(params);
+  // Phase-1 funnel events (offer/upgrade/briefing) carry open-ended slugs like
+  // offer_key/category. Normalize them through the shared slug + allow-list
+  // sanitizer so a future free-text/partner-name value can never leak to GTM/GA4
+  // — previously only the DB path was hardened (audit P2-13).
+  const normalized = isPhase1AnalyticsEvent(eventName) ? sanitizePhase1EventMetadata(eventName, params) : null;
+  const payload = sanitizeAnalyticsParams(normalized ?? params);
   trackInternalEvent(eventName, undefined, payload);
 
   const destination = googleDestination();

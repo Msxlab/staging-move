@@ -156,4 +156,24 @@ describe("Google analytics wrapper", () => {
     );
     analytics.consentDenied();
   });
+
+  it("slug-normalizes a phase-1 offer_key before it reaches GTM (no free-text/PII leak)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GTM_ID", "GTM-TEST");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true })));
+    const { windowMock } = installBrowser();
+    consentMock.hasAnalyticsConsent.mockReturnValue(true);
+    const analytics = await import("./analytics");
+
+    analytics.consentGranted("nonce-1");
+    // A hypothetical free-text/partner-name offer_key must NOT reach Google raw.
+    analytics.trackEvent("offer_clicked", { offer_key: "Sparkle Cleaning Co! <x>", surface: "pricing" });
+
+    const pushed = windowMock.dataLayer.find(
+      (e) => (e as Record<string, unknown>)?.event === "offer_clicked",
+    ) as Record<string, unknown> | undefined;
+    expect(pushed).toBeTruthy();
+    expect(String(pushed!.offer_key)).toMatch(/^[a-z0-9_]+$/);
+    expect(pushed!.surface).toBe("pricing");
+    analytics.consentDenied();
+  });
 });

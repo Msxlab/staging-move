@@ -4,6 +4,7 @@ import {
   DEFAULT_BILLING_PLAN,
   DEFAULT_SUBSCRIPTION_STATUS,
   getEffectiveEntitlement,
+  applyConsumerFreeOverride,
   isPaidBillingPlan,
   TRIAL_DURATION_DAYS,
   type BillingPlan,
@@ -131,13 +132,25 @@ export async function getStripeAnnualTrialDays(): Promise<number> {
   return parsed;
 }
 
-export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntitlementSnapshot {
+export function buildUnifiedEntitlementSnapshot(
+  subscription: any,
+  opts?: { consumerFree?: boolean },
+): UnifiedEntitlementSnapshot {
   if (!subscription) {
-    return createFallbackEntitlementSnapshot({
-      status: "UNKNOWN",
-      isActive: false,
-      trialEndsAt: null,
-    });
+    if (!opts?.consumerFree) {
+      return createFallbackEntitlementSnapshot({
+        status: "UNKNOWN",
+        isActive: false,
+        trialEndsAt: null,
+      });
+    }
+    // Consumer-free + no subscription row = the purest free/no-row consumer.
+    // getEffectiveEntitlement(null) resolves to managementKind "none", so the
+    // H3-safe override below upgrades it to active PRO (mobile/profile read
+    // this). Normalize to an empty row so it shares the single derivation path
+    // and the snapshot shape stays identical to the with-row case.
+    // (docs/ai/free-pivot/16 M1)
+    subscription = {};
   }
 
   // Backfill provider for legacy rows that have a Stripe customer but no
@@ -146,10 +159,17 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   // goes through getEffectiveEntitlement so the answers stay in lockstep.
   const inferredProvider =
     subscription.provider || (subscription.stripeCustomerId ? "STRIPE" : "TRIAL");
-  const effective = getEffectiveEntitlement({
-    ...subscription,
-    provider: inferredProvider,
-  });
+  // Consumer read paths (profile/mobile snapshot) pass consumerFree=true so a
+  // pure free / campaign / no-row consumer resolves to PRO. Admin / billing
+  // metrics omit it → RAW entitlement (the override is H3-safe and never
+  // touches a real or lapsed stripe/store/admin row). (docs/ai/free-pivot/16 H1)
+  const effective = applyConsumerFreeOverride(
+    getEffectiveEntitlement({
+      ...subscription,
+      provider: inferredProvider,
+    }),
+    opts?.consumerFree ?? false,
+  );
 
   // Use the EFFECTIVE plan (accounts for admin grants + inherited workspace
   // tier), consistent with isActive/accessType below which already derive from

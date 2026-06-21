@@ -500,6 +500,7 @@ export default function ProviderDetailScreen() {
         </Card>
 
         {provider.affiliateActive ? (
+          <>
           <TouchableOpacity
             style={styles.affiliateBtn}
             onPress={async () => {
@@ -526,6 +527,14 @@ export default function ProviderDetailScreen() {
             <Sparkles size={16} color={theme.colors.primary} />
             <Text style={styles.affiliateBtnText}>{t("providers.getStarted", { defaultValue: "Get started" })}</Text>
           </TouchableOpacity>
+          {/* FTC material-connection disclosure adjacent to the affiliate CTA. */}
+          <Text style={styles.affiliateDisclosure}>
+            {t("providers.affiliateDisclosure", {
+              defaultValue:
+                "Affiliate link — we may earn a commission if you sign up, at no extra cost to you. It never affects rankings.",
+            })}
+          </Text>
+          </>
         ) : null}
 
         {provider.website ? (
@@ -721,6 +730,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 14,
   },
   affiliateBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.primary },
+  affiliateDisclosure: { fontSize: 11, lineHeight: 15, color: theme.colors.textMuted, marginTop: 6, textAlign: "center" },
   section: { marginTop: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },

@@ -3,9 +3,11 @@ import {
   PHASE1_ANALYTICS_EVENTS,
   buildAiBriefingActionClickedMetadata,
   buildAiBriefingViewedMetadata,
+  buildOfferEventMetadata,
   buildOnboardingTeaserViewedMetadata,
   buildTrustCopyShownMetadata,
   buildUpgradeClickedMetadata,
+  isPhase1AnalyticsEvent,
   sanitizePhase1EventMetadata,
 } from "./phase1-experiment-analytics";
 
@@ -176,6 +178,57 @@ describe("phase 1 experiment analytics metadata", () => {
       }
       expect(JSON.stringify(metadata)).not.toContain("person@example.com");
       expect(JSON.stringify(metadata)).not.toContain("123 Main");
+    }
+  });
+
+  it("registers the monetization funnel events so they are validated + always persisted", () => {
+    expect(isPhase1AnalyticsEvent("offer_viewed")).toBe(true);
+    expect(isPhase1AnalyticsEvent("offer_clicked")).toBe(true);
+    expect(isPhase1AnalyticsEvent("lead_submitted")).toBe(true);
+    expect(isPhase1AnalyticsEvent("concierge_interest_clicked")).toBe(true);
+  });
+
+  it("allowlists offer_key/category and the high-intent surfaces; strips everything else", () => {
+    const metadata = sanitizePhase1EventMetadata(PHASE1_ANALYTICS_EVENTS.OFFER_CLICKED, {
+      surface: "provider_detail",
+      offer_key: "junk_removal",
+      category: "JUNK_REMOVAL",
+      partner_name: "Acme Junk Haulers", // PII-ish display name → dropped (not allow-listed)
+      affiliate_url: "https://partner.example/aff?id=123", // dropped
+    });
+
+    expect(metadata).toEqual({
+      surface: "provider_detail",
+      offer_key: "junk_removal",
+      category: "junk_removal", // normalized to a lowercase slug
+    });
+  });
+
+  it("normalizes a non-slug offer_key (URL / display name) to unknown", () => {
+    const metadata = sanitizePhase1EventMetadata(PHASE1_ANALYTICS_EVENTS.OFFER_VIEWED, {
+      offer_key: "https://partner.example/x",
+      surface: "movers",
+    });
+    expect(metadata).toEqual({ offer_key: "unknown", surface: "movers" });
+  });
+
+  it("buildOfferEventMetadata produces a validated, PII-safe payload", () => {
+    const metadata = buildOfferEventMetadata(PHASE1_ANALYTICS_EVENTS.LEAD_SUBMITTED, {
+      offerKey: "moving_quotes",
+      category: "moving",
+      surface: "movers",
+      platform: "web",
+      source: "recommendation",
+    });
+    expect(metadata).toEqual({
+      platform: "web",
+      surface: "movers",
+      source: "recommendation",
+      offer_key: "moving_quotes",
+      category: "moving",
+    });
+    for (const forbidden of FORBIDDEN_FIELDS) {
+      expect(metadata).not.toHaveProperty(forbidden);
     }
   });
 

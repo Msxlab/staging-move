@@ -7,6 +7,8 @@ import {
   findSubscriptionForEntitlement,
 } from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
@@ -111,7 +113,14 @@ export async function GET(request?: NextRequest) {
       movingPlanCount,
       ...summarizeOnboardingEvents(onboardingEvents),
     });
-    const entitlement = buildUnifiedEntitlementSnapshot(entitlementSubscription);
+    // CONSUMER_FREE: under the free-for-all pivot, the snapshot that the web
+    // client AND mobile read (planTier / isPremium) resolves a pure free / no-row
+    // consumer to active PRO. H3-safe — real or lapsed stripe/store/admin rows
+    // pass through unchanged. Flag off (default) → no change.
+    const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
+    const entitlement = buildUnifiedEntitlementSnapshot(entitlementSubscription, {
+      consumerFree,
+    });
     const safeSubscription = sanitizeSubscriptionForClient(subscription);
 
     return NextResponse.json({

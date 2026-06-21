@@ -19,8 +19,9 @@ import {
   type OAuthProviderConfig,
   type OAuthTokens,
 } from "@locateflow/connectors";
-import { getEffectiveEntitlement, planFeatures } from "@locateflow/shared";
+import { planFeatures } from "@locateflow/shared";
 import { connectorRegistry } from "@/lib/connector-registry";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
@@ -44,14 +45,20 @@ export async function isApiConnectorsEnabled(): Promise<boolean> {
  *  3. an ANNUAL commitment — owner pricing decision (2026-05-30): automatic
  *     connections are an annual-commitment feature, so a one-time mover can't
  *     buy a single $11.99 month of Pro, run the sync, and churn. Admin-granted
- *     Pro (manual comp) is exempt from the annual requirement.
+ *     Pro (manual comp) AND consumer-free users are exempt from the annual req.
+ *
+ * Routes through resolveConsumerEntitlement so a free-for-all consumer resolves
+ * to PRO here too (audit P1-3 — apiConnectors are ON for everyone under the
+ * pivot, docs 13/14/18). The override leaves isManualOverride false, so the
+ * `consumerFreeApplied` signal is what exempts them from the annual commitment.
  */
 export async function userHasApiConnectorEntitlement(userId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({ where: { userId } });
-  const eff = getEffectiveEntitlement(sub);
+  const { entitlement: eff, consumerFreeApplied } = await resolveConsumerEntitlement(sub);
   if (!eff.hasAccess) return false;
   if (planFeatures(String(eff.effectivePlan)).apiConnectors !== true) return false;
   if (eff.isManualOverride) return true;
+  if (consumerFreeApplied) return true;
   return (sub as { billingInterval?: string | null } | null)?.billingInterval === "YEAR";
 }
 

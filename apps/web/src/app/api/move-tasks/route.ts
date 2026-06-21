@@ -20,7 +20,7 @@ function includeTaskContext() {
     service: { select: { id: true, providerName: true, category: true, isActive: true, addressId: true } },
     provider: { select: { id: true, name: true, slug: true, category: true } },
     customProvider: { select: { id: true, name: true, category: true, providerType: true, trustStatus: true } },
-    destinationProvider: { select: { id: true, name: true, slug: true, category: true } },
+    destinationProvider: { select: { id: true, name: true, slug: true, category: true, affiliateActive: true } },
     originAddress: { select: { id: true, nickname: true, city: true, state: true, zip: true } },
     destinationAddress: { select: { id: true, nickname: true, city: true, state: true, zip: true } },
     // Assignee (Family/Pro). Only id + name fields — enough to render an

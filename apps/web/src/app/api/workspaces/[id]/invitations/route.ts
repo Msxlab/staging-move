@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { can, getEffectiveEntitlement, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
+import { can, type WorkspaceMemberStatus, type WorkspaceRole } from "@locateflow/shared";
 import { Prisma } from "@locateflow/db";
 import { prisma } from "@/lib/db";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 import { getUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { workspaceFeatureGate } from "@/lib/workspace-routes";
@@ -97,7 +98,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const workspace = await prisma.workspace.findUnique({ where: { id }, select: { ownerUserId: true, name: true } });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
-  const plan = String(getEffectiveEntitlement(ownerSub).effectivePlan);
+  // Consumer seat gate → consumer-free override (audit P1-2): under CONSUMER_FREE
+  // a free owner resolves to PRO and may invite, instead of being dead-ended at 1.
+  const plan = String((await resolveConsumerEntitlement(ownerSub)).entitlement.effectivePlan);
   if (seatLimitForPlan(plan) <= 1) {
     return NextResponse.json({ error: "Upgrade to Family or Pro to invite members." }, { status: 403 });
   }

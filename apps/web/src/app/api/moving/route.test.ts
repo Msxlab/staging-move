@@ -52,10 +52,17 @@ vi.mock("@/lib/census-geocoder", () => ({
   geocodeFallbackForPersist: vi.fn(),
 }));
 
+// Default off so every existing test exercises the normal plan-keyed gate. The
+// CONSUMER_FREE H4 test flips it on per-case.
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn(() => Promise.resolve(false)),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireAppMutationUser } from "@/lib/api-gates";
 import { canCreateMovingPlan, canCreateMovingDestinationAddress, getPlanForLimitScope } from "@/lib/plan-limits";
 import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { POST } from "./route";
 
 const requireAppMutationUserMock = requireAppMutationUser as unknown as Mock;
@@ -63,6 +70,7 @@ const canCreateMovingPlanMock = canCreateMovingPlan as unknown as Mock;
 const canCreateMovingDestinationAddressMock = canCreateMovingDestinationAddress as unknown as Mock;
 const getPlanForLimitScopeMock = getPlanForLimitScope as unknown as Mock;
 const geocodeFallbackForPersistMock = geocodeFallbackForPersist as unknown as Mock;
+const isFeatureEnabledMock = isFeatureEnabled as unknown as Mock;
 const movingPlanCountMock = prisma.movingPlan.count as unknown as Mock;
 const addressFindUniqueMock = prisma.address.findUnique as unknown as Mock;
 const transactionMock = prisma.$transaction as unknown as Mock;
@@ -139,6 +147,7 @@ describe("moving mutation gates", () => {
     getPlanForLimitScopeMock.mockResolvedValue({ plan: "INDIVIDUAL" });
     movingPlanCountMock.mockResolvedValue(0);
     geocodeFallbackForPersistMock.mockResolvedValue(null);
+    isFeatureEnabledMock.mockResolvedValue(false); // CONSUMER_FREE off by default
   });
 
   it.each([
@@ -246,6 +255,30 @@ describe("moving mutation gates", () => {
       getPlanForLimitScopeMock.mockResolvedValue({ plan: "PRO" });
       movingPlanCountMock.mockResolvedValue(3);
 
+      const response = await movingRequest();
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body.upgradeRequired).toBe("CONCURRENT_PLAN_LIMIT");
+    });
+
+    it("CONSUMER_FREE on: does NOT dead-end the now-PRO base at the 4th move (H4)", async () => {
+      // Everyone resolves to PRO under the pivot (concurrentPlanLimit 3), which
+      // would otherwise teaser-block the whole base at the 4th active move. With
+      // the flag on the gate is raised to a finite abuse ceiling (25).
+      isFeatureEnabledMock.mockResolvedValue(true);
+      getPlanForLimitScopeMock.mockResolvedValue({ plan: "PRO" });
+      addressFindUniqueMock.mockResolvedValue(null); // reach 404 once past the gate
+
+      // 3 active plans (the old dead-end) → now allowed past the gate.
+      movingPlanCountMock.mockResolvedValue(3);
+      expect((await movingRequest()).status).toBe(404);
+
+      // 24 active plans → still under the 25 abuse ceiling → past the gate.
+      movingPlanCountMock.mockResolvedValue(24);
+      expect((await movingRequest()).status).toBe(404);
+
+      // 25 active plans → at the finite abuse ceiling → teaser still trips.
+      movingPlanCountMock.mockResolvedValue(25);
       const response = await movingRequest();
       const body = await response.json();
       expect(response.status).toBe(200);

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { checkGlobalBudget } from "@/lib/global-spend-guard";
 import { scopedRecordWhere } from "@/lib/workspace-data-scope";
 import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { CANCELED_MOVING_PLAN_STATUSES, planFeatures } from "@locateflow/shared";
@@ -356,7 +357,11 @@ export async function POST(request: NextRequest) {
     limit: DAILY_AI_GENERATION_CAP,
     windowSeconds: 24 * 60 * 60,
   });
-  if (!genGate.success) {
+  // App-wide daily AI budget (circuit-breaker): when the global cap is set AND
+  // exceeded, degrade everyone to the rule-based briefing — protects spend even
+  // when each user's own 3/day budget is fine. No cap configured → no effect.
+  const aiBudget = await checkGlobalBudget("ai");
+  if (!genGate.success || !aiBudget.allowed) {
     // Budget spent: serve today's last briefing if this instance still has it,
     // otherwise a deterministic rule-based briefing (no AI call, no extra spend).
     // Never an error; the next UTC day restores the budget.

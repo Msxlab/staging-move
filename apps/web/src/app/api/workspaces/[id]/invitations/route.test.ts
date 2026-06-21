@@ -24,6 +24,15 @@ vi.mock("@locateflow/shared", () => ({
   getEffectiveEntitlement: (...args: unknown[]) => (mocks.getEffectiveEntitlement as Mock)(...args),
 }));
 
+// Consumer seat gate resolves through this helper now (audit P1-2). The owner is
+// FAMILY here (seatLimitForPlan mocked to 6); consumer-free is off in these tests.
+vi.mock("@/lib/consumer-entitlement", () => ({
+  resolveConsumerEntitlement: vi.fn(async () => ({
+    entitlement: { effectivePlan: "FAMILY" },
+    consumerFreeApplied: false,
+  })),
+}));
+
 vi.mock("@/lib/db", () => ({
   prisma: {
     workspaceMember: {

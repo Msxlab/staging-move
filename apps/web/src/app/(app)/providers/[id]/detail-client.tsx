@@ -14,6 +14,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { AffiliateCtaButton } from "@/components/affiliate/affiliate-cta-button";
+import { AffiliateDisclosure } from "@/components/affiliate/affiliate-disclosure";
 import {
   getMergedDisplayCategoryLabel,
   getMergedDisplaySubcategoryLabel,
@@ -210,6 +211,7 @@ export function ProviderDetailClient({
             </a>
           )}
         </div>
+        {provider.affiliateActive && <AffiliateDisclosure className="mt-2" />}
       </div>
 
       <div className="rounded-2xl border border-border bg-foreground/[0.03] p-4 flex gap-3">

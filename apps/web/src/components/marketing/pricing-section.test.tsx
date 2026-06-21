@@ -207,6 +207,28 @@ describe("PricingSection", () => {
     expect(html.indexOf("Compare plans")).toBeGreaterThan(html.indexOf('id="pricing-plan-grid"'));
   });
 
+  it("CONSUMER_FREE: renders the Free + coming-soon variant and drops the paid scaffolding", () => {
+    const html = renderToStaticMarkup(
+      <PricingSection ctaHref="/sign-up" ctaLabelLoggedIn={false} headingLevel="h1" consumerFree />,
+    );
+
+    // Free positioning + active card.
+    expect(html).toContain("LocateFlow is free for your whole move");
+    expect(html).toContain("Everything included");
+    expect(html).toContain("$0");
+    expect(html).toContain("Get started free");
+    expect(html).toContain('href="/sign-up"');
+    // Coming-soon placeholders.
+    expect(html).toContain("Concierge");
+    expect(html).toContain("Business");
+    expect(html).toContain("I&#x27;m interested");
+    // The paid 3-tier / billing-cycle / compare scaffolding must NOT render.
+    expect(html).not.toContain("Choose Individual");
+    expect(html).not.toContain('aria-label="Billing interval"');
+    expect(html).not.toContain("Compare plans");
+    expect(html).not.toContain("/year after trial");
+  });
+
   it("renders annual and monthly campaign offers together", () => {
     const html = renderToStaticMarkup(
       <PricingSection

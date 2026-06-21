@@ -21,6 +21,9 @@ import type {
   BillingProvider,
   SubscriptionStatus,
 } from "./billing";
+// Value import is runtime-safe: consumer-free.ts imports ONLY a type from this
+// module (erased at compile), so there is no runtime import cycle.
+import { applyConsumerFreeOverride } from "./consumer-free";
 
 export type EffectiveStatus =
   | "FREE_ACCESS_ACTIVE"
@@ -127,7 +130,35 @@ function isManualAdminGrant(sub: EntitlementSubscriptionLike): boolean {
  * Pure function — accepts plain objects from Prisma, JSON, or tests. Returns
  * the same shape every read path can render against.
  */
+export interface EffectiveEntitlementOptions {
+  /**
+   * Consumer read paths pass the resolved CONSUMER_FREE flag here so a pure
+   * free / campaign / no-row consumer resolves to PRO (the everything-free
+   * pivot). Admin / billing-truth / ownership-reconcile paths OMIT it → RAW
+   * entitlement. H3-safe: never upgrades a real or lapsed stripe/store/admin
+   * row (see applyConsumerFreeOverride). Default false → fully reversible.
+   */
+  applyConsumerFree?: boolean;
+}
+
+/**
+ * Canonical effective-entitlement resolver. When `options.applyConsumerFree` is
+ * true, the H3-safe consumer-free override is applied as the SINGLE, final step,
+ * so every consumer gate that routes through here (plan-limits, the unified
+ * snapshot, seats, connectors) gets PRO in one place (audit P1-2). Default false
+ * leaves the billing-truth result untouched, so the preserve-suite and every
+ * admin/billing read are unaffected and the pivot stays reversible.
+ */
 export function getEffectiveEntitlement(
+  subscription: EntitlementSubscriptionLike | null | undefined,
+  now: Date = new Date(),
+  options?: EffectiveEntitlementOptions,
+): EffectiveEntitlement {
+  const result = computeEffectiveEntitlement(subscription, now);
+  return applyConsumerFreeOverride(result, options?.applyConsumerFree ?? false);
+}
+
+function computeEffectiveEntitlement(
   subscription: EntitlementSubscriptionLike | null | undefined,
   now: Date = new Date(),
 ): EffectiveEntitlement {

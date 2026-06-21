@@ -16,9 +16,9 @@
  * each route can map them to the SAME HTTP status the token route used.
  */
 
-import { getEffectiveEntitlement } from "@locateflow/shared";
 import { Prisma, type WorkspaceInvitation } from "@locateflow/db";
 import { prisma } from "@/lib/db";
+import { resolveConsumerEntitlement } from "@/lib/consumer-entitlement";
 import { seatLimitForPlan } from "@/lib/workspace-invitations";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import {
@@ -78,7 +78,10 @@ export async function acceptWorkspaceInvitation({
   if (!workspace) throw new AcceptInviteError("WORKSPACE_NOT_FOUND");
 
   const ownerSub = await prisma.subscription.findUnique({ where: { userId: workspace.ownerUserId } });
-  const seatLimit = seatLimitForPlan(String(getEffectiveEntitlement(ownerSub).effectivePlan));
+  // Consumer seat gate → consumer-free override (audit P1-2).
+  const seatLimit = seatLimitForPlan(
+    String((await resolveConsumerEntitlement(ownerSub)).entitlement.effectivePlan),
+  );
 
   try {
     await prisma.$transaction(

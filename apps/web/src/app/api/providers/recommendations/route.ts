@@ -29,6 +29,10 @@ import {
   type ServiceabilitySourceGap,
 } from "@/lib/provider-serviceability";
 import { requestHasPlanFeature } from "@/lib/request-entitlements";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { OFFERS_AFFILIATE_FLAG } from "@locateflow/shared";
+import { getActiveSponsoredProvider } from "@/lib/sponsored-provider";
+import { recordSponsoredImpression } from "@/lib/movers";
 import type { ProviderCoverageMetadata } from "@locateflow/db";
 
 const GUIDE_LANE_PROVIDER_LIMIT = 8;
@@ -1408,10 +1412,20 @@ export async function GET(request: NextRequest) {
       electric: serviceability.electric.status,
     });
 
+    // R2: one FTC-labeled sponsored provider slot for the lead "best matches"
+    // category, surfaced SEPARATELY from the organic clusters (never reordering
+    // them — §7 ranking integrity). Flag-gated (fail-closed) + fail-safe (null).
+    const offersAffiliate = await isFeatureEnabled(OFFERS_AFFILIATE_FLAG, { userId });
+    const sponsored = offersAffiliate
+      ? await getActiveSponsoredProvider(regionGroups[0]?.category ?? null, effectiveState || null)
+      : null;
+    if (sponsored) recordSponsoredImpression(sponsored.placementId);
+
     return NextResponse.json({
       ...result,
       region,
       regionGroups,
+      sponsored,
       savedProviderIds: [...savedProviderIds],
       recommendationGuide,
       meta: {

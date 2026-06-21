@@ -4,6 +4,8 @@ import { activeTrackedServiceWhereForScope } from "@/lib/service-active";
 import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
 import { isWorkspaceModelEnabled } from "@/lib/workspace-context";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG, consumerFreeApplies } from "@locateflow/shared";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -30,24 +32,32 @@ export const UNLIMITED = Number.MAX_SAFE_INTEGER;
 const PLAN_LIMITS: Record<string, {
   maxAddresses: number;
   maxServices: number;
+  maxCustomProviders: number;
 }> = {
   // FREE = thin teaser tier (owner 2026-06-10): 3 addresses, 10 services.
   // The move plan itself is gated separately (see canCreateMovingPlan).
+  // `maxCustomProviders` is an ABUSE ceiling, not a paywall: generous enough that
+  // no real user hits it, finite so a single account can't create unbounded
+  // userCustomProvider rows (the active path previously had no count check).
   FREE_TRIAL: {
     maxAddresses: 3,
     maxServices: 10,
+    maxCustomProviders: 25,
   },
   INDIVIDUAL: {
     maxAddresses: 10,
     maxServices: 100,
+    maxCustomProviders: 100,
   },
   FAMILY: {
     maxAddresses: 15,
     maxServices: 500,
+    maxCustomProviders: 300,
   },
   PRO: {
     maxAddresses: 25,
     maxServices: 1000,
+    maxCustomProviders: 1000,
   },
 };
 
@@ -102,8 +112,22 @@ export interface PlanLimitScope {
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
   const subscription = await findSubscriptionForEntitlement(userId);
+  // CONSUMER_FREE: every consumer resolves to PRO (everything free), reversibly.
+  // Read once. Admin never calls getUserPlan (it reads getEffectiveEntitlement
+  // directly), so admin truth stays on the raw entitlement.
+  const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
 
   if (!subscription) {
+    if (consumerFree) {
+      return {
+        plan: "PRO",
+        status: "FREE_ACCESS",
+        isActive: true,
+        hasPremium: true,
+        isTrialExpired: false,
+        limits: PLAN_LIMITS.PRO,
+      };
+    }
     return {
       plan: "FREE_TRIAL",
       status: "FREE_ACCESS",
@@ -116,6 +140,20 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
   const effective = getEffectiveEntitlement(subscription);
   const status = subscription.status || "FREE_ACCESS";
+
+  // CONSUMER_FREE short-circuit: a free / no-management consumer resolves to PRO
+  // (full features + PRO abuse caps). Real or lapsed payers and admin grants are
+  // excluded by consumerFreeApplies (H3) and fall through to the normal ladder.
+  if (consumerFreeApplies(effective, consumerFree)) {
+    return {
+      plan: "PRO",
+      status,
+      isActive: true,
+      hasPremium: true,
+      isTrialExpired: false,
+      limits: PLAN_LIMITS.PRO,
+    };
+  }
   const accessType = (subscription as { accessType?: string | null }).accessType;
 
   // Free Access and Free Trial keep users on FREE_TRIAL feature limits
@@ -396,6 +434,23 @@ export async function canCreateCustomProvider(userId: string): Promise<PlanLimit
       };
     }
     return inactivePlanBlock(userPlan, "customProvider");
+  }
+
+  // Active path: enforce a per-owner ABUSE ceiling (finite, not a paywall).
+  // Previously this path returned { allowed: true } with no count check, so a
+  // single account could create unbounded custom providers — the only guards
+  // were the route's rate limit (velocity) and the pending-review cap (review
+  // queue only). This caps cumulative rows. Finite value → safe to interpolate;
+  // intentionally NOT `upgradeRequired` (everything is free — no tier to buy).
+  const count = await prisma.userCustomProvider.count({ where: { userId, deletedAt: null } });
+  if (count >= userPlan.limits.maxCustomProviders) {
+    return {
+      allowed: false,
+      code: "CUSTOM_PROVIDER_LIMIT_REACHED",
+      reason: `You've reached the maximum of ${userPlan.limits.maxCustomProviders} custom providers.`,
+      current: count,
+      limit: userPlan.limits.maxCustomProviders,
+    };
   }
 
   return { allowed: true };

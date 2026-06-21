@@ -84,6 +84,7 @@ jobs:
             "0 * * * *")
               hit "$WEB/api/cron/checkout-cleanup"
               hit "$WEB/api/cron/connector-dispatch"
+              hit "$WEB/api/cron/lead-dispatch"
               hit "$WEB/api/cron/scheduled-delivery"
               hit "$WEB/api/cron/blog-publish"
               hit "$WEB/api/cron/store-review-accounts"

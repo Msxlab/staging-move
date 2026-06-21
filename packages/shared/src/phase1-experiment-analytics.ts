@@ -13,6 +13,13 @@ export const PHASE1_ANALYTICS_EVENTS = {
   TRUST_COPY_SHOWN: "trust_copy_shown",
   ONBOARDING_TEASER_VIEWED: "onboarding_teaser_viewed",
   UPGRADE_CLICKED: "upgrade_clicked",
+  // Monetization funnel (docs/ai/free-pivot/10 + 19 §9). Soft, consented funnel
+  // signal only — hard revenue lives on ClickEvent/AffiliateConversion/Lead.
+  // Keyed by `offer_key` (a slug, never a partner name → PII-safe).
+  OFFER_VIEWED: "offer_viewed",
+  OFFER_CLICKED: "offer_clicked",
+  LEAD_SUBMITTED: "lead_submitted",
+  CONCIERGE_INTEREST_CLICKED: "concierge_interest_clicked",
 } as const;
 
 export type Phase1AnalyticsEvent =
@@ -68,6 +75,25 @@ const EVENT_ALLOWED_KEYS: Record<Phase1AnalyticsEvent, Set<string>> = {
     "target_plan_tier",
     "feature_gate",
   ]),
+  [PHASE1_ANALYTICS_EVENTS.OFFER_VIEWED]: new Set([
+    ...COMMON_ALLOWED_KEYS,
+    "offer_key",
+    "category",
+  ]),
+  [PHASE1_ANALYTICS_EVENTS.OFFER_CLICKED]: new Set([
+    ...COMMON_ALLOWED_KEYS,
+    "offer_key",
+    "category",
+  ]),
+  [PHASE1_ANALYTICS_EVENTS.LEAD_SUBMITTED]: new Set([
+    ...COMMON_ALLOWED_KEYS,
+    "offer_key",
+    "category",
+  ]),
+  [PHASE1_ANALYTICS_EVENTS.CONCIERGE_INTEREST_CLICKED]: new Set([
+    ...COMMON_ALLOWED_KEYS,
+    "offer_key",
+  ]),
 };
 
 const EVENT_NAMES = new Set<string>(Object.values(PHASE1_ANALYTICS_EVENTS));
@@ -85,6 +111,11 @@ const SURFACE_VALUES = new Set([
   "daily_digest",
   "pricing",
   "subscription",
+  // High-intent monetization surfaces (offer/lead funnel — docs/ai/free-pivot/19 §6).
+  "provider_detail",
+  "recommendations",
+  "movers",
+  "move_task",
   "unknown",
 ]);
 const PLAN_TIER_VALUES = new Set(["free", "individual", "family", "pro", "unknown"]);
@@ -173,6 +204,15 @@ function stateValue(value: unknown): string {
   return /^[A-Z]{2}$/.test(normalized) ? normalized : "unknown";
 }
 
+// offer_key / category are open-ended slugs (e.g. "concierge", "junk_removal",
+// "utility_internet"). Lowercase + restrict to a slug charset so a partner name,
+// URL, email, or free text can never leak into the soft event log.
+function slugValue(value: unknown): string {
+  if (typeof value !== "string") return "unknown";
+  const normalized = value.trim().toLowerCase();
+  return /^[a-z0-9_]{1,40}$/.test(normalized) ? normalized : "unknown";
+}
+
 function normalizeByKey(key: string, value: unknown): string | number | boolean | null {
   switch (key) {
     case "platform":
@@ -204,6 +244,9 @@ function normalizeByKey(key: string, value: unknown): string | number | boolean 
       return enumValue(value, UPGRADE_SURFACE_VALUES, "unknown");
     case "feature_gate":
       return enumValue(value, FEATURE_GATE_VALUES, "unknown");
+    case "offer_key":
+    case "category":
+      return slugValue(value);
     default:
       return null;
   }
@@ -307,6 +350,37 @@ export function buildOnboardingTeaserViewedMetadata(input: {
     plan_tier: input.planTier,
     experiment_flag: UX_ONBOARDING_TEASER_FLAG,
     variant: input.variant,
+  }) ?? {};
+}
+
+export type OfferEventName =
+  | typeof PHASE1_ANALYTICS_EVENTS.OFFER_VIEWED
+  | typeof PHASE1_ANALYTICS_EVENTS.OFFER_CLICKED
+  | typeof PHASE1_ANALYTICS_EVENTS.LEAD_SUBMITTED
+  | typeof PHASE1_ANALYTICS_EVENTS.CONCIERGE_INTEREST_CLICKED;
+
+/**
+ * Build validated metadata for a monetization funnel event. `offerKey` is a slug
+ * identifying the offer/placement (e.g. "concierge", "junk_removal", a partner
+ * offer key) — never a partner display name. The result is allow-listed +
+ * normalized, so it is safe to persist on the consented UserEvent log.
+ */
+export function buildOfferEventMetadata(
+  event: OfferEventName,
+  input: {
+    offerKey: string;
+    category?: string;
+    surface?: string;
+    platform?: PlatformName;
+    source?: string;
+  },
+): Phase1AnalyticsMetadata {
+  return sanitizePhase1EventMetadata(event, {
+    platform: input.platform ?? "web",
+    surface: input.surface ?? "unknown",
+    source: input.source ?? "unknown",
+    offer_key: input.offerKey,
+    ...(input.category ? { category: input.category } : {}),
   }) ?? {};
 }
 

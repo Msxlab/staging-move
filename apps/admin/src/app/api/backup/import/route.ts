@@ -312,6 +312,36 @@ const IMPORT_MODEL_OPS = {
       prisma.moverDocument.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.moverDocument.create({ data }),
   },
+  leads: {
+    count: () => prisma.lead.count(),
+    findUniqueById: (id: string) => prisma.lead.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.lead.create({ data }),
+  },
+  leadDispatches: {
+    count: () => prisma.leadDispatch.count(),
+    findUniqueById: (id: string) => prisma.leadDispatch.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.leadDispatch.create({ data }),
+  },
+  partners: {
+    count: () => prisma.partner.count(),
+    findUniqueById: (id: string) => prisma.partner.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partner.create({ data }),
+  },
+  partnerDocuments: {
+    count: () => prisma.partnerDocument.count(),
+    findUniqueById: (id: string) => prisma.partnerDocument.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partnerDocument.create({ data }),
+  },
+  partnerInvoices: {
+    count: () => prisma.partnerInvoice.count(),
+    findUniqueById: (id: string) => prisma.partnerInvoice.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partnerInvoice.create({ data }),
+  },
+  partnerLedgerEntries: {
+    count: () => prisma.partnerLedgerEntry.count(),
+    findUniqueById: (id: string) => prisma.partnerLedgerEntry.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.partnerLedgerEntry.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

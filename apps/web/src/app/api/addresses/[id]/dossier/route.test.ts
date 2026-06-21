@@ -66,6 +66,21 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
 }));
 
+// Durable area cache → pass-through in route tests: always run the fetcher (the
+// lib mocks above supply the data), so section assembly stays identical.
+vi.mock("@/lib/address-data-cache", () => ({
+  getOrFetchSection: vi.fn(async ({ fetcher }: { fetcher: () => Promise<{ data: unknown }> }) => ({
+    data: (await fetcher()).data,
+    cache: "MISS",
+  })),
+}));
+
+// Global spend circuit-breaker: default allowed (no cap). The breaker test flips
+// it to exhausted to prove cost-bearing lookups are skipped and degrade.
+vi.mock("@/lib/global-spend-guard", () => ({
+  checkGlobalBudget: vi.fn(() => Promise.resolve({ allowed: true, cap: null })),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getPlanForLimitScope } from "@/lib/plan-limits";
@@ -81,6 +96,7 @@ import { lookupWalkability } from "@/lib/epa-walkability";
 import { lookupNearbySchools } from "@/lib/nces-schools";
 import { lookupHudHousing } from "@/lib/hud-housing";
 import { lookupEvCharging } from "@/lib/nlr-alt-fuel-stations";
+import { checkGlobalBudget } from "@/lib/global-spend-guard";
 import { GET, clearDossierCacheForTests } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -99,6 +115,7 @@ const mockLookupWalkability = lookupWalkability as unknown as Mock;
 const mockLookupNearbySchools = lookupNearbySchools as unknown as Mock;
 const mockLookupHudHousing = lookupHudHousing as unknown as Mock;
 const mockLookupEvCharging = lookupEvCharging as unknown as Mock;
+const mockCheckGlobalBudget = checkGlobalBudget as unknown as Mock;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -280,6 +297,7 @@ describe("address dossier route", () => {
     mockLookupNeighborhoodAcs.mockResolvedValue(NEIGHBORHOOD_OK);
     mockLookupWalkability.mockResolvedValue(WALKABILITY_OK);
     mockLookupNearbySchools.mockResolvedValue(SCHOOLS_OK);
+    mockCheckGlobalBudget.mockResolvedValue({ allowed: true, cap: null }); // breaker off
   });
 
   it("returns a structured 401 when the DB-backed session is invalid", async () => {
@@ -854,6 +872,34 @@ describe("address dossier route", () => {
     expect(body.radon).toEqual({ status: "ok", zone: 3 });
     expect(body.air).toEqual({ status: "ok", aqi: 52, category: "Moderate" });
     expect(body.flood.status).toBe("ok");
+  });
+
+  it("global budget exhausted: skips every upstream call and degrades all sections (PR1c breaker)", async () => {
+    // The app-wide daily dossier budget is spent → no new external spend. Fresh
+    // durable-cache HITs would still serve (handled in getOrFetchSection), but a
+    // cache MISS must NOT reach the upstream lib; the section degrades instead.
+    mockCheckGlobalBudget.mockResolvedValue({ allowed: false, cap: 100 });
+
+    const response = await GET(dossierRequest(), addressParams() as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // Every cost-bearing section degrades to its error/no-data shape.
+    expect(body.flood.status).toBe("error");
+    expect(body.school.status).toBe("error");
+    expect(body.hazards.status).toBe("error");
+    expect(body.radon.status).toBe("error");
+    expect(body.water.status).toBe("error");
+    expect(body.air.status).toBe("error");
+    // Not one upstream lookup was called — the whole point of the fuse.
+    expect(mockLookupFloodZone).not.toHaveBeenCalled();
+    expect(mockLookupSchoolDistrict).not.toHaveBeenCalled();
+    expect(mockLookupHazardRisks).not.toHaveBeenCalled();
+    expect(mockLookupRadonZone).not.toHaveBeenCalled();
+    expect(mockLookupWaterSystem).not.toHaveBeenCalled();
+    expect(mockLookupAirQuality).not.toHaveBeenCalled();
+    expect(mockLookupHudHousing).not.toHaveBeenCalled();
+    expect(mockLookupEvCharging).not.toHaveBeenCalled();
   });
 
   it("passes through air not_configured (no AirNow key) per the contract", async () => {

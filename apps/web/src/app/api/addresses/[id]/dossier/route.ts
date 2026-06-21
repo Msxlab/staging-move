@@ -27,6 +27,8 @@ import {
 import { recordIntegrationOutcome, recordIntegrationOutcomes } from "@/lib/integration-telemetry";
 import { getPlanForLimitScope } from "@/lib/plan-limits";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { getOrFetchSection, type DossierSection, type SectionDataStatus } from "@/lib/address-data-cache";
+import { checkGlobalBudget } from "@/lib/global-spend-guard";
 import { planFeatures } from "@locateflow/shared";
 
 // GET /api/addresses/:id/dossier — the New Home Dossier data endpoint.
@@ -101,6 +103,31 @@ function addressVersion(address: { updatedAt?: Date | string | null }): string {
   const value = address.updatedAt;
   if (!value) return "unknown";
   return value instanceof Date ? value.toISOString() : String(value);
+}
+
+/**
+ * Classify an upstream lookup result for the durable area cache. Every lookup
+ * result carries a `status` ("ok" | "no_location" | "error" | …), so "ok" is
+ * the only REAL outcome; anything else is DEGRADED (retry next time) and a
+ * null/absent result is EMPTY. getOrFetchSection serves REAL from cache and
+ * re-fetches the rest ("fetch once; serve cache; retry only if not real").
+ */
+function libCacheStatus(r: { status?: string } | null | undefined): SectionDataStatus {
+  if (r == null) return "EMPTY";
+  return r.status === "ok" ? "REAL" : "DEGRADED";
+}
+
+/**
+ * Global daily dossier spend circuit-breaker. When the app-wide budget for the
+ * day is exhausted, a cost-bearing upstream lookup is skipped: it rejects so the
+ * caller's `allSettled` records the section as degraded (and durable-cached
+ * sections fall back to any prior stale row). Fresh durable-cache HITs are
+ * served before the fetcher runs, so cached areas are unaffected. `allowed` is
+ * resolved once per request via checkGlobalBudget("dossier"); off by default
+ * (no cap configured) → always allowed. (docs/ai/free-pivot/15 + global-spend-guard)
+ */
+function dossierBudgetGated<T>(allowed: boolean, run: () => Promise<T>): Promise<T> {
+  return allowed ? run() : Promise.reject(new Error("DOSSIER_GLOBAL_BUDGET_EXHAUSTED"));
 }
 
 interface FloodSection {
@@ -522,9 +549,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return dossierJson(summary, "MISS", DOSSIER_SUMMARY_CACHE_TTL_MS);
       }
 
+      const summaryBudget = await checkGlobalBudget("dossier");
       const [airSettled, housingSettled] = await Promise.allSettled([
-        lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
-        lookupHudHousing({ zip: address.zip, state: address.state }),
+        dossierBudgetGated(summaryBudget.allowed, () =>
+          lookupAirQuality({ latitude: address.latitude, longitude: address.longitude })),
+        dossierBudgetGated(summaryBudget.allowed, () =>
+          lookupHudHousing({ zip: address.zip, state: address.state })),
       ]);
       const summary = {
         configured: true,
@@ -610,15 +640,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           return dossierJson(cachedPreview, "HIT", DOSSIER_PREVIEW_CACHE_TTL_MS);
         }
 
+        const previewBudget = await checkGlobalBudget("dossier");
         const [floodSettled, schoolSettled, weatherSettled] = await Promise.allSettled([
-          lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
-          lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
+          dossierBudgetGated(previewBudget.allowed, () =>
+            lookupFloodZone({ latitude: address.latitude, longitude: address.longitude })),
+          dossierBudgetGated(previewBudget.allowed, () =>
+            lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude })),
           weatherTargetDate
-            ? lookupMoveDayForecast({
-                latitude: address.latitude,
-                longitude: address.longitude,
-                targetDate: weatherTargetDate,
-              })
+            ? dossierBudgetGated(previewBudget.allowed, () =>
+                lookupMoveDayForecast({
+                  latitude: address.latitude,
+                  longitude: address.longitude,
+                  targetDate: weatherTargetDate,
+                }))
             : Promise.resolve(null),
         ]);
         const preview = {
@@ -740,6 +774,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // The libs never throw by contract, but allSettled keeps one misbehaving
     // lookup from ever taking down the other sections (belt and braces).
+    // Coordinate-keyed sections go through the durable, area-scoped cache
+    // (getOrFetchSection): fetched once per geo cell, shared across users and
+    // nearby addresses, re-fetched only when expired or not REAL. WATER (city/
+    // state) and HOUSING (zip/state) are not coordinate-keyed and stay on the
+    // request-level cache for now (low volume). The mappers are unchanged —
+    // each cached promise resolves to the raw lib result via `.then(r => r.data)`.
+    const dlat = address.latitude as number;
+    const dlng = address.longitude as number;
+    // Global daily dossier budget (the "fuse"): resolved once per full build. When
+    // exhausted, cachedLookup fetchers and the direct WATER/HOUSING calls skip the
+    // upstream call — fresh durable-cache HITs still serve; stale rows are served
+    // as fallback; uncached sections degrade. Off by default → always allowed.
+    const dossierBudget = await checkGlobalBudget("dossier");
+    const cachedLookup = <T,>(section: DossierSection, run: () => Promise<T>, date?: string | null) =>
+      getOrFetchSection<T>({
+        section,
+        lat: dlat,
+        lng: dlng,
+        date,
+        fetcher: async () => {
+          if (!dossierBudget.allowed) {
+            // Over the app-wide daily budget — do not spend on a new upstream call.
+            // Throw so getOrFetchSection serves a prior (stale) row if one exists,
+            // otherwise the section degrades. No cost incurred.
+            throw new Error("DOSSIER_GLOBAL_BUDGET_EXHAUSTED");
+          }
+          const r = await run();
+          return { data: r, status: libCacheStatus(r as { status?: string } | null) };
+        },
+      }).then((res) => res.data);
+
     const [
       floodSettled,
       schoolSettled,
@@ -751,21 +816,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       housingSettled,
       evChargingSettled,
     ] = await Promise.allSettled([
-      lookupFloodZone({ latitude: address.latitude, longitude: address.longitude }),
-      lookupSchoolDistrict({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("FLOOD", () => lookupFloodZone({ latitude: dlat, longitude: dlng })),
+      cachedLookup("SCHOOL", () => lookupSchoolDistrict({ latitude: dlat, longitude: dlng })),
       weatherTargetDate
-        ? lookupMoveDayForecast({
-            latitude: address.latitude,
-            longitude: address.longitude,
-            targetDate: weatherTargetDate,
-          })
+        ? cachedLookup(
+            "WEATHER",
+            () => lookupMoveDayForecast({ latitude: dlat, longitude: dlng, targetDate: weatherTargetDate }),
+            weatherTargetDate,
+          )
         : Promise.resolve(null),
-      lookupHazardRisks({ latitude: address.latitude, longitude: address.longitude }),
-      lookupRadonZone({ latitude: address.latitude, longitude: address.longitude }),
-      lookupWaterSystem({ city: address.city, state: address.state }),
-      lookupAirQuality({ latitude: address.latitude, longitude: address.longitude }),
-      lookupHudHousing({ zip: address.zip, state: address.state }),
-      lookupEvCharging({ latitude: address.latitude, longitude: address.longitude }),
+      cachedLookup("HAZARDS", () => lookupHazardRisks({ latitude: dlat, longitude: dlng })),
+      cachedLookup("RADON", () => lookupRadonZone({ latitude: dlat, longitude: dlng })),
+      // WATER/HOUSING aren't coordinate-keyed (no durable cache) — gate them on the
+      // budget directly so an exhausted day skips their upstream spend too.
+      dossierBudgetGated(dossierBudget.allowed, () =>
+        lookupWaterSystem({ city: address.city, state: address.state })),
+      cachedLookup("AIR", () => lookupAirQuality({ latitude: dlat, longitude: dlng })),
+      dossierBudgetGated(dossierBudget.allowed, () =>
+        lookupHudHousing({ zip: address.zip, state: address.state })),
+      cachedLookup("EV", () => lookupEvCharging({ latitude: dlat, longitude: dlng })),
     ]);
 
     // Neighborhood Intelligence is Pro-only: only Pro spends these three
@@ -777,11 +846,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let walkabilityStatus = "gated";
     let schoolsStatus = "gated";
     if (features.neighborhoodIntel) {
-      const coords = { latitude: address.latitude, longitude: address.longitude };
       const [censusSettled, walkSettled, schoolsSettled] = await Promise.allSettled([
-        lookupNeighborhoodAcs(coords),
-        lookupWalkability(coords),
-        lookupNearbySchools(coords),
+        cachedLookup("NB_CENSUS", () => lookupNeighborhoodAcs({ latitude: dlat, longitude: dlng })),
+        cachedLookup("NB_WALK", () => lookupWalkability({ latitude: dlat, longitude: dlng })),
+        cachedLookup("NB_SCHOOLS", () => lookupNearbySchools({ latitude: dlat, longitude: dlng })),
       ]);
       neighborhood = neighborhoodSection(censusSettled, walkSettled, schoolsSettled);
       censusStatus = sourceTelemetryStatus(censusSettled);

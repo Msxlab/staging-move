@@ -35,7 +35,9 @@ import {
 import {
   BILLING_PLAN_DEFINITIONS,
   TRIAL_DURATION_DAYS,
+  CONSUMER_FREE_FLAG,
 } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
@@ -91,11 +93,12 @@ export default async function LandingPage() {
   // CTA below resolves a state-aware destination so eligible Free Access
   // users are not silently funnelled past the trial offer.
   const primaryHref = userId ? "/dashboard" : "/sign-up";
-  const [ctaTarget, publicCampaign, workspaceModelEnabled, apiConnectorsEnabled] = await Promise.all([
+  const [ctaTarget, publicCampaign, workspaceModelEnabled, apiConnectorsEnabled, consumerFree] = await Promise.all([
     resolveMarketingCtaTarget(userId),
     getPublicSubscriptionOffersViewModel(),
     isWorkspaceModelEnabled(),
     isApiConnectorsEnabled(),
+    isFeatureEnabled(CONSUMER_FREE_FLAG),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   // Server-side translation — getTranslations resolves the locale from
@@ -104,10 +107,17 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tErrors = await getTranslations("errors");
   const tPricing = await getTranslations("pricing");
+  // CONSUMER_FREE: the trial/cancel/refund Q&As (also emitted as FAQ structured
+  // data) are meaningless when everything is free — drop them under the flag.
+  const billingFaqs = consumerFree
+    ? []
+    : [
+        { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
+        { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
+        { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+      ];
   const faqs = [
-    { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
-    { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
-    { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+    ...billingFaqs,
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
     // Product / privacy entries — expanded for SEO and to answer the
     // questions the marketing review flagged. The provider-account answer
@@ -141,30 +151,41 @@ export default async function LandingPage() {
     operatingSystem: "Web, iOS, Android",
     description: SITE_DESCRIPTION,
     publisher: { "@id": `${SITE_URL}#organization` },
-    offers: [
-      {
-        "@type": "Offer",
-        name: BILLING_PLAN_DEFINITIONS.FREE_TRIAL.displayName,
-        price: "0",
-        priceCurrency: "USD",
-      },
-      {
-        "@type": "Offer",
-        name: `${individualPlan.displayName} Annual`,
-        price: String(individualPlan.yearlyPriceUsd ?? 24),
-        priceCurrency: "USD",
-      },
-      ...(individualPlan.monthlyPriceUsd
-        ? [
-            {
-              "@type": "Offer",
-              name: `${individualPlan.displayName} Monthly`,
-              price: String(individualPlan.monthlyPriceUsd),
-              priceCurrency: "USD",
-            },
-          ]
-        : []),
-    ],
+    // CONSUMER_FREE: advertise a single $0 offer (everything included) instead of
+    // the paid Individual/Family/Pro tiers. Flag off (default) → unchanged.
+    offers: consumerFree
+      ? [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "USD",
+          },
+        ]
+      : [
+          {
+            "@type": "Offer",
+            name: BILLING_PLAN_DEFINITIONS.FREE_TRIAL.displayName,
+            price: "0",
+            priceCurrency: "USD",
+          },
+          {
+            "@type": "Offer",
+            name: `${individualPlan.displayName} Annual`,
+            price: String(individualPlan.yearlyPriceUsd ?? 24),
+            priceCurrency: "USD",
+          },
+          ...(individualPlan.monthlyPriceUsd
+            ? [
+                {
+                  "@type": "Offer",
+                  name: `${individualPlan.displayName} Monthly`,
+                  price: String(individualPlan.monthlyPriceUsd),
+                  priceCurrency: "USD",
+                },
+              ]
+            : []),
+        ],
   };
 
   return (
@@ -462,6 +483,7 @@ export default async function LandingPage() {
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
         offers={publicCampaign}
+        consumerFree={consumerFree}
       />
 
       {/* Latest blog posts — server component, ISR-cached. Renders

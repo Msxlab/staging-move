@@ -8,7 +8,8 @@ import { canCreateMovingDestinationAddress, canCreateMovingPlan, getPlanForLimit
 import { encrypt } from "@/lib/shared-encryption";
 import { geocodeFallbackForPersist } from "@/lib/census-geocoder";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
-import { MOVING_PLAN_STATUS, normalizeMovingPlanStatus, planFeatures } from "@locateflow/shared";
+import { MOVING_PLAN_STATUS, normalizeMovingPlanStatus, planFeatures, CONSUMER_FREE_FLAG } from "@locateflow/shared";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
   normalizeMovingState,
   validateMovingAddressStates,
@@ -19,6 +20,13 @@ import {
   resolveWorkspaceDataScope,
   scopedRecordWhere,
 } from "@/lib/workspace-data-scope";
+
+// CONSUMER_FREE abuse ceiling for simultaneously-active moving plans. Under the
+// free-for-all pivot every account resolves to PRO (concurrentPlanLimit 3), which
+// would dead-end the entire base at the 4th active move (docs/ai/free-pivot/16 H4).
+// This is a high but FINITE cap (not unlimited) so pathological accounts still trip
+// — a real consumer never has dozens of moves planning at once.
+const CONSUMER_FREE_CONCURRENT_PLAN_LIMIT = 25;
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -97,7 +105,12 @@ export async function POST(request: NextRequest) {
     // Plan resolves from the workspace OWNER in a shared workspace (same as
     // canCreateMovingPlan), so a member's concurrency cap follows the owner's tier.
     const ownerPlan = await getPlanForLimitScope(userId, planLimitScopeForDataScope(scope));
-    const concurrentPlanLimit = planFeatures(ownerPlan.plan).concurrentPlanLimit;
+    // CONSUMER_FREE: raise the gate to a finite abuse ceiling so the now-PRO base
+    // is not dead-ended at the 4th active move (H4). Flag off (default) → unchanged.
+    const consumerFree = await isFeatureEnabled(CONSUMER_FREE_FLAG);
+    const concurrentPlanLimit = consumerFree
+      ? CONSUMER_FREE_CONCURRENT_PLAN_LIMIT
+      : planFeatures(ownerPlan.plan).concurrentPlanLimit;
     const activePlanCount = await prisma.movingPlan.count({
       where: scopedRecordWhere(
         scope,

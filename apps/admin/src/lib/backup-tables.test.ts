@@ -55,6 +55,8 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "IntegrationDailyStat", // rebuildable telemetry counters (trend-grade observability); PITR covers recovery (same rationale as RateLimitLog)
   "MovingCompany", // re-importable from the public FMCSA census via scripts/etl-fmcsa-movers.mjs — source of truth is external
   "MoverPortalToken", // magic-link mover-portal session tokens (sha256 hash, 14d TTL) — restoring stale tokens would re-grant revoked portal access (session/token-table rationale)
+  "AddressDataCacheEntry", // regenerable per-area dossier cache (non-PII, geo-keyed) — refetched on demand, PITR covers recovery (same rationale as RateLimitLog)
+  "PartnerPortalToken", // magic-link partner-portal session tokens (sha256 hash, TTL) — restoring stale tokens would re-grant revoked portal access (session/token-table rationale)
 ]);
 
 describe("backup table catalog", () => {

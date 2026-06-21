@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { SITE_URL, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 import { buildLlmsTxt, listLlmsBlogPosts } from "@/lib/public-ai-discovery";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { CONSUMER_FREE_FLAG } from "@locateflow/shared";
 
 /**
  * `/llms.txt` - emerging-standard discovery file for AI crawlers.
@@ -48,8 +50,11 @@ export async function GET() {
     });
   }
 
-  const posts = await listLlmsBlogPosts();
-  const body = buildLlmsTxt({ appUrl: APP_URL, posts });
+  const [posts, consumerFree] = await Promise.all([
+    listLlmsBlogPosts(),
+    isFeatureEnabled(CONSUMER_FREE_FLAG),
+  ]);
+  const body = buildLlmsTxt({ appUrl: APP_URL, posts, consumerFree });
 
   return new NextResponse(body, {
     headers: {

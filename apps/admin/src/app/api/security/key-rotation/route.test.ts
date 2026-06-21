@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 
 // Every model the rotation route must cover. service + address have bespoke
 // mocks; the rest share otherFindMany/otherUpdate.
-const OTHER_MODELS = ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch"];
+const OTHER_MODELS = ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch", "lead"];
 
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mocks.requirePermission(...args),
@@ -41,7 +41,7 @@ vi.mock("@/lib/db", () => {
       update: (...args: unknown[]) => mocks.addressUpdate(...args),
     },
   };
-  for (const name of ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch"]) {
+  for (const name of ["user", "adminUser", "runtimeConfigEntry", "partnerConsent", "connectorDispatch", "lead"]) {
     client[name] = {
       findMany: (...args: unknown[]) => mocks.otherFindMany(name, ...args),
       update: (...args: unknown[]) => mocks.otherUpdate(name, ...args),
@@ -154,7 +154,7 @@ describe("security key rotation API", () => {
     expect(body.message).toContain("connectorDispatch");
     // Results report stats for all seven tables.
     expect(Object.keys(body.results).sort()).toEqual(
-      ["address", "adminUser", "connectorDispatch", "partnerConsent", "runtimeConfigEntry", "service", "user"],
+      ["address", "adminUser", "connectorDispatch", "lead", "partnerConsent", "runtimeConfigEntry", "service", "user"],
     );
   });
 
