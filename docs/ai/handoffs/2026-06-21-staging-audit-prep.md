@@ -6,6 +6,61 @@ Local pre-install audit for the `Msxlab/staging-move` repo in `C:\Users\Kutay\Do
 
 Branch created for this audit memory: `codex/staging-audit-2026-06-21`.
 
+## Live Dokploy Staging Update - 2026-06-21
+
+Dokploy staging was created under the existing `LocateFlow` project as compose service
+`Staging Move` (`staging-move-phkdb4`) using the Git provider:
+
+- Repository: `https://github.com/Msxlab/staging-move.git`.
+- Branch: `codex/staging-audit-2026-06-21`.
+- Compose path: `docker-compose.dokploy.yml`.
+- Required Dokploy env isolation keys: `DOKPLOY_COMPOSE_PROJECT_NAME=staging-move`
+  and `DOKPLOY_CONTAINER_PREFIX=staging-move`.
+
+Cloudflare staging DNS records were added as DNS-only A records to `89.117.149.77`:
+
+- `staging.locateflow.com`.
+- `admin-staging.locateflow.com`.
+- `img-staging.locateflow.com`.
+
+Dokploy domains were attached and validated:
+
+- Web: `https://staging.locateflow.com` -> service `web`, port `3000`.
+- Admin: `https://admin-staging.locateflow.com` -> service `admin`, port `3001`.
+- Imgproxy: `https://img-staging.locateflow.com` -> service `imgproxy`, port `8080`.
+
+Deployment notes:
+
+- Initial Dokploy deploy succeeded with commit `48932b17` (`Make Dokploy compose staging-safe`).
+- A follow-up compose fix was required because `cron` did not have a Docker Compose
+  profile and therefore started during staging deployment. Commit `57e6b624`
+  (`Keep Dokploy cron behind explicit profile`) adds `profiles: ["cron"]` to
+  `docker-compose.dokploy.yml`.
+- After redeploy, Dokploy final log showed `mysql`, `imgproxy`, `migrate`, `admin`,
+  and `web` only in the compose start path; the old `staging-move-cron` container
+  remained from the first deploy and was manually stopped in Dokploy.
+- Current Dokploy container state after refresh: `staging-move-web` running/healthy,
+  `staging-move-admin` running/healthy, `staging-move-migrate` exited `0`,
+  `staging-move-mysql` running/healthy, `staging-move-imgproxy` running, and
+  `staging-move-cron` exited.
+
+Post-deploy smoke checks:
+
+- Public DNS via `1.1.1.1` resolves all three staging hostnames to `89.117.149.77`.
+- `GET https://staging.locateflow.com/api/health` returns `200`, `ready: true`,
+  `requiredOk: true`, `missingRequiredCount: 0`.
+- `GET https://admin-staging.locateflow.com/api/healthz` returns `200` with
+  `{"ok":true,"service":"admin"}`.
+- `HEAD https://img-staging.locateflow.com/` returns `200` from `imgproxy`.
+- `HEAD https://staging.locateflow.com/` returns `200`.
+- `HEAD https://admin-staging.locateflow.com/` returns `307` to `/login`; `/login`
+  returns `200`.
+- `GET https://staging.locateflow.com/robots.txt` returns `Disallow: /`.
+- Web and admin responses include `X-Robots-Tag: noindex, nofollow, noarchive`.
+
+No env secret values were copied into chat or local notes. The smoke tests only used
+HTTP responses and masked/indirect Dokploy state.
+
 ## Read / Inspected
 
 - Repo rules: `AGENTS.md`.
