@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,10 +26,11 @@ import {
   Crown,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useAppTheme, type Theme } from "@/lib/theme";
+import { useAppTheme, fonts, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { Input } from "@/components/ui/Input";
+import { HeroCard, MoveCard, Pill } from "@/components/move";
 import * as FileSystem from "expo-file-system/legacy";
 
 function buildExportFileName(type: string, format: string) {
@@ -171,30 +172,31 @@ export default function ExportScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.exportHero}>
-          <View style={styles.exportHeroIcon}>
-            <Database size={22} color={theme.colors.accent} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.exportHeroTitle}>
-              {t("settings.exportSecureTitle", { defaultValue: "Secure data export" })}
-            </Text>
-            <Text style={styles.exportHeroText}>
-              {t("settings.export_description")}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.stepUpCard}>
-          <View style={styles.stepUpHeader}>
-            <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
-            <View style={[styles.stepUpPill, stepUpReady && styles.stepUpPillReady]}>
-              <Text style={[styles.stepUpPillText, stepUpReady && styles.stepUpPillTextReady]}>
-                {stepUpReady
-                  ? t("settings.exportReady", { defaultValue: "Ready" })
-                  : t("settings.exportLocked", { defaultValue: "Locked" })}
+        <HeroCard style={styles.exportHero} padding={16} radius={theme.radius.xl}>
+          <View style={styles.exportHeroRow}>
+            <View style={styles.exportHeroIcon}>
+              <Database size={22} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.exportHeroTitle}>
+                {t("settings.exportSecureTitle", { defaultValue: "Secure data export" })}
+              </Text>
+              <Text style={styles.exportHeroText}>
+                {t("settings.export_description")}
               </Text>
             </View>
+          </View>
+        </HeroCard>
+
+        <MoveCard style={styles.stepUpCard} padding={16} radius={theme.radius.xl}>
+          <View style={styles.stepUpHeader}>
+            <Text style={styles.stepUpTitle}>{t("settings.export_confirmTitle", { defaultValue: "Confirm it's you" })}</Text>
+            <Pill
+              tone={stepUpReady ? "success" : "muted"}
+              label={stepUpReady
+                ? t("settings.exportReady", { defaultValue: "Ready" })
+                : t("settings.exportLocked", { defaultValue: "Locked" })}
+            />
           </View>
           {noStepUpMethod ? (
             <Text style={styles.stepUpHint}>
@@ -223,7 +225,7 @@ export default function ExportScreen() {
               </View>
             </>
           )}
-        </View>
+        </MoveCard>
 
         <View style={styles.exportStatusStrip}>
           <View style={styles.exportStatusDot} />
@@ -238,10 +240,10 @@ export default function ExportScreen() {
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
           return (
-            <View key={opt.type} style={styles.card}>
+            <MoveCard key={opt.type} style={styles.card} padding={12} radius={16}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardIconBox}>
-                  <Icon size={20} color={theme.colors.accent} />
+                  <Icon size={20} color={theme.colors.primary} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.cardTitle}>{opt.title}</Text>
@@ -265,10 +267,10 @@ export default function ExportScreen() {
                       activeOpacity={0.7}
                     >
                       {isLoading ? (
-                        <ActivityIndicator color={theme.colors.accent} size="small" />
+                        <ActivityIndicator color={theme.colors.primary} size="small" />
                       ) : (
                         <>
-                          <Download size={14} color={theme.colors.accent} />
+                          <Download size={14} color={theme.colors.primary} />
                           <Text style={styles.formatBtnText}>{fmt}</Text>
                         </>
                       )}
@@ -276,7 +278,7 @@ export default function ExportScreen() {
                   );
                 })}
               </View>
-            </View>
+            </MoveCard>
           );
         })}
 
@@ -293,19 +295,16 @@ export default function ExportScreen() {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 20, fontFamily: fonts.serifBold, color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   exportHero: {
+    marginBottom: 14,
+  },
+  exportHeroRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
-    padding: 16,
-    marginBottom: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.glass.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
   },
   exportHeroIcon: {
     width: 46,
@@ -313,32 +312,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.amber.bg,
+    backgroundColor: theme.colors.accentSoft,
     borderWidth: 1,
-    borderColor: theme.colors.amber.border,
+    borderColor: theme.colors.accentBorder,
   },
-  exportHeroTitle: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
-  exportHeroText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginTop: 3 },
-  noticeBox: { marginBottom: 16, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(242, 196, 108,0.08)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.2)" },
-  noticeText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18 },
-  stepUpCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: 16, marginBottom: 10 },
+  exportHeroTitle: { fontSize: 16, fontFamily: fonts.serifBold, color: theme.colors.text },
+  exportHeroText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.dim, lineHeight: 18, marginTop: 3 },
+  stepUpCard: { marginBottom: 10 },
   stepUpHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 4 },
-  stepUpTitle: { flex: 1, fontSize: 15, fontWeight: "800", color: theme.colors.text },
-  stepUpPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  stepUpPillReady: {
-    backgroundColor: theme.colors.successFaded,
-    borderColor: theme.colors.emerald.border,
-  },
-  stepUpPillText: { fontSize: 10, fontWeight: "900", color: theme.colors.textTertiary, textTransform: "uppercase" },
-  stepUpPillTextReady: { color: theme.colors.success },
-  stepUpHint: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18 },
+  stepUpTitle: { flex: 1, fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.text },
+  stepUpHint: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 18 },
   exportStatusStrip: {
     flexDirection: "row",
     alignItems: "center",
@@ -357,16 +340,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 999,
     backgroundColor: theme.colors.primary,
   },
-  exportStatusText: { flex: 1, fontSize: 11, lineHeight: 16, color: theme.colors.textTertiary },
-  card: { backgroundColor: theme.colors.glass.bg, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.glass.highlight, padding: 12, marginBottom: 9 },
+  exportStatusText: { flex: 1, fontSize: 11, fontFamily: fonts.sans, lineHeight: 16, color: theme.colors.faint },
+  card: { marginBottom: 9 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 9 },
-  cardIconBox: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.amber.bg, borderWidth: 1, borderColor: theme.colors.amber.border, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: theme.colors.text },
-  cardDesc: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, fontWeight: "700", textTransform: "uppercase" },
+  cardIconBox: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder, alignItems: "center", justifyContent: "center" },
+  cardTitle: { fontSize: 15, fontFamily: fonts.sansBold, color: theme.colors.text },
+  cardDesc: { fontSize: 10, fontFamily: fonts.sansBold, color: theme.colors.faint, marginTop: 2, letterSpacing: 0.6, textTransform: "uppercase" },
   formatRow: { flexDirection: "row", gap: 8 },
-  formatBtn: { flex: 1, minHeight: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.colors.amber.bg, borderWidth: 1, borderColor: theme.colors.amber.border },
-  formatBtnDisabled: { opacity: 0.45, backgroundColor: "rgba(255,255,255,0.035)", borderColor: theme.colors.border },
-  formatBtnText: { fontSize: 13, fontWeight: "800", color: theme.colors.accent },
-  gdprNote: { marginTop: 12, padding: 14, borderRadius: theme.radius.lg, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: theme.colors.border },
-  gdprText: { fontSize: 12, color: theme.colors.textMuted, lineHeight: 18 },
+  formatBtn: { flex: 1, minHeight: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.colors.accentSoft, borderWidth: 1, borderColor: theme.colors.accentBorder },
+  formatBtnDisabled: { opacity: 0.45, backgroundColor: theme.colors.surface2, borderColor: theme.colors.border },
+  formatBtnText: { fontSize: 13, fontFamily: fonts.sansBold, color: theme.colors.primary },
+  gdprNote: { marginTop: 12, padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
+  gdprText: { fontSize: 12, fontFamily: fonts.sans, color: theme.colors.faint, lineHeight: 18 },
 });
