@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces, Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
@@ -51,6 +51,34 @@ const fraunces = Fraunces({
   axes: ["opsz", "SOFT"],
   style: ["normal", "italic"],
   fallback: ["Didot", "Georgia", "serif"],
+});
+
+// Move design system — Playfair Display (display/serif), DM Sans (UI),
+// DM Mono (numerals/meta). Repointed via --font-display/sans/mono in
+// globals.css. Fraunces/Geist stay loaded for any not-yet-migrated refs.
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-playfair",
+  weight: ["400", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  fallback: ["Didot", "Georgia", "serif"],
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700"],
+  fallback: ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-mono",
+  weight: ["400", "500"],
+  fallback: ["Geist Mono", "JetBrains Mono", "Consolas", "monospace"],
 });
 
 const SITE_URL = getCanonicalSiteUrl();
@@ -146,7 +174,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${playfair.variable} ${dmSans.variable} ${dmMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -182,7 +210,7 @@ export default async function RootLayout({
         ) : null}
         {!BLOCK_INDEXING ? <SiteSchemas /> : null}
       </head>
-      <body className={`${geistSans.className} lf-aurora`}>
+      <body className={`${dmSans.className} lf-aurora`}>
         {/*
          * Embed-mode detection — runs before paint to avoid a flash of the
          * full marketing/app chrome before it's hidden. The mobile in-app
